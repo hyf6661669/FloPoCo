@@ -1493,7 +1493,7 @@ namespace flopoco{
 		
 		increment = ceil(ratio * target->suggestMultiplierCount(count, widthX, widthY));
 		estimatedCountMultiplier += increment;
-		increment2 = target->suggestDSPfromMultiplier(count);
+		increment2 = target->suggestDSPfromMultiplier(count, widthX, widthY);
 		estimatedCountDSP += increment2;
 		
 		(increment>0)? output << "Multiplier count increased by " << increment : output << "Multiplier count decreased by " << increment;
@@ -1503,26 +1503,11 @@ namespace flopoco{
 		return output.str();
 	}
 	
-	std::string Operator::addMemory(int count){
-		std::ostringstream output;
-		int increment;
-		
-		increment = target->suggestMemoryCount(count);		//get estimates using the default values for the target technology
-		estimatedCountMemory += increment;
-		estimatedCountRAM += increment;
-		
-		(increment>0)? output << "Memory elements count increased by " << increment << " . RAM memory was targeted" : output << "Memory elements count decreased by " << increment << " . RAM memory was targeted";
-		output << endl;
-		(increment>0)? output << "RAM count increased by " << increment : output << "RAM count decreased by " << increment;
-		output << endl;
-		return output.str();
-	}
-	
 	std::string Operator::addMemory(int count, int size, int width, int type){
 		std::ostringstream output;
 		int increment;
 		
-		increment = target->suggestMemoryCount(count, size, width, type);		//get estimates using the custom values for the target technology
+		increment = target->suggestMemoryCount(count, size, width, type);		
 		estimatedCountMemory += increment;
 		(type) ? estimatedCountROM += increment : estimatedCountRAM += increment;
 		
@@ -1561,26 +1546,6 @@ namespace flopoco{
 		estimatedCountROM += count;
 		
 		(count>0)? output << "ROM count increased by " << count : output << "ROM count decreased by " << count;
-		output << endl;
-		return output.str();
-	}
-	
-	//TODO: should count the shift registers according to their bitwidths
-	std::string Operator::addSRL(int count){
-		std::ostringstream output;
-		int increment, increment2;
-		
-		estimatedCountSRL += count;
-		increment = target->suggestLUTfromSRL(count, width);
-		estimatedCountLUT += increment;
-		increment2 = target->suggestFFfromSRL(count, width);
-		estimatedCountFF += increment2;
-		
-		(count>0)? output << "SRL count increased by " << count : output << "SRL count decreased by " << count;
-		output << endl;
-		(increment>0)? output << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << endl;
-		(increment2>0)? output << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
 		output << endl;
 		return output.str();
 	}
@@ -1712,11 +1677,11 @@ namespace flopoco{
 		int increment, increment2, increment3;
 		
 		estimatedCountDecoder += count;
-		increment = target->suggestLUTfromAccumulator(count, width);
+		increment = target->suggestLUTfromDecoder(count, width);
 		estimatedCountLUT += increment;
-		increment2 = target->suggestFFfromAccumulator(count, width);
+		increment2 = target->suggestFFfromDecoder(count, width);
 		estimatedCountFF += increment2;
-		increment3 = target->suggestRAMfromAccumulator(count, width);
+		increment3 = target->suggestRAMfromDecoder(count, width);
 		estimatedCountRAM += increment3;
 		
 		(count>0)? output << "Decoder count increased by " << count : output << "Decoder count decreased by " << count;
@@ -1737,18 +1702,10 @@ namespace flopoco{
 		estimatedCountArithOp += count;
 		increment = target->suggestLUTfromArithmeticOperator(count, nrInputs, width);
 		estimatedCountLUT += increment;
-		increment2 = target->suggestFFfromArithmeticOperator(count, width);
-		estimatedCountFF += increment2;
-		increment3 = target->suggestRAMfromArithmeticOperator(count, width);
-		estimatedCountRAM += increment3;
 		
 		(count>0)? output << "Arithmetic Operator count increased by " << count : output << "Arithmetic Operator count decreased by " << count;
 		output << endl;
 		(increment>0)? output << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << endl;
-		(increment2>0)? output << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << endl;
-		(increment3>0)? output << "ROM count increased by " << increment3 : output << "ROM count decreased by " << increment3;
 		output << endl;
 		return output.str();
 	}

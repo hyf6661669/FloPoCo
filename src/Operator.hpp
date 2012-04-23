@@ -993,19 +993,11 @@ public:
 	std::string addMultiplier(int count = 1, int widthX, int widthY, double ratio);
 	
 	/**
-	 * Add @count memory elements (having the default size) to the total 
-	 * estimate
-	 * NOTE: Defaults to adding RAM memories
-	 * @param count (by default 1) the number of elements to add
-	 * @return the string describing the performed operation
-	 */
-	std::string addMemory(int count = 1);
-	
-	/**
 	 * Add @count memories to the total estimate, each having @size 
 	 * words of @width bits
 	 * The memories can be either RAM or ROM, depending on the value of
 	 * the @type parameter
+	 * NOTE: Defaults to adding RAM memories
 	 * @param count (by default 1) the number of elements to add
 	 * @param size the number of words of the memory
 	 * @param width the bitwidth of each of the memory's word
@@ -1042,17 +1034,6 @@ public:
 	 * @return the string describing the performed operation
 	 */
 	std::string addROM(int count = 1);
-	
-	/**
-	 * Add @count Shift Registers to the total estimate
-	 * NOTE: The added SRLs use the default settings
-	 * NOTE: this function also modifies the total number of LUTs and FFs 
-	 * in the design; this aspect should be considered so as not to result 
-	 * in counting the resources multiple times and overestimate
-	 * @param count (by default 1) the number of elements to add
-	 * @return the string describing the performed operation
-	 */
-	std::string addSRL(int count = 1);
 	
 	/**
 	 * Add @count Shift Registers to the total estimate, each having a

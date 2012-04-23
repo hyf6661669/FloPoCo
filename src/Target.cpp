@@ -72,5 +72,140 @@ namespace flopoco{
 		return useHardMultipliers_ ;
 	} 
 
+	/*-------------- Resource Estimation related items	----------*/
+	
+	
+	virtual int suggestLUTType(){
+		cerr << "Error: function suggestLUTType() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	 
+	virtual int suggestLUTCount(int count, int type){
+		cerr << "Error: function suggestLUTCount() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestDSPfromMultiplier(int count, int widthX, int widthY){
+		cerr << "Error: function suggestDSPfromMultiplier() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestMultiplierCount(int count, int widthX, int widthY){
+		cerr << "Error: function suggestMultiplierCount() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestMemoryCount(int count, int size, int width, int type){
+		cerr << "Error: function suggestMemoryCount() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestSRLCount(int count, int width){
+		cerr << "Error: function suggestSRLCount() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestLUTfromSRL(int count, int width){
+		cerr << "Error: function suggestLUTfromSRL() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestFFfromSRL(int count, int width){
+		cerr << "Error: function suggestFFfromSRL() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestMuxCount(int count, int nrInputs, int width){
+		cerr << "Error: function suggestMuxCount() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestLUTfromMux(int count, int nrInputs, int width){
+		cerr << "Error: function suggestLUTfromMux() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestLUTfromCounter(int count, int width){
+		cerr << "Error: function suggestLUTfromCounter() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestFFfromCounter(int count, int width){
+		cerr << "Error: function suggestFFfromCounter() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestLUTfromAccumulator(int count, int width){
+		cerr << "Error: function suggestLUTfromAccumulator() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestFFfromAccumulator(int count, int width){
+		cerr << "Error: function suggestFFfromAccumulator() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestDSPfromAccumulator(int count, int width){
+		cerr << "Error: function suggestDSPfromAccumulator() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestLUTfromDecoder(int count, int width){
+		cerr << "Error: function suggestLUTfromDecoder() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestFFfromDecoder(int count, int width){
+		cerr << "Error: function suggestFFfromDecoder() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestRAMfromDecoder(int count, int width){
+		cerr << "Error: function suggestRAMfromDecoder() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestLUTfromArithmeticOperator(int count, int nrInputs, int width){
+		cerr << "Error: function suggestLUTfromArithmeticOperator() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestLUTfromFSM(int count, int nrStates, int nrTransitions){
+		cerr << "Error: function suggestLUTfromFSM() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestFFfromFSM(int count, int nrStates, int nrTransitions){
+		cerr << "Error: function suggestFFfromFSM() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	
+	virtual int suggestRAMfromFSM(int count, int nrStates, int nrTransitions){
+		cerr << "Error: function suggestRAMfromFSM() not implemented for this target FPGA." << endl;
+		exit(1);
+	}
+	
+	/*------------------------------------------------------------*/
 
 }

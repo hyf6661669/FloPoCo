@@ -287,8 +287,280 @@ namespace flopoco{
 		/** Constructs a specific DSP to each target */
 		virtual DSP* createDSP() = 0;
 	
-		//todo
 		
+		
+		/*-------------- Resource Estimation related items	----------*/
+		
+		/**
+		 * Provide the type of LUT that is default (recommended) for the
+		 * target architecture.
+		 * This type might refer to the number of inputs of the function 
+		 * generator, number of outputs etc. (add other features if desired).
+		 * @return the type of the LUT to be used for resource estimation
+		 */ 
+		virtual int suggestLUTType();
+		
+		/**
+		 * Return the number of LUT elements that should be added to the 
+		 * total resource estimation by adding @count LUTs of type @type.
+		 * According to the LUT type and number of the LUTs, the final 
+		 * number of LUTs that are inferred after synthesis might be 
+		 * different from the initial estimations.
+		 * @param count (by default 1) the number of LUTs that the user 
+		 * wishes to add to the design
+		 * @param type (by default 0, meaning the value returned by 
+		 * the @suggestLUTType() function) the LUT type
+		 * @return the type of the LUT to be used for resource estimation
+		 */ 
+		virtual int suggestLUTCount(int count = 1, int type = 0);
+		
+		/**
+		 * Return the number of DSP that should be added to the total 
+		 * resource count, after adding count multipliers that each have 
+		 * inputs of widths @widthX and @widthY bits respectively.
+		 * The function should take into account the DSP that are only 
+		 * partially filled, and that might be completed after another 
+		 * call to the function.
+		 * @param count (by default 1) the number of such multipliers 
+		 * that need to be added
+		 * @param widthX the width of the first term to the operation
+		 * @param widthY the width of the second term to the operation
+		 * @return the number of DSP blocks to add
+		 */
+		virtual int suggestDSPfromMultiplier(int count = 1, int widthX, int widthY);
+		
+		/**
+		 * Return the number of Multipliers that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * multipliers that each have inputs of widths @widthX and
+		 * @widthY bits respectively.
+		 * The function should take into account the DSP that are only 
+		 * partially filled, and that might be completed after another 
+		 * call to the function.
+		 * @param count (by default 1) the number of such multipliers 
+		 * that need to be added
+		 * @param widthX the width of the first term to the operation
+		 * @param widthY the width of the second term to the operation
+		 * @return the number of multipliers to add
+		 */
+		virtual int suggestMultiplierCount(int count = 1, int widthX, int widthY);
+		
+		/**
+		 * Return the number of Memory elements that should be added to 
+		 * the total resource count, when the user wishes to add @count 
+		 * memories, each having @size words of width @width. The 
+		 * memories can be RAMs or ROMs, depending on the @type parameter
+		 * @param count (by default 1) the number of memories with the 
+		 * specified characteristics to add
+		 * @param size the size of the memory, measured in words
+		 * @param width the width of the memory words
+		 * @param type (by default 0, RAM) the memory type (RAM or ROM)
+		 */
+		virtual int suggestMemoryCount(int count = 1, int size, int width, int type = 0);
+		
+		/**
+		 * Return the number of Shift Registers that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * shift registers that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such SRLs that need 
+		 * to be added
+		 * @param width the width of the shift registers
+		 * @return the number of SRLs to add
+		 */
+		virtual int suggestSRLCount(int count = 1, int width);
+		
+		/**
+		 * Return the number of LUTs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * shift registers that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such SRLs that need 
+		 * to be added
+		 * @param width the width of the shift registers
+		 * @return the number of LUTs to add to the resource estimation
+		 */
+		virtual int suggestLUTfromSRL(int count = 1, int width);
+		
+		/**
+		 * Return the number of FFs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * shift registers that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such SRLs that need 
+		 * to be added
+		 * @param width the width of the shift registers
+		 * @return the number of FFs to add to the resource estimation
+		 */
+		virtual int suggestFFfromSRL(int count = 1, int width);
+		
+		/**
+		 * Return the number of Multiplexers that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * multiplexers that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such Muxs that need 
+		 * to be added
+		 * @param nrInputs the number of inputs of the multiplexer
+		 * @param width the width of the multiplexers
+		 * @return the number of Multiplexers to add
+		 */
+		virtual int suggestMuxCount(int count = 1, int nrInputs, int width);
+		
+		/**
+		 * Return the number of LUTs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * multiplexers that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such Multiplexers 
+		 * that need to be added
+		 * @param nrInputs the number of inputs of the multiplexer
+		 * @param width the width of the multiplexers
+		 * @return the number of LUTs to add to the resource estimation
+		 */
+		virtual int suggestLUTfromMux(int count = 1, int nrInputs, int width);
+		
+		/**
+		 * Return the number of LUTs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * counters that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such counters
+		 * that need to be added
+		 * @param width the width of the counters
+		 * @return the number of LUTs to add to the resource estimation
+		 */
+		virtual int suggestLUTfromCounter(int count = 1, int width);
+		
+		/**
+		 * Return the number of FFs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * counters that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such counters
+		 * that need to be added
+		 * @param width the width of the counters
+		 * @return the number of FFs to add to the resource estimation
+		 */
+		virtual int suggestFFfromCounter(int count = 1, int width);
+		
+		/**
+		 * Return the number of LUTs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * accumulators that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such accumulators
+		 * that need to be added
+		 * @param width the width of the accumulators
+		 * @return the number of LUTs to add to the resource estimation
+		 */
+		virtual int suggestLUTfromAccumulator(int count = 1, int width);
+		
+		/**
+		 * Return the number of FFs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * accumulators that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such accumulators
+		 * that need to be added
+		 * @param width the width of the accumulators
+		 * @return the number of FFs to add to the resource estimation
+		 */
+		virtual int suggestFFfromAccumulator(int count = 1, int width);
+		
+		/**
+		 * Return the number of DSPs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * accumulators that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such accumulators
+		 * that need to be added
+		 * @param width the width of the accumulators
+		 * @return the number of DSPs to add to the resource estimation
+		 */
+		virtual int suggestDSPfromAccumulator(int count = 1, int width);
+		
+		/**
+		 * Return the number of LUTs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * encoders/decoders that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such encoders/decoders
+		 * that need to be added
+		 * @param width the width of the encoders/decoders
+		 * @return the number of LUTs to add to the resource estimation
+		 */
+		virtual int suggestLUTfromDecoder(int count = 1, int width);
+		
+		/**
+		 * Return the number of FFs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * encoders/decoders that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such encoders/decoders
+		 * that need to be added
+		 * @param width the width of the encoders/decoders
+		 * @return the number of FFs to add to the resource estimation
+		 */
+		virtual int suggestFFfromDecoder(int count = 1, int width);
+		
+		/**
+		 * Return the number of RAMs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * encoders/decoders that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such encoders/decoders
+		 * that need to be added
+		 * @param width the width of the encoders/decoders
+		 * @return the number of RAMs to add to the resource estimation
+		 */
+		virtual int suggestRAMfromDecoder(int count = 1, int width);
+		
+		/**
+		 * Return the number of LUTs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * arithmetic operators that each have inputs of width @width 
+		 * bits.
+		 * @param count (by default 1) the number of such arithmetic 
+		 * operators that need to be added
+		 * @param nrInputs the number of inputs of the arithmetic 
+		 * operator
+		 * @param width the width of the arithmetic operators
+		 * @return the number of LUTs to add to the resource estimation
+		 */
+		virtual int suggestLUTfromArithmeticOperator(int count = 1, int nrInputs, int width);
+		
+		/**
+		 * Return the number of LUTs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * FSM that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such FSM
+		 * that need to be added
+		 * @param states the number of states of the finite state machine
+		 * @param transitions the number of transitions of the state machine
+		 * @param width the width of the FSM
+		 * @return the number of LUTs to add to the resource estimation
+		 */
+		virtual int suggestLUTfromFSM(int count = 1, int nrStates, int nrTransitions);
+		
+		/**
+		 * Return the number of FFs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * FSM that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such FSM
+		 * that need to be added
+		 * @param states the number of states of the finite state machine
+		 * @param transitions the number of transitions of the state machine
+		 * @param width the width of the FSM
+		 * @return the number of FFs to add to the resource estimation
+		 */
+		virtual int suggestFFfromFSM(int count = 1, int nrStates, int nrTransitions)
+		
+		/**
+		 * Return the number of RAMs that should be added to the 
+		 * total resource count, when the user wishes to add @count 
+		 * FSM that each have inputs of width @width bits.
+		 * @param count (by default 1) the number of such FSM
+		 * that need to be added
+		 * @param states the number of states of the finite state machine
+		 * @param transitions the number of transitions of the state machine
+		 * @param width the width of the FSM
+		 * @return the number of RAMs to add to the resource estimation
+		 */
+		virtual int suggestRAMfromFSM(int count = 1, int nrStates, int nrTransitions)
+		
+		
+		/*------------------------------------------------------------*/
+		
+		
+		//todo
 
 	protected:
 		string id_;

@@ -24,7 +24,7 @@ INCLUDE(CPack)
 #SET(CMAKE_CXX_FLAGS_DEBUG "-Wall")
 # Uncomment for profiling
 #SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
-SET(CMAKE_CXX_FLAGS_DEBUG "-pg -Wall")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
 # Do you want an executable of 12MB ?
 SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_BUILD_TYPE release)
@@ -40,6 +40,17 @@ FIND_LIBRARY(MPFR_LIB
 	NAMES mpfr mpfr.lib
 	HINTS "C:/Program Files/Microsoft Visual Studio 9.0/VC/lib"
 	DOC "Directory of the MPFR library")
+
+FIND_PATH(MPFI_H
+	  mpfi.h
+	  HINTS "C:/Program Files/Microsoft Visual Studio 9.0/VC/include"
+	  DOC "Path of mpfi.h"
+)
+
+FIND_LIBRARY(MPFI_LIB
+	NAMES mpfi mpfi.lib
+	HINTS "C:/Program Files/Microsoft Visual Studio 9.0/VC/lib"
+	DOC "Directory of the MPFI library")
 
 
 # Detect Sollya's presence
@@ -138,7 +149,8 @@ ADD_CUSTOM_COMMAND(
 SET_SOURCE_FILES_PROPERTIES(ExpressionScanner GENERATED)
 
 
-ADD_LIBRARY(FloPoCo STATIC
+# DT10 - On cygwin cmake can't deal with the FloPoCo vs flopoco
+ADD_LIBRARY(FloPoCoLib STATIC
  src/FloPoCo.hpp
  src/Operator
  src/Signal
@@ -338,11 +350,18 @@ ADD_LIBRARY(FloPoCo STATIC
 
  src/UtilSollya
 )
-TARGET_LINK_LIBRARIES(
-  FloPoCo  
-  mpfr gmp gmpxx xml2 mpfi ${SOLLYA_LIB}
-  )
-SET(FLOPOCO_LIB FloPoCo)
+IF(SOLLYA_LIB)
+ TARGET_LINK_LIBRARIES(
+   FloPoCoLib
+   ${MPFR_LIB} gmp gmpxx xml2 ${MPFI_LIB} ${SOLLYA_LIB}
+   )
+ELSE(SOLLYA_LIB)
+ TARGET_LINK_LIBRARIES(
+   FloPoCoLib 
+   ${MPFR_LIB} gmp gmpxx xml2 ${MPFI_LIB}
+   )
+ENDIF(SOLLYA_LIB)
+SET(FLOPOCO_LIB FloPoCoLib)
 
 ADD_EXECUTABLE(flopoco
  src/main 
@@ -373,3 +392,6 @@ TARGET_LINK_LIBRARIES(bin2fp  mpfr gmp gmpxx)
 
 ADD_EXECUTABLE(longacc2fp src/Tools/longacc2fp  src/utils)
 TARGET_LINK_LIBRARIES(longacc2fp  mpfr gmp gmpxx)
+
+
+add_subdirectory(src/random)

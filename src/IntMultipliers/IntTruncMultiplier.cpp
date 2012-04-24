@@ -14,6 +14,7 @@
   All rights reserved.
 */
 
+#include <time.h>
 #include <typeinfo>
 #include <iostream>
 #include <fstream>

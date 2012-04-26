@@ -35,7 +35,6 @@ struct rng_para
 };
 
 rng_para table[]={
-	{8, 4, 3, 2, 0}, // Don't use"
 	{1024 , 32 , 3 , 32 ,  0x1a5eb},
 	{1024 , 32 , 4 , 32 ,  0x1562cd6},
 	{1024 , 32 , 5 , 32 ,  0x1c48},
@@ -124,6 +123,9 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
   		setName(name.str());
   		// Copyright 
   		setCopyrightString("Junfei Yan and David Thomas 2011");
+		
+		// We have recurrences of one cycle, anything more is an error
+		setHasDelay1Feedbacks();
 
 //============================================================================================================================
 // 0: select suitable parameters n, s according to r and t; k=32
@@ -232,7 +234,7 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
 
 	for (int i=0; i<n; i++)
 	{
-		declare(join("SR_",i),1,false, Signal::registeredWithoutReset);
+		declare(join("SR_",i),1,false, Signal::registeredWithZeroInitialiser);
 	}
 
 // 6: output FIFO connections in VHDL

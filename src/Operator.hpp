@@ -509,7 +509,13 @@ public:
          */
         void setRecirculationSignal();
 	
-
+	/** Indicates that it is not a warning if there is feedback of one cycle, but it
+		is an error if a feedback of more than one cycle happens.
+		*/
+	void setHasDelay1Feedbacks()
+	{
+		hasDelay1Feedbacks_=true;
+	}
 
 
 
@@ -763,6 +769,10 @@ public:
 		return hardOperator_;
 	}
 	
+	bool hasDelay1Feedbacks(){
+		return hasDelay1Feedbacks_;
+	}
+	
 	vector<Operator*> getOpList(){
 		return oplist;
 	}
@@ -911,6 +921,7 @@ public:
 		criticalPath_               = op->getCriticalPath();
 		needRecirculationSignal_    = op->getNeedRecirculationSignal();
 		hardOperator_               = op->hardOperator();
+		hasDelay1Feedbacks_ = op->hasDelay1Feedbacks();
 		
 		oplist                      = op->getOpList();
 	}
@@ -961,7 +972,7 @@ private:
 	double                 criticalPath_;               /**< The current delay of the current pipeline stage */
 	bool                   needRecirculationSignal_;    /**< True if the operator has registers having a recirculation signal  */
 	bool                   hardOperator_;               /**< False if this operator is just an interface operator to several possible implementations*/
-
+	int					hasDelay1Feedbacks_;	/**< True if this operator has feedbacks of one cyle, and no more than one cycle (i.e. an error if the distance is more). False gives warnings */
 };
 
 	// global variables used through most of FloPoCo,

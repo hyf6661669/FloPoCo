@@ -156,7 +156,6 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/Signal
  src/utils
  src/FlopocoStream
-# src/VHDLLexer
  VHDLLexer
 
  src/Targets/DSP
@@ -168,15 +167,12 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/DualTable2
  
  src/FPExpressions/ExpressionParserData
-# src/FPExpressions/ExpressionParser 
-# src/FPExpressions/ExpressionScanner 
  ExpressionParser 
  ExpressionScanner
  src/FPPipeline
 
  src/Wrapper
  src/TestBench 
- #src/BigTestBench
  src/UserDefinedOperator
  
 # Addition related --------------------------------------------------
@@ -218,6 +214,9 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/IntMultipliers/IntTruncMultiplier
  src/IntMultipliers/IntKaratsuba
  src/IntSquarer
+ src/IntMultipliers/FormalBinaryProduct
+ src/IntMultipliers/GenericBinaryPolynomial
+ src/IntMultipliers/IntPower
 
 # Shifters/LZOC related ---------------------------------------------
 #--------------------------------------------------------------------
@@ -254,6 +253,12 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/FixedPointFunctions/HOTBM/PowerROM.cc
  src/FixedPointFunctions/HOTBM/TermPowMult.cc 
 
+# Fixed-point operators ---------------------------------------------
+#--------------------------------------------------------------------
+ src/FixSinCos.cpp
+ src/CORDIC/FixedPointSinOrCos.cpp
+ src/CORDIC/CordicSinCos
+ src/CORDIC/CordicSinCosRedIter
 
 # Floating-Point ----------------------------------------------------
 #--------------------------------------------------------------------

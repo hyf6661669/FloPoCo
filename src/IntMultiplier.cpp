@@ -1,5 +1,5 @@
 /*
-An integer multiplier for FloPoCo
+An integer multiplier mess for FloPoCo
 
 Authors:  Bogdan Pasca
 
@@ -33,8 +33,8 @@ using namespace std;
 namespace flopoco {
 	extern vector<Operator*> oplist;
 	
-	IntMultiplier::IntMultiplier (Target* target, int wInX, int wInY, map<string, double> inputDelays, bool sign, float ratio):
-	Operator ( target, inputDelays, false ), wInX_(wInX), wInY_(wInY), wOut_(wInX+wInY), sign_(sign), ratio_(ratio) {
+	IntMultiplier::IntMultiplier (Target* target, int wInX, int wInY, bool sign, map<string, double> inputDelays, float ratio):
+	Operator ( target, inputDelays ), wInX_(wInX), wInY_(wInY), wOut_(wInX+wInY), sign_(sign), ratio_(ratio) {
 		ostringstream name;
 		srcFileName="IntMultiplier";
 		setCopyrightString ( "Bogdan Pasca 2011" );
@@ -48,6 +48,33 @@ namespace flopoco {
 		addOutput ( "R"  , wInX_+wInY_, 1 , true );
 		
 		REPORT(INFO, "Implementing IntMultiplier ");
+
+		int wxDSP, wyDSP;
+		//test if the multiplication fits into one DSP
+		target->getDSPWidths(wxDSP, wyDSP, sign);
+		bool testForward, testReverse, testFit;
+		testForward     = (wInX<=wxDSP)&&(wInY<=wyDSP);
+		testReverse = (wInY<=wxDSP)&&(wInX<=wyDSP);
+		testFit = testForward || testReverse;
+		
+		if (testFit){
+			setCriticalPath(getMaxInputDelays ( inputDelays ));
+			manageCriticalPath(target->DSPMultiplierDelay());
+				//nextCycle();// TODO: not needed for low frequencies
+			if (sign)
+				vhdl << tab << declare("rfull", wInX + wInY) << " <= X * Y;"<<endl;
+			else //sign extension is necessary for using use ieee.std_logic_signed.all; 
+			    // for correct inference of Xilinx DSP functions
+				vhdl << tab << declare("rfull", wInX + wInY + 2) << " <= (\"0\" & X) * (\"0\" & Y);"<<endl;
+			
+			//nextCycle();// TODO: to be fixed
+			vhdl << tab << "R <= rfull"<<range(wInX + wInY-1, 0)<<";"<<endl;	
+			outDelayMap["R"] = getCriticalPath();
+			
+			return;
+			//don't go do the rest as we already solved our problem			
+		}
+
 		
 		if ((!sign) && (ratio==1)){
 			selectedVersion = 0; //UnsignedIntMultiplier	
@@ -66,39 +93,26 @@ namespace flopoco {
 		}	
 
 		REPORT(INFO, "Selected implementation is "<<selectedVersion);
-		
+		Operator* IntMultiplierInstantiation;
+
 		//generate the component itself
 		switch (selectedVersion) {
 			case 0: { IntMultiplierInstantiation = new UnsignedIntMultiplier(target, wInX, wInY, inputDelays); break;}
 			case 1: { IntMultiplierInstantiation = new SignedIntMultiplier(target, wInX, wInY, inputDelays); break;}
-			case 2: { IntMultiplierInstantiation = new IntTilingMult(target, wInX, wInY, ratio, 2, false); break;}
-			case 3: { IntMultiplierInstantiation = new LogicIntMultiplier(target, wInX, wInY, inputDelays, false); break;}
-			case 4: { IntMultiplierInstantiation = new LogicIntMultiplier(target, wInX, wInY, inputDelays, true); break; }
+		case 2: { IntMultiplierInstantiation = new IntTilingMult(target, wInX, wInY, ratio, 2, false); break;} // this false means interactive
+			case 3: { IntMultiplierInstantiation = new LogicIntMultiplier(target, wInX, wInY, false, inputDelays); break;}
+			case 4: { IntMultiplierInstantiation = new LogicIntMultiplier(target, wInX, wInY, true, inputDelays); break; }
 			default: { REPORT(INFO, "Something is wrong!, check IntMultiplier");		
 					IntMultiplierInstantiation = new UnsignedIntMultiplier(target, wInX, wInY, inputDelays); }
 		}
 
-		IntMultiplierInstantiation->setuid(getuid()); //the selected implemetation becomes this operator 
-		oplist.push_back(IntMultiplierInstantiation); //the code of the selected implementation 
+		setIndirectOperator(IntMultiplierInstantiation);
+		oplist.push_back(IntMultiplierInstantiation); 
 
-		outDelayMap["R"] = IntMultiplierInstantiation->getOutputDelay("R"); //populate output delays
-		setCycle(IntMultiplierInstantiation->getPipelineDepth());
-		IntMultiplierInstantiation->setName ( name.str() );//accordingly set the name of the implementation
-
-		signalList_ = IntMultiplierInstantiation->signalList_;
-		subComponents_ = IntMultiplierInstantiation->subComponents_;
-		ioList_ = IntMultiplierInstantiation->ioList_;
-		
-		
 	}
 	
 	/**************************************************************************/
 	IntMultiplier::~IntMultiplier() {
-	}
-	
-	void IntMultiplier::outputVHDL(std::ostream& o, std::string name) {
-
-	
 	}
 	
 	/******************************************************************************/
@@ -134,10 +148,36 @@ namespace flopoco {
 
 	}
 	
-        void IntMultiplier::changeName(std::string operatorName){
-                Operator::changeName(operatorName);
-				IntMultiplierInstantiation->changeName(operatorName);
-        }
+	void IntMultiplier::changeName(std::string operatorName){
+		Operator::changeName(operatorName);
+		if(getIndirectOperator())  getIndirectOperator()->changeName(operatorName);
+	}
+
+
+
+	void IntMultiplier::outputVHDL(std::ostream& o, std::string name) {
+		licence(o);
+		o << "library ieee; " << endl;
+		o << "use ieee.std_logic_1164.all;" << endl;
+		o << "use ieee.std_logic_arith.all;" << endl;
+		if  (sign_){
+			o << "use ieee.std_logic_signed.all;" << endl;
+		}else{
+			o << "use ieee.std_logic_unsigned.all;" << endl;
+		}
+		
+		o << "library work;" << endl;
+		outputVHDLEntity(o);
+		newArchitecture(o,name);
+		o << buildVHDLComponentDeclarations();	
+		o << buildVHDLSignalDeclarations();
+		beginArchitecture(o);		
+		o<<buildVHDLRegisters();
+		o << vhdl.str();
+		endArchitecture(o);
+	}
+
+
 }
 
 

@@ -3,6 +3,11 @@
 // TODO: I guess we should at some point copy here only the public part of each class, 
 // to provide a single self-contained include file.
 
+// support the autotools-generated config.h
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "Operator.hpp"
 #include "FlopocoStream.hpp"
 
@@ -57,6 +62,8 @@
 #include "IntMultipliers/IntTruncMultiplier.hpp"
 #include "IntMultipliers/IntKaratsuba.hpp"
 #include "IntSquarer.hpp"
+#include "IntMultipliers/GenericBinaryPolynomial.hpp"
+#include "IntMultipliers/IntPower.hpp"
 
 #include "ConstMult/IntConstMult.hpp"
 #include "ConstMult/FPConstMult.hpp"
@@ -77,6 +84,16 @@
 #include "FixedPointFunctions/FunctionEvaluator.hpp"
 #include "FixedPointFunctions/PolynomialEvaluator.hpp"
 #endif
+#endif
+
+/* fixed-point ----------------------------------------------- */
+#ifdef HAVE_SOLLYA
+#include "FixSinCos.hpp"
+#include "CORDIC/FixedPointSinOrCos.hpp"
+
+//#include "CORDIC/FixMicroRotation.hpp"
+#include "CORDIC/CordicSinCos.hpp"
+#include "CORDIC/CordicSinCosRedIter.hpp"
 #endif
 
 /* floating-point -------------------------------------------- */ 

@@ -569,13 +569,12 @@ extern vector<Operator*> oplist;
 
 
 		else{ // normal case, mantissa is not one
-			inPortMap  (icm, "inX", "x_sig");
+			inPortMap  (icm, "X", "x_sig");
 			outPortMap (icm, "R","sig_prod");
 			vhdl << instance(icm, "sig_mult");
 			
 			setCycleFromSignal("sig_prod"); 
 			setCriticalPath(icm->getOutputDelay("R"));
-			
 			vhdl << tab << declare("norm") << " <= sig_prod" << of(icm->rsize -1) << ";"<<endl;
 			setSignalDelay("norm", getCriticalPath()); // save the delay for later
 			
@@ -584,13 +583,12 @@ extern vector<Operator*> oplist;
 			
 			vhdl << tab << declare("shifted_frac",    wF_out+1) << " <= sig_prod("<<icm->rsize -2<<" downto "<<icm->rsize - wF_out-2 <<")  when norm = '1'"<<endl
 			     << tab << "           else sig_prod("<<icm->rsize -3<<" downto "<<icm->rsize - wF_out - 3<<");"<<endl;  
-			
-			
 		}
 		
 		// Here if mantissa was 1 critical path is 0. Otherwise we want to reset critical path to the norm bit
 		setCycleFromSignal("norm", getSignalDelay("norm"));
 		
+		manageCriticalPath(target_->localWireDelay() + target_->adderDelay(wE_sum+1));
 		vhdl <<endl << tab << "-- exponent processing"<<endl;
 		
 		vhdl << tab << declare("abs_unbiased_cst_exp",wE_sum+1) << " <= \""

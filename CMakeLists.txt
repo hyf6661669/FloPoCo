@@ -395,3 +395,4 @@ TARGET_LINK_LIBRARIES(longacc2fp  mpfr gmp gmpxx)
 
 
 add_subdirectory(src/random)
+target_link_libraries(FloPoCoLib flopoco_random_lib)

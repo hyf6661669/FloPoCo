@@ -14,9 +14,10 @@ IF (NTL_H AND NTL_LIB)
 	ADD_DEFINITIONS(-DHAVE_NTL)
 	
 	FIND_LIBRARY(GMP_LIB NAMES gmp gmp.lib )
-ENDIF (NTL_H AND NTL_LIB)
 
-message(${NTL_H})
+	INCLUDE_DIRECTORIES(${NTL_H})
+	LINK_DIRECTORIES(${NTL_LIB})
+ENDIF (NTL_H AND NTL_LIB)
 
 ADD_LIBRARY(flopoco_random_lib STATIC
 	random_main.cpp
@@ -25,8 +26,8 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 target_link_libraries(flopoco_random_lib ${GMP_LIB})
 
 
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR} ${NTL_H})
-LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} ${GSL_LIBRARY_DIRS} ${NTL_LIB})
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})
+LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} ${GSL_LIBRARY_DIRS})
 
 #add_executable(test_distributions distributions/test_distributions.cpp)
 #target_link_libraries(test_distributions ${Boost_LIBRARIES})

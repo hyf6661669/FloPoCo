@@ -984,6 +984,7 @@ public:
 	 * @widthY, respectively
 	 * The user can also chose to what degree the multipliers are 
 	 * implemented in logic (a number between 0 and 1)
+	 * NOTE: also increases the DSP count
 	 * @param count (by default 1) the number of elements to add
 	 * @param width the bitwidth of the multipliers
 	 * @param ratio (by default 1) the ratio to which the multipliers 
@@ -1043,9 +1044,10 @@ public:
 	 * in counting the resources multiple times and overestimate
 	 * @param count (by default 1) the number of elements to add
 	 * @param width the bitwidth of the registers
+	 * @param depth the depth of the shift register
 	 * @return the string describing the performed operation
 	 */
-	std::string addSRL(int count = 1, int width);
+	std::string addSRL(int count = 1, int width, int depth);
 	
 	/**
 	 * Add @count wire elements to the total estimate
@@ -1114,9 +1116,10 @@ public:
 	 * overestimate
 	 * @param count (by default 1) the number of elements to add
 	 * @param width the bitwidth of the accumulator
+	 * @param useDSP whether the use of DSPs is allowed
 	 * @return the string describing the performed operation
 	 */
-	std::string addAccumulator(int count = 1, int width);
+	std::string addAccumulator(int count = 1, int width, bool useDSP);
 	
 	/**
 	 * Add @count decoder to the total estimate, each decoding an input 

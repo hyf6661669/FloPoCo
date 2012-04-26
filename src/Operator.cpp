@@ -1441,19 +1441,6 @@ namespace flopoco{
 		return output.str();
 	}
 	
-	//TODO: should also count the different types of registers that are 
-	//		being added
-	std::string Operator::addReg(int count, int width){
-		std::ostringstream output;
-		int increment = count*width;
-		
-		estimatedCountFF += increment;
-		
-		(count>0)? output << "FF count increased by " << increment : output << "FF count decreased by " << increment;
-		output << endl;
-		return output.str();
-	}
-	
 	//TODO: should also count LUTs based on their type, for more accurate 
 	//		resource estimations
 	std::string Operator::addLUT(int count, int type){			
@@ -1470,7 +1457,21 @@ namespace flopoco{
 		return output.str();
 	}
 	
+	//TODO: should also count the different types of registers that are 
+	//		being added
+	std::string Operator::addReg(int count, int width){
+		std::ostringstream output;
+		int increment = count*width;
+		
+		estimatedCountFF += increment;
+		
+		(count>0)? output << "FF count increased by " << increment : output << "FF count decreased by " << increment;
+		output << endl;
+		return output.str();
+	}
+	
 	//TODO: verify increase in the DSP count
+	//TODO: should also consider increasing FF and LUT counts
 	std::string Operator::addMultiplier(int count){
 		std::ostringstream output;
 		int increment;
@@ -1487,6 +1488,7 @@ namespace flopoco{
 	}
 	
 	//TODO: verify increase the DSP count 
+	//TODO: should also consider increasing FF and LUT counts
 	std::string Operator::addMultiplier(int count, int widthX, int widthY, double ratio){
 		std::ostringstream output;
 		int increment, increment2;
@@ -1551,22 +1553,26 @@ namespace flopoco{
 	}
 	
 	//TODO: should count the shift registers according to their bitwidths
-	std::string Operator::addSRL(int count, int width){
+	std::string Operator::addSRL(int count, int width, int depth){
 		std::ostringstream output;
-		int increment, increment2, increment3;
+		int increment, increment2, increment3, increment4;
 		
-		increment = target->suggestSRLCount(count, width);
+		increment = target->suggestSRLCount(count, width, depth);
 		estimatedCountSRL += increment;
-		increment2 = target->suggestLUTfromSRL(count, width);
-		estimatedCountLUT += increment;
-		increment3 = target->suggestFFfromSRL(count, width);
-		estimatedCountFF += increment2;
+		increment2 = target->suggestLUTfromSRL(count, width, depth);
+		estimatedCountLUT += increment2;
+		increment3 = target->suggestFFfromSRL(count, width, depth);
+		estimatedCountFF += increment3;
+		increment4 = target->suggestRAMfromSRL(count, width, depth);
+		estimatedCountRAM += increment4;
 		
 		(increment>0)? output << "SRL count increased by " << increment : output << "SRL count decreased by " << increment;
 		output << endl;
 		(increment2>0)? output << "LUT count increased by " << increment2 : output << "LUT count decreased by " << increment2;
 		output << endl;
 		(increment3>0)? output << "FF count increased by " << increment3 : output << "FF count decreased by " << increment3;
+		output << endl;
+		(increment4>0)? output << "RAM count increased by " << increment4 : output << "RAM count decreased by " << increment4;
 		output << endl;
 		return output.str();
 	}
@@ -1647,16 +1653,16 @@ namespace flopoco{
 	}
 	
 	//TODO: count the accumulators according to their bitwidth
-	std::string Operator::addAccumulator(int count, int width){
+	std::string Operator::addAccumulator(int count, int width, bool useDSP){
 		std::ostringstream output;
 		int increment, increment2, increment3;
 		
 		estimatedCountAccumulator += count;
-		increment = target->suggestLUTfromAccumulator(count, width);
+		increment = target->suggestLUTfromAccumulator(count, width, useDSP);
 		estimatedCountLUT += increment;
-		increment2 = target->suggestFFfromAccumulator(count, width);
+		increment2 = target->suggestFFfromAccumulator(count, width, useDSP);
 		estimatedCountFF += increment2;
-		increment3 = target->suggestDSPfromAccumulator(count, width);
+		increment3 = target->suggestDSPfromAccumulator(count, width, useDSP);
 		estimatedCountDSP += increment3;
 		
 		(count>0)? output << "Accumulator count increased by " << count : output << "Accumulator count decreased by " << count;

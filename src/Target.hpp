@@ -296,6 +296,9 @@ namespace flopoco{
 		 * target architecture.
 		 * This type might refer to the number of inputs of the function 
 		 * generator, number of outputs etc. (add other features if desired).
+		 * NOTE: this function should be overridden in the classes that
+		 * inherit Target, as the information returned is dependent on 
+		 * the target architecture
 		 * @return the type of the LUT to be used for resource estimation
 		 */ 
 		virtual int suggestLUTType();
@@ -365,9 +368,10 @@ namespace flopoco{
 		 * @param count (by default 1) the number of such SRLs that need 
 		 * to be added
 		 * @param width the width of the shift registers
+		 * @param the depth of the shift register
 		 * @return the number of SRLs to add
 		 */
-		virtual int suggestSRLCount(int count = 1, int width);
+		virtual int suggestSRLCount(int count = 1, int width, int depth);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 
@@ -444,9 +448,10 @@ namespace flopoco{
 		 * @param count (by default 1) the number of such accumulators
 		 * that need to be added
 		 * @param width the width of the accumulators
+		 * @param useDSP whether the use of DSPs is allowed
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int suggestLUTfromAccumulator(int count = 1, int width);
+		virtual int suggestLUTfromAccumulator(int count = 1, int width, bool useDSP);
 		
 		/**
 		 * Return the number of FFs that should be added to the 
@@ -455,9 +460,10 @@ namespace flopoco{
 		 * @param count (by default 1) the number of such accumulators
 		 * that need to be added
 		 * @param width the width of the accumulators
+		 * @param useDSP whether the use of DSPs is allowed
 		 * @return the number of FFs to add to the resource estimation
 		 */
-		virtual int suggestFFfromAccumulator(int count = 1, int width);
+		virtual int suggestFFfromAccumulator(int count = 1, int width, bool useDSP);
 		
 		/**
 		 * Return the number of DSPs that should be added to the 
@@ -466,9 +472,10 @@ namespace flopoco{
 		 * @param count (by default 1) the number of such accumulators
 		 * that need to be added
 		 * @param width the width of the accumulators
+		 * @param useDSP whether the use of DSPs is allowed
 		 * @return the number of DSPs to add to the resource estimation
 		 */
-		virtual int suggestDSPfromAccumulator(int count = 1, int width);
+		virtual int suggestDSPfromAccumulator(int count = 1, int width, bool useDSP);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 

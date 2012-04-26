@@ -74,136 +74,206 @@ namespace flopoco{
 
 	/*-------------- Resource Estimation related items	----------*/
 	
-	
+	//TODO: ensure that this function is implemented in the classes that
+	//		extend Target, else it will cause failures
+	//		for now it defaults to the Target default lutInputs_
 	int Target::suggestLUTType(){
-		cerr << "Error: function suggestLUTType() not implemented for this target FPGA." << endl;
-		exit(1);
+		
+		return lutInputs();
 	}
 	
-	 
+	
 	int Target::suggestLUTCount(int count, int type){
-		cerr << "Error: function suggestLUTCount() not implemented for this target FPGA." << endl;
-		exit(1);
+		int lutType, increment;
+		
+		(type == 0) ? lutType = suggestLUTType() : lutType = type;
+		if(lutSplitInputs(lutType)){
+			return count/2;
+		}else
+			return count;
 	}
 	
 	
-	int Target::suggestDSPfromMultiplier(int count, int widthX, int widthY){
-		cerr << "Error: function suggestDSPfromMultiplier() not implemented for this target FPGA." << endl;
-		exit(1);
-	}
-	
-	
+	//FIXME: for now, just simply return the number of multipliers as a
+	//result when the widths are smaller than the standard multiplier size
 	int Target::suggestMultiplierCount(int count, int widthX, int widthY){
-		cerr << "Error: function suggestMultiplierCount() not implemented for this target FPGA." << endl;
-		exit(1);
+		double ratioX, ratioY;
+		int sizeDSPx, sizeDSPy;
+		
+		getDSPWidths(&sizeDSPx, &sizeDSPy, true);
+		ratioX = (double)widthX/sizeDSPx;
+		ratioY = (double)widthY/sizeDSPy;
+		return count*ceil(ratioX)*ceil(ratioY);
 	}
 	
-	
+	//TODO: create a data structure/ function that gives the multiplier 
+	//		input width levels and the associated number of DSPs
+	int Target::suggestDSPfromMultiplier(int count, int widthX, int widthY){
+		double ratioX, ratioY;
+		int sizeDSPx, sizeDSPy;
+		
+		if(dspSplitMult()){
+			return count*getMultPerDSP(widthX, widthY);
+		}else{
+			getDSPWidths(&sizeDSPx, &sizeDSPy, true);
+			ratioX = (double)widthX/sizeDSPx;
+			ratioY = (double)widthY/sizeDSPy;
+			return count*ceil(ratioX)*ceil(ratioY);
+		}
+	}
+		
+	//TODO: create a data structure/ function that gives the possible 
+	//		word sizes 
+	//TODO: take into account the memory type (RAM or ROM)
 	int Target::suggestMemoryCount(int count, int size, int width, int type){
-		cerr << "Error: function suggestMemoryCount() not implemented for this target FPGA." << endl;
-		exit(1);
+		int wordsPerBlock;
+		
+		wordsPerBlock = getWordsPerBlock(width);
+		return ceil(count*(double)size/wordsPerBlock);
 	}
 	
 	
-	int Target::suggestSRLCount(int count, int width){
-		cerr << "Error: function suggestSRLCount() not implemented for this target FPGA." << endl;
-		exit(1);
+	int Target::suggestSRLCount(int count, int width, int depth){
+		int defaultShifterWidth;
+		
+		defaultShifterWidth = getSRLWidth(depth);
+		return count*width*ceil((double)depth/defaultShifterWidth);
 	}
 	
 	
-	int Target::suggestLUTfromSRL(int count, int width){
-		cerr << "Error: function suggestLUTfromSRL() not implemented for this target FPGA." << endl;
-		exit(1);
+	int Target::suggestLUTfromSRL(int count, int width, int depth){
+		double srlPerLut;
+		
+		srlPerLut = getLutForSRL(depth);
+		if(srlPerLut != 0){
+			return ceil(count*width*srlPerLut);
+		}else
+			return 0;
 	}
 	
 	
-	int Target::suggestFFfromSRL(int count, int width){
-		cerr << "Error: function suggestFFfromSRL() not implemented for this target FPGA." << endl;
-		exit(1);
+	int Target::suggestFFfromSRL(int count, int width, int depth){
+		int ffPerSRL;
+		
+		ffPerSRL = getFfForSRL(depth);
+		if(ffPerSRL != 0){
+			return ceil(count*width*(double)depth/ffPerSRL);
+		}else
+			return 0;
 	}
 	
 	
+	int Target::suggestRAMfromSRL(int count, int width, int depth){
+		int ramPerSRL;
+		
+		ramPerSRL = getRAMForSRL(width, depth);
+		if(ramPerSRL != 0){
+			return ceil(count*ramPerSRL);
+		}else
+			return 0;
+	}
+	
+	//TODO: get a more accurate count of the number of multiplexers 
+	//		needed; currently specific resources are not taken into account
 	int Target::suggestMuxCount(int count, int nrInputs, int width){
-		cerr << "Error: function suggestMuxCount() not implemented for this target FPGA." << endl;
-		exit(1);
+		
+		return count;
 	}
 	
 	
 	int Target::suggestLUTfromMux(int count, int nrInputs, int width){
-		cerr << "Error: function suggestLUTfromMux() not implemented for this target FPGA." << endl;
-		exit(1);
+		int stdInputs;
+		
+		stdInputs = 1;
+		while(stdInputs<nrInputs)
+			stdInputs *= 2;
+		if(stdInputs == 1)
+			return 0;
+		return count*width*getLUTfromMux(nrInputs);
 	}
 	
 	
 	int Target::suggestLUTfromCounter(int count, int width){
-		cerr << "Error: function suggestLUTfromCounter() not implemented for this target FPGA." << endl;
-		exit(1);
+		
+		return ceil(count*width*getLutFromCounter());
 	}
 	
 	
 	int Target::suggestFFfromCounter(int count, int width){
-		cerr << "Error: function suggestFFfromCounter() not implemented for this target FPGA." << endl;
-		exit(1);
+		
+		return ceil(count*width*getFfFromCounter());
 	}
 	
 	
-	int Target::suggestLUTfromAccumulator(int count, int width){
-		cerr << "Error: function suggestLUTfromAccumulator() not implemented for this target FPGA." << endl;
-		exit(1);
+	int Target::suggestLUTfromAccumulator(int count, int width, bool useDSP){
+		
+		return ceil(count*width*getLutFromAccumulator(useDSP));
 	}
 	
 	
-	int Target::suggestFFfromAccumulator(int count, int width){
-		cerr << "Error: function suggestFFfromAccumulator() not implemented for this target FPGA." << endl;
-		exit(1);
+	int Target::suggestFFfromAccumulator(int count, int width, bool useDSP){
+		
+		return ceil(count*width*getFfFromAccumulator(useDSP));
 	}
 	
 	
-	int Target::suggestDSPfromAccumulator(int count, int width){
-		cerr << "Error: function suggestDSPfromAccumulator() not implemented for this target FPGA." << endl;
-		exit(1);
+	int Target::suggestDSPfromAccumulator(int count, int width, bool useDSP){
+		
+		return ceil(count*width*getDSPFromAccumulator(useDSP));
 	}
 	
 	
 	int Target::suggestLUTfromDecoder(int count, int width){
-		cerr << "Error: function suggestLUTfromDecoder() not implemented for this target FPGA." << endl;
-		exit(1);
+		
+		return ceil(count*width*getLutFromDecoder(width));
 	}
 	
 	
 	int Target::suggestFFfromDecoder(int count, int width){
-		cerr << "Error: function suggestFFfromDecoder() not implemented for this target FPGA." << endl;
-		exit(1);
+		
+		return ceil(count*width*getLutFromDecoder(width));
 	}
 	
 	
 	int Target::suggestRAMfromDecoder(int count, int width){
-		cerr << "Error: function suggestRAMfromDecoder() not implemented for this target FPGA." << endl;
-		exit(1);
+		
+		return ceil(count*width*getRAMFromDecoder(width));
 	}
 	
 	
 	int Target::suggestLUTfromArithmeticOperator(int count, int nrInputs, int width){
-		cerr << "Error: function suggestLUTfromArithmeticOperator() not implemented for this target FPGA." << endl;
-		exit(1);
+		double lutsPerArithOp;
+		
+		lutsPerArithOp = (double)nrInputs/lutInputs();
+		return ceil(count*width*lutsPerArithOp);
 	}
 	
 	
+	//TODO: find a better approximation for the resources
+	//		currently just logic corresponding to the multiplexers
 	int Target::suggestLUTfromFSM(int count, int nrStates, int nrTransitions){
-		cerr << "Error: function suggestLUTfromFSM() not implemented for this target FPGA." << endl;
-		exit(1);
+		int lutCount = 0;
+		
+		lutCount += suggestLUTfromMux(count*nrStates*nrTransitions, 2, ceil(log2(nrStates)));
+		return lutCount;
 	}
 	
 	
+	//TODO: find a better approximation for the resources
+	//		currently just logic corresponding to the state register
 	int Target::suggestFFfromFSM(int count, int nrStates, int nrTransitions){
-		cerr << "Error: function suggestFFfromFSM() not implemented for this target FPGA." << endl;
-		exit(1);
+		int ffCount = 0;
+		
+		ffCount += ceil(count*log2(nrStates));
+		return ffCount;
 	}
 	
 	
+	//TODO: find a better approximation for the resources
+	//		for now, RAM blocks are not used
 	int Target::suggestRAMfromFSM(int count, int nrStates, int nrTransitions){
-		cerr << "Error: function suggestRAMfromFSM() not implemented for this target FPGA." << endl;
-		exit(1);
+		
+		return 0;
 	}
 	
 	/*------------------------------------------------------------*/

@@ -45,9 +45,16 @@ using namespace flopoco;
 	string cl_name=""; // used for the -name option
 	Target* target;
 
+extern void random_usage(char *name, string opName);
+	
+extern bool random_parseCommandLine(
+	int argc, char *argv[], Target *target,
+	std::string opname, int &i,
+	vector<Operator*> &oplist
+);
 
 
-static void usage(char *name, string opName = ""){
+void usage(char *name, string opName = ""){
 	bool full = (opName=="");
 
 	if ( full ){
@@ -423,6 +430,10 @@ static void usage(char *name, string opName = ""){
 		cerr << "      (4/pi)*atan(2^x) function.\n";
 	}	
 #endif // HAVE_LNS
+	
+	// Delegate to operators from random
+	random_usage(name, opName);
+	
 	if ( full )
 	cerr << "    ____________ APPLICATIONS __________________________________________________\n";
 
@@ -584,7 +595,6 @@ void addOperator(vector<Operator*> &oplist, Operator *op) {
 	// TODO this procedure should be a static method of operator, so that other operators can call it
 	oplist.push_back(op);
 }
-
 
 
 bool parseCommandLine(int argc, char* argv[], vector<Operator*> &oplist){
@@ -2340,8 +2350,10 @@ bool parseCommandLine(int argc, char* argv[], vector<Operator*> &oplist){
 		}
 
 #endif
-
-		else if (opname == "TestBench") {
+		
+		else if(random_parseCommandLine(argc, argv, target, opname, i, oplist)){
+			// we actually do nothing, the work is already done if it returned true
+		}else if (opname == "TestBench") {
 			int nargs = 1;
 			if (i+nargs > argc)
 				usage(argv[0],opname); // and exit

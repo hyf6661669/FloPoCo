@@ -98,12 +98,12 @@ namespace flopoco{
 		}
 		o << " : ";
 		if ((1==width())&&(!isBus_)) 
-			o << "std_logic" ;
+			o << "std_logic := '0'" ;
 		else 
 			if(isFP_) 
 				o << " std_logic_vector(" << wE() <<"+"<<wF() << "+2 downto 0)";
 			else
-				o << " std_logic_vector(" << width()-1 << " downto 0)";
+				o << " std_logic_vector(" << width()-1 << " downto 0) := (others=>'0')"; // DT10 - is zero init ok?
 		o << ";";
 		return o.str();
 	}

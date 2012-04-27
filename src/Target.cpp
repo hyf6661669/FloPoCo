@@ -284,32 +284,303 @@ namespace flopoco{
 	/*-------- Resource Estimation - target specific functions -------*/
 	
 	bool lutSplitInputs(int lutType){
-		cerr << "Error: function lutSplitInputs() not yet implemented" << endl;
-		exit(1);
+		bool fpgaDefault;
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				fpgaDefault = false;
+			}else if(id_ == "Virtex4"){
+				fpgaDefault = false;
+			}else if(id_ == "Virtex5"){
+				fpgaDefault = true;
+			}else if(id_ == "Virtex6"){
+				fpgaDefault = true;
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				fpgaDefault = true;
+			}else if(id_ == "StratixIII"){
+				fpgaDefault = true;
+			}else if(id_ == "StratixIV"){
+				fpgaDefault = true;
+			}
+		}
+		return fpgaDefault && (lutType <= ceil(lutInputs()/2.0));
 	}
 	
 	
 	bool dspSplitMult(){
-		cerr << "Error: function dspSplitMult() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				return false;
+			}else if(id_ == "Virtex4"){
+				return false;
+			}else if(id_ == "Virtex5"){
+				return false;
+			}else if(id_ == "Virtex6"){
+				return false;
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				return true;
+			}else if(id_ == "StratixIII"){
+				return true;
+			}else if(id_ == "StratixIV"){
+				return true;
+			}
+		}
 	}
 	
 	
-	int getMultPerDSP(int widthX, int widthY){
-		cerr << "Error: function getMultPerDSP() not yet implemented" << endl;
-		exit(1);
+	double getMultPerDSP(int widthX, int widthY){
+		int defaultWidthX, defaultWidthY, maxWidth;
+		
+		getDSPWidths(&defaultWidthX, &defaultWidthY, true);
+		(defaultWidthX>defaultWidthY) ? maxWidth = defaultWidthX : maxWidth = defaultWidthY;
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				return ceil((double)widthX/defaultWidthX)*ceil((double)widthY/defaultWidthY);
+			}else if(id_ == "Virtex4"){
+				return ceil((double)widthX/defaultWidthX)*ceil((double)widthY/defaultWidthY);
+			}else if(id_ == "Virtex5"){
+				return ceil((double)widthX/defaultWidthX)*ceil((double)widthY/defaultWidthY);
+			}else if(id_ == "Virtex6"){
+				return ceil((double)widthX/defaultWidthX)*ceil((double)widthY/defaultWidthY);
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(maxWidth<=9){
+					return 1.0/8;
+				}else if(maxWidth<=18){
+					return 1.0/4;
+				}else if(maxWidth<=36){
+					return 1;
+				}else{
+					return ceil((double)widthX/defaultWidthX)*ceil((double)widthY/defaultWidthY);
+				}
+			}else if(id_ == "StratixIII"){
+				if(maxWidth<=9){
+					return 1.0/8;
+				}else if(maxWidth<=12){
+					return 1.0/6;
+				}else if(maxWidth<=18){
+					return 1.0/4;
+				}else if(maxWidth<=36){
+					return 1.0/2;
+				}else{
+					return ceil((double)widthX/defaultWidthX)*ceil((double)widthY/defaultWidthY);
+				}
+			}else if(id_ == "StratixIV"){
+				if(maxWidth<=9){
+					return 1.0/8;
+				}else if(maxWidth<=12){
+					return 1.0/6;
+				}else if(maxWidth<=18){
+					return 1.0/4;
+				}else if(maxWidth<=36){
+					return 1.0/2;
+				}else{
+					return ceil((double)widthX/defaultWidthX)*ceil((double)widthY/defaultWidthY);
+				}
+			}
+		}
 	}
 	
-	
+	//TODO: give indication of the memory type being used, so as to get 
+	//		better results (for example, Altera has several types of  
+	//		RAM memory, and depending on the type, the size varies)
+	//		for now, the function returns the best results, mixing 
+	//		memory types
 	int wordsPerBlock(int width){
-		cerr << "Error: function wordsPerBlock() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(width<=1){
+					return 16384;
+				}else if(width<=2){
+					return 8192;
+				}else if(width<=4){
+					return 4096;
+				}else if(width<=8){
+					return 2048;
+				}else if(width<=16){
+					return 1024;
+				}else if(width<=32){
+					return 512;
+				}else if(width<=72){
+					return 256;
+				}
+			}else if(id_ == "Virtex4"){
+				if(width<=1){
+					return 16384;
+				}else if(width<=2){
+					return 8192;
+				}else if(width<=4){
+					return 4096;
+				}else if(width<=9){
+					return 2048;
+				}else if(width<=18){
+					return 1024;
+				}else if(width<=36){
+					return 512;
+				}
+			}else if(id_ == "Virtex5"){
+				if(width<=1){
+					return 32768;
+				}else if(width<=2){
+					return 16384;
+				}else if(width<=4){
+					return 8192;
+				}else if(width<=9){
+					return 4096;
+				}else if(width<=18){
+					return 2048;
+				}else if(width<=36){
+					return 1024;
+				}else if(width<=72){
+					return 512;
+				}
+			}else if(id_ == "Virtex6"){
+				if(width<=1){
+					return 32768;
+				}else if(width<=2){
+					return 16384;
+				}else if(width<=4){
+					return 8192;
+				}else if(width<=9){
+					return 4096;
+				}else if(width<=18){
+					return 2048;
+				}else if(width<=36){
+					return 1024;
+				}else if(width<=72){
+					return 512;
+				}
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(width<=1){
+					return 4096;
+				}else if(width<=2){
+					return 2048;
+				}else if(width<=4){
+					return 1024;
+				}else if(width<=8){
+					return 65536;
+				}else if(width<=9){
+					return 65536;
+				}else if(width<=16){
+					return 32768;
+				}else if(width<=18){
+					return 32768;
+				}else if(width<=32){
+					return 16384;
+				}else if(width<=64){
+					return 8192;
+				}else if(width<=72){
+					return 8192;
+				}else if(width<=128){
+					return 4096;
+				}else if(width<=144){
+					return 4096;
+				}
+			}else if(id_ == "StratixIII"){
+				if(width<=1){
+					return 8192;
+				}else if(width<=2){
+					return 4096;
+				}else if(width<=4){
+					return 2048;
+				}else if(width<=8){
+					return 16384;
+				}else if(width<=9){
+					return 16384;
+				}else if(width<=16){
+					return 8192;
+				}else if(width<=18){
+					return 8192;
+				}else if(width<=32){
+					return 4096;
+				}else if(width<=36){
+					return 4096;
+				}else if(width<=64){
+					return 2048;
+				}else if(width<=72){
+					return 2048;
+				}
+			}else if(id_ == "StratixIV"){
+				if(width<=1){
+					return 8192;
+				}else if(width<=2){
+					return 4096;
+				}else if(width<=4){
+					return 2048;
+				}else if(width<=8){
+					return 16384;
+				}else if(width<=9){
+					return 16384;
+				}else if(width<=16){
+					return 8192;
+				}else if(width<=18){
+					return 8192;
+				}else if(width<=32){
+					return 4096;
+				}else if(width<=36){
+					return 4096;
+				}else if(width<=64){
+					return 2048;
+				}else if(width<=72){
+					return 2048;
+				}
+			}
+		}
 	}
 	
-	
+	//TODO: check validity of the shift register widths for the Altera
+	//		families of devices
 	int getSRLDepth(int depth){
-		cerr << "Error: function getSRLDepth() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				return ceil(depth/16.0);
+			}else if(id_ == "Virtex4"){
+				return ceil(depth/16.0);
+			}else if(id_ == "Virtex5"){
+				if(depth<=16)
+					return ceil(depth/16.0);
+				else
+					return ceil(depth/32.0);
+			}else if(id_ == "Virtex6"){
+				if(depth<=16)
+					return ceil(depth/16.0);
+				else
+					return ceil(depth/32.0);
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(depth<=18)
+					return ceil(depth/16.0);
+				else if(depth<=36)
+					return ceil(depth/36.0);
+				else if(depth<=144)
+					return ceil(depth/144.0);
+			}else if(id_ == "StratixIII"){
+				if(depth<=18)
+					return ceil(depth/16.0);
+				else if(depth<=36)
+					return ceil(depth/36.0);
+				else if(depth<=72)
+					return ceil(depth/72.0);
+			}else if(id_ == "StratixIV"){
+				if(depth<=18)
+					return ceil(depth/16.0);
+				else if(depth<=36)
+					return ceil(depth/36.0);
+				else if(depth<=72)
+					return ceil(depth/72.0);
+			}
+		}
 	}
 	
 	

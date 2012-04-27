@@ -565,6 +565,7 @@ namespace flopoco{
 		
 		/*------------ Resource Estimation - target specific ---------*/
 		
+		
 		/**
 		 * IMPORTANT: These functions are supposed to perform tasks specific 
 		 * to the FPGA target. There is an implementation that tries to 
@@ -573,6 +574,7 @@ namespace flopoco{
 		 * can just as well override the functions to provide better 
 		 * ones.
 		 */
+		
 		
 		/**
 		 * Determine whether a LUT can be split to implement multiple 
@@ -604,7 +606,7 @@ namespace flopoco{
 		 * @param widthY the width of the second input to the multiplier
 		 * @return the number of required DSP blocks
 		 */
-		virtual int getMultPerDSP(int widthX, int widthY);
+		virtual double getMultPerDSP(int widthX, int widthY);
 		
 		/**
 		 * Determine the number of words in a memory block that has the

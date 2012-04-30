@@ -194,13 +194,15 @@ namespace flopoco{
 		return ceil(count*width*getLUTfromMux(nrInputs));
 	}
 	
-	
+	//TODO: get estimations when using specific resources (like DSPs)
+	//		involves also changes to getLUTPerCounter()
 	int Target::suggestLUTfromCounter(int count, int width){
 		
 		return ceil(count*width*getLUTPerCounter(width));
 	}
 	
-	
+	//TODO: get estimations when using specific resources (like DSPs)
+	//		involves also changes to getLUTPerCounter()
 	int Target::suggestFFfromCounter(int count, int width){
 		
 		return ceil(count*width*getFFPerCounter(width));
@@ -237,12 +239,6 @@ namespace flopoco{
 	int Target::suggestFFfromDecoder(int count, int width){
 		
 		return ceil(count*width*getLutFromDecoder(width));
-	}
-	
-	
-	int Target::suggestRAMfromDecoder(int count, int width){
-		
-		return ceil(count*width*getRAMFromDecoder(width));
 	}
 	
 	
@@ -585,74 +581,689 @@ namespace flopoco{
 	
 	
 	double getLUTPerSRL(int depth){
-		cerr << "Error: function getLUTPerSRL() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				return depth;
+			}else if(id_ == "Virtex4"){
+				return depth;
+			}else if(id_ == "Virtex5"){
+				return depth/2;
+			}else if(id_ == "Virtex6"){
+				return depth/2;
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				return depth/2;
+			}else if(id_ == "StratixIII"){
+				return depth/2;
+			}else if(id_ == "StratixIV"){
+				return depth/2;
+			}
+		}
 	}
 	
 	
 	double getFFPerSRL(int depth){
-		cerr << "Error: function getFFPerSRL() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				return depth/4;
+			}else if(id_ == "Virtex4"){
+				return depth/4;
+			}else if(id_ == "Virtex5"){
+				return depth/4;
+			}else if(id_ == "Virtex6"){
+				return depth/4;
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				return depth/4;
+			}else if(id_ == "StratixIII"){
+				return depth/4;
+			}else if(id_ == "StratixIV"){
+				return depth/4;
+			}
+		}
 	}
 	
 	
 	double getRAMPerSRL(int depth){
-		cerr << "Error: function getRAMPerSRL() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				return 0;
+			}else if(id_ == "Virtex4"){
+				return 0;
+			}else if(id_ == "Virtex5"){
+				return 0;
+			}else if(id_ == "Virtex6"){
+				return 0;
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(depth<=18)
+					return ceil(depth/16.0);
+				else if(depth<=36)
+					return ceil(depth/36.0);
+				else if(depth<=144)
+					return ceil(depth/144.0);
+			}else if(id_ == "StratixIII"){
+				if(depth<=18)
+					return ceil(depth/16.0);
+				else if(depth<=36)
+					return ceil(depth/36.0);
+				else if(depth<=72)
+					return ceil(depth/72.0);
+			}else if(id_ == "StratixIV"){
+				if(depth<=18)
+					return ceil(depth/16.0);
+				else if(depth<=36)
+					return ceil(depth/36.0);
+				else if(depth<=72)
+					return ceil(depth/72.0);
+			}
+		}
 	}
 	
 	
 	double getLUTFromMux(int nrInputs){
-		cerr << "Error: function getLUTFromMux() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(nrInputs<=32)
+					return nrInputs/2;
+				else{
+					int totalMux = 0, levels = ceil(log2(nrInputs));
+					
+					i = levels;
+					while(i>=0){
+						totalMux += nrInputs/32;
+						nrInputs /= 32;
+						i--;
+					}
+					return totalMux;
+				}
+			}else if(id_ == "Virtex4"){
+				if(nrInputs<=32)
+					return nrInputs/2;
+				else{
+					int totalMux = 0, levels = ceil(log2(nrInputs));
+					
+					i = levels;
+					while(i>=0){
+						totalMux += nrInputs/32;
+						nrInputs /= 32;
+						i--;
+					}
+					return totalMux;
+				}
+			}else if(id_ == "Virtex5"){
+				if(nrInputs<=16)
+					return nrInputs/4;
+				else{
+					int totalMux = 0, levels = ceil(log2(nrInputs));
+					
+					i = levels;
+					while(i>=0){
+						totalMux += nrInputs/16;
+						nrInputs /= 16;
+						i--;
+					}
+					return totalMux;
+				}
+			}else if(id_ == "Virtex6"){
+				if(nrInputs<=16)
+					return nrInputs/4;
+				else{
+					int totalMux = 0, levels = ceil(log2(nrInputs));
+					
+					i = levels;
+					while(i>=0){
+						totalMux += nrInputs/16;
+						nrInputs /= 16;
+						i--;
+					}
+					return totalMux;
+				}
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(nrInputs<=8)
+					return ceil(nrInputs/4.0);
+				else{
+					int totalMux = 0, levels = ceil(log2(nrInputs));
+					
+					i = levels;
+					while(i>=0){
+						totalMux += nrInputs/8;
+						nrInputs /= 8;
+						i--;
+					}
+					return totalMux;
+				}	
+			}else if(id_ == "StratixIII"){
+				if(nrInputs<=8)
+					return ceil(nrInputs/4.0);
+				else{
+					int totalMux = 0, levels = ceil(log2(nrInputs));
+					
+					i = levels;
+					while(i>=0){
+						totalMux += nrInputs/8;
+						nrInputs /= 8;
+						i--;
+					}
+					return totalMux;
+				}
+			}else if(id_ == "StratixIV"){
+				if(nrInputs<=8)
+					return ceil(nrInputs/4.0);
+				else{
+					int totalMux = 0, levels = ceil(log2(nrInputs));
+					
+					i = levels;
+					while(i>=0){
+						totalMux += nrInputs/8;
+						nrInputs /= 8;
+						i--;
+					}
+					return totalMux;
+				}
+			}
+		}
 	}
 	
 	
+	//TODO: get more precise estimations for Virtex4, Virtex6, StratixII
 	double getLUTPerCounter(int width){
-		cerr << "Error: function getLUTPerCounter() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(width<=16)
+					return 2.722;
+				else if(width<=64)
+					return 2.000;
+				else if(width<=256)
+					return 2.560;
+			}else if(id_ == "Virtex4"){
+				if(width<=16)
+					return 1.055;
+				else if(width<=64)
+					return 1.510;
+				else if(width<=256)
+					return 1.945;
+			}else if(id_ == "Virtex5"){
+				if(width<=16)
+					return 1.055;
+				else if(width<=64)
+					return 1.510;
+				else if(width<=256)
+					return 1.945;
+			}else if(id_ == "Virtex6"){
+				if(width<=16)
+					return 1.055;
+				else if(width<=64)
+					return 1.510;
+				else if(width<=256)
+					return 1.945;
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(width<=4)
+					return 2.250;
+				else if(width<=8)
+					return 1.125;
+				else if(width<=16)
+					return 1.063;
+				else if(width<=24)
+					return 1.041;
+				else if(width<=32)
+					return 1.031;
+				else if(width<=64)
+					return 1.015;
+			}else if(id_ == "StratixIII"){
+				if(width<=4)
+					return 2.250;
+				else if(width<=8)
+					return 1.125;
+				else if(width<=16)
+					return 1.063;
+				else if(width<=24)
+					return 1.041;
+				else if(width<=32)
+					return 1.031;
+				else if(width<=64)
+					return 1.015;
+			}else if(id_ == "StratixIV"){
+				if(width<=4)
+					return 2.250;
+				else if(width<=8)
+					return 1.125;
+				else if(width<=16)
+					return 1.063;
+				else if(width<=24)
+					return 1.041;
+				else if(width<=32)
+					return 1.031;
+				else if(width<=64)
+					return 1.015;
+			}
+		}
 	}
 	
 	
+	//TODO: get more precise estimations for Virtex4, Virtex6, StratixII
 	double getFFPerCounter(int width){
-		cerr << "Error: function getFFPerCounter() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(width<=16)
+					return 2.000;
+				else if(width<=64)
+					return 2.170;
+				else if(width<=256)
+					return 2.320;
+			}else if(id_ == "Virtex4"){
+				if(width<=16)
+					return 2.000;
+				else if(width<=64)
+					return 2.170;
+				else if(width<=256)
+					return 2.320;
+			}else if(id_ == "Virtex5"){
+				if(width<=16)
+					return 1.000;
+				else if(width<=64)
+					return 1.829;
+				else if(width<=256)
+					return 2.095;
+			}else if(id_ == "Virtex6"){
+				if(width<=16)
+					return 1.000;
+				else if(width<=64)
+					return 1.829;
+				else if(width<=256)
+					return 2.095;
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(width<=4)
+					return 1.000;
+				else if(width<=8)
+					return 1.000;
+				else if(width<=16)
+					return 1.000;
+				else if(width<=24)
+					return 1.000;
+				else if(width<=32)
+					return 1.000;
+				else if(width<=64)
+					return 1.000;
+			}else if(id_ == "StratixIII"){
+				if(width<=4)
+					return 1.000;
+				else if(width<=8)
+					return 1.000;
+				else if(width<=16)
+					return 1.000;
+				else if(width<=24)
+					return 1.000;
+				else if(width<=32)
+					return 1.000;
+				else if(width<=64)
+					return 1.000;
+			}else if(id_ == "StratixIV"){
+				if(width<=4)
+					return 1.000;
+				else if(width<=8)
+					return 1.000;
+				else if(width<=16)
+					return 1.000;
+				else if(width<=24)
+					return 1.000;
+				else if(width<=32)
+					return 1.000;
+				else if(width<=64)
+					return 1.000;
+			}
+		}
 	}
 	
 	
+	//TODO: get more precise estimations for Virtex4, Virtex6, StratixII
+	//		get more specific estimates for Altera (several possibilities)
 	double getLUTPerAccumulator(int width, bool useDSP){
-		cerr << "Error: function getLUTPerAccumulator() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(useDSP){
+					if(width<=8)
+						return 0.000;
+					else if(width<=32)
+						return 0.000;
+					else if(width<=64)
+						return 0.000;
+					else if(width<=128)
+						return 0.000;
+				}else{
+					if(width<=8)
+						return 1.000;
+					else if(width<=32)
+						return 1.187;
+					else if(width<=64)
+						return 2.218;
+					else if(width<=128)
+						return 3.050;
+				}
+			}else if(id_ == "Virtex4"){
+				if(useDSP){
+					if(width<=8)
+						return 0.000;
+					else if(width<=32)
+						return 0.000;
+					else if(width<=64)
+						return 0.000;
+					else if(width<=128)
+						return 0.000;
+				}else{
+					if(width<=8)
+						return 1.000;
+					else if(width<=32)
+						return 1.125;
+					else if(width<=64)
+						return 1.843;
+					else if(width<=128)
+						return 2.400;
+				}
+			}else if(id_ == "Virtex5"){
+				if(useDSP){
+					if(width<=8)
+						return 0.000;
+					else if(width<=32)
+						return 0.000;
+					else if(width<=64)
+						return 0.000;
+					else if(width<=128)
+						return 0.000;
+				}else{
+					if(width<=8)
+						return 1.000;
+					else if(width<=32)
+						return 1.125;
+					else if(width<=64)
+						return 1.843;
+					else if(width<=128)
+						return 2.400;
+				}
+			}else if(id_ == "Virtex6"){
+				if(useDSP){
+					if(width<=8)
+						return 0.000;
+					else if(width<=32)
+						return 0.000;
+					else if(width<=64)
+						return 0.000;
+					else if(width<=128)
+						return 0.000;
+				}else{
+					if(width<=8)
+						return 1.000;
+					else if(width<=32)
+						return 1.125;
+					else if(width<=64)
+						return 1.843;
+					else if(width<=128)
+						return 2.400;
+				}
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(width<=8)
+					return 4.000;
+				else if(width<=64)
+					return 3.953;
+			}else if(id_ == "StratixIII"){
+				if(width<=8)
+					return 4.000;
+				else if(width<=64)
+					return 3.953;
+			}else if(id_ == "StratixIV"){
+				if(width<=8)
+					return 4.000;
+				else if(width<=64)
+					return 3.953;
+			}
+		}
 	}
 	
 	
+	//TODO: get more precise estimations for Virtex4, Virtex6, StratixII
+	//		get more specific estimates for Altera (several possibilities)
 	double getFFPerAccumulator(int width, bool useDSP){
-		cerr << "Error: function getFFPerAccumulator() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(useDSP){
+					if(width<=8)
+						return 0.000;
+					else if(width<=32)
+						return 0.000;
+					else if(width<=64)
+						return 0.000;
+					else if(width<=128)
+						return 0.000;
+				}else{
+					if(width<=8)
+						return 1.000;
+					else if(width<=32)
+						return 2.906;
+					else if(width<=64)
+						return 3.765;
+					else if(width<=128)
+						return 4.190;
+				}
+			}else if(id_ == "Virtex4"){
+				if(useDSP){
+					if(width<=8)
+						return 0.000;
+					else if(width<=32)
+						return 0.000;
+					else if(width<=64)
+						return 0.000;
+					else if(width<=128)
+						return 0.000;
+				}else{
+					if(width<=8)
+						return 1.000;
+					else if(width<=32)
+						return 2.906;
+					else if(width<=64)
+						return 3.765;
+					else if(width<=128)
+						return 4.190;
+				}
+			}else if(id_ == "Virtex5"){
+				if(useDSP){
+					if(width<=8)
+						return 0.000;
+					else if(width<=32)
+						return 0.000;
+					else if(width<=64)
+						return 0.000;
+					else if(width<=128)
+						return 0.000;
+				}else{
+					if(width<=8)
+						return 1.000;
+					else if(width<=32)
+						return 2.281;
+					else if(width<=64)
+						return 3.390;
+					else if(width<=128)
+						return 3.870;
+				}
+			}else if(id_ == "Virtex6"){
+				if(useDSP){
+					if(width<=8)
+						return 0.000;
+					else if(width<=32)
+						return 0.000;
+					else if(width<=64)
+						return 0.000;
+					else if(width<=128)
+						return 0.000;
+				}else{
+					if(width<=8)
+						return 1.000;
+					else if(width<=32)
+						return 2.281;
+					else if(width<=64)
+						return 3.390;
+					else if(width<=128)
+						return 3.870;
+				}
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(width<=8)
+					return 6.375;
+				else if(width<=64)
+					return 3.531;
+			}else if(id_ == "StratixIII"){
+				if(width<=8)
+					return 6.375;
+				else if(width<=64)
+					return 3.531;
+			}else if(id_ == "StratixIV"){
+				if(width<=8)
+					return 6.375;
+				else if(width<=64)
+					return 3.593;
+			}
+		}
 	}
 	
 	
 	double getDSPPerAccumulator(int width){
-		cerr << "Error: function getDSPPerAccumulator() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(width<=48)
+					return 1.000;
+				else 
+					return ceil(width/48.0);
+			}else if(id_ == "Virtex4"){
+				if(width<=48)
+					return 1.000;
+				else 
+					return ceil(width/48.0);
+			}else if(id_ == "Virtex5"){
+				if(width<=48)
+					return 1.000;
+				else 
+					return ceil(width/48.0);
+			}else if(id_ == "Virtex6"){
+				if(width<=48)
+					return 1.000;
+				else 
+					return ceil(width/48.0);
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(width<=38)
+					return 1.000;
+				else 
+					return ceil(width/38.0);
+			}else if(id_ == "StratixIII"){
+				if(width<=38)
+					return 1.000;
+				else 
+					return ceil(width/38.0);
+			}else if(id_ == "StratixIV"){
+				if(width<=38)
+					return 1.000;
+				else 
+					return ceil(width/38.0);
+			}
+		}
 	}
 	
-	
+	//TODO: get more precise data for Xilinx architectures and for
+	//		StratixII
 	double getLUTPerDecoder(int width){
-		cerr << "Error: function getLUTPerDecoder() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			return 1.000;
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(width<=12)
+					return 1.583;
+				else if(width<=29)
+					return 1.894;
+				else if(width<=32)
+					return 1.250;
+				else if(width<=64)
+					return 1.234;
+			}else if(id_ == "StratixIII"){
+				if(width<=12)
+					return 1.583;
+				else if(width<=29)
+					return 1.894;
+				else if(width<=32)
+					return 1.250;
+				else if(width<=64)
+					return 1.234;
+			}else if(id_ == "StratixIV"){
+				if(width<=12)
+					return 1.583;
+				else if(width<=29)
+					return 1.310;
+				else if(width<=32)
+					return 1.312;
+				else if(width<=64)
+					return 1.218;
+			}
+		}
 	}
 	
 	
+	//TODO: get more precise data for Xilinx architectures and for
+	//		StratixII
 	double getFFPerDecoder(int width){
-		cerr << "Error: function getFFPerDecoder() not yet implemented" << endl;
-		exit(1);
-	}
-	
-	
-	double getRAMPerDecoder(int width){
-		cerr << "Error: function getRAMPerDecoder() not yet implemented" << endl;
-		exit(1);
+		
+		if(vendor_ == "Xilinx"){
+			return 1.000;
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(width<=12)
+					return 2.500;
+				else if(width<=29)
+					return 2.241;
+				else if(width<=32)
+					return 2.218;
+				else if(width<=64)
+					return 2.125;
+			}else if(id_ == "StratixIII"){
+				if(width<=12)
+					return 2.500;
+				else if(width<=29)
+					return 2.241;
+				else if(width<=32)
+					return 2.218;
+				else if(width<=64)
+					return 2.125;
+			}else if(id_ == "StratixIV"){
+				if(width<=12)
+					return 2.500;
+				else if(width<=29)
+					return 2.241;
+				else if(width<=32)
+					return 2.218;
+				else if(width<=64)
+					return 2.125;
+			}
+		}
 	}
 	
 	/*----------------------------------------------------------------*/

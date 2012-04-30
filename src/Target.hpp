@@ -500,17 +500,6 @@ namespace flopoco{
 		virtual int suggestFFfromDecoder(int count = 1, int width);
 		
 		/**
-		 * Return the number of RAMs that should be added to the 
-		 * total resource count, when the user wishes to add @count 
-		 * encoders/decoders that each have inputs of width @width bits.
-		 * @param count (by default 1) the number of such encoders/decoders
-		 * that need to be added
-		 * @param width the width of the encoders/decoders
-		 * @return the number of RAMs to add to the resource estimation
-		 */
-		virtual int suggestRAMfromDecoder(int count = 1, int width);
-		
-		/**
 		 * Return the number of LUTs that should be added to the 
 		 * total resource count, when the user wishes to add @count 
 		 * arithmetic operators that each have inputs of width @width 
@@ -755,18 +744,6 @@ namespace flopoco{
 		 * @return the ratio of FFs per decoder bits
 		 */
 		virtual double getFFPerDecoder(int width);
-		
-		/**
-		 * Determine the required number of Ram elements for a decoder 
-		 * having a bitwidth of @width bits. The number of RAM elements 
-		 * can vary according to the properties of the FPGA, the width 
-		 * of the decoder.
-		 * This function computes a factor that symbolizes the ratio of
-		 * RAM elements per decoder bits.
-		 * @param width the width of the decoder
-		 * @return the ratio of RAM elements per decoder bits
-		 */
-		virtual double getRAMPerDecoder(int width);
 		
 		/*------------------------------------------------------------*/
 		

@@ -1447,8 +1447,8 @@ namespace flopoco{
 		std::ostringstream output;								 
 		int targetLUTType, increment;										
 		
-		(type == 0) ? targetLUTType =  target->suggestLUTType() : targetLUTType = type;
-		increment = target->suggestLUTCount(count, targetLUTType);
+		(type == 0) ? targetLUTType =  lutInputs() : targetLUTType = type;
+		increment = target->lutCount(count, targetLUTType);
 		
 		estimatedCountLUT += increment;
 		
@@ -1477,7 +1477,7 @@ namespace flopoco{
 		int increment;
 		
 		estimatedCountMultiplier += count;
-		increment = target->suggestDSPfromMultiplier(count);
+		increment = target->dspForMultiplier(count);
 		estimatedCountDSP += increment;
 		
 		(count>0)? output << "Multiplier count increased by " << count : output << "Multiplier count decreased by " << count;
@@ -1487,15 +1487,15 @@ namespace flopoco{
 		return output.str();
 	}
 	
-	//TODO: verify increase the DSP count 
+	//TODO: verify increase in the DSP count 
 	//TODO: should also consider increasing FF and LUT counts
 	std::string Operator::addMultiplier(int count, int widthX, int widthY, double ratio){
 		std::ostringstream output;
 		int increment, increment2;
 		
-		increment = ceil(ratio * target->suggestMultiplierCount(count, widthX, widthY));
+		increment = ceil(ratio * target->multiplierCount(count, widthX, widthY));
 		estimatedCountMultiplier += increment;
-		increment2 = target->suggestDSPfromMultiplier(count, widthX, widthY);
+		increment2 = target->dspForMultiplier(count, widthX, widthY);
 		estimatedCountDSP += increment2;
 		
 		(increment>0)? output << "Multiplier count increased by " << increment : output << "Multiplier count decreased by " << increment;
@@ -1509,7 +1509,7 @@ namespace flopoco{
 		std::ostringstream output;
 		int increment;
 		
-		increment = target->suggestMemoryCount(count, size, width, type);		
+		increment = target->memoryCount(count, size, width, type);		
 		estimatedCountMemory += increment;
 		(type) ? estimatedCountROM += increment : estimatedCountRAM += increment;
 		
@@ -1557,13 +1557,13 @@ namespace flopoco{
 		std::ostringstream output;
 		int increment, increment2, increment3, increment4;
 		
-		increment = target->suggestSRLCount(count, width, depth);
+		increment = target->srlCount(count, width, depth);
 		estimatedCountSRL += increment;
-		increment2 = target->suggestLUTfromSRL(count, width, depth);
+		increment2 = target->lutForSRL(count, width, depth);
 		estimatedCountLUT += increment2;
-		increment3 = target->suggestFFfromSRL(count, width, depth);
+		increment3 = target->ffForSRL(count, width, depth);
 		estimatedCountFF += increment3;
-		increment4 = target->suggestRAMfromSRL(count, width, depth);
+		increment4 = target->ramForSRL(count, width, depth);
 		estimatedCountRAM += increment4;
 		
 		(increment>0)? output << "SRL count increased by " << increment : output << "SRL count decreased by " << increment;
@@ -1620,9 +1620,9 @@ namespace flopoco{
 		std::ostringstream output;
 		int increment, increment2;
 		
-		increment = target->suggestMuxCount(count, nrInputs, width);
+		increment = target->muxCount(count, nrInputs, width);
 		estimatedCountMux += increment;
-		increment2 = target->suggestLUTfromMUX(increment, nrInputs, width);
+		increment2 = target->lutForMux(increment, nrInputs, width);
 		estimatedCountLUT += increment2;
 		
 		(increment>0)? output << "MUX count increased by " << increment : output << "MUX count decreased by " << increment;
@@ -1638,9 +1638,9 @@ namespace flopoco{
 		int increment, increment2;
 		
 		estimatedCountCounter += count;
-		increment = target->suggestLUTfromCounter(count, width);
+		increment = target->lutForCounter(count, width);
 		estimatedCountLUT += increment;
-		increment2 = target->suggestFFfromCounter(count, width);
+		increment2 = target->ffForCounter(count, width);
 		estimatedCountFF += increment2;
 		
 		(count>0)? output << "Counter count increased by " << count : output << "Counter count decreased by " << count;
@@ -1658,11 +1658,11 @@ namespace flopoco{
 		int increment, increment2, increment3;
 		
 		estimatedCountAccumulator += count;
-		increment = target->suggestLUTfromAccumulator(count, width, useDSP);
+		increment = target->lutForAccumulator(count, width, useDSP);
 		estimatedCountLUT += increment;
-		increment2 = target->suggestFFfromAccumulator(count, width, useDSP);
+		increment2 = target->ffForAccumulator(count, width, useDSP);
 		estimatedCountFF += increment2;
-		increment3 = target->suggestDSPfromAccumulator(count, width, useDSP);
+		increment3 = target->dspForAccumulator(count, width, useDSP);
 		estimatedCountDSP += increment3;
 		
 		(count>0)? output << "Accumulator count increased by " << count : output << "Accumulator count decreased by " << count;
@@ -1680,23 +1680,19 @@ namespace flopoco{
 	//		bitwidths
 	std::string Operator::addDecoder(int count){
 		std::ostringstream output;
-		int increment, increment2, increment3;
+		int increment, increment2;
 		
 		estimatedCountDecoder += count;
-		increment = target->suggestLUTfromDecoder(count, width);
+		increment = target->lutForDecoder(count, width);
 		estimatedCountLUT += increment;
-		increment2 = target->suggestFFfromDecoder(count, width);
+		increment2 = target->ffForDecoder(count, width);
 		estimatedCountFF += increment2;
-		increment3 = target->suggestRAMfromDecoder(count, width);
-		estimatedCountRAM += increment3;
 		
 		(count>0)? output << "Decoder count increased by " << count : output << "Decoder count decreased by " << count;
 		output << endl;
 		(increment>0)? output << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
 		output << endl;
 		(increment2>0)? output << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << endl;
-		(increment3>0)? output << "RAM count increased by " << increment3 : output << "RAM count decreased by " << increment3;
 		output << endl;
 		return output.str();
 	}
@@ -1706,7 +1702,7 @@ namespace flopoco{
 		int increment, increment2, increment3;
 		
 		estimatedCountArithOp += count;
-		increment = target->suggestLUTfromArithmeticOperator(count, nrInputs, width);
+		increment = target->lutForArithmeticOperator(count, nrInputs, width);
 		estimatedCountLUT += increment;
 		
 		(count>0)? output << "Arithmetic Operator count increased by " << count : output << "Arithmetic Operator count decreased by " << count;
@@ -1721,12 +1717,12 @@ namespace flopoco{
 		int increment, increment2, increment3;
 		
 		estimatedCountFSM += count;
-		increment = target->suggestLUTfromFSM(count, nrStates, nrTransitions);
+		increment = target->lutForFSM(count, nrStates, nrTransitions);
 		estimatedCountLUT += increment;
-		increment2 = target->suggestFFfromFSM(count, nrStates, nrTransitions);
+		increment2 = target->ffForFSM(count, nrStates, nrTransitions);
 		estimatedCountFF += increment2;
-		increment3 = target->suggestROMfromFSM(count, nrStates, nrTransitions);
-		estimatedCountROM += increment3;
+		increment3 = target->ramForFSM(count, nrStates, nrTransitions);
+		estimatedCountRAM += increment3;
 		
 		(count>0)? output << "FSM count increased by " << count : output << "FSM count decreased by " << count;
 		output << endl;
@@ -1734,7 +1730,7 @@ namespace flopoco{
 		output << endl;
 		(increment2>0)? output << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
 		output << endl;
-		(increment3>0)? output << "ROM count increased by " << increment3 : output << "ROM count decreased by " << increment3;
+		(increment3>0)? output << "RAM count increased by " << increment3 : output << "ROM count decreased by " << increment3;
 		output << endl;
 		return output.str();
 	}

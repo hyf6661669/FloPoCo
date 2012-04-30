@@ -74,20 +74,12 @@ namespace flopoco{
 
 	/*----------------- Resource Estimation related items ------------*/
 	
-	//TODO: ensure that this function is implemented in the classes that
-	//		extend Target, else it will cause failures
-	//		for now it defaults to the Target default lutInputs_
-	int Target::suggestLUTType(){
-		
-		return lutInputs();
-	}
-	
 	//TODO: get a better approximation of the number of LUT used
 	//		currently, the LUT can at most be split into 2 indep. functions
-	int Target::suggestLUTCount(int count, int type){
+	int Target::lutCount(int count, int nrInputs){
 		int lutType, increment;
 		
-		(type == 0) ? lutType = suggestLUTType() : lutType = type;
+		(nrInputs == 0) ? lutType = lutInputs() : lutType = nrInputs;
 		if(lutSplitInputs(lutType)){
 			return count/2;
 		}else
@@ -97,7 +89,7 @@ namespace flopoco{
 	
 	//FIXME: for now, just simply return the number of multipliers as a
 	//result when the widths are smaller than the standard multiplier size
-	int Target::suggestMultiplierCount(int count, int widthX, int widthY){
+	int Target::multiplierCount(int count, int widthX, int widthY){
 		double ratioX, ratioY;
 		int sizeDSPx, sizeDSPy;
 		
@@ -107,9 +99,10 @@ namespace flopoco{
 		return count*ceil(ratioX)*ceil(ratioY);
 	}
 	
+	
 	//TODO: create a data structure/ function that gives the multiplier 
 	//		input width levels and the associated number of DSPs
-	int Target::suggestDSPfromMultiplier(int count, int widthX, int widthY){
+	int Target::dspForMultiplier(int count, int widthX, int widthY){
 		double ratioX, ratioY;
 		int sizeDSPx, sizeDSPy;
 		
@@ -126,8 +119,9 @@ namespace flopoco{
 	//TODO: create a data structure/ function that gives the possible 
 	//		word sizes 
 	//TODO: take into account the memory type (RAM or ROM); depending on 
-	//		the type, might be implemented through distributed memory
-	int Target::suggestMemoryCount(int count, int size, int width, int type){
+	//		the type, might be implemented through distributed memory or
+	//		dedicated memory blocks
+	int Target::memoryCount(int count, int size, int width, int type){
 		int wordsPerBlock;
 		
 		wordsPerBlock = getWordsPerBlock(width);
@@ -135,7 +129,7 @@ namespace flopoco{
 	}
 	
 	
-	int Target::suggestSRLCount(int count, int width, int depth){
+	int Target::srlCount(int count, int width, int depth){
 		int defaultShifterWidth;
 		
 		defaultShifterDepth = getSRLDepth(depth);
@@ -143,7 +137,7 @@ namespace flopoco{
 	}
 	
 	
-	int Target::suggestLUTfromSRL(int count, int width, int depth){
+	int Target::lutForSRL(int count, int width, int depth){
 		double srlPerLut;
 		
 		srlPerLut = getLUTPerSRL(depth);
@@ -154,7 +148,7 @@ namespace flopoco{
 	}
 	
 	
-	int Target::suggestFFfromSRL(int count, int width, int depth){
+	int Target::ffForSRL(int count, int width, int depth){
 		int ffPerSRL;
 		
 		ffPerSRL = getFFPerSRL(depth);
@@ -165,7 +159,7 @@ namespace flopoco{
 	}
 	
 	
-	int Target::suggestRAMfromSRL(int count, int width, int depth){
+	int Target::ramForSRL(int count, int width, int depth){
 		int ramPerSRL;
 		
 		ramPerSRL = getRAMPerSRL(width, depth);
@@ -177,13 +171,13 @@ namespace flopoco{
 	
 	//TODO: get a more accurate count of the number of multiplexers 
 	//		needed; currently specific resources are not taken into account
-	int Target::suggestMuxCount(int count, int nrInputs, int width){
+	int Target::muxCount(int count, int nrInputs, int width){
 		
 		return count;
 	}
 	
 	
-	int Target::suggestLUTfromMux(int count, int nrInputs, int width){
+	int Target::lutForMux(int count, int nrInputs, int width){
 		int stdInputs;
 		
 		stdInputs = 1;
@@ -196,32 +190,32 @@ namespace flopoco{
 	
 	//TODO: get estimations when using specific resources (like DSPs)
 	//		involves also changes to getLUTPerCounter()
-	int Target::suggestLUTfromCounter(int count, int width){
+	int Target::lutForCounter(int count, int width){
 		
 		return ceil(count*width*getLUTPerCounter(width));
 	}
 	
 	//TODO: get estimations when using specific resources (like DSPs)
 	//		involves also changes to getLUTPerCounter()
-	int Target::suggestFFfromCounter(int count, int width){
+	int Target::ffForCounter(int count, int width){
 		
 		return ceil(count*width*getFFPerCounter(width));
 	}
 	
 	
-	int Target::suggestLUTfromAccumulator(int count, int width, bool useDSP){
+	int Target::lutForAccumulator(int count, int width, bool useDSP){
 		
 		return ceil(count*width*getLUTPerAccumulator(width, useDSP));
 	}
 	
 	
-	int Target::suggestFFfromAccumulator(int count, int width, bool useDSP){
+	int Target::ffForAccumulator(int count, int width, bool useDSP){
 		
 		return ceil(count*width*getFFPerAccumulator(width, useDSP));
 	}
 	
 	
-	int Target::suggestDSPfromAccumulator(int count, int width, bool useDSP){
+	int Target::dspForAccumulator(int count, int width, bool useDSP){
 		
 		if(useDSP)
 			return ceil(count*width*getDSPPerAccumulator(width));
@@ -230,19 +224,19 @@ namespace flopoco{
 	}
 	
 	
-	int Target::suggestLUTfromDecoder(int count, int width){
+	int Target::lutForDecoder(int count, int width){
 		
 		return ceil(count*width*getLutFromDecoder(width));
 	}
 	
 	
-	int Target::suggestFFfromDecoder(int count, int width){
+	int Target::ffForDecoder(int count, int width){
 		
 		return ceil(count*width*getLutFromDecoder(width));
 	}
 	
 	
-	int Target::suggestLUTfromArithmeticOperator(int count, int nrInputs, int width){
+	int Target::lutForArithmeticOperator(int count, int nrInputs, int width){
 		double lutsPerArithOp;
 		
 		lutsPerArithOp = (double)nrInputs/lutInputs();
@@ -252,7 +246,7 @@ namespace flopoco{
 	
 	//TODO: find a better approximation for the resources
 	//		currently just logic corresponding to the multiplexers
-	int Target::suggestLUTfromFSM(int count, int nrStates, int nrTransitions){
+	int Target::lutForFSM(int count, int nrStates, int nrTransitions){
 		int lutCount = 0;
 		
 		lutCount += suggestLUTfromMux(count*nrStates*nrTransitions, 2, ceil(log2(nrStates)));
@@ -262,7 +256,7 @@ namespace flopoco{
 	
 	//TODO: find a better approximation for the resources
 	//		currently just logic corresponding to the state register
-	int Target::suggestFFfromFSM(int count, int nrStates, int nrTransitions){
+	int Target::ffForFSM(int count, int nrStates, int nrTransitions){
 		int ffCount = 0;
 		
 		ffCount += ceil(count*log2(nrStates));
@@ -272,14 +266,14 @@ namespace flopoco{
 	
 	//TODO: find a better approximation for the resources
 	//		for now, RAM blocks are not used
-	int Target::suggestRAMfromFSM(int count, int nrStates, int nrTransitions){
+	int Target::ramForFSM(int count, int nrStates, int nrTransitions){
 		
 		return 0;
 	}
 	
 	/*-------- Resource Estimation - target specific functions -------*/
 	
-	bool lutSplitInputs(int lutType){
+	bool lutSplitInputs(int nrInputs){
 		bool fpgaDefault;
 		
 		if(vendor_ == "Xilinx"){
@@ -301,7 +295,7 @@ namespace flopoco{
 				fpgaDefault = true;
 			}
 		}
-		return fpgaDefault && (lutType <= ceil(lutInputs()/2.0));
+		return fpgaDefault && (nrInputs <= ceil(lutInputs()/2.0));
 	}
 	
 	

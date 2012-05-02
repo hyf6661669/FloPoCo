@@ -76,8 +76,8 @@ namespace flopoco{
 	
 	//TODO: get a better approximation of the number of LUT used
 	//		currently, the LUT can at most be split into 2 indep. functions
-	int Target::lutCount(int count, int nrInputs){
-		int lutType, increment;
+	int Target::lutCount(int nrInputs, int count){
+		int lutType;
 		
 		(nrInputs == 0) ? lutType = lutInputs() : lutType = nrInputs;
 		if(lutSplitInputs(lutType)){
@@ -89,11 +89,11 @@ namespace flopoco{
 	
 	//FIXME: for now, just simply return the number of multipliers as a
 	//result when the widths are smaller than the standard multiplier size
-	int Target::multiplierCount(int count, int widthX, int widthY){
+	int Target::multiplierCount(int widthX, int widthY, int count){
 		double ratioX, ratioY;
 		int sizeDSPx, sizeDSPy;
 		
-		getDSPWidths(&sizeDSPx, &sizeDSPy, true);
+		getDSPWidths(sizeDSPx, sizeDSPy, true);
 		ratioX = (double)widthX/sizeDSPx;
 		ratioY = (double)widthY/sizeDSPy;
 		return count*ceil(ratioX)*ceil(ratioY);
@@ -102,14 +102,14 @@ namespace flopoco{
 	
 	//TODO: create a data structure/ function that gives the multiplier 
 	//		input width levels and the associated number of DSPs
-	int Target::dspForMultiplier(int count, int widthX, int widthY){
+	int Target::dspForMultiplier(int widthX, int widthY, int count){
 		double ratioX, ratioY;
 		int sizeDSPx, sizeDSPy;
 		
 		if(dspSplitMult()){
 			return count*getMultPerDSP(widthX, widthY);
 		}else{
-			getDSPWidths(&sizeDSPx, &sizeDSPy, true);
+			getDSPWidths(sizeDSPx, sizeDSPy, true);
 			ratioX = (double)widthX/sizeDSPx;
 			ratioY = (double)widthY/sizeDSPy;
 			return count*ceil(ratioX)*ceil(ratioY);
@@ -121,23 +121,23 @@ namespace flopoco{
 	//TODO: take into account the memory type (RAM or ROM); depending on 
 	//		the type, might be implemented through distributed memory or
 	//		dedicated memory blocks
-	int Target::memoryCount(int count, int size, int width, int type){
-		int wordsPerBlock;
+	int Target::memoryCount(int size, int width, int type, int count){
+		int WpB;
 		
-		wordsPerBlock = getWordsPerBlock(width);
-		return ceil(count*(double)size/wordsPerBlock);
+		WpB = wordsPerBlock(width);
+		return ceil(count*(double)size/WpB);
 	}
 	
 	
-	int Target::srlCount(int count, int width, int depth){
-		int defaultShifterWidth;
+	int Target::srlCount(int width, int depth, int count){
+		int defaultShifterDepth;
 		
 		defaultShifterDepth = getSRLDepth(depth);
 		return count*width*ceil((double)depth/defaultShifterDepth);
 	}
 	
 	
-	int Target::lutForSRL(int count, int width, int depth){
+	int Target::lutForSRL(int width, int depth, int count){
 		double srlPerLut;
 		
 		srlPerLut = getLUTPerSRL(depth);
@@ -148,7 +148,7 @@ namespace flopoco{
 	}
 	
 	
-	int Target::ffForSRL(int count, int width, int depth){
+	int Target::ffForSRL(int width, int depth, int count){
 		int ffPerSRL;
 		
 		ffPerSRL = getFFPerSRL(depth);
@@ -159,10 +159,10 @@ namespace flopoco{
 	}
 	
 	
-	int Target::ramForSRL(int count, int width, int depth){
+	int Target::ramForSRL(int width, int depth, int count){
 		int ramPerSRL;
 		
-		ramPerSRL = getRAMPerSRL(width, depth);
+		ramPerSRL = getRAMPerSRL(depth);
 		if(ramPerSRL != 0){
 			return ceil(count*ramPerSRL);
 		}else
@@ -171,13 +171,13 @@ namespace flopoco{
 	
 	//TODO: get a more accurate count of the number of multiplexers 
 	//		needed; currently specific resources are not taken into account
-	int Target::muxCount(int count, int nrInputs, int width){
+	int Target::muxCount(int nrInputs, int width, int count){
 		
 		return count;
 	}
 	
 	
-	int Target::lutForMux(int count, int nrInputs, int width){
+	int Target::lutForMux(int nrInputs, int width, int count){
 		int stdInputs;
 		
 		stdInputs = 1;
@@ -185,37 +185,37 @@ namespace flopoco{
 			stdInputs *= 2;
 		if(stdInputs == 1)
 			return 0;
-		return ceil(count*width*getLUTfromMux(nrInputs));
+		return ceil(count*width*getLUTFromMux(nrInputs));
 	}
 	
 	//TODO: get estimations when using specific resources (like DSPs)
 	//		involves also changes to getLUTPerCounter()
-	int Target::lutForCounter(int count, int width){
+	int Target::lutForCounter(int width, int count){
 		
 		return ceil(count*width*getLUTPerCounter(width));
 	}
 	
 	//TODO: get estimations when using specific resources (like DSPs)
 	//		involves also changes to getLUTPerCounter()
-	int Target::ffForCounter(int count, int width){
+	int Target::ffForCounter(int width, int count){
 		
 		return ceil(count*width*getFFPerCounter(width));
 	}
 	
 	
-	int Target::lutForAccumulator(int count, int width, bool useDSP){
+	int Target::lutForAccumulator(int width, bool useDSP, int count){
 		
 		return ceil(count*width*getLUTPerAccumulator(width, useDSP));
 	}
 	
 	
-	int Target::ffForAccumulator(int count, int width, bool useDSP){
+	int Target::ffForAccumulator(int width, bool useDSP, int count){
 		
 		return ceil(count*width*getFFPerAccumulator(width, useDSP));
 	}
 	
 	
-	int Target::dspForAccumulator(int count, int width, bool useDSP){
+	int Target::dspForAccumulator(int width, bool useDSP, int count){
 		
 		if(useDSP)
 			return ceil(count*width*getDSPPerAccumulator(width));
@@ -224,19 +224,19 @@ namespace flopoco{
 	}
 	
 	
-	int Target::lutForDecoder(int count, int width){
+	int Target::lutForDecoder(int width, int count){
 		
-		return ceil(count*width*getLutFromDecoder(width));
+		return ceil(count*width*getLUTPerDecoder(width));
 	}
 	
 	
-	int Target::ffForDecoder(int count, int width){
+	int Target::ffForDecoder(int width, int count){
 		
-		return ceil(count*width*getLutFromDecoder(width));
+		return ceil(count*width*getFFPerDecoder(width));
 	}
 	
 	
-	int Target::lutForArithmeticOperator(int count, int nrInputs, int width){
+	int Target::lutForArithmeticOperator(int nrInputs, int width, int count){
 		double lutsPerArithOp;
 		
 		lutsPerArithOp = (double)nrInputs/lutInputs();
@@ -246,17 +246,17 @@ namespace flopoco{
 	
 	//TODO: find a better approximation for the resources
 	//		currently just logic corresponding to the multiplexers
-	int Target::lutForFSM(int count, int nrStates, int nrTransitions){
+	int Target::lutForFSM(int nrStates, int nrTransitions, int count){
 		int lutCount = 0;
 		
-		lutCount += suggestLUTfromMux(count*nrStates*nrTransitions, 2, ceil(log2(nrStates)));
+		lutCount += lutForMux(count*nrStates*nrTransitions, 2, ceil(log2(nrStates)));
 		return lutCount;
 	}
 	
 	
 	//TODO: find a better approximation for the resources
 	//		currently just logic corresponding to the state register
-	int Target::ffForFSM(int count, int nrStates, int nrTransitions){
+	int Target::ffForFSM(int nrStates, int nrTransitions, int count){
 		int ffCount = 0;
 		
 		ffCount += ceil(count*log2(nrStates));
@@ -266,14 +266,14 @@ namespace flopoco{
 	
 	//TODO: find a better approximation for the resources
 	//		for now, RAM blocks are not used
-	int Target::ramForFSM(int count, int nrStates, int nrTransitions){
+	int Target::ramForFSM(int nrStates, int nrTransitions, int count){
 		
 		return 0;
 	}
 	
 	/*-------- Resource Estimation - target specific functions -------*/
 	
-	bool lutSplitInputs(int nrInputs){
+	bool Target::lutSplitInputs(int nrInputs){
 		bool fpgaDefault;
 		
 		if(vendor_ == "Xilinx"){
@@ -295,11 +295,12 @@ namespace flopoco{
 				fpgaDefault = true;
 			}
 		}
+		
 		return fpgaDefault && (nrInputs <= ceil(lutInputs()/2.0));
 	}
 	
 	
-	bool dspSplitMult(){
+	bool Target::dspSplitMult(){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -320,13 +321,15 @@ namespace flopoco{
 				return true;
 			}
 		}
+		
+		return false;
 	}
 	
 	
-	double getMultPerDSP(int widthX, int widthY){
+	double Target::getMultPerDSP(int widthX, int widthY){
 		int defaultWidthX, defaultWidthY, maxWidth;
 		
-		getDSPWidths(&defaultWidthX, &defaultWidthY, true);
+		getDSPWidths(defaultWidthX, defaultWidthY, true);
 		(defaultWidthX>defaultWidthY) ? maxWidth = defaultWidthX : maxWidth = defaultWidthY;
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -375,6 +378,8 @@ namespace flopoco{
 				}
 			}
 		}
+		
+		return 0;
 	}
 	
 	//TODO: give indication of the memory type being used, so as to get 
@@ -382,7 +387,7 @@ namespace flopoco{
 	//		RAM memory, and depending on the type, the size varies)
 	//		for now, the function returns the best results, mixing 
 	//		memory types
-	int wordsPerBlock(int width){
+	int Target::wordsPerBlock(int width){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -525,11 +530,13 @@ namespace flopoco{
 				}
 			}
 		}
+		
+		return 0;
 	}
 	
 	//TODO: check validity of the shift register widths for the Altera
 	//		families of devices
-	int getSRLDepth(int depth){
+	int Target::getSRLDepth(int depth){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -571,10 +578,12 @@ namespace flopoco{
 					return ceil(depth/72.0);
 			}
 		}
+		
+		return 0;
 	}
 	
 	
-	double getLUTPerSRL(int depth){
+	double Target::getLUTPerSRL(int depth){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -595,10 +604,12 @@ namespace flopoco{
 				return depth/2;
 			}
 		}
+		
+		return 0;
 	}
 	
 	
-	double getFFPerSRL(int depth){
+	double Target::getFFPerSRL(int depth){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -619,10 +630,12 @@ namespace flopoco{
 				return depth/4;
 			}
 		}
+		
+		return 0;
 	}
 	
 	
-	double getRAMPerSRL(int depth){
+	double Target::getRAMPerSRL(int depth){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -658,17 +671,19 @@ namespace flopoco{
 					return ceil(depth/72.0);
 			}
 		}
+		
+		return 0;
 	}
 	
 	
-	double getLUTFromMux(int nrInputs){
+	double Target::getLUTFromMux(int nrInputs){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
 				if(nrInputs<=32)
 					return nrInputs/2;
 				else{
-					int totalMux = 0, levels = ceil(log2(nrInputs));
+					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
 					i = levels;
 					while(i>=0){
@@ -682,7 +697,7 @@ namespace flopoco{
 				if(nrInputs<=32)
 					return nrInputs/2;
 				else{
-					int totalMux = 0, levels = ceil(log2(nrInputs));
+					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
 					i = levels;
 					while(i>=0){
@@ -696,7 +711,7 @@ namespace flopoco{
 				if(nrInputs<=16)
 					return nrInputs/4;
 				else{
-					int totalMux = 0, levels = ceil(log2(nrInputs));
+					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
 					i = levels;
 					while(i>=0){
@@ -710,7 +725,7 @@ namespace flopoco{
 				if(nrInputs<=16)
 					return nrInputs/4;
 				else{
-					int totalMux = 0, levels = ceil(log2(nrInputs));
+					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
 					i = levels;
 					while(i>=0){
@@ -726,7 +741,7 @@ namespace flopoco{
 				if(nrInputs<=8)
 					return ceil(nrInputs/4.0);
 				else{
-					int totalMux = 0, levels = ceil(log2(nrInputs));
+					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
 					i = levels;
 					while(i>=0){
@@ -740,7 +755,7 @@ namespace flopoco{
 				if(nrInputs<=8)
 					return ceil(nrInputs/4.0);
 				else{
-					int totalMux = 0, levels = ceil(log2(nrInputs));
+					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
 					i = levels;
 					while(i>=0){
@@ -754,7 +769,7 @@ namespace flopoco{
 				if(nrInputs<=8)
 					return ceil(nrInputs/4.0);
 				else{
-					int totalMux = 0, levels = ceil(log2(nrInputs));
+					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
 					i = levels;
 					while(i>=0){
@@ -766,11 +781,13 @@ namespace flopoco{
 				}
 			}
 		}
+		
+		return 0;
 	}
 	
 	
 	//TODO: get more precise estimations for Virtex4, Virtex6, StratixII
-	double getLUTPerCounter(int width){
+	double Target::getLUTPerCounter(int width){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -844,11 +861,13 @@ namespace flopoco{
 					return 1.015;
 			}
 		}
+		
+		return 0;
 	}
 	
 	
 	//TODO: get more precise estimations for Virtex4, Virtex6, StratixII
-	double getFFPerCounter(int width){
+	double Target::getFFPerCounter(int width){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -922,12 +941,14 @@ namespace flopoco{
 					return 1.000;
 			}
 		}
+		
+		return 0;
 	}
 	
 	
 	//TODO: get more precise estimations for Virtex4, Virtex6, StratixII
 	//		get more specific estimates for Altera (several possibilities)
-	double getLUTPerAccumulator(int width, bool useDSP){
+	double Target::getLUTPerAccumulator(int width, bool useDSP){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -1029,12 +1050,14 @@ namespace flopoco{
 					return 3.953;
 			}
 		}
+		
+		return 0;
 	}
 	
 	
 	//TODO: get more precise estimations for Virtex4, Virtex6, StratixII
 	//		get more specific estimates for Altera (several possibilities)
-	double getFFPerAccumulator(int width, bool useDSP){
+	double Target::getFFPerAccumulator(int width, bool useDSP){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -1136,10 +1159,12 @@ namespace flopoco{
 					return 3.593;
 			}
 		}
+		
+		return 0;
 	}
 	
 	
-	double getDSPPerAccumulator(int width){
+	double Target::getDSPPerAccumulator(int width){
 		
 		if(vendor_ == "Xilinx"){
 			if(id_ == "Spartan3"){
@@ -1181,11 +1206,13 @@ namespace flopoco{
 					return ceil(width/38.0);
 			}
 		}
+		
+		return 0;
 	}
 	
 	//TODO: get more precise data for Xilinx architectures and for
 	//		StratixII
-	double getLUTPerDecoder(int width){
+	double Target::getLUTPerDecoder(int width){
 		
 		if(vendor_ == "Xilinx"){
 			return 1.000;
@@ -1219,12 +1246,14 @@ namespace flopoco{
 					return 1.218;
 			}
 		}
+		
+		return 0;
 	}
 	
 	
 	//TODO: get more precise data for Xilinx architectures and for
 	//		StratixII
-	double getFFPerDecoder(int width){
+	double Target::getFFPerDecoder(int width){
 		
 		if(vendor_ == "Xilinx"){
 			return 1.000;
@@ -1258,6 +1287,8 @@ namespace flopoco{
 					return 2.125;
 			}
 		}
+		
+		return 0;
 	}
 	
 	/*----------------------------------------------------------------*/

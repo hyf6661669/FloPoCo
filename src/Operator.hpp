@@ -959,17 +959,18 @@ public:
 	 * @param width the width of each register
 	 * @return the string describing the performed operation
 	 */
-	std::string addReg(int count = 1, int width);
+	std::string addReg(int width, int count = 1);
 	
 	/**
 	 * Add @count function generators to the total estimate
 	 * Suggest Look-Up Table type (based on number of inputs), in order
 	 * to obtain more accurate predictions
 	 * @param count (by default 1) the number of elements to add
-	 * @param type LUT type (0 for default option for target technology)
+	 * @param nrInputs number of inputs of the LUT (0 for default option 
+	 * of target technology)
 	 * @return the string describing the performed operation
 	 */
-	std::string addLUT(int count = 1, int type = 0); 
+	std::string addLUT(int nrInputs = 0, int count = 1); 
 	
 	/**
 	 * Add @count multipliers to the total estimate
@@ -991,7 +992,7 @@ public:
 	 * are implemented in logic (0 for 0%, 1 for 100%)
 	 * @return the string describing the performed operation
 	 */
-	std::string addMultiplier(int count = 1, int widthX, int widthY, double ratio);
+	std::string addMultiplier(int widthX, int widthY, double ratio = 1, int count = 1);
 	
 	/**
 	 * Add @count memories to the total estimate, each having @size 
@@ -1006,7 +1007,7 @@ public:
 	 * (0 for RAM, 1 for ROM)
 	 * @return the string describing the performed operation
 	 */
-	std::string addMemory(int count = 1, int size, int width, int type = 0);
+	std::string addMemory(int size, int width, int type = 0, int count = 1);
 	
 	//---More particular resource logging
 	/**
@@ -1047,7 +1048,7 @@ public:
 	 * @param depth the depth of the shift register
 	 * @return the string describing the performed operation
 	 */
-	std::string addSRL(int count = 1, int width, int depth);
+	std::string addSRL(int width, int depth, int count = 1);
 	
 	/**
 	 * Add @count wire elements to the total estimate
@@ -1093,7 +1094,7 @@ public:
 	 * @param width the bitwidth of the inputs and the output
 	 * @return the string describing the performed operation
 	 */
-	std::string addMux(int count = 1, int nrInputs = 2, int width);
+	std::string addMux(int width, int nrInputs = 2, int count = 1);
 	
 	/**
 	 * Add @count counters to the total estimate, each having 
@@ -1105,7 +1106,7 @@ public:
 	 * @param width the bitwidth of the counter
 	 * @return the string describing the performed operation
 	 */
-	std::string addCounter(int count = 1, int width);
+	std::string addCounter(int width, int count = 1);
 	
 	/**
 	 * Add @count accumulators to the total estimate, each having
@@ -1116,10 +1117,10 @@ public:
 	 * overestimate
 	 * @param count (by default 1) the number of elements to add
 	 * @param width the bitwidth of the accumulator
-	 * @param useDSP whether the use of DSPs is allowed
+	 * @param useDSP (by default false) whether the use of DSPs is allowed
 	 * @return the string describing the performed operation
 	 */
-	std::string addAccumulator(int count = 1, int width, bool useDSP);
+	std::string addAccumulator(int width, bool useDSP = false, int count = 1);
 	
 	/**
 	 * Add @count decoder to the total estimate, each decoding an input 
@@ -1131,7 +1132,7 @@ public:
 	 * @param count (by default 1) the number of elements to add
 	 * @return the string describing the performed operation
 	 */
-	std::string addDecoder(int count = 1, int wIn, int wOut);
+	std::string addDecoder(int wIn, int wOut, int count = 1);
 	
 	/**
 	 * Add @count arithmetic operator to the total estimate, each having
@@ -1144,7 +1145,7 @@ public:
 	 * @param width the bitwidth of the inputs
 	 * @return the string describing the performed operation
 	 */
-	std::string addArithOp(int count = 1, int nrInputs = 2, int width);
+	std::string addArithOp(int width, int nrInputs = 2, int count = 1);
 	
 	/**
 	 * Add @count Finite State Machine to the total estimate, each 
@@ -1159,7 +1160,7 @@ public:
 	 * the FSM
 	 * @return the string describing the performed operation
 	 */
-	std::string addFSM(int count = 1, int nrStates, int nrTransitions = 0);
+	std::string addFSM(int nrStates, int nrTransitions = 0, int count = 1);
 	
 	//--Resource usage statistics
 	/**
@@ -1206,7 +1207,7 @@ public:
 	 * Should not be used together with the manual estimation functions addWireCount, addPortCount, addComponentResourceCount!
 	 * @return the string describing the performed operation
 	 */
-	std::string addAutomaticResourceEstimations();
+	void addAutomaticResourceEstimations();
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 

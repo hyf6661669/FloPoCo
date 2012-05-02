@@ -1443,12 +1443,12 @@ namespace flopoco{
 	
 	//TODO: should also count LUTs based on their type, for more accurate 
 	//		resource estimations
-	std::string Operator::addLUT(int count, int type){			
+	std::string Operator::addLUT(int nrInputs, int count){
 		std::ostringstream output;								 
 		int targetLUTType, increment;										
 		
-		(type == 0) ? targetLUTType =  lutInputs() : targetLUTType = type;
-		increment = target->lutCount(count, targetLUTType);
+		(nrInputs == 0) ? targetLUTType =  target_->lutInputs() : targetLUTType = nrInputs;
+		increment = target_->lutCount(targetLUTType, count);
 		
 		estimatedCountLUT += increment;
 		
@@ -1459,7 +1459,7 @@ namespace flopoco{
 	
 	//TODO: should also count the different types of registers that are 
 	//		being added
-	std::string Operator::addReg(int count, int width){
+	std::string Operator::addReg(int width, int count){
 		std::ostringstream output;
 		int increment = count*width;
 		
@@ -1474,10 +1474,11 @@ namespace flopoco{
 	//TODO: should also consider increasing FF and LUT counts
 	std::string Operator::addMultiplier(int count){
 		std::ostringstream output;
-		int increment;
+		int increment, widthX, widthY;
 		
 		estimatedCountMultiplier += count;
-		increment = target->dspForMultiplier(count);
+		target_->getDSPWidths(widthX, widthY);
+		increment = target_->dspForMultiplier(widthX, widthY, count);
 		estimatedCountDSP += increment;
 		
 		(count>0)? output << "Multiplier count increased by " << count : output << "Multiplier count decreased by " << count;
@@ -1489,13 +1490,13 @@ namespace flopoco{
 	
 	//TODO: verify increase in the DSP count 
 	//TODO: should also consider increasing FF and LUT counts
-	std::string Operator::addMultiplier(int count, int widthX, int widthY, double ratio){
+	std::string Operator::addMultiplier(int widthX, int widthY, double ratio, int count){
 		std::ostringstream output;
 		int increment, increment2;
 		
-		increment = ceil(ratio * target->multiplierCount(count, widthX, widthY));
+		increment = ceil(ratio * target_->multiplierCount(widthX, widthY, count));
 		estimatedCountMultiplier += increment;
-		increment2 = target->dspForMultiplier(count, widthX, widthY);
+		increment2 = target_->dspForMultiplier(widthX, widthY, count);
 		estimatedCountDSP += increment2;
 		
 		(increment>0)? output << "Multiplier count increased by " << increment : output << "Multiplier count decreased by " << increment;
@@ -1505,17 +1506,17 @@ namespace flopoco{
 		return output.str();
 	}
 	
-	std::string Operator::addMemory(int count, int size, int width, int type){
+	std::string Operator::addMemory(int size, int width, int type, int count){
 		std::ostringstream output;
 		int increment;
 		
-		increment = target->memoryCount(count, size, width, type);		
+		increment = target_->memoryCount(size, width, type, count);		
 		estimatedCountMemory += increment;
 		(type) ? estimatedCountROM += increment : estimatedCountRAM += increment;
 		
 		(increment>0)? output << "Memory elements count increased by " << increment : output << "Memory elements count decreased by " << increment;
-		(type) ? " ROM memory was targeted" : " RAM memory was targeted";
-		(type) ? (increment>0)? output << "ROM count increased by " << increment : output << "ROM count decreased by " << increment
+		(type>0) ? output << " ROM memory was targeted" : output << " RAM memory was targeted";
+		(type>0) ? (increment>0)? output << "ROM count increased by " << increment : output << "ROM count decreased by " << increment
 			   : (increment>0)? output << "RAM count increased by " << increment : output << "RAM count decreased by " << increment;
 		output << endl;
 		return output.str();
@@ -1553,17 +1554,17 @@ namespace flopoco{
 	}
 	
 	//TODO: should count the shift registers according to their bitwidths
-	std::string Operator::addSRL(int count, int width, int depth){
+	std::string Operator::addSRL(int width, int depth, int count){
 		std::ostringstream output;
 		int increment, increment2, increment3, increment4;
 		
-		increment = target->srlCount(count, width, depth);
+		increment = target_->srlCount(width, depth, count);
 		estimatedCountSRL += increment;
-		increment2 = target->lutForSRL(count, width, depth);
+		increment2 = target_->lutForSRL(width, depth, count);
 		estimatedCountLUT += increment2;
-		increment3 = target->ffForSRL(count, width, depth);
+		increment3 = target_->ffForSRL(width, depth, count);
 		estimatedCountFF += increment3;
-		increment4 = target->ramForSRL(count, width, depth);
+		increment4 = target_->ramForSRL(width, depth, count);
 		estimatedCountRAM += increment4;
 		
 		(increment>0)? output << "SRL count increased by " << increment : output << "SRL count decreased by " << increment;
@@ -1596,17 +1597,17 @@ namespace flopoco{
 		return output.str();
 	}
 	
-	std::string Operator::addIOB(int count, std::string){
+	std::string Operator::addIOB(int count, std::string portName){
 		std::ostringstream output;
 		int increment;
 		
 		if(portName.empty())
 			increment = count;
 		else{
-			Signal* s = portMap_[signalName];
+			Signal* s = signalMap_[portName];
 			
 			increment = s->width();
-			estimatedPortNames.push_back(signalName);
+			estimatedPortNames.push_back(portName);
 		}
 		estimatedCountIOB += increment;
 		
@@ -1616,13 +1617,13 @@ namespace flopoco{
 	}
 	
 	//---Even more particular resource logging
-	std::string Operator::addMux(int count, int nrInputs, int width){
+	std::string Operator::addMux(int width, int nrInputs, int count){
 		std::ostringstream output;
 		int increment, increment2;
 		
-		increment = target->muxCount(count, nrInputs, width);
+		increment = target_->muxCount(nrInputs, width, count);
 		estimatedCountMux += increment;
-		increment2 = target->lutForMux(increment, nrInputs, width);
+		increment2 = target_->lutForMux(nrInputs, width, increment);
 		estimatedCountLUT += increment2;
 		
 		(increment>0)? output << "MUX count increased by " << increment : output << "MUX count decreased by " << increment;
@@ -1633,14 +1634,14 @@ namespace flopoco{
 	}
 	
 	//TODO: count the counters according to their bitwidth
-	std::string Operator::addCounter(int count, int width){
+	std::string Operator::addCounter(int width, int count){
 		std::ostringstream output;
 		int increment, increment2;
 		
 		estimatedCountCounter += count;
-		increment = target->lutForCounter(count, width);
+		increment = target_->lutForCounter(width, count);
 		estimatedCountLUT += increment;
-		increment2 = target->ffForCounter(count, width);
+		increment2 = target_->ffForCounter(width, count);
 		estimatedCountFF += increment2;
 		
 		(count>0)? output << "Counter count increased by " << count : output << "Counter count decreased by " << count;
@@ -1653,16 +1654,16 @@ namespace flopoco{
 	}
 	
 	//TODO: count the accumulators according to their bitwidth
-	std::string Operator::addAccumulator(int count, int width, bool useDSP){
+	std::string Operator::addAccumulator(int width, bool useDSP, int count){
 		std::ostringstream output;
 		int increment, increment2, increment3;
 		
 		estimatedCountAccumulator += count;
-		increment = target->lutForAccumulator(count, width, useDSP);
+		increment = target_->lutForAccumulator(width, useDSP, count);
 		estimatedCountLUT += increment;
-		increment2 = target->ffForAccumulator(count, width, useDSP);
+		increment2 = target_->ffForAccumulator(width, useDSP, count);
 		estimatedCountFF += increment2;
-		increment3 = target->dspForAccumulator(count, width, useDSP);
+		increment3 = target_->dspForAccumulator(width, useDSP, count);
 		estimatedCountDSP += increment3;
 		
 		(count>0)? output << "Accumulator count increased by " << count : output << "Accumulator count decreased by " << count;
@@ -1678,14 +1679,14 @@ namespace flopoco{
 	
 	//TODO: count the decoders according to their input and output 
 	//		bitwidths
-	std::string Operator::addDecoder(int count){
+	std::string Operator::addDecoder(int wIn, int wOut, int count){
 		std::ostringstream output;
 		int increment, increment2;
 		
 		estimatedCountDecoder += count;
-		increment = target->lutForDecoder(count, width);
+		increment = target_->lutForDecoder(wIn, count);
 		estimatedCountLUT += increment;
-		increment2 = target->ffForDecoder(count, width);
+		increment2 = target_->ffForDecoder(wIn, count);
 		estimatedCountFF += increment2;
 		
 		(count>0)? output << "Decoder count increased by " << count : output << "Decoder count decreased by " << count;
@@ -1697,12 +1698,12 @@ namespace flopoco{
 		return output.str();
 	}
 	
-	std::string Operator::addArithOp(int count, int nrInputs, int width){
+	std::string Operator::addArithOp(int width, int nrInputs, int count){
 		std::ostringstream output;
-		int increment, increment2, increment3;
+		int increment;
 		
 		estimatedCountArithOp += count;
-		increment = target->lutForArithmeticOperator(count, nrInputs, width);
+		increment = target_->lutForArithmeticOperator(nrInputs, width, count);
 		estimatedCountLUT += increment;
 		
 		(count>0)? output << "Arithmetic Operator count increased by " << count : output << "Arithmetic Operator count decreased by " << count;
@@ -1712,16 +1713,16 @@ namespace flopoco{
 		return output.str();
 	}
 	
-	std::string Operator::addFSM(int count, int nrStates, int nrTransitions){
+	std::string Operator::addFSM(int nrStates, int nrTransitions, int count){
 		std::ostringstream output;
 		int increment, increment2, increment3;
 		
 		estimatedCountFSM += count;
-		increment = target->lutForFSM(count, nrStates, nrTransitions);
+		increment = target_->lutForFSM(nrStates, nrTransitions, count);
 		estimatedCountLUT += increment;
-		increment2 = target->ffForFSM(count, nrStates, nrTransitions);
+		increment2 = target_->ffForFSM(nrStates, nrTransitions, count);
 		estimatedCountFF += increment2;
-		increment3 = target->ramForFSM(count, nrStates, nrTransitions);
+		increment3 = target_->ramForFSM(nrStates, nrTransitions, count);
 		estimatedCountRAM += increment3;
 		
 		(count>0)? output << "FSM count increased by " << count : output << "FSM count decreased by " << count;
@@ -1745,42 +1746,44 @@ namespace flopoco{
 		
 		resourceEstimateReport << endl;
 		resourceEstimateReport << "Top level entity	name				: " << this->getName() << endl;
-		resourceEstimateReport << "Top level entity is pipelined		: " << (target->isPipelined()) ? "True" : "False" << endl;
-		resourceEstimateReport << "Top level entity target frequency	: " << (target->isPipelined()) ? target->frequencyMHz : "N/A" << endl;
-		resourceEstimateReport << "Top level entity uses DSP blocks		: " << (target->getUseHardMultiplier()) ? "True" : "False" << endl;
+		resourceEstimateReport << "Top level entity is pipelined		: " << ((target_->isPipelined()) ? "True" : "False") << endl;
+		resourceEstimateReport << "Top level entity target frequency	: " << ((target_->isPipelined()) ? join("", target_->frequencyMHz()) : "N/A") << endl;
+		resourceEstimateReport << "Top level entity uses DSP blocks		: " << ((target_->getUseHardMultipliers()) ? "True" : "False") << endl;
 		resourceEstimateReport << endl;
-		resourceEstimateReport << "Number of Flip-Flops					: " << (estimatedCountFF) ? estimatedCountFF : "None" << endl;
-		resourceEstimateReport << "Number of Function Generators		: " << (estimatedCountLUT) ? estimatedCountLUT : "None" << endl;
-		resourceEstimateReport << "Number of Multipliers				: " << (estimatedCountMultiplier) estimatedCountMultiplier : "None" << endl;
-		resourceEstimateReport << "Number of Memory blocks				: " << (estimatedCountMemory) estimatedCountMemory : "None" << endl;
+		resourceEstimateReport << "Number of Flip-Flops					: " << ((estimatedCountFF) ? join("", estimatedCountFF) : "None") << endl;
+		resourceEstimateReport << "Number of Function Generators		: " << ((estimatedCountLUT) ? join("", estimatedCountLUT) : "None") << endl;
+		resourceEstimateReport << "Number of Multipliers				: " << ((estimatedCountMultiplier) ? join("", estimatedCountMultiplier) : "None") << endl;
+		resourceEstimateReport << "Number of Memory blocks				: " << ((estimatedCountMemory) ? join("", estimatedCountMemory) : "None") << endl;
 		resourceEstimateReport << endl;
 		if(detailLevel>0){
-		(estimatedCountDSP)  ?	resourceEstimateReport << "Number of DSP blocks					: " << estimatedCountDSP << endl : ;
-		(estimatedCountRAM)  ?	resourceEstimateReport << "Number of RAM blocks					: " << estimatedCountRAM << endl : ;
-		(estimatedCountROM)  ?	resourceEstimateReport << "Number of ROM blocks					: " << estimatedCountROM << endl : ;
-		(estimatedCountSRL)  ?	resourceEstimateReport << "Number of SRLs							: " << estimatedCountSRL << endl : ;
-		(estimatedCountWire) ?	resourceEstimateReport << "Number of Wires						: " << estimatedCountWire << endl : ;
-		(estimatedCountIOB)  ?	resourceEstimateReport << "Number of IOs	 					: " << estimatedCountIOB << endl : ;
+		(estimatedCountDSP)  ?	resourceEstimateReport << "Number of DSP blocks					: " << estimatedCountDSP << endl : resourceEstimateReport << "";
+		(estimatedCountRAM)  ?	resourceEstimateReport << "Number of RAM blocks					: " << estimatedCountRAM << endl : resourceEstimateReport << "";
+		(estimatedCountROM)  ?	resourceEstimateReport << "Number of ROM blocks					: " << estimatedCountROM << endl : resourceEstimateReport << "";
+		(estimatedCountSRL)  ?	resourceEstimateReport << "Number of SRLs							: " << estimatedCountSRL << endl : resourceEstimateReport << "";
+		(estimatedCountWire) ?	resourceEstimateReport << "Number of Wires						: " << estimatedCountWire << endl : resourceEstimateReport << "";
+		(estimatedCountIOB)  ?	resourceEstimateReport << "Number of IOs	 					: " << estimatedCountIOB << endl : resourceEstimateReport << "";
 		resourceEstimateReport << endl;
 		}
 		if(detailLevel>1){
-		(estimatedCountMux) 		?	resourceEstimateReport << "Number of Multiplexers				: " << estimatedCountMux << endl : ;
-		(estimatedCountCounter) 	?	resourceEstimateReport << "Number of Counters					: " << estimatedCountCounter << endl : ;
-		(estimatedCountAccumulator) ?	resourceEstimateReport << "Number of Accumulators				: " << estimatedCountAccumulator << endl : ;
-		(estimatedCountDecoder)		?	resourceEstimateReport << "Number of Decoders/Encoders			: " << estimatedCountDecoder << endl : ;
-		(estimatedCountArithOp)		?	resourceEstimateReport << "Number of Arithmetic Operators		: " << estimatedCountArithOp << endl : ;
-		(estimatedCountFSM)			?	resourceEstimateReport << "Number of FSMs						: " << estimatedCountFSM << endl : ;
+		(estimatedCountMux) 		?	resourceEstimateReport << "Number of Multiplexers				: " << estimatedCountMux << endl : resourceEstimateReport << "";
+		(estimatedCountCounter) 	?	resourceEstimateReport << "Number of Counters					: " << estimatedCountCounter << endl : resourceEstimateReport << "";
+		(estimatedCountAccumulator) ?	resourceEstimateReport << "Number of Accumulators				: " << estimatedCountAccumulator << endl : resourceEstimateReport << "";
+		(estimatedCountDecoder)		?	resourceEstimateReport << "Number of Decoders/Encoders			: " << estimatedCountDecoder << endl : resourceEstimateReport << "";
+		(estimatedCountArithOp)		?	resourceEstimateReport << "Number of Arithmetic Operators		: " << estimatedCountArithOp << endl : resourceEstimateReport << "";
+		(estimatedCountFSM)			?	resourceEstimateReport << "Number of FSMs						: " << estimatedCountFSM << endl : resourceEstimateReport << "";
 		resourceEstimateReport << endl;
 		}
 		
 		resourceEstimateReport << "=========================================================================" << endl;
+		
+		return resourceEstimateReport.str();
 	}
 	
 	//--Utility functions related to the generation of resource usage statistics
 	std::string Operator::addPipelineFF(){
 		std::ostringstream output;
 		
-		for(int i=0; i<signalList_.size(); i++) {
+		for(unsigned int i=0; i<signalList_.size(); i++) {
 			Signal *s = signalList_[i];
 			
 			estimatedCountFF += s->getLifeSpan() * s->width();
@@ -1793,15 +1796,15 @@ namespace flopoco{
 	std::string Operator::addWireCount(){
 		std::ostringstream output;
 		
-		for(int i=0; i<signalList_.size(); i++) {
+		for(unsigned int i=0; i<signalList_.size(); i++) {
 			Signal *s = signalList_[i];
 			bool processed = false;
 			
-			for(int j=0; j<estimatedSignalNames.size(); i++) {
-				Signal *stemp = estimatedSignalNames[j];
-				if((s->getName()).compare(stemp->getName())){
+			for(unsigned int j=0; j<estimatedSignalNames.size(); i++) {
+				std::string stemp = estimatedSignalNames[j];
+				if((s->getName()).compare(stemp)){
 					processed = true;
-					break();
+					break;
 				}
 			}
 			if(processed)
@@ -1816,15 +1819,15 @@ namespace flopoco{
 	std::string Operator::addPortCount(){
 		std::ostringstream output;
 		
-		for(int i=0; i<ioList_.size(); i++) {
+		for(unsigned int i=0; i<ioList_.size(); i++) {
 			Signal *s = ioList_[i];
 			bool processed = false;
 			
-			for(int j=0; j<estimatedPortNames.size(); i++) {
-				Signal *stemp = estimatedPortNames[j];
-				if((s->getName()).compare(stemp->getName())){
+			for(unsigned int j=0; j<estimatedPortNames.size(); i++) {
+				std::string stemp = estimatedPortNames[j];
+				if((s->getName()).compare(stemp)){
 					processed = true;
-					break();
+					break;
 				}
 			}
 			if(processed)
@@ -1865,7 +1868,7 @@ namespace flopoco{
 		return output.str();
 	}
 	
-	std::string Operator::addAutomaticResourceEstimations(){
+	void Operator::addAutomaticResourceEstimations(){
 		
 		resourceEstimate << this->addPipelineFF();
 		resourceEstimate << this->addWireCount();

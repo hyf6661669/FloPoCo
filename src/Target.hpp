@@ -303,7 +303,7 @@ namespace flopoco{
 		 * the @suggestLUTType() function) the number of inputs of the LUT
 		 * @return the type of the LUT to be used for resource estimation
 		 */ 
-		virtual int lutCount(int count = 1, int nrInputs = 0);
+		virtual int lutCount(int nrInputs = 0, int count = 1);
 		
 		/**
 		 * Return the number of Multipliers that should be added to the 
@@ -319,7 +319,7 @@ namespace flopoco{
 		 * @param widthY the width of the second term to the operation
 		 * @return the number of multipliers to add
 		 */
-		virtual int multiplierCount(int count = 1, int widthX, int widthY);
+		virtual int multiplierCount(int widthX, int widthY, int count = 1);
 		
 		/**
 		 * Return the number of DSP that should be added to the total 
@@ -334,7 +334,7 @@ namespace flopoco{
 		 * @param widthY the width of the second term to the operation
 		 * @return the number of DSP blocks to add
 		 */
-		virtual int dspForMultiplier(int count = 1, int widthX, int widthY);
+		virtual int dspForMultiplier(int widthX, int widthY, int count = 1);
 		
 		/**
 		 * Return the number of Memory elements that should be added to 
@@ -347,7 +347,7 @@ namespace flopoco{
 		 * @param width the width of the memory words
 		 * @param type (by default 0, RAM) the memory type (RAM or ROM)
 		 */
-		virtual int memoryCount(int count = 1, int size, int width, int type = 0);
+		virtual int memoryCount(int size, int width, int type = 0, int count = 1);
 		
 		/**
 		 * Return the number of Shift Registers that should be added to the 
@@ -359,7 +359,7 @@ namespace flopoco{
 		 * @param the depth of the shift register
 		 * @return the number of SRLs to add
 		 */
-		virtual int srlCount(int count = 1, int width, int depth);
+		virtual int srlCount(int width, int depth, int count = 1);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 
@@ -367,10 +367,11 @@ namespace flopoco{
 		 * shift registers each having the input of width @width bits.
 		 * @param count (by default 1) the number of such SRLs that need 
 		 * to be added
-		 * @param width the width of the shift registers
+		 * @param width the width of the shift register(s)
+		 * @param depth the depth of the shift register(s)
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int lutForSRL(int count = 1, int width);
+		virtual int lutForSRL(int width, int depth, int count = 1);
 		
 		/**
 		 * Return the number of FFs that should be added to the 
@@ -378,10 +379,11 @@ namespace flopoco{
 		 * shift registers that each have inputs of width @width bits.
 		 * @param count (by default 1) the number of such SRLs that need 
 		 * to be added
-		 * @param width the width of the shift registers
+		 * @param width the width of the shift register(s)
+		 * @param depth the depth of the shift register(s)
 		 * @return the number of FFs to add to the resource estimation
 		 */
-		virtual int ffForSRL(int count = 1, int width);
+		virtual int ffForSRL(int width, int depth, int count = 1);
 		
 		/**
 		 * Return the number of RAM blocks that should be added to the 
@@ -389,11 +391,12 @@ namespace flopoco{
 		 * shift registers that each have inputs of width @width bits.
 		 * @param count (by default 1) the number of such SRLs that need 
 		 * to be added
-		 * @param width the width of the shift registers
+		 * @param width the width of the shift register(s)
+		 * @param depth the depth of the shift register(s)
 		 * @return the number of RAM blocks to add to the resource 
 		 * estimation
 		 */
-		virtual int ramForSRL(int count = 1, int width);
+		virtual int ramForSRL(int width, int depth, int count = 1);
 		
 		/**
 		 * Return the number of Multiplexers that should be added to the 
@@ -405,7 +408,7 @@ namespace flopoco{
 		 * @param width the width of the multiplexers
 		 * @return the number of Multiplexers to add
 		 */
-		virtual int muxCount(int count = 1, int nrInputs, int width);
+		virtual int muxCount(int nrInputs, int width, int count = 1);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 
@@ -417,7 +420,7 @@ namespace flopoco{
 		 * @param width the width of the multiplexers
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int lutForMux(int count = 1, int nrInputs, int width);
+		virtual int lutForMux(int nrInputs, int width, int count = 1);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 
@@ -428,7 +431,7 @@ namespace flopoco{
 		 * @param width the width of the counters
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int lutForCounter(int count = 1, int width);
+		virtual int lutForCounter(int width, int count = 1);
 		
 		/**
 		 * Return the number of FFs that should be added to the 
@@ -439,7 +442,7 @@ namespace flopoco{
 		 * @param width the width of the counters
 		 * @return the number of FFs to add to the resource estimation
 		 */
-		virtual int ffForCounter(int count = 1, int width);
+		virtual int ffForCounter(int width, int count = 1);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 
@@ -448,10 +451,10 @@ namespace flopoco{
 		 * @param count (by default 1) the number of such accumulators
 		 * that need to be added
 		 * @param width the width of the accumulators
-		 * @param useDSP whether DSPs are used, or not
+		 * @param useDSP (by default false) whether DSPs are used, or not
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int lutForAccumulator(int count = 1, int width, bool useDSP);
+		virtual int lutForAccumulator(int width, bool useDSP = false, int count = 1);
 		
 		/**
 		 * Return the number of FFs that should be added to the 
@@ -463,7 +466,7 @@ namespace flopoco{
 		 * @param useDSP whether DSPs are used, or not
 		 * @return the number of FFs to add to the resource estimation
 		 */
-		virtual int ffForAccumulator(int count = 1, int width, bool useDSP);
+		virtual int ffForAccumulator(int width, bool useDSP = false, int count = 1);
 		
 		/**
 		 * Return the number of DSPs that should be added to the 
@@ -475,7 +478,7 @@ namespace flopoco{
 		 * @param useDSP whether the use of DSPs is allowed
 		 * @return the number of DSPs to add to the resource estimation
 		 */
-		virtual int dspForAccumulator(int count = 1, int width, bool useDSP);
+		virtual int dspForAccumulator(int width, bool useDSP, int count = 1);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 
@@ -486,7 +489,7 @@ namespace flopoco{
 		 * @param width the width of the encoders/decoders
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int lutForDecoder(int count = 1, int width);
+		virtual int lutForDecoder(int width, int count = 1);
 		
 		/**
 		 * Return the number of FFs that should be added to the 
@@ -497,7 +500,7 @@ namespace flopoco{
 		 * @param width the width of the encoders/decoders
 		 * @return the number of FFs to add to the resource estimation
 		 */
-		virtual int ffForDecoder(int count = 1, int width);
+		virtual int ffForDecoder(int width, int count = 1);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 
@@ -511,7 +514,7 @@ namespace flopoco{
 		 * @param width the width of the arithmetic operators' inputs
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int lutForArithmeticOperator(int count = 1, int nrInputs, int width);
+		virtual int lutForArithmeticOperator(int nrInputs, int width, int count = 1);
 		
 		/**
 		 * Return the number of LUTs that should be added to the 
@@ -524,7 +527,7 @@ namespace flopoco{
 		 * machine
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int lutForFSM(int count = 1, int nrStates, int nrTransitions);
+		virtual int lutForFSM(int nrStates, int nrTransitions, int count = 1);
 		
 		/**
 		 * Return the number of FFs that should be added to the 
@@ -537,7 +540,7 @@ namespace flopoco{
 		 * machine
 		 * @return the number of LUTs to add to the resource estimation
 		 */
-		virtual int ffForFSM(int count = 1, int nrStates, int nrTransitions);
+		virtual int ffForFSM(int nrStates, int nrTransitions, int count = 1);
 		
 		/**
 		 * Return the number of RAMs that should be added to the 
@@ -550,7 +553,7 @@ namespace flopoco{
 		 * @param width the width of the FSM
 		 * @return the number of RAMs to add to the resource estimation
 		 */
-		virtual int ramForFSM(int count = 1, int nrStates, int nrTransitions);
+		virtual int ramForFSM(int nrStates, int nrTransitions, int count = 1);
 		
 		/*------------ Resource Estimation - target specific ---------*/
 		

@@ -53,14 +53,21 @@ private:
 		if(!sorted)
 			std::sort(m_elements.begin(), m_elements.end(), EltLessThan);
 
-		if((n%2) && m_elements[n/2].first!=0)
+		if((n%2) && (m_elements[n/2].first!=0)){
+			//fprintf(stderr, "elts[n/2]=%lg\n", m_elements[n/2].first);
 			m_isSymmetric=false;
+		}
+		
 		if(m_isSymmetric){
 			for(unsigned i=0;i<n/2 && m_isSymmetric;i++){
-				if(m_elements[i].first!=-m_elements[n-i-1].first)
+				if(m_elements[i].first!=-m_elements[n-i-1].first){
+					//fprintf(stderr, "first\n");
 					m_isSymmetric=false;
-				if(m_elements[i].second!=m_elements[n-i-1].second)
+				}
+				if(m_elements[i].second!=m_elements[n-i-1].second){
+					//fprintf(stderr, "second : e[%d] = %lg, e[%d]=%lg,  diff=%lg\n", i, m_elements[i].second, n-i-1, m_elements[n-i-1].second,  m_elements[i].second-m_elements[n-i-1].second);
 					m_isSymmetric=false;
+				}
 			}
 		}
 	}

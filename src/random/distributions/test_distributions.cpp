@@ -1,4 +1,5 @@
 #include "distribution.hpp"
+#include "clt_distribution.hpp"
 #include "table_distribution.hpp"
 #include "gaussian_distribution.hpp"
 
@@ -6,6 +7,24 @@
 
 #define BOOST_TEST_MODULE BaseTests
 #include <boost/test/unit_test.hpp>
+
+using namespace flopoco::random;
+
+
+BOOST_AUTO_TEST_CASE(CLTDistributionTests)
+{
+	typedef typename TableDistribution<double>::TypePtr TableDistributionPtr;
+	
+	TableDistributionPtr clt=flopoco::random::MakeCLTDistribution<double>(3, 2);
+	
+	for(unsigned i=0;i<clt->ElementCount();i++){
+		std::pair<double,double> v=clt->GetElement(i);
+		fprintf(stderr, "%lg, %lg\n", v.first, v.second);
+	}
+	
+	fprintf(stderr, "IsSym=%d\n", clt->IsSymmetric()?1:0);
+}
+
 
 double ReferenceRawMoment(unsigned n, const double *v, unsigned k)
 {
@@ -101,7 +120,7 @@ BOOST_AUTO_TEST_CASE(TableDistributionTests)
 
 BOOST_AUTO_TEST_CASE(GaussianDistributionTests)
 {
-	typedef ContinuousDistribution<double>::ContinuousDistributionPtr ContinuousDistributionPtr;
+	typedef ContinuousDistribution<double>::TypePtr ContinuousDistributionPtr;
 	
 	ContinuousDistributionPtr ptr=boost::make_shared<GaussianDistribution<double> >();
 	

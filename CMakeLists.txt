@@ -59,6 +59,8 @@ FIND_LIBRARY( SOLLYA_LIB sollya )
 IF (SOLLYA_LIB)
 	ADD_DEFINITIONS(-DHAVE_SOLLYA)
 	MESSAGE(STATUS "Found Sollya: ${SOLLYA_LIB}")
+    
+    FIND_LIBRARY(FPLLL_LIB NAMES mpflll mpflll.lib)
 ELSE (SOLLYA_LIB)
 	MESSAGE(STATUS "Sollya not found, many very nice operators won't be available")
 ENDIF (SOLLYA_LIB)
@@ -356,14 +358,21 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/UtilSollya
 )
 IF(SOLLYA_LIB)
- TARGET_LINK_LIBRARIES(
-   FloPoCoLib
-   gmp gmpxx xml2 ${SOLLYA_LIB} ${MPFI_LIB} ${MPFR_LIB}
-   )
+ IF(FPLLL_LIB)
+  TARGET_LINK_LIBRARIES(
+    FloPoCoLib
+    gmp gmpxx xml2 ${SOLLYA_LIB} ${MPFI_LIB}  ${FPLLL_LIB} ${MPFR_LIB} xml2
+    )
+ ELSE(FPLLL_LIB)
+  TARGET_LINK_LIBRARIES(
+    FloPoCoLib
+    gmp gmpxx ${SOLLYA_LIB} ${MPFI_LIB} ${MPFR_LIB} xml2
+    )
+ ENDIF(FPLLL_LIB)
 ELSE(SOLLYA_LIB)
  TARGET_LINK_LIBRARIES(
    FloPoCoLib 
-   ${MPFR_LIB} gmp gmpxx xml2 ${MPFI_LIB}
+   ${MPFR_LIB} gmp gmpxx ${MPFI_LIB}
    )
 ENDIF(SOLLYA_LIB)
 SET(FLOPOCO_LIB FloPoCoLib)

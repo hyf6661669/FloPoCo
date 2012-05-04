@@ -115,6 +115,37 @@ namespace flopoco{
 			return count*ceil(ratioX)*ceil(ratioY);
 		}
 	}
+	
+	int Target::lutForMultiplier(int widthX, int widthY, int count){
+		int maxWidth;
+		
+		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
+		return ceil(count*maxWidth*getLUTPerMultiplier(widthX, widthY));
+	}
+	
+	
+	int Target::ffForMultiplier(int widthX, int widthY, int count){
+		int maxWidth;
+		
+		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
+		return ceil(count*maxWidth*getFFPerMultiplier(widthX, widthY));
+	}
+	
+	int Target::lutForAdderSubtracter(int widthX, int widthY, int count){
+		int maxWidth;
+		
+		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
+		return ceil(count*maxWidth*getLUTPerAdderSubtracter(widthX, widthY));
+	}
+	
+	
+	int Target::ffForAdderSubtracter(int widthX, int widthY, int count){
+		int maxWidth;
+		
+		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
+		return ceil(count*maxWidth*getFFPerAdderSubtracter(widthX, widthY));
+	}
+	
 		
 	//TODO: create a data structure/ function that gives the possible 
 	//		word sizes 
@@ -375,6 +406,543 @@ namespace flopoco{
 					return 1.0/2;
 				}else{
 					return ceil((double)widthX/defaultWidthX)*ceil((double)widthY/defaultWidthY);
+				}
+			}
+		}
+		
+		return 0;
+	}
+	
+	double Target::getLUTPerMultiplier(int widthX, int widthY){
+		int maxWidth;
+		
+		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(maxWidth<=9){
+					return 12.555; 
+				}else if(maxWidth<=12){
+					return 14.917;
+				}else if(maxWidth<=20){
+					if(widthX==18 && widthY==18){
+						return 0.000;
+					}else{
+						return 3.600;
+					}
+				}else if(maxWidth<=25){
+					if((widthX==25 && widthY==18) || (widthY==25 && widthX==18)){
+						return 0.680;
+					}else{
+						return 14.958;
+					}
+				}else if(maxWidth<=35){
+					return 2.486;
+				}else if(maxWidth<=53){
+					return 9.283;
+				}
+			}else if(id_ == "Virtex4"){
+				if(maxWidth<=9){
+					return 12.555; 
+				}else if(maxWidth<=12){
+					return 14.917;
+				}else if(maxWidth<=20){
+					if(widthX==18 && widthY==18){
+						return 0.000;
+					}else{
+						return 3.600;
+					}
+				}else if(maxWidth<=25){
+					if((widthX==25 && widthY==18) || (widthY==25 && widthX==18)){
+						return 0.680;
+					}else{
+						return 14.958;
+					}
+				}else if(maxWidth<=35){
+					return 2.486;
+				}else if(maxWidth<=53){
+					return 9.283;
+				}
+			}else if(id_ == "Virtex5"){
+				if(maxWidth<=9){
+					return 12.111; 
+				}else if(maxWidth<=12){
+					return 13.917;
+				}else if(maxWidth<=20){
+					if(widthX==18 && widthY==18){
+						return 0.000;
+					}else{
+						return 1.200;
+					}
+				}else if(maxWidth<=25){
+					if((widthX==25 && widthY==18) || (widthY==25 && widthX==18)){
+						return 0.000;
+					}else{
+						return 7.083;
+					}
+				}else if(maxWidth<=35){
+					return 1.000;
+				}else if(maxWidth<=53){
+					return 4.320;
+				}
+			}else if(id_ == "Virtex6"){
+				if(maxWidth<=9){
+					return 12.778;
+				}else if(maxWidth<=12){
+					return 14.667;
+				}else if(maxWidth<=20){
+					if(widthX==18 && widthY==18){
+						return 0.000;
+					}else{
+						return 1.150;
+					}
+				}else if(maxWidth<=25){
+					if((widthX==25 && widthY==18) || (widthY==25 && widthX==18)){
+						return 0.000;
+					}else{
+						return 8.333;
+					}
+				}else if(maxWidth<=35){
+					return 0.942;
+				}else if(maxWidth<=53){
+					return 2.509;
+				}
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				//can use just DSPs and no additional logic
+				if((widthX==8 && widthY==8) || (widthX==16 && widthY==16) || (widthX==32 && widthY==32))
+					return 0.000;
+				else
+					return 1.281;
+			}else if(id_ == "StratixIII"){
+				if((widthX==8 && widthY==8) || (widthX==16 && widthY==16) || (widthX==32 && widthY==32))
+					return 0.000;
+				else
+					return 1.281;
+			}else if(id_ == "StratixIV"){
+				if((widthX==8 && widthY==8) || (widthX==16 && widthY==16) || (widthX==32 && widthY==32))
+					return 0.000;
+				else
+					return 1.281;
+			}
+		}
+		
+		return 0;
+	}
+	
+	double Target::getFFPerMultiplier(int widthX, int widthY){
+		int maxWidth;
+		
+		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(maxWidth<=9){
+					return 11.555;
+				}else if(maxWidth<=12){
+					return 13.750;
+				}else if(maxWidth<=20){
+					if(widthX==18 && widthY==18){
+						return 0.000;
+					}else{
+						return 3.750;
+					}
+				}else if(maxWidth<=25){
+					if((widthX==25 && widthY==18) || (widthY==25 && widthX==18)){
+						return 1.000;
+					}else{
+						return 3.000;
+					}
+				}else if(maxWidth<=35){
+					return 5.000;
+				}else if(maxWidth<=53){
+					return 8.566;
+				}
+			}else if(id_ == "Virtex4"){
+				if(maxWidth<=9){
+					return 11.555;
+				}else if(maxWidth<=12){
+					return 13.750;
+				}else if(maxWidth<=20){
+					if(widthX==18 && widthY==18){
+						return 0.000;
+					}else{
+						return 3.750;
+					}
+				}else if(maxWidth<=25){
+					if((widthX==25 && widthY==18) || (widthY==25 && widthX==18)){
+						return 1.000;
+					}else{
+						return 3.000;
+					}
+				}else if(maxWidth<=35){
+					return 5.000;
+				}else if(maxWidth<=53){
+					return 8.566;
+				}
+			}else if(id_ == "Virtex5"){
+				if(maxWidth<=9){
+					return 12.222;
+				}else if(maxWidth<=12){
+					return 14.917;
+				}else if(maxWidth<=20){
+					if(widthX==18 && widthY==18){
+						return 0.000;
+					}else{
+						return 1.200;
+					}
+				}else if(maxWidth<=25){
+					if((widthX==25 && widthY==18) || (widthY==25 && widthX==18)){
+						return 0.000;
+					}else{
+						return 9.833;
+					}
+				}else if(maxWidth<=35){
+					return 2.485;
+				}else if(maxWidth<=53){
+					return 5.283;
+				}
+			}else if(id_ == "Virtex6"){
+				if(maxWidth<=9){
+					return 12.222;
+				}else if(maxWidth<=12){
+					return 14.917;
+				}else if(maxWidth<=20){
+					if(widthX==18 && widthY==18){
+						return 0.000;
+					}else{
+						return 1.200;
+					}
+				}else if(maxWidth<=25){
+					if((widthX==25 && widthY==18) || (widthY==25 && widthX==18)){
+						return 0.000;
+					}else{
+						return 9.833;
+					}
+				}else if(maxWidth<=35){
+					return 1.971;
+				}else if(maxWidth<=53){
+					return 5.207;
+				}
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if((widthX==8 && widthY==8) || (widthX==16 && widthY==16) || (widthX==32 && widthY==32))
+					return 0.000;
+				else
+					return 2.000;
+			}else if(id_ == "StratixIII"){
+				if((widthX==8 && widthY==8) || (widthX==16 && widthY==16) || (widthX==32 && widthY==32))
+					return 0.000;
+				else
+					return 2.000;
+			}else if(id_ == "StratixIV"){
+				if((widthX==8 && widthY==8) || (widthX==16 && widthY==16) || (widthX==32 && widthY==32))
+					return 0.000;
+				else
+					return 2.000;
+			}
+		}
+		
+		return 0;
+	}
+	
+	
+	//TODO: get statistics for Virtex6 (for now using Virtex5 data)
+	//		verify statistics for Altera families		
+	double Target::getLUTPerAdderSubtracter(int widthX, int widthY){
+		int maxWidth;
+		
+		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(isPipelined()){
+					if(maxWidth<=8){
+						return 3.875;
+					}else if(maxWidth<=12){
+						return 4.500;
+					}else if(maxWidth<=16){
+						return 4.750;
+					}else if(maxWidth<=20){
+						return 4.900;
+					}else if(maxWidth<=24){
+						return 4.917;
+					}else if(maxWidth<=32){
+						return 5.156;
+					}else if(maxWidth<=48){
+						return 7.167;
+					}else if(maxWidth<=64){
+						return 7.968;
+					}else if(maxWidth<=96){
+						return 9.833;
+					}else if(maxWidth<=128){
+						return 11.671;
+					}else if(maxWidth<=256){
+						return 18.179;
+					}
+				}else{
+					return 1.000;
+				}
+			}else if(id_ == "Virtex4"){
+				if(isPipelined()){
+					if(maxWidth<=32){
+						return 1.000;
+					}else if(maxWidth<=48){
+						return 1.312;
+					}else if(maxWidth<=52){
+						return 1.365;
+					}else if(maxWidth<=64){
+						return 1.484;
+					}else if(maxWidth<=96){
+						return 2.667;
+					}else if(maxWidth<=128){
+						return 2.757;
+					}else if(maxWidth<=256){
+						return 3.347;
+					}
+				}else{
+					return 1.000;
+				}
+			}else if(id_ == "Virtex5"){
+				if(isPipelined()){
+					if(maxWidth<=32){
+						return 1.000;
+					}else if(maxWidth<=48){
+						return 1.145;
+					}else if(maxWidth<=52){
+						return 1.211;
+					}else if(maxWidth<=64){
+						return 1.328;
+					}else if(maxWidth<=96){
+						return 2.562;
+					}else if(maxWidth<=128){
+						return 2.687;
+					}else if(maxWidth<=256){
+						return 3.214;
+					}
+				}else{
+					return 1.000;
+				}
+			}else if(id_ == "Virtex6"){
+				if(isPipelined()){
+					if(maxWidth<=32){
+						return 1.000;
+					}else if(maxWidth<=48){
+						return 1.145;
+					}else if(maxWidth<=52){
+						return 1.211;
+					}else if(maxWidth<=64){
+						return 1.328;
+					}else if(maxWidth<=96){
+						return 2.562;
+					}else if(maxWidth<=128){
+						return 2.687;
+					}else if(maxWidth<=256){
+						return 3.214;
+					}
+				}else{
+					return 1.000;
+				}
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(isPipelined()){
+					if(maxWidth<=24){
+						return 1.208;
+					}else if(maxWidth<=32){
+						return 1.406;
+					}else if(maxWidth<=48){
+						return 1.645;
+					}else if(maxWidth<=64){
+						return 1.765;
+					}else if(maxWidth<=96){
+						return 2.062;
+					}else if(maxWidth<=128){
+						return 2.031;
+					}else if(maxWidth<=256){
+						return 2.164;
+					}
+				}else{
+					return 1.000;
+				}
+			}else if(id_ == "StratixIII"){
+				if(isPipelined()){
+					if(maxWidth<=48){
+						return 1.167;
+					}else if(maxWidth<=64){
+						return 1.375;
+					}else if(maxWidth<=96){
+						return 1.604;
+					}else if(maxWidth<=128){
+						return 1.718;
+					}else if(maxWidth<=256){
+						return 1.910;
+					}
+				}else{
+					return 1.000;
+				}
+			}else if(id_ == "StratixIV"){
+				if(isPipelined()){
+					if(maxWidth<=96){
+						return 1.187;
+					}else if(maxWidth<=128){
+						return 1.390;
+					}else if(maxWidth<=256){
+						return 1.710;
+					}
+				}else{
+					return 1.000;
+				}
+			}
+		}
+		
+		return 0;
+	}
+	
+	
+	//TODO: get statistics for Virtex6 (for now Virtex5 data)
+	//		verify statistics for Altera families
+	double Target::getFFPerAdderSubtracter(int widthX, int widthY){
+		int maxWidth;
+		
+		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
+		if(vendor_ == "Xilinx"){
+			if(id_ == "Spartan3"){
+				if(isPipelined()){
+					if(maxWidth<=8){
+						return 1.875;
+					}else if(maxWidth<=12){
+						return 2.583;
+					}else if(maxWidth<=16){
+						return 2.687;
+					}else if(maxWidth<=20){
+						return 2.950;
+					}else if(maxWidth<=24){
+						return 2.958;
+					}else if(maxWidth<=32){
+						return 3.750;
+					}else if(maxWidth<=48){
+						return 4.500;
+					}else if(maxWidth<=64){
+						return 4.875;
+					}else if(maxWidth<=96){
+						return 6.437;
+					}else if(maxWidth<=128){
+						return 6.828;
+					}else if(maxWidth<=256){
+						return 7.414;
+					}
+				}else{
+					return 0.000;
+				}
+			}else if(id_ == "Virtex4"){
+				if(isPipelined()){
+					if(maxWidth<=32){
+						return 1.000;
+					}else if(maxWidth<=48){
+						return 1.020;
+					}else if(maxWidth<=52){
+						return 1.019;
+					}else if(maxWidth<=64){
+						return 1.015;
+					}else if(maxWidth<=96){
+						return 1.010;
+					}else if(maxWidth<=128){
+						return 1.273;
+					}else if(maxWidth<=256){
+						return 2.167;
+					}
+				}else{
+					return 0.000;
+				}
+			}else if(id_ == "Virtex5"){
+				if(isPipelined()){
+					if(maxWidth<=32){
+						return 1.000;
+					}else if(maxWidth<=48){
+						return 1.020;
+					}else if(maxWidth<=52){
+						return 1.019;
+					}else if(maxWidth<=64){
+						return 1.015;
+					}else if(maxWidth<=96){
+						return 1.010;
+					}else if(maxWidth<=128){
+						return 1.376;
+					}else if(maxWidth<=256){
+						return 2.117;
+					}
+				}else{
+					return 0.000;
+				}
+			}else if(id_ == "Virtex6"){
+				if(isPipelined()){
+					if(maxWidth<=32){
+						return 1.000;
+					}else if(maxWidth<=48){
+						return 1.020;
+					}else if(maxWidth<=52){
+						return 1.019;
+					}else if(maxWidth<=64){
+						return 1.015;
+					}else if(maxWidth<=96){
+						return 1.010;
+					}else if(maxWidth<=128){
+						return 1.376;
+					}else if(maxWidth<=256){
+						return 2.117;
+					}
+				}else{
+					return 0.000;
+				}
+			}
+		}else if(vendor_.compare("Altera") == 0){
+			if(id_ == "StratixII"){
+				if(isPipelined()){
+					if(maxWidth<=24){
+						return 0.000;
+					}else if(maxWidth<=32){
+						return 1.031;
+					}else if(maxWidth<=48){
+						return 2.062;
+					}else if(maxWidth<=64){
+						return 3.093;
+					}else if(maxWidth<=96){
+						return 3.0114;
+					}else if(maxWidth<=128){
+						return 2.976;
+					}else if(maxWidth<=256){
+						return 2.593;
+					}
+				}else{
+					return 0.000;
+				}
+			}else if(id_ == "StratixIII"){
+				if(isPipelined()){
+					if(maxWidth<=48){
+						return 0.000;
+					}else if(maxWidth<=64){
+						return 1.015;
+					}else if(maxWidth<=96){
+						return 2.031;
+					}else if(maxWidth<=128){
+						return 3.046;
+					}else if(maxWidth<=256){
+						return 5.964;
+					}
+				}else{
+					return 0.000;
+				}
+			}else if(id_ == "StratixIV"){
+				if(isPipelined()){
+					if(maxWidth<=96){
+						return 0.000;
+					}else if(maxWidth<=128){
+						return 1.007;
+					}else if(maxWidth<=256){
+						return 3.023;
+					}
+				}else{
+					return 0.000;
 				}
 			}
 		}

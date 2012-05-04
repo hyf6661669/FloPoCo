@@ -995,6 +995,20 @@ public:
 	std::string addMultiplier(int widthX, int widthY, double ratio = 1, int count = 1);
 	
 	/**
+	 * Add @count adders/subtracters each having inputs of bitwidths @widthX and 
+	 * @widthY, respectively
+	 * The user can also chose to what degree the adders/subtracters are 
+	 * implemented in logic (a number between 0 and 1)
+	 * NOTE: can also increase the DSP count
+	 * @param count (by default 1) the number of elements to add
+	 * @param width the bitwidth of the multipliers
+	 * @param ratio (by default 0) the ratio to which the multipliers 
+	 * are implemented in logic (0 for 0%, 1 for 100%)
+	 * @return the string describing the performed operation
+	 */
+	std::string addAdderSubtracter(int widthX, int widthY, double ratio = 0, int count = 1);
+	
+	/**
 	 * Add @count memories to the total estimate, each having @size 
 	 * words of @width bits
 	 * The memories can be either RAM or ROM, depending on the value of

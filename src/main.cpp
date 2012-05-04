@@ -44,6 +44,11 @@ using namespace flopoco;
 	string filename="flopoco.vhdl";
 	string cl_name=""; // used for the -name option
 	Target* target;
+	
+	//------------ Resource Estimation --------------------------------
+	int reLevel;
+	bool resourceEstimationDebug = false;
+	//-----------------------------------------------------------------
 
 
 
@@ -695,6 +700,30 @@ bool parseCommandLine(int argc, char* argv[], vector<Operator*> &oplist){
 				else if (o == "name") {
 					cl_name=v; // TODO?  check it is a valid VHDL entity name 
 				}
+				//------------ Resource Estimation ---------------------
+				else if (o == "resourceEstimation") {
+					int estimation = atoi(v.c_str());
+					if (estimation>=0 && estimation<=2) {
+						reLevel = estimation;
+						
+						if(verbose) 
+							cerr << ((estimation!=0) ? "Using resource estimation" : "Not using resource estimation") <<endl; 
+					}
+					else {
+						cerr<<"WARNING: not a valid option for resource estimation."<<endl; 
+					}
+				}
+				//------------------------------------------------------
+				//--------- Resource Estimation Degugging --------------
+				else if (o == "reDebugging") {
+					if(v=="yes") resourceEstimationDebug = true;
+					else if(v=="no")  resourceEstimationDebug = false;
+					else {
+						cerr<<"ERROR: resource estimation debugging option should be yes or no, got "<<v<<"."<<endl; 
+						usage(argv[0],"extra");
+					}
+				}
+				//------------------------------------------------------
 				else { 	
 					cerr << "Unknown option "<<o<<endl; 
 					return false;
@@ -2272,6 +2301,15 @@ bool parseCommandLine(int argc, char* argv[], vector<Operator*> &oplist){
 			Operator* tg = new CordicSinCos(target, w, reducedIterations);
 			addOperator(oplist, tg);
 		}
+		
+		else if (opname == "CordicSinCosClassic") {
+			int nargs = 1;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int w = checkStrictlyPositive(argv[i++], argv[0]); // must be >=2 actually
+			Operator* tg = new CordicSinCosClassic(target, w);
+			addOperator(oplist, tg);
+		}
 
 #endif
 
@@ -2388,6 +2426,30 @@ int main(int argc, char* argv[] )
 	}
 	
 	cerr<< "Output file: " << filename <<endl;
+	
+	//------------------------ Resource Estimation ---------------------
+		
+	for (vector<Operator*>::iterator it = oplist.begin(); it!=oplist.end(); ++it) {
+		Operator* op = *it;
+		
+		if(reLevel!=0)
+			cerr << op->generateStatistics(reLevel);
+	}
+	//------------------------------------------------------------------
+	//------------------ Resource Estimation Debugging -----------------
+	if(resourceEstimationDebug){
+		ofstream file;
+		file.open("flopoco.debug");
+		for (vector<Operator*>::iterator it = oplist.begin(); it!=oplist.end(); ++it) {
+			Operator* op = *it;
+			
+			file << op->resourceEstimate.str();
+		}
+		file.close();
+		cerr << "Resource estimation log written to the \'flopoco.debug\' file" << endl;
+	}
+	//------------------------------------------------------------------
+	
 	return 0;
 }
 

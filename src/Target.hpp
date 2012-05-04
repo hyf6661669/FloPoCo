@@ -337,6 +337,54 @@ namespace flopoco{
 		virtual int dspForMultiplier(int widthX, int widthY, int count = 1);
 		
 		/**
+		 * Return the number of LUTs that should be added to the total 
+		 * resource count, after adding count multipliers that each have 
+		 * inputs of widths @widthX and @widthY bits respectively.
+		 * @param count (by default 1) the number of such multipliers 
+		 * that need to be added
+		 * @param widthX the width of the first term to the operation
+		 * @param widthY the width of the second term to the operation
+		 * @return the number of LUTs to add
+		 */
+		virtual int lutForMultiplier(int widthX, int widthY, int count = 1);
+		
+		/**
+		 * Return the number of FFs that should be added to the total 
+		 * resource count, after adding count multipliers that each have 
+		 * inputs of widths @widthX and @widthY bits respectively.
+		 * @param count (by default 1) the number of such multipliers 
+		 * that need to be added
+		 * @param widthX the width of the first term to the operation
+		 * @param widthY the width of the second term to the operation
+		 * @return the number of FFs to add
+		 */
+		virtual int ffForMultiplier(int widthX, int widthY, int count = 1);
+		
+		/**
+		 * Return the number of LUTs that should be added to the total 
+		 * resource count, after adding @count adders that each have 
+		 * inputs of widths @widthX and @widthY bits respectively.
+		 * @param count (by default 1) the number of such adders 
+		 * that need to be added
+		 * @param widthX the width of the first term to the operation
+		 * @param widthY the width of the second term to the operation
+		 * @return the number of LUTs to add
+		 */
+		virtual int lutForAdderSubtracter(int widthX, int widthY, int count = 1);
+		
+		/**
+		 * Return the number of FFs that should be added to the total 
+		 * resource count, after adding @count adders that each have 
+		 * inputs of widths @widthX and @widthY bits respectively.
+		 * @param count (by default 1) the number of such adders 
+		 * that need to be added
+		 * @param widthX the width of the first term to the operation
+		 * @param widthY the width of the second term to the operation
+		 * @return the number of FFs to add
+		 */
+		virtual int ffForAdderSubtracter(int widthX, int widthY, int count = 1);
+		
+		/**
 		 * Return the number of Memory elements that should be added to 
 		 * the total resource count, when the user wishes to add @count 
 		 * memories, each having @size words of width @width. The 
@@ -598,6 +646,46 @@ namespace flopoco{
 		 * @return the number of required DSP blocks
 		 */
 		virtual double getMultPerDSP(int widthX, int widthY);
+		
+		/**
+		 * Determine the required number of LUTs for creating
+		 * @count multipliers having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the multiplier
+		 * @param widthY the width of the second input to the multiplier
+		 * @return the number of required LUTs
+		 */
+		virtual double getLUTPerMultiplier(int widthX, int widthY);
+		
+		/**
+		 * Determine the required number of FFs for creating
+		 * @count multipliers having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the multiplier
+		 * @param widthY the width of the second input to the multiplier
+		 * @return the number of required FFs
+		 */
+		virtual double getFFPerMultiplier(int widthX, int widthY);
+		
+		/**
+		 * Determine the required number of LUTs for creating @count
+		 * adders/subtracters having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the adder
+		 * @param widthY the width of the second input to the adder
+		 * @return the number of required LUTs
+		 */
+		virtual double getLUTPerAdderSubtracter(int widthX, int widthY);
+		
+		/**
+		 * Determine the required number of FFs for creating @count
+		 * adders/subtracters having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the adder
+		 * @param widthY the width of the second input to the adder
+		 * @return the number of required FFs
+		 */
+		virtual double getFFPerAdderSubtracter(int widthX, int widthY);
 		
 		/**
 		 * Determine the number of words in a memory block that has the

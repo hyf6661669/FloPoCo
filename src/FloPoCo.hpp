@@ -91,7 +91,8 @@
 #include "FixSinCos.hpp"
 #include "CORDIC/FixedPointSinOrCos.hpp"
 
-//#include "CORDIC/FixMicroRotation.hpp"
+#include "CORDIC/CordicIteration.hpp"
+#include "CORDIC/CordicSinCosClassic.hpp"
 #include "CORDIC/CordicSinCos.hpp"
 #include "CORDIC/CordicSinCosRedIter.hpp"
 #endif

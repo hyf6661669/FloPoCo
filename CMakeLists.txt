@@ -247,6 +247,9 @@ ADD_LIBRARY(FloPoCo STATIC
  src/CORDIC/FixedPointSinOrCos.cpp
  src/CORDIC/CordicSinCos
  src/CORDIC/CordicSinCosRedIter
+ 
+ src/CORDIC/CordicSinCosClassic
+ src/CORDIC/CordicIteration 
 
 # Floating-Point ----------------------------------------------------
 #--------------------------------------------------------------------

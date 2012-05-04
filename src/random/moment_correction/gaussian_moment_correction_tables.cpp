@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 			for(unsigned k=2;k<=8;k+=2){
 				TableDistribution<double>::TypePtr table=MakeCLTDistribution<double>(w, k);
 							
-				for(unsigned d=1;d<=9;d+=2){
+				for(unsigned d=1;d<=7;d+=2){
 					std::vector<double> poly=FindPolynomialCorrection<double>(table, target, d);
 					
 					TableDistribution<double>::TypePtr corrected=table->ApplyPolynomial(poly);
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 					fprintf(stdout, "clt, %d, %d, %d, %.12lg, %.12lg, %.12lg, %.12lg, %.12lg\n",
 						w, k, d, poly[1], poly[3], poly[5], poly[7], poly[9]
 					);
-					fprintf(stderr, "  m2=%g, m4=%lg\n", corrected->StandardMoment(2), corrected->StandardMoment(4));
+					fprintf(stderr, "  m2=%lg -> %g, m4=%lg -> %lg\n", table->RawMoment(2), corrected->RawMoment(2), table->RawMoment(4), corrected->RawMoment(4));
 				}
 			}
 		}
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 		for(unsigned n=16;n<=65536;n*=2){
 			TableDistribution<double>::TypePtr table=MakeTableApproximation<double>(target, n);
 			
-			for(unsigned d=1;d<=9;d+=2){
+			for(unsigned d=1;d<=7;d+=2){
 				std::vector<double> poly=FindPolynomialCorrection<double>(table, target, d);
 				
 				TableDistribution<double>::TypePtr corrected=table->ApplyPolynomial(poly);

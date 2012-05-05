@@ -26,111 +26,59 @@ private:
 	storage_t m_elements;
 	T m_base, m_step;
 	
-	mutable std::vector<T> m_rawMoments;
-	
-	void CompleteInit(bool sorted)
-	{
-		unsigned n=m_elements.size();
-		
-		if(!sorted)
-			std::sort(m_elements.begin(), m_elements.end(), EltLessThan);
-
-		if((n%2) && (m_elements[n/2].first!=0)){
-			//fprintf(stderr, "elts[n/2]=%lg\n", m_elements[n/2].first);
-			m_isSymmetric=false;
-		}
-		
-		if(m_isSymmetric){
-			for(unsigned i=0;i<n/2 && m_isSymmetric;i++){
-				if(m_elements[i].first!=-m_elements[n-i-1].first){
-					//fprintf(stderr, "first\n");
-					m_isSymmetric=false;
-				}
-				if(m_elements[i].second!=m_elements[n-i-1].second){
-					//fprintf(stderr, "second : e[%d] = %lg, e[%d]=%lg,  diff=%lg\n", i, m_elements[i].second, n-i-1, m_elements[n-i-1].second,  m_elements[i].second-m_elements[n-i-1].second);
-					m_isSymmetric=false;
-				}
-			}
-		}
-	}
+	mutable std::vector<T> m_standardMoments;
 public:
 
 	template<class TC>
 	HistogramDistribution(T base, T step, const TC &src)
 		: m_isSymmetric(true)
+		, m_elements(src)
+		, m_base(base)
+		, m_step(step)
 	{
 		if(src.size()==0)
 			throw std::invalid_argument("HistogramDistribution - Table must contain at least one element.");
 		
-		m_elements.assign(src.begin(), src.end());
 		std::sort(m_elements.begin(), m_elements.end(), ProbLessThan);
-		T acc=0;
-		for(unsigned i=0;i<src.size();i++){
-			if(m_elements[i].second < 0)
-				throw std::logic_error("TableDistribution - Element probability is less than 0.");
-			acc += m_elements[i].second;
-		}
+		T acc=std::sum(m_elements.begin(), m_elements.end(), (T)0.0);
+		
 		if(fabs(acc-1)>1e-12)
 			throw std::logic_error("TableDistribution - Element probabilities are more than 1e-12 from one.");
-		
-		CompleteInit(false);
-	}
-
-	TableDistribution(const T *begin, const T *end)
-		: m_isSymmetric(true)
-	{
-		if(end<=begin)
-			throw std::invalid_argument("TableDistribution - Table must contain at least one element.");
-		
-		size_t n=end-begin;
-		
-		m_elements.reserve(n);
-		T p=1.0;
-		p=p/n;
-		bool sorted=true;
-		for(int i=0;i<(end-begin);i++){
-			m_elements.push_back(std::make_pair(begin[i],p));
-			if(i!=0)
-				sorted=sorted && EltLessThan(*(m_elements.end()-1), m_elements.back());
+		T scale=1.0/acc;
+		for(unsigned i=0;i<src.size();i++){
+			if(m_elements[i] < 0){
+				throw std::logic_error("TableDistribution - Negative element probability.");
+			}
+			m_elements[i] = src[i] * scale;
 		}
-
-		CompleteInit(sorted);
-	}
-	
-	T RawMoment(unsigned k) const
-	{
-		if(k>=m_rawMoments.size()){
-			std::vector<T> tmp(m_elements.size());
-			while(k>=m_rawMoments.size()){
-				if((k%2) && m_isSymmetric){
-					m_rawMoments.push_back(0.0);
-				}else{
-					for(unsigned i=0;i<m_elements.size();i++){
-						tmp[i]=m_elements[i].second*pow(m_elements[i].first,m_rawMoments.size());
-					}
-					std::sort(tmp.begin(), tmp.end());
-					m_rawMoments.push_back(std::accumulate(tmp.begin(),tmp.end(),(T)0.0));
-				}
+		
+		for(unsigned i=0;i<src.size()/2;i++){
+			if(m_elements[i] != m_elements[m_elements.size()-i-1]){
+				m_isSymmetric=false;
+				break;
 			}
 		}
-		return m_rawMoments[k];
-	}
-
-	virtual T StandardMoment(unsigned k) const
-	{
-		if(k==0)
-			return 1.0;
-		if(k==1)
-			return RawMoment(k);
-		if(k==2)
-			return CentralMoment(k);
-		return CentralMoment(k) / pow(CentralMoment(2), k/2.0);
 	}
 	
-	T CentralMoment(unsigned k) const
+	virtual T StandardMoment(unsigned k) const
 	{
-		RawMoment(k);	// force calculate if necessary
-		return RawMomentsToCentralMoment(k, &m_rawMoments[0]);
+		while(m_standardMoments.size()<=k){
+			std::vector<T> tmp(m_elements.size());
+			
+			unsigned kc=m_standardMoments.size();
+			if((kc%2) && m_isSymmetric){
+				m_standardMoments.push_back(0);
+			}else{
+				// Lazy...
+				T curr=base;
+				for(unsigned i=0;i<m_elements.size();i++){
+					tmp[i] = pow(curr, kc) * m_elements[i];
+					curr += step;
+				}				
+				std::sort(tmp.begin(), tmp.end());
+				T ss=std::accumulate(tmp.begin(), tmp.end(), (T)0.0);
+			}
+		}
 	}
 	
 	virtual bool IsSymmetric() const

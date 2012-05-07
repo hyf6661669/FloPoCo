@@ -41,7 +41,7 @@ namespace flopoco{
 		needRecirculationSignal_    = false;
 		inputDelayMap               = inputDelays;
 		myuid                       = getNewUId();
-		architectureName_			      = "arch";
+		architectureName_			= "arch";
 		indirectOperator_           =NULL;
 		
 		if (target_->isPipelined())
@@ -1428,17 +1428,24 @@ namespace flopoco{
 		estimatedCountAccumulator = 0;
 		estimatedCountDecoder = 0;
 		estimatedCountArithOp = 0;
+		estimatedCountAdderSubtracter = 0;
+		estimatedCountReg = 0;
 		estimatedCountFSM = 0;
 	}
 	
 	std::string Operator::addFF(int count){
 		std::ostringstream output;
 		
-		estimatedCountFF += count;
+		if(isSequential_){
+			estimatedCountFF += count;
+			
+			(count>0)? output << tab << "FF count increased by " << count : output << "FF count decreased by " << count;
+			output << " by adding " << count << " flip-flops";
+			output << endl;
+		}else{
+			output << "FF count not increased: combinatorial circuit. Warning: adding register resources for combinatorial circuit" << endl;
+		}
 		
-		(count>0)? output << tab << "FF count increased by " << count : output << "FF count decreased by " << count;
-		output << " by ading " << count << " flip-flops";
-		output << endl;
 		return output.str();
 	}
 	
@@ -1446,15 +1453,23 @@ namespace flopoco{
 	//		resource estimations
 	std::string Operator::addLUT(int nrInputs, int count){
 		std::ostringstream output;								 
-		int targetLUTType, increment;										
+		int targetLUTType, increment;
+		map<int, int>::iterator it;
 		
 		(nrInputs == 0) ? targetLUTType =  target_->lutInputs() : targetLUTType = nrInputs;
 		increment = target_->lutCount(targetLUTType, count);
 		
+		it = estimatedLUTTypes.find(nrInputs);
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[nrInputs] = count;
+		}else{
+			estimatedLUTTypes[nrInputs] += count;
+		}
+		
 		estimatedCountLUT += increment;
 		
 		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " by ading " << count << " function generators";
+		output << " by adding " << count << " function generators";
 		output << endl;
 		return output.str();
 	}
@@ -1464,12 +1479,27 @@ namespace flopoco{
 	std::string Operator::addReg(int width, int count){
 		std::ostringstream output;
 		int increment = count*width;
+		map<int, int>::iterator it;
 		
-		estimatedCountFF += increment;
+		if(isSequential_){
+			estimatedCountFF += increment;
 		
-		(count>0)? output << tab << "FF count increased by " << increment : output << "FF count decreased by " << increment;
-		output << " after ading " << increment << " registers of width " << width;
-		output << endl;
+			(count>0)? output << "Register count increased by " << count : output << "Register count decreased by " << count;
+			output << endl;
+			(count>0)? output << tab << "FF count increased by " << increment : output << "FF count decreased by " << increment;
+			output << " after adding " << count << " registers of width " << width;
+			output << endl;
+			
+			it = estimatedRegisterTypes.find(width);
+			if(it == estimatedRegisterTypes.end()){
+				estimatedRegisterTypes[width] = count;
+			}else{
+				estimatedRegisterTypes[width] += count;
+			}
+		}else{
+			output << "Register and FF counts not increased: combinatorial circuit" << endl;
+		}
+		
 		return output.str();
 	}
 	
@@ -1477,13 +1507,16 @@ namespace flopoco{
 	std::string Operator::addMultiplier(int count){
 		std::ostringstream output;
 		int increment, increment2, increment3, widthX, widthY;
+		map<int, int>::iterator it;
 		
 		estimatedCountMultiplier += count;
 		target_->getDSPWidths(widthX, widthY);
 		increment = target_->lutForMultiplier(widthX, widthY, count);
 		estimatedCountLUT += increment;
-		increment2 = target_->ffForMultiplier(widthX, widthY, count);
-		estimatedCountFF += increment2;
+		if(isSequential_){
+			increment2 = target_->ffForMultiplier(widthX, widthY, count);
+			estimatedCountFF += increment2;
+		}
 		increment3 = target_->dspForMultiplier(widthX, widthY, count);
 		estimatedCountDSP += increment3;
 		
@@ -1491,14 +1524,32 @@ namespace flopoco{
 		output << " after ading " << count << " multipliers";
 		output << endl;
 		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after ading " << count << " " << widthX << "by" << widthY << " multipliers";
+		output << " after adding " << count << " " << widthX << "by" << widthY << " multipliers";
 		output << endl;
-		(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << " after ading " << count << " " << widthX << "by" << widthY << " multipliers";
-		output << endl;
+		if(isSequential_){
+			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
+			output << " after adding " << count << " " << widthX << "by" << widthY << " multipliers";
+			output << endl;
+		}else{
+			output << "FF count not increased: combinatorial circuit" << endl;
+		}
 		(increment3>0)? output << tab << "DSP count increased by " << increment3 : output << "DSP count decreased by " << increment3;
-		output << " after ading " << count << " " << widthX << "by" << widthY << " multipliers";
+		output << " after adding " << count << " " << widthX << "by" << widthY << " multipliers";
 		output << endl;
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment2;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment2;
+		}
+		it = estimatedMultiplierTypes.find((widthX>widthY?widthX:widthY));
+		if(it == estimatedMultiplierTypes.end()){
+			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] = increment;
+		}else{
+			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] += increment;
+		}
+		
 		return output.str();
 	}
 	
@@ -1506,27 +1557,48 @@ namespace flopoco{
 	std::string Operator::addMultiplier(int widthX, int widthY, double ratio, int count){
 		std::ostringstream output;
 		int increment, increment2, increment3, increment4;
+		map<int, int>::iterator it;
 		
 		increment = ceil(ratio * target_->multiplierCount(widthX, widthY, count));
 		estimatedCountMultiplier += increment;
 		increment2 = target_->lutForMultiplier(widthX, widthY, count);
 		estimatedCountLUT += increment2;
-		increment3 = target_->ffForMultiplier(widthX, widthY, count);
-		estimatedCountFF += increment3;
+		if(isSequential_){
+			increment3 = target_->ffForMultiplier(widthX, widthY, count);
+			estimatedCountFF += increment3;
+		}
 		increment4 = target_->dspForMultiplier(widthX, widthY, count);
 		estimatedCountDSP += increment4;
 		
 		(increment>0)? output << "Multiplier count increased by " << increment : output << "Multiplier count decreased by " << increment;
 		output << endl;
 		(increment2>0)? output << tab << "LUT count increased by " << increment2 : output << "LUT count decreased by " << increment2;
-		output << " after ading " << increment << " " << widthX << "by" << widthY << " multipliers";
+		output << " after adding " << increment << " " << widthX << "by" << widthY << " multipliers";
 		output << endl;
-		(increment3>0)? output << tab << "FF count increased by " << increment3 : output << "FF count decreased by " << increment3;
-		output << " after ading " << increment << " " << widthX << "by" << widthY << " multipliers";
-		output << endl;
+		if(isSequential_){
+			(increment3>0)? output << tab << "FF count increased by " << increment3 : output << "FF count decreased by " << increment3;
+			output << " after adding " << increment << " " << widthX << "by" << widthY << " multipliers";
+			output << endl;
+		}else{
+			output << "FF count not increased: combinatorial circuit" << endl;
+		}
 		(increment4>0)? output << tab << "DSP count increased by " << increment4 : output << "DSP count decreased by " << increment4;
 		output << " after ading " << increment << " " << widthX << "by" << widthY << " multipliers";
 		output << endl;
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment2;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment2;
+		}
+		it = estimatedMultiplierTypes.find((widthX>widthY?widthX:widthY));
+		if(it == estimatedMultiplierTypes.end()){
+			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] = increment;
+		}else{
+			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] += increment;
+		}
+		
 		return output.str();
 	}
 	
@@ -1534,20 +1606,44 @@ namespace flopoco{
 	std::string Operator::addAdderSubtracter(int widthX, int widthY, double ratio, int count){
 		std::ostringstream output;
 		int increment, increment2;
+		map<int, int>::iterator it;
 		
+		estimatedCountAdderSubtracter += count;
 		increment = target_->lutForAdderSubtracter(widthX, widthY, count);
 		estimatedCountLUT += increment;
-		increment2 = target_->ffForAdderSubtracter(widthX, widthY, count);
-		estimatedCountFF += increment2;
+		if(isSequential_){
+			increment2 = target_->ffForAdderSubtracter(widthX, widthY, count);
+			estimatedCountFF += increment2;
+		}else{
+			output << "FF count not increased: combinatorial circuit" << endl;
+		}
 		
 		(increment>0)? output << "Adder/Subtracter count increased by " << count : output << "Adder/Subtracter count decreased by " << count;
 		output << endl;
 		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after ading " << count << " " << widthX << "by" << widthY << " adders";
+		output << " after adding " << count << " " << widthX << "by" << widthY << " adders";
 		output << endl;
-		(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << " after ading " << count << " " << widthX << "by" << widthY << " adders";
-		output << endl;
+		if(isSequential_){
+			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
+			output << " after adding " << count << " " << widthX << "by" << widthY << " adders";
+			output << endl;
+		}else{
+			output << "FF count not increased: combinatorial circuit" << endl;
+		}
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment;
+		}
+		it = estimatedAdderTypes.find((widthX>widthY?widthX:widthY));
+		if(it == estimatedMultiplierTypes.end()){
+			estimatedAdderTypes[(widthX>widthY?widthX:widthY)] = count;
+		}else{
+			estimatedAdderTypes[(widthX>widthY?widthX:widthY)] += count;
+		}
+		
 		return output.str();
 	}
 	
@@ -1570,11 +1666,22 @@ namespace flopoco{
 	//---More particular resource logging
 	std::string Operator::addDSP(int count){
 		std::ostringstream output;
+		map<int, int>::iterator it;
+		int widthX, widthY;
 		
 		estimatedCountDSP += count;
 		
 		(count>0)? output << tab << "DSP count increased by " << count : output << "DSP count decreased by " << count;
 		output << endl;
+		
+		target_->getDSPWidths(widthX, widthY, true);
+		it = estimatedMultiplierTypes.find((widthX>widthY?widthX:widthY));
+		if(it == estimatedLUTTypes.end()){
+			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] = count;
+		}else{
+			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] += count;
+		}
+		
 		return output.str();
 	}
 	
@@ -1602,27 +1709,48 @@ namespace flopoco{
 	std::string Operator::addSRL(int width, int depth, int count){
 		std::ostringstream output;
 		int increment, increment2, increment3, increment4;
+		map<int, int>::iterator it;
 		
 		increment = target_->srlCount(width, depth, count);
 		estimatedCountSRL += increment;
 		increment2 = target_->lutForSRL(width, depth, count);
 		estimatedCountLUT += increment2;
-		increment3 = target_->ffForSRL(width, depth, count);
-		estimatedCountFF += increment3;
+		if(isSequential_){
+			increment3 = target_->ffForSRL(width, depth, count);
+			estimatedCountFF += increment3;
+		}
 		increment4 = target_->ramForSRL(width, depth, count);
 		estimatedCountRAM += increment4;
 		
 		(increment>0)? output << "SRL count increased by " << increment : output << "SRL count decreased by " << increment;
 		output << endl;
 		(increment2>0)? output << tab << "LUT count increased by " << increment2 : output << "LUT count decreased by " << increment2;
-		output << " after ading " << increment << " adders of width" << width << " and depth " << depth;
+		output << " after adding " << increment << " adders of width " << width << " and depth " << depth;
 		output << endl;
-		(increment3>0)? output << tab << "FF count increased by " << increment3 : output << "FF count decreased by " << increment3;
-		output << " after ading " << increment << " adders of width" << width << " and depth " << depth;
-		output << endl;
+		if(isSequential_){
+			(increment3>0)? output << tab << "FF count increased by " << increment3 : output << "FF count decreased by " << increment3;
+			output << " after adding " << increment << " adders of width " << width << " and depth " << depth;
+			output << endl;
+		}else{
+			output << "FF count not increased: combinatorial circuit" << endl;
+		}
 		(increment4>0)? output << tab << "RAM count increased by " << increment4 : output << "RAM count decreased by " << increment4;
-		output << " after ading " << increment << " adders of width" << width << " and depth " << depth;
+		output << " after adding " << increment << " adders of width " << width << " and depth " << depth;
 		output << endl;
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment2;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment2;
+		}
+		it = estimatedShifterTypes.find(width);
+		if(it == estimatedShifterTypes.end()){
+			estimatedShifterTypes[width] = increment;
+		}else{
+			estimatedShifterTypes[width] += increment;
+		}
+		
 		return output.str();
 	}
 	
@@ -1668,6 +1796,7 @@ namespace flopoco{
 	std::string Operator::addMux(int width, int nrInputs, int count){
 		std::ostringstream output;
 		int increment, increment2;
+		map<int, int>::iterator it;
 		
 		increment = target_->muxCount(nrInputs, width, count);
 		estimatedCountMux += increment;
@@ -1675,11 +1804,19 @@ namespace flopoco{
 		estimatedCountLUT += increment2;
 		
 		(increment>0)? output << "MUX count increased by " << increment : output << "MUX count decreased by " << increment;
-		output << " after ading " << count << " multiplexers of width" << width << " and with " << nrInputs << " inputs";
+		output << " after adding " << count << " multiplexers of width " << width << " and with " << nrInputs << " inputs";
 		output << endl;
 		(increment>0)? output << tab << "LUT count increased by " << increment2 : output << "LUT count decreased by " << increment2;
-		output << " after ading " << count << " multiplexers of width" << width << " and with " << nrInputs << " inputs";
+		output << " after adding " << count << " multiplexers of width " << width << " and with " << nrInputs << " inputs";
 		output << endl;
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment;
+		}
+		
 		return output.str();
 	}
 	
@@ -1687,22 +1824,43 @@ namespace flopoco{
 	std::string Operator::addCounter(int width, int count){
 		std::ostringstream output;
 		int increment, increment2;
+		map<int, int>::iterator it;
 		
 		estimatedCountCounter += count;
 		increment = target_->lutForCounter(width, count);
 		estimatedCountLUT += increment;
-		increment2 = target_->ffForCounter(width, count);
-		estimatedCountFF += increment2;
-		
+		if(isSequential_){
+			increment2 = target_->ffForCounter(width, count);
+			estimatedCountFF += increment2;
+		}
+				
 		(count>0)? output << "Counter count increased by " << count : output << "Counter count decreased by " << count;
-		output << " after ading " << count << " counters of width" << width;
+		output << " after adding " << count << " counters of width " << width;
 		output << endl;
 		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after ading " << count << " counters of width" << width;
+		output << " after adding " << count << " counters of width " << width;
 		output << endl;
-		(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << " after ading " << count << " counters of width" << width;
-		output << endl;
+		if(isSequential_){
+			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
+			output << " after adding " << count << " counters of width " << width;
+			output << endl;
+		}else{
+			output << "FF count not increased: combinatorial circuit" << endl;
+		}
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment;
+		}
+		it = estimatedCounterTypes.find(width);
+		if(it == estimatedCounterTypes.end()){
+			estimatedCounterTypes[width] = count;
+		}else{
+			estimatedCounterTypes[width] += count;
+		}
+		
 		return output.str();
 	}
 	
@@ -1710,26 +1868,42 @@ namespace flopoco{
 	std::string Operator::addAccumulator(int width, bool useDSP, int count){
 		std::ostringstream output;
 		int increment, increment2, increment3;
+		map<int, int>::iterator it;
 		
 		estimatedCountAccumulator += count;
 		increment = target_->lutForAccumulator(width, useDSP, count);
 		estimatedCountLUT += increment;
-		increment2 = target_->ffForAccumulator(width, useDSP, count);
-		estimatedCountFF += increment2;
+		if(isSequential_){
+			increment2 = target_->ffForAccumulator(width, useDSP, count);
+			estimatedCountFF += increment2;
+		}
+		
 		increment3 = target_->dspForAccumulator(width, useDSP, count);
 		estimatedCountDSP += increment3;
 		
 		(count>0)? output << "Accumulator count increased by " << count : output << "Accumulator count decreased by " << count;
 		output << endl;
 		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after ading " << count << " accumulators of width" << width;
+		output << " after adding " << count << " accumulators of width " << width;
 		output << endl;
-		(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << " after ading " << count << " accumulators of width" << width;
-		output << endl;
+		if(isSequential_){
+			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
+			output << " after adding " << count << " accumulators of width " << width;
+			output << endl;
+		}else{
+			output << "FF count not increased: combinatorial circuit" << endl;
+		}
 		(increment3>0)? output << tab << "DSP count increased by " << increment3 : output << "DSP count decreased by " << increment3;
-		output << " after ading " << count << " accumulators of width" << width;
+		output << " after adding " << count << " accumulators of width " << width;
 		output << endl;
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment;
+		}
+		
 		return output.str();
 	}
 	
@@ -1738,27 +1912,43 @@ namespace flopoco{
 	std::string Operator::addDecoder(int wIn, int wOut, int count){
 		std::ostringstream output;
 		int increment, increment2;
+		map<int, int>::iterator it;
 		
 		estimatedCountDecoder += count;
 		increment = target_->lutForDecoder(wIn, count);
 		estimatedCountLUT += increment;
-		increment2 = target_->ffForDecoder(wIn, count);
-		estimatedCountFF += increment2;
+		if(isSequential_){
+			increment2 = target_->ffForDecoder(wIn, count);
+			estimatedCountFF += increment2;
+		}
 		
 		(count>0)? output << "Decoder count increased by " << count : output << "Decoder count decreased by " << count;
 		output << endl;
 		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after ading " << count << " decoders of width" << wIn;
+		output << " after adding " << count << " decoders of width " << wIn;
 		output << endl;
-		(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << " after ading " << count << " decoders of width" << wIn;
-		output << endl;
+		if(isSequential_){
+			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
+			output << " after adding " << count << " decoders of width " << wIn;
+			output << endl;
+		}else{
+			output << "FF count not increased: combinatorial circuit" << endl;
+		}
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment;
+		}
+		
 		return output.str();
 	}
 	
 	std::string Operator::addArithOp(int width, int nrInputs, int count){
 		std::ostringstream output;
 		int increment;
+		map<int, int>::iterator it;
 		
 		estimatedCountArithOp += count;
 		increment = target_->lutForArithmeticOperator(nrInputs, width, count);
@@ -1767,14 +1957,29 @@ namespace flopoco{
 		(count>0)? output << "Arithmetic Operator count increased by " << count : output << "Arithmetic Operator count decreased by " << count;
 		output << endl;
 		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after ading " << count << " arithmetic operators of width " << width << " and with " << nrInputs << " inputs";
+		output << " after adding " << count << " arithmetic operators of width " << width << " and with " << nrInputs << " inputs";
 		output << endl;
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment;
+		}
+		it = estimatedArithOpTypes.find(width);
+		if(it == estimatedArithOpTypes.end()){
+			estimatedArithOpTypes[width] = count;
+		}else{
+			estimatedArithOpTypes[width] += count;
+		}
+		
 		return output.str();
 	}
 	
 	std::string Operator::addFSM(int nrStates, int nrTransitions, int count){
 		std::ostringstream output;
 		int increment, increment2, increment3;
+		map<int, int>::iterator it;
 		
 		estimatedCountFSM += count;
 		increment = target_->lutForFSM(nrStates, nrTransitions, count);
@@ -1787,14 +1992,22 @@ namespace flopoco{
 		(count>0)? output << "FSM count increased by " << count : output << "FSM count decreased by " << count;
 		output << endl;
 		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after ading " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
+		output << " after adding " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
 		output << endl;
 		(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << " after ading " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
+		output << " after adding " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
 		output << endl;
 		(increment3>0)? output << tab << "RAM count increased by " << increment3 : output << "ROM count decreased by " << increment3;
-		output << " after ading " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
+		output << " after adding " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
 		output << endl;
+		
+		it = estimatedLUTTypes.find(target_->lutInputs());
+		if(it == estimatedLUTTypes.end()){
+			estimatedLUTTypes[target_->lutInputs()] = increment;
+		}else{
+			estimatedLUTTypes[target_->lutInputs()] += increment;
+		}
+		
 		return output.str();
 	}
 	
@@ -1814,7 +2027,17 @@ namespace flopoco{
 		resourceEstimateReport << endl;
 		resourceEstimateReport << "Number of Flip-Flops                 : " << ((estimatedCountFF) ? join("", estimatedCountFF) : "None") << endl;
 		resourceEstimateReport << "Number of Function Generators        : " << ((estimatedCountLUT) ? join("", estimatedCountLUT) : "None") << endl;
+		if(detailLevel>1){
+			for(map<int, int>::iterator it = estimatedLUTTypes.begin(); it !=estimatedLUTTypes.end(); it++) {
+				resourceEstimateReport << tab << "Number of " << it->first << " input function generators     : " << it->second << endl;		
+			}			
+		}
 		resourceEstimateReport << "Number of Multipliers                : " << ((estimatedCountMultiplier) ? join("", estimatedCountMultiplier) : "None") << endl;
+		if(detailLevel>1){
+			for(map<int, int>::iterator it = estimatedMultiplierTypes.begin(); it !=estimatedMultiplierTypes.end(); it++) {
+				resourceEstimateReport << tab << "Number of multipliers of width " << it->first << "          : " << it->second << endl;		
+			}			
+		}
 		resourceEstimateReport << "Number of Memory blocks              : " << ((estimatedCountMemory) ? join("", estimatedCountMemory) : "None") << endl;
 		resourceEstimateReport << endl;
 		if(detailLevel>0){
@@ -1822,6 +2045,11 @@ namespace flopoco{
 		(estimatedCountRAM)  ?	resourceEstimateReport << "Number of RAM blocks                 : " << estimatedCountRAM << endl : resourceEstimateReport << "";
 		(estimatedCountROM)  ?	resourceEstimateReport << "Number of ROM blocks                 : " << estimatedCountROM << endl : resourceEstimateReport << "";
 		(estimatedCountSRL)  ?	resourceEstimateReport << "Number of SRLs                       : " << estimatedCountSRL << endl : resourceEstimateReport << "";
+		if(detailLevel>1){
+			for(map<int, int>::iterator it = estimatedShifterTypes.begin(); it !=estimatedShifterTypes.end(); it++) {
+				resourceEstimateReport << tab << "Number of shift registers of width " << it->first << "      : " << it->second << endl;		
+			}			
+		}
 		(estimatedCountWire) ?	resourceEstimateReport << "Number of Wires                      : " << estimatedCountWire << endl : resourceEstimateReport << "";
 		(estimatedCountIOB)  ?	resourceEstimateReport << "Number of IOs                        : " << estimatedCountIOB << endl : resourceEstimateReport << "";
 		resourceEstimateReport << endl;
@@ -1829,9 +2057,31 @@ namespace flopoco{
 		if(detailLevel>1){
 		(estimatedCountMux) 		?	resourceEstimateReport << "Number of Multiplexers               : " << estimatedCountMux << endl : resourceEstimateReport << "";
 		(estimatedCountCounter) 	?	resourceEstimateReport << "Number of Counters                   : " << estimatedCountCounter << endl : resourceEstimateReport << "";
+		if(detailLevel>1){
+			for(map<int, int>::iterator it = estimatedCounterTypes.begin(); it !=estimatedCounterTypes.end(); it++) {
+				resourceEstimateReport << tab << "Number of counters of width " << it->first << "             : " << it->second << endl;		
+			}			
+		}
 		(estimatedCountAccumulator) ?	resourceEstimateReport << "Number of Accumulators               : " << estimatedCountAccumulator << endl : resourceEstimateReport << "";
 		(estimatedCountDecoder)		?	resourceEstimateReport << "Number of Decoders/Encoders          : " << estimatedCountDecoder << endl : resourceEstimateReport << "";
 		(estimatedCountArithOp)		?	resourceEstimateReport << "Number of Arithmetic Operators       : " << estimatedCountArithOp << endl : resourceEstimateReport << "";
+		if(detailLevel>1){
+			for(map<int, int>::iterator it = estimatedArithOpTypes.begin(); it !=estimatedArithOpTypes.end(); it++) {
+				resourceEstimateReport << tab << "Number of arithmetic operators of width " << it->first << " : " << it->second << endl;
+			}			
+		}
+		(estimatedCountAdderSubtracter) ? resourceEstimateReport << "Number of Adders/Subtracters         : " <<  estimatedCountAdderSubtracter << endl : resourceEstimateReport << "";
+		if(detailLevel>1){
+			for(map<int, int>::iterator it = estimatedAdderTypes.begin(); it !=estimatedAdderTypes.end(); it++) {
+				resourceEstimateReport << tab << "Number of adders/subtracters of width " << it->first << "   : " << it->second << endl;
+			}			
+		}
+		(estimatedCountReg)			?	resourceEstimateReport << "Number of registers                  : " << estimatedCountReg << endl : resourceEstimateReport << "";
+		if(detailLevel>1){
+			for(map<int, int>::iterator it = estimatedRegisterTypes.begin(); it !=estimatedRegisterTypes.end(); it++) {
+				resourceEstimateReport << tab << "Number of registers of width " << it->first << "            : " << it->second << endl;
+			}			
+		}
 		(estimatedCountFSM)			?	resourceEstimateReport << "Number of FSMs                       : " << estimatedCountFSM << endl : resourceEstimateReport << "";
 		resourceEstimateReport << endl;
 		}
@@ -1843,19 +2093,27 @@ namespace flopoco{
 	
 	//--Utility functions related to the generation of resource usage statistics
 	
-	//TODO: determine the needed registers according to number of levels
-	//		and if the operator is pipelined
+	//TODO: find a more precise way to determine the required number of
+	//		registers due to pipeline
 	std::string Operator::addPipelineFF(){
 		std::ostringstream output;
 		int increment = 0;
 		
+		output << "FF count being compensated for " << endl;
+		
 		for(unsigned int i=0; i<signalList_.size(); i++) {
 			Signal *s = signalList_[i];
-			
-			if(target_->isPipelined())
-				increment += s->getLifeSpan() * s->width();
-			else
-				increment += s->width();
+			if ((s->type() == Signal::registeredWithoutReset) || (s->type() == Signal::wire) 
+					|| (s->type() == Signal::registeredWithAsyncReset) || (s->type() == Signal::registeredWithSyncReset)) 
+				if(s->getLifeSpan() >0) {
+					if(target_->isPipelined() && isSequential_){
+						increment += s->getLifeSpan() * s->width();
+						output << tab << "Added " << s->getLifeSpan()*s->width() << " FFs for signal " << s->getName() << " having width " << s->width() << " and life-span of " << s->getLifeSpan() << " (pipelined target)" << endl;
+					}else{
+						increment += s->width();
+						output << tab << "Added " << s->width() << " FFs for signal " << s->getName() << " having width " << s->width() << " and life-span of " << s->getLifeSpan() << " (non-pipelined target)" << endl;
+					}
+				}
 		}
 		estimatedCountFF += increment;
 		
@@ -1913,6 +2171,10 @@ namespace flopoco{
 		return output.str();
 	}
 	
+	
+	//continu here -> add resources from subcomponents to the detailed statistics
+	
+	
 	//TODO: add function to add resource count from specified component
 	std::string Operator::addComponentResourceCount(){
 		std::ostringstream output;
@@ -1920,23 +2182,24 @@ namespace flopoco{
 		for(map<string, Operator*>::iterator it = subComponents_.begin(); it !=subComponents_.end(); it++) {
 			Operator *op = it->second;
 			
-			estimatedCountFF += op->estimatedCountFF;
-			estimatedCountLUT += op->estimatedCountLUT;
-			estimatedCountMultiplier += op->estimatedCountMultiplier;
+			estimatedCountFF 				+= op->estimatedCountFF;
+			estimatedCountLUT 				+= op->estimatedCountLUT;
+			estimatedCountMultiplier 		+= op->estimatedCountMultiplier;
 			
-			estimatedCountDSP += op->estimatedCountDSP;
-			estimatedCountRAM += op->estimatedCountRAM;
-			estimatedCountROM += op->estimatedCountROM;
-			estimatedCountSRL += op->estimatedCountSRL;
-			estimatedCountWire += op->estimatedCountWire;
-			estimatedCountIOB += op->estimatedCountIOB;
+			estimatedCountDSP 				+= op->estimatedCountDSP;
+			estimatedCountRAM 				+= op->estimatedCountRAM;
+			estimatedCountROM 				+= op->estimatedCountROM;
+			estimatedCountSRL 				+= op->estimatedCountSRL;
+			estimatedCountWire 				+= op->estimatedCountWire;
+			estimatedCountIOB 				+= op->estimatedCountIOB;
 			
-			estimatedCountMux += op->estimatedCountMux;
-			estimatedCountCounter += op->estimatedCountCounter;
-			estimatedCountAccumulator += op->estimatedCountAccumulator;
-			estimatedCountDecoder += op->estimatedCountDecoder;
-			estimatedCountArithOp += op->estimatedCountArithOp;
-			estimatedCountFSM += op->estimatedCountFSM;
+			estimatedCountMux 				+= op->estimatedCountMux;
+			estimatedCountCounter	 		+= op->estimatedCountCounter;
+			estimatedCountAccumulator 		+= op->estimatedCountAccumulator;
+			estimatedCountDecoder 			+= op->estimatedCountDecoder;
+			estimatedCountArithOp 			+= op->estimatedCountArithOp;
+			estimatedCountAdderSubtracter 	+= op->estimatedCountAdderSubtracter;
+			estimatedCountFSM 				+= op->estimatedCountFSM;
 			
 			resourceEstimate << endl << op->resourceEstimate.str();
 		}

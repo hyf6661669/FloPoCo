@@ -1812,9 +1812,9 @@ namespace flopoco{
 		
 		it = estimatedLUTTypes.find(target_->lutInputs());
 		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment;
+			estimatedLUTTypes[target_->lutInputs()] = increment2;
 		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment;
+			estimatedLUTTypes[target_->lutInputs()] += increment2;
 		}
 		
 		return output.str();
@@ -2027,17 +2027,7 @@ namespace flopoco{
 		resourceEstimateReport << endl;
 		resourceEstimateReport << "Number of Flip-Flops                 : " << ((estimatedCountFF) ? join("", estimatedCountFF) : "None") << endl;
 		resourceEstimateReport << "Number of Function Generators        : " << ((estimatedCountLUT) ? join("", estimatedCountLUT) : "None") << endl;
-		if(detailLevel>1){
-			for(map<int, int>::iterator it = estimatedLUTTypes.begin(); it !=estimatedLUTTypes.end(); it++) {
-				resourceEstimateReport << tab << "Number of " << it->first << " input function generators     : " << it->second << endl;		
-			}			
-		}
 		resourceEstimateReport << "Number of Multipliers                : " << ((estimatedCountMultiplier) ? join("", estimatedCountMultiplier) : "None") << endl;
-		if(detailLevel>1){
-			for(map<int, int>::iterator it = estimatedMultiplierTypes.begin(); it !=estimatedMultiplierTypes.end(); it++) {
-				resourceEstimateReport << tab << "Number of multipliers of width " << it->first << "          : " << it->second << endl;		
-			}			
-		}
 		resourceEstimateReport << "Number of Memory blocks              : " << ((estimatedCountMemory) ? join("", estimatedCountMemory) : "None") << endl;
 		resourceEstimateReport << endl;
 		if(detailLevel>0){
@@ -2045,11 +2035,6 @@ namespace flopoco{
 		(estimatedCountRAM)  ?	resourceEstimateReport << "Number of RAM blocks                 : " << estimatedCountRAM << endl : resourceEstimateReport << "";
 		(estimatedCountROM)  ?	resourceEstimateReport << "Number of ROM blocks                 : " << estimatedCountROM << endl : resourceEstimateReport << "";
 		(estimatedCountSRL)  ?	resourceEstimateReport << "Number of SRLs                       : " << estimatedCountSRL << endl : resourceEstimateReport << "";
-		if(detailLevel>1){
-			for(map<int, int>::iterator it = estimatedShifterTypes.begin(); it !=estimatedShifterTypes.end(); it++) {
-				resourceEstimateReport << tab << "Number of shift registers of width " << it->first << "      : " << it->second << endl;		
-			}			
-		}
 		(estimatedCountWire) ?	resourceEstimateReport << "Number of Wires                      : " << estimatedCountWire << endl : resourceEstimateReport << "";
 		(estimatedCountIOB)  ?	resourceEstimateReport << "Number of IOs                        : " << estimatedCountIOB << endl : resourceEstimateReport << "";
 		resourceEstimateReport << endl;
@@ -2057,32 +2042,63 @@ namespace flopoco{
 		if(detailLevel>1){
 		(estimatedCountMux) 		?	resourceEstimateReport << "Number of Multiplexers               : " << estimatedCountMux << endl : resourceEstimateReport << "";
 		(estimatedCountCounter) 	?	resourceEstimateReport << "Number of Counters                   : " << estimatedCountCounter << endl : resourceEstimateReport << "";
-		if(detailLevel>1){
-			for(map<int, int>::iterator it = estimatedCounterTypes.begin(); it !=estimatedCounterTypes.end(); it++) {
-				resourceEstimateReport << tab << "Number of counters of width " << it->first << "             : " << it->second << endl;		
-			}			
-		}
 		(estimatedCountAccumulator) ?	resourceEstimateReport << "Number of Accumulators               : " << estimatedCountAccumulator << endl : resourceEstimateReport << "";
 		(estimatedCountDecoder)		?	resourceEstimateReport << "Number of Decoders/Encoders          : " << estimatedCountDecoder << endl : resourceEstimateReport << "";
 		(estimatedCountArithOp)		?	resourceEstimateReport << "Number of Arithmetic Operators       : " << estimatedCountArithOp << endl : resourceEstimateReport << "";
-		if(detailLevel>1){
-			for(map<int, int>::iterator it = estimatedArithOpTypes.begin(); it !=estimatedArithOpTypes.end(); it++) {
-				resourceEstimateReport << tab << "Number of arithmetic operators of width " << it->first << " : " << it->second << endl;
-			}			
-		}
 		(estimatedCountAdderSubtracter) ? resourceEstimateReport << "Number of Adders/Subtracters         : " <<  estimatedCountAdderSubtracter << endl : resourceEstimateReport << "";
-		if(detailLevel>1){
-			for(map<int, int>::iterator it = estimatedAdderTypes.begin(); it !=estimatedAdderTypes.end(); it++) {
-				resourceEstimateReport << tab << "Number of adders/subtracters of width " << it->first << "   : " << it->second << endl;
-			}			
-		}
 		(estimatedCountReg)			?	resourceEstimateReport << "Number of registers                  : " << estimatedCountReg << endl : resourceEstimateReport << "";
-		if(detailLevel>1){
-			for(map<int, int>::iterator it = estimatedRegisterTypes.begin(); it !=estimatedRegisterTypes.end(); it++) {
-				resourceEstimateReport << tab << "Number of registers of width " << it->first << "            : " << it->second << endl;
-			}			
-		}
 		(estimatedCountFSM)			?	resourceEstimateReport << "Number of FSMs                       : " << estimatedCountFSM << endl : resourceEstimateReport << "";
+		resourceEstimateReport << endl;
+		}
+		
+		if(detailLevel>2){
+		resourceEstimateReport << "=========================================================================" << endl;
+		resourceEstimateReport << "*                      Detailed Resource Usage                          *" << endl;
+		resourceEstimateReport << "=========================================================================" << endl;
+		
+		resourceEstimateReport << endl;
+		if(estimatedCountLUT>0){
+			resourceEstimateReport << "Number of Function Generators                     : " << estimatedCountLUT << endl;
+			for(map<int, int>::iterator it = estimatedLUTTypes.begin(); it !=estimatedLUTTypes.end(); it++) {
+				resourceEstimateReport << tab << "*Number of " << it->first << " input function generators         : " << it->second << endl;		
+			}
+		}
+		if(estimatedCountMultiplier>0){
+			resourceEstimateReport << "Number of Multipliers                             : " << estimatedCountMultiplier << endl;
+			for(map<int, int>::iterator it = estimatedMultiplierTypes.begin(); it !=estimatedMultiplierTypes.end(); it++) {
+				resourceEstimateReport << tab << "*Number of multipliers of width " << it->first << "         " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;		
+			}
+		}
+		if(estimatedCountSRL>0){
+			resourceEstimateReport << "Number of SRLs                                    : " << estimatedCountSRL << endl;
+			for(map<int, int>::iterator it = estimatedShifterTypes.begin(); it !=estimatedShifterTypes.end(); it++) {
+				resourceEstimateReport << tab << "*Number of shift registers of width " << it->first << "     " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;		
+			}
+		}
+		if(estimatedCountCounter>0){
+			resourceEstimateReport << "Number of Counters                                : " << estimatedCountCounter << endl;
+			for(map<int, int>::iterator it = estimatedCounterTypes.begin(); it !=estimatedCounterTypes.end(); it++) {
+				resourceEstimateReport << tab << "*Number of counters of width " << it->first << "            " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;		
+			}
+		}	
+		if(estimatedCountArithOp>0){
+			resourceEstimateReport << "Number of Arithmetic Operators                    : " << estimatedCountArithOp << endl;
+			for(map<int, int>::iterator it = estimatedArithOpTypes.begin(); it !=estimatedArithOpTypes.end(); it++) {
+				resourceEstimateReport << tab << "*Number of arithmetic operators of width " << it->first << "" << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;
+			}
+		}
+		if(estimatedCountAdderSubtracter>0){
+			resourceEstimateReport << "Number of Adders/Subtracters                      : " <<  estimatedCountAdderSubtracter << endl;
+			for(map<int, int>::iterator it = estimatedAdderTypes.begin(); it !=estimatedAdderTypes.end(); it++) {
+				resourceEstimateReport << tab << "*Number of adders/subtracters of width " << it->first << "  " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;
+			}
+		}
+		if(estimatedCountReg>0){
+			resourceEstimateReport << "Number of registers                               : " << estimatedCountReg << endl;
+			for(map<int, int>::iterator it = estimatedRegisterTypes.begin(); it !=estimatedRegisterTypes.end(); it++) {
+				resourceEstimateReport << tab << "*Number of registers of width " << it->first << "          " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;
+			}
+		}			
 		resourceEstimateReport << endl;
 		}
 		
@@ -2172,9 +2188,6 @@ namespace flopoco{
 	}
 	
 	
-	//continu here -> add resources from subcomponents to the detailed statistics
-	
-	
 	//TODO: add function to add resource count from specified component
 	std::string Operator::addComponentResourceCount(){
 		std::ostringstream output;
@@ -2200,6 +2213,91 @@ namespace flopoco{
 			estimatedCountArithOp 			+= op->estimatedCountArithOp;
 			estimatedCountAdderSubtracter 	+= op->estimatedCountAdderSubtracter;
 			estimatedCountFSM 				+= op->estimatedCountFSM;
+			
+			if(op->estimatedCountLUT>0){
+				for(map<int, int>::iterator itTypesImport = op->estimatedLUTTypes.begin(); itTypesImport != op->estimatedLUTTypes.end(); itTypesImport++) {
+					map<int, int>::iterator itTypes;
+					
+					itTypes = estimatedLUTTypes.find(itTypesImport->first);
+					if(itTypes == estimatedLUTTypes.end()){
+						estimatedLUTTypes[itTypesImport->first] = itTypesImport->second;
+					}else{
+						estimatedLUTTypes[itTypesImport->first] += itTypesImport->second;
+					}
+				}
+			}
+			if(op->estimatedCountAdderSubtracter>0){
+				for(map<int, int>::iterator itTypesImport = op->estimatedAdderTypes.begin(); itTypesImport != op->estimatedAdderTypes.end(); itTypesImport++) {
+					map<int, int>::iterator itTypes;
+					
+					itTypes = estimatedAdderTypes.find(itTypesImport->first);
+					if(itTypes == estimatedAdderTypes.end()){
+						estimatedAdderTypes[itTypesImport->first] = itTypesImport->second;
+					}else{
+						estimatedAdderTypes[itTypesImport->first] += itTypesImport->second;
+					}
+				}
+			}
+			if(op->estimatedCountMultiplier>0){
+				for(map<int, int>::iterator itTypesImport = op->estimatedMultiplierTypes.begin(); itTypesImport != op->estimatedMultiplierTypes.end(); itTypesImport++) {
+					map<int, int>::iterator itTypes;
+					
+					itTypes = estimatedMultiplierTypes.find(itTypesImport->first);
+					if(itTypes == estimatedMultiplierTypes.end()){
+						estimatedMultiplierTypes[itTypesImport->first] = itTypesImport->second;
+					}else{
+						estimatedMultiplierTypes[itTypesImport->first] += itTypesImport->second;
+					}
+				}
+			}
+			if(op->estimatedCountReg>0){
+				for(map<int, int>::iterator itTypesImport = op->estimatedRegisterTypes.begin(); itTypesImport != op->estimatedRegisterTypes.end(); itTypesImport++) {
+					map<int, int>::iterator itTypes;
+					
+					itTypes = estimatedRegisterTypes.find(itTypesImport->first);
+					if(itTypes == estimatedLUTTypes.end()){
+						estimatedRegisterTypes[itTypesImport->first] = itTypesImport->second;
+					}else{
+						estimatedRegisterTypes[itTypesImport->first] += itTypesImport->second;
+					}
+				}
+			}
+			if(op->estimatedCountSRL>0){
+				for(map<int, int>::iterator itTypesImport = op->estimatedShifterTypes.begin(); itTypesImport != op->estimatedShifterTypes.end(); itTypesImport++) {
+					map<int, int>::iterator itTypes;
+					
+					itTypes = estimatedShifterTypes.find(itTypesImport->first);
+					if(itTypes == estimatedShifterTypes.end()){
+						estimatedShifterTypes[itTypesImport->first] = itTypesImport->second;
+					}else{
+						estimatedShifterTypes[itTypesImport->first] += itTypesImport->second;
+					}
+				}
+			}
+			if(op->estimatedCountCounter>0){
+				for(map<int, int>::iterator itTypesImport = op->estimatedCounterTypes.begin(); itTypesImport != op->estimatedCounterTypes.end(); itTypesImport++) {
+					map<int, int>::iterator itTypes;
+					
+					itTypes = estimatedCounterTypes.find(itTypesImport->first);
+					if(itTypes == estimatedCounterTypes.end()){
+						estimatedCounterTypes[itTypesImport->first] = itTypesImport->second;
+					}else{
+						estimatedCounterTypes[itTypesImport->first] += itTypesImport->second;
+					}
+				}
+			}
+			if(op->estimatedCountArithOp>0){
+				for(map<int, int>::iterator itTypesImport = op->estimatedArithOpTypes.begin(); itTypesImport != op->estimatedArithOpTypes.end(); itTypesImport++) {
+					map<int, int>::iterator itTypes;
+					
+					itTypes = estimatedArithOpTypes.find(itTypesImport->first);
+					if(itTypes == estimatedArithOpTypes.end()){
+						estimatedArithOpTypes[itTypesImport->first] = itTypesImport->second;
+					}else{
+						estimatedArithOpTypes[itTypesImport->first] += itTypesImport->second;
+					}
+				}
+			}
 			
 			resourceEstimate << endl << op->resourceEstimate.str();
 		}

@@ -214,9 +214,12 @@ namespace flopoco{
 		stdInputs = 1;
 		while(stdInputs<nrInputs)
 			stdInputs *= 2;
-		if(stdInputs == 1)
+			
+		if(stdInputs == 1){
+			cout << "Warning: lutForMux(): trying to add multiplexer with a single input" << endl;
 			return 0;
-		return ceil(count*width*getLUTFromMux(nrInputs));
+		}
+		return ceil(count*width*getLUTFromMux(stdInputs));
 	}
 	
 	//TODO: get estimations when using specific resources (like DSPs)
@@ -1262,8 +1265,10 @@ namespace flopoco{
 					return totalMux;
 				}
 			}else if(id_ == "Virtex4"){
-				if(nrInputs<=32)
-					return nrInputs/2;
+				if(nrInputs==2){
+					return nrInputs/4.0;
+				}if(nrInputs<=32)
+					return ceil(nrInputs/2.0);
 				else{
 					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
@@ -1276,9 +1281,11 @@ namespace flopoco{
 					return totalMux;
 				}
 			}else if(id_ == "Virtex5"){
-				if(nrInputs<=16)
-					return nrInputs/4;
-				else{
+				if(nrInputs==2){
+					return nrInputs/4.0;
+				}else if(nrInputs<=16){
+					return ceil(nrInputs/4.0);
+				}else{
 					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
 					i = levels;
@@ -1290,8 +1297,10 @@ namespace flopoco{
 					return totalMux;
 				}
 			}else if(id_ == "Virtex6"){
-				if(nrInputs<=16)
-					return nrInputs/4;
+				if(nrInputs==2){
+					return nrInputs/4.0;
+				}if(nrInputs<=16)
+					return ceil(nrInputs/4.0);
 				else{
 					int totalMux = 0, levels = ceil(log2(nrInputs)), i;
 					
@@ -1318,7 +1327,7 @@ namespace flopoco{
 						i--;
 					}
 					return totalMux;
-				}	
+				}
 			}else if(id_ == "StratixIII"){
 				if(nrInputs<=8)
 					return ceil(nrInputs/4.0);
@@ -1350,6 +1359,7 @@ namespace flopoco{
 			}
 		}
 		
+		cerr << "Warning: getLutFromMux(): unknown type of target" << endl;
 		return 0;
 	}
 	

@@ -136,28 +136,36 @@ namespace flopoco{
 		
 		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
 		
-		/*
 		//method based on FloPoCo formulas
 		double period;
 		int alpha, beta, kappa;
 		
+		/*
 		period = 1.0/frequency_;
-		alpha = 1 + floor((period-2*lutDelay())/carryPropagateDelay());
+		//alpha = 1 + floor((period-2.0*lutDelay())/carryPropagateDelay());
+		suggestSubaddSize(alpha, maxWidth);
 		kappa = maxWidth/alpha + 1;
 		beta = maxWidth - (kappa - 1)*alpha;
+		*/
+		
+		period = 1.0/frequency_;
+		suggestSubaddSize(alpha, maxWidth);
+		beta = (maxWidth % alpha == 0 ? alpha : maxWidth % alpha);
+		kappa = (maxWidth % alpha == 0 ? maxWidth/alpha : maxWidth/alpha + 1);
 		
 		//TODO: decide formula to use based on the type of the adder
-		if(kappa<=2){
+		if(kappa == 1){
+			return maxWidth;
+		}else if(kappa == 2){
 			return alpha+2*beta;
 		}else{
 			return (4*kappa-8)*alpha+3*beta+kappa-3;
 		}
-		
 		//
-		*/
+		
 		
 		//method based on approximations
-		return ceil(count*maxWidth*getLUTPerAdderSubtracter(widthX, widthY));
+		//return ceil(count*maxWidth*getLUTPerAdderSubtracter(widthX, widthY));
 	}
 	
 	
@@ -166,24 +174,31 @@ namespace flopoco{
 		
 		(widthX>widthY) ? maxWidth=widthX : maxWidth=widthY;
 		
-		/*
 		//method based on FloPoCo formulas
 		double period;
 		int alpha, beta, kappa;
 		
+		/*
 		period = 1.0/frequency_;
 		alpha = 1 + floor((period-2*lutDelay())/carryPropagateDelay());
 		kappa = maxWidth/alpha + 1;
 		beta = maxWidth - (kappa - 1)*alpha;
-		
-		//TODO: decide formula to use based on the type of the adder
-		return (2*kappa-3)*alpha+beta+2*kappa-3;
-		
-		//
 		*/
 		
+		period = 1.0/frequency_;
+		suggestSubaddSize(alpha, maxWidth);
+		beta = (maxWidth % alpha == 0 ? alpha : maxWidth % alpha);
+		kappa = (maxWidth % alpha == 0 ? maxWidth/alpha : maxWidth/alpha + 1);
+		
+		//TODO: decide formula to use based on the type of the adder
+		if(kappa == 1)
+			return maxWidth;
+		else
+			return (2*kappa-3)*alpha+beta+2*kappa-3;
+		//
+		
 		//method based on approximations
-		return ceil(count*maxWidth*getFFPerAdderSubtracter(widthX, widthY));
+		//return ceil(count*maxWidth*getFFPerAdderSubtracter(widthX, widthY));
 	}
 	
 		

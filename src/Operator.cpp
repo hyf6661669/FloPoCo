@@ -1609,10 +1609,10 @@ namespace flopoco{
 		map<int, int>::iterator it;
 		
 		estimatedCountAdderSubtracter += count;
-		increment = target_->lutForAdderSubtracter(widthX, widthY, count);
+		increment = count*target_->lutForAdderSubtracter(widthX, widthY, count);
 		estimatedCountLUT += increment;
 		if(isSequential_){
-			increment2 = target_->ffForAdderSubtracter(widthX, widthY, count);
+			increment2 = count*target_->ffForAdderSubtracter(widthX, widthY, count);
 			estimatedCountFF += increment2;
 		}else{
 			output << "FF count not increased: combinatorial circuit" << endl;

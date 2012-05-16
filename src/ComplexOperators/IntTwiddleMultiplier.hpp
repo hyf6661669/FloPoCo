@@ -5,6 +5,7 @@
 
 #include "../Operator.hpp"
 #include "../ConstMult/FixRealKCM.hpp"
+#include "../ConstMult/IntConstMult.hpp"
 #include "../IntAdder.hpp"
 
 #define TWIDDLEIM 		0
@@ -35,7 +36,7 @@ namespace flopoco{
 	class IntTwiddleMultiplier : public Operator
 	{
 	public:
-		IntTwiddleMultiplier(Target* target, int wI, int wF, int twiddleExponent, int n, bool signedOperator = true, bool reducedMultiplications = false);
+		IntTwiddleMultiplier(Target* target, int wI, int wF, int twiddleExponent, int n, bool signedOperator = true, bool reducedMultiplications = false, int multiplierMode = 0);
 		~IntTwiddleMultiplier();
 		
 		void emulate(TestCase * tc);
@@ -80,6 +81,7 @@ namespace flopoco{
 		int twiddleExponent;		/**< The exponent in the twiddle factor: w^twiddleExp_N*/
 		int n;						/**< The size of the FFT (as number of inputs to the FFT)*/
 		bool signedOperator;		/**< The FFT inputs are signed/ unsigned numbers*/
+		int multiplierMode;			/**< The type of multiplier to be used inside the twiddle factor: 0=KCM, 1=Shift-And-Add*/
 
 	};
 }

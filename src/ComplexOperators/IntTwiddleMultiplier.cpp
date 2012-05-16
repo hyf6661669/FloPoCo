@@ -16,8 +16,8 @@ namespace flopoco{
 	//FIXME: correct the size of the output and intermediary computations
 	//		 for now it's fixed at 2*w, achieved through padding (and with 1 all around)
 	//FIXME: correct the emulate function
-	IntTwiddleMultiplier::IntTwiddleMultiplier(Target* target, int wI_, int wF_, int twiddleExponent_, int n_, bool signedOperator_, bool reducedMultiplications)
-		: Operator(target), wI(wI_), wF(wF_), twiddleExponent(twiddleExponent_), n(n_), signedOperator(signedOperator_)
+	IntTwiddleMultiplier::IntTwiddleMultiplier(Target* target, int wI_, int wF_, int twiddleExponent_, int n_, bool signedOperator_, bool reducedMultiplications, int multiplierMode_)
+		: Operator(target), wI(wI_), wF(wF_), twiddleExponent(twiddleExponent_), n(n_), signedOperator(signedOperator_), multiplierMode(multiplierMode_)
 	{
 		bool completeExecutionPath = true;
 		
@@ -75,17 +75,30 @@ namespace flopoco{
 			twRe = getTwiddleConstant(TWIDDLERE);
 			twIm = getTwiddleConstant(TWIDDLEIM);
 			
-			FixRealKCM *multiplyOperatorRe, *multiplyOperatorIm;
+			Operator *multiplyOperatorRe, *multiplyOperatorIm;
 			
-			multiplyOperatorRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLERE));
-			oplist.push_back(multiplyOperatorRe);
-			
-			if((n/getGCD(n, 2*twiddleExponent))%4 == 0){
-				multiplyOperatorIm = multiplyOperatorRe;
+			if(multiplierMode == 0){
+				multiplyOperatorRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLERE));
+				oplist.push_back(multiplyOperatorRe);
+				
+				if(abs(twIm.get_si()) == abs(twRe.get_si())){
+					multiplyOperatorIm = multiplyOperatorRe;
+				}else{
+					multiplyOperatorIm = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIM));
+					oplist.push_back(multiplyOperatorIm);
+				}
 			}else{
-				multiplyOperatorIm = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIM));
-				oplist.push_back(multiplyOperatorIm);
+				multiplyOperatorRe = new IntConstMult(target, w, (twRe<0 ? (-1)*twRe : twRe));
+				oplist.push_back(multiplyOperatorRe);
+				
+				if(abs(twIm.get_si()) == abs(twRe.get_si())){
+					multiplyOperatorIm = multiplyOperatorRe;
+				}else{
+					multiplyOperatorIm = new IntConstMult(target, w, (twIm<0 ? (-1)*twIm : twIm));
+					oplist.push_back(multiplyOperatorIm);
+				}
 			}
+			
 			IntAdder* addOperator =  new IntAdder(target, 2*w, inDelayMap("X",getCriticalPath()));
 			oplist.push_back(addOperator);
 			
@@ -105,8 +118,13 @@ namespace flopoco{
 			outPortMap(multiplyOperatorIm, "R", "intXrYi");
 			vhdl << instance(multiplyOperatorIm, "MUL_XrYi");
 			
-			wOutIm = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLEIM).get_si())));
-			wOutRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLERE).get_si())));
+			if(multiplierMode == 0){
+				wOutIm = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLEIM).get_si())));
+				wOutRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLERE).get_si())));
+			}else{
+				wOutIm = ceil(log2((double)(twIm.get_si()) * ((pow(2.0, (double)w))-1.0)));
+				wOutRe = ceil(log2((double)(twRe.get_si()) * ((pow(2.0, (double)w))-1.0)));
+			}
 			
 			vhdl << tab << declare("XrYr", 2*w) << " <= (" << 2*w-1-wOutRe << " downto 0 => intXrYr(" << wOutRe-1 << ")) & intXrYr;" << endl;
 			vhdl << tab << declare("XiYi", 2*w) << " <= (" << 2*w-1-wOutIm << " downto 0 => intXiYi(" << wOutIm-1 << ")) & intXiYi;" << endl;
@@ -217,28 +235,56 @@ namespace flopoco{
 			twImAddRe = getTwiddleConstant(TWIDDLEIMADDRE);
 			twImSubRe = getTwiddleConstant(TWIDDLEIMSUBRE);
 			
-			wOutRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLERE).get_si())));
-			wOutImAddRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLEIMADDRE).get_si())));
-			wOutImSubRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLEIMSUBRE).get_si())));
-			
-			FixRealKCM *multiplyOperatorRe, *multiplyOperatorImAddRe, *multiplyOperatorImSubRe;
-			
-			multiplyOperatorRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLERE));
-			oplist.push_back(multiplyOperatorRe);
-			if(abs(twImAddRe.get_si()) == abs(twImSubRe.get_si())){
-				multiplyOperatorImAddRe = multiplyOperatorRe;
-				multiplyOperatorImSubRe = multiplyOperatorRe;
-			}else if(twImAddRe.get_si() == 0){
-				multiplyOperatorImSubRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMSUBRE));
-				oplist.push_back(multiplyOperatorImSubRe);
-			}else if(twImSubRe.get_si() == 0){
-				multiplyOperatorImAddRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMADDRE));
-				oplist.push_back(multiplyOperatorImAddRe);
+			if(multiplierMode == 0){
+				wOutRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLERE).get_si())));
+				wOutImAddRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLEIMADDRE).get_si())));
+				wOutImSubRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLEIMSUBRE).get_si())));
 			}else{
-				multiplyOperatorImAddRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMADDRE));
-				oplist.push_back(multiplyOperatorImAddRe);
-				multiplyOperatorImSubRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMSUBRE));
-				oplist.push_back(multiplyOperatorImSubRe);
+				wOutRe = ceil(log2((double)(twRe.get_si()) * ((pow(2.0, (double)w))-1.0)));
+				wOutImAddRe = ceil(log2((double)(twImAddRe.get_si()) * ((pow(2.0, (double)w))-1.0)));
+				wOutImSubRe = ceil(log2((double)(twImSubRe.get_si()) * ((pow(2.0, (double)w))-1.0)));
+			}
+			
+			Operator *multiplyOperatorRe, *multiplyOperatorImAddRe, *multiplyOperatorImSubRe;
+			
+			if(multiplierMode == 0){
+				multiplyOperatorRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLERE));
+				oplist.push_back(multiplyOperatorRe);
+				
+				if(abs(twImAddRe.get_si()) == abs(twImSubRe.get_si())){
+					multiplyOperatorImAddRe = multiplyOperatorRe;
+					multiplyOperatorImSubRe = multiplyOperatorRe;
+				}else if(twImAddRe.get_si() == 0){
+					multiplyOperatorImSubRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMSUBRE));
+					oplist.push_back(multiplyOperatorImSubRe);
+				}else if(twImSubRe.get_si() == 0){
+					multiplyOperatorImAddRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMADDRE));
+					oplist.push_back(multiplyOperatorImAddRe);
+				}else{
+					multiplyOperatorImAddRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMADDRE));
+					oplist.push_back(multiplyOperatorImAddRe);
+					multiplyOperatorImSubRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMSUBRE));
+					oplist.push_back(multiplyOperatorImSubRe);
+				}
+			}else{
+				multiplyOperatorRe = new IntConstMult(target, w, (twRe<0 ? (-1)*twRe : twRe));
+				oplist.push_back(multiplyOperatorRe);
+				
+				if(abs(twImAddRe.get_si()) == abs(twImSubRe.get_si())){
+					multiplyOperatorImAddRe = multiplyOperatorRe;
+					multiplyOperatorImSubRe = multiplyOperatorRe;
+				}else if(twImAddRe.get_si() == 0){
+					multiplyOperatorImSubRe = new IntConstMult(target, w, (twImSubRe<0 ? (-1)*twImSubRe : twImSubRe));
+					oplist.push_back(multiplyOperatorImSubRe);
+				}else if(twImSubRe.get_si() == 0){
+					multiplyOperatorImAddRe = new IntConstMult(target, w, (twImAddRe<0 ? (-1)*twImAddRe : twImAddRe));
+					oplist.push_back(multiplyOperatorImAddRe);
+				}else{
+					multiplyOperatorImAddRe = new IntConstMult(target, w, (twImAddRe<0 ? (-1)*twImAddRe : twImAddRe));
+					oplist.push_back(multiplyOperatorImAddRe);
+					multiplyOperatorImSubRe = new IntConstMult(target, w, (twImSubRe<0 ? (-1)*twImSubRe : twImSubRe));
+					oplist.push_back(multiplyOperatorImSubRe);
+				}
 			}
 			
 			IntAdder* addOperator =  new IntAdder(target, w, inDelayMap("X",getCriticalPath()));

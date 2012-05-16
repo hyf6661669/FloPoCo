@@ -14,7 +14,7 @@ namespace flopoco{
 	IntComplexAdder::IntComplexAdder(Target* target, int wI_, int wF_, bool signedOperator_, map<string, double> inputDelays)
 		: Operator(target), wI(wI_), wF(wF_), signedOperator(signedOperator_)
 	{
-		signedOperator ? w = 1 + wI + wF : wI + wF;
+		signedOperator ? w = 1 + wI + wF : w = wI + wF;
 		
 		ostringstream name;
 

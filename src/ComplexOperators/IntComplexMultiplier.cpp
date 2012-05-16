@@ -10,7 +10,6 @@ namespace flopoco{
 	extern vector<Operator *> oplist;
 
 	//TODO: explore implementation using multiply-accumulate operators
-	//FIXME: correct negation of signals
 	//FIXME: correct timing of the circuit
 	IntComplexMultiplier::IntComplexMultiplier(Target* target, int wI_, int wF_, bool signedOperator_, bool hasLessMultiplications)
 		: Operator(target), wI(wI_), wF(wF_), signedOperator(signedOperator_)

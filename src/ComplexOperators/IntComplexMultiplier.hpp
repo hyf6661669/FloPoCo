@@ -10,7 +10,7 @@
 namespace flopoco{
 	
 	/**
-	 * Complex multiplier for complex numbers
+	 * Multiplier for complex numbers
 	 * Depending on the value of hasLessMultiplications, the multiplication
 	 * (a+jb)*(c+jd) can be either
 	 * 		Re(z)=a*c+-b*d

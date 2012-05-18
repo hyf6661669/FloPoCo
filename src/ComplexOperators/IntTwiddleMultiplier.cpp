@@ -16,6 +16,8 @@ namespace flopoco{
 	//FIXME: correct the size of the output and intermediary computations
 	//		 for now it's fixed at 2*w, achieved through padding (and with 1 all around)
 	//FIXME: correct the emulate function
+	
+	//URGENT: change computations from (twiddle = Yr + j*Yi) to the correct (twiddle = Yr - j*Yi)
 	IntTwiddleMultiplier::IntTwiddleMultiplier(Target* target, int wI_, int wF_, int twiddleExponent_, int n_, bool signedOperator_, bool reducedMultiplications, int multiplierMode_)
 		: Operator(target), wI(wI_), wF(wF_), twiddleExponent(twiddleExponent_), n(n_), signedOperator(signedOperator_), multiplierMode(multiplierMode_)
 	{
@@ -46,24 +48,25 @@ namespace flopoco{
 		
 		if(twiddleExponent == 0){
 						
-			vhdl << tab << "Zi <= Xi;" << endl;
-			vhdl << tab << "Zr <= Xr;" << endl;
+			vhdl << tab << "Zi <= (" << w-1 << " downto 0 => Xi(" << w-1 << ")) & Xi;" << endl;
+			vhdl << tab << "Zr <= (" << w-1 << " downto 0 => Xr(" << w-1 << ")) & Xr;" << endl;
 			
 			completeExecutionPath = false;
 		} else if((double)twiddleExponent == (double)n/4.0){
 			
-			vhdl << tab << declare("neg_Xi", w) << " <= Xi xor (" << w-1 << " downto 0 => \'1\');" << endl;
+			vhdl << tab << declare("neg_Xr", w) << " <= Xr xor (" << w-1 << " downto 0 => \'1\');" << endl;
 			
 			IntAdder* addOperator =  new IntAdder(target, w, inDelayMap("X",getCriticalPath()));
 			oplist.push_back(addOperator);
 			
-			inPortMap 	(addOperator, "X", 	 "neg_Xi");
+			inPortMap 	(addOperator, "X", 	 "neg_Xr");
 			inPortMapCst(addOperator, "Y", 	 zg(w, 0));
 			inPortMapCst(addOperator, "Cin", "\'1\'");
-			outPortMap	(addOperator, "R", 	 "Zr", false);
-			vhdl << instance(addOperator, "ADD_negXi");
+			outPortMap	(addOperator, "R", 	 "intZi", false);
+			vhdl << instance(addOperator, "ADD_negXr");
 			
-			vhdl << tab << "Zi <= Xr;" << endl;
+			vhdl << tab << "Zi <= (" << w-1 << " downto 0 => intZi(" << w-1 << ")) & intZi;" << endl;
+			vhdl << tab << "Zr <= (" << w-1 << " downto 0 => Xi(" << w-1 << ")) & Xi;" << endl;
 			
 			completeExecutionPath = false;
 		}
@@ -133,61 +136,61 @@ namespace flopoco{
 			
 			syncCycleFromSignal("XiYr", false);
 			
-			std::string strXrYr, strNegXiYi, strXrYi, strXiYr, strCinRe, strCinIm;
+			std::string strXrYr, strXiYi, strNegXrYi, strXiYr, strCinRe, strCinIm;
 			bool negateZr = false, negateZi = false;
 			
 			if((twIm<0) && (twRe<0)){
-				vhdl << tab << declare("neg_XrYi", 2*w) << " <= XrYi xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
-				
-				strXrYr 	= "neg_XrYr";
-				strNegXiYi 	= "XiYi";
-				strCinRe	= "\'1\'";
-				negateZr	= false;
-				strXrYi		= "XrYi";
-				strXiYr		= "XiYr";
-				strCinIm	= "\'0\'";
-				negateZi	= true;
-				
-				syncCycleFromSignal("neg_XrYi", false);
-				nextCycle();
-			}else if((twIm<0) && (twRe>=0)){
-				vhdl << tab << declare("neg_XrYi", 2*w) << " <= XrYi xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
-				
-				strXrYr 	= "XrYr";
-				strNegXiYi 	= "XiYi";
-				strCinRe	= "\'0\'";
-				negateZr	= false;
-				strXrYi		= "neg_XrYi";
-				strXiYr		= "XiYr";
-				strCinIm	= "\'0\'";
-				negateZi	= false;
-				
-				syncCycleFromSignal("neg_XrYi", false);
-				nextCycle();
-			}else if((twIm>=0) && (twRe<0)){
 				vhdl << tab << declare("neg_XiYr", 2*w) << " <= XiYr xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
 				
 				strXrYr 	= "XrYr";
-				strNegXiYi 	= "XiYi";
+				strXiYi 	= "XiYi";
 				strCinRe	= "\'0\'";
 				negateZr	= true;
-				strXrYi		= "XrYi";
+				strNegXrYi	= "XrYi";
 				strXiYr		= "neg_XiYr";
 				strCinIm	= "\'1\'";
 				negateZi	= false;
 				
 				syncCycleFromSignal("neg_XiYr", false);
 				nextCycle();
+			}else if((twIm<0) && (twRe>=0)){
+				vhdl << tab << declare("neg_XiYi", 2*w) << " <= XiYi xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
+				
+				strXrYr 	= "XrYr";
+				strXiYi 	= "neg_XiYi";
+				strCinRe	= "\'1\'";
+				negateZr	= false;
+				strNegXrYi	= "XrYi";
+				strXiYr		= "XiYr";
+				strCinIm	= "\'0\'";
+				negateZi	= false;
+				
+				syncCycleFromSignal("neg_XiYi", false);
+				nextCycle();
+			}else if((twIm>=0) && (twRe<0)){
+				vhdl << tab << declare("neg_XrYr", 2*w) << " <= XrYr xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
+				
+				strXrYr 	= "neg_XrYr";
+				strXiYi 	= "XiYi";
+				strCinRe	= "\'1\'";
+				negateZr	= false;
+				strNegXrYi	= "XrYi";
+				strXiYr		= "XiYr";
+				strCinIm	= "\'0\'";
+				negateZi	= true;
+				
+				syncCycleFromSignal("neg_XrYr", false);
+				nextCycle();
 			}else if((twIm>=0) && (twRe>=0)){
 				vhdl << tab << declare("neg_XiYi", 2*w) << " <= XiYi xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
 				
 				strXrYr 	= "XrYr";
-				strNegXiYi 	= "neg_XiYi";
-				strCinRe	= "\'1\'";
+				strXiYi 	= "XiYi";
+				strCinRe	= "\'0\'";
 				negateZr	= false;
-				strXrYi		= "XrYi";
+				strNegXrYi	= "neg_XrYi";
 				strXiYr		= "XiYr";
-				strCinIm	= "\'0\'";
+				strCinIm	= "\'1\'";
 				negateZi	= false;
 				
 				syncCycleFromSignal("neg_XiYi", false);
@@ -195,7 +198,7 @@ namespace flopoco{
 			}
 			
 			inPortMap 	(addOperator, "X", 	 strXrYr);
-			inPortMap 	(addOperator, "Y", 	 strNegXiYi);
+			inPortMap 	(addOperator, "Y", 	 strXiYi);
 			inPortMapCst(addOperator, "Cin", strCinRe);
 			if(negateZr)
 				outPortMap	(addOperator, "R", 	 "intZr");
@@ -203,7 +206,7 @@ namespace flopoco{
 				outPortMap	(addOperator, "R", 	 "Zr", false);
 			vhdl << instance(addOperator, "ADD_XrYrSubXiYi");
 			
-			inPortMap 	(addOperator, "X", 	 strXrYi);
+			inPortMap 	(addOperator, "X", 	 strNegXrYi);
 			inPortMap 	(addOperator, "Y", 	 strXiYr);
 			inPortMapCst(addOperator, "Cin", strCinIm);
 			if(negateZi)
@@ -228,62 +231,62 @@ namespace flopoco{
 			}
 		}else if(reducedMultiplications && completeExecutionPath){
 			try{
-			mpz_class twRe, twImAddRe, twImSubRe;
-			int wOutRe, wOutImAddRe, wOutImSubRe;
+			mpz_class twRe, twReSubIm, twNegReAddIm;
+			int wOutRe, wOutReSubIm, wOutNegReAddIm;
 			
 			twRe = getTwiddleConstant(TWIDDLERE);
-			twImAddRe = getTwiddleConstant(TWIDDLEIMADDRE);
-			twImSubRe = getTwiddleConstant(TWIDDLEIMSUBRE);
+			twReSubIm = getTwiddleConstant(TWIDDLERESUBIM);
+			twNegReAddIm = getTwiddleConstant(TWIDDLENEGREADDIM);
 			
 			if(multiplierMode == 0){
 				wOutRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLERE).get_si())));
-				wOutImAddRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLEIMADDRE).get_si())));
-				wOutImSubRe = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLEIMSUBRE).get_si())));
+				wOutReSubIm = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLERESUBIM).get_si())));
+				wOutNegReAddIm = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLENEGREADDIM).get_si())));
 			}else{
 				wOutRe = ceil(log2((double)(twRe.get_si()) * ((pow(2.0, (double)w))-1.0)));
-				wOutImAddRe = ceil(log2((double)(twImAddRe.get_si()) * ((pow(2.0, (double)w))-1.0)));
-				wOutImSubRe = ceil(log2((double)(twImSubRe.get_si()) * ((pow(2.0, (double)w))-1.0)));
+				wOutReSubIm = ceil(log2((double)(twReSubIm.get_si()) * ((pow(2.0, (double)w))-1.0)));
+				wOutNegReAddIm = ceil(log2((double)(twNegReAddIm.get_si()) * ((pow(2.0, (double)w))-1.0)));
 			}
 			
-			Operator *multiplyOperatorRe, *multiplyOperatorImAddRe, *multiplyOperatorImSubRe;
+			Operator *multiplyOperatorRe, *multiplyOperatorReSubIm, *multiplyOperatorNegReAddIm;
 			
 			if(multiplierMode == 0){
 				multiplyOperatorRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLERE));
 				oplist.push_back(multiplyOperatorRe);
 				
-				if(abs(twImAddRe.get_si()) == abs(twImSubRe.get_si())){
-					multiplyOperatorImAddRe = multiplyOperatorRe;
-					multiplyOperatorImSubRe = multiplyOperatorRe;
-				}else if(twImAddRe.get_si() == 0){
-					multiplyOperatorImSubRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMSUBRE));
-					oplist.push_back(multiplyOperatorImSubRe);
-				}else if(twImSubRe.get_si() == 0){
-					multiplyOperatorImAddRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMADDRE));
-					oplist.push_back(multiplyOperatorImAddRe);
+				if(abs(twReSubIm.get_si()) == abs(twNegReAddIm.get_si())){
+					multiplyOperatorReSubIm = multiplyOperatorRe;
+					multiplyOperatorNegReAddIm = multiplyOperatorRe;
+				}else if(twReSubIm.get_si() == 0){
+					multiplyOperatorNegReAddIm = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLENEGREADDIM));
+					oplist.push_back(multiplyOperatorNegReAddIm);
+				}else if(twNegReAddIm.get_si() == 0){
+					multiplyOperatorReSubIm = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLERESUBIM));
+					oplist.push_back(multiplyOperatorReSubIm);
 				}else{
-					multiplyOperatorImAddRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMADDRE));
-					oplist.push_back(multiplyOperatorImAddRe);
-					multiplyOperatorImSubRe = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLEIMSUBRE));
-					oplist.push_back(multiplyOperatorImSubRe);
+					multiplyOperatorReSubIm = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLERESUBIM));
+					oplist.push_back(multiplyOperatorReSubIm);
+					multiplyOperatorNegReAddIm = new FixRealKCM(target, -wF, wI-1, 1, -2*wF, getTwiddleConstantString(TWIDDLENEGREADDIM));
+					oplist.push_back(multiplyOperatorNegReAddIm);
 				}
 			}else{
 				multiplyOperatorRe = new IntConstMult(target, w, (twRe<0 ? (-1)*twRe : twRe));
 				oplist.push_back(multiplyOperatorRe);
 				
-				if(abs(twImAddRe.get_si()) == abs(twImSubRe.get_si())){
-					multiplyOperatorImAddRe = multiplyOperatorRe;
-					multiplyOperatorImSubRe = multiplyOperatorRe;
-				}else if(twImAddRe.get_si() == 0){
-					multiplyOperatorImSubRe = new IntConstMult(target, w, (twImSubRe<0 ? (-1)*twImSubRe : twImSubRe));
-					oplist.push_back(multiplyOperatorImSubRe);
-				}else if(twImSubRe.get_si() == 0){
-					multiplyOperatorImAddRe = new IntConstMult(target, w, (twImAddRe<0 ? (-1)*twImAddRe : twImAddRe));
-					oplist.push_back(multiplyOperatorImAddRe);
+				if(abs(twReSubIm.get_si()) == abs(twNegReAddIm.get_si())){
+					multiplyOperatorReSubIm = multiplyOperatorRe;
+					multiplyOperatorNegReAddIm = multiplyOperatorRe;
+				}else if(twReSubIm.get_si() == 0){
+					multiplyOperatorNegReAddIm = new IntConstMult(target, w, (twNegReAddIm<0 ? (-1)*twNegReAddIm : twNegReAddIm));
+					oplist.push_back(multiplyOperatorNegReAddIm);
+				}else if(twNegReAddIm.get_si() == 0){
+					multiplyOperatorReSubIm = new IntConstMult(target, w, (twReSubIm<0 ? (-1)*twReSubIm : twReSubIm));
+					oplist.push_back(multiplyOperatorReSubIm);
 				}else{
-					multiplyOperatorImAddRe = new IntConstMult(target, w, (twImAddRe<0 ? (-1)*twImAddRe : twImAddRe));
-					oplist.push_back(multiplyOperatorImAddRe);
-					multiplyOperatorImSubRe = new IntConstMult(target, w, (twImSubRe<0 ? (-1)*twImSubRe : twImSubRe));
-					oplist.push_back(multiplyOperatorImSubRe);
+					multiplyOperatorReSubIm = new IntConstMult(target, w, (twReSubIm<0 ? (-1)*twReSubIm : twReSubIm));
+					oplist.push_back(multiplyOperatorReSubIm);
+					multiplyOperatorNegReAddIm = new IntConstMult(target, w, (twNegReAddIm<0 ? (-1)*twNegReAddIm : twNegReAddIm));
+					oplist.push_back(multiplyOperatorNegReAddIm);
 				}
 			}
 			
@@ -303,41 +306,41 @@ namespace flopoco{
 			outPortMap(multiplyOperatorRe, "R", "intK1");
 			vhdl << instance(multiplyOperatorRe, "MUL_K1");
 			
-			if(twImSubRe == 0){
-				vhdl << tab << declare("intK2", wOutImSubRe) << " <= " << zg(wOutImSubRe, 0) << ";" << endl;
+			if(twNegReAddIm == 0){
+				vhdl << tab << declare("intK2", wOutNegReAddIm) << " <= " << zg(wOutNegReAddIm, 0) << ";" << endl;
 				
-				inPortMap (multiplyOperatorImAddRe, "X", "Xi");
-				outPortMap(multiplyOperatorImAddRe, "R", "intintK3");
-				vhdl << instance(multiplyOperatorImAddRe, "MUL_K3");
+				inPortMap (multiplyOperatorReSubIm, "X", "Xi");
+				outPortMap(multiplyOperatorReSubIm, "R", "intintK3");
+				vhdl << instance(multiplyOperatorReSubIm, "MUL_K3");
 				
-				vhdl << tab << declare("intK3", wOutImAddRe+1) << " <= intintK3 & \'0\';" << endl;
-			}else if(twImAddRe == 0){
-				vhdl << tab << declare("intK3", wOutImAddRe) << " <= " << zg(wOutImAddRe, 0) << ";" << endl;
+				vhdl << tab << declare("intK3", wOutReSubIm+1) << " <= intintK3 & \'0\';" << endl;
+			}else if(twReSubIm == 0){
+				vhdl << tab << declare("intK3", wOutReSubIm) << " <= " << zg(wOutReSubIm, 0) << ";" << endl;
 				
-				inPortMap (multiplyOperatorImSubRe, "X", "Xr");
-				outPortMap(multiplyOperatorImSubRe, "R", "intintK2");
-				vhdl << instance(multiplyOperatorImSubRe, "MUL_K2");
+				inPortMap (multiplyOperatorNegReAddIm, "X", "Xr");
+				outPortMap(multiplyOperatorNegReAddIm, "R", "intintK2");
+				vhdl << instance(multiplyOperatorNegReAddIm, "MUL_K2");
 				
-				vhdl << tab << declare("intK2", wOutImSubRe+1) << " <= intintK2 & \'0\';" << endl;
+				vhdl << tab << declare("intK2", wOutNegReAddIm+1) << " <= intintK2 & \'0\';" << endl;
 			}else{
-				inPortMap (multiplyOperatorImSubRe, "X", "Xr");
-				outPortMap(multiplyOperatorImSubRe, "R", "intK2");
-				vhdl << instance(multiplyOperatorImSubRe, "MUL_K2");
+				inPortMap (multiplyOperatorNegReAddIm, "X", "Xr");
+				outPortMap(multiplyOperatorNegReAddIm, "R", "intK2");
+				vhdl << instance(multiplyOperatorNegReAddIm, "MUL_K2");
 				
-				inPortMap (multiplyOperatorImAddRe, "X", "Xi");
-				outPortMap(multiplyOperatorImAddRe, "R", "intK3");
-				vhdl << instance(multiplyOperatorImAddRe, "MUL_K3");
+				inPortMap (multiplyOperatorReSubIm, "X", "Xi");
+				outPortMap(multiplyOperatorReSubIm, "R", "intK3");
+				vhdl << instance(multiplyOperatorReSubIm, "MUL_K3");
 			}
 			
 			vhdl << tab << declare("K1", 2*w) << " <= (" << 2*w-1-wOutRe << " downto 0 => intK1(" << wOutRe-1 << ")) & intK1;" << endl;
-			if(twImAddRe == 0)
-				vhdl << tab << declare("K2", 2*w) << " <= (" << 2*w-2-wOutImSubRe << " downto 0 => intK2(" << wOutImSubRe << ")) & intK2;" << endl;
+			if(twReSubIm == 0)
+				vhdl << tab << declare("K2", 2*w) << " <= (" << 2*w-2-wOutNegReAddIm << " downto 0 => intK2(" << wOutNegReAddIm << ")) & intK2;" << endl;
 			else
-				vhdl << tab << declare("K2", 2*w) << " <= (" << 2*w-1-wOutImSubRe << " downto 0 => intK2(" << wOutImSubRe-1 << ")) & intK2;" << endl;
-			if(twImSubRe == 0)
-				vhdl << tab << declare("K3", 2*w) << " <= (" << 2*w-2-wOutImAddRe << " downto 0 => intK3(" << wOutImAddRe << ")) & intK2;" << endl;
+				vhdl << tab << declare("K2", 2*w) << " <= (" << 2*w-1-wOutNegReAddIm << " downto 0 => intK2(" << wOutNegReAddIm-1 << ")) & intK2;" << endl;
+			if(twNegReAddIm == 0)
+				vhdl << tab << declare("K3", 2*w) << " <= (" << 2*w-2-wOutReSubIm << " downto 0 => intK3(" << wOutReSubIm << ")) & intK2;" << endl;
 			else
-				vhdl << tab << declare("K3", 2*w) << " <= (" << 2*w-1-wOutImAddRe << " downto 0 => intK3(" << wOutImAddRe-1 << ")) & intK3;" << endl;
+				vhdl << tab << declare("K3", 2*w) << " <= (" << 2*w-1-wOutReSubIm << " downto 0 => intK3(" << wOutReSubIm-1 << ")) & intK3;" << endl;
 			
 			syncCycleFromSignal("K1", false);
 			//nextCycle(); 
@@ -345,7 +348,7 @@ namespace flopoco{
 			if(twRe<0){
 				vhdl << tab << declare("neg_K1", 2*w) << " <= K1 xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
 			}
-			if(twImSubRe<0){
+			if(twNegReAddIm<0){
 				vhdl << tab << declare("neg_K2", 2*w) << " <= K2 xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
 			}
 			vhdl << tab << declare("neg_K3", 2*w) << " <= K3 xor (" << 2*w-1 << " downto 0 => \'1\');" << endl;
@@ -356,7 +359,7 @@ namespace flopoco{
 			std::string strK1Im, strK1Re, strK2, strNegK3, strCinRe, strCinIm;
 			bool negateZr = false, negateZi = false;
 			
-			if((twRe<0) && (twImAddRe<0) && (twImSubRe<0)){
+			if((twRe<0) && (twReSubIm<0) && (twNegReAddIm<0)){
 				strK1Im = "K1";
 				strK2 = "K2";
 				strCinIm = "\'0\'";
@@ -365,7 +368,7 @@ namespace flopoco{
 				strNegK3 = "K3";
 				strCinRe = "\'1\'";
 				negateZr = false;
-			}else if((twRe<0) && (twImAddRe<0) && (twImSubRe>0)){
+			}else if((twRe<0) && (twReSubIm<0) && (twNegReAddIm>0)){
 				strK1Im = "neg_K1";
 				strK2 = "K2";
 				strCinIm = "\'1\'";
@@ -374,7 +377,7 @@ namespace flopoco{
 				strNegK3 = "K3";
 				strCinRe = "\'1\'";
 				negateZr = false;
-			}else if((twRe<0) && (twImAddRe>0) && (twImSubRe<0)){
+			}else if((twRe<0) && (twReSubIm>0) && (twNegReAddIm<0)){
 				strK1Im = "K1";
 				strK2 = "K2";
 				strCinIm = "\'0\'";
@@ -383,7 +386,7 @@ namespace flopoco{
 				strNegK3 = "K3";
 				strCinRe = "\'0\'";
 				negateZr = true;
-			}else if((twRe<0) && (twImAddRe>0) && (twImSubRe>0)){
+			}else if((twRe<0) && (twReSubIm>0) && (twNegReAddIm>0)){
 				strK1Im = "neg_K1";
 				strK2 = "K2";
 				strCinIm = "\'1\'";
@@ -392,7 +395,7 @@ namespace flopoco{
 				strNegK3 = "K3";
 				strCinRe = "\'0\'";
 				negateZr = true;
-			}else if((twRe>0) && (twImAddRe<0) && (twImSubRe<0)){
+			}else if((twRe>0) && (twReSubIm<0) && (twNegReAddIm<0)){
 				strK1Im = "K1";
 				strK2 = "neg_K2";
 				strCinIm = "\'1\'";
@@ -401,7 +404,7 @@ namespace flopoco{
 				strNegK3 = "K3";
 				strCinRe = "\'0\'";
 				negateZr = false;
-			}else if((twRe>0) && (twImAddRe<0) && (twImSubRe>0)){
+			}else if((twRe>0) && (twReSubIm<0) && (twNegReAddIm>0)){
 				strK1Im = "K1";
 				strK2 = "K2";
 				strCinIm = "\'0\'";
@@ -410,7 +413,7 @@ namespace flopoco{
 				strNegK3 = "K3";
 				strCinRe = "\'0\'";
 				negateZr = false;
-			}else if((twRe>0) && (twImAddRe>0) && (twImSubRe<0)){
+			}else if((twRe>0) && (twReSubIm>0) && (twNegReAddIm<0)){
 				strK1Im = "K1";
 				strK2 = "neg_K2";
 				strCinIm = "\'1\'";
@@ -419,7 +422,7 @@ namespace flopoco{
 				strNegK3 = "neg_K3";
 				strCinRe = "\'1\'";
 				negateZr = false;
-			}else if((twRe>0) && (twImAddRe>0) && (twImSubRe>0)){
+			}else if((twRe>0) && (twReSubIm>0) && (twNegReAddIm>0)){
 				strK1Im = "K1";
 				strK2 = "K2";
 				strCinIm = "\'0\'";
@@ -487,64 +490,72 @@ namespace flopoco{
 		mpz_class svYr = getTwiddleConstant(TWIDDLERE);
 		
 		
-		if (! signedOperator){
-
-			mpz_class svZi = svXr*svYi + svXi*svYr;
-			mpz_class svZr = svXr*svYr - svXi*svYi;
-			
-			// Don't allow overflow
-			mpz_clrbit ( svZi.get_mpz_t(), 2*w );
-			mpz_clrbit ( svZr.get_mpz_t(), 2*w );
-
-			tc->addExpectedOutput("Zi", svZi);
-			tc->addExpectedOutput("Zr", svZr);
+		if(twiddleExponent == 0){
+			mpz_class svZi = svXi;
+			mpz_class svZr = svXr;
+		}else if((double)twiddleExponent == (double)n/4.0){
+			mpz_class svZi = svXr;
+			mpz_class svZr = (-1)*svXi;
 		}else{
-			mpz_class big1 = (mpz_class(1) << (w));
-			mpz_class big1P = (mpz_class(1) << (w-1));
-			mpz_class big2 = (mpz_class(1) << (w));
-			mpz_class big2P = (mpz_class(1) << (w-1));
+			if (! signedOperator){
 
-			if ( svXi >= big1P)
-				svXi = svXi - big1;
-			if ( svXr >= big1P)
-				svXr = svXi - big1;
+				mpz_class svZi = svXi*svYr + svXr*svYi;
+				mpz_class svZr = svXr*svYr + svXi*svYi;
+				
+				// Don't allow overflow
+				mpz_clrbit ( svZi.get_mpz_t(), 2*w );
+				mpz_clrbit ( svZr.get_mpz_t(), 2*w );
 
-			if ( svYi >= big2P)
-				svYi = svYi - big2;
-			if ( svYr >= big2P)
-				svYr = svYr - big2;
-			
-			mpz_class svXrYr = svXr*svYr;
-			mpz_class svXiYi = svXi*svYi;
-			mpz_class svXrYi = svXr*svYi;
-			mpz_class svXiYr = svXi*svYr;
-			
-			if ( svXrYr < 0){
-				mpz_class tmpSUB = (mpz_class(1) << (2*w));
-				svXrYr = tmpSUB + svXrYr; 
+				tc->addExpectedOutput("Zi", svZi);
+				tc->addExpectedOutput("Zr", svZr);
+			}else{
+				mpz_class big1 = (mpz_class(1) << (w));
+				mpz_class big1P = (mpz_class(1) << (w-1));
+				mpz_class big2 = (mpz_class(1) << (w));
+				mpz_class big2P = (mpz_class(1) << (w-1));
+
+				if ( svXi >= big1P)
+					svXi = svXi - big1;
+				if ( svXr >= big1P)
+					svXr = svXi - big1;
+
+				if ( svYi >= big2P)
+					svYi = svYi - big2;
+				if ( svYr >= big2P)
+					svYr = svYr - big2;
+				
+				mpz_class svXrYr = svXr*svYr;
+				mpz_class svXiYi = svXi*svYi;
+				mpz_class svXrYi = svXr*svYi;
+				mpz_class svXiYr = svXi*svYr;
+				
+				if ( svXrYr < 0){
+					mpz_class tmpSUB = (mpz_class(1) << (2*w));
+					svXrYr = tmpSUB + svXrYr; 
+				}
+				if ( svXiYi < 0){
+					mpz_class tmpSUB = (mpz_class(1) << (2*w));
+					svXiYi = tmpSUB + svXiYi; 
+				}
+				if ( svXrYi < 0){
+					mpz_class tmpSUB = (mpz_class(1) << (2*w));
+					svXrYi = tmpSUB + svXrYi; 
+				}
+				if ( svXiYr < 0){
+					mpz_class tmpSUB = (mpz_class(1) << (2*w));
+					svXiYr = tmpSUB + svXiYr; 
+				}
+				
+				mpz_class svZi = svXiYr - svXrYi;
+				mpz_class svZr = svXrYr + svXiYi;
+				 
+				// Don't allow overflow
+				mpz_clrbit ( svZi.get_mpz_t(), 2*w );
+				mpz_clrbit ( svZr.get_mpz_t(), 2*w );
+				
+				tc->addExpectedOutput("Zi", svZi);
+				tc->addExpectedOutput("Zr", svZr);
 			}
-			if ( svXiYi < 0){
-				mpz_class tmpSUB = (mpz_class(1) << (2*w));
-				svXiYi = tmpSUB + svXiYi; 
-			}
-			if ( svXrYi < 0){
-				mpz_class tmpSUB = (mpz_class(1) << (2*w));
-				svXrYi = tmpSUB + svXrYi; 
-			}
-			if ( svXiYr < 0){
-				mpz_class tmpSUB = (mpz_class(1) << (2*w));
-				svXiYr = tmpSUB + svXiYr; 
-			}
-			
-			mpz_class svZi = svXrYi + svXiYr;
-			mpz_class svZr = svXrYr - svXiYi;
-			 
-			// Don't allow overflow
-			mpz_clrbit ( svZi.get_mpz_t(), 2*w );
-			mpz_clrbit ( svZr.get_mpz_t(), 2*w );
-			
-			tc->addExpectedOutput("Zi", svZi);
-			tc->addExpectedOutput("Zr", svZr);
 		}
 	}
 	
@@ -575,13 +586,14 @@ namespace flopoco{
 			case TWIDDLEIM:
 							mpfr_set(temp, twiddleIm, GMP_RNDN);
 							break;
-			case TWIDDLEIMADDRE:
-							mpfr_set(temp, twiddleIm, GMP_RNDN);
-							mpfr_add(temp, temp, twiddleRe, GMP_RNDN);
+			case TWIDDLERESUBIM:
+							mpfr_set(temp, twiddleRe, GMP_RNDN);
+							mpfr_sub(temp, temp, twiddleIm, GMP_RNDN);
 							break;
-			case TWIDDLEIMSUBRE:
-							mpfr_set(temp, twiddleIm, GMP_RNDN);
-							mpfr_sub(temp, temp, twiddleRe, GMP_RNDN);
+			case TWIDDLENEGREADDIM:
+							mpfr_set(temp, twiddleRe, GMP_RNDN);
+							mpfr_add(temp, temp, twiddleIm, GMP_RNDN);
+							mpfr_neg(temp, temp, GMP_RNDN);
 							break;
 		}
 		

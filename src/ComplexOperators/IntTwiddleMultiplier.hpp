@@ -8,10 +8,10 @@
 #include "../ConstMult/IntConstMult.hpp"
 #include "../IntAdder.hpp"
 
-#define TWIDDLEIM 		0
-#define TWIDDLERE 		1
-#define TWIDDLEIMADDRE 	2
-#define TWIDDLEIMSUBRE 	3
+#define TWIDDLEIM 			0
+#define TWIDDLERE 			1
+#define TWIDDLERESUBIM 		2
+#define TWIDDLENEGREADDIM 	3
 
 namespace flopoco{
 	
@@ -19,12 +19,12 @@ namespace flopoco{
 	 * Multiplier by a constant twiddle factor
 	 * Depending on the value of hasLessMultiplications, the multiplication
 	 * (a+jb)*(c+jd) can be either
-	 * 		Re(z)=a*c-b*d
-	 * 		Im(z)=a*d+b*c, with 4 multiplications by a constant and 3 additions
+	 * 		Re(z)=a*c+b*d
+	 * 		Im(z)=-a*d+b*c, with 4 multiplications by a constant and 3 additions
 	 * or
 	 * 		m1=(a+b)*c
-	 * 		m2=(d+c)*b		-> d+c can be precomputed
-	 * 		m3=(d-c)*a		-> d-c can be precomputed
+	 * 		m2=(-d+c)*b		-> d+c can be precomputed
+	 * 		m3=(-d-c)*a		-> d-c can be precomputed
 	 * 		Re(z)=m1-m2
 	 * 		Im(z)=m1+m3, with 3 multiplications by a constant and 3 additions
 	 * where

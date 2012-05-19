@@ -16,8 +16,6 @@ namespace flopoco{
 	//FIXME: correct the size of the output and intermediary computations
 	//		 for now it's fixed at 2*w, achieved through padding (and with 1 all around)
 	//FIXME: correct the emulate function
-	
-	//URGENT: change computations from (twiddle = Yr + j*Yi) to the correct (twiddle = Yr - j*Yi)
 	IntTwiddleMultiplier::IntTwiddleMultiplier(Target* target, int wI_, int wF_, int twiddleExponent_, int n_, bool signedOperator_, bool reducedMultiplications, int multiplierMode_)
 		: Operator(target), wI(wI_), wF(wF_), twiddleExponent(twiddleExponent_), n(n_), signedOperator(signedOperator_), multiplierMode(multiplierMode_)
 	{
@@ -27,7 +25,7 @@ namespace flopoco{
 		
 		ostringstream name;
 
-		setCopyrightString ( "Istoan Matei, Florent de Dinechin (2008-2012)" );
+		setCopyrightString ( "Matei Istoan, Florent de Dinechin (2008-2012)" );
 		if(target->isPipelined())
 			name << "IntTwiddleMultiplier_" << w << "_w_exp_" << twiddleExponent << "_f"<< target->frequencyMHz() << "_uid" << getNewUId();
 		else

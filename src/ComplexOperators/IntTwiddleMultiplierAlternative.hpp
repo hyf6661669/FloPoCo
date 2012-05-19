@@ -53,14 +53,6 @@ namespace flopoco{
 		 * the sum/difference of the two, as a string
 		 */
 		std::string getTwiddleConstantString(int constantType);
-		
-		/**
-		 * Compute the greatest common divisor of two numbers
-		 * @param x the first number
-		 * @param y the second number
-		 * @return the gcd
-		 */
-		int getGCD(int x, int y);
 
 		//user-defined class specific variables
 		int wI;						/**< Number of bits in the integer part of the fixed-point numbers in the input*/

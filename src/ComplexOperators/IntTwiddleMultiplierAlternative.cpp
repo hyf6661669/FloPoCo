@@ -27,7 +27,7 @@ namespace flopoco{
 		
 		ostringstream name;
 
-		setCopyrightString ( "Istoan Matei, Florent de Dinechin (2008-2012)" );
+		setCopyrightString ( "Matei Istoan, Florent de Dinechin (2008-2012)" );
 		if(target->isPipelined())
 			name << "IntTwiddleMultiplierAlternative_" << w << "_w_exp_" << twiddleExponent << "_f"<< target->frequencyMHz() << "_uid" << getNewUId();
 		else
@@ -73,10 +73,7 @@ namespace flopoco{
 			twS = getTwiddleConstant(TWIDDLES);
 			
 			Operator *multiplyOperatorCp, *multiplyOperatorS, *multiplyOperatorCp2;
-			IntAdder *addOperator;
-			
-			addOperator =  new IntAdder(target, w, inDelayMap("X",getCriticalPath()));
-			oplist.push_back(addOperator);
+			IntAdder *addOperatorGamma, *addOperatorZi, *addOperatorZr;
 			
 			if(multiplierMode == 0){
 				wOutAlpha   = 1 + wI + 2*wF + ceil(log2(abs(getTwiddleConstant(TWIDDLECP).get_si())));
@@ -110,11 +107,20 @@ namespace flopoco{
 				oplist.push_back(multiplyOperatorCp2);
 			}
 			
+			addOperatorGamma =  new IntAdder(target, wOutAlpha, inDelayMap("X",getCriticalPath()));
+			oplist.push_back(addOperatorGamma);
+			
+			addOperatorZi =  new IntAdder(target, wOutBeta, inDelayMap("X",getCriticalPath()));
+			oplist.push_back(addOperatorZi);
+			
+			addOperatorZr =  new IntAdder(target, wOutZiMulCp, inDelayMap("X",getCriticalPath()));
+			oplist.push_back(addOperatorZr);
+			
 			inPortMap( multiplyOperatorCp, "X", "Xi");
 			outPortMap(multiplyOperatorCp, "R", "Alpha");
 			vhdl << instance(multiplyOperatorCp, "MUL_Alpha");
 			
-			vhdl << tab << declare("Xr_pad_to_wOutAlpha", wOutAlpha) << " <= (" << wOutAlpha-w << " downto 0 => Xr(" << w-1 << ")) & Xr;" << endl;
+			vhdl << tab << declare("Xr_pad_to_wOutAlpha", wOutAlpha) << " <= (" << wOutAlpha-w-1 << " downto 0 => Xr(" << w-1 << ")) & Xr;" << endl;
 			
 			inPortMap(	 addOperatorGamma, "X", "Xr_pad_to_wOutAlpha");
 			inPortMap(	 addOperatorGamma, "Y", "Alpha");
@@ -126,7 +132,7 @@ namespace flopoco{
 			outPortMap(multiplyOperatorS, "R", "Beta");
 			vhdl << instance(multiplyOperatorS, "MUL_Beta");
 			
-			vhdl << tab << declare("Xi_pad_to_wOutBeta", wOutBeta) << " <= (" << wOutBeta-w << " downto 0 => Xi(" << w-1 << ")) & Xi;" << endl;
+			vhdl << tab << declare("Xi_pad_to_wOutBeta", wOutBeta) << " <= (" << wOutBeta-w-1 << " downto 0 => Xi(" << w-1 << ")) & Xi;" << endl;
 			vhdl << tab << declare("neg_Beta", wOutBeta) << " <= (" << wOutBeta-1 << " downto 0 => \'1\') xor Beta;" << endl;
 			
 			inPortMap(	 addOperatorZi, "X", "Xi_pad_to_wOutBeta");
@@ -139,7 +145,7 @@ namespace flopoco{
 			outPortMap(multiplyOperatorCp2, "R", "intZiMulCp");
 			vhdl << instance(multiplyOperatorCp2, "MUL_ZiMulCp");
 			
-			vhdl << tab << declare("Gamma_pad_to_wOutZiMulCp", wOutZiMulCp) << " <= (" << wOutZiMulCp-wOutGamma << " downto 0 => Gamma(" << wOutGamma-1 << ")) & Gamma;" << endl;
+			vhdl << tab << declare("Gamma_pad_to_wOutZiMulCp", wOutZiMulCp) << " <= (" << wOutZiMulCp-wOutGamma-1 << " downto 0 => Gamma(" << wOutGamma-1 << ")) & Gamma;" << endl;
 			
 			inPortMap(	 addOperatorZr, "X", "intZiMulCp");
 			inPortMap(	 addOperatorZr, "Y", "Gamma_pad_to_wOutZiMulCp");
@@ -147,13 +153,18 @@ namespace flopoco{
 			outPortMap(	 addOperatorZr, "R", "intZr");
 			vhdl << instance(addOperatorZr, "ADD_Zr");
 			
-			vhdl << tab << "Zi <= (" << 2*w-wOutBeta << " downto 0 => intZi(" << wOutBeta-1 << ")) & intZi;" << endl;
-			vhdl << tab << "Zr <= (" << 2*w-wOutZiMulCp << " downto 0 => intZr(" << wOutZiMulCp-1 << ")) & intZr;" << endl;
+			if(2*w>wOutBeta){
+				vhdl << tab << "Zi <= (" << 2*w-wOutBeta-1 << " downto 0 => intZi(" << wOutBeta-1 << ")) & intZi;" << endl;
+			}else{
+				vhdl << tab << "Zi <= intZi(" << wOutBeta-1 << " downto " << wOutBeta-2*w << ");" << endl;
+			}
+			if(2*w>wOutZiMulCp){
+				vhdl << tab << "Zr <= (" << 2*w-wOutZiMulCp-1 << " downto 0 => intZr(" << wOutZiMulCp << ")) & intZr;" << endl;
+			}else{
+				vhdl << tab << "Zr <= intZr(" << wOutZiMulCp-1 << " downto " << wOutZiMulCp-2*w << ");" << endl;
+			}
 		}
 	}
-	
-}	
-
 
 	IntTwiddleMultiplierAlternative::~IntTwiddleMultiplierAlternative()
 	{
@@ -163,8 +174,8 @@ namespace flopoco{
 	void IntTwiddleMultiplierAlternative::emulate ( TestCase* tc ) {
 		mpz_class svXi = tc->getInputValue("Xi");
 		mpz_class svXr = tc->getInputValue("Xr");
-		mpz_class svYi = getTwiddleConstant(TWIDDLEIM);
-		mpz_class svYr = getTwiddleConstant(TWIDDLERE);
+		mpz_class svYi = getTwiddleConstant(TWIDDLES);
+		mpz_class svYr = getTwiddleConstant(TWIDDLEC);
 		
 		
 		if(twiddleExponent == 0){
@@ -241,8 +252,8 @@ namespace flopoco{
 		mpfr_t twiddleExp, twiddleS, twiddleC, constPi, temp;
 		mpz_class intTemp;
 		
-		mpfr_init2(twiddleIm, 	10*w);
-		mpfr_init2(twiddleRe, 	10*w);
+		mpfr_init2(twiddleS, 	10*w);
+		mpfr_init2(twiddleC, 	10*w);
 		mpfr_init2(twiddleExp, 	10*w);
 		mpfr_init2(constPi, 	10*w);
 		mpfr_init2(temp, 		10*w);
@@ -289,22 +300,6 @@ namespace flopoco{
 		result << temp;
 		
 		return result.str();
-	}
-	
-	int IntTwiddleMultiplierAlternative::getGCD(int x, int y){
-		int temp;
-		
-		if(x==0)
-			return y;
-		else if(y==0)
-			return x;
-		else if(x<y){
-			temp = x;
-			x = y;
-			y = temp;
-		}
-		
-		return getGCD(y, x % y);
 	}
 
 }

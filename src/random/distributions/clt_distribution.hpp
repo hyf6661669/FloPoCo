@@ -15,8 +15,48 @@ namespace flopoco
 namespace random
 {
 	template<class T>
+	std::vector<T> convolve(const std::vector<T> &a, const std::vector<T> &b);
+	
+	template<>
+	std::vector<double> convolve(const std::vector<double> &a, const std::vector<double> &b)
+	{
+		unsigned n=a.size()+b.size()-1;
+		n=pow(2.0, ceil(log(n) / log(2.0)));
+		
+		// This is a bit of a hack, it should really defer to the arbitrary precision version in moptl2
+		std::vector<double> aa(n, 0.0);
+		std::copy(a.begin(), a.end(), aa.begin());
+		if(0!=gsl_fft_real_radix2_transform(&aa[0], 1, n))
+			throw std::runtime_error("Error from gsl_fft_real_radix2_transform");
+		
+		std::vector<double> bb(n, 0.0);
+		std::copy(b.begin(), b.end(), bb.begin());
+		if(0!=gsl_fft_real_radix2_transform(&bb[0], 1, n))
+			throw std::runtime_error("Error from gsl_fft_real_radix2_transform");
+		
+		aa[0]=aa[0]*bb[0];
+		for(unsigned i=1;i<n/2;i++){
+			std::complex<double> va(aa[i], aa[n-i]);
+			std::complex<double> vb(bb[i], bb[n-i]);
+			std::complex<double> vr=va*vb;
+			aa[i]=real(vr);
+			aa[n-i]=imag(vr);
+		}
+		aa[n/2]=aa[n/2]*bb[n/2];
+		
+		bb.clear();
+		
+		if(0!=gsl_fft_halfcomplex_radix2_inverse(&aa[0], 1, n))
+			throw std::runtime_error("Error from gsl_fft_halfcomplex_radix2_inverse");
+		
+		aa.resize(a.size()+b.size()-1);
+		return aa;
+	}
+	
+	template<class T>
 	std::vector<T> self_convolve(const std::vector<T> &a, unsigned k);
 	
+
 	template<>
 	std::vector<double> self_convolve(const std::vector<double> &a, unsigned k)
 	{

@@ -70,6 +70,8 @@ class DiscreteDistribution
 {
 public:
 	virtual T Pmf(const T &x) const=0;
+
+	typedef boost::shared_ptr<DiscreteDistribution> TypePtr;
 };
 
 template<class T>
@@ -91,6 +93,8 @@ public:
 			begin++;
 		}
 	}
+	
+	typedef boost::shared_ptr<EnumerableDistribution> TypePtr;
 };
 
 }; // random

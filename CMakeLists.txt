@@ -25,6 +25,7 @@ INCLUDE(CPack)
 # Uncomment for profiling
 #SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
+SET(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG=1")
 # Do you want an executable of 12MB ?
 SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_BUILD_TYPE release)

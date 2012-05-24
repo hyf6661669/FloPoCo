@@ -1,5 +1,6 @@
 #include "find_roots_gsl.hpp"
 #include "minimise_gsl.hpp"
+#include "anneal_gsl.hpp"
 
 #define BOOST_TEST_MODULE BaseTests
 #include <boost/test/unit_test.hpp>
@@ -23,6 +24,34 @@ struct poly1_t
 		return metric(params);
 	}
 };
+
+template<class T>
+class WrapSim
+	: public flopoco::random::VectorEnergyFunction
+{
+	T m_metric;
+
+public:	
+	std::vector<double> Guess() const
+	{
+		std::vector<double> guess(m_metric.arity());
+		m_metric.DefaultGuess(&guess[0]);
+		return guess;
+	}
+	
+	virtual double Energy(const std::vector<double> &v) const
+	{ return m_metric.metric(&v[0]); }
+	
+};
+
+
+BOOST_AUTO_TEST_CASE(AnnealGSLTests_poly1)
+{
+	WrapSim<poly1_t> target;
+	std::pair<std::vector<double >,double> m=target.Execute(target.Guess());
+	std::cerr<<"poly1-anneal : root="<<m.first[0]<<", error="<<m.first[0]-3.14159265358979<<", metric="<<m.second<<"\n";
+	BOOST_CHECK(abs(m.first[0]-3.14159265358979) < 1e-8);
+}
 
 BOOST_AUTO_TEST_CASE(MinimiseGSLTests_poly1)
 {
@@ -86,7 +115,21 @@ BOOST_AUTO_TEST_CASE(MinimiseGSLTests_test2)
 		BOOST_CHECK(fabs(m.first[0]-R0) < 1e-8);
 		BOOST_CHECK(fabs(m.first[1]-R1) < 1e-8);
 	}
-	
+}
+
+BOOST_AUTO_TEST_CASE(AnnealGSLTests_test2)
+{
+	WrapSim<test2_t> target;
+	double R0=0.873308054655, R1=0.811951910877;
+	for(int i=0;i<10;i++){
+		std::vector<double> init;
+		init.push_back(drand48()*2-1);
+		init.push_back(drand48()*2-1);
+		std::pair<std::vector<double >,double> m=target.Execute(init);
+		std::cerr<<"test2-anneal : root=("<<m.first[0]<<", "<<m.first[1]<<"), error=("<<m.first[0]-R0<<", "<<m.first[1]-R1<<"), metric="<<m.second<<"\n";
+		BOOST_CHECK(fabs(m.first[0]-R0) < 1e-8);
+		BOOST_CHECK(fabs(m.first[1]-R1) < 1e-8);
+	}
 }
 
 BOOST_AUTO_TEST_CASE(FindRootsGSLTests_test2)

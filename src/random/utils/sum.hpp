@@ -1,60 +1,103 @@
+#ifndef flopoco_random_utils_sum_hpp
+#define flopoco_random_utils_sum_hpp
 
+#include "random/utils/ladder_accumulator.hpp"
 
-class LadderAcc
+#include <iterator>
+
+namespace flopoco
 {
-	std::vector<int64_t> m_sums;
+namespace random
+{
+	template<class T>
+	struct SelectAccumulator;
 	
-	void Add(unsigned e, int64_t v)
+	template<>
+	struct SelectAccumulator<float>
+	{ typedef double type; };
+	
+	template<>
+	struct SelectAccumulator<double>
+	{ typedef LadderAccumulator type; };
+	
+	template<class TIt>
+	typename std::iterator_traits<TIt>::value_type sum(TIt begin, TIt end)
 	{
-		if(e >= m_sums.size())
-			m_sums.resize(e+1, 0);
-		
-		int64_t acc=m_sums[e]+v;
-		if( acc >= (1ll<<62)){
-			acc -= 1ll<<60;
-			v=1;
-		}else if(acc <= -1ll<<60){
-			acc += 1ll<<60;
-			v=-1;
-		}else{
-			v=0;
+		if(begin==end)
+			return 0;
+		if(begin+1==end)
+			return *begin;
+		typename SelectAccumulator<typename std::iterator_traits<TIt>::value_type>::type acc;
+		acc=0;
+		while(begin!=end){
+			acc += *begin;
+			++begin;
 		}
-		m_sums[e]=acc;
-		if(v)
-			Add(e+60, v);
+		return acc;
 	}
 	
-	void Add(double x)
+	template<class TIt, class TF>
+	typename TF::result_type sum(TIt begin, TIt end, const TF &f)
 	{
-		int e;
-		double m=frexp(x, &e);
-		
-		e += BIAS;
-		assert(e>=0);
-		
-		int64_t im=(int64_t)ldexp(x, 53);
-		assert(m==ldexp((double)im, -53));
-		
-		Add(e, im);
+		if(begin==end)
+			return 0;
+		if(begin+1==end)
+			return f(*begin);
+		typename SelectAccumulator<typename TF::return_type>::type acc;
+		acc=0;
+		while(begin!=end){
+			acc += f(*begin);
+			++begin;
+		}
+		return acc;
 	}
 	
-	void Normalise()
+	template<class TIt>
+	typename std::iterator_traits<TIt>::value_type sum_powers(TIt begin, TIt end, int k)
 	{
-		int i=0;
-		while(i+1<m_sums.size()){
-			while( std::abs(2*m_sums[i]) > std::abs(m_sums[i])){
-				
+		if(begin==end)
+			return 0;
+		if(begin+1==end)
+			return pow(*begin, k);
+		typename SelectAccumulator<typename std::iterator_traits<TIt>::value_type>::type acc;
+		acc=0;
+		while(begin!=end){
+			acc += pow(*begin, k);
+			++begin;
+		}
+		return acc;
+	}
+	
+	template<class TIt>
+	typename std::iterator_traits<TIt>::value_type::second_type
+		sum_weighted_powers(TIt begin, TIt end, int k)
+	{
+		if(begin==end)
+			return 0.0;
+		if(begin+1==end)
+			return pow(begin->first, k) * begin->second;
+		typename SelectAccumulator<typename std::iterator_traits<TIt>::value_type::second_type>::type acc;
+		acc=0;
+		if(k==0){
+			while(begin!=end){
+				acc += begin->second;
+				++begin;
+			}
+		}else if(k==1){
+			while(begin!=end){
+				acc += begin->first * begin->second;
+				++begin;
+			}
+		}else{
+			while(begin!=end){
+				acc += pow(begin->first, k) * begin->second;
+				++begin;
 			}
 		}
+		return acc;
 	}
-};
 
-template<
-	class TIt,
-	class TF,
-	class TRes=TF::result_type
->
-TRes Sum(TIt begin, TIt end, const TF &transform)
-{
-	
-}
+}; // random
+}; // flopoco
+
+#endif

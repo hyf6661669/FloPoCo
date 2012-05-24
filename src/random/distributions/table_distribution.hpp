@@ -4,6 +4,8 @@
 #include "distribution.hpp"
 #include "moment_conversions.hpp"
 
+#include "random/utils/sum.hpp"
+
 #include <vector>
 #include <algorithm>
 #include <numeric>
@@ -46,9 +48,16 @@ private:
 		return a.second<b.second;
 	};
 	
-	void CompleteInit(bool sorted)
+	void CompleteInit(bool sorted, double acc)
 	{
 		unsigned n=m_elements.size();
+		
+		if(acc!=1.0){
+			double scale=1.0/acc;
+			for(size_t i=0;i<m_elements.size();i++){
+				m_elements[i].second *=scale;
+			}
+		}
 		
 		if(!sorted)
 			std::sort(m_elements.begin(), m_elements.end(), EltLessThan);
@@ -59,7 +68,7 @@ private:
 		}
 		
 		if(m_isSymmetric){
-			for(unsigned i=0;i<n/2 && m_isSymmetric;i++){
+			for(size_t i=0;i<n/2 && m_isSymmetric;i++){
 				if(m_elements[i].first!=-m_elements[n-i-1].first){
 					//fprintf(stderr, "first\n");
 					m_isSymmetric=false;
@@ -72,7 +81,6 @@ private:
 		}
 	}
 public:
-
 	template<class TC>
 	TableDistribution(const TC &src)
 		: m_isSymmetric(true)
@@ -81,17 +89,11 @@ public:
 			throw std::invalid_argument("TableDistribution - Table must contain at least one element.");
 		
 		m_elements.assign(src.begin(), src.end());
-		std::sort(m_elements.begin(), m_elements.end(), ProbLessThan);
-		T acc=0;
-		for(unsigned i=0;i<src.size();i++){
-			if(m_elements[i].second < 0)
-				throw std::logic_error("TableDistribution - Element probability is less than 0.");
-			acc += m_elements[i].second;
-		}
+		double acc=sum_weighted_powers(m_elements.begin(), m_elements.end(), 0);
 		if(fabs(acc-1)>1e-12)
 			throw std::logic_error("TableDistribution - Element probabilities are more than 1e-12 from one.");
 		
-		CompleteInit(false);
+		CompleteInit(false, acc);
 	}
 
 	TableDistribution(const T *begin, const T *end)
@@ -112,22 +114,18 @@ public:
 				sorted=sorted && EltLessThan(*(m_elements.end()-1), m_elements.back());
 		}
 
-		CompleteInit(sorted);
+		CompleteInit(sorted, 1.0);
 	}
 	
 	T RawMoment(unsigned k) const
 	{
 		if(k>=m_rawMoments.size()){
-			std::vector<T> tmp(m_elements.size());
 			while(k>=m_rawMoments.size()){
-				if((k%2) && m_isSymmetric){
+				int kk=m_rawMoments.size();
+				if((kk%2) && m_isSymmetric){
 					m_rawMoments.push_back(0.0);
 				}else{
-					for(unsigned i=0;i<m_elements.size();i++){
-						tmp[i]=m_elements[i].second*pow(m_elements[i].first,m_rawMoments.size());
-					}
-					std::sort(tmp.begin(), tmp.end());
-					m_rawMoments.push_back(std::accumulate(tmp.begin(),tmp.end(),(T)0.0));
+					m_rawMoments.push_back(sum_weighted_powers(m_elements.begin(), m_elements.end(), (int)kk));
 				}
 			}
 		}
@@ -173,7 +171,8 @@ public:
 	{
 		if(x>=m_elements.back().first)
 			return 1.0;
-		T acc=0.0;
+		typename SelectAccumulator<T>::type acc;
+		acc=0.0;
 		for(unsigned i=0;i<m_elements.size();i++){
 			if(x<m_elements[i].first)
 				return acc;
@@ -191,7 +190,7 @@ public:
 
 	void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
 	{
-		if((end>begin) || (end>=ElementCount()))
+		if((end<begin) || (end>=ElementCount()))
 			throw std::range_error("Requested elements are out of range.");
 		std::copy(m_elements.begin()+begin, m_elements.end()+end, dest);
 	}

@@ -1,7 +1,10 @@
 #include "distribution.hpp"
 #include "clt_distribution.hpp"
 #include "table_distribution.hpp"
+#include "histogram_distribution.hpp"
 #include "gaussian_distribution.hpp"
+
+#include "sum_distribution.hpp"
 
 #include "moment_conversions.hpp"
 
@@ -9,6 +12,51 @@
 #include <boost/test/unit_test.hpp>
 
 using namespace flopoco::random;
+
+
+BOOST_AUTO_TEST_CASE(HistogramDistributionTests)
+{
+	typedef HistogramDistribution<double>::TypePtr HistogramDistributionPtr;
+	
+	std::vector<double> data;
+	data.push_back(0.25);
+	data.push_back(0.50);
+	data.push_back(0.25);
+	
+	HistogramDistributionPtr ptr=boost::make_shared<HistogramDistribution<double> >(-1, 1, data);
+	
+	BOOST_CHECK(ptr->ElementCount()==3);
+	
+	BOOST_CHECK_EQUAL(ptr->Pmf(-1.5), 0);
+	BOOST_CHECK_CLOSE(ptr->Pmf(-1), 0.25, 1e-10);
+	BOOST_CHECK_EQUAL(ptr->Pmf(-.5), 0);
+	BOOST_CHECK_CLOSE(ptr->Pmf(0), 0.5, 1e-10);
+	BOOST_CHECK_EQUAL(ptr->Pmf(.5), 0);
+	BOOST_CHECK_CLOSE(ptr->Pmf(+1), 0.25, 1e-10);
+	BOOST_CHECK_EQUAL(ptr->Pmf(1.5), 0);
+	
+	BOOST_CHECK_EQUAL(ptr->Cdf(-1.5), 0);
+	BOOST_CHECK_EQUAL(ptr->Cdf(-1), 0.25);
+	BOOST_CHECK_EQUAL(ptr->Cdf(-.5), 0.25);
+	BOOST_CHECK_EQUAL(ptr->Cdf(0), 0.75);
+	BOOST_CHECK_EQUAL(ptr->Cdf(.5), 0.75);
+	BOOST_CHECK_EQUAL(ptr->Cdf(+1), 1);
+	BOOST_CHECK_EQUAL(ptr->Cdf(1.5), 1.0);
+	
+	typename EnumerableDistribution<double>::TypePtr tri=SelfAddHistogramDistribution<double>(ptr,2);
+	
+	BOOST_CHECK_CLOSE(tri->Pmf(-2.5), 0, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(-2), 0.0625, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(-1.5), 0, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(-1), 0.25, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(-0.5), 0, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(0), 0.375, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(.5), 0, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(1), 0.25, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(1.5), 0, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(2), 0.0625, 1e-10);
+	BOOST_CHECK_CLOSE(tri->Pmf(2.5), 0, 1e-10);
+}
 
 
 BOOST_AUTO_TEST_CASE(CLTDistributionTests)
@@ -79,7 +127,7 @@ BOOST_AUTO_TEST_CASE(MomentConversionTests)
 		
 		for(int j=1;j<=K;j++){
 			BOOST_CHECK(abs(raw[j]-tab.RawMoment(j)) < 1e-10);
-			BOOST_CHECK(abs(ref[j] - tab.CentralMoment(j)) < 1e-10);
+			BOOST_CHECK(abs(ref[j]-  tab.CentralMoment(j))< 1e-10);
 		}
 	}
 }

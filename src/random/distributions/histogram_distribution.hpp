@@ -13,12 +13,14 @@ namespace flopoco
 namespace random
 {
 
+/* Histogram distribution is disguished from table by having a regularly
+	spaced set of discrete points */
 template<class T>
 class HistogramDistribution
 	: public EnumerableDistribution<T>
 {
 public:	
-	typedef boost::shared_ptr<HistoramDistribution> TypePtr;
+	typedef boost::shared_ptr<HistogramDistribution> TypePtr;
 private:
 	bool m_isSymmetric;
 
@@ -39,15 +41,14 @@ public:
 		if(src.size()==0)
 			throw std::invalid_argument("HistogramDistribution - Table must contain at least one element.");
 		
-		std::sort(m_elements.begin(), m_elements.end(), ProbLessThan);
-		T acc=std::sum(m_elements.begin(), m_elements.end(), (T)0.0);
+		T acc=sum(src.begin(), src.end());
 		
 		if(fabs(acc-1)>1e-12)
-			throw std::logic_error("TableDistribution - Element probabilities are more than 1e-12 from one.");
+			throw std::logic_error("HistogramDistribution - Element probabilities are more than 1e-12 from one.");
 		T scale=1.0/acc;
 		for(unsigned i=0;i<src.size();i++){
 			if(m_elements[i] < 0){
-				throw std::logic_error("TableDistribution - Negative element probability.");
+				throw std::logic_error("HistogramDistribution - Negative element probability.");
 			}
 			m_elements[i] = src[i] * scale;
 		}
@@ -60,56 +61,64 @@ public:
 		}
 	}
 	
+	T RangeBase() const
+	{ return m_base; }
+	
+	T RangeStep() const
+	{ return m_step; }
+	
 	virtual T StandardMoment(unsigned k) const
 	{
 		while(m_standardMoments.size()<=k){
-			std::vector<T> tmp(m_elements.size());
-			
+			typename SelectAccumulator<T>::type acc;
 			unsigned kc=m_standardMoments.size();
 			if((kc%2) && m_isSymmetric){
 				m_standardMoments.push_back(0);
 			}else{
-				// Lazy...
-				T curr=base;
-				for(unsigned i=0;i<m_elements.size();i++){
-					tmp[i] = pow(curr, kc) * m_elements[i];
-					curr += step;
-				}				
-				std::sort(tmp.begin(), tmp.end());
-				T ss=std::accumulate(tmp.begin(), tmp.end(), (T)0.0);
+				acc=0.0;
+				T curr=m_base;
+				for(size_t i=0;i<m_elements.size();i++){
+					acc += pow(curr, kc) * m_elements[i];
+					curr+=m_step;
+				}
+				m_standardMoments.push_back(acc);
 			}
 		}
+		return m_standardMoments[k];
 	}
 	
 	virtual bool IsSymmetric() const
 	{ return m_isSymmetric; } // this is more strict than symmetric about the mean, but still is valid
 		
 	virtual std::pair<T,T> Support() const
-	{ return std::make_pair(m_elements.front().first, m_elements.back().second); }
+	{ return std::make_pair(m_base, m_base+m_step*(m_elements.size()-1)); }
 		
 	virtual T Pmf(const T &x) const
 	{
-		// Elements must have non-negative probability, so we always have (x-eps,p) < (x,-1) < (x,p)
-		typename storage_t::const_iterator it=std::lower_bound(m_elements.begin(), m_elements.end(), std::pair<T,T>(x,-1.0));
-		T acc=0.0;
-		while( it!=m_elements.end() ? it->first==x : false ){
-			acc+=it->second;
-			++it;
-		}
-		return acc;
+		if(x<m_base)
+			return 0;
+		if(x > (m_base+m_step*(m_elements.size()-1)))
+			return 0;
+		T vi=(x-m_base)/m_step;
+		T ii=round(vi);
+		if(vi!=ii)
+			return 0;
+		size_t i=(size_t)ii;
+		assert(i<m_elements.size());
+		return m_elements[i];
 	}
 	
 	virtual T Cdf(const T &x) const
 	{
-		if(x>=m_elements.back().first)
-			return 1.0;
-		T acc=0.0;
-		for(unsigned i=0;i<m_elements.size();i++){
-			if(x<m_elements[i].first)
-				return acc;
-			acc+=m_elements[i].second;
-		}
-		assert(0);
+		if(x<m_base)
+			return 0;
+		if(x > (m_base+m_step*(m_elements.size()-1)))
+			return 1;
+		
+		T vi=(x-m_base)/m_step;
+		size_t i=floor(vi);
+		
+		return sum(m_elements.begin(), m_elements.begin()+i+1);
 	}
 
 	virtual uint64_t ElementCount() const
@@ -117,27 +126,27 @@ public:
 
 	// All legal distributions contain at least one element.
 	virtual std::pair<T,T> GetElement(uint64_t index) const
-	{ return m_elements.at(index); }
+	{ return std::make_pair(m_base+index*m_step, m_elements.at(index)); }
 
 	void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
 	{
-		if((end>begin) || (end>=ElementCount()))
+		if((end<begin) || (end>ElementCount()))
 			throw std::range_error("Requested elements are out of range.");
-		std::copy(m_elements.begin()+begin, m_elements.end()+end, dest);
+		T curr=m_base+m_step*begin;
+		const T *src=&m_elements[begin];
+		for(int i=0;i<(end-begin);i++){
+			dest=std::make_pair(curr, *src);
+			curr+=m_step;
+			src++;
+		}
 	}
 	
-	TypePtr ApplyPolynomial(const std::vector<T> &poly) const
+	void GetProbabilities(uint64_t begin, uint64_t end, T *dest) const
 	{
-		storage_t elts(m_elements.begin(), m_elements.end());
-		for(unsigned i=0;i<elts.size();i++){
-			T xx=elts[i].first;
-			T acc=poly.back();
-			for(int j=(int)poly.size()-2;j>=0;j--){
-				acc=poly[j] + acc * xx;
-			}
-			elts[i].first=acc;
-		}
-		return boost::make_shared<TableDistribution>(elts);
+		if((end<begin) || (end>ElementCount()))
+			throw std::range_error("Requested elements are out of range.");
+		
+		std::copy(m_elements.begin()+ begin, m_elements.begin()+end, dest);
 	}
 };
 

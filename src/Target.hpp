@@ -851,6 +851,18 @@ namespace flopoco{
 		bool   useHardMultipliers_; /**< If true the operator design can use the hardware multipliers */
 		long   sizeOfBlock_;		/**< The size of a primitive memory block */
 		double maxFrequencyMHz_ ;/**< The maximum practical frequency attainable on this target. An indicator of relative performance of FPGAs. 400 is for Virtex4 */
+		
+		/*------------ Floorplanning Related Items ---------*/
+		/**
+		 * NOTE: These variables should be set for each different FPGA 
+		 * architecture, in their corresponding constructor.
+		 */
+		vector<int> multiplierPosition;			/**< The position of the columns of multipliers. The Position represents the neighboring LUT column, on the left. */
+		vector<int> memoryPosition;				/**< The position of the columns of memories. The Position represents the neighboring LUT column, on the left. */
+		int topSliceX;							/**< The x coordinate of the top right slice. */
+		int topSliceY;							/**< The y coordinate of the top right slice. */
+		int lutPerSlice;						/**< The number of function generators per slice. */
+		/*--------------------------------------------------*/
 	
 	};
 

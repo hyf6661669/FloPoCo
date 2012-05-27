@@ -953,6 +953,12 @@ namespace flopoco{
 		// add the operator to the subcomponent list 
 		subComponents_[op->getName()]  = op;
 		return o.str();
+		
+		//Floorplanning related-----------------------------------------
+		floorplan << manageFloorplan();
+		flComponentList.push_back(op->getName());
+		flInstanceNames[op->getName] = instanceName;
+		//--------------------------------------------------------------
 	}
 
 
@@ -2313,12 +2319,170 @@ namespace flopoco{
 		resourceEstimate << addPortCount();
 		resourceEstimate << addComponentResourceCount();
 	}
-	
-	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	
-
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////Functions used for floorplanning
+	void initFloorplanning(){
+		
+		floorplan << "";
+		
+		virtualModuleId = 0;
+		
+		prevEstimatedCountFF 		 = 0;
+		prevEstimatedCountLUT 		 = 0;
+		prevEstimatedCountMemory 	 = 0;
+		prevEstimatedCountMultiplier = 0;
+	}
+	
+	std::string manageFloorplan(){
+		std::ostringstream result;
+		Operator* virtualComponent = new Operator(target); 
+		std::string moduleName = join("virtual_module_", virtualModuleId);
+		
+		virtualModuleId++;
+		
+		virtualComponent->setName(moduleName);
+		virtualComponent->initResourceEstimation();
+		virtualComponent->estimatedCountLUT 		= estimatedCountLUT-prevEstimatedCountLUT;
+		virtualComponent->estimatedCountFF  		= estimatedCountFF-prevEstimatedCountFF;
+		virtualComponent->estimatedCountMultiplier 	= estimatedCountMultiplier-prevEstimatedCountMultiplier;
+		virtualComponent->estimatedCountMemory 		= estimatedCountMemory-prevEstimatedCountMemory;
+		
+		flComponentList.push_back(moduleName);
+		flVirtualComponentList[moduleName] = virtualModuleId;
+		
+		result << "Created virtual module - " << moduleName << endl;
+		result << tab << "Added " << estimatedCountLUT-prevEstimatedCountLUT << " function generators" << endl;
+		result << tab << "Added " << estimatedCountFF-prevEstimatedCountFF << " registers" << endl;
+		result << tab << "Added " << estimatedCountMultiplier-prevEstimatedCountMultiplier << " multipliers" << endl;
+		result << tab << "Added " << estimatedCountMemory-prevEstimatedCountMemory << " memories" << endl;
+		
+		prevEstimatedCountLUT = estimatedCountLUT;
+		prevEstimatedCountFF = estimatedCountFF;
+		prevEstimatedCountMultiplier = estimatedCountMultiplier;
+		prevEstimatedCountMemory = estimatedCountMemory;
+		
+		return result.str();
+	}
+	
+	std::string addPlacementConstraint(std::string source, std::string sink, int type){
+		std::ostringstream result;
+		constraintType newConstraint;
+		
+		if((type!=TO_LEFT_OF) && (type!=TO_RIGHT_OF) && (type!=ABOVE) && (type!=UNDER)){
+			cerr << "Error: Trying to add a placement constraint of undefined type." << endl;
+			exit(1);
+		}
+		if(subComponents_.find(source)==subComponents_.end()){
+			cerr << "Error: source sub-component " << source << " was not found" << endl;
+			exit(1);
+		}
+		if(subComponents_.find(sink)==subComponents_.end()){
+			cerr << "Error: sink sub-component " << sink << " was not found" << endl;
+			exit(1);
+		}
+		
+		newConstraint.type = PLACEMENT;
+		newConstraint.source = source;
+		newConstraint.sink = sink;
+		newConstraint.value = type;
+		
+		flConstraintList.push_back(newConstraint);
+		
+		result << "Created new placement constraint" << endl;
+		result << tab << "Source module " << source 
+				<< "is " << ((type==TO_LEFT_OF) ? "to the left of" : (type==TO_RIGHT_OF) ? "to the right of" : (type==ABOVE) ? "above" : "under")
+				<< " sink module " << sink << endl;
+		
+		return result.str();
+	}
+	
+	std::string addConnectivityConstraint(std::string source, std::string sink, int nrWires){
+		std::ostringstream result;
+		constraintType newConstraint;
+		
+		if(nrWires<1){
+			cerr << "Error: trying to add an invalid number of wires:" << nrWires << endl;
+			exit(1);
+		}
+		if(subComponents_.find(source)==subComponents_.end()){
+			cerr << "Error: source sub-component " << source << " was not found" << endl;
+			exit(1);
+		}
+		if(subComponents_.find(sink)==subComponents_.end()){
+			cerr << "Error: sink sub-component " << sink << " was not found" << endl;
+			exit(1);
+		}
+		
+		newConstraint.type = CONNECTIVITY;
+		newConstraint.source = source;
+		newConstraint.sink = sink;
+		newConstraint.value = nrWires;
+		
+		flConstraintList.push_back(newConstraint);
+		
+		result << "Created new connectivity constraint" << endl;
+		result << tab << "Source module " << source 
+				<< "is connected to sink module " << sink << " by " << nrWires << " wires" << endl;
+		
+		return result.str();
+	}
+	
+	std::string processPlacementConstraints(){
+		
+		for(int i=0; i<flConstraintList.size(); i++){
+			constraintType newConstraint = flConstraintList[i];
+			coordinateType sourceCoordinate, sinkCoordinate;
+			
+			sourceCoordinate = flComponentCordVirtual[newConstraint.source];
+			sinkCoordinate = flComponentCordVirtual[newConstraint.sink];
+			//continue here -> use the source and sink coordinates and the constraint type
+			
+		}
+	}
+	
+	std::string processConnectivityConstraints(){
+		
+	}
+	
+	std::string createVirtualGrid(){
+		std::ostringstream result;
+		
+		result << "Created virtual grid of sub-components" << endl;
+		
+		for(int i=0; i<flComponentList.size(); i++){
+			std::string componentName = flComponentList[i];
+			coordinateType newCoordinate;
+			
+			newCoordinate.x = i;
+			newCoordinate.y = 0;
+			
+			flComponentCordVirtual[componentName] = newCoordinate;
+			
+			result << tab << "Sub-component " << componentName << " placed by default at x=" << i << " y=0" << endl;
+		}
+		
+		return result.str();
+	}
+	
+	std::string createPlacementGrid(){
+		
+	}
+	
+	std::string createConstraintsFile(){
+		
+	}
+	
+	std::string createPlacementGrid(std::string moduleName){
+		
+	}
+	
+	std::string createFloorplan(){
+		
+	}
+	/////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 

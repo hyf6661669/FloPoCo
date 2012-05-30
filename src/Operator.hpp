@@ -45,10 +45,15 @@ namespace flopoco {
 
 
 //Floorplanning - direction of placement constraints
-#define ABOVE			0
-#define UNDER			1
-#define TO_LEFT_OF		2
-#define TO_RIGHT_OF		3
+#define ABOVE						0
+#define UNDER						1
+#define TO_LEFT_OF					2
+#define TO_RIGHT_OF					3
+
+#define ABOVE_WITH_EXTRA			4
+#define UNDER_WITH_EXTRA			5
+#define TO_LEFT_OF_WITH_EXTRA		6
+#define TO_RIGHT_OF_WITH_EXTRA		7
 
 #define PLACEMENT 		0
 #define CONNECTIVITY	1
@@ -1264,8 +1269,10 @@ public:
 	 * Initialize the resources used for the floorplanning process. This
 	 * function should be called before the other functions used for 
 	 * floorplanning are used.
+	 * @param ratio the floorplanning ratio: to what degree should the 
+	 * bounding boxes be filled (has a default value of 0.75)
 	 */
-	void initFloorplanning();
+	void initFloorplanning(double ratio = 0.75);
 	
 	/**
 	 * Count the resources that have been added (as glue logic), since 
@@ -1344,7 +1351,7 @@ public:
 	 * @param moduleName the name of the module
 	 * @return the string summarizing the operation
 	 */
-	std::string createPlacementGrid(std::string moduleName);
+	std::string createPlacementForComponent(std::string moduleName);
 	
 	/**
 	 * Create the floorplan, according the flow described in each 
@@ -1397,13 +1404,16 @@ public:
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////Variables used for floorplanning
-	std::ostringstream floorplan;							/**< Stream containing the floorplanning operations */
+	std::ostringstream 			floorplan;							/**< Stream containing the floorplanning operations */
+	
+	double 					floorplanningRatio;					/**< The level to which the areas in the floorplan are filled to */	
 	
 	vector<string> 				  flComponentList;			/**< The list of sub-components in the order in which they are instantiated */
 	map<string, string>		  	  flInstanceNames;			/**< The list of eqivalences between instance names and components */
 	map<string, Operator*>		  flVirtualComponentList;	/**< The list of virtual components, created for florplanning */
 	map<string, coordinateType> flComponentCordVirtual;	/**< The coordinates of the sub-components in the virtual grid */
 	map<string, coordinateType> flComponentCordReal;		/**< The coordinates of the sub-components in the real grid */
+	map<string, coordinateType> flComponentDimension;		/**< The dimensions of the sub-components in the real grid */
 	vector<constraintType> 	  flConstraintList;			/**< The list of placement constraints between components */
 	
 	int 						virtualModuleId;			/**< The unique identifier of each virtual module created, assigned in the order of their appearance */

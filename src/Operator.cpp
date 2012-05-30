@@ -3202,6 +3202,19 @@ namespace flopoco{
 					maxComponentHeight = operatorWidth;
 			}
 			
+			//if the modules chain vertically and they run out of space, expand design horizontally
+			while(ceil(nrLines*maxComponentHeight*sqrt(1.0/floorplanningRatio)) > target_->topSliceY){
+				maxComponentHeight--;
+				
+				//design cannot be floorplanned with the current constraints
+				if(maxComponentHeight == 0){
+					cerr << "Error: the design cannot be floorplanned with the current constraints. Please reconsider and re-run." << endl;
+					cerr << tab << "number of lines= " << nrLines << " maximum component height=" << maxComponentHeight << " ratio=" << 1.0/floorplanningRatio << endl;
+					cerr << tab << "maximum allowed height=" << target_->topSliceY << endl;
+					exit(1);
+				}
+			}
+			
 			result << tab << "Order the lines of the 2D virtual placement matrix" << endl;
 			
 			//order the lines of the 2D virtual placement matrix, in the
@@ -3234,7 +3247,7 @@ namespace flopoco{
 				vector<string> matrixLine = subcomponentMatrixLines[i];
 				
 				prevCoordX = 0;
-				prevCoordY = i * maxComponentHeight * (1.0/floorplanningRatio);
+				prevCoordY = ceil(i * maxComponentHeight * sqrt(1.0/floorplanningRatio));
 				for(unsigned int j=0; j<matrixLine.size(); j++){
 					int lutWidth, ffWidth, componentWidth;
 					coordinateType componentLocation, componentDimension;
@@ -3243,14 +3256,14 @@ namespace flopoco{
 					if(subComponents_.find(matrixLine[j]) != subComponents_.end()){
 						currentComponent = subComponents_[matrixLine[j]];
 						
-						lutWidth = ((currentComponent->estimatedCountLUT)/(target_->lutPerSlice))/maxComponentHeight;		//width in slices
-						ffWidth = ((currentComponent->estimatedCountFF)/(target_->ffPerSlice))/maxComponentHeight;		//width in slices
+						lutWidth = ceil(((double)(currentComponent->estimatedCountLUT)/(target_->lutPerSlice))/maxComponentHeight);		//width in slices
+						ffWidth = ceil(((double)(currentComponent->estimatedCountFF)/(target_->ffPerSlice))/maxComponentHeight);		//width in slices
 						componentWidth = (lutWidth>ffWidth) ? lutWidth : ffWidth;
 						
 						componentLocation.x = prevCoordX + 1;
 						componentLocation.y = prevCoordY;
-						componentDimension.x = componentWidth * (1.0/floorplanningRatio);
-						componentDimension.y = maxComponentHeight * (1.0/floorplanningRatio);
+						componentDimension.x = ceil(componentWidth * sqrt(1.0/(double)floorplanningRatio));
+						componentDimension.y = ceil(maxComponentHeight * sqrt(1.0/(double)floorplanningRatio));
 						
 						flComponentCordReal[matrixLine[j]] = componentLocation;
 						flComponentDimension[matrixLine[j]] = componentDimension;
@@ -3287,13 +3300,13 @@ namespace flopoco{
 		//	should fit them
 		for(unsigned int i=0; i<flComponentList.size(); i++){
 			result << tab << "Added constraints for sub-component " << flComponentList[i] << endl;
-			file << createPlacementForComponent(flComponentList[i]);cout << "Created constraint for component " << flComponentList[i] << endl;
+			file << createPlacementForComponent(flComponentList[i]);
 		}
 		
 		file.close();
 		
 		if(target_->getVendor() == "Xilinx"){
-			cerr << "Floorplan written to \'flopoco.ucf\' constraints file file" << endl;
+			cerr << "***Floorplan written to \'flopoco.ucf\' constraints file file" << endl;
 		}else if(target_->getVendor() == "Altera"){
 			
 		}
@@ -3335,9 +3348,10 @@ namespace flopoco{
 				it++;
 			}
 			
-			constraintString << "INST \"*\" AREA_GROUP pblock_root;" << endl;
+			constraintString << "INST \"*\" AREA_GROUP=\"pblock_root\";" << endl;
 			constraintString << "AREA_GROUP \"pblock_root\" RANGE=SLICE_X" 
 				<< minX << "Y" << minY << ":SLICE_X" << maxX << "Y" << maxY << ";" << endl;
+			constraintString << endl;
 				
 			return constraintString.str();
 		}
@@ -3348,14 +3362,14 @@ namespace flopoco{
 		if(target_->getVendor() == "Xilinx"){
 			//create the constraint
 			constraintString << "INST \"" << flInstanceNames[moduleName] 
-				<< "\" AREA_GROUP pblock_" << flInstanceNames[moduleName] << ";" << endl;
+				<< "\" AREA_GROUP=\"pblock_" << flInstanceNames[moduleName] << "\";" << endl;
 			//add constraints for function generators and registers
-			constraintString << "AREA_GROUP pblock_" << flInstanceNames[moduleName] 
-				<< " RANGE=SLICE_X" << (flComponentCordReal[moduleName]).x << "Y" << (flComponentCordReal[moduleName]).y
+			constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] 
+				<< "\" RANGE=SLICE_X" << (flComponentCordReal[moduleName]).x << "Y" << (flComponentCordReal[moduleName]).y
 				<< ":SLICE_X" << (flComponentCordReal[moduleName]).x + (flComponentDimension[moduleName]).x
 				<< "Y" << (flComponentCordReal[moduleName]).y + (flComponentDimension[moduleName]).y << ";" << endl;
-			constraintString << "AREA_GROUP pblock_" << flInstanceNames[moduleName] << " GROUP=OPEN;" << endl;
-			constraintString << "AREA_GROUP pblock_" << flInstanceNames[moduleName] << " PLACE=OPEN;" << endl;
+			constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] << "\" GROUP=OPEN;" << endl;
+			constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] << "\" PLACE=OPEN;" << endl;
 			//add constraints for DSPs
 			if((subComponents_[moduleName])->estimatedCountMultiplier != 0){
 				vector<int> dspPositions;
@@ -3373,8 +3387,8 @@ namespace flopoco{
 				for(unsigned int i=0; i<dspPositions.size(); i++){
 					int currentDSPColumn = dspPositions[i];
 					
-					constraintString << "AREA_GROUP pblock_" << flInstanceNames[moduleName] 
-						<< " RANGE=DSP48_X" << currentDSPColumn << "Y" << (flComponentCordReal[moduleName]).y/target_->dspHeightInLUT
+					constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] 
+						<< "\" RANGE=DSP48_X" << currentDSPColumn << "Y" << (flComponentCordReal[moduleName]).y/target_->dspHeightInLUT
 						<< ":DSP48_X" << currentDSPColumn
 						<< "Y" << (flComponentCordReal[moduleName]).y/target_->dspHeightInLUT + dspInColumn << ";" << endl;
 				}
@@ -3397,13 +3411,13 @@ namespace flopoco{
 					int currentRAMColumn = ramPositions[i];
 					
 					if(target_->getID() == "Virtex4" || target_->getID() == "Spartan3"){
-					constraintString << "AREA_GROUP pblock_" << flInstanceNames[moduleName] 
-						<< " RANGE=RAMB16_X" << currentRAMColumn << "Y" << (flComponentCordReal[moduleName]).y/target_->ramHeightInLUT
+					constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] 
+						<< "\" RANGE=RAMB16_X" << currentRAMColumn << "Y" << (flComponentCordReal[moduleName]).y/target_->ramHeightInLUT
 						<< ":RAMB16_X" << currentRAMColumn
 						<< "Y" << (flComponentCordReal[moduleName]).y/target_->ramHeightInLUT + ramInColumn << ";" << endl;
 					}else{
-					constraintString << "AREA_GROUP pblock_" << flInstanceNames[moduleName] 
-						<< " RANGE=RAMB36_X" << currentRAMColumn << "Y" << (flComponentCordReal[moduleName]).y/target_->ramHeightInLUT
+					constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] 
+						<< "\" RANGE=RAMB36_X" << currentRAMColumn << "Y" << (flComponentCordReal[moduleName]).y/target_->ramHeightInLUT
 						<< ":RAMB36_X" << currentRAMColumn
 						<< "Y" << (flComponentCordReal[moduleName]).y/target_->ramHeightInLUT + ramInColumn << ";" << endl;	
 					}
@@ -3428,20 +3442,22 @@ namespace flopoco{
 	std::string Operator::createFloorplan(){
 		ostringstream result;
 		
-		cerr << "-----------------------------------------------------------" << endl;
-		cerr << "Starting creation of floorplan for operator " << uniqueName_ << endl;
-		cerr << "---Triggered processing of placement constraints" << endl;
+		cerr << "=========================================================================" << endl;
+		cerr << "*                          Floorplanning                                *" << endl;
+		cerr << "=========================================================================" << endl;
+		cerr << "Starting the creation of the floorplan for operator " << uniqueName_ << endl;
+		cerr << "***Triggered processing of placement constraints" << endl;
 		result << processPlacementConstraints();
-		cerr << "---Triggered processing of connectivity constraints" << endl;
+		cerr << "***Triggered processing of connectivity constraints" << endl;
 		result << processConnectivityConstraints();
-		cerr << "---Triggered creation of the virtual arrangement of the sub-components" << endl;
+		cerr << "***Triggered creation of the virtual arrangement of the sub-components" << endl;
 		result << createVirtualGrid();
-		cerr << "---Triggered creation of the actual arrangement of the sub-components" << endl;
+		cerr << "***Triggered creation of the actual arrangement of the sub-components" << endl;
 		result << createPlacementGrid();
-		cerr << "---Triggered creation of the constraints" << endl;
+		cerr << "***Triggered creation of the constraints" << endl;
 		result << createConstraintsFile();
 		cerr << "Finished creating the floorplan for operator " << uniqueName_ << endl;
-		cerr << "-----------------------------------------------------------" << endl;
+		cerr << "=========================================================================" << endl;
 		
 		return result.str();
 	}

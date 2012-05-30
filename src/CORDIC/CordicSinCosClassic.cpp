@@ -36,6 +36,10 @@ namespace flopoco{
 		//RE
 		initResourceEstimation();
 		//RE
+		
+		//FLP
+		initFloorplanning(0.45);
+		//FLP
 
 		// declaring inputs
 		addInput  ( "X"  , wcs, true );

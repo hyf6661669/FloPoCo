@@ -49,6 +49,12 @@ using namespace flopoco;
 	int reLevel;
 	bool resourceEstimationDebug = false;
 	//-----------------------------------------------------------------
+	
+	//------------------ Floorplanning --------------------------------
+	bool floorplanning = false;
+	bool floorplanningDebug = false;
+	ostringstream floorplanMessages;
+	//-----------------------------------------------------------------
 
 
 
@@ -703,7 +709,7 @@ bool parseCommandLine(int argc, char* argv[], vector<Operator*> &oplist){
 				//------------ Resource Estimation ---------------------
 				else if (o == "resourceEstimation") {
 					int estimation = atoi(v.c_str());
-					if (estimation>=0 && estimation<=2) {
+					if (estimation>=0 && estimation<=3) {
 						reLevel = estimation;
 						
 						if(verbose) 
@@ -720,6 +726,26 @@ bool parseCommandLine(int argc, char* argv[], vector<Operator*> &oplist){
 					else if(v=="no")  resourceEstimationDebug = false;
 					else {
 						cerr<<"ERROR: resource estimation debugging option should be yes or no, got "<<v<<"."<<endl; 
+						usage(argv[0],"extra");
+					}
+				}
+				//------------------------------------------------------
+				//------------------ Floorplanning ---------------------
+				else if (o == "floorplanning") {
+					if(v=="yes") floorplanning = true;
+					else if(v=="no")  floorplanning = false;
+					else {
+						cerr<<"ERROR: floorplanning option should be yes or no, got "<<v<<"."<<endl; 
+						usage(argv[0],"extra");
+					}
+				}
+				//------------------------------------------------------
+				//--------------- Floorplanning Debug ------------------
+				else if (o == "flpDebug") {
+					if(v=="yes") floorplanningDebug = true;
+					else if(v=="no")  floorplanningDebug = false;
+					else {
+						cerr<<"ERROR: floorplanning debugging option should be yes or no, got "<<v<<"."<<endl; 
 						usage(argv[0],"extra");
 					}
 				}
@@ -2310,6 +2336,86 @@ bool parseCommandLine(int argc, char* argv[], vector<Operator*> &oplist){
 			Operator* tg = new CordicSinCosClassic(target, w);
 			addOperator(oplist, tg);
 		}
+		
+		
+		else if (opname == "IntComplexAdder") {
+			int nargs = 2;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wI = checkPositiveOrNull(argv[i++], argv[0]);
+			int wF = checkPositiveOrNull(argv[i++], argv[0]);
+			Operator* tg = new IntComplexAdder(target, wI, wF);
+			addOperator(oplist, tg);
+		}
+		
+		else if (opname == "IntComplexMultiplier") {
+			int nargs = 2;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wI = checkPositiveOrNull(argv[i++], argv[0]);
+			int wF = checkPositiveOrNull(argv[i++], argv[0]);
+			Operator* tg = new IntComplexMultiplier(target, wI, wF);
+			addOperator(oplist, tg);
+		}
+		
+		else if (opname == "IntTwiddleMultiplier") {
+			int nargs = 4;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wI = checkPositiveOrNull(argv[i++], argv[0]);
+			int wF = checkPositiveOrNull(argv[i++], argv[0]);
+			int exp = checkPositiveOrNull(argv[i++], argv[0]);
+			int fftSize = checkPositiveOrNull(argv[i++], argv[0]);
+			Operator* tg = new IntTwiddleMultiplier(target, wI, wF, exp, fftSize);
+			addOperator(oplist, tg);
+		}
+		
+		else if (opname == "IntTwiddleMultiplierAlternative") {
+			int nargs = 4;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wI = checkPositiveOrNull(argv[i++], argv[0]);
+			int wF = checkPositiveOrNull(argv[i++], argv[0]);
+			int exp = checkPositiveOrNull(argv[i++], argv[0]);
+			int fftSize = checkPositiveOrNull(argv[i++], argv[0]);
+			Operator* tg = new IntTwiddleMultiplierAlternative(target, wI, wF, exp, fftSize);
+			addOperator(oplist, tg);
+		}
+		
+		else if (opname == "IntFFTButterfly") {
+			int nargs = 4;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wI = checkPositiveOrNull(argv[i++], argv[0]);
+			int wF = checkPositiveOrNull(argv[i++], argv[0]);
+			int exp = checkPositiveOrNull(argv[i++], argv[0]);
+			int fftSize = checkPositiveOrNull(argv[i++], argv[0]);
+			Operator* tg = new IntFFTButterfly(target, wI, wF, exp, fftSize);
+			addOperator(oplist, tg);
+		}
+		
+		else if (opname == "IntFFTLevelDIT2") {
+			int nargs = 4;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wI = checkPositiveOrNull(argv[i++], argv[0]);
+			int wF = checkPositiveOrNull(argv[i++], argv[0]);
+			int levelNumber = checkPositiveOrNull(argv[i++], argv[0]);
+			int fftSize = checkPositiveOrNull(argv[i++], argv[0]);
+			Operator* tg = new IntFFTLevelDIT2(target, wI, wF, levelNumber, fftSize);
+			addOperator(oplist, tg);
+		}
+		
+		else if (opname == "IntFFT") {
+			int nargs = 3;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wI = checkPositiveOrNull(argv[i++], argv[0]);
+			int wF = checkPositiveOrNull(argv[i++], argv[0]);
+			int fftSize = checkPositiveOrNull(argv[i++], argv[0]);
+			Operator* tg = new IntFFT(target, wI, wF, fftSize);
+			addOperator(oplist, tg);
+		}
 
 #endif
 
@@ -2428,7 +2534,6 @@ int main(int argc, char* argv[] )
 	cerr<< "Output file: " << filename <<endl;
 	
 	//------------------------ Resource Estimation ---------------------
-		
 	for (vector<Operator*>::iterator it = oplist.begin(); it!=oplist.end(); ++it) {
 		Operator* op = *it;
 		
@@ -2436,6 +2541,7 @@ int main(int argc, char* argv[] )
 			cerr << op->generateStatistics(reLevel);
 	}
 	//------------------------------------------------------------------
+	
 	//------------------ Resource Estimation Debugging -----------------
 	if(resourceEstimationDebug){
 		ofstream file;
@@ -2447,6 +2553,39 @@ int main(int argc, char* argv[] )
 		}
 		file.close();
 		cerr << "Resource estimation log written to the \'flopoco.debug\' file" << endl;
+	}
+	//------------------------------------------------------------------
+	
+	//------------------------ Floorplanning ---------------------------
+	for (vector<Operator*>::iterator it = oplist.begin(); it!=oplist.end(); ++it) {
+		Operator* op = *it;
+		
+		if(reLevel == 0){
+			cerr << "Floorplanning option can be used only when the resource estimation is enabled." 
+					<< " Please rerun the program with the appropriate options" << endl;
+			exit(1);
+		}
+		if(floorplanning)
+			floorplanMessages << op->createFloorplan();
+	}
+	//------------------------------------------------------------------
+	
+	//------------------ Floorplanning Debugging -----------------------
+	if(reLevel==0 || !floorplanning){
+		cerr << "Debugging Floorplanning option can be used only when the resource estimation and the floorplanning is enabled." 
+					<< " Please rerun the program with the appropriate options" << endl;
+			exit(1);
+	}else if(floorplanningDebug){
+		ofstream file;
+		file.open("flopoco.floorplan.debug");
+		for (vector<Operator*>::iterator it = oplist.begin(); it!=oplist.end(); ++it) {
+			Operator* op = *it;
+			
+			file << op->floorplan.str();
+			file << floorplanMessages.str();
+		}
+		file.close();
+		cerr << "Floorplanning log (for debugging purposes) written to the \'flopoco.floorplanning.debug\' file" << endl;
 	}
 	//------------------------------------------------------------------
 	

@@ -43,7 +43,7 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})
 LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} ${GSL_LIBRARY_DIRS})
 
 add_executable(test_fixed_point_exp fixed_point_exp/test_fixed_point_exp.cpp)
-target_link_libraries(test_fixed_point_exp ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
+target_link_libraries(test_fixed_point_exp ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB} FloPoCoLib)
 
 add_executable(test_accumulation utils/test_accumulation.cpp)
 target_link_libraries(test_accumulation ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})

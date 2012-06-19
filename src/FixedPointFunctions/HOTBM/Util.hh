@@ -12,11 +12,19 @@ using namespace std;
 
 void handleSignals();
 
-#define P(n) (((long long int)1) << (n))
+
+// DT10 : Commenting this out didn't seem to hurt, and having a macro called T was messing with template functions
+//#define T(i,p,w) ((i) & ((P(w)-1) << ((p)-(w))))
+
+// DT10 : Something depends on this, but it wrecks boost.test, so this seems like an ok solution
+//#define P(n) (((long long int)1) << (n))
+inline long long int P(int n) { return ((long long int)1)<<n; }
+
+// DT10 : leaving these alone for now
 #define E(x) (exp2(x))
-#define T(i,p,w) ((i) & ((P(w)-1) << ((p)-(w))))
 #define I(i,p,w) (((i) >> ((p)-(w))) & (P(w)-1))
 
+// DT10 : aww, it's like you're replicating "windows.h". See, you lurvve windows really :)
 #define MAX(x,y) ((x) >= (y) ? (x) : (y))
 #define MIN(x,y) ((x) <= (y) ? (x) : (y))
 

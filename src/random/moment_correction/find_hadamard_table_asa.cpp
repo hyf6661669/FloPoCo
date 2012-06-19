@@ -4,8 +4,6 @@
 #include "random/distributions/make_table_approximation.hpp"
 #include "random/distributions/clt_distribution.hpp"
 
-#include "random/utils/anneal_gsl.hpp"
-
 #include "gsl/gsl_cdf.h"
 
 using namespace flopoco::random;
@@ -22,8 +20,6 @@ public:
 
 	int m_expectedBase;
 	std::vector<double> m_expectedPdf, m_expectedCdf;
-
-	std::vector<double> m_buckets1024; // Equally probability bucket boundaries
 
 	int ToInt(double v) const
 	{ return ldexp(v, m_fb); }
@@ -63,11 +59,6 @@ public:
 			m_expectedCdf[i] = gsl_cdf_ugaussian_P(x+ldexp(1.0,-m_fb));
 			m_expectedPdf[i] = exp(-x*x/2) * pdfScale;
 		}
-		
-		m_buckets1024.resize(1025);
-		for(int i=0;i<=1024;i++){
-			m_buckets1024[i]=gsl_cdf_ugaussian_Pinv(i/1024.0);
-		}
 	}
 
 	virtual state_t Step(const gsl_rng *r, const state_t &src, double step_size) const
@@ -75,9 +66,7 @@ public:
 		std::vector<double> res(src);
 		for(int i=0;i<(int)src.size();i++){
 			double delta=(gsl_rng_uniform(r)-gsl_rng_uniform(r)) * step_size;
-			double tmp=Fix(res[i]+delta);
-			//fprintf(stderr, "%lg\n", tmp-res[i]);
-			res[i]=tmp;
+			res[i]=std::max(std::fabs(Fix(res[i]+delta)), ldexp(1,-m_fb));
 		}
 		return res;
 	}
@@ -92,7 +81,6 @@ public:
 		double kurtosis;
 		double baseStddev;
 		double baseKurt;
-		double buckets1024;
 	};
 	
 	metrics_t CalcMetrics(double gotBase, int nGot, const double *gotPdf, const double *truePdf, const double *trueCdf) const
@@ -104,7 +92,6 @@ public:
 		res.adStat=0;
 		res.stddev=0;
 		res.kurtosis=0;
-		res.buckets1024=0;
 		double oc=0;
 		double x=gotBase, xstep=ldexp(1,-m_fb);
 		x=x-xstep;
@@ -127,22 +114,6 @@ public:
 		assert(x==0);
 		res.kurtosis /= res.stddev*res.stddev;
 		res.stddev=sqrt(res.stddev);
-		
-		const double *pUpper=&m_buckets1024[1];
-		double tAcc=0, cAcc=0;
-		x=gotBase-xstep;
-		for(int i=0;i<nGot;i++){
-			x+=xstep;
-			double p=gotPdf[i];
-			while(x>*pUpper){
-				tAcc+= pow(cAcc-1.0/1024,2)*1024;
-				cAcc=0;
-				pUpper++;
-			}
-			cAcc+=p;
-		}
-		tAcc+= pow(cAcc-1.0/1024,2)*1024;
-		res.buckets1024=tAcc;
 		
 		return res;
 	}
@@ -199,14 +170,14 @@ public:
 	virtual double Energy(const std::vector<double> &s) const
 	{
 		metrics_t m=EnergyFull(s);
-		return m.buckets1024;
+		return std::fabs(m.stddev-1) + m.adStat;
 	}
 	
 	virtual void Print(const state_t &a) const
 	{
 		metrics_t mm=EnergyFull(a);
-		fprintf(stderr, "pchi2=%lg, cchi2=%lg, ks=%lg, ad=%lg, sttdev=%.8lg kurt=%lg, baseStd=%.8lg, baseKurt=%lg, buckets1024=%lg\n",
-			mm.pdfChi2, mm.cdfChi2, mm.ksStat, mm.adStat, mm.stddev, mm.kurtosis, mm.baseStddev, mm.baseKurt, mm.buckets1024
+		fprintf(stderr, "pchi2=%lg, cchi2=%lg, ks=%lg, ad=%lg, sttdev=%.8lg kurt=%lg, baseStd=%.8lg, baseKurt=%lg\n",
+			mm.pdfChi2, mm.cdfChi2, mm.ksStat, mm.adStat, mm.stddev, mm.kurtosis, mm.baseStddev, mm.baseKurt
 		);
 	}
 	
@@ -220,7 +191,7 @@ public:
 	{ return 1e-10; }
 	
 	virtual double MaxStepSize() const
-	{ return pow(2.0, -(m_fb-3)); }
+	{ return pow(2.0, -(m_fb-6)); }
 
 	virtual double MinStepSize() const
 	{ return pow(2.0, -m_fb); }
@@ -237,7 +208,7 @@ int main(int argc, char *argv[])
 	try{
 		int n=32;
 		int k=4;
-		int s_w=8, t_w=10;
+		int s_w=10, t_w=10;
 		std::vector<double> curr;
 		
 		while(s_w<=t_w){

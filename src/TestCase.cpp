@@ -48,8 +48,11 @@ namespace flopoco{
 	void TestCase::addInput(string name, mpz_class v)
 	{
 		Signal* s = op_->getSignalByName(name);
-		if (v >= (mpz_class(1) << s->width())) 
-			throw string("ERROR in TestCase::addInput, signal value out of range");
+		if (v >= (mpz_class(1) << s->width())) {
+			std::stringstream tmp;
+			tmp<<"ERROR in TestCase::addInput, signal value for '"<<name<<"' out of range : "<<v<<", should be "<<s->width()<<" bits";
+			throw tmp.str();
+		}
 		if (v<0) {
 			if (v < - (mpz_class(1) << s->width())) 
 				throw string("ERROR in TestCase::addInput, negative signal value out of range");

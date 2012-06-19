@@ -85,7 +85,8 @@ namespace flopoco{
 
 		setCriticalPath(getMaxInputDelays(inputDelays));
 
-		if (logicTable_ == 1)  {
+		// DT10 : modified the condition to match the condition in outputVHDL
+		if (logicTable_ == 1  || wIn <= target_->lutInputs())  {
 			// Delay is that of broadcasting the input bits to wOut LUTs, plus the LUT delay itself
 			if(wIn <= target->lutInputs()) 
 				addToCriticalPath(target->localWireDelay(wOut) + target->lutDelay());
@@ -123,8 +124,13 @@ namespace flopoco{
 		if (logicTable_==1 || wIn <= target_->lutInputs()){
 			int i,x;
 			mpz_class y;
+			
+			o<<tab<<"signal table_out : std_logic_vector("<<wOut-1<<" downto 0);\n";
+			
+			outputVHDLSignalDeclarations(o);
 			beginArchitecture(o);		
-			o	<< "  with X select  Y <= " << endl;
+			
+			o	<< "  with X select  table_out <= " << endl;
 			for (x = minIn; x <= maxIn; x++) {
 				y=function(x);
 				//if( y>=(1<<wOut) || y<0)
@@ -135,6 +141,10 @@ namespace flopoco{
 			for (i = 0; i < wOut; i++) 
 				o << "-";
 			o <<  "\" when others;" << endl;
+			
+			// DT10 : I moved this signal here in readiness for supporting a clock process, but couldn't work out if it was safe
+			o<<tab<<"Y <= table_out;\n";
+						
 //			Operator::outputVHDL(o,  name);
 		}
 		else { 

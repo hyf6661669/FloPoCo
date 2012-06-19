@@ -1,159 +1,142 @@
+#ifndef flopoco_random_fixed_point_exp_find_close_value_hpp
+#define flopoco_random_fixed_point_exp_find_close_value_hpp
 
+#include "residual_type.hpp"
 
-class no_close_value_error : public std::exception
-{};	
-	
-template<class T>
-class fixed_point_t
+#include <map>
+
+namespace flopoco{
+namespace random{
+
+template<class T>	
+struct close_value_t
 {
-private:
-	bool isSigned;
-	int msb;
-	int lsb;
-	
-public:
-	class range_it_t
-	{
-	private:
-		T m_curr, m_delta;
-	public:
-		range_it_t(const T &curr, const T &delta)
-			: m_curr(curr)
-			, m_delta(delta)
-		{}
-		
-		bool operator==(const range_it_t &o) const
-		{ return m_curr==o.m_curr; }
-		
-		range_it_t operator ++() const
-		{ m_curr+=m_delta; return *this; }
-		
-		const T &operator*() const
-		{ return m_curr; }
-	};		
-	
-	bool IsSigned() const
-	{ return 
-
-	unsigned Width() const
-	{ return msb-lsb+1; } 
-	
-	T MinValue() const
-	{ return isSigned ? power2<T>(msb) : (T)0.0; }
-	
-	T MaxValue() const
-	{ return power2<T>(msb)-power2<T>(lsb); }
-	
-	T DeltaValue() const
-	{ return power2<T>(lsb); }
-	
-	typedef range_it_t const_iterator;
-	
-	const_iterator begin() const
-	{ return const_iterator(MinValue(), DeltaValue()); }
-	
-	const_iterator end() const
-	{ return const_iterator(MaxValue()+DeltaValue(), DeltaValue()); }
-};
-
-	
-template<class T>
-struct close_value_params_t
-{
-	T sigma;
-	T mu;
-	int fractionBits;
-	bool residualSigned;
-	int residualMsb; 
-	int residualLsb;
+	T input;
+	T offset;
+	T exact;	// == exp(input-offset)
+	T approx;	// == round(exact,fracBits)
+	unsigned fracBits;
 };
 
 template<class T>
-struct close_value_entry_t
-{
-private:
-	boost::shared_ptr<T> m_params;
-	int m_exponent, m_fraction;
-	T m_offset, m_error;
-public:
-	close_value_entry_t(boost::shared_ptr<T> params, T offset)
-		: m_params(params)
-		, m_offset(offset)
-	{}
-	
-	const T &GetValue(const T &x) const
-	{ return exp(m_params->sigma*(m_x-m_offset)+m_params->mu); }
-};
-
-//! Find a close appproximation to exp(x*SIGMA+MU)
-/*! The return value  is (value,residual), where:
-	value*exp(residual*SIGMA+MU) = exp(x*SIGMA+MU),
-	residual is a fixed-point number with the specified type,
-	and "value" can be represented with a floating-point
-	value with "bits" worth of mantissa.
-*/
-template<class T>
-close_value_entry_t<T> FindCloseValue(
-	boost::shared_ptr<close_value_params_t> params,
-	const T &x
+close_value_t<T> FindCloseValue(
+	T mu, T sigma,
+	T input,
+	const residual_type<T> &offsetSpace,
+	T errorMin,
+	T errorMax,
+	unsigned fracBits // Current number of fracBits
 ){
-	T target=exp(params->sigma*x+params->mu);
+	close_value_t<T> res;
+	res.input=input;
 	
-	bool bestValid=false
-	T bestOffset=0, T bestError=0;
-	T offset=0, delta=pow(2.0, params->residualLsb), max=pow(2.0, params->residualMsb);
-	while(base<max){
-		T v=exp(params->sigma*(x-offset)+params->mu);
-		T error=(target-v)/target;
-		if(params->maxRelError.first <= error && error <=params->maxRelError.second){
-			if(!bestValid || (fabs(error) < fabs(bestError))){
-				bestOffset=offset;
-				bestError=error;
-			}
-			bestValid=true;
-			if(params->stoppingRelError.first <= error && error <= params->stoppingRelError.second){
-				break;
-			}
+	while(true){
+		typename residual_type<T>::iterator curr=offsetSpace.begin();
+		typename residual_type<T>::iterator end=offsetSpace.end();
+	
+		if(fracBits+1 >= (unsigned)std::numeric_limits<T>::digits){
+			std::stringstream acc;
+			acc<<"FindCloseValue - fracBits has risen to level of type fraction width, fracBits="<<fracBits<<", digits="<<std::numeric_limits<T>::digits<<"\n";
+			throw std::invalid_argument(acc.str());
 		}
-		if(params->residualSigned){
-			v=exp(params->sigma*(x+offset)+params->mu);
-			error=(target-v)/target;
-			if(params->maxRelError.first <= error && error <=params->maxRelError.second){
-				if(!bestValid || (fabs(error) < fabs(bestError))){
-					bestOffset=-offset;
-					bestError=error;
-				}
-				bestValid=true;
-				if(params->stoppingRelError.first <= error && error <= params->stoppingRelError.second){
-					break;
-				}
+		
+		while(curr!=end){
+			
+			T offset=*curr;
+			
+			T ref=exp(mu+sigma*(input-offset));
+			int e;
+			T refF=frexp(ref,&e);
+			T gotF=ldexp(ceil(ldexp(refF, fracBits+1)), -(int)(fracBits+1));
+			T got=ldexp(gotF, e);
+			T err=(got-ref)/ref;
+			
+			if((errorMin<=err) && (err<=errorMax)){
+				res.fracBits=fracBits;
+				res.offset=offset;
+				res.exact=ref;
+				res.approx=got;
+				return res;
 			}
+			
+			gotF=ldexp(floor(ldexp(refF, fracBits+1)), -(int)(fracBits+1));
+			got=ldexp(gotF, e);
+			err=(got-ref)/ref;
+			
+			if((errorMin<=err) && (err<=errorMax)){
+				res.fracBits=fracBits;
+				res.offset=offset;
+				res.exact=ref;
+				res.approx=got;
+				return res;
+			}
+		
+			++curr;
 		}
-		offset+=delta;
+		++fracBits;
 	}
-	if(!bestValid)
-		throw no_close_value_error();
-	params->worstRelError.first=std::min(
-	return close_value_entry_t(params, bestOffset);
 }
 
 template<class T>
 struct close_value_table_t
 {
-private:
-	boost::shared_ptr<T> m_entryParams;
+	T mu, sigma;
+	residual_type<T> inputSpace;
+	residual_type<T> targetOffsetSpace;
+	T targetErrorMin, targetErrorMax;
+	residual_type<T> offsetSpace;
+	result_type<T> resultSpace;
+	std::map<T,close_value_t<T> > table;
+};
+
+/* Run through the entire input space, and find the smallest number of
+	fracBits that will support the given relative error, and a mapping
+	from values in the inputSpace to an offset*/
+template<class T>
+close_value_table_t<T> FindCloseValues(
+	T mu, T sigma,
+	const residual_type<T> &inputSpace,
+	const residual_type<T> &offsetSpace,
+	T errorMin,
+	T errorMax
+){
+	close_value_table_t<T> res={
+		mu, sigma,
+		inputSpace, offsetSpace,
+		errorMin, errorMax,
+		offsetSpace,
+		result_type<T>(0),
+		std::map<T,close_value_t<T> >()
+	};
 	
-	bool m_inputSigned;
-	int m_inputMsb, m_inputLsb;
-public:
-	close_value_table_t(
-		boost::shared_ptr<T> inputParams
-	){
-		: m_params(params)
-		, m_offset(offset)
-	{
-		
+	unsigned fracBits=0;
+	
+	typename residual_type<T>::iterator curr=inputSpace.begin();
+	typename residual_type<T>::iterator end=inputSpace.end();
+	
+	//std::cerr<<"errMin="<<errorMin<<", errMax="<<errorMax<<"\n";
+	
+	while(curr!=end){
+		close_value_t<T> v=FindCloseValue(mu, sigma, *curr, offsetSpace, errorMin, errorMax, fracBits);
+		fracBits=std::max(fracBits, v.fracBits);
+		//std::cerr<<"  in="<<*curr<<", fracBits="<<v.fracBits<<", relErr="<<(v.approx-v.exact)/v.exact<<"\n";
+		res.table[*curr]=v;
+		res.offsetSpace.Add(v.offset);
+		++curr;
 	}
 	
+	res.resultSpace=result_type<T>(fracBits);
 	
-};
+	typename std::map<T,close_value_t<T> >::iterator it=res.table.begin();
+	while(it!=res.table.end()){
+		res.resultSpace.Add(it->second.approx, it->second.exact);
+		++it;
+	}
+	
+	return res;
+}
+
+}; // random
+}; // flopoco
+
+#endif

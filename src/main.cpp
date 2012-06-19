@@ -2368,6 +2368,8 @@ int main(int argc, char* argv[] )
 {
 	uint32_t i;
 	
+	srand48(1);
+	
 
 	target = new Virtex5();
 

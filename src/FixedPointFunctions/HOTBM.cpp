@@ -46,6 +46,16 @@ namespace flopoco{
 			o << "hotbm_" << vhdlize(func) << wI << "_" << wO << "_" << n;
 			o << "_" << vhdlize(xmin) << "_" << vhdlize(xmax) << "_" << vhdlize(scale);
 			uniqueName_ = o.str();
+			
+			// DT10 : Xilinx tools break on very long function names
+			if(uniqueName_.size()>26){
+				unsigned acc=0;
+				for(int i=0;i<uniqueName_.size();i++)
+					acc=acc*17+uniqueName_[i];
+				o.str("");
+				o<<uniqueName_.substr(0,26-10)<<acc;
+				uniqueName_=o.str();
+			}
 		}
 		setCombinatorial();
 		addInput("X", wI);

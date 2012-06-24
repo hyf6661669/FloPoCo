@@ -1,14 +1,11 @@
-#ifndef flopoco_random_func_approx_exp_stage_hpp
-#define flopoco_random_func_approx_exp_stage_hpp
+#ifndef flopoco_random_poly_approx_exp_stage_hpp
+#define flopoco_random_poly_approx_exp_stage_hpp
 
 #include "fixed_point_exp_stage.hpp"
 
 #include "find_close_value.hpp"
 
 #include "FixedPointFunctions/HOTBM.hpp"
-#include "FixedPointFunctions/HOTBM/Minimax.hh"
-
-#include "sollya.h"
 
 namespace flopoco
 {
@@ -21,8 +18,6 @@ class FuncApproxExpStage
 protected:
 	residual_type<T> m_outputResidualType;
 	result_type<T> m_outputResultType;
-
-	boost::shared_ptr<flopoco::HOTBM> m_fe;
 
 public:
 	FuncApproxExpStage(
@@ -48,28 +43,21 @@ public:
 		if(m_outputResultType.RangeMin()<1 || 1.5<m_outputResultType.RangeMax())
 			throw std::invalid_argument("FuncApproxExpState - Result must be in range [1,1.5)");
 		
-		double scaleInput=pow(2.0, inputResidualType.MsbPower()+1);
-		double scaleOutput=pow(2.0, m_outputResultType.FracWidth()-m_outputResultType.FracWidthNonZero()-1);
+		double scaleInput=pow(2.0, inputResidualType.MsbPower());
+		double scaleOutput=pow(2.0, m_outputResultType.FracWidth()-m_outputResultType.FracWidthNonZero());
 		
 		std::cerr<<"in="<<m_inputResidualType<<", out="<<m_outputResultType<<"\n";
 		std::cerr<<"scaleInput="<<scaleInput<<", scaleOutput="<<scaleOutput<<"\n";
 		
+		// I don't really like this, as I'm not holding the reference via shared_ptr... never mind
 		ostringstream function;
-		function <<"(exp("<<expMu<<" + x * 2^"<<inputResidualType.MsbPower()+1<<" * "<<expSigma<<")-1)*"<<scaleOutput;
+		function <<"(exp("<<expMu<<" + x * 2^"<<inputResidualType.MsbPower()<<" * "<<expSigma<<")-1)*"<<scaleOutput;
 		std::cerr<<" function = "<<function.str()<<"\n";
+		flopoco::HOTBM *fe;
 		
-		REPORT(DEBUG, "HOTBM source function = "<<function.str());
+		fe = new flopoco::HOTBM(target, function.str(), "FAE", m_inputResidualType.Width(), m_outputResultType.FracWidthNonZero()+1, 1, false);
+		oplist.push_back(fe);
 		
-		
-		int pp=getToolPrecision();
-		setToolPrecision(96);
-		int pInfPoints=Minimax::setInfNormPoints(31);	// We know it is very smooth
-		
-		m_fe.reset(new flopoco::HOTBM(target, function.str(), "FAE", m_inputResidualType.Width(), m_outputResultType.FracWidthNonZero()+1, 2, false));
-		oplist.push_back(m_fe.get());
-		
-		setToolPrecision(pp);
-		Minimax::setInfNormPoints(pInfPoints);
 		
 		ostringstream name;
 		name << "FuncApproxExpStage_"<<m_inputResidualType.DescriptionId();
@@ -79,10 +67,10 @@ public:
 		addInput ("iResidual" , InputResidualType().Width(), true);
 		addOutput ("oResult" , OutputResultType().Width(), true);
 		
-		inPortMap(m_fe.get(), "X", "iResidual");
-		outPortMap(m_fe.get(), "R", "result");
+		inPortMap(fe, "X", "iResidual");
+		outPortMap(fe, "R", "result");
 		
-		vhdl<<instance(m_fe.get(), "fe");
+		vhdl<<instance(fe, "fe");
 		syncCycleFromSignal("result");
 		
 		vhdl<<tab<<"oResult <= \"";
@@ -92,9 +80,7 @@ public:
 	}
 	
 	virtual ~FuncApproxExpStage()
-	{
-		// TODO : should I take m_fe out of oplist when destructing?
-	}
+	{}
 	
 	virtual residual_type<T> OutputResidualType() const
 	{ return m_outputResidualType; }
@@ -104,49 +90,17 @@ public:
 	
 	virtual std::pair<T,T> Execute(const T &residual, const T &result) const
 	{
-		assert(result==1.0);
-		mpz_class bits=m_inputResidualType.ToMpz(residual);
+		throw std::invalid_argument("Not implemented.");
 		
-		boost::shared_ptr<flopoco::TestCase> tc(new flopoco::TestCase(m_fe.get()));
+		/*assert(result==1.0);
+		uint64_t bits=m_inputResidualType.ToBits(residual);
 		
-		tc->setInputValue("X", bits); // Unsafe
-		m_fe->emulate(tc.get());
-		const std::vector<mpz_class> &res=tc->getExpectedOutputValues("R");
+		unsigned index=bits>>(m_inputResidualType.Width()-m_tableInputBits);
+		T baseResidual=m_outputResidualType.FromBits(bits & ((1ull<<(m_inputResidualType.Width()-m_tableInputBits))-1));
 		
-		if((res.size()!=1) && (res.size()!=2))
-			throw std::logic_error("FuncApproxExpStage::Execute - Expected one or two values from HOTBM.");
+		assert(m_tableIndexType.FromBits(index)+baseResidual==residual);
 		
-		T exact=ReferenceExp(residual);
-		
-		if(res[0]<0)
-			throw std::logic_error("FuncApproxExpStage::Execute - HOTBM returned a negative result.");
-		T a=m_outputResultType.FromMpz(res[0]);
-		T b=a;
-		if(res.size()==2){
-			if(res[1]<0)
-				throw std::logic_error("FuncApproxExpStage::Execute - HOTBM returned a negative result.");
-			b=m_outputResultType.FromMpz(res[1]);
-		}
-		
-		if(a>b)
-			std::swap(a,b);
-		
-		REPORT(DEBUG, "input="<<residual<<", exact="<<exact<<", got=("<<a<<","<<b);
-		
-		if((exact < a) || (b<exact)){
-			throw std::logic_error("FuncApproxExpStage::Execute - Output of HOTBM does not bracket exact result (not faithful).");
-		}
-		
-		if(a!=b){
-			if(m_outputResultType.Next(a)!=b)
-				throw std::logic_error("FuncApproxExpStage::Execute - Output of HOTBM does not differ by one bit (not faithful).");
-		}
-		
-		if( (exact-a) > (b-exact) ){
-			return std::make_pair((T)0.0, a);
-		}else{
-			return std::make_pair((T)0.0, b);
-		}
+		return std::make_pair(baseResidual+m_table[index].residualOffset, m_table[index].roundedResult);*/
 	}
 };
 

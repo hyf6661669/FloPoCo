@@ -155,6 +155,12 @@ public:
 		emulate(tc);
 		return tc;
 	}
+	
+	//! Retrieves all distinct output (exact,approx) pairs, assuming the input is 1.0 May throw if it is ridiculous
+	virtual std::vector<std::pair<T,T> > GetAllResultValues() const
+	{
+		throw std::logic_error("FixedPointExpStage::GetAllResultValues() - Not implemented.");
+	}
 };
 
 typedef boost::shared_ptr<FixedPointExpStage> FixedPointExpStagePtr;

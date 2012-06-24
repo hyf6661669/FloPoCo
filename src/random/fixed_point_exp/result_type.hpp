@@ -214,7 +214,7 @@ public:
 		return ldexp(f, e);
 	}
 	
-	T FromMpz(const mpz_class &x)
+	T FromMpz(const mpz_class &x) const
 	{ return FromBits(to_uint64_t(x)); }
 	
 	uint64_t ToBits(const T &x) const
@@ -246,6 +246,12 @@ public:
 	
 	mpz_class ToMpz(const T &x) const
 	{ return to_mpz_class(ToBits(x)); }
+	
+	T Next(const T &x) const
+	{
+		// This is a hack that works well for strictly positive floating-point
+		return FromBits(ToBits(x)+1);
+	}
 	
 	T Round(const T &x) const
 	{

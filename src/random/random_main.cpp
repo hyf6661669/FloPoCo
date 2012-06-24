@@ -285,6 +285,32 @@ bool random_parseCommandLine(
 		addOperator(oplist, table.get());
 		return true;
 	}
+	if (opname == "FuncApproxExpStage")
+	{
+		int nargs = 3;
+		if (i+nargs > argc)
+			usage(argv[0], opname); // and exit
+		
+		int residualMsb = atoi(argv[i++]);
+		int residualLsb = atoi(argv[i++]);
+		int outWidth = atoi(argv[i++]);
+		
+		flopoco::random::residual_type<double> inputResidual(false, residualMsb-residualLsb+1, residualMsb);
+		cerr<<"input type = "<<inputResidual<<"\n";
+		
+		double mu=0.0;
+		double sigma=1.0;
+		
+		flopoco::random::FixedPointExpStagePtr table(
+			new flopoco::random::FuncApproxExpStage(target, mu, sigma,
+				inputResidual, 
+				outWidth
+			)
+		);
+		pinOperator(table);
+		addOperator(oplist, table.get());
+		return true;
+	}
 	else if (opname == "ChainedMultiplierCloseTableExp")
 	{
 		int nargs = 5;
@@ -305,13 +331,13 @@ bool random_parseCommandLine(
 		// we want (1+stageErr)^k < (1+outputErr)
 		// Let's assume (1+stageErr)^k < 1 + (k+1)*stageErr <= (1+outputErr), and quietly walk away
 		
-		double outputErr=pow(2.0, -outputResultWidth);
+		double outputErr=pow(2.0, -outputResultWidth-1);
 		int stageCount=(int)ceil((inputResidual.Width()-1.0)/(addressWidth-1.0));
 		
 		double stageErr=outputErr / (stageCount+1);
 		
 		// Again, apologies...
-		int calcResultWidth=outputResultWidth+stageCount;
+		int calcResultWidth=outputResultWidth+stageCount+2;
 		
 		std::cerr<<"stageErr = 2^"<<log(stageErr)/log(2.0)<<"\n";
 		
@@ -323,7 +349,7 @@ bool random_parseCommandLine(
 				table.reset(new flopoco::random::FuncApproxExpStage(target,
 					stages.size()==0 ? mu : 0.0, sigma,
 					inputResidual, 
-					outputResultWidth+2
+					outputResultWidth+3
 				));
 			}else{
 				table.reset(new flopoco::random::CloseTableExpStage(target,

@@ -32,6 +32,7 @@ namespace flopoco{
 		int wIn() const { return wI; }
 		int wOut() const { return wO + 1; }
 
+		void emulate(TestCase * tc);
 	private:
 		HOTBMInstance *inst;
 		Function &f;

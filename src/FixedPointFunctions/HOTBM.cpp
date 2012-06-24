@@ -112,5 +112,46 @@ namespace flopoco{
 		mpfr_get_z(rd.get_mpz_t(), mpR, GMP_RNDD);
 		ru = rd + 1;
 	}
+	
+	void HOTBM::emulate(TestCase * tc)
+	{
+		//Apologies for the copy-and-pastieness
+		
+		mpz_class x=tc->getInputValue("X");
+
+		mpz_class rd;
+		mpz_class ru;
+
+		// int outSign = 0;
+
+		mpfr_t mpX, mpR;
+		mpfr_inits(mpX, mpR, 0, NULL);
+
+		/* Convert a random signal to an mpfr_t in [0,1[ */
+		mpfr_set_z(mpX, x.get_mpz_t(), GMP_RNDN);
+		mpfr_div_2si(mpX, mpX, wI, GMP_RNDN);
+		
+		/* Compute the function */
+		f.eval(mpR, mpX);
+		
+		/* Compute the signal value */
+		if (mpfr_signbit(mpR))
+			{
+				// outSign = 1;
+				mpfr_abs(mpR, mpR, GMP_RNDN);
+			}
+		mpfr_mul_2si(mpR, mpR, wO, GMP_RNDN);
+			
+
+		/* NOT A TYPO. HOTBM only guarantees faithful
+		 * rounding, so we will round down here,
+		 * add both the upper and lower neighbor.
+		 */
+		mpfr_get_z(rd.get_mpz_t(), mpR, GMP_RNDD);
+		ru = rd + 1;
+		
+		tc->addExpectedOutput("R", ru);
+		tc->addExpectedOutput("R", rd);
+	}
 
 }

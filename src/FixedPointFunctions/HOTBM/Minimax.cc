@@ -23,6 +23,21 @@
 #define EPSILON 1.0e-12
 
 namespace flopoco{
+	
+	// Default in sollya
+	int Minimax::infNormPoints = 501;
+	
+	int Minimax::getInfNormPoints()
+	{
+		return infNormPoints;
+	}
+	
+	int Minimax::setInfNormPoints(int pp)
+	{
+		int prev=infNormPoints;
+		infNormPoints=pp;
+		return prev;
+	}
 
 	/*
 	 * Uses libsollya to compute the minimax polynomial
@@ -71,7 +86,7 @@ namespace flopoco{
 		/* Compute the error */
 		sollya_node_t nDiff = makeSub(f, nRemez);
 		mpfr_init(mpErr);
-		uncertifiedInfnorm(mpErr, nDiff, ia, ib, 501/*default in sollya*/, getToolPrecision()); 
+		uncertifiedInfnorm(mpErr, nDiff, ia, ib, infNormPoints, getToolPrecision()); 
 
 		/* Cleanup */
 		for (i = 0; i <= degree; i++)

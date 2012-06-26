@@ -953,9 +953,11 @@ namespace flopoco{
 		
 		
 		//Floorplanning related-----------------------------------------
+		/*
 		floorplan << manageFloorplan();
 		flComponentList.push_back(op->getName());
 		flInstanceNames[op->getName()] = instanceName;
+		*/
 		//--------------------------------------------------------------
 		
 		
@@ -1421,700 +1423,133 @@ namespace flopoco{
 		resourceEstimate << "Starting Resource estimation report for entity: " << uniqueName_ << " --------------- " << endl;
 		resourceEstimateReport << "";
 		
-		estimatedCountFF = 0;
-		estimatedCountLUT = 0;
-		estimatedCountMultiplier = 0;
-		estimatedCountMemory = 0;
-		
-		estimatedCountDSP = 0;
-		estimatedCountRAM = 0;
-		estimatedCountROM = 0;
-		estimatedCountSRL = 0;
-		estimatedCountWire = 0;
-		estimatedCountIOB = 0;
-		
-		estimatedCountMux = 0;
-		estimatedCountCounter = 0;
-		estimatedCountAccumulator = 0;
-		estimatedCountDecoder = 0;
-		estimatedCountArithOp = 0;
-		estimatedCountAdderSubtracter = 0;
-		estimatedCountReg = 0;
-		estimatedCountFSM = 0;
+		reHelper = new ResourceEstimationHelper(target_, this);
+		reHelper->initResourceEstimation();
 	}
 	
 	std::string Operator::addFF(int count){
-		std::ostringstream output;
 		
-		if(isSequential_){
-			estimatedCountFF += count;
-			
-			(count>0)? output << tab << "FF count increased by " << count : output << "FF count decreased by " << count;
-			output << " by adding " << count << " flip-flops";
-			output << endl;
-		}else{
-			output << "FF count not increased: combinatorial circuit. Warning: adding register resources for combinatorial circuit" << endl;
-		}
-		
-		return output.str();
+		return reHelper->addFF(count);
 	}
 	
-	//TODO: should also count LUTs based on their type, for more accurate 
-	//		resource estimations
 	std::string Operator::addLUT(int nrInputs, int count){
-		std::ostringstream output;								 
-		int targetLUTType, increment;
-		map<int, int>::iterator it;
 		
-		(nrInputs == 0) ? targetLUTType =  target_->lutInputs() : targetLUTType = nrInputs;
-		increment = target_->lutCount(targetLUTType, count);
-		
-		it = estimatedLUTTypes.find(nrInputs);
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[nrInputs] = count;
-		}else{
-			estimatedLUTTypes[nrInputs] += count;
-		}
-		
-		estimatedCountLUT += increment;
-		
-		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " by adding " << count << " function generators";
-		output << endl;
-		return output.str();
+		return reHelper->addLUT(nrInputs, count);
 	}
 	
-	//TODO: should also count the different types of registers that are 
-	//		being added
 	std::string Operator::addReg(int width, int count){
-		std::ostringstream output;
-		int increment = count*width;
-		map<int, int>::iterator it;
-		
-		if(isSequential_){
-			estimatedCountFF += increment;
-		
-			(count>0)? output << "Register count increased by " << count : output << "Register count decreased by " << count;
-			output << endl;
-			(count>0)? output << tab << "FF count increased by " << increment : output << "FF count decreased by " << increment;
-			output << " after adding " << count << " registers of width " << width;
-			output << endl;
-			
-			it = estimatedRegisterTypes.find(width);
-			if(it == estimatedRegisterTypes.end()){
-				estimatedRegisterTypes[width] = count;
-			}else{
-				estimatedRegisterTypes[width] += count;
-			}
-		}else{
-			output << "Register and FF counts not increased: combinatorial circuit" << endl;
-		}
-		
-		return output.str();
+				
+		return reHelper->addReg(width, count);
 	}
 	
 	//TODO: verify increase in the DSP count
 	std::string Operator::addMultiplier(int count){
-		std::ostringstream output;
-		int increment, increment2, increment3, widthX, widthY;
-		map<int, int>::iterator it;
 		
-		estimatedCountMultiplier += count;
-		target_->getDSPWidths(widthX, widthY);
-		increment = target_->lutForMultiplier(widthX, widthY, count);
-		estimatedCountLUT += increment;
-		if(isSequential_){
-			increment2 = target_->ffForMultiplier(widthX, widthY, count);
-			estimatedCountFF += increment2;
-		}
-		increment3 = target_->dspForMultiplier(widthX, widthY, count);
-		estimatedCountDSP += increment3;
-		
-		(count>0)? output << "Multiplier count increased by " << count : output << "Multiplier count decreased by " << count;
-		output << " after ading " << count << " multipliers";
-		output << endl;
-		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after adding " << count << " " << widthX << "by" << widthY << " multipliers";
-		output << endl;
-		if(isSequential_){
-			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-			output << " after adding " << count << " " << widthX << "by" << widthY << " multipliers";
-			output << endl;
-		}else{
-			output << "FF count not increased: combinatorial circuit" << endl;
-		}
-		(increment3>0)? output << tab << "DSP count increased by " << increment3 : output << "DSP count decreased by " << increment3;
-		output << " after adding " << count << " " << widthX << "by" << widthY << " multipliers";
-		output << endl;
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment2;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment2;
-		}
-		it = estimatedMultiplierTypes.find((widthX>widthY?widthX:widthY));
-		if(it == estimatedMultiplierTypes.end()){
-			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] = increment;
-		}else{
-			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] += increment;
-		}
-		
-		return output.str();
+		return reHelper->addMultiplier(count);
 	}
 	
 	//TODO: verify increase in the DSP count 
 	std::string Operator::addMultiplier(int widthX, int widthY, double ratio, int count){
-		std::ostringstream output;
-		int increment, increment2, increment3, increment4;
-		map<int, int>::iterator it;
 		
-		increment = ceil(ratio * target_->multiplierCount(widthX, widthY, count));
-		estimatedCountMultiplier += increment;
-		increment2 = target_->lutForMultiplier(widthX, widthY, count);
-		estimatedCountLUT += increment2;
-		if(isSequential_){
-			increment3 = target_->ffForMultiplier(widthX, widthY, count);
-			estimatedCountFF += increment3;
-		}
-		increment4 = target_->dspForMultiplier(widthX, widthY, count);
-		estimatedCountDSP += increment4;
-		
-		(increment>0)? output << "Multiplier count increased by " << increment : output << "Multiplier count decreased by " << increment;
-		output << endl;
-		(increment2>0)? output << tab << "LUT count increased by " << increment2 : output << "LUT count decreased by " << increment2;
-		output << " after adding " << increment << " " << widthX << "by" << widthY << " multipliers";
-		output << endl;
-		if(isSequential_){
-			(increment3>0)? output << tab << "FF count increased by " << increment3 : output << "FF count decreased by " << increment3;
-			output << " after adding " << increment << " " << widthX << "by" << widthY << " multipliers";
-			output << endl;
-		}else{
-			output << "FF count not increased: combinatorial circuit" << endl;
-		}
-		(increment4>0)? output << tab << "DSP count increased by " << increment4 : output << "DSP count decreased by " << increment4;
-		output << " after ading " << increment << " " << widthX << "by" << widthY << " multipliers";
-		output << endl;
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment2;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment2;
-		}
-		it = estimatedMultiplierTypes.find((widthX>widthY?widthX:widthY));
-		if(it == estimatedMultiplierTypes.end()){
-			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] = increment;
-		}else{
-			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] += increment;
-		}
-		
-		return output.str();
+		return reHelper->addMultiplier(widthX, widthY, ratio, count);
 	}
 	
 	//TODO: verify increase in the element count
 	std::string Operator::addAdderSubtracter(int widthX, int widthY, double ratio, int count){
-		std::ostringstream output;
-		int increment, increment2;
-		map<int, int>::iterator it;
 		
-		estimatedCountAdderSubtracter += count;
-		increment = count*target_->lutForAdderSubtracter(widthX, widthY, count);
-		estimatedCountLUT += increment;
-		if(isSequential_){
-			increment2 = count*target_->ffForAdderSubtracter(widthX, widthY, count);
-			estimatedCountFF += increment2;
-		}else{
-			output << "FF count not increased: combinatorial circuit" << endl;
-		}
-		
-		(increment>0)? output << "Adder/Subtracter count increased by " << count : output << "Adder/Subtracter count decreased by " << count;
-		output << endl;
-		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after adding " << count << " " << widthX << "by" << widthY << " adders";
-		output << endl;
-		if(isSequential_){
-			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-			output << " after adding " << count << " " << widthX << "by" << widthY << " adders";
-			output << endl;
-		}else{
-			output << "FF count not increased: combinatorial circuit" << endl;
-		}
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment;
-		}
-		it = estimatedAdderTypes.find((widthX>widthY?widthX:widthY));
-		if(it == estimatedMultiplierTypes.end()){
-			estimatedAdderTypes[(widthX>widthY?widthX:widthY)] = count;
-		}else{
-			estimatedAdderTypes[(widthX>widthY?widthX:widthY)] += count;
-		}
-		
-		return output.str();
+		return reHelper->addAdderSubtracter(widthX, widthY, ratio, count);
 	}
 	
+	//TODO: take into account the memory type (RAM or ROM); depending on 
+	//		the type, might be implemented through distributed memory or
+	//		dedicated memory blocks
 	std::string Operator::addMemory(int size, int width, int type, int count){
-		std::ostringstream output;
-		int increment;
 		
-		increment = target_->memoryCount(size, width, type, count);		
-		estimatedCountMemory += increment;
-		(type) ? estimatedCountROM += increment : estimatedCountRAM += increment;
-		
-		(increment>0)? output << "Memory elements count increased by " << increment : output << "Memory elements count decreased by " << increment;
-		(type>0) ? output << tab << " ROM memory was targeted" : output << " RAM memory was targeted";
-		(type>0) ? (increment>0)? output << tab << "ROM count increased by " << increment : output << "ROM count decreased by " << increment
-			   : (increment>0)? output << tab << "RAM count increased by " << increment : output << "RAM count decreased by " << increment;
-		output << endl;
-		return output.str();
+		return reHelper->addMemory(size, width, type, count);
 	}
 	
 	//---More particular resource logging
 	std::string Operator::addDSP(int count){
-		std::ostringstream output;
-		map<int, int>::iterator it;
-		int widthX, widthY;
 		
-		estimatedCountDSP += count;
-		
-		(count>0)? output << tab << "DSP count increased by " << count : output << "DSP count decreased by " << count;
-		output << endl;
-		
-		target_->getDSPWidths(widthX, widthY, true);
-		it = estimatedMultiplierTypes.find((widthX>widthY?widthX:widthY));
-		if(it == estimatedLUTTypes.end()){
-			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] = count;
-		}else{
-			estimatedMultiplierTypes[(widthX>widthY?widthX:widthY)] += count;
-		}
-		
-		return output.str();
+		return reHelper->addDSP(count);
 	}
 	
 	std::string Operator::addRAM(int count){
-		std::ostringstream output;
 		
-		estimatedCountRAM += count;
-		
-		(count>0)? output << tab << "RAM count increased by " << count : output << "RAM count decreased by " << count;
-		output << endl;
-		return output.str();
+		return reHelper->addRAM(count);
 	}
 	
 	std::string Operator::addROM(int count){
-		std::ostringstream output;
 		
-		estimatedCountROM += count;
-		
-		(count>0)? output << tab << "ROM count increased by " << count : output << "ROM count decreased by " << count;
-		output << endl;
-		return output.str();
+		return reHelper->addROM(count);
 	}
 	
 	//TODO: should count the shift registers according to their bitwidths
 	std::string Operator::addSRL(int width, int depth, int count){
-		std::ostringstream output;
-		int increment, increment2, increment3, increment4;
-		map<int, int>::iterator it;
-		
-		increment = target_->srlCount(width, depth, count);
-		estimatedCountSRL += increment;
-		increment2 = target_->lutForSRL(width, depth, count);
-		estimatedCountLUT += increment2;
-		if(isSequential_){
-			increment3 = target_->ffForSRL(width, depth, count);
-			estimatedCountFF += increment3;
-		}
-		increment4 = target_->ramForSRL(width, depth, count);
-		estimatedCountRAM += increment4;
-		
-		(increment>0)? output << "SRL count increased by " << increment : output << "SRL count decreased by " << increment;
-		output << endl;
-		(increment2>0)? output << tab << "LUT count increased by " << increment2 : output << "LUT count decreased by " << increment2;
-		output << " after adding " << increment << " adders of width " << width << " and depth " << depth;
-		output << endl;
-		if(isSequential_){
-			(increment3>0)? output << tab << "FF count increased by " << increment3 : output << "FF count decreased by " << increment3;
-			output << " after adding " << increment << " adders of width " << width << " and depth " << depth;
-			output << endl;
-		}else{
-			output << "FF count not increased: combinatorial circuit" << endl;
-		}
-		(increment4>0)? output << tab << "RAM count increased by " << increment4 : output << "RAM count decreased by " << increment4;
-		output << " after adding " << increment << " adders of width " << width << " and depth " << depth;
-		output << endl;
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment2;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment2;
-		}
-		it = estimatedShifterTypes.find(width);
-		if(it == estimatedShifterTypes.end()){
-			estimatedShifterTypes[width] = increment;
-		}else{
-			estimatedShifterTypes[width] += increment;
-		}
-		
-		return output.str();
+				
+		return reHelper->addSRL(width, depth, count);
 	}
 	
 	std::string Operator::addWire(int count, std::string signalName){
-		std::ostringstream output;
-		int increment;
 		
-		if(signalName.empty())
-			increment = count;
-		else{
-			Signal* s = signalMap_[signalName];
-			
-			increment = s->width();
-			estimatedSignalNames.push_back(signalName);
-		}
-		estimatedCountWire += increment;
-		
-		(increment>0)? output << tab << "Wire count increased by " << increment : output << "Wire count decreased by " << increment;
-		output  << endl;
-		return output.str();
+		return reHelper->addWire(count, signalName);
 	}
 	
 	std::string Operator::addIOB(int count, std::string portName){
-		std::ostringstream output;
-		int increment;
 		
-		if(portName.empty())
-			increment = count;
-		else{
-			Signal* s = signalMap_[portName];
-			
-			increment = s->width();
-			estimatedPortNames.push_back(portName);
-		}
-		estimatedCountIOB += increment;
-		
-		(increment>0)? output << tab << "IOB count increased by " << increment : output << "IOB count decreased by " << increment;
-		output << endl;
-		return output.str();
+		return reHelper->addIOB(count, portName);
 	}
 	
-	//---Even more particular resource logging
+	//---Even more particular resource logging-------------------------
+	
+	//TODO: get a more accurate count of the number of multiplexers 
+	//		needed; currently specific resources are not taken into account
 	std::string Operator::addMux(int width, int nrInputs, int count){
-		std::ostringstream output;
-		int increment, increment2;
-		map<int, int>::iterator it;
-		
-		increment = target_->muxCount(nrInputs, width, count);
-		estimatedCountMux += increment;
-		increment2 = target_->lutForMux(nrInputs, width, increment);
-		estimatedCountLUT += increment2;
-		
-		(increment>0)? output << "MUX count increased by " << increment : output << "MUX count decreased by " << increment;
-		output << " after adding " << count << " multiplexers of width " << width << " and with " << nrInputs << " inputs";
-		output << endl;
-		(increment>0)? output << tab << "LUT count increased by " << increment2 : output << "LUT count decreased by " << increment2;
-		output << " after adding " << count << " multiplexers of width " << width << " and with " << nrInputs << " inputs";
-		output << endl;
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment2;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment2;
-		}
-		
-		return output.str();
+				
+		return reHelper->addMux(width, nrInputs, count);
 	}
 	
 	//TODO: count the counters according to their bitwidth
+	//TODO: get estimations when using specific resources (like DSPs)
+	//		involves also changes to getLUTPerCounter() getFFPerCounter()
 	std::string Operator::addCounter(int width, int count){
-		std::ostringstream output;
-		int increment, increment2;
-		map<int, int>::iterator it;
-		
-		estimatedCountCounter += count;
-		increment = target_->lutForCounter(width, count);
-		estimatedCountLUT += increment;
-		if(isSequential_){
-			increment2 = target_->ffForCounter(width, count);
-			estimatedCountFF += increment2;
-		}
 				
-		(count>0)? output << "Counter count increased by " << count : output << "Counter count decreased by " << count;
-		output << " after adding " << count << " counters of width " << width;
-		output << endl;
-		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after adding " << count << " counters of width " << width;
-		output << endl;
-		if(isSequential_){
-			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-			output << " after adding " << count << " counters of width " << width;
-			output << endl;
-		}else{
-			output << "FF count not increased: combinatorial circuit" << endl;
-		}
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment;
-		}
-		it = estimatedCounterTypes.find(width);
-		if(it == estimatedCounterTypes.end()){
-			estimatedCounterTypes[width] = count;
-		}else{
-			estimatedCounterTypes[width] += count;
-		}
-		
-		return output.str();
+		return reHelper->addCounter(width, count);
 	}
 	
 	//TODO: count the accumulators according to their bitwidth
 	std::string Operator::addAccumulator(int width, bool useDSP, int count){
-		std::ostringstream output;
-		int increment, increment2, increment3;
-		map<int, int>::iterator it;
 		
-		estimatedCountAccumulator += count;
-		increment = target_->lutForAccumulator(width, useDSP, count);
-		estimatedCountLUT += increment;
-		if(isSequential_){
-			increment2 = target_->ffForAccumulator(width, useDSP, count);
-			estimatedCountFF += increment2;
-		}
-		
-		increment3 = target_->dspForAccumulator(width, useDSP, count);
-		estimatedCountDSP += increment3;
-		
-		(count>0)? output << "Accumulator count increased by " << count : output << "Accumulator count decreased by " << count;
-		output << endl;
-		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after adding " << count << " accumulators of width " << width;
-		output << endl;
-		if(isSequential_){
-			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-			output << " after adding " << count << " accumulators of width " << width;
-			output << endl;
-		}else{
-			output << "FF count not increased: combinatorial circuit" << endl;
-		}
-		(increment3>0)? output << tab << "DSP count increased by " << increment3 : output << "DSP count decreased by " << increment3;
-		output << " after adding " << count << " accumulators of width " << width;
-		output << endl;
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment;
-		}
-		
-		return output.str();
+		return reHelper->addAccumulator(width, useDSP, count);
 	}
 	
 	//TODO: count the decoders according to their input and output 
 	//		bitwidths
 	std::string Operator::addDecoder(int wIn, int wOut, int count){
-		std::ostringstream output;
-		int increment, increment2;
-		map<int, int>::iterator it;
-		
-		estimatedCountDecoder += count;
-		increment = target_->lutForDecoder(wIn, count);
-		estimatedCountLUT += increment;
-		if(isSequential_){
-			increment2 = target_->ffForDecoder(wIn, count);
-			estimatedCountFF += increment2;
-		}
-		
-		(count>0)? output << "Decoder count increased by " << count : output << "Decoder count decreased by " << count;
-		output << endl;
-		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after adding " << count << " decoders of width " << wIn;
-		output << endl;
-		if(isSequential_){
-			(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-			output << " after adding " << count << " decoders of width " << wIn;
-			output << endl;
-		}else{
-			output << "FF count not increased: combinatorial circuit" << endl;
-		}
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment;
-		}
-		
-		return output.str();
+				
+		return reHelper->addDecoder(wIn, wOut, count);
 	}
 	
 	std::string Operator::addArithOp(int width, int nrInputs, int count){
-		std::ostringstream output;
-		int increment;
-		map<int, int>::iterator it;
-		
-		estimatedCountArithOp += count;
-		increment = target_->lutForArithmeticOperator(nrInputs, width, count);
-		estimatedCountLUT += increment;
-		
-		(count>0)? output << "Arithmetic Operator count increased by " << count : output << "Arithmetic Operator count decreased by " << count;
-		output << endl;
-		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after adding " << count << " arithmetic operators of width " << width << " and with " << nrInputs << " inputs";
-		output << endl;
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment;
-		}
-		it = estimatedArithOpTypes.find(width);
-		if(it == estimatedArithOpTypes.end()){
-			estimatedArithOpTypes[width] = count;
-		}else{
-			estimatedArithOpTypes[width] += count;
-		}
-		
-		return output.str();
+				
+		return reHelper->addArithOp(width, nrInputs, count);
 	}
 	
+	//TODO: find a better approximation for the resources
+	//		currently just logic corresponding to the multiplexers
+	//TODO: find a better approximation for the resources
+	//		currently just logic corresponding to the state register
+	//TODO: find a better approximation for the resources
+	//		for now, RAM blocks are not used
 	std::string Operator::addFSM(int nrStates, int nrTransitions, int count){
-		std::ostringstream output;
-		int increment, increment2, increment3;
-		map<int, int>::iterator it;
-		
-		estimatedCountFSM += count;
-		increment = target_->lutForFSM(nrStates, nrTransitions, count);
-		estimatedCountLUT += increment;
-		increment2 = target_->ffForFSM(nrStates, nrTransitions, count);
-		estimatedCountFF += increment2;
-		increment3 = target_->ramForFSM(nrStates, nrTransitions, count);
-		estimatedCountRAM += increment3;
-		
-		(count>0)? output << "FSM count increased by " << count : output << "FSM count decreased by " << count;
-		output << endl;
-		(increment>0)? output << tab << "LUT count increased by " << increment : output << "LUT count decreased by " << increment;
-		output << " after adding " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
-		output << endl;
-		(increment2>0)? output << tab << "FF count increased by " << increment2 : output << "FF count decreased by " << increment2;
-		output << " after adding " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
-		output << endl;
-		(increment3>0)? output << tab << "RAM count increased by " << increment3 : output << "ROM count decreased by " << increment3;
-		output << " after adding " << count << " multiplexers of " << nrStates << " states and with " << nrTransitions << " transitions";
-		output << endl;
-		
-		it = estimatedLUTTypes.find(target_->lutInputs());
-		if(it == estimatedLUTTypes.end()){
-			estimatedLUTTypes[target_->lutInputs()] = increment;
-		}else{
-			estimatedLUTTypes[target_->lutInputs()] += increment;
-		}
-		
-		return output.str();
+				
+		return reHelper->addFSM(nrStates, nrTransitions, count);
 	}
 	
-	//--Resource usage statistics
+	//--Resource usage statistics---------------------------------------
 	std::string Operator::generateStatistics(int detailLevel){
-		
-		
-		resourceEstimateReport << "=========================================================================" << endl;
-		resourceEstimateReport << "*                     Resource Estimation Report                        *" << endl;
-		resourceEstimateReport << "=========================================================================" << endl;
-		
-		resourceEstimateReport << endl;
-		resourceEstimateReport << "Top level entity name                : " << uniqueName_ << endl;
-		resourceEstimateReport << "Top level entity is pipelined        : " << ((target_->isPipelined()) ? "True" : "False") << endl;
-		resourceEstimateReport << "Top level entity target frequency    : " << ((target_->isPipelined()) ? join("", target_->frequencyMHz()) : "N/A") << endl;
-		resourceEstimateReport << "Top level entity uses DSP blocks     : " << ((target_->getUseHardMultipliers()) ? "True" : "False") << endl;
-		resourceEstimateReport << endl;
-		resourceEstimateReport << "Number of Flip-Flops                 : " << ((estimatedCountFF) ? join("", estimatedCountFF) : "None") << endl;
-		resourceEstimateReport << "Number of Function Generators        : " << ((estimatedCountLUT) ? join("", estimatedCountLUT) : "None") << endl;
-		resourceEstimateReport << "Number of Multipliers                : " << ((estimatedCountMultiplier) ? join("", estimatedCountMultiplier) : "None") << endl;
-		resourceEstimateReport << "Number of Memory blocks              : " << ((estimatedCountMemory) ? join("", estimatedCountMemory) : "None") << endl;
-		resourceEstimateReport << endl;
-		if(detailLevel>0){
-		(estimatedCountDSP)  ?	resourceEstimateReport << "Number of DSP blocks                 : " << estimatedCountDSP << endl : resourceEstimateReport << "";
-		(estimatedCountRAM)  ?	resourceEstimateReport << "Number of RAM blocks                 : " << estimatedCountRAM << endl : resourceEstimateReport << "";
-		(estimatedCountROM)  ?	resourceEstimateReport << "Number of ROM blocks                 : " << estimatedCountROM << endl : resourceEstimateReport << "";
-		(estimatedCountSRL)  ?	resourceEstimateReport << "Number of SRLs                       : " << estimatedCountSRL << endl : resourceEstimateReport << "";
-		(estimatedCountWire) ?	resourceEstimateReport << "Number of Wires                      : " << estimatedCountWire << endl : resourceEstimateReport << "";
-		(estimatedCountIOB)  ?	resourceEstimateReport << "Number of IOs                        : " << estimatedCountIOB << endl : resourceEstimateReport << "";
-		resourceEstimateReport << endl;
-		}
-		if(detailLevel>1){
-		(estimatedCountMux) 		?	resourceEstimateReport << "Number of Multiplexers               : " << estimatedCountMux << endl : resourceEstimateReport << "";
-		(estimatedCountCounter) 	?	resourceEstimateReport << "Number of Counters                   : " << estimatedCountCounter << endl : resourceEstimateReport << "";
-		(estimatedCountAccumulator) ?	resourceEstimateReport << "Number of Accumulators               : " << estimatedCountAccumulator << endl : resourceEstimateReport << "";
-		(estimatedCountDecoder)		?	resourceEstimateReport << "Number of Decoders/Encoders          : " << estimatedCountDecoder << endl : resourceEstimateReport << "";
-		(estimatedCountArithOp)		?	resourceEstimateReport << "Number of Arithmetic Operators       : " << estimatedCountArithOp << endl : resourceEstimateReport << "";
-		(estimatedCountAdderSubtracter) ? resourceEstimateReport << "Number of Adders/Subtracters         : " <<  estimatedCountAdderSubtracter << endl : resourceEstimateReport << "";
-		(estimatedCountReg)			?	resourceEstimateReport << "Number of registers                  : " << estimatedCountReg << endl : resourceEstimateReport << "";
-		(estimatedCountFSM)			?	resourceEstimateReport << "Number of FSMs                       : " << estimatedCountFSM << endl : resourceEstimateReport << "";
-		resourceEstimateReport << endl;
-		}
-		
-		if(detailLevel>2){
-		resourceEstimateReport << "=========================================================================" << endl;
-		resourceEstimateReport << "*                      Detailed Resource Usage                          *" << endl;
-		resourceEstimateReport << "=========================================================================" << endl;
-		
-		resourceEstimateReport << endl;
-		if(estimatedCountLUT>0){
-			resourceEstimateReport << "Number of Function Generators                     : " << estimatedCountLUT << endl;
-			for(map<int, int>::iterator it = estimatedLUTTypes.begin(); it !=estimatedLUTTypes.end(); it++) {
-				resourceEstimateReport << tab << "*Number of " << it->first << " input function generators         : " << it->second << endl;		
-			}
-		}
-		if(estimatedCountMultiplier>0){
-			resourceEstimateReport << "Number of Multipliers                             : " << estimatedCountMultiplier << endl;
-			for(map<int, int>::iterator it = estimatedMultiplierTypes.begin(); it !=estimatedMultiplierTypes.end(); it++) {
-				resourceEstimateReport << tab << "*Number of multipliers of width " << it->first << "         " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;		
-			}
-		}
-		if(estimatedCountSRL>0){
-			resourceEstimateReport << "Number of SRLs                                    : " << estimatedCountSRL << endl;
-			for(map<int, int>::iterator it = estimatedShifterTypes.begin(); it !=estimatedShifterTypes.end(); it++) {
-				resourceEstimateReport << tab << "*Number of shift registers of width " << it->first << "     " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;		
-			}
-		}
-		if(estimatedCountCounter>0){
-			resourceEstimateReport << "Number of Counters                                : " << estimatedCountCounter << endl;
-			for(map<int, int>::iterator it = estimatedCounterTypes.begin(); it !=estimatedCounterTypes.end(); it++) {
-				resourceEstimateReport << tab << "*Number of counters of width " << it->first << "            " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;		
-			}
-		}	
-		if(estimatedCountArithOp>0){
-			resourceEstimateReport << "Number of Arithmetic Operators                    : " << estimatedCountArithOp << endl;
-			for(map<int, int>::iterator it = estimatedArithOpTypes.begin(); it !=estimatedArithOpTypes.end(); it++) {
-				resourceEstimateReport << tab << "*Number of arithmetic operators of width " << it->first << "" << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;
-			}
-		}
-		if(estimatedCountAdderSubtracter>0){
-			resourceEstimateReport << "Number of Adders/Subtracters                      : " <<  estimatedCountAdderSubtracter << endl;
-			for(map<int, int>::iterator it = estimatedAdderTypes.begin(); it !=estimatedAdderTypes.end(); it++) {
-				resourceEstimateReport << tab << "*Number of adders/subtracters of width " << it->first << "  " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;
-			}
-		}
-		if(estimatedCountReg>0){
-			resourceEstimateReport << "Number of registers                               : " << estimatedCountReg << endl;
-			for(map<int, int>::iterator it = estimatedRegisterTypes.begin(); it !=estimatedRegisterTypes.end(); it++) {
-				resourceEstimateReport << tab << "*Number of registers of width " << it->first << "          " << ((it->first>=1000) ? " : " : (it->first>=100) ? "  : " : (it->first>=10) ? "    : " : "     : ") << it->second << endl;
-			}
-		}			
-		resourceEstimateReport << endl;
-		}
-		
-		resourceEstimateReport << "=========================================================================" << endl;
-		
-		return resourceEstimateReport.str();
+				
+		return reHelper->generateStatistics(detailLevel);
 	}
 	
 	//--Utility functions related to the generation of resource usage statistics
@@ -2122,213 +1557,36 @@ namespace flopoco{
 	//TODO: find a more precise way to determine the required number of
 	//		registers due to pipeline
 	std::string Operator::addPipelineFF(){
-		std::ostringstream output;
-		int increment = 0;
-		
-		output << "FF count being compensated for " << endl;
-		
-		for(unsigned int i=0; i<signalList_.size(); i++) {
-			Signal *s = signalList_[i];
-			if ((s->type() == Signal::registeredWithoutReset) || (s->type() == Signal::wire) 
-					|| (s->type() == Signal::registeredWithAsyncReset) || (s->type() == Signal::registeredWithSyncReset)) 
-				if(s->getLifeSpan() >0) {
-					if(target_->isPipelined() && isSequential_){
-						increment += s->getLifeSpan() * s->width();
-						output << tab << "Added " << s->getLifeSpan()*s->width() << " FFs for signal " << s->getName() << " having width " << s->width() << " and life-span of " << s->getLifeSpan() << " (pipelined target)" << endl;
-					}else{
-						increment += s->width();
-						output << tab << "Added " << s->width() << " FFs for signal " << s->getName() << " having width " << s->width() << " and life-span of " << s->getLifeSpan() << " (non-pipelined target)" << endl;
-					}
-				}
-		}
-		estimatedCountFF += increment;
-		
-		output << "FF count compensated for by " << increment << " with pipeline related registers." << endl;
-		return output.str();
+				
+		return reHelper->addPipelineFF();
 	}
 	
 	std::string Operator::addWireCount(){
-		std::ostringstream output;
-		int increment = 0;
-		
-		for(unsigned int i=0; i<signalList_.size(); i++) {
-			Signal *s = signalList_[i];
-			bool processed = false;
-			
-			for(unsigned int j=0; j<estimatedSignalNames.size(); i++) {
-				std::string stemp = estimatedSignalNames[j];
-				if((s->getName()).compare(stemp)){
-					processed = true;
-					break;
-				}
-			}
-			if(processed)
-				continue;
-			increment += s->width();
-		}
-		estimatedCountWire += increment;
-		
-		output << "Wire count compensated for by " << increment << " with wires from signal declarations." << endl;
-		return output.str();
+				
+		return reHelper->addWireCount();
 	}
 	
 	std::string Operator::addPortCount(){
-		std::ostringstream output;
-		int increment = 0;
-		
-		for(unsigned int i=0; i<ioList_.size(); i++) {
-			Signal *s = ioList_[i];
-			bool processed = false;
-			
-			for(unsigned int j=0; j<estimatedPortNames.size(); i++) {
-				std::string stemp = estimatedPortNames[j];
-				if((s->getName()).compare(stemp)){
-					processed = true;
-					break;
-				}
-			}
-			if(processed)
-				continue;
-			increment += s->width();
-		}
-		estimatedCountIOB += increment;
-		
-		output << "Port count compensated for by " << increment << " with ports from port declarations." << endl;
-		return output.str();
+				
+		return reHelper->addPortCount();
 	}
-	
 	
 	//TODO: add function to add resource count from specified component
 	std::string Operator::addComponentResourceCount(){
-		std::ostringstream output;
-		
-		for(map<string, Operator*>::iterator it = subComponents_.begin(); it !=subComponents_.end(); it++) {
-			Operator *op = it->second;
-			
-			estimatedCountFF 				+= op->estimatedCountFF;
-			estimatedCountLUT 				+= op->estimatedCountLUT;
-			estimatedCountMultiplier 		+= op->estimatedCountMultiplier;
-			
-			estimatedCountDSP 				+= op->estimatedCountDSP;
-			estimatedCountRAM 				+= op->estimatedCountRAM;
-			estimatedCountROM 				+= op->estimatedCountROM;
-			estimatedCountSRL 				+= op->estimatedCountSRL;
-			estimatedCountWire 				+= op->estimatedCountWire;
-			estimatedCountIOB 				+= op->estimatedCountIOB;
-			
-			estimatedCountMux 				+= op->estimatedCountMux;
-			estimatedCountCounter	 		+= op->estimatedCountCounter;
-			estimatedCountAccumulator 		+= op->estimatedCountAccumulator;
-			estimatedCountDecoder 			+= op->estimatedCountDecoder;
-			estimatedCountArithOp 			+= op->estimatedCountArithOp;
-			estimatedCountAdderSubtracter 	+= op->estimatedCountAdderSubtracter;
-			estimatedCountFSM 				+= op->estimatedCountFSM;
-			
-			if(op->estimatedCountLUT>0){
-				for(map<int, int>::iterator itTypesImport = op->estimatedLUTTypes.begin(); itTypesImport != op->estimatedLUTTypes.end(); itTypesImport++) {
-					map<int, int>::iterator itTypes;
-					
-					itTypes = estimatedLUTTypes.find(itTypesImport->first);
-					if(itTypes == estimatedLUTTypes.end()){
-						estimatedLUTTypes[itTypesImport->first] = itTypesImport->second;
-					}else{
-						estimatedLUTTypes[itTypesImport->first] += itTypesImport->second;
-					}
-				}
-			}
-			if(op->estimatedCountAdderSubtracter>0){
-				for(map<int, int>::iterator itTypesImport = op->estimatedAdderTypes.begin(); itTypesImport != op->estimatedAdderTypes.end(); itTypesImport++) {
-					map<int, int>::iterator itTypes;
-					
-					itTypes = estimatedAdderTypes.find(itTypesImport->first);
-					if(itTypes == estimatedAdderTypes.end()){
-						estimatedAdderTypes[itTypesImport->first] = itTypesImport->second;
-					}else{
-						estimatedAdderTypes[itTypesImport->first] += itTypesImport->second;
-					}
-				}
-			}
-			if(op->estimatedCountMultiplier>0){
-				for(map<int, int>::iterator itTypesImport = op->estimatedMultiplierTypes.begin(); itTypesImport != op->estimatedMultiplierTypes.end(); itTypesImport++) {
-					map<int, int>::iterator itTypes;
-					
-					itTypes = estimatedMultiplierTypes.find(itTypesImport->first);
-					if(itTypes == estimatedMultiplierTypes.end()){
-						estimatedMultiplierTypes[itTypesImport->first] = itTypesImport->second;
-					}else{
-						estimatedMultiplierTypes[itTypesImport->first] += itTypesImport->second;
-					}
-				}
-			}
-			if(op->estimatedCountReg>0){
-				for(map<int, int>::iterator itTypesImport = op->estimatedRegisterTypes.begin(); itTypesImport != op->estimatedRegisterTypes.end(); itTypesImport++) {
-					map<int, int>::iterator itTypes;
-					
-					itTypes = estimatedRegisterTypes.find(itTypesImport->first);
-					if(itTypes == estimatedLUTTypes.end()){
-						estimatedRegisterTypes[itTypesImport->first] = itTypesImport->second;
-					}else{
-						estimatedRegisterTypes[itTypesImport->first] += itTypesImport->second;
-					}
-				}
-			}
-			if(op->estimatedCountSRL>0){
-				for(map<int, int>::iterator itTypesImport = op->estimatedShifterTypes.begin(); itTypesImport != op->estimatedShifterTypes.end(); itTypesImport++) {
-					map<int, int>::iterator itTypes;
-					
-					itTypes = estimatedShifterTypes.find(itTypesImport->first);
-					if(itTypes == estimatedShifterTypes.end()){
-						estimatedShifterTypes[itTypesImport->first] = itTypesImport->second;
-					}else{
-						estimatedShifterTypes[itTypesImport->first] += itTypesImport->second;
-					}
-				}
-			}
-			if(op->estimatedCountCounter>0){
-				for(map<int, int>::iterator itTypesImport = op->estimatedCounterTypes.begin(); itTypesImport != op->estimatedCounterTypes.end(); itTypesImport++) {
-					map<int, int>::iterator itTypes;
-					
-					itTypes = estimatedCounterTypes.find(itTypesImport->first);
-					if(itTypes == estimatedCounterTypes.end()){
-						estimatedCounterTypes[itTypesImport->first] = itTypesImport->second;
-					}else{
-						estimatedCounterTypes[itTypesImport->first] += itTypesImport->second;
-					}
-				}
-			}
-			if(op->estimatedCountArithOp>0){
-				for(map<int, int>::iterator itTypesImport = op->estimatedArithOpTypes.begin(); itTypesImport != op->estimatedArithOpTypes.end(); itTypesImport++) {
-					map<int, int>::iterator itTypes;
-					
-					itTypes = estimatedArithOpTypes.find(itTypesImport->first);
-					if(itTypes == estimatedArithOpTypes.end()){
-						estimatedArithOpTypes[itTypesImport->first] = itTypesImport->second;
-					}else{
-						estimatedArithOpTypes[itTypesImport->first] += itTypesImport->second;
-					}
-				}
-			}
-			
-			resourceEstimate << endl << op->resourceEstimate.str();
-		}
-		
-		output << "Resource count compensated for with resource estimations from subcomponents." << endl;
-		return output.str();
+				
+		return reHelper->addComponentResourceCount();
 	}
 	
 	void Operator::addAutomaticResourceEstimations(){
-		
-		resourceEstimate << addPipelineFF();
-		resourceEstimate << addWireCount();
-		resourceEstimate << addPortCount();
-		resourceEstimate << addComponentResourceCount();
+				
+		resourceEstimate << reHelper->addAutomaticResourceEstimations();
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////Functions used for floorplanning
-	void Operator::initFloorplanning(double ratio){
+	/*void Operator::initFloorplanning(double ratio){
 		
 		floorplan << "";
 		
@@ -2409,9 +1667,9 @@ namespace flopoco{
 		flConstraintList.push_back(newConstraint);
 		
 		result << "Created new placement constraint" << endl;
-		result << tab << "Source module " << source 
-				<< "is " << ((type==TO_LEFT_OF) ? "to the left of" : (type==TO_RIGHT_OF) ? "to the right of" : (type==ABOVE) ? "above" : "under")
-				<< " sink module " << sink << endl;
+		result << tab << "Sink module " << sink
+				<< " is " << ((type==TO_LEFT_OF) ? "to the left of" : (type==TO_RIGHT_OF) ? "to the right of" : (type==ABOVE) ? "above" : (type==UNDER) ? "under" : (type==TO_LEFT_OF_WITH_EXTRA) ? "to the left of" : (type==TO_RIGHT_OF_WITH_EXTRA) ? "to the right of" : (type==ABOVE_WITH_EXTRA) ? "above" : "under")
+				<< " source module " << source << endl;
 		
 		return result.str();
 	}
@@ -2470,8 +1728,13 @@ namespace flopoco{
 					newCoordinate.x = sourceCoordinate.x - 1;
 					newCoordinate.y = sourceCoordinate.y;
 					
+					if(sinkCoordinate.x<sourceCoordinate.x && sinkCoordinate.y==sourceCoordinate.y)
+						continue;
+					
 					//as long as they are taken, go to the left of source
 					do{
+						int iterationsPerformed = 0;
+						
 						for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 							coordinateType tempCoordinate = it->second;
 							
@@ -2479,6 +1742,10 @@ namespace flopoco{
 								positionOccupied = true;
 								break;
 							}
+							iterationsPerformed++;
+						}
+						if(iterationsPerformed == flComponentCordVirtual.size()){
+							positionOccupied = false;
 						}
 						if(positionOccupied == true){
 							newCoordinate.x -= 1;
@@ -2497,8 +1764,13 @@ namespace flopoco{
 					newCoordinate.x = sourceCoordinate.x + 1;
 					newCoordinate.y = sourceCoordinate.y;
 					
+					if(sinkCoordinate.x>sourceCoordinate.x && sinkCoordinate.y==sourceCoordinate.y)
+						continue;
+					
 					//as long as they are taken, go to the right of source
 					do{
+						int iterationsPerformed = 0;
+						
 						for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 							coordinateType tempCoordinate = it->second;
 							
@@ -2506,6 +1778,10 @@ namespace flopoco{
 								positionOccupied = true;
 								break;
 							}
+							iterationsPerformed++;
+						}
+						if(iterationsPerformed == flComponentCordVirtual.size()){
+							positionOccupied = false;
 						}
 						if(positionOccupied == true){
 							newCoordinate.x += 1;
@@ -2524,8 +1800,13 @@ namespace flopoco{
 					newCoordinate.x = sourceCoordinate.x;
 					newCoordinate.y = sourceCoordinate.y - 1;
 					
+					if(sinkCoordinate.y<sourceCoordinate.y && sinkCoordinate.x==sourceCoordinate.x)
+						continue;
+					
 					//as long as they are taken, go upwards of source
 					do{
+						int iterationsPerformed = 0;
+						
 						for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 							coordinateType tempCoordinate = it->second;
 							
@@ -2533,6 +1814,10 @@ namespace flopoco{
 								positionOccupied = true;
 								break;
 							}
+							iterationsPerformed++;
+						}
+						if(iterationsPerformed == flComponentCordVirtual.size()){
+							positionOccupied = false;
 						}
 						if(positionOccupied == true){
 							newCoordinate.y -= 1;
@@ -2551,8 +1836,13 @@ namespace flopoco{
 					newCoordinate.x = sourceCoordinate.x;
 					newCoordinate.y = sourceCoordinate.y + 1;
 					
+					if(sinkCoordinate.y>sourceCoordinate.y && sinkCoordinate.x==sourceCoordinate.x)
+						continue;
+					
 					//as long as they are taken, go downwards of source
 					do{
+						int iterationsPerformed = 0;
+						
 						for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 							coordinateType tempCoordinate = it->second;
 							
@@ -2560,6 +1850,10 @@ namespace flopoco{
 								positionOccupied = true;
 								break;
 							}
+							iterationsPerformed++;
+						}
+						if(iterationsPerformed == flComponentCordVirtual.size()){
+							positionOccupied = false;
 						}
 						if(positionOccupied == true){
 							newCoordinate.y += 1;
@@ -2578,8 +1872,13 @@ namespace flopoco{
 					newCoordinate.x = sourceCoordinate.x - 1;
 					newCoordinate.y = sourceCoordinate.y;
 					
+					if(sinkCoordinate.x<sourceCoordinate.x && sinkCoordinate.y==sourceCoordinate.y)
+						continue;
+					
 					//as long as they are taken, go downwards of source
 					do{
+						int iterationsPerformed = 0;
+						
 						for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 							coordinateType tempCoordinate = it->second;
 							
@@ -2587,6 +1886,10 @@ namespace flopoco{
 								positionOccupied = true;
 								break;
 							}
+							iterationsPerformed++;
+						}
+						if(iterationsPerformed == flComponentCordVirtual.size()){
+							positionOccupied = false;
 						}
 						if(positionOccupied == true){
 							newCoordinate.x -= 1;
@@ -2620,8 +1923,13 @@ namespace flopoco{
 					newCoordinate.x = sourceCoordinate.x + 1;
 					newCoordinate.y = sourceCoordinate.y;
 					
+					if(sinkCoordinate.x>sourceCoordinate.x && sinkCoordinate.y==sourceCoordinate.y)
+						continue;
+					
 					//as long as they are taken, go downwards of source
 					do{
+						int iterationsPerformed = 0;
+						
 						for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 							coordinateType tempCoordinate = it->second;
 							
@@ -2629,6 +1937,10 @@ namespace flopoco{
 								positionOccupied = true;
 								break;
 							}
+							iterationsPerformed++;
+						}
+						if(iterationsPerformed == flComponentCordVirtual.size()){
+							positionOccupied = false;
 						}
 						if(positionOccupied == true){
 							newCoordinate.x += 1;
@@ -2662,8 +1974,13 @@ namespace flopoco{
 					newCoordinate.x = sourceCoordinate.x;
 					newCoordinate.y = sourceCoordinate.y - 1;
 					
+					if(sinkCoordinate.y<sourceCoordinate.y && sinkCoordinate.x==sourceCoordinate.x)
+						continue;
+					
 					//as long as they are taken, go downwards of source
 					do{
+						int iterationsPerformed = 0;
+						
 						for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 							coordinateType tempCoordinate = it->second;
 							
@@ -2671,6 +1988,10 @@ namespace flopoco{
 								positionOccupied = true;
 								break;
 							}
+							iterationsPerformed++;
+						}
+						if(iterationsPerformed == flComponentCordVirtual.size()){
+							positionOccupied = false;
 						}
 						if(positionOccupied == true){
 							newCoordinate.y -= 1;
@@ -2704,8 +2025,13 @@ namespace flopoco{
 					newCoordinate.x = sourceCoordinate.x;
 					newCoordinate.y = sourceCoordinate.y + 1;
 					
+					if(sinkCoordinate.y>sourceCoordinate.y && sinkCoordinate.x==sourceCoordinate.x)
+						continue;
+					
 					//as long as they are taken, go downwards of source
 					do{
+						int iterationsPerformed = 0;
+						
 						for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 							coordinateType tempCoordinate = it->second;
 							
@@ -2713,6 +2039,10 @@ namespace flopoco{
 								positionOccupied = true;
 								break;
 							}
+							iterationsPerformed++;
+						}
+						if(iterationsPerformed == flComponentCordVirtual.size()){
+							positionOccupied = false;
 						}
 						if(positionOccupied == true){
 							newCoordinate.y += 1;
@@ -2765,7 +2095,7 @@ namespace flopoco{
 		}
 		
 		//scan the components' y coordinates; if there are empty lines,
-		//	move the rest of the lines one unit up
+		//	move the rest of the lines up
 		bool hasEmptyLines = false;
 		int maxLine = 0;
 		
@@ -2783,25 +2113,30 @@ namespace flopoco{
 			
 			for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 				coordinateType tempCoordinate = it->second;
+				coordinateType closestCoordinate = it->second;
 				
 				if(tempCoordinate.y == maxLine)
 					continue;
 				
+				closestCoordinate.y +=flComponentCordVirtual.size();
+				
 				for(map<string, coordinateType>::iterator it2 = flComponentCordVirtual.begin(); it2 != flComponentCordVirtual.end(); it2++){
 					coordinateType tempCoordinate2 = it2->second;
 					
-					if((tempCoordinate2.y-tempCoordinate.y > 0) && (it->first != it2->first))
-						if(minGapSize > tempCoordinate2.y-tempCoordinate.y){
-							minGapSize = tempCoordinate2.y-tempCoordinate.y;
-							minGapLine = tempCoordinate.y;
-						}
+					if((tempCoordinate2.y > tempCoordinate.y) && (tempCoordinate2.y < closestCoordinate.y) && (it->first != it2->first))
+						closestCoordinate = tempCoordinate2;
+				}
+				
+				if((closestCoordinate.y-tempCoordinate.y < minGapSize) && (closestCoordinate.y-tempCoordinate.y > 1)){
+					minGapSize = closestCoordinate.y-tempCoordinate.y;
+					minGapLine = tempCoordinate.y;
 				}
 			}
 			
-			if(minGapSize>1){
+			if(minGapSize>1 && minGapSize!=flComponentCordVirtual.size()){
 				for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
 					if((it->second).y >= minGapLine)
-						(it->second).y -= (minGapSize-1);
+						flComponentCordVirtual[(it->first)].y -= (minGapSize-1);
 				}
 			}else{
 				hasEmptyLines = false;
@@ -2827,12 +2162,12 @@ namespace flopoco{
 	}
 	
 	std::string Operator::processConnectivityConstraints(){
-		/**
-		 * currently, as the user decides where each module goes, without
-		 * the automation of the process, the relevance of the number of
-		 * links between two modules is questionable.
-		 * futrher modifications to follow.
-		 */
+		//
+		 // currently, as the user decides where each module goes, without
+		 // the automation of the process, the relevance of the number of
+		 // links between two modules is questionable.
+		 // futrher modifications to follow.
+		 //
 		 return "";
 	}
 	
@@ -2957,44 +2292,46 @@ namespace flopoco{
 					breakLines = true;
 			}
 			
-			if(invertAxes == true){
-				for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
-					int temp = (it->second).x;
-					(it->second).x = (it->second).y;
-					(it->second).y = temp;
-				}
+			//feature not yet finifshed or used
+			//if(invertAxes == true){
+				//for(map<string, coordinateType>::iterator it = flComponentCordVirtual.begin(); it != flComponentCordVirtual.end(); it++){
+					//int temp = (it->second).x;
+					//(it->second).x = (it->second).y;
+					//(it->second).y = temp;
+				//}
 				
-				vector< vector<string> > tempMatrix;
-				tempMatrix = subcomponentMatrixColumns;
-				subcomponentMatrixColumns = subcomponentMatrixLines;
-				subcomponentMatrixLines = tempMatrix;
+				//vector< vector<string> > tempMatrix;
+				//tempMatrix = subcomponentMatrixColumns;
+				//subcomponentMatrixColumns = subcomponentMatrixLines;
+				//subcomponentMatrixLines = tempMatrix;
 				
-				virtualDSPperColumn = (target_->multiplierPosition).size();
-				virtualDSPperRow = target_->dspPerColumn;
+				//virtualDSPperColumn = (target_->multiplierPosition).size();
+				//virtualDSPperRow = target_->dspPerColumn;
 				
-				virtualRAMperColumn = (target_->memoryPosition).size();
-				virtualRAMperRow = target_->ramPerColumn;
+				//virtualRAMperColumn = (target_->memoryPosition).size();
+				//virtualRAMperRow = target_->ramPerColumn;
 				
-				int temp = maxDSPperColumn;
-				maxDSPperColumn = maxDSPperLine;
-				maxDSPperLine = temp;
-				temp = maxRAMperColumn;
-				maxRAMperColumn = maxRAMperLine;
-				maxRAMperLine = temp;
-			}else{
-				virtualDSPperColumn = target_->dspPerColumn;
-				virtualDSPperRow = (target_->multiplierPosition).size();
+				//int temp = maxDSPperColumn;
+				//maxDSPperColumn = maxDSPperLine;
+				//maxDSPperLine = temp;
+				//temp = maxRAMperColumn;
+				//maxRAMperColumn = maxRAMperLine;
+				//maxRAMperLine = temp;
+			//}else{
+				//virtualDSPperColumn = target_->dspPerColumn;
+				//virtualDSPperRow = (target_->multiplierPosition).size();
 				
-				virtualRAMperColumn = target_->ramPerColumn;
-				virtualRAMperRow = (target_->memoryPosition).size();
-			}
-			if(breakLines == true){
-				//should break the lines, but this may lead to considerable
-				//	differences from the original floorplan
-				//  so an Error is signaled to the user to reconsider the strategy
-				cerr << "Warning: the current floorplanning strategy, on the target FPGA, cannot be performed." 
-						<< " Please reconsider. No floorplan has been generated." << endl;
-			}
+				//virtualRAMperColumn = target_->ramPerColumn;
+				//virtualRAMperRow = (target_->memoryPosition).size();
+			//}
+			//if(breakLines == true){
+				////should break the lines, but this may lead to considerable
+				////	differences from the original floorplan
+				////  so an Error is signaled to the user to reconsider the strategy
+				//cerr << "Warning: the current floorplanning strategy, on the target FPGA, cannot be performed." 
+						//<< " Please reconsider. No floorplan has been generated." << endl;
+			//}
+			//
 			
 			//determine the maximum height of a bounding box for a 
 			//	sub-component based on the largets chain of DSPs or RAMs 
@@ -3222,9 +2559,13 @@ namespace flopoco{
 			for(unsigned int i=0; i<subcomponentMatrixLines.size(); i++){
 				vector<string> tempList = subcomponentMatrixLines[i];
 				
-				for(unsigned int j=0; j<tempList.size(); j++)
-					for(unsigned int k=0; k<tempList.size(); k++){
+				for(unsigned int j=0; j<tempList.size()-1; j++)
+					for(unsigned int k=j+1; k<tempList.size(); k++){
 						if((flComponentCordVirtual[tempList[j]]).x > (flComponentCordVirtual[tempList[k]]).x){
+							coordinateType tempCoord = flComponentCordVirtual[tempList[j]];
+							flComponentCordVirtual[tempList[j]] = flComponentCordVirtual[tempList[k]];
+							flComponentCordVirtual[tempList[k]] = tempCoord;
+							
 							string tempString = tempList[j];
 							tempList[j] = tempList[k];
 							tempList[k] = tempString;
@@ -3306,7 +2647,7 @@ namespace flopoco{
 		file.close();
 		
 		if(target_->getVendor() == "Xilinx"){
-			cerr << "***Floorplan written to \'flopoco.ucf\' constraints file file" << endl;
+			cerr << "***Floorplan written to \'flopoco.ucf\' constraints file" << endl;
 		}else if(target_->getVendor() == "Altera"){
 			
 		}
@@ -3359,17 +2700,18 @@ namespace flopoco{
 		if(flVirtualComponentList.find(moduleName) != flVirtualComponentList.end())
 			return constraintString.str();
 		
+		string instanceName = flInstanceNames[moduleName];
+		
 		if(target_->getVendor() == "Xilinx"){
 			//create the constraint
-			constraintString << "INST \"" << flInstanceNames[moduleName] 
-				<< "\" AREA_GROUP=\"pblock_" << flInstanceNames[moduleName] << "\";" << endl;
+			constraintString << "INST \"" << instanceName << "\" AREA_GROUP=\"pblock_" << instanceName << "\";" << endl;
 			//add constraints for function generators and registers
-			constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] 
+			constraintString << "AREA_GROUP \"pblock_" << instanceName 
 				<< "\" RANGE=SLICE_X" << (flComponentCordReal[moduleName]).x << "Y" << (flComponentCordReal[moduleName]).y
 				<< ":SLICE_X" << (flComponentCordReal[moduleName]).x + (flComponentDimension[moduleName]).x
 				<< "Y" << (flComponentCordReal[moduleName]).y + (flComponentDimension[moduleName]).y << ";" << endl;
-			constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] << "\" GROUP=OPEN;" << endl;
-			constraintString << "AREA_GROUP \"pblock_" << flInstanceNames[moduleName] << "\" PLACE=OPEN;" << endl;
+			constraintString << "AREA_GROUP \"pblock_" << instanceName << "\" GROUP=OPEN;" << endl;
+			constraintString << "AREA_GROUP \"pblock_" << instanceName << "\" PLACE=OPEN;" << endl;
 			//add constraints for DSPs
 			if((subComponents_[moduleName])->estimatedCountMultiplier != 0){
 				vector<int> dspPositions;
@@ -3446,21 +2788,21 @@ namespace flopoco{
 		cerr << "*                          Floorplanning                                *" << endl;
 		cerr << "=========================================================================" << endl;
 		cerr << "Starting the creation of the floorplan for operator " << uniqueName_ << endl;
+		cerr << "***Triggered creation of the virtual arrangement of the sub-components" << endl;
+		result << createVirtualGrid();
 		cerr << "***Triggered processing of placement constraints" << endl;
 		result << processPlacementConstraints();
 		cerr << "***Triggered processing of connectivity constraints" << endl;
 		result << processConnectivityConstraints();
-		cerr << "***Triggered creation of the virtual arrangement of the sub-components" << endl;
-		result << createVirtualGrid();
 		cerr << "***Triggered creation of the actual arrangement of the sub-components" << endl;
 		result << createPlacementGrid();
-		cerr << "***Triggered creation of the constraints" << endl;
+		cerr << "***Triggered creation of the constraints file" << endl;
 		result << createConstraintsFile();
 		cerr << "Finished creating the floorplan for operator " << uniqueName_ << endl;
 		cerr << "=========================================================================" << endl;
 		
 		return result.str();
-	}
+	}*/
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 }
 

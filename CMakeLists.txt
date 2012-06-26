@@ -24,7 +24,8 @@ INCLUDE(CPack)
 #SET(CMAKE_CXX_FLAGS_DEBUG "-Wall")
 # Uncomment for profiling
 #SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
-SET(CMAKE_CXX_FLAGS_DEBUG "-pg -Wall")
+#SET(CMAKE_CXX_FLAGS_DEBUG "-pg -Wall")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
 # Do you want an executable of 12MB ?
 SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_BUILD_TYPE release)
@@ -145,6 +146,11 @@ ADD_LIBRARY(FloPoCo STATIC
  src/utils
  src/FlopocoStream
  VHDLLexer
+ 
+# Resource Estimation related ---------------------------------------
+#--------------------------------------------------------------------
+ src/Tools/ResourceEstimationHelper
+ #--------------------------------------------------------------------
 
  src/Targets/DSP
  src/Target src/Targets/Virtex4 src/Targets/Spartan3 src/Targets/Virtex6 src/Targets/StratixII src/Targets/StratixIII src/Targets/Virtex5 src/Targets/StratixIV
@@ -250,6 +256,16 @@ ADD_LIBRARY(FloPoCo STATIC
  
  src/CORDIC/CordicSinCosClassic
  src/CORDIC/CordicIteration 
+ 
+ src/CORDIC/CordicSinCosNew
+ 
+ src/ComplexOperators/IntComplexAdder
+ src/ComplexOperators/IntComplexMultiplier
+ src/ComplexOperators/IntTwiddleMultiplier
+ src/ComplexOperators/IntTwiddleMultiplierAlternative
+ src/ComplexOperators/IntFFTButterfly
+ src/ComplexOperators/IntFFTLevelDIT2
+ src/ComplexOperators/IntFFT
 
 # Floating-Point ----------------------------------------------------
 #--------------------------------------------------------------------

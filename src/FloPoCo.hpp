@@ -12,6 +12,10 @@
 #include "FlopocoStream.hpp"
 
 
+/* resource estimation --------------------------------------- */
+#include "Tools/ResourceEstimationHelper.hpp"
+/* resource estimation --------------------------------------- */
+
 #include "Target.hpp"
 #include "Targets/DSP.hpp"
 #include "Targets/Spartan3.hpp"
@@ -95,7 +99,16 @@
 #include "CORDIC/CordicSinCosClassic.hpp"
 #include "CORDIC/CordicSinCos.hpp"
 #include "CORDIC/CordicSinCosRedIter.hpp"
+#include "CORDIC/CordicSinCosNew.hpp"
 #endif
+
+#include "ComplexOperators/IntComplexAdder.hpp"
+#include "ComplexOperators/IntComplexMultiplier.hpp"
+#include "ComplexOperators/IntTwiddleMultiplier.hpp"
+#include "ComplexOperators/IntTwiddleMultiplierAlternative.hpp"
+#include "ComplexOperators/IntFFTButterfly.hpp"
+#include "ComplexOperators/IntFFTLevelDIT2.hpp"
+#include "ComplexOperators/IntFFT.hpp"
 
 /* floating-point -------------------------------------------- */ 
 #include "FPMultiplier.hpp"

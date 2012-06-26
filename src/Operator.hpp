@@ -16,6 +16,7 @@
 #include <vector>
 #include "FlopocoStream.hpp"
 #include "utils.hpp"
+#include "Tools/ResourceEstimationHelper.hpp"
 
 using namespace std;
 
@@ -1378,28 +1379,7 @@ public:
 	std::ostringstream 	resourceEstimate;				/**< The log of resource estimations made by the user */
 	std::ostringstream 	resourceEstimateReport;			/**< The final report of resource estimations made by the user */
 	
-	int 				estimatedCountFF;				/**< The estimated count of flip-flops used in the design */
-	int 				estimatedCountLUT;				/**< The estimated count of function generators used in the design */
-	int 				estimatedCountMultiplier;		/**< The estimated count of dedicated multipliers used in the design */
-	int 				estimatedCountMemory;			/**< The estimated count of block memory elements used in the design */
-	
-	//more particular resource statistics
-	int 				estimatedCountDSP;				/**< The estimated count of DSPs used in the design */
-	int 				estimatedCountRAM;				/**< The estimated count of Block RAMs used in the design */
-	int 				estimatedCountROM;				/**< The estimated count of Distributed used in the design */	
-	int 				estimatedCountSRL;				/**< The estimated count of Shift Registers used in the design */
-	int 				estimatedCountWire;				/**< The estimated count of wire elements (based on the signals used) used in the design */
-	int 				estimatedCountIOB;				/**< The estimated count of Input/Output ports used in the design */
-	
-	//even more particular resource statistics
-	int 				estimatedCountMux;				/**< The estimated count of multiplexers used in the design */
-	int 				estimatedCountCounter;			/**< The estimated count of counters used in the design */
-	int 				estimatedCountAccumulator;		/**< The estimated count of accumulators used in the design */
-	int 				estimatedCountDecoder;			/**< The estimated count of decoders used in the design */
-	int 				estimatedCountArithOp;			/**< The estimated count of arithmetic operations used in the design */
-	int 				estimatedCountAdderSubtracter;	/**< The estimated count of adders-subtracters used in the design */
-	int 				estimatedCountReg;				/**< The estimated count of registers used in the design */
-	int 				estimatedCountFSM;				/**< The estimated count of Finite State Machines used in the design */
+	ResourceEstimationHelper* reHelper;				/**< Performs all the necessary operations for resource estimation */
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1458,20 +1438,6 @@ private:
 	double                 criticalPath_;               /**< The current delay of the current pipeline stage */
 	bool                   needRecirculationSignal_;    /**< True if the operator has registers having a recirculation signal  */
 	Operator*              indirectOperator_;               /**< NULL if this operator is just an interface operator to several possible implementations, otherwise points to the instance*/
-	
-	////////////Variables used for resource estimations
-	vector<string>		estimatedSignalNames;			/**< The names of signals which have a manual resource estimation 
-																(DOES NOT CONCERN REGISTERS DUE TO PIPELINING) */
-	vector<string>		estimatedPortNames;				/**< The names of ports which have a manual resource estimation */
-	
-	map<int, int>		estimatedLUTTypes;				/**< The list of different LUT types, based on their widths */
-	
-	map<int, int>		estimatedAdderTypes;				/**< The list of different adder types, based on their widths */
-	map<int, int>		estimatedMultiplierTypes;		/**< The list of different multiplier types, based on their widths */
-	map<int, int>		estimatedRegisterTypes;			/**< The list of different registers types, based on their widths */
-	map<int, int>		estimatedShifterTypes;			/**< The list of different shifter types, based on their widths */
-	map<int, int>		estimatedCounterTypes;			/**< The list of different counter types, based on their widths */
-	map<int, int>		estimatedArithOpTypes;			/**< The list of different arithmetic operator types, based on their widths */
 
 };
 

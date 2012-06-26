@@ -2337,6 +2337,17 @@ bool parseCommandLine(int argc, char* argv[], vector<Operator*> &oplist){
 			addOperator(oplist, tg);
 		}
 		
+		else if (opname == "CordicSinCosNew") {
+			int nargs = 3;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wIn = checkStrictlyPositive(argv[i++], argv[0]); // must be >=2 actually
+			int wOut = checkStrictlyPositive(argv[i++], argv[0]); // must be >=2 actually
+			int reducedIterations = checkPositiveOrNull(argv[i++], argv[0]); 
+			Operator* tg = new CordicSinCosNew(target, wIn, wOut, reducedIterations);
+			addOperator(oplist, tg);
+		}
+		
 		
 		else if (opname == "IntComplexAdder") {
 			int nargs = 2;
@@ -2557,36 +2568,44 @@ int main(int argc, char* argv[] )
 	//------------------------------------------------------------------
 	
 	//------------------------ Floorplanning ---------------------------
-	for (vector<Operator*>::iterator it = oplist.begin(); it!=oplist.end(); ++it) {
-		Operator* op = *it;
-		
-		if(reLevel == 0){
-			cerr << "Floorplanning option can be used only when the resource estimation is enabled." 
-					<< " Please rerun the program with the appropriate options" << endl;
-			exit(1);
-		}
-		if(floorplanning)
-			floorplanMessages << op->createFloorplan();
-	}
-	//------------------------------------------------------------------
-	
-	//------------------ Floorplanning Debugging -----------------------
-	if(reLevel==0 || !floorplanning){
-		cerr << "Debugging Floorplanning option can be used only when the resource estimation and the floorplanning is enabled." 
-					<< " Please rerun the program with the appropriate options" << endl;
-			exit(1);
-	}else if(floorplanningDebug){
-		ofstream file;
-		file.open("flopoco.floorplan.debug");
+	/*
+	if(floorplanning){
 		for (vector<Operator*>::iterator it = oplist.begin(); it!=oplist.end(); ++it) {
 			Operator* op = *it;
 			
-			file << op->floorplan.str();
-			file << floorplanMessages.str();
+			if(reLevel == 0){
+				cerr << "Floorplanning option can be used only when the resource estimation is enabled." 
+						<< " Please rerun the program with the appropriate options" << endl;
+				exit(1);
+			}
+			if(floorplanning)
+				floorplanMessages << op->createFloorplan();
 		}
-		file.close();
-		cerr << "Floorplanning log (for debugging purposes) written to the \'flopoco.floorplanning.debug\' file" << endl;
 	}
+	*/
+	//------------------------------------------------------------------
+	
+	//------------------ Floorplanning Debugging -----------------------
+	/*
+	if(floorplanningDebug){
+		if(reLevel==0 || !floorplanning){
+			cerr << "Debugging Floorplanning option can be used only when the resource estimation and the floorplanning is enabled." 
+						<< " Please rerun the program with the appropriate options" << endl;
+				exit(1);
+		}else{
+			ofstream file;
+			file.open("flopoco.floorplan.debug");
+			for (vector<Operator*>::iterator it = oplist.begin(); it!=oplist.end(); ++it) {
+				Operator* op = *it;
+				
+				file << op->floorplan.str();
+				file << floorplanMessages.str();
+			}
+			file.close();
+			cerr << "Floorplanning log (for debugging purposes) written to the \'flopoco.floorplanning.debug\' file" << endl;
+		}
+	}
+	*/
 	//------------------------------------------------------------------
 	
 	return 0;

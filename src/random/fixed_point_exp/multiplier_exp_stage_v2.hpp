@@ -56,7 +56,8 @@ public:
 		Target *target,
 		FixedPointExpStagePtr hi,
 		FixedPointExpStagePtr lo,
-		unsigned outputFracBits,
+		T minOutputError,
+		T maxOutputError,
 		map<string, double> inputDelays = emptyDelayMap
 	)
 		: FixedPointExpStage(target, inputDelays, hi->Mu()+lo->Mu(), hi->Sigma(), hi->InputResidualType(), hi->InputResultType())
@@ -65,6 +66,18 @@ public:
 		, m_outputResidualType(impl->OutputResidualType())
 		, m_outputResultType(outputFracBits)
 	{
+		if(hi->OutputResultType().relErrorMin+lo->OutputResultType().relErrorMin < minOutputError)
+			throw unsatisfiable_contraints("MultiplierExpStage - Relative errors of inputs mean output error can't be met.");
+		if(maxOutputError < hi->OutputResultType().relErrorMax+lo->OutputResultType().relErrorMax)
+			throw unsatisfiable_contraints("MultiplierExpStage - Relative errors of inputs mean output error can't be met.");
+		
+		int outputBitsNeeded=-1;
+		for(int i=1;i<hi->OutputResultType().FracWidth()+lo->OutputResultType().FracWidth();i++){
+			
+		}
+		if(outputBitsNeeded==-1)
+			throw unsatisfiable_contraints("MultiplierExpStage - No amount of output bits meets constraints.");
+		
 		std::cerr<<"MultiplierV2 src type : "<<inputResultType<<"\n";
 		std::cerr<<"  hi res type : "<<hi->OutputResultType()<<"\n";
 		std::cerr<<"  lo res type : "<<lo->OutputResultType()<<"\n";
@@ -90,6 +103,8 @@ public:
 		inPortMap(hi.get(), "iResidual", "iResidual");
 		assert(hi->InputResultType().Width()==0);
 		outPortMap(hi.get(), "oResidual", "hi_residual");
+		if(hi->OutputResultType().FracWidth()==0)
+			throw std::logic_error("MultiplierExpStageV2 - Haven't specialised for 0-bit fractions yet.");
 		outPortMap(hi.get(), "oResult", "hi_result");
 		vhdl<<tab<<instance(hi.get(), "hi_stage");
 		
@@ -132,9 +147,9 @@ public:
 		
 		bool sparse_multiplier = lo->OutputResultType().FracWidthNonZero()+1 < lo->OutputResultType().FracWidth()
 				|| hi->OutputResultType().FracWidthNonZero()+1 < hi->OutputResultType().FracWidth();
-		
+			
 		if(sparse_multiplier){
-			int WLO=lo->OutputResultType().FracWidth(), WHI=lo->OutputResultType().FracWidth();
+			int WLO=lo->OutputResultType().FracWidth(), WHI=hi->OutputResultType().FracWidth();
 			int NZLO=lo->OutputResultType().FracWidthNonZero(), NZHI=hi->OutputResultType().FracWidthNonZero();
 			int WR=WHI+WLO+2;
 			// 100AA * 10BBB ->  00000RRRRR + 00BBBB0000 + 0000AA0000 + 0100000000
@@ -148,10 +163,12 @@ public:
 				<< tab<<tab<<"(\"01\"&"<<zeros(WR-NZHI-NZLO-2)<<"&result_frac_prod_amb)\n"
 				<< tab<<tab<<" + \n" 
 				<< tab<<tab<<"result_frac_prod_apb;\n";
+			nextCycle();
 		}else{
 			vhdl<<tab<<declare("result_frac_prod", partialFracWidth, true) <<" <= hi_result_frac * lo_result_frac;\n";
+			nextCycle();
 		}
-		nextCycle();
+		
 		
 		if(postNormUp && postNormDown){
 			vhdl<<tab<<declare("result_frac_norm", partialFracWidth, true)<<" <= result_frac_prod when result_frac_prod("<<partialFracWidth<<"-1)='1' else result_frac_prod("<<partialFracWidth-2<<" downto 0)&'0';\n";

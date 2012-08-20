@@ -10,6 +10,8 @@
 #include <boost/smart_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <stdexcept>
+
 namespace flopoco
 {
 	
@@ -17,6 +19,14 @@ extern vector<Operator *> oplist;
 	
 namespace random
 {
+	
+class unsatisfiable_constraints : public std::runtime_error
+{
+public:
+	unsatisfiable_constraints(const char *str)
+		: std::runtime_error(str)
+	{}
+};
 
 class FixedPointExpStage
 	: public flopoco::Operator

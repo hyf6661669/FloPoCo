@@ -7,6 +7,7 @@
 
 #include "FixedPointFunctions/HOTBM.hpp"
 #include "FixedPointFunctions/HOTBM/Minimax.hh"
+#include "FixedPointFunctions/HOTBM/Exhaustive.hh"
 
 #include "sollya.h"
 
@@ -64,12 +65,18 @@ public:
 		int pp=getToolPrecision();
 		setToolPrecision(96);
 		int pInfPoints=Minimax::setInfNormPoints(31);	// We know it is very smooth
+		Exhaustive::ScoreType pST=Exhaustive::setScoreType(Exhaustive::ScoreArea);
+		int pMinAlpha=Exhaustive::setMinAlpha(std::min(inputResidualType.Width()-2, target->lutInputs()));
+		int pMaxAlpha=Exhaustive::setMaxAlpha(target->lutInputs()+2);
 		
 		m_fe.reset(new flopoco::HOTBM(target, function.str(), "FAE", m_inputResidualType.Width(), m_outputResultType.FracWidthNonZero()+1, 2, false));
 		oplist.push_back(m_fe.get());
 		
 		setToolPrecision(pp);
 		Minimax::setInfNormPoints(pInfPoints);
+		Exhaustive::setScoreType(pST);
+		Exhaustive::setMinAlpha(pMinAlpha);
+		Exhaustive::setMaxAlpha(pMaxAlpha);
 		
 		ostringstream name;
 		name << "FuncApproxExpStage_"<<m_inputResidualType.DescriptionId();

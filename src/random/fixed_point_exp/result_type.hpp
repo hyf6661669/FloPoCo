@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
+#include <stdlib.h>
 
 #include <gmpxx.h>
 
@@ -260,6 +261,15 @@ public:
 		int e;
 		T f=frexp(x, &e);
 		return ldexp(round(ldexp(f,fracWidth+1)), e-fracWidth-1);
+	}
+	
+	T RoundHalfUp(const T &x) const
+	{
+		if(x<=0)
+			throw std::invalid_argument("x must be strictly positive.");
+		int e;
+		T f=frexp(x, &e);
+		return ldexp(floor(ldexp(f,fracWidth+1)+0.5), e-fracWidth-1);
 	}
 	
 	T RoundHalfDown(const T &x) const

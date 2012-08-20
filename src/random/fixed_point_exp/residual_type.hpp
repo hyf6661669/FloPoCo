@@ -169,7 +169,7 @@ namespace detail
 		unsigned RangeSize() const
 		{
 			T tmp = ((rangeMin<=rangeMax) ? (RangeMax()-RangeMin()) : (TypeMax()-TypeMin())) / TypeDelta() + 1;
-			if(tmp>(1u<<31)
+			if(tmp>(1u<<31))
 				throw std::logic_error("residual_type::RangeSize - Size is more than 2^31.");
 			return (unsigned)tmp;
 		}

@@ -14,7 +14,6 @@
 #include "fixed_point_exp/table_exp_stage.hpp"
 #include "fixed_point_exp/close_table_exp_stage.hpp"
 #include "fixed_point_exp/multiplier_exp_stage.hpp"
-#include "fixed_point_exp/multiplier_v2_exp_stage.hpp"
 #include "fixed_point_exp/chained_exp_stage.hpp"
 
 #include "FloPoCo.hpp"

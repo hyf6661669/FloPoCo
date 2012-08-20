@@ -213,6 +213,7 @@ public:
 				res.push_back(std::make_pair(m_table[i].trueResult, m_table[i].roundedResult));
 			}
 		}
+		return res;
 	}
 };
 

@@ -40,7 +40,7 @@ namespace flopoco {
 #define INNER_SEPARATOR "................................................................................"
 #define DEBUG_SEPARATOR "________________________________________________________________________________"
 #define OUTER_SEPARATOR "################################################################################"
-#define REPORT(level, stream) {if ((level)<=(verbose)){ cerr << "> " << srcFileName << ": " << stream << endl;}else{}} 
+#define REPORT(level, stream) {if ((level)<=(::flopoco::verbose)){ cerr << "> " << srcFileName << ": " << stream << endl;}else{}} 
 
 
 

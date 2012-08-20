@@ -95,10 +95,9 @@ public:
 		m_tableMaxIndex=0;
 		while(curr!=end){
 			T x=*curr;
-			unsigned index=m_tableIndexType.ToBits(x);
 			bool valid=inputResidualType.IsInRange(x);
 			if(valid){
-				
+				unsigned index=m_tableIndexType.ToBits(x);
 				T fx=ReferenceExp(x);
 				T rx=m_outputResultType.Round(fx);
 				assert(rx=m_outputResultType.Round(rx));
@@ -169,6 +168,20 @@ public:
 		assert(m_tableIndexType.FromBits(index)+nextResidual==residual);
 		
 		return std::make_pair(nextResidual, m_table[index].roundedResult);
+	}
+	
+	virtual std::vector<std::pair<T,T> > GetAllResultValues() const
+	{
+		std::vector<std::pair<T,T> > res;
+		res.reserve(m_table.size());
+		
+		for(int i=0;i<(int)m_table.size();i++){
+			if(m_table[i].inRange){
+				res.push_back(std::make_pair(m_table[i].trueResult, m_table[i].roundedResult));
+			}
+		}
+		
+		return res;
 	}
 };
 

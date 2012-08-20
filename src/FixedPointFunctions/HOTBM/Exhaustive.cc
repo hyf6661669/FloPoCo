@@ -37,7 +37,7 @@ namespace flopoco{
 		tInstance best(NULL, HUGE_VAL);
 		int n = 0;
 		bool done = false;
-		for (int alpha = 0; (alpha <= p.wI-2) && (!done); alpha++) {
+		for (int alpha = std::max(0, minAlpha); (alpha <= std::min(p.wI-2, maxAlpha)) && (!done); alpha++) {
 			Param p = this->p;
 			tInstSet instSet;
 
@@ -119,7 +119,7 @@ namespace flopoco{
 				skim(instSet, 4);
 
 				cerr << " *";// << endl;
-
+				
 				instSet_ = instSet;
 				for (tInstSet::iterator k = instSet_.begin(); k != instSet_.end(); k++) {
 					Param p = (*k).first->getParam();
@@ -260,7 +260,7 @@ namespace flopoco{
 				instSet.insert(termROMInstSet.begin(), termROMInstSet.end());
 				skim(instSet, 4);
 			}
-
+		
 			skim(instSet, 1);
 			cerr << instSet.begin()->second << " vs. " << best.second;
 			if (instSet.begin()->second < best.second) {
@@ -297,13 +297,54 @@ namespace flopoco{
 	{
 		return instance;
 	}
+	
+	int Exhaustive::minAlpha = 0;
+	int Exhaustive::maxAlpha = 10000;
+	
+	int Exhaustive::setMinAlpha(int x)
+	{
+		std::swap(x,minAlpha);
+		return x;
+	}
+	
+	int Exhaustive::setMaxAlpha(int x)
+	{
+		std::swap(x,maxAlpha);
+		return x;
+	}
+	
+	int Exhaustive::getMinAlpha()
+	{ return minAlpha; }
+	
+	int Exhaustive::getMaxAlpha()
+	{ return maxAlpha; }
+	
+	Exhaustive::ScoreType Exhaustive::scoreType=Exhaustive::ScoreAreaSquaredDelay;
+	
+	Exhaustive::ScoreType Exhaustive::setScoreType(ScoreType score)
+	{
+		ScoreType prev=scoreType;
+		scoreType=score;
+		return prev;
+	}
+		
+	Exhaustive::ScoreType Exhaustive::getScoreType()
+	{
+		return scoreType;
+	}
 
 	double Exhaustive::score(const HOTBMInstance &inst)
 	{
 		double area	= inst.estimArea();
 		double delay = inst.estimDelay();
 
-		return area*area * delay;
+		if(scoreType==ScoreArea){
+			return area;
+		}else if(scoreType==ScoreAreaDelay){
+			return area*delay;
+		}else{ // ScoreAreaSquaredDelay
+			return area*area * delay;
+		}
 	}
 
 	int Exhaustive::process(list<Param> &pList, tInstSet &instSet, int nMax)

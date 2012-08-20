@@ -1,7 +1,8 @@
+#include "optimise_rounding.hpp"
+
 #include "fixed_point_exp_tester.hpp"
 
 #include "func_approx_exp_stage.hpp"
-#include "multiplier_v2_exp_stage.hpp"
 #include "close_table_exp_stage.hpp"
 #include "find_close_value.hpp"
 #include "chained_exp_stage.hpp"
@@ -17,6 +18,44 @@
 
 #define BOOST_TEST_MODULE FixedPointExp
 #include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(TestOptimiseRounding)
+{
+	::flopoco::verbose=DEBUG;
+	
+	typedef flopoco::random::result_type <double> result_t;
+	
+	typedef flopoco::random::residual_type<double> residual_t;
+	typedef flopoco::random::result_type <double> result_t;
+	
+	boost::shared_ptr<flopoco::Target> target(new flopoco::Virtex4());
+	
+	residual_t inputResidual(true, 24, 6);
+	
+	boost::shared_ptr<flopoco::random::CloseTableExpStage> hi(new flopoco::random::CloseTableExpStage(target.get(),
+		0.0, 1.0, // mu, sigma
+		inputResidual, 
+		6, // table address bits
+		-pow(2.0, -24), pow(2.0, -24)
+	));
+	boost::shared_ptr<flopoco::random::CloseTableExpStage> lo(new flopoco::random::CloseTableExpStage(target.get(),
+		0.0, 1.0, // mu, sigma
+		hi->OutputResidualType(),
+		6,
+		-pow(2.0, -24), pow(2.0, -24)
+	));
+	
+	flopoco::random::multiplier_rounding_spec<double> res=flopoco::random::FindResultBitsForMultiply(
+		hi->OutputResultType().FracWidth(),
+		hi->GetAllResultValues(),
+		lo->OutputResultType().FracWidth(),
+		lo->GetAllResultValues(),
+		-pow(2.0,-23),
+		pow(2.0,-23)
+	);
+	
+	std::cerr<<"   Output residual = "<<lo->OutputResidualType()<<"\n";
+}
 
 BOOST_AUTO_TEST_CASE(TestFuncApproxExpStage)
 {
@@ -56,39 +95,6 @@ BOOST_AUTO_TEST_CASE(FuncApproxExpStage)
 	
 	std::ofstream dst("test_FuncApproxExpStage.vhdl");
 	t->outputVHDLToFile(dst);
-}
-
-BOOST_AUTO_TEST_CASE(MultiplierV2ExpStage)
-{
-	typedef flopoco::random::residual_type<double> residual_t;
-	typedef flopoco::random::result_type <double> result_t;
-	
-	boost::shared_ptr<flopoco::Target> target(new flopoco::Virtex4());
-	
-	residual_t inputResidual(true, 16, 0);
-	
-	boost::shared_ptr<flopoco::random::CloseTableExpStage> s1(new flopoco::random::CloseTableExpStage(target.get(),
-		0.0, 1.0, // mu, sigma
-		inputResidual, 
-		6, // table address bits
-		0.0, 1e-8
-	));
-	boost::shared_ptr<flopoco::random::CloseTableExpStage> s2(new flopoco::random::CloseTableExpStage(target.get(),
-		0.0, 1.0, // mu, sigma
-		s1->OutputResidualType(),
-		s1->OutputResidualType().Width(),
-		0.0, 1e-8
-	));
-	
-	boost::shared_ptr<flopoco::random::MultiplierV2ExpStage> m(
-		new flopoco::random::MultiplierV2ExpStage(target.get(),
-		s2,
-		s1->OutputResultType(),
-		16
-	));
-	
-	std::ofstream dst("test_MultiplierV2ExpStage.vhdl");
-	m->outputVHDLToFile(dst);
 }
 
 BOOST_AUTO_TEST_CASE(CloseTableExpStage)

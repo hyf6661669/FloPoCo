@@ -100,6 +100,12 @@ extern "C" {
 #define RELATIVESYM 198
 #define SINGLE 39
 
+#define DISPLAY_MODE_DECIMAL     0
+#define DISPLAY_MODE_DYADIC      1
+#define DISPLAY_MODE_POWERS      2
+#define DISPLAY_MODE_BINARY      3
+#define DISPLAY_MODE_HEXADECIMAL 4
+
 typedef struct sollya_chain* sollya_chain_t;
 typedef struct sollya_node* sollya_node_t;
 typedef struct sollya_range* sollya_range_t;
@@ -116,11 +122,17 @@ int getToolHopitalRecursions();
 void setToolHopitalRecursions(int);
 int getToolDiameter(mpfr_t);
 void setToolDiameter(mpfr_t);
+int getDieOnErrorMode();
+void setDieOnErrorMode(int);
+int getDisplayMode();
+int setDisplayMode(int);
+
 
 void initTool();
 void finishTool();
 void setRecoverEnvironment(jmp_buf *);
 void invalidateRecoverEnvironment();
+void blockSignals();
 
 sollya_node_t makeVariable();
 sollya_node_t makeConstant(mpfr_t x);
@@ -167,6 +179,7 @@ void free_memory(sollya_node_t tree);
 
 void printTree(sollya_node_t tree);
 void fprintTree(FILE *fd, sollya_node_t tree);
+void fprintTreeWithPrintMode(FILE *fd, sollya_node_t tree);
 char *sprintTree(sollya_node_t tree);
 
 sollya_node_t copyTree(sollya_node_t tree);

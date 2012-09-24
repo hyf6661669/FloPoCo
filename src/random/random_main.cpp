@@ -16,7 +16,7 @@
 #include "fixed_point_exp/multiplier_exp_stage.hpp"
 #include "fixed_point_exp/chained_exp_stage.hpp"
 
-#include "FloPoCo.hpp"
+//#include "FloPoCo.hpp"
 
 
 #define BRIGHT 1

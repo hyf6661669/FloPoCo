@@ -106,9 +106,19 @@ extern "C" {
 #define DISPLAY_MODE_BINARY      3
 #define DISPLAY_MODE_HEXADECIMAL 4
 
-typedef struct sollya_chain* sollya_chain_t;
+typedef struct sollya_chain
+{
+  void *value;
+  sollya_chain *next;
+} *sollya_chain_t;
+
 typedef struct sollya_node* sollya_node_t;
-typedef struct sollya_range* sollya_range_t;
+
+typedef struct
+{
+  mpfr_t *a;
+  mpfr_t *b;
+}sollya_range_t;
 
 char *getNameOfVariable();
 int setNameOfVariable(char *);

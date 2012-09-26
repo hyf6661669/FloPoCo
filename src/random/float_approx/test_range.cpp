@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
 		invalidateRecoverEnvironment();
 		blockSignals();	// Someone manages to turn this back on...
 		setDisplayMode(DISPLAY_MODE_DECIMAL);
+		setToolPrecision(160);
 		
 		std::string funcdesc="exp(x)";
 		if(argc > 1){
@@ -43,6 +44,7 @@ int main(int argc, char *argv[])
 		}
 		
 		flopoco::Function f(funcdesc);
+		unblockSignals();
 		
 		mpfr_t domainStart, domainFinish, domainEnd;
 		mpfr_inits2(domainWF, domainStart, domainEnd, domainFinish, (mpfr_ptr)0);
@@ -156,11 +158,31 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Starting RangePoly\n");
 		RangePolys rp(r, degree);
 		
-		rp.split_to_error(pow(2.0, -rangeWF-1));
-		
+		fprintf(stderr, "\n\nSplittin to error of 2^(-rangeWF)\n");
+		rp.split_to_error(pow(2.0, -rangeWF));
 		r.dump(stdout);
 		
+		int guard=1;
+		
+		fprintf(stderr, "\n\nCreating faithful with %d guard bits\n", guard);
+		rp.calc_faithful_fixed_point(guard);
+		r.dump(stdout);
+		
+		rp.build_concrete(guard);
+		
+		rp.dump_concrete(stdout);
+		
+		rp.exhaust_concrete();
+		
 		mpfr_clears(domainStart, domainFinish, (mpfr_ptr)0);
+		
+		exit(1); // Hangs for some reason... there is memory corruption somewhere
+		
+		fprintf(stderr, "Cleaning\n");
+		rp.m_concretePartition.clear();
+		rp.m_concretePolys.clear();
+		r.m_segments.clear();
+		fprintf(stderr, "Exiting scope\n");		
 	}catch(std::exception &e){
 		fprintf(stderr, "Caught C++ exception : %s\n", e.what());
 		return 1;

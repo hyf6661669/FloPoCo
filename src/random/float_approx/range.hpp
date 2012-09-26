@@ -2,6 +2,7 @@
 #define flopoco_random_float_approx_range_hpp
 
 #include <list>
+#include <vector>
 #include <map>
 #include <stdio.h>
 #include <mpfr.h>
@@ -17,12 +18,14 @@ namespace random
 {
 namespace float_approx
 {
+	
+void unblockSignals();
 
 // initialise and copy same value (with same precision)
 void mpfr_init_copy(mpfr_t dst, mpfr_t src);
 	
 // Fix to this many fractional bits
-void mpfr_fix(mpfr_t x, int bits);
+void mpfr_fix(mpfr_t x, int bits, mpfr_rnd_t rnd=MPFR_RNDN);
 	
 struct Range;
 
@@ -61,7 +64,12 @@ public:
 	sollya_node_t minimax(unsigned degree);
 	
 	// Compute minimax with fixed-point coefficients
-	sollya_node_t fpminimax(sollya_chain_t monomials, sollya_chain_t formats);
+	/* coeffFormats is a list of integers, such that coefficient i will be representable as x/2^coeffFormats[i],
+		i.e. it has that many fractional bits :) */
+	sollya_node_t fpminimax(const std::vector<int> &coeffFormats, sollya_node_t minimax=NULL);
+	
+	// Compute minimax with fixed-point coefficients all with the given precision
+	sollya_node_t fpminimax(unsigned degree, int coeffFormat, sollya_node_t minimax=NULL);
 	
 	// The returned node should not be freed (it is cached)
 	sollya_node_t get_scaled_flat_function();
@@ -122,6 +130,8 @@ struct Range
 	// Get the function scaled to fixed point for input binade eD and output eR
 	// The returned node should not be freed (it is cached)
 	sollya_node_t get_scaled_flat_function(int eD, int eR);
+	
+	segment_it_t find_segment(mpfr_t x);
 };
 
 }; // float_approx

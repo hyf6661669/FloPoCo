@@ -9,6 +9,25 @@ namespace random
 {
 namespace float_approx
 {
+	
+// Try to undo sollya's "helpful" stuff
+void unblockSignals()
+{
+  sigset_t mask;
+
+  sigemptyset(&mask);
+  sigaddset(&mask,SIGINT);
+  sigaddset(&mask,SIGSEGV);
+  sigaddset(&mask,SIGBUS);
+  sigaddset(&mask,SIGFPE);
+  sigaddset(&mask,SIGPIPE);
+  sigprocmask(SIG_UNBLOCK, &mask, NULL);
+  signal(SIGINT,SIG_DFL);
+  signal(SIGSEGV,SIG_DFL);
+  signal(SIGBUS,SIG_DFL);
+  signal(SIGFPE,SIG_DFL);
+  signal(SIGPIPE,SIG_DFL);
+}
 
 // initialise and copy same value (with same precision)
 void mpfr_init_copy(mpfr_t dst, mpfr_t src)
@@ -18,10 +37,10 @@ void mpfr_init_copy(mpfr_t dst, mpfr_t src)
 }
 
 // Fix to this many fractional bits
-void mpfr_fix(mpfr_t x, int bits)
+void mpfr_fix(mpfr_t x, int bits, mpfr_rnd_t rnd)
 {
 	mpfr_mul_2si(x, x, bits, MPFR_RNDN);
-	mpfr_round(x,x);
+	mpfr_rint(x,x, rnd);
 	mpfr_mul_2si(x, x, -bits, MPFR_RNDN);
 }
 
@@ -118,6 +137,8 @@ bool Segment::has_property(std::string name) const
 {
 	return properties.find(name)!=properties.end();
 }
+
+
 
 /* This function is flat, with eD=binade(domainStart), eR=binade(f(domainStart))
 	That means that 	2^(eD-1) <= domainStart <= domainFinish < 2^eD
@@ -255,8 +276,7 @@ sollya_node_t Segment::minimax(unsigned degree)
 	real_to_frac(fracStart, domainStart);
 	real_to_frac(fracFinish, domainFinish);
 	
-	mpfr_fprintf(stderr, " minimax, dRange=[%Rf,%Rf] -> [%Rf,%Rf]\n", domainStart, domainFinish, fracStart, fracFinish);
-	mpfr_fprintf(stderr, "  rRange=[%Rf,%Rf]\n", rangeStart, rangeFinish);
+	mpfr_fprintf(stderr, " minimax, dRange=[%Rf,%Rf] -> [%Rf,%Rf]\n", domainStart, domainFinish, rangeStart, rangeFinish);
 	
 	sollya_node_t func=parent->get_scaled_flat_function(mpfr_get_exp(domainStart), mpfr_get_exp(rangeStart));
 	sollya_node_t weight=makeConstantDouble(1.0);
@@ -265,14 +285,8 @@ sollya_node_t Segment::minimax(unsigned degree)
 	mp_prec_t prec=getToolPrecision();
 	mpfr_t requestedQuality;
 	mpfr_init2(requestedQuality, prec);
-	mpfr_set_d(requestedQuality, pow(2.0, -parent->m_rangeWF-2), MPFR_RNDN);
+	mpfr_set_d(requestedQuality, pow(2.0, -parent->m_rangeWF-10), MPFR_RNDN);
 
-	blockSignals();
-	
-	fprintf(stderr, "Minimax tree : ");
-	fprintTree(stderr, func);
-	fprintf(stderr, "\n");
-	
 	if(mpfr_equal_p(domainStart, domainFinish)){
 		mpfr_t *coeffs=(mpfr_t*)malloc(sizeof(mpfr_t)*(degree+1));
 		for(unsigned i=0;i<=degree;i++){
@@ -299,37 +313,34 @@ sollya_node_t Segment::minimax(unsigned degree)
 	return res;
 }
 
-sollya_node_t Segment::fpminimax(sollya_chain_t monomials, sollya_chain_t coefficients)
+sollya_chain_t makeIntPtrChain(const std::vector<int> &values)
 {
+	sollya_chain_t res=NULL;
+	for(int j=values.size()-1;j>=0;--j){
+		int *elem=(int*)malloc(sizeof(int));
+		*elem=values[j];
+		res=addElement(res, elem);
+	}
+	return res;
+}
+
+sollya_node_t Segment::fpminimax(const std::vector<int> &coeffWidths, sollya_node_t minimax)
+{
+	unsigned degree=coeffWidths.size()-1;
+	
 	assert(isRangeFlat && isDomainFlat);
+	if(minimax){
+		assert(isPolynomial(minimax));
+		assert(getDegree(minimax)==(int)degree);
+	}
 	
 	sollya_node_t res=NULL;
 	
-	mpfr_t fracStart, fracFinish;
-	mpfr_init2(fracStart, parent->m_domainWF);
-	mpfr_init2(fracFinish, parent->m_domainWF);
+	mpfr_fprintf(stderr, " fpminimax, dRange=[%Rf,%Rf] -> [%Rf,%Rf]\n", domainStart, domainFinish, rangeStart, rangeFinish);
 	
-	
-	real_to_frac(fracStart, domainStart);
-	real_to_frac(fracFinish, domainFinish);
-	
-	mpfr_fprintf(stderr, " minimax, dRange=[%Rf,%Rf] -> [%Rf,%Rf]\n", domainStart, domainFinish, fracStart, fracFinish);
-	mpfr_fprintf(stderr, "  rRange=[%Rf,%Rf]\n", rangeStart, rangeFinish);
-	
-	sollya_node_t func=parent->get_scaled_flat_function(mpfr_get_exp(domainStart), mpfr_get_exp(rangeStart));
-	sollya_node_t weight=makeConstantDouble(1.0);
-	sollya_chain_t monom=makeIntPtrChainFromTo(0, degree);
+	sollya_node_t func=get_scaled_flat_function();
 	
 	mp_prec_t prec=getToolPrecision();
-	mpfr_t requestedQuality;
-	mpfr_init2(requestedQuality, prec);
-	mpfr_set_d(requestedQuality, pow(2.0, -parent->m_rangeWF-2), MPFR_RNDN);
-
-	blockSignals();
-	
-	fprintf(stderr, "Minimax tree : ");
-	fprintTree(stderr, func);
-	fprintf(stderr, "\n");
 	
 	if(mpfr_equal_p(domainStart, domainFinish)){
 		mpfr_t *coeffs=(mpfr_t*)malloc(sizeof(mpfr_t)*(degree+1));
@@ -337,25 +348,37 @@ sollya_node_t Segment::fpminimax(sollya_chain_t monomials, sollya_chain_t coeffi
 			mpfr_init2(coeffs[i], getToolPrecision());
 			mpfr_set_d(coeffs[i], 0.0, MPFR_RNDN);
 		}
-		evaluateFaithful(coeffs[0], func, fracStart, prec);
+		evaluateFaithful(coeffs[0], func, domainStartFrac, prec);
 		
 		// We need to round to whatever the format of coeff zero should be
-		mpfr_fix(coeffs[0], parent->m_rangeWF);
+		mpfr_fix(coeffs[0], coeffWidths[0]);
 		
-		mpfr_fprintf(stderr, "  creating constant : %Rf -> %Rf\n", fracStart, coeffs[0]);
+		mpfr_fprintf(stderr, "  creating constant : %Rf -> %Rf\n", domainStartFrac, coeffs[0]);
 		res=makePolynomial(&coeffs[0], degree);
 		for(unsigned i=0;i<=degree;i++){
 			mpfr_clear(coeffs[i]);
 		}
 		free(coeffs);
-	}else{	
-		res=FPminimax(sY, tempChain ,tempChain2, NULL, zero, bi, FIXED, ABSOLUTESYM, tempNode2,NULL);
-	}
+	}else{
+		sollya_chain_t monom=makeIntPtrChainFromTo(0, degree);
+		sollya_chain_t formats=makeIntPtrChain(coeffWidths);
+		sollya_node_t constantPart=makeConstantDouble(0.0);
 		
-	free_memory(weight);
-	mpfr_clears(fracStart, fracFinish, (mpfr_ptr)0);
+		res=FPminimax(func, monom, formats, /*points*/NULL, domainStartFrac, domainFinishFrac, FIXED, ABSOLUTESYM, constantPart,minimax);
+		
+		free_memory(constantPart);
+		freeChain(monom,freeIntPtr);
+		freeChain(formats,freeIntPtr);
+	}
 	
 	return res;
+}
+
+sollya_node_t Segment::fpminimax(unsigned degree, int coeffWidths, sollya_node_t minimax)
+{
+	std::vector<int> coeffWidthsVec(degree+1, coeffWidths);
+	
+	return fpminimax(coeffWidthsVec, minimax);
 }
 
 Range::Range(Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish)
@@ -554,6 +577,19 @@ void Range::dump(FILE *dst)
 		++curr;
 	}
 	fprintf(dst, "Total segments = %u\n", m_segments.size());
+}
+
+// TODO : This is O(n)... fix it
+Range::segment_it_t Range::find_segment(mpfr_t x)
+{
+	segment_it_t curr=m_segments.begin();
+	while(curr!=m_segments.end()){
+		if(mpfr_lessequal_p(x,curr->domainFinish) && mpfr_greaterequal_p(curr->domainStart, x))
+			return curr;
+		++curr;
+	}
+	
+	throw std::invalid_argument("find_segment - value out of range.");
 }
 
 }; // float_approx

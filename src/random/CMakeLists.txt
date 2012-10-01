@@ -19,18 +19,18 @@ IF (NTL_H AND NTL_LIB)
 	LINK_DIRECTORIES(${NTL_LIB}  )
 ENDIF (NTL_H AND NTL_LIB)
 
-ADD_LIBRARY(flopoco_random_asa_lib STATIC
-	utils/asa/asa.c
-	utils/asa/asa_usr.c
-)
-set_target_properties(flopoco_random_asa_lib	PROPERTIES
-	COMPILE_DEFINITIONS "ASA_LIB=TRUE"
-	COMPILE_DEFINITIONS "USER_COST_FUNCTION=asa_user_cost_function"
-	COMPILE_DEFINITIONS "OPTIONAL_DATA_PTR=TRUE"
-	COMPILE_DEFINITIONS "OPTIONAL_PTR_TYPE=\"void *\""
-	COMPILE_DEFINITIONS "INT_LONG=TRUE"
-	COMPILE_DEFINITIONS "INT_ALLOC=FALSE"
-)
+#ADD_LIBRARY(flopoco_random_asa_lib STATIC
+#	utils/asa/asa.c
+#	utils/asa/asa_usr.c
+#)
+#set_target_properties(flopoco_random_asa_lib	PROPERTIES
+#	COMPILE_DEFINITIONS "ASA_LIB=TRUE"
+#	COMPILE_DEFINITIONS "USER_COST_FUNCTION=asa_user_cost_function"
+#	COMPILE_DEFINITIONS "OPTIONAL_DATA_PTR=TRUE"
+#	COMPILE_DEFINITIONS "OPTIONAL_PTR_TYPE=\"void *\""
+#	COMPILE_DEFINITIONS "INT_LONG=TRUE"
+#	COMPILE_DEFINITIONS "INT_ALLOC=FALSE"
+#)
 
 ADD_LIBRARY(flopoco_random_lib STATIC
 	random_main.cpp
@@ -68,8 +68,8 @@ IF(NTL_FOUND)
 	target_link_libraries(find_hadamard_table ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
 ENDIF(NTL_FOUND)
 
-add_executable(test_dag_parser dag/test_dag_parser.cpp dag/dag_parser.cpp dag/dag_printer.cpp)
-target_link_libraries(test_dag_parser ${Boost_LIBRARIES})
+#add_executable(test_dag_parser dag/test_dag_parser.cpp dag/dag_parser.cpp dag/dag_printer.cpp)
+#target_link_libraries(test_dag_parser ${Boost_LIBRARIES})
 
 add_executable(test_range float_approx/test_range.cpp float_approx/range.cpp)
 target_link_libraries(test_range ${FLOPOCO_LIB})

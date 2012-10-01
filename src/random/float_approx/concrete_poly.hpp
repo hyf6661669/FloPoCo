@@ -130,13 +130,6 @@ public:
 	}
 };
 
-void freeMpfrPtr(void *p)
-{
-	mpfr_clear(*(mpfr_t*)p);
-	free(p);
-}
-
-
 // Find maxima/minima of polynomial over range to working precision
 // The returned set will always include the largest extrema, but may contain
 // rubbish as well.
@@ -327,6 +320,8 @@ public:
 		}
 		
 		mpfr_set(res, tmp, MPFR_RNDN);
+		
+		mpfr_clears(tmp, rx, (mpfr_ptr)0);
 	}
 	
 	void dump(FILE *dst, const char *prefix="") const

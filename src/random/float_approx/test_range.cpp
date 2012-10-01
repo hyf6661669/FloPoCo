@@ -61,10 +61,13 @@ int main(int argc, char *argv[])
 		Range r(f, domainWF, rangeWF, domainStart, domainFinish);
 		r.dump(stdout);
 		
+		r.make_monotonic_or_range_flat();
+		r.dump(stdout);
+		
 		r.flatten_domain();
 		r.dump(stdout);
 		
-		r.flatten_range();
+		r.flatten_range(true);
 		r.dump(stdout);
 		
 		Range::segment_it_t curr=r.m_segments.begin();
@@ -125,6 +128,8 @@ int main(int argc, char *argv[])
 			//mpfr_fprintf(stdout, "   result, res=%Rf, rangeFinish=%Rf\n", res, curr->rangeFinish);
 			assert(mpfr_equal_p(res, curr->rangeFinish));
 			
+			assert(curr->isRangeFlat);
+			assert(curr->isDomainFlat);
 			
 			++curr;
 			mpfr_clears(x, res, frac, fracSF, (mpfr_ptr)0);
@@ -161,7 +166,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "\n\nSplittin to error of 2^(-rangeWF)\n");
 		rp.split_to_error(pow(2.0, -rangeWF));
 		r.dump(stdout);
-		
 		int guard=1;
 		
 		fprintf(stderr, "\n\nCreating faithful with %d guard bits\n", guard);
@@ -176,7 +180,7 @@ int main(int argc, char *argv[])
 		
 		mpfr_clears(domainStart, domainFinish, (mpfr_ptr)0);
 		
-		exit(1); // Hangs for some reason... there is memory corruption somewhere
+		//exit(1); // Hangs for some reason... there is memory corruption somewhere
 		
 		fprintf(stderr, "Cleaning\n");
 		rp.m_concretePartition.clear();

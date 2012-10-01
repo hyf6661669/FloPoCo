@@ -18,24 +18,6 @@ namespace random
 namespace float_approx
 {
 
-/*
-typedef boost::shared_ptr<sollya_node> sollya_node_ptr_t;
-
-sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
-{ return sollya_node_ptr_t(n, free_memory); }
-*/
-	
-typedef struct{
-	sollya_node_t _x;
-	
-	sollya_node_t get()
-	{ return _x; }
-}sollya_node_ptr_t;
-	
-sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
-{ sollya_node_ptr_t x; x._x=n; return x; }
-
-
 MPFRVec getPolyCoeffs(sollya_node_t poly)
 {
 	unsigned degree=getDegree(poly);
@@ -43,7 +25,7 @@ MPFRVec getPolyCoeffs(sollya_node_t poly)
 	for(unsigned i=0;i<=degree;i++){
 		sollya_node_t c=getIthCoefficient(poly, i);
 		evaluateConstantExpression(res[i], c, getToolPrecision());
-		//free_memory(c);
+		free_memory(c);
 	}
 	return res;
 }
@@ -65,8 +47,7 @@ private:
 		mpfr_init2(error, getToolPrecision());
 		
 		uncertifiedInfnorm(error, diff, a, b, points, getToolPrecision()); 
-		// TODO : This causes corruption later on, but I don't see why, as both inputs are copied
-		//free_memory(diff);
+		free_memory(diff);
 		
 		double res=mpfr_get_d(error, MPFR_RNDD);	// round down
 		mpfr_clear(error);
@@ -140,10 +121,8 @@ public:
 		sollya_node_t fp=curr->fpminimax(widths, boost::any_cast<sollya_node_ptr_t>(curr->properties["minimax"]).get() );
 		
 		double error=infNorm(curr->get_scaled_flat_function(), fp, curr->domainStartFrac, curr->domainFinishFrac, 71);
-		
 		MPFRVec coeffs=getPolyCoeffs(fp);
-		
-		// free_memory(fp)
+		free_memory(fp);
 		
 		if(error > tol)
 			throw std::runtime_error("calc_faithful_fixed_point - fixed-point poly was not faithful.");
@@ -233,6 +212,8 @@ public:
 		mpfr_mul_2si(rres, rres, m_concreteExp[i], MPFR_RNDN);
 		
 		mpfr_set(res, rres, MPFR_RNDN);
+		
+		mpfr_clears(rx, rres, (mpfr_ptr)0);
 		
 		return i;
 	}

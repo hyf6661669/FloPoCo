@@ -9,6 +9,7 @@
 #include <assert.h>
 
 #include <boost/any.hpp>
+#include <boost/smart_ptr.hpp>
 
 #include "FixedPointFunctions/Function.hpp"
 
@@ -18,6 +19,31 @@ namespace random
 {
 namespace float_approx
 {
+	
+inline void freeMpfrPtr(void *p)
+{
+	mpfr_clear(*(mpfr_t*)p);
+	free(p);
+}
+
+	
+typedef boost::shared_ptr<sollya_node> sollya_node_ptr_t;
+
+inline sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
+{ return sollya_node_ptr_t(n, free_memory); }
+
+	
+/*typedef struct{
+	sollya_node_t _x;
+	
+	sollya_node_t get()
+	{ return _x; }
+}sollya_node_ptr_t;
+	
+sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
+{ sollya_node_ptr_t x; x._x=n; return x; }
+*/
+
 	
 void unblockSignals();
 
@@ -106,15 +132,18 @@ struct Range
 	// Splits the segment into two equal parts
 	void split_segment(segment_it_t src);
 	
+	// Split up ranges to ensure that each segment is either monotonically increasing, decreasing, or flat in the range (not nesc. in domain though)
+	void make_monotonic_or_range_flat();
+	
 	// Keep splitting in domain until all segments are flat
 	void flatten_domain();
 	
-	/* Requires: binade(f(start)) < binade(f(finish))
-		Ensures: start<=newFinish < finish  and  binade(f(start))==binade(f(newFinish))  and  binade(f(newFinish))<binade(f(next(newFinish)))*/
+	/* Requires: binade(f(start)) != binade(f(finish))
+		Ensures: start<=newFinish < finish  and  binade(f(start))==binade(f(newFinish))  and  binade(f(newFinish))!=binade(f(next(newFinish)))*/
 	void find_range_jump(mpfr_t newFinish, mpfr_t start, mpfr_t finish);
 	
 	// Keep splitting in range until all segments are flat
-	void flatten_range();
+	void flatten_range(bool domainAlreadyFlat=false);
 	
 	// Evaluate function into previously initialised variable
 	void eval(mpfr_t res, mpfr_t x);
@@ -126,6 +155,9 @@ struct Range
 	void init_eval(mpfr_t res, mpfr_t x);
 	
 	void dump(FILE *dst);
+	
+	// Return true if this point is included in the function domain (is in a segment and is representable)
+	bool is_in_domain(mpfr_t x);
 	
 	// Get the function scaled to fixed point for input binade eD and output eR
 	// The returned node should not be freed (it is cached)

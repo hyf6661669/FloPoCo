@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <vector>
 #include <stdlib.h>
+#include <boost/utility.hpp>
 
 namespace flopoco
 {
@@ -66,7 +67,6 @@ void Segment::set_domain(mpfr_t _domainStart, mpfr_t _domainFinish)
 	mpfr_fprintf(stderr, "Post eval : (%Rf, %Rf)\n", rangeStart, rangeFinish);
 	
 	assert(mpfr_sgn(rangeStart) > 0);
-	assert(mpfr_lessequal_p(rangeStart, rangeFinish));
 	
 	isRangeFlat = mpfr_get_exp(rangeStart) == mpfr_get_exp(rangeFinish);
 	isDomainFlat = mpfr_get_exp(domainStart) == mpfr_get_exp(domainFinish);
@@ -451,6 +451,102 @@ void Range::split_segment(segment_it_t src)
 	mpfr_clear(mid);
 }
 
+void Range::make_monotonic_or_range_flat()
+{
+	sollya_node_ptr_t deriv=make_shared_sollya(differentiate(m_function.getSollyaNode()));
+	
+	fprintf(stderr, "Deriv = ");
+	fprintTree(stderr, deriv.get());
+	fprintf(stderr, "\n");
+	
+	sollya_range_t rr={ &(m_segments.begin()->domainStart), &(boost::prior(m_segments.end())->domainFinish) };
+	sollya_chain_t zeros=fpFindZerosFunction(deriv.get(), rr, getToolPrecision());
+	
+	mpfr_t extremaLow, extremaHigh, extremaLowRange, extremaHighRange;
+	mpfr_inits2(m_domainWF, extremaLow, extremaHigh, (mpfr_ptr)0);
+	mpfr_inits2(m_rangeWF, extremaLowRange, extremaHighRange, (mpfr_ptr)0);
+	
+	sollya_chain_t tmp=zeros;
+	while (tmp != NULL) {
+		mpfr_t &extrema = *(mpfr_t*)(tmp->value);	// some maximum or minimum
+		
+		mpfr_fprintf(stderr, "  extrema at %Rg\n", extrema);
+		
+		// The extrema might be at a representable number...
+		if(0==mpfr_set(extremaLow, extrema, MPFR_RNDD)){
+			// in which case it must be the first or last element of a segment
+			segment_it_t seg=Range::find_segment(extremaLow);
+			
+			if(mpfr_equal_p(seg->domainStart,extremaLow) || mpfr_equal_p(seg->domainFinish,extremaHigh)){
+				// This is fine, one segment already finishes on this boundary, so the function must
+				// be curving up (down) from the minima (maxima)
+				fprintf(stderr, "    extrema already on function boundary.\n");
+			}else{
+				// otherwise the maxima is located within this segment.
+				if((mpfr_get_exp(seg->domainStart) == mpfr_get_exp(extremaLow)) &&(mpfr_get_exp(seg->domainFinish) == mpfr_get_exp(extremaLow))){
+					// We don't need to do anything, as this segment is already flat in the range
+					// TODO : There is a slight risk that this might result in functions that are very difficult
+					// to approximate, and it would be better to split at the extrema. However, this should
+					// be handled later on by the adaptive splitting if it occurs.
+					fprintf(stderr, "    extrema already in flat range segment.\n");
+				}else{
+					// Split the range at the (exact) extrema
+					// Each segment should now be curving up or down away from the boundary
+					split_segment(seg, extremaLow);
+				}
+			}			
+		}else{
+			mpfr_set(extremaHigh, extremaLow, MPFR_RNDN);
+			mpfr_nextabove(extremaHigh);
+			eval(extremaLowRange, extremaLow);
+			eval(extremaHighRange, extremaHigh);
+			mpfr_fprintf(stderr, "    extremaLow=%Rg, extremaHigh=%Rg\n", extremaLow, extremaHigh);
+			fprintf(stderr,"    lowInDomain=%d, highInDomain=%d\n", is_in_domain(extremaLow)?1:0, is_in_domain(extremaHigh)?1:0);
+			
+			// The function has an extrema at extremaLow < extrema < extremaHigh
+			if((!is_in_domain(extremaLow)) || (!is_in_domain(extremaHigh))){
+				// We don't have to worry, as one or both of the extrema turns out
+				// not to be representable. If one is representable, then they other
+				// must be curving up or down quite happily
+				fprintf(stderr, "    one side of extrema not in domain.\n");
+			}else{
+				segment_it_t seg=Range::find_segment(extremaLow);
+				mpfr_fprintf(stderr, "    [%Rg,%Rg]\n", seg->domainStart, seg->domainFinish);
+				
+				if(mpfr_equal_p(seg->domainFinish, extremaLow)){
+					// The lower bound is at the end of a segment, we don't need to
+					// do anything
+					fprintf(stderr, "    extremaLow already at finish of segment.\n");
+				}else if((mpfr_get_exp(seg->rangeStart)==mpfr_get_exp(extremaLowRange)) && (mpfr_get_exp(seg->rangeFinish)==mpfr_get_exp(extremaLowRange))){
+					// The segment is flat, we don't need to do anything
+					fprintf(stderr, "    extremaLow already in a flat segment.\n");
+				}else{
+					// We are splitting
+					fprintf(stderr, "    extremaLow forcing split.\n");
+					split_segment(seg, extremaLow);
+				}
+				
+				// This is the same again. I'm pretty sure it won't do anything.
+				seg=Range::find_segment(extremaHigh);
+				if(mpfr_equal_p(seg->domainFinish, extremaHigh)){
+					fprintf(stderr, "    extremaHigh already at finish of segment.\n");
+				}else if((mpfr_get_exp(seg->rangeStart)==mpfr_get_exp(extremaHighRange)) && (mpfr_get_exp(seg->rangeFinish)==mpfr_get_exp(extremaHighRange))){
+					fprintf(stderr, "    extremaHigh already in a flat segment.\n");
+				}else{
+					fprintf(stderr, "    extremaHigh forcing split.\n");
+					split_segment(seg, extremaHigh);
+				}
+			}
+		}
+			
+		
+		tmp=tmp->next;
+	}
+	
+	mpfr_clears(extremaLow, extremaHigh, extremaLowRange, extremaHighRange, (mpfr_ptr)0);
+	freeChain(zeros, freeMpfrPtr);
+}
+
 // Keep splitting range until all segments are flat
 // This could be done more efficiently at construction time
 void Range::flatten_domain()
@@ -481,8 +577,6 @@ void Range::flatten_domain()
 
 void Range::find_range_jump(mpfr_t newFinish, mpfr_t start, mpfr_t finish)
 {
-	assert(mpfr_less_p(start, finish));
-	
 	mpfr_t low, mid, high;
 	mpfr_t val;
 	int lowE, highE, midE;
@@ -497,7 +591,7 @@ void Range::find_range_jump(mpfr_t newFinish, mpfr_t start, mpfr_t finish)
 	eval(val, high);
 	highE=mpfr_get_exp(val);
 	
-	assert(lowE<highE);
+	assert(lowE!=highE);
 	
 	while(true){
 		mpfr_fprintf(stderr, "  low=%Rf, high=%Rf, lowE=%d, highE=%d\n", low, high, lowE, highE);
@@ -532,7 +626,7 @@ void Range::find_range_jump(mpfr_t newFinish, mpfr_t start, mpfr_t finish)
 	mpfr_clears(low, mid, high, val, (mpfr_ptr)0);
 }
 
-void Range::flatten_range()
+void Range::flatten_range(bool domainAlreadyFlat)
 {
 	mpfr_t newFinish;
 	mpfr_init2(newFinish, m_domainWF);
@@ -540,8 +634,8 @@ void Range::flatten_range()
 	segment_it_t curr=m_segments.begin();
 	while(curr!=m_segments.end()){
 		if(!curr->isRangeFlat){
-			// So currently we have [start,finish] with binade(f(start)) < binade(f(finish))
-			// We need to find newFinish where  start<=newFinish<finish and binade(f(newFinish)) < binade(f(next(newFinish)))
+			// So currently we have [start,finish] with binade(f(start)) != binade(f(finish))
+			// We need to find newFinish where  start<=newFinish<finish and binade(f(newFinish)) != binade(f(next(newFinish)))
 		
 			find_range_jump(newFinish, curr->domainStart, curr->domainFinish);
 		
@@ -549,6 +643,7 @@ void Range::flatten_range()
 			split_segment(curr, newFinish);
 			
 			assert(curr->isRangeFlat);
+			assert(domainAlreadyFlat ? curr->isRangeFlat : true);
 		}
 		if(curr->isRangeFlat)
 			++curr;
@@ -580,11 +675,32 @@ void Range::dump(FILE *dst)
 }
 
 // TODO : This is O(n)... fix it
+bool Range::is_in_domain(mpfr_t x)
+{
+	bool res=false;
+	
+	mpfr_t tmp;
+	mpfr_init2(tmp, m_domainWF);
+	if(0==mpfr_set(tmp, x, MPFR_RNDN)){
+		segment_it_t curr=m_segments.begin();
+		while(curr!=m_segments.end()){
+			if(mpfr_lessequal_p(curr->domainStart, tmp) && mpfr_lessequal_p(tmp,curr->domainFinish)){
+				res=true;
+				break;
+			}				
+			++curr;
+		}
+	}
+	mpfr_clear(tmp);
+	return res;
+}
+
+// TODO : This is O(n)... fix it
 Range::segment_it_t Range::find_segment(mpfr_t x)
 {
 	segment_it_t curr=m_segments.begin();
 	while(curr!=m_segments.end()){
-		if(mpfr_lessequal_p(x,curr->domainFinish) && mpfr_greaterequal_p(curr->domainStart, x))
+		if(mpfr_lessequal_p(curr->domainStart, x) && mpfr_lessequal_p(x,curr->domainFinish))
 			return curr;
 		++curr;
 	}

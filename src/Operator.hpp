@@ -587,9 +587,15 @@ public:
 	Signal * getIOListSignal(int i);
 		
 	
+	/** Return the number of inputs
+	 * @return The total number of inputs for the operator */
+	int getInputCount() const;
+	
+	/** Return the number of outputs
+	 * @return The total number of outputs for the operator */
+	int getOutputCount() const;
 
-
-
+	
 	/** DEPRECATED, better use setCopyrightString
 		 Output the licence
 	 * @param o the stream where the licence is going to be outputted
@@ -725,9 +731,15 @@ public:
 		return numberOfInputs_;
 	}
 	
+	/** Get the i'th input, where 0<=i<getNumberOfInputs() **/
+	Signal *getInputSignal(int i);
+	
 	int getNumberOfOutputs(){
 		return numberOfOutputs_;
 	}
+	
+	/** Get the i'th output, where 0<=i<getNumberOfOutputs() **/
+	Signal *getOutputSignal(int i);
 	
 	map<string, Signal*> getSignalMap(){
 		return signalMap_;

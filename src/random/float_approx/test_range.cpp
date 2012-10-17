@@ -2,6 +2,9 @@
 #include <stdlib.h>
 
 #include "range_polys.hpp"
+#include "static_quantiser.hpp"
+
+#include "Targets/Virtex5.hpp"
 
 using namespace flopoco::random::float_approx;
 
@@ -135,57 +138,32 @@ int main(int argc, char *argv[])
 			mpfr_clears(x, res, frac, fracSF, (mpfr_ptr)0);
 		}
 		
-		/*
-		curr=r.m_segments.begin();
-		while(curr!=r.m_segments.end()){
-			fprintf(stderr, "\n\n");
-			sollya_node_t poly=curr->minimax(2);
-			sollya_node_t func=curr->get_scaled_flat_function();
-			
-			setDisplayMode(DISPLAY_MODE_DECIMAL);
-			fprintTreeWithPrintMode(stderr, poly);
-			fprintf(stderr, "\n");
-			
-			sollya_node_t diff=makeSub(copyTree(func), poly);
-			
-			mpfr_t error;
-			mpfr_init2(error, getToolPrecision());
-			blockSignals();
-			uncertifiedInfnorm(error, diff, curr->domainStartFrac, curr->domainFinishFrac, 501, getToolPrecision()); 
-			
-			mpfr_fprintf(stderr, "Error : %Rg\n", error);
-			
-			free_memory(diff);	// poly freed by this too
-			mpfr_clear(error);
-			++curr;
-		}*/
-		
 		fprintf(stderr, "Starting RangePoly\n");
 		RangePolys rp(r, degree);
 		
 		fprintf(stderr, "\n\nSplittin to error of 2^(-rangeWF)\n");
 		rp.split_to_error(pow(2.0, -rangeWF));
 		r.dump(stdout);
-		int guard=1;
+		int guard=0;
 		
 		fprintf(stderr, "\n\nCreating faithful with %d guard bits\n", guard);
 		rp.calc_faithful_fixed_point(guard);
 		r.dump(stdout);
 		
+		fprintf(stderr, "\n\nBuilding concrete with %d guard bits\n", guard);
 		rp.build_concrete(guard);
+		r.dump(stdout);
 		
-		rp.dump_concrete(stdout);
+		::flopoco::verbose=FULL;
 		
-		rp.exhaust_concrete();
+		flopoco::Virtex5 target;
+		flopoco::PolynomialEvaluator *pe=rp.make_polynomial_evaluator(&target);
+		
+		StaticQuantiser *sq=rp.make_static_quantiser(&target);
+		sq->outputVHDL(std::cout);
+		
 		
 		mpfr_clears(domainStart, domainFinish, (mpfr_ptr)0);
-		
-		//exit(1); // Hangs for some reason... there is memory corruption somewhere
-		
-		fprintf(stderr, "Cleaning\n");
-		rp.m_concretePartition.clear();
-		rp.m_concretePolys.clear();
-		r.m_segments.clear();
 		fprintf(stderr, "Exiting scope\n");		
 	}catch(std::exception &e){
 		fprintf(stderr, "Caught C++ exception : %s\n", e.what());

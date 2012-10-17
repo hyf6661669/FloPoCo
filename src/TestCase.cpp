@@ -38,7 +38,10 @@ namespace flopoco{
 	*/
 
 
-	TestCase::TestCase(Operator* op) : op_(op){
+	TestCase::TestCase(Operator* op)
+		: op_(op)
+		, setupCycle_(false)
+	{
 	}
 
 	TestCase::~TestCase() {
@@ -229,7 +232,7 @@ namespace flopoco{
 						expected += " " + s->valueToVHDL(v,false);
 					}
 
-				o << " report \"Incorrect output value for " << s->getName() << ", expected" << expected << " | Test Number : " << getId() << "  \" severity ERROR; ";
+				o << " report \"Incorrect output value for " << s->getName() << ", got \"& str("<<s->getName()<<") & \" expected " << expected << " | Test Number : " << getId() << "  \" severity ERROR; ";
 				o << endl;
 			}
 
@@ -283,13 +286,18 @@ namespace flopoco{
 			Signal* s = op_->getSignalByName(*it);
 			vector<mpz_class> vs = outputs[*it];
 			
+					if(getSetupCycle()){
+						// During setup cycles we are pushing data into the architecture, and the expected outputs are only relevant to emulate(.), not to testbench.
+						o << 0 << " ";
+					}else{
                         o << vs.size() << " ";
-			/* Iterate through possible output values */
-			for (vector<mpz_class>::iterator it = vs.begin(); it != vs.end(); it++)
-			{
-				mpz_class v = *it;
-				o << s->valueToVHDL(v,false) << " ";
-			}
+						/* Iterate through possible output values */
+						for (vector<mpz_class>::iterator it = vs.begin(); it != vs.end(); it++)
+						{
+							mpz_class v = *it;
+							o << s->valueToVHDL(v,false) << " ";
+						}
+					}
                 }
                 o << endl;
 		return o.str();

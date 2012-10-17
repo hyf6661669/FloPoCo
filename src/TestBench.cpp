@@ -561,7 +561,19 @@ namespace flopoco{
                   << tab << "end str;" << endl; 
 
               o << endl << endl << endl;
-
+			  
+			  /*
+		// DT10 : Not sure if this is more reliable, but it seems to work more often
+		o<<	tab<<"-- Yet another convert to string, str(.) seems to hang GHDL."<<endl
+			<<tab<<"function to_string(sv: Std_Logic_Vector) return string is"<<endl
+			<<tab<<tab<<"use Std.TextIO.all;"<<endl
+			<<tab<<tab<<"variable bv: bit_vector(sv'range) := to_bitvector(sv);"<<endl
+			<<tab<<tab<<"variable lp: line;"<<endl
+			<<tab<<"begin"<<endl
+			<<tab<<tab<<"write(lp, bv);"<<endl
+			<<tab<<tab<<"return lp.all;"<<endl
+			<<tab<<"end;"<<endl<<endl;
+*/
 
                 /* If op_ is an IEEE operator (IEEE input and output, we define) the function
                  * fp_equal for the considered precision in the ieee case

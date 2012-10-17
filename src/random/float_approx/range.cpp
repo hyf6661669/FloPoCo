@@ -240,6 +240,26 @@ static void frac_to_real(mpfr_t real, mpfr_t frac, int e)
 	mpfr_clear(tmp);
 }
 
+// Return a (wE,wF) pair that can represent all values in the domain
+std::pair<int,int> Range::GetFloatTypeEnclosingDomain() const
+{
+	int minE=mpfr_get_exp(m_segments.begin()->domainStart);
+	int maxE=mpfr_get_exp(boost::prior(m_segments.begin())->domainFinish);
+	int wE=1;
+	while( (minE<(1<<(wE-1))) || ((1<<(wE-1)) < maxE)){
+		wE++;
+	}
+	return std::make_pair(wE, m_domainWF-1);
+}
+
+/*
+// Return a (wE,wF) pair that can represent all values in the range
+std::pair<int,int> Range::GetFloatTypeEnclosingRange() const
+{
+	
+}
+*/
+
 void Range::eval_scaled_flat_function(mpfr_t res, mpfr_t x, int eD, int eR)
 {
 	mpfr_t tx;

@@ -119,7 +119,16 @@ struct Range
 	typedef std::map<std::pair<int,int>,sollya_node_t> flat_function_cache_t;
 	flat_function_cache_t m_flatFunctions;
 	
+	typedef std::map<std::string,boost::any> property_map_t;
+	property_map_t properties;
+	
 	Range(Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish);
+	
+	// Return a (wE,wF) pair that can represent all values in the domain
+	std::pair<int,int> GetFloatTypeEnclosingDomain() const;
+	
+	// Return a (wE,wF) pair that can represent all values in the range
+	std::pair<int,int> GetFloatTypeEnclosingRange() const;
 	
 	~Range();
 	

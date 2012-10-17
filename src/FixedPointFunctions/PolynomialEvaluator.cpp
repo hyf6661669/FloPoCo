@@ -102,6 +102,8 @@ namespace flopoco{
 			/* epsilon_approx + epsilon_eval <= 1/2 ulp. the other half ulp
 			comes from the final rounding (which we incorporate in a0*/
 			mpfr_add( u, *approximationError, *e, GMP_RNDN);
+			
+			REPORT(DETAILED, "  Error : e="<<mpfr_get_d(*e,MPFR_RNDN)<<", total="<<mpfr_get_d(u,MPFR_RNDN)<<", target="<<mpfr_get_d(targetError,MPFR_RNDN));
 
 			if (  mpfr_cmp( u, targetError) <= 0 ){
 				REPORT(DETAILED, " Solution found. Starting refinement");
@@ -264,6 +266,37 @@ namespace flopoco{
 		}	
 		for (int i=0; i<=degree_; i++)
 			maxBoundA[i] = sigma[i]->getGuardBits();			
+	}
+
+	bool PolynomialEvaluator::nextStateY(){
+		if (! sol){
+			aGuard_[degree_] = 0 ;
+			int carry = 1;
+			bool allMaxBoundsZero = true;
+			for (int i=1; i<=degree_;i++){
+				if (maxBoundY[i]-1 != 0)
+					allMaxBoundsZero = false; 
+				if ((yState_[i] == maxBoundY[i]-1) && ( carry==1)){
+					yState_[i] = 0;
+					carry = 1;
+				}else{
+					yState_[i]+=carry;
+					carry = 0;
+				}
+			}
+		
+			for (int i=1; i<=degree_; i++){
+				yGuard_[i] = -getPossibleYValue(i,yState_[i]);
+			}
+			
+			if ((carry==1) && (!allMaxBoundsZero)){	
+				return false;
+			}else{
+				return true;
+			}
+		}else{
+			return false;
+		}
 	}
 
 

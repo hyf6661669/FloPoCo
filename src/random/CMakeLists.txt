@@ -35,10 +35,12 @@ ENDIF (NTL_H AND NTL_LIB)
 ADD_LIBRARY(flopoco_random_lib STATIC
 	random_main.cpp
 	urng/lut_sr_rng.cpp
+	float_approx/static_quantiser.cpp
+	utils/comparable_float_type.cpp
 	transforms/blocks/HadamardTransform.cpp
 	transforms/blocks/CLTTransform.cpp
 )
-target_link_libraries(flopoco_random_lib ${GMP_LIB} ${MPFR_LIB})
+target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB})
 
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})
@@ -73,6 +75,9 @@ ENDIF(NTL_FOUND)
 #add_executable(test_dag_parser dag/test_dag_parser.cpp dag/dag_parser.cpp dag/dag_printer.cpp)
 #target_link_libraries(test_dag_parser ${Boost_LIBRARIES})
 
+add_executable(test_comparable_float_type utils/test_comparable_float_type.cpp)
+target_link_libraries(test_comparable_float_type ${Boost_LIBRARIES} ${GMP_LIB} ${MPFR_LIB})
+
 add_executable(test_range float_approx/test_range.cpp float_approx/range.cpp)
-target_link_libraries(test_range ${FLOPOCO_LIB})
+target_link_libraries(test_range flopoco_random_lib ${FLOPOCO_LIB})
 

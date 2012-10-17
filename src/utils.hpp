@@ -227,11 +227,19 @@ namespace flopoco{
 
 	/**
 	* A one generator method which takes as input two arguments and returns a string of zeros with quotes as stated by the second argurment
-	* @param[in] n		    integer argument representing the number of zeros on the output string
+	* @param[in] n		    integer argument representing the number of ones on the output string
 	* @param[in] margins	integer argument determining the position of the quotes in the output string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
 	* @return returns a string of zeros with the corresonding quotes given by margins
 	**/
 	string og(int n, int margins=0);
+	
+	/**
+	* An undetermined ('X') generator method which takes as input two arguments and returns a string of Xs with quotes as stated by the second argurment
+	* @param[in] n		    integer argument representing the number of Xs on the output string
+	* @param[in] margins	integer argument determining the position of the quotes in the output string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
+	* @return returns a string of zeros with the corresonding quotes given by margins
+	**/
+	string xg(int n, int margins=0);
 	
 	
 	/**

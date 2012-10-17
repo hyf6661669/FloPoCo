@@ -384,11 +384,6 @@ ADD_EXECUTABLE(flopoco
  src/main 
 )
 
-TARGET_LINK_LIBRARIES(
-  flopoco  
-	${FLOPOCO_LIB}
-  )
-
 
 ADD_EXECUTABLE(fpadder_example
  src/main_minimal 
@@ -410,6 +405,11 @@ TARGET_LINK_LIBRARIES(bin2fp  mpfr gmp gmpxx)
 ADD_EXECUTABLE(longacc2fp src/Tools/longacc2fp  src/utils)
 TARGET_LINK_LIBRARIES(longacc2fp  mpfr gmp gmpxx)
 
-
 add_subdirectory(src/random)
-target_link_libraries(FloPoCoLib flopoco_random_lib)
+
+TARGET_LINK_LIBRARIES(
+  flopoco  
+	${FLOPOCO_LIB}
+    flopoco_random_lib
+  )
+ 

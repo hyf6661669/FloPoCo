@@ -16,6 +16,7 @@
 #include "Function.hpp"
 #include <sstream>
 
+
 namespace flopoco{
 
 	Function::Function(string name_, double xmin, double xmax, double scale)
@@ -52,6 +53,9 @@ namespace flopoco{
 	Function::~Function()
 	{
 		free_memory(node);
+		if(diff){
+			free_memory(diff);
+		}
 	}
 
 	string Function::getName() const
@@ -82,5 +86,16 @@ namespace flopoco{
 	{
 		return node;
 	}
-
+	
+	void Function::eval_inverse(mpfr_t x, mpfr_t y, mpfr_t a, mpfr_t b) const
+	{
+		// DT10 : todo, check this works when time allows...
+		throw std::string("Not tested.");
+		/*if(!diff){
+			diff=differentiate(node);
+		}
+		sollya_node_t tmp=makeSub(copyTree(node),makeConstant(y));
+		newtonFaithful(x, diff a, b, getToolPrecision());
+		free_memory(tmp);*/
+	}
 }

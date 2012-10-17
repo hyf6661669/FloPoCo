@@ -19,6 +19,8 @@
 #include "fixed_point_exp/multiplier_exp_stage.hpp"
 #include "fixed_point_exp/chained_exp_stage.hpp"
 
+#include "utils/comparable_float_type.hpp"
+
 //#include "FloPoCo.hpp"
 
 
@@ -88,6 +90,10 @@ void random_usage(char *name, string opName = ""){
 		OP("ChainedMultiplierTableExp", "msb lsb  addrW resultTableW resultCalcW  resultOutW");
 		std::cerr<<" Creates an exp approximation using (non-exact) tables of the same width and multipliers.";
 	}
+	if(opName=="ComparableFloatEncoder"){
+		OP("ComparableFloatEncoder", "wE wF");
+		std::cerr<<" Converts a flopoco FP number into an alternate form that can be directly compared as bit patterns.";
+	}
 	/*
 	//6.20 bitwise architecture Junfei Yan
 	if (full || opName=="bitwise"){
@@ -128,8 +134,8 @@ bool random_parseCommandLine(
 		if (i+nargs > argc)
 			usage(argv[0], opname); // and exit
 		int tr = checkStrictlyPositive(argv[i++], argv[0]);
-		int t = checkStrictlyPositive(argv[i++], argv[0]);
-		int k = checkStrictlyPositive(argv[i++], argv[0]);
+		int t = checkPositiveOrNull(argv[i++], argv[0]);
+		int k = checkPositiveOrNull(argv[i++], argv[0]);
 
 
 		cerr << "> lut_sr_rng: r=" << tr << "	t= " << t << "	k= " << k <<endl;
@@ -155,6 +161,26 @@ bool random_parseCommandLine(
 	}
 	
 	else
+	if (opname == "clt_rng")
+	{
+		int nargs = 2;
+		if (i+nargs > argc)
+			usage(argv[0], opname); // and exit
+		int wBase = checkStrictlyPositive(argv[i++], argv[0]);
+		int k = checkStrictlyPositive(argv[i++], argv[0]);
+
+		cerr << "> clt_rng: wBase="<<wBase<<", k="<<k<<endl;
+		if(k!=2)
+			throw std::string("clt_transform - Only k==2 is supported at the moment.");
+		std::stringstream acc;
+		acc<<"CLTRng_w"<<wBase<<"_k"<<k;
+		
+		flopoco::random::RngTransformOperator *base=new flopoco::random::CLTTransform(target, wBase);
+		addOperator(oplist, flopoco::random::LutSrRng::DriveTransform(acc.str(), base));
+		return true;
+	}
+	
+	else
 	if (opname == "clt_hadamard_transform")
 	{
 		int nargs = 2;
@@ -166,9 +192,29 @@ bool random_parseCommandLine(
 		cerr << "> clt_hadamard_transform: log2n=" << log2n <<", wBase="<<wBase<<endl;
 		
 		flopoco::random::RngTransformOperator *base=new flopoco::random::CLTTransform(target, wBase);
-		addOperator(oplist, base);
 		assert(base);
 		addOperator(oplist, new flopoco::random::HadamardTransform(target, log2n, base));
+		return true;
+	}
+	
+	else
+	if (opname == "clt_hadamard_rng")
+	{
+		int nargs = 2;
+		if (i+nargs > argc)
+			usage(argv[0], opname); // and exit
+		int log2n = checkStrictlyPositive(argv[i++], argv[0]);
+		int wBase = checkStrictlyPositive(argv[i++], argv[0]);
+
+		cerr << "> clt_hadamard_rng: log2n=" << log2n <<", wBase="<<wBase<<endl;
+		std::stringstream acc;
+		acc<<"CLTHadamardRng_n"<<(1<<log2n)<<"_wb"<<wBase;
+		
+		flopoco::random::RngTransformOperator *base=new flopoco::random::CLTTransform(target, wBase);
+		
+		flopoco::random::RngTransformOperator *hadamard=new flopoco::random::HadamardTransform(target, log2n, base);
+		
+		addOperator(oplist, flopoco::random::LutSrRng::DriveTransform(acc.str(), hadamard));
 		return true;
 	}
 	
@@ -454,6 +500,20 @@ bool random_parseCommandLine(
 		
 		return true;
 	}
+	
+	if (opname == "ComparableFloatEncoder")
+	{
+		int nargs = 2;
+		if (i+nargs > argc)
+			usage(argv[0], opname); // and exit
+		int wE = checkStrictlyPositive(argv[i++], argv[0]);
+		int wF = checkStrictlyPositive(argv[i++], argv[0]);
+
+		flopoco::random::ComparableFloatType type(wE, wF);
+		addOperator(oplist, type.MakeEncoder(target));
+		return true;
+	}
+	
 	else
 	{
 		return false;

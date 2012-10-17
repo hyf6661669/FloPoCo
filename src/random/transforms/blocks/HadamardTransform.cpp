@@ -69,6 +69,8 @@ HadamardTransform::HadamardTransform(Target* target,
 	acc<<"HadamardTransform_n"<<m_n<<"_uid"<<getNewUId();
 	setName(acc.str());
 	
+	oplist.push_back(base);
+	
 	m_uniformInputBits=base->uniformInputBits() * (1<<log2n);
 	m_uniformInputName="iUniformBits";
 	
@@ -120,7 +122,7 @@ void HadamardTransform::emulate(TestCase * tc)
 		if(xx.size()!=1)
 			throw std::string("HadamardTransform::emulate - base generator returned multiple expected values.");
 		curr[i]=fromTwosComplement(xx[0], m_base->nonUniformOutputWidth(0));
-		mpfr_fprintf(stderr, "%d : input=%Zx, twosComp=%Zx, value=%Zd\n", i, inBits.get_mpz_t(), xx[0].get_mpz_t(), curr[i].get_mpz_t());
+		//mpfr_fprintf(stderr, "%d : input=%Zx, twosComp=%Zx, value=%Zd\n", i, inBits.get_mpz_t(), xx[0].get_mpz_t(), curr[i].get_mpz_t());
 		
 		bits=bits>>m_base->uniformInputBits();
 	}
@@ -142,7 +144,7 @@ void HadamardTransform::emulate(TestCase * tc)
 	
 	for(unsigned i=0;i<m_n;i++){
 		mpz_class v=toTwosComplement(curr[i], m_baseWidth+m_log2n);
-		mpfr_fprintf(stderr, "  out=%Zd, twos=%Zx, fwd=%Zd\n", curr[i].get_mpz_t(), v.get_mpz_t(), fromTwosComplement(v, m_baseWidth+m_log2n).get_mpz_t());
+		//mpfr_fprintf(stderr, "  out=%Zd, twos=%Zx, fwd=%Zd\n", curr[i].get_mpz_t(), v.get_mpz_t(), fromTwosComplement(v, m_baseWidth+m_log2n).get_mpz_t());
 		tc->addExpectedOutput(join(m_nonUniformOutputNameBase,i), v);
 	}
 }

@@ -1038,6 +1038,28 @@ namespace flopoco{
 		attributesValues_[p] = value;
 	}
 	
+	Signal *Operator::getInputSignal(int i){
+		for(unsigned j=0;j<ioList_.size();j++){
+			if(ioList_[j]->type()==Signal::in){
+				if(i==0)
+					return ioList_[j];
+				--i;
+			}
+		}
+		throw std::string("getInputSignal - Invalid signal index.");
+	}
+
+	Signal *Operator::getOutputSignal(int i){
+		for(unsigned j=0;j<ioList_.size();j++){
+			if(ioList_[j]->type()==Signal::out){
+				if(i==0)
+					return ioList_[j];
+				--i;
+			}
+		}
+		throw std::string("getOutputSignal - Invalid signal index.");
+	}
+	
 	
 	string Operator::buildVHDLTypeDeclarations() {
 		ostringstream o;

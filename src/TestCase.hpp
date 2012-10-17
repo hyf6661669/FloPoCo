@@ -160,6 +160,20 @@ namespace flopoco{
                 int getId();
 
                 string getDescription();
+				
+		/** A setup cycle is used to put certain stateful operators into a known state at
+			startup. The expected values should be passed along (as parent operators may
+			be using emulate to implement their emulate), but the output values will not
+			be tested by the testbench.
+			The main use case is in composing RNGs, as if you connect an RNG to an
+			unknown transformation, you need some way of forcing the pipeline into a 
+			known state while not causing errors.
+		*/
+		void setSetupCycle(bool value)
+		{	setupCycle_=value;	}
+		
+		bool getSetupCycle() const
+		{ return setupCycle_; }
 
 	private:
 		Operator *op_;                       /**< The operator for which this test case is being built */
@@ -169,7 +183,8 @@ namespace flopoco{
 
 		string comment;
                 int intId;                      /* integer identifiant of the test case */ 
-
+	
+		bool setupCycle_;
 	};
 
 

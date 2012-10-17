@@ -19,14 +19,17 @@ namespace flopoco{
 
 		string getName() const;
 		double eval(double x) const;
-		void eval(mpfr_t r, mpfr_t x) const;
+		void eval(mpfr_t y, mpfr_t x) const;
 		sollya_node_t getSollyaNode() const;
-
+	
+		/** Find x such that eval(x)==y, where a<x<b
+		**/
+		void eval_inverse(mpfr_t x, mpfr_t y, mpfr_t a, mpfr_t b) const;
 	private:
 		string name;
 		sollya_node_t node;
+		sollya_node_t diff;
 	
-	}
-		;
+	};
 }
 #endif // _FUNCTION_HH_

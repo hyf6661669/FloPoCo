@@ -9,7 +9,7 @@
 /* This file contains a lot of useful functions to manipulate vhdl */
 #include "utils.hpp"
 
-
+#include "../transforms/RngTransformOperator.hpp"
 
 /*  All flopoco operators and utility functions are declared within
   the flopoco namespace.
@@ -24,13 +24,14 @@ class LutSrRng : public Operator {
     /* operatorInfo is a user defined parameter (not a part of Operator class) for
       stocking information about the operator. The user is able to defined any number of parameter in this class, as soon as it does not affect Operator parameters undeliberatly*/
     static string operatorInfo;
-    int tr; 		//number of random output bits generated per cycle
-    int t;		// XOR input count
-    int k;
     std::vector<int> perm;		//output permutation
     int seedtap;
+  
+    int want_r; // Number of actual outputs
 
     int n,r;
+    int t;		// XOR input count
+    int k;
     uint32_t s;
 
 	std::vector<set<int> > taps;	//XOR connections
@@ -38,13 +39,10 @@ class LutSrRng : public Operator {
 
   std::vector<int> cs, ns;
 
-
-    int i;		//loop counter
-
   public:
 
     // constructor, defined there with two parameters (default value 0 for each)
-    LutSrRng(Target* target,int tr, int t, int k);
+    LutSrRng(Target* target,int want_r, int want_t, int want_k);
 
     // destructor
     ~LutSrRng();

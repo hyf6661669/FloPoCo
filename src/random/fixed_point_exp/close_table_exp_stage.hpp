@@ -208,7 +208,7 @@ public:
 		std::vector<std::pair<T,T> > res;
 		res.reserve(m_table.size());
 		
-		for(int i=0;i<m_table.size();i++){
+		for(unsigned i=0;i<m_table.size();i++){
 			if(m_table[i].inRange){
 				res.push_back(std::make_pair(m_table[i].trueResult, m_table[i].roundedResult));
 			}

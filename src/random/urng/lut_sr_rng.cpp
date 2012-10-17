@@ -117,6 +117,13 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
 	LutSrRng::LutSrRng(Target* target, int tr, int t, int k)
 	: Operator(target), tr(tr), t(t), k(k), seedtap(0)
 	{
+		if(tr==0){
+			tr=std::max(3,lutInputs()-1);
+		}
+		if(k==0){
+			k==32;
+		}
+		
   		// definition of the name of the operator
   		ostringstream name;
   		name << "lut_sr_rng_" << tr << "_" << t << "_" << k;
@@ -429,6 +436,35 @@ void LutSrRng::buildStandardTestCases(TestCaseList* tcl)
 
 
 //============================================================================================================================
+
+/*
+static Operator *LutSrRng::DriveTransform(std::string name, RngTransformOperator *base)
+{
+	class LutSrDriver
+		: public Operator
+	{
+	public:
+		LutSrDriver(name, base)
+			: Operator(base->getTarget())
+		{
+			setName(name);
+			
+			addInput("m");			//mode-> m=1 load; m=0 RNG
+			addInput("Sin");		//serial load input in load mode
+			
+			Operator *urng=new LutSrRng(base->getTarget(), base->uniformInputBits(), 0, 0);
+			oplist.push_back(urng);
+			inPortMap(urng, "m", "m");
+			inPortMap(urng, "Sin", "Sin");
+			outPortMap(urng, "RNG", "chain");
+			vhdl<<instance(urng, "urng");
+			
+			inPortMap(base, base->uniformInputName(), "chain");
+			
+		}
+	};
+}
+*/
 
 
 }; // random

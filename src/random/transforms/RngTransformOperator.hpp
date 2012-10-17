@@ -18,6 +18,10 @@ protected:
 public:
 	virtual unsigned uniformInputBits() const=0;
 	virtual std::string uniformInputName() const =0;
+
+	virtual unsigned nonUniformOutputCount() const=0;
+	virtual unsigned nonUniformOutputWidth(int i) const=0;
+	virtual std::string nonUniformOutputName(int i) const=0;
 };
 
 };

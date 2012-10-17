@@ -93,7 +93,7 @@ public:
 		syncCycleFromSignal("result");
 		
 		vhdl<<tab<<"oResult <= \"";
-		for(int i=0;i<OutputResultType().Width()-OutputResultType().FracWidthNonZero();i++)
+		for(unsigned i=0;i<OutputResultType().Width()-OutputResultType().FracWidthNonZero();i++)
 			vhdl<<"0";
 		vhdl<<"\"  & result("<<OutputResultType().FracWidthNonZero()-1<<" downto 0);\n";
 	}

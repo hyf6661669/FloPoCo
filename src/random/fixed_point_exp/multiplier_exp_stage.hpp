@@ -107,7 +107,7 @@ public:
 		if(impl->OutputResultType().FracWidthNonZero()+1<impl->OutputResultType().FracWidth()){
 			// This didn't convince XST to do anything exciting :(
 			vhdl<<tab<<"stage_result_frac <= \"1";
-			for(int i=0;i<impl->OutputResultType().FracWidth()-impl->OutputResultType().FracWidthNonZero();i++){
+			for(unsigned i=0;i<impl->OutputResultType().FracWidth()-impl->OutputResultType().FracWidthNonZero();i++){
 				vhdl<<"0";
 			}
 			vhdl<<"\" & stage_result("<<impl->OutputResultType().FracWidthNonZero()-1<<" downto 0);\n";
@@ -166,9 +166,9 @@ public:
 			vhdl<<tab<<"result_exp_rounded <= result_exp_norm;\n";
 		}else{
 			vhdl<<tab<<declare("result_frac_rounded_pre", partialFracWidth, true)<<" <= (result_frac_norm + \"";
-			for(int i=0;i<OutputResultType().FracWidth()+2;i++)
+			for(unsigned i=0;i<OutputResultType().FracWidth()+2;i++)
 				vhdl<<"0";
-			for(int i=OutputResultType().FracWidth()+2;i<partialFracWidth;i++)
+			for(unsigned i=OutputResultType().FracWidth()+2;i<partialFracWidth;i++)
 				vhdl<<"1";
 			vhdl<<"\" );\n";
 			vhdl<<tab<<"result_frac_rounded <= result_frac_rounded_pre("<<partialFracWidth-2<<" downto "<<partialFracWidth-1-OutputResultType().FracWidth()<<");\n";

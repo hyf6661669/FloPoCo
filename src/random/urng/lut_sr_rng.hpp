@@ -64,6 +64,12 @@ class LutSrRng : public Operator {
 
 //    void buildRandomTestCases(TestCaseList* tcl, int n);
 //    TestCase* buildRandomTestCase(int i);
+
+  /** Take the given transform, and supply it with uniform bits. The inputs of the
+    * resulting operator will be the LUT-SR inputs, while the outputs will be those
+    * of the transform operator
+   */
+  static Operator *DriveTransform(std::string name, RngTransformOperator *base);
 };
 
 }; // random

@@ -35,8 +35,10 @@ ENDIF (NTL_H AND NTL_LIB)
 ADD_LIBRARY(flopoco_random_lib STATIC
 	random_main.cpp
 	urng/lut_sr_rng.cpp
+	transforms/blocks/HadamardTransform.cpp
+	transforms/blocks/CLTTransform.cpp
 )
-target_link_libraries(flopoco_random_lib ${GMP_LIB})
+target_link_libraries(flopoco_random_lib ${GMP_LIB} ${MPFR_LIB})
 
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})

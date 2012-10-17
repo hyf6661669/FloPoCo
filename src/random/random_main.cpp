@@ -8,6 +8,9 @@
 
 #include "urng/lut_sr_rng.hpp"
 
+#include "transforms/blocks/HadamardTransform.hpp"
+#include "transforms/blocks/CLTTransform.hpp"
+
 #include "fixed_point_exp/func_approx_exp_stage.hpp"
 #include "fixed_point_exp/fixed_point_exp_stage.hpp"
 #include "fixed_point_exp/fixed_point_exp_tester.hpp"
@@ -61,6 +64,18 @@ void random_usage(char *name, string opName = ""){
 		cerr << "	r - width of output random number\n";
 		cerr << "	t - XOR gate input count\n";
 		cerr << "	k - Maximum Shift Register length\n";
+	}
+	if( opName=="clt_transform"){
+		OP("clt_hadamard_stage", "baseWidth k");
+		cerr << "       Generates a CLT transform with k uniform inputs\n";
+		cerr << "	baseWidth - How many bits per base uniform generator.\n";
+		cerr << "	k - Number of input uniforms (must be even, and greater than zero)\n";
+	}
+	if( opName=="clt_hadamard_transform"){
+		OP("clt_hadamard_stage", "log2n baseWidth");
+		cerr << "       Generates vectors of Gaussian Random numbers\n";
+		cerr << "	log2n - Number of output variates (n=2^log2n)\n";
+		cerr << "	baseWidth - How many bits per base generator.\n";
 	}
 	if(opName=="TableExpStage"){
 		OP("TableExpStage", "msb lsb addrW resultW");
@@ -121,6 +136,42 @@ bool random_parseCommandLine(
 		addOperator(oplist, new flopoco::random::LutSrRng(target, tr, t, k));
 		return true;
 	}
+	
+	else
+	if (opname == "clt_transform")
+	{
+		int nargs = 2;
+		if (i+nargs > argc)
+			usage(argv[0], opname); // and exit
+		int wBase = checkStrictlyPositive(argv[i++], argv[0]);
+		int k = checkStrictlyPositive(argv[i++], argv[0]);
+
+		cerr << "> clt_transform: wBase="<<wBase<<", k="<<k<<endl;
+		if(k!=2)
+			throw std::string("clt_transform - Only k==2 is supported at the moment.");
+		
+		addOperator(oplist, new flopoco::random::CLTTransform(target, wBase));
+		return true;
+	}
+	
+	else
+	if (opname == "clt_hadamard_transform")
+	{
+		int nargs = 2;
+		if (i+nargs > argc)
+			usage(argv[0], opname); // and exit
+		int log2n = checkStrictlyPositive(argv[i++], argv[0]);
+		int wBase = checkStrictlyPositive(argv[i++], argv[0]);
+
+		cerr << "> clt_hadamard_transform: log2n=" << log2n <<", wBase="<<wBase<<endl;
+		
+		flopoco::random::RngTransformOperator *base=new flopoco::random::CLTTransform(target, wBase);
+		addOperator(oplist, base);
+		assert(base);
+		addOperator(oplist, new flopoco::random::HadamardTransform(target, log2n, base));
+		return true;
+	}
+	
 	else
 	if (opname == "TableExpStage")
 	{

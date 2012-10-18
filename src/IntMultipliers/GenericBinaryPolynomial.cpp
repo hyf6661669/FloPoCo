@@ -2,23 +2,27 @@
 #include <sstream>
 #include <list>
 #include <vector>
+#include <tr1/memory>
 
 #include "gmp.h"
 #include "mpfr.h"
 
+#include "../BitHeap.hpp"
 #include "GenericBinaryPolynomial.hpp"
 #include "IntMultiAdder.hpp"
+#include "IntAddition/NewCompressorTree.hpp"
 
 //std::string GenericBinaryPolynomial::operatorInfo = "UserDefinedInfo param0 param1 <options>";
 
 using namespace flopoco;
 
-static void print_vhdl_string_of_monomial_option
-	(FlopocoStream& vhdl, const Option<MonomialOfBits>& o)
+static string vhdl_string_of_monomial_option
+	(const Option<MonomialOfBits>& o)
 {
+	ostringstream vhdl;
 	if (o.is_empty()) {
 		vhdl << "'0'";
-		return;
+		return vhdl.str();
 	}
 	MonomialOfBits m = o.get_value();
 	bool cont = false;
@@ -34,95 +38,84 @@ static void print_vhdl_string_of_monomial_option
 	}
 	if (!cont)
 		vhdl << "'1'";
+	return vhdl.str();
 }
 
 GenericBinaryPolynomial::GenericBinaryPolynomial(Target* target,
-                                                 Product p,
+                                                 const Product& p,
 						 std::map<std::string,double>
 						 	inputDelays)
 	:Operator(target,inputDelays), p(p) {
-
-	// don't support zero-sized p
-	if (p.data.size() == 0)
-		throw "Zero-size p not supported";
 
 	ostringstream name;
 	name << "GenericBinaryPolynomial_" << p.mon_size << "_" << p.data.size()
 	     << "_uid" << Operator::getNewUId();
 	setName(name.str());
-	setCopyrightString("Guillaume Sergent 2012");
+	setCopyrightString("Guillaume Sergent, Florent de Dinechin 2012");
 
 	addInput ("X" , p.mon_size);
 	addOutput("R" , p.data.size());
 
-	// here we split (arbitrarily, as of now) p into a sum of vectors
-	// that can be easily calculated just by logic ANDs
-	// TODO: intelligently sort the list, if necessary
-	// (FormalBinaryProduct already implicitly doing sort)
-	Product p_copy(p);
-	// TODO: declare p as const / use p_copy after this line
-	std::list<std::vector<Option<MonomialOfBits> > > p_split;
-	for (;;) {
-		bool exit_the_loop = true;
-		std::vector<Option<MonomialOfBits> > v
-			(p.data.size(),Option<MonomialOfBits>());
-		std::vector<ProductBit>::iterator it;
-		std::vector<Option<MonomialOfBits> >::iterator vit;
-		it = p.data.begin(); vit = v.begin();
-		// v and p.data have same size
-		for (; it != p.data.end(); it++,vit++) {
-			if (it->data.empty()) {
-				*vit = Option<MonomialOfBits>();
-			} else {
-				*vit = Option<MonomialOfBits>(it->data.front());
-				it->data.pop_front();
-				exit_the_loop = false;
-			}
+	if (p.data.size() == 0) {
+		return;
+	}
+
+#if 1 // The new Bit Heap 
+	//	shared_ptr<BitHeap> bh(new BitHeap(this, ));
+	// The bit heap
+	BitHeap * bitHeap = new BitHeap(this, p.data.size());
+	
+ 		
+	for (unsigned i = 0; i < p.data.size(); i++) { // i is a weight
+		list<MonomialOfBits>::const_iterator it = p.data[i].data.begin();
+		for (; it != p.data[i].data.end(); it++) {
+			ostringstream rhs;
+			rhs << vhdl_string_of_monomial_option (Option<MonomialOfBits>(*it));
+			bitHeap -> addBit(i, rhs.str()); 
 		}
-		// the loop terminates since lists have finite length
-		if (exit_the_loop)
-			break;
-		else
-			p_split.push_back (v);
 	}
-	size_t int_adder_N = 0;
-	std::list<std::vector<Option<MonomialOfBits> > >::const_iterator pspit;
-	for (pspit = p_split.begin(); pspit != p_split.end(); pspit++) {
-		vhdl << tab
-		     << declare(join("multiadder_input_",int_adder_N),
-				p.data.size())
-		     << " <= ";
-		bool cont = false;
-		// const_reverse_iterator incompatible with G++ 3.4
-		// the vector is iterated in reverse order since
-		// ProductIR is little-endian and FloPoCo is big-endian
-		std::vector<Option<MonomialOfBits> >::const_reverse_iterator vit;
-		for (vit = pspit->rbegin(); vit != pspit->rend(); vit++) {
-			if (cont)
-				vhdl << " & ";
-			vhdl << " ( ";
-			print_vhdl_string_of_monomial_option (vhdl, *vit);
-			vhdl << " ) ";
-			cont = true;
+
+		bitHeap -> generateCompressorVHDL();			
+		vhdl << tab << "R" << " <= " << bitHeap-> getSumName() << range(p.data.size()-1, 0) << ";" << endl;
+
+
+#else // Guillaume's compressor trees
+	vector<unsigned> lengths (p.data.size(), 0);
+	for (unsigned i = 0; i < p.data.size(); i++) {
+		lengths[i] = p.data[i].data.size();
+		if (!lengths[i]) {
+			// if nct_input_i is null, just declare the signal
+			// (such that inPortMap won't complain)
+			declare (join("nct_input_",i),0);
+			continue;
 		}
-		vhdl << ";\n";
-		// at the end of the loop int_adder_N will contain
-		// the length of the list
-		int_adder_N++;
+		vhdl << declare (join("nct_input_",i),lengths[i]);
+		if (lengths[i] == 1)
+			// if there's no '&' it'll be a std_logic in rhs
+			vhdl << of(0);
+		vhdl << " <= (";
+		list<MonomialOfBits>::const_iterator
+			it = p.data[i].data.begin();
+		for (; it != p.data[i].data.end(); it++) {
+			if (it != p.data[i].data.begin())
+				vhdl << ") & (";
+			vhdl << vhdl_string_of_monomial_option (Option<MonomialOfBits>(*it));
+		}
+		vhdl << ");\n";
 	}
-	// after having calculated the inputs, add them
-	nextCycle();
-	ima = new IntMultiAdder (target, p.data.size(), int_adder_N,
-	                         inputDelays, false);
-	oplist.push_back (ima);
-	outPortMap (ima, "R", "R_ima");
-	for (int i = int_adder_N - 1; i >= 0; i--) {
-		inPortMap (ima, join("X",i), join("multiadder_input_",i));
+	NewCompressorTree* nct = new NewCompressorTree (target, lengths);
+	oplist.push_back (nct);
+	outPortMap (nct, "R", "R_ima");
+	for (int i = p.data.size() - 1; i >= 0; i--) {
+		inPortMap (nct, join("X",i), join("nct_input_",i));
 	}
-	vhdl << instance (ima, "ima");
-	syncCycleFromSignal ("R_ima");
-	nextCycle();
-	vhdl << "R <= R_ima;" << endl; //can't do directly outPortMap(ima,R,R)
+	vhdl << instance (nct, "final_adder");
+	if(nct->wOut < p.data.size())
+		vhdl << "R <= " << zg(p.data.size() - nct->wOut) << "& R_ima;" << endl; 
+	else
+		vhdl << "R <= R_ima" << range(p.data.size()-1, 0) << ";" << endl; 
+#endif
+
 };
 
 	

@@ -16,6 +16,8 @@
 #include <vector>
 #include "FlopocoStream.hpp"
 #include "utils.hpp"
+#include "Tools/ResourceEstimationHelper.hpp"
+#include "Tools/FloorplanningHelper.hpp"
 
 using namespace std;
 
@@ -41,8 +43,23 @@ namespace flopoco {
 #define DEBUG_SEPARATOR "________________________________________________________________________________"
 #define OUTER_SEPARATOR "################################################################################"
 #define REPORT(level, stream) {if ((level)<=(::flopoco::verbose)){ cerr << "> " << srcFileName << ": " << stream << endl;}else{}} 
+#define THROWERROR(stream) {{ostringstream o; o << " ERROR in " << uniqueName_ << " (" << srcFileName << "): " << stream << endl; throw o.str();}} 
 
 
+//Floorplanning - direction of placement constraints
+#define ABOVE						0
+#define UNDER						1
+#define TO_LEFT_OF					2
+#define TO_RIGHT_OF					3
+
+#define ABOVE_WITH_EXTRA				4
+#define UNDER_WITH_EXTRA				5
+#define TO_LEFT_OF_WITH_EXTRA				6
+#define TO_RIGHT_OF_WITH_EXTRA				7
+
+//Floorplanning - constraint type
+#define PLACEMENT 					0
+#define CONNECTIVITY					1
 
 
 /**
@@ -56,14 +73,28 @@ class Operator
 
 public:
 
+	/** add a sub-operator to this operator */
+	void addSubComponent(Operator* op);
+
+
+	/** add this operator to the global (first-level) list, which is stored in its Target (not really its place, sorry).
+	This method should be called by 
+	1/ the main / top-level, or  
+	2/ for sub-components that are really basic operators, 
+	expected to be used several times, *in a way that is independent of the context/timing*.
+	Typical example is a table designed to fit in a LUT or parallel row of LUTs
+ */
+	void addToGlobalOpList();
+
 
 	/** generates the code for a list of operators and all their subcomponents */
 	static void outputVHDLToFile(vector<Operator*> &oplist, ofstream& file);
 
 
+#if 1
 	/** generates the code for this operator and all its subcomponents */
 	void outputVHDLToFile(ofstream& file);
-
+#endif
 
 	/** Operator Constructor.
 	 * Creates an operator instance with an instantiated target for deployment.
@@ -87,8 +118,19 @@ public:
 	 * @param width the number of bits of the signal.
 	 * @param isBus describes if this signal is a bus, that is, an instance of std_logic_vector
 	 */
-	void addInput  (const std::string name, const int width=1, const bool isBus=false);
+	void addInput  (const std::string name, const int width=1, const bool isBus=true);
 	
+	/** Adds an input wire (of type std_logic) to the operator.
+	 * Adds a signal of type Signal::in to the the I/O signal list.
+	 * @param name  the name of the signal
+	 */
+	void addInput  (const std::string name) {
+		addInput (name, 1, false);
+	}
+
+	void addInput (const char* name) {
+		addInput (name, 1, false);
+	}
 
 	/** Adds an output signal to the operator.
 	 * Adds a signal of type Signal::out to the the I/O signal list.
@@ -97,8 +139,20 @@ public:
 	 * @param numberOfPossibleOutputValues (optional, defaults to 1) set to 2 for a faithfully rounded operator for instance
 	 * @param isBus describes if this signal is a bus, that is, an instance of std_logic_vector
 	 */	
-	void addOutput(const std::string name, const int width=1, const int numberOfPossibleOutputValues=1, const bool isBus=false);
+	void addOutput(const std::string name, const int width=1, const int numberOfPossibleOutputValues=1, const bool isBus=true);
 	
+	/** Adds an output wire (of type std_logic) with one possible value
+	 ** to the operator.
+	 * Adds a signal of type Signal::out to the the I/O signal list.
+	 * @param name  the name of the signal
+	 */	
+	void addOutput(const std::string name) {
+		addOutput (name, 1, 1, false);
+	}
+
+	void addOutput(const char* name) {
+		addOutput (name, 1, 1, false);
+	}
 
 	/** Adds a floating point (FloPoCo format) input signal to the operator.
 	 * Adds a signal of type Signal::in to the the I/O signal list, 
@@ -152,6 +206,29 @@ public:
 	void setCopyrightString(std::string authorsYears);
 
 
+	/** use the Synopsys de-facto standard ieee.std_logic_unsigned for this entity
+	 */
+	void useStdLogicUnsigned() {
+		stdLibType_ = 0;
+	};
+
+	/** use the Synopsys de-facto standard ieee.std_logic_unsigned for this entity
+	 */
+	void useStdLogicSigned() {
+		stdLibType_ = -1;
+	};
+
+
+	/** use the real IEEE standard ieee.numeric_std for this entity
+	 */
+	void useNumericStd() {
+		stdLibType_ = 1;
+	};
+
+	int getStdLibType() {
+		return stdLibType_; 
+	};
+
 	/** Sets Operator name to givenName.
 	 * Sets the name of the operator to operatorName.
 	 * @param operatorName new name of the operator
@@ -191,10 +268,10 @@ public:
  /*****************************************************************************/
 
 
-
 	/* Functions related to pipeline management */
+	// TODO We should introduce a notion of pipetime, which is (cycle, critical path) in lexicographic order.
 
-	/** Define the current cycle 
+	/** Define the current cycle, and resets the critical path 
 	 * @param the new value of the current cycle */
 	void setCycle(int cycle, bool report=true) ;
 
@@ -202,11 +279,11 @@ public:
 	 * @return the current cycle */
 	int getCurrentCycle(); 
 
-	/** Define the current cycle 
+	/** advance the current cycle by 1, and resets the critical path 
 	 * @param the new value of the current cycle */
 	void nextCycle(bool report=true) ;
 
-	/** Define the current cycle 
+	/** Define the current cycle, and reset the critical path
 	 * @param the new value of the current cycle */
 	void previousCycle(bool report=true) ;
 
@@ -243,6 +320,8 @@ public:
 	// param criticalPath is the critical path delay associated to this signal: typically getDelay(name)
 	// Shouldn't this be the default behaviour?
 	// Check current use and fix.
+
+
 
 	int getCycleFromSignal(string name, bool report = false);
 		
@@ -288,7 +367,18 @@ public:
 	 * @param regType: the registring type of this signal. See also the Signal Class for more info
 	 * @return name
 	 */
-	string declare(string name, const int width=1, bool isbus=false, Signal::SignalType regType = Signal::wire );
+	string declare(string name, const int width, bool isbus=true, Signal::SignalType regType = Signal::wire );
+
+	/** Declares a signal of length 1 as in the previous declare() function, but as std_logic by default
+	 * @param name is the name of the signal
+	 * @param isbus: if true, declares the signal as std_logic_vector; else declares the signal as std_logic
+	 * @param regType: the registring type of this signal. See also the Signal Class for mor info
+	 * @return name
+	 */
+	string declare(string name, Signal::SignalType regType = Signal::wire ) {
+		return declare(name, 1, false, regType);
+	}
+
 	// TODO: add methods that allow for signals with reset (when rewriting LongAcc for the new framework)
 
 
@@ -399,18 +489,6 @@ public:
 
 
 	/**
-	 * Append random test cases to a test case list. There is a default
-	 * implementation using a uniform random generator, but most
-	 * operators are not exercised efficiently using such a
-	 * generator. For instance, in FPAdder, the random number generator
-	 * should be biased to favor exponents which are relatively close
-	 * so that an effective addition takes place.
-	 * @param tcl a TestCaseList
-	 * @param n the number of random test cases to add
-	 */
-	virtual void buildRandomTestCaseList(TestCaseList* tcl, int n);
-
-	/**
 	 * Generate Random Test case identified by an integer . There is a default
 	 * implementation using a uniform random generator, but most
 	 * operators are not exercised efficiently using such a
@@ -418,6 +496,7 @@ public:
 	 * should be biased to favor exponents which are relatively close
 	 * so that an effective addition takes place.
 	 * This function create a new TestCase (to be free after use)
+	 * See FPExp.cpp for an example of overloading this method.
 	 * @param i the identifier of the test case to be generated
 	 * @return TestCase*
 	 */
@@ -425,15 +504,29 @@ public:
 
 
 
-	Target* target() {
-		return target_;
-	}
-
 
 
  /*****************************************************************************/
  /*     From this point, we have methods that are not needed in normal use    */
  /*****************************************************************************/
+
+
+
+
+	/**
+	 * Append random test cases to a test case list. There is a default
+	 * implementation using a uniform random generator, but most
+	 * operators are not exercised efficiently using such a
+	 * generator. For instance, in FPAdder, the random number generator
+	 * should be biased to favor exponents which are relatively close
+	 * so that an effective addition takes place.
+	 * In most cases you do need to overload this method, 
+	 * but simply overload  buildRandomTestCase(int i) 
+	 * which is called by the default implementation of buildRandomTestCaseList
+	 * @param tcl a TestCaseList
+	 * @param n the number of random test cases to add
+	 */
+	virtual void buildRandomTestCaseList(TestCaseList* tcl, int n);
 
 
 
@@ -522,6 +615,10 @@ public:
 	}
 
 
+	bool hasDelay1Feedbacks(){
+		return hasDelay1Feedbacks_;
+	}
+	
 
 
 	
@@ -615,18 +712,11 @@ public:
 
 	void pipelineInfo(std::ostream& o);
 
-	/** DEPRECATED  Output the standard library paperwork 
+	/** Output the standard library paperwork 
 	 * @param o the stream where the libraries will be written to
 	 */
-	static void stdLibs(std::ostream& o){
-		o<< "library ieee;"<<endl
-		 << "use ieee.std_logic_1164.all;"<<endl
-		 << "use ieee.std_logic_arith.all;"<<endl
-		 << "use ieee.std_logic_unsigned.all;"<<endl 
-		 << "library std;" << endl
-		 << "use std.textio.all;"<< endl 
-		 << "library work;"<<endl<< endl;
-	};
+	void stdLibs(std::ostream& o);
+
 		
 	/** DEPRECATED  Output the VHDL entity of the current operator.
 	 * @param o the stream where the entity will be outputted
@@ -800,13 +890,10 @@ public:
 		 }
 	}
 	
-	bool hasDelay1Feedbacks(){
-		return hasDelay1Feedbacks_;
-	}
-	
 	vector<Operator*> getOpList(){
 		return oplist;
 	}
+
 
 	vector<Operator*>& getOpListR(){
 		return oplist;
@@ -917,6 +1004,7 @@ public:
 
 	/** Completely replace "this" with a copy of another operator. */
 	void cloneOperator(Operator *op){
+		stdLibType_ = op->stdLibType_;
 		subComponents_ = op->getSubComponents();
 		signalList_ = op->getSignalList();	
 		ioList_     = op->getIOListV();
@@ -951,59 +1039,480 @@ public:
 		currentCycle_               = op->getCurrentCycle();
 		criticalPath_               = op->getCriticalPath();
 		needRecirculationSignal_    = op->getNeedRecirculationSignal();
-		indirectOperator_               = op->getIndirectOperator();
-		hasDelay1Feedbacks_ = op->hasDelay1Feedbacks();
-		
+		indirectOperator_           = op->getIndirectOperator();
+		hasDelay1Feedbacks_         = op->hasDelay1Feedbacks();
+
 		oplist                      = op->getOpList();
 	}
+	
+	
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////Functions used for resource estimations
+	
+	//--Logging functions
+	
+	/**
+	 * Add @count flip-flops to the total estimate
+	 * @param count (by default 1) the number of elements to add
+	 * @return the string describing the performed operation
+	 */
+	std::string addFF(int count = 1);
+	
+	/**
+	 * Add @count registers to increase the total flip-flop estimate 
+	 * from the register characteristics
+	 * @param count (by default 1) the number of registers to add
+	 * @param width the width of each register
+	 * @return the string describing the performed operation
+	 */
+	std::string addReg(int width, int count = 1);
+	
+	/**
+	 * Add @count function generators to the total estimate
+	 * Suggest Look-Up Table type (based on number of inputs), in order
+	 * to obtain more accurate predictions
+	 * @param count (by default 1) the number of elements to add
+	 * @param nrInputs number of inputs of the LUT (0 for default option 
+	 * of target technology)
+	 * @return the string describing the performed operation
+	 */
+	std::string addLUT(int nrInputs = 0, int count = 1); 
+	
+	/**
+	 * Add @count multipliers to the total estimate
+	 * NOTE: also increases the DSP count
+	 * @param count (by default 1) the number of elements to add
+	 * @return the string describing the performed operation
+	 */
+	std::string addMultiplier(int count = 1);
+	
+	/**
+	 * Add @count multipliers each having inputs of bitwidths @widthX and 
+	 * @widthY, respectively
+	 * The user can also chose to what degree the multipliers are 
+	 * implemented in logic (a number between 0 and 1)
+	 * NOTE: also increases the DSP count
+	 * @param count (by default 1) the number of elements to add
+	 * @param width the bitwidth of the multipliers
+	 * @param ratio (by default 1) the ratio to which the multipliers 
+	 * are implemented in logic (0 for 0%, 1 for 100%)
+	 * @return the string describing the performed operation
+	 */
+	std::string addMultiplier(int widthX, int widthY, double ratio = 1, int count = 1);
+	
+	/**
+	 * Add @count adders/subtracters each having inputs of bitwidths @widthX and 
+	 * @widthY, respectively
+	 * The user can also chose to what degree the adders/subtracters are 
+	 * implemented in logic (a number between 0 and 1)
+	 * NOTE: can also increase the DSP count
+	 * @param count (by default 1) the number of elements to add
+	 * @param width the bitwidth of the multipliers
+	 * @param ratio (by default 0) the ratio to which the multipliers 
+	 * are implemented in logic (0 for 0%, 1 for 100%)
+	 * @return the string describing the performed operation
+	 */
+	std::string addAdderSubtracter(int widthX, int widthY, double ratio = 0, int count = 1);
+	
+	/**
+	 * Add @count memories to the total estimate, each having @size 
+	 * words of @width bits
+	 * The memories can be either RAM or ROM, depending on the value of
+	 * the @type parameter
+	 * NOTE: Defaults to adding RAM memories
+	 * @param count (by default 1) the number of elements to add
+	 * @param size the number of words of the memory
+	 * @param width the bitwidth of each of the memory's word
+	 * @param type (by default 0) the type of the memory  
+	 * (0 for RAM, 1 for ROM)
+	 * @return the string describing the performed operation
+	 */
+	std::string addMemory(int size, int width, int type = 0, int count = 1);
+	
+	//---More particular resource logging
+	/**
+	 * Add @count DSP(s) to the total estimate
+	 * @param count (by default 1) the number of elements to add
+	 * @return the string describing the performed operation
+	 */
+	std::string addDSP(int count = 1);
+	
+	/**
+	 * Add @count RAM(s) to the total estimate
+	 * NOTE: For a more precise description of the memory being added, use the
+	 * @addMemory() function with the corresponding parameters
+	 * NOTE: adds memories with the default widths and sizes
+	 * @param count (by default 1) the number of elements to add
+	 * @return the string describing the performed operation
+	 */
+	std::string addRAM(int count = 1);
+	
+	/**
+	 * Add @count ROM(s) to the total estimate
+	 * NOTE: For a more precise description of the memory being added, use the
+	 * @addMemory() function with the corresponding parameters
+	 * NOTE: adds memories with the default widths and sizes
+	 * @param count (by default 1) the number of elements to add
+	 * @return the string describing the performed operation
+	 */
+	std::string addROM(int count = 1);
+	
+	/**
+	 * Add @count Shift Registers to the total estimate, each having a
+	 * bitwidth of @width bits
+	 * NOTE: this function also modifies the total number of LUTs and FFs 
+	 * in the design; this aspect should be considered so as not to result 
+	 * in counting the resources multiple times and overestimate
+	 * @param count (by default 1) the number of elements to add
+	 * @param width the bitwidth of the registers
+	 * @param depth the depth of the shift register
+	 * @return the string describing the performed operation
+	 */
+	std::string addSRL(int width, int depth, int count = 1);
+	
+	/**
+	 * Add @count wire elements to the total estimate
+	 * The estimation can be done in conjunction with the declaration of a 
+	 * certain signal, in which specify the signal's name is specified 
+	 * through the @signalName parameter
+	 * NOTE: it is not advised to use the function without specifying 
+	 * the signal's name, as it results in duplication of resource count
+	 * NOTE: if @signalName is provided, @count can be omitted, as it 
+	 * serves no purpose
+	 * @param count (by default 1) the number of elements to add
+	 * @param signalName (by default the empty string) the name of the
+	 * corresponding signal
+	 * @return the string describing the performed operation
+	 */
+	std::string addWire(int count = 1, std::string signalName = "");
+	
+	/**
+	 * Add @count I/O ports to the total estimate
+	 * The estimation can be done in conjunction with the declaration 
+	 * of a certain port, in which specify the port's name is specified 
+	 * through the @portName parameter
+	 * NOTE: it is not advised to use the function without specifying 
+	 * the port's name, as it results in duplication of resource count
+	 * NOTE: if @portName is provided, @count can be omitted, as it 
+	 * serves no purpose
+	 * @param count (by default 1) the number of elements to add
+	 * @param portName (by default the empty string) the name of the
+	 * corresponding port
+	 * @return the string describing the performed operation
+	 */
+	std::string addIOB(int count = 1, std::string portName = "");
+	
+	//---Even more particular resource logging
+	/**
+	 * Add @count multiplexers to the total estimate, each having 
+	 * @nrInputs inputs of @width bitwidths
+	 * NOTE: this function also modifies the total number of LUTs in 
+	 * the design; this aspect should be considered so as not to result 
+	 * in counting the resources multiple times and overestimate
+	 * @param count (by default 1) the number of elements to add
+	 * @param nrInputs (by default 2) the number of inputs to the MUX
+	 * @param width the bitwidth of the inputs and the output
+	 * @return the string describing the performed operation
+	 */
+	std::string addMux(int width, int nrInputs = 2, int count = 1);
+	
+	/**
+	 * Add @count counters to the total estimate, each having 
+	 * @width bitwidth
+	 * NOTE: this function also modifies the total number of LUTs and 
+	 * FFs in the design; this aspect should be considered so as not to 
+	 * result in counting the resources multiple times and overestimate
+	 * @param count (by default 1) the number of elements to add
+	 * @param width the bitwidth of the counter
+	 * @return the string describing the performed operation
+	 */
+	std::string addCounter(int width, int count = 1);
+	
+	/**
+	 * Add @count accumulators to the total estimate, each having
+	 * @width bitwidth
+	 * NOTE: this function also modifies the total number of LUTs and 
+	 * FFs and DSPs in the design; this aspect should be considered so 
+	 * as not to result in counting the resources multiple times and 
+	 * overestimate
+	 * @param count (by default 1) the number of elements to add
+	 * @param width the bitwidth of the accumulator
+	 * @param useDSP (by default false) whether the use of DSPs is allowed
+	 * @return the string describing the performed operation
+	 */
+	std::string addAccumulator(int width, bool useDSP = false, int count = 1);
+	
+	/**
+	 * Add @count decoder to the total estimate, each decoding an input 
+	 * signal of wIn bits to an output signal of wOut bits
+	 * NOTE: this function also modifies the total number of LUTs and 
+	 * FFs and RAMs in the design; this aspect should be considered so 
+	 * as not to result in counting the resources multiple times and 
+	 * overestimate
+	 * @param count (by default 1) the number of elements to add
+	 * @return the string describing the performed operation
+	 */
+	std::string addDecoder(int wIn, int wOut, int count = 1);
+	
+	/**
+	 * Add @count arithmetic operator to the total estimate, each having
+	 * @nrInputs of @width bitwidths
+	 * NOTE: this function also modifies the total number of LUTs in 
+	 * the design; this aspect should be considered so as not to result 
+	 * in counting the resources multiple times and overestimate
+	 * @param count (by default 1) the number of elements to add
+	 * @param nrInputs (by default 2) the number of inputs of the gate
+	 * @param width the bitwidth of the inputs
+	 * @return the string describing the performed operation
+	 */
+	std::string addArithOp(int width, int nrInputs = 2, int count = 1);
+	
+	/**
+	 * Add @count Finite State Machine to the total estimate, each 
+	 * having @nrStates states, @nrTransitions transitions
+	 * NOTE: this function also modifies the total number of LUTs and 
+	 * FFs and ROMs in the design; this aspect should be considered so 
+	 * as not to result in counting the resources multiple times and 
+	 * overestimate
+	 * @param count (by default 1) the number of elements to add
+	 * @param nrStates the number of states of the FSM
+	 * @param nrTransitions (by default 0) the number of transitions of 
+	 * the FSM
+	 * @return the string describing the performed operation
+	 */
+	std::string addFSM(int nrStates, int nrTransitions = 0, int count = 1);
+	
+	//--Resource usage statistics
+	/**
+	 * Generate statistics regarding resource utilization in the design,
+	 * based on the user's approximations
+	 * @param detailLevel (by default 0, basic resource estimations) 
+	 * the level of detail to which the resource utilizations are 
+	 * reported (0 - basic report; 1 - include the more specific 
+	 * resources; 2 - include all statistics)
+	 * @return a formatted string containing the statistics
+	 */
+	std::string generateStatistics(int detailLevel = 0);
+	
+	//--Utility functions related to the generation of resource usage statistics
+	/**
+	 * Count registers that are due to design pipelining
+	 * @return the string describing the performed operation
+	 */
+	std::string addPipelineFF();
+	
+	/**
+	 * Count wires from declared signals
+	 * @return the string describing the performed operation
+	 */
+	std::string addWireCount();
+	
+	/**
+	 * Count I/O ports from declared inputs and outputs
+	 * @return the string describing the performed operation
+	 */
+	std::string addPortCount();
+	
+	/**
+	 * Count resources added from components
+	 * @return the string describing the performed operation
+	 */
+	std::string addComponentResourceCount();
+	
+	/**
+	 * Perform automatic operations related to resource estimation; this includes:
+	 * 		- count registers added due to pipelining framework
+	 * 		- count input/output ports
+	 * 		- count resources in subcomponents
+	 * Should not be used together with the manual estimation functions addWireCount, addPortCount, addComponentResourceCount!
+	 * @return the string describing the performed operation
+	 */
+	void addAutomaticResourceEstimations();
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////Functions used for floorplanning
+	/**
+	 * NOTE: Floorplanning should be used only is resource estimation is 
+	 * also used. The floorplanning tools rely on the data provided by 
+	 * the resource estimation.
+	 */
+	
+	
+	/**
+	 * Count the resources that have been added (as glue logic), since 
+	 * the last module has been instantiated. It will create a virtual 
+	 * module that is placed between the real modules, and that accounts 
+	 * for the space needed for the glue logic.
+	 * Possibly to be integrated in the instance() method, as the 
+	 * process can be done without the intervention of the user.
+	 * Uses and updates the pastEstimation... set of variables.
+	 * @return the string summarizing the operation
+	 */
+	std::string manageFloorplan();
+	
+	/**
+	 * Add a new placement constraint between the @source and @sink 
+	 * modules. The constraint should be read as: "@sink is @type of @source".
+	 * The type of the constraint should be one of the following 
+	 * predefined constants: TO_LEFT_OF, TO_RIGHT_OF, ABOVE, UNDER.
+	 * NOTE: @source and @sink are the operators' names, NOT 
+	 * the instances' names
+	 * @param source the source sub-component
+	 * @param sink the sink sub-component
+	 * @param type the constraint type (has as value predefined constant)
+	 * @return the string summarizing the operation
+	 */
+	std::string addPlacementConstraint(std::string source, std::string sink, int type);
+	
+	/**
+	 * Add a new connectivity constraint between the @source and @sink 
+	 * modules. The constraint should be read as: "@sink is connected 
+	 * to @source by @nrWires wires".
+	 * NOTE: @source and @sink are the operators' names, NOT 
+	 * the instances' names
+	 * @param source the source sub-component
+	 * @param sink the sink sub-component
+	 * @param nrWires the number of wires that connect the two modules
+	 * @return the string summarizing the operation
+	 */
+	std::string addConnectivityConstraint(std::string source, std::string sink, int nrWires);
+	
+	/**
+	 * Add a new aspect constraint for @source module. The constraint 
+	 * should be read as: "@source's width is @ratio times larger than 
+	 * its width".
+	 * @param source the source sub-component
+	 * @param ratio the aspect ratio
+	 * @return the string summarizing the operation
+	 */
+	std::string addAspectConstraint(std::string source, double ratio);
+	
+	/**
+	 * Add a new constraint for @source module, regarding the contents 
+	 * of the module. The constraint gives an indication on the possible 
+	 * size/shape constraints, depending what the module contains.
+	 * @param source the source sub-component
+	 * @param value the type of content constraint
+	 * @param length the length, if needed, of the component (for 
+	 * example for adders or multipliers)
+	 * @return the string summarizing the operation
+	 */
+	std::string addContentConstraint(std::string source, int value, int length);
+	
+	/**
+	 * Process the placement and connectivity constraints that the 
+	 * user has input using the corresponding functions.
+	 * Start by processing the placement constraints and then, when 
+	 * needed, process the connectivity constraints
+	 * @return the string summarizing the operation
+	 */
+	std::string processConstraints();
+	
+	/**
+	 * Create the virtual grid for the sub-components.
+	 * @return the string summarizing the operation
+	 */
+	std::string createVirtualGrid();
+	
+	/**
+	 * Transform the virtual placement grid into the actual placement on 
+	 * the device, ready to generate the actual constraints file.
+	 * @return the string summarizing the operation
+	 */
+	std::string createPlacementGrid();
+	
+	/**
+	 * Create the file that will contain the floorplanning constraints.
+	 * @return the string summarizing the operation
+	 */
+	std::string createConstraintsFile();
+	
+	/**
+	 * Generate the placement for a given module.
+	 * @param moduleName the name of the module
+	 * @return the string summarizing the operation
+	 */
+	std::string createPlacementForComponent(std::string moduleName);
+	
+	/**
+	 * Create the floorplan, according the flow described in each 
+	 * function and according to the user placed constraints.
+	 */
+	std::string createFloorplan();
+	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////BEWARE: don't add anything below without adding it to cloneOperator, too
 
-	map<string, Operator*> subComponents_;/**< The list of sub-components */
-	vector<Signal*>     signalList_;      /**< The list of internal signals of the operator */
-	vector<Signal*>     ioList_;          /**< The list of I/O signals of the operator */
+	map<string, Operator*> subComponents_;					/**< The list of sub-components */
+	vector<Signal*>     signalList_;      					/**< The list of internal signals of the operator */
+	vector<Signal*>     ioList_;          					/**< The list of I/O signals of the operator */
 
-	FlopocoStream       vhdl;             /**< The internal stream to which the constructor will build the VHDL code */
-	int                 numberOfTests;    /**< The number of tests, set by TestBench before this operator is tested */
+	FlopocoStream       vhdl;             					/**< The internal stream to which the constructor will build the VHDL code */
+	int                 numberOfTests;    					/**< The number of tests, set by TestBench before this operator is tested */
+	
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////Variables used for resource estimations
+	std::ostringstream 	resourceEstimate;					/**< The log of resource estimations made by the user */
+	std::ostringstream 	resourceEstimateReport;				/**< The final report of resource estimations made by the user */
+	
+	ResourceEstimationHelper* reHelper;						/**< Performs all the necessary operations for resource estimation */
+	
+	bool reActive;											/**< Shows if any resource estimation operations have been performed */
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////Variables used for floorplanning
+	std::ostringstream 			floorplan;					/**< Stream containing the floorplanning operations */
+	
+	FloorplanningHelper*		flpHelper;					/**< Tools for floorplanning */
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	
 
 protected:    
-	Target*             target_;          /**< The target on which the operator will be deployed */
-	string              uniqueName_;      /**< By default, a name derived from the operator class and the parameters */
-	string 				architectureName_;	/**< Name of the operator architecture */
-	vector<Signal*>     testCaseSignals_; /**< The list of pointers to the signals in a test case entry. Its size also gives the dimension of a test case */
+	Target*             target_;          					/**< The target on which the operator will be deployed */
+	string              uniqueName_;      					/**< By default, a name derived from the operator class and the parameters */
+	string 				architectureName_;					/**< Name of the operator architecture */
+	vector<Signal*>     testCaseSignals_; 					/**< The list of pointers to the signals in a test case entry. Its size also gives the dimension of a test case */
 
-	map<string, string> portMap_;         /**< Port map for an instance of this operator */
-	map<string, double> outDelayMap;      /**< Slack delays on the outputs */
-	map<string, double> inputDelayMap;       /**< Slack delays on the inputs */
-	string              srcFileName;      /**< Used to debug and report.  */
-	map<string, int>    declareTable;     /**< Table containing the name and declaration cycle of the signal */
-	int                 myuid;              /**<unique id>*/
-	int                 cost;             /**< the cost of the operator depending on different metrics */
-	vector<Operator*>   oplist;
+	map<string, string> portMap_;         					/**< Port map for an instance of this operator */
+	map<string, double> outDelayMap;      					/**< Slack delays on the outputs */
+	map<string, double> inputDelayMap;      				/**< Slack delays on the inputs */
+	string              srcFileName;      					/**< Used to debug and report.  */
+	map<string, int>    declareTable;     					/**< Table containing the name and declaration cycle of the signal */
+	int                 myuid;              				/**<unique id>*/
+	int                 cost;             					/**< the cost of the operator depending on different metrics */
+	vector<Operator*>   oplist;                     /**< A list of all the sub-operators */
+	
 
 private:
-	int                    numberOfInputs_;             /**< The number of inputs of the operator */
-	int                    numberOfOutputs_;            /**< The number of outputs of the operator */
-	bool                   isSequential_;               /**< True if the operator needs a clock signal*/
-	int                    pipelineDepth_;              /**< The pipeline depth of the operator. 0 for combinatorial circuits */
-	map<string, Signal*>   signalMap_;                  /**< A container of tuples for recovering the signal based on it's name */ 
-	map<string, pair<string, string> > constants_;      /**< The list of constants of the operator: name, <type, value> */
-	map<string, string>    attributes_;                  /**< The list of attribute declarations (name, type) */
-	map<string, string>    types_;                      /**< The list of type declarations (name, type) */
-	map<pair<string,string>, string >  attributesValues_;/**< attribute values <attribute name, object (component, signal, etc)> ,  value> */
-	bool                   hasRegistersWithoutReset_;   /**< True if the operator has registers without a reset */
-	bool                   hasRegistersWithAsyncReset_; /**< True if the operator has registers having an asynch reset */
-	bool                   hasRegistersWithSyncReset_;  /**< True if the operator has registers having a synch reset */
-	string                 commentedName_;              /**< Usually is the default name of the architecture.  */
-	string                 copyrightString_;            /**< Authors and years.  */
-	int                    currentCycle_;               /**< The current cycle, when building a pipeline */
-	double                 criticalPath_;               /**< The current delay of the current pipeline stage */
-	bool                   needRecirculationSignal_;    /**< True if the operator has registers having a recirculation signal  */
-	Operator*              indirectOperator_;               /**< NULL if this operator is just an interface operator to several possible implementations, otherwise points to the instance*/
-	int					hasDelay1Feedbacks_;	/**< True if this operator has feedbacks of one cyle, and no more than one cycle (i.e. an error if the distance is more). False gives warnings */
+	int                    stdLibType_;                 	/**< 0 will use the Synopsys ieee.std_logic_unsigned, -1 uses std_logic_unsigned, 1 uses ieee numeric_std  (preferred) */
+	int                    numberOfInputs_;             	/**< The number of inputs of the operator */
+	int                    numberOfOutputs_;            	/**< The number of outputs of the operator */
+	bool                   isSequential_;               	/**< True if the operator needs a clock signal*/
+	int                    pipelineDepth_;              	/**< The pipeline depth of the operator. 0 for combinatorial circuits */
+	map<string, Signal*>   signalMap_;                  	/**< A container of tuples for recovering the signal based on it's name */ 
+	map<string, pair<string, string> > constants_;      	/**< The list of constants of the operator: name, <type, value> */
+	map<string, string>    attributes_;                  	/**< The list of attribute declarations (name, type) */
+	map<string, string>    types_;                      	/**< The list of type declarations (name, type) */
+	map<pair<string,string>, string >  attributesValues_;	/**< attribute values <attribute name, object (component, signal, etc)> ,  value> */
+	bool                   hasRegistersWithoutReset_;   	/**< True if the operator has registers without a reset */
+	bool                   hasRegistersWithAsyncReset_; 	/**< True if the operator has registers having an asynch reset */
+	bool                   hasRegistersWithSyncReset_;  	/**< True if the operator has registers having a synch reset */
+	string                 commentedName_;              	/**< Usually is the default name of the architecture.  */
+	string                 copyrightString_;            	/**< Authors and years.  */
+	int                    currentCycle_;               	/**< The current cycle, when building a pipeline */
+	double                 criticalPath_;               	/**< The current delay of the current pipeline stage */
+	bool                   needRecirculationSignal_;    	/**< True if the operator has registers having a recirculation signal  */
+	int					    hasDelay1Feedbacks_;		/**< True if this operator has feedbacks of one cyle, and no more than one cycle (i.e. an error if the distance is more). False gives warnings */
+	Operator*              indirectOperator_;              /**< NULL if this operator is just an interface operator to several possible implementations, otherwise points to the instance*/
 };
 
 	// global variables used through most of FloPoCo,

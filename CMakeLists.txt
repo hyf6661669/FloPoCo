@@ -56,6 +56,7 @@ FIND_LIBRARY(MPFI_LIB
 	DOC "Directory of the MPFI library")
 
 
+
 # Detect Sollya's presence
 FIND_LIBRARY( SOLLYA_LIB sollya )
 
@@ -79,6 +80,7 @@ ELSE (MPFR_FOUND)
     MESSAGE(FATAL_ERROR "Could not find MPFR.\nOn Debian-based systems type: 'sudo apt-get install libmpfr-dev'")
 ENDIF (MPFR_FOUND)
 
+ADD_DEFINITIONS(-DHAVE_LNS)
 
 # Create target for the lexer
  ADD_CUSTOM_TARGET(VHDLLexer echo "Creating VHDLLexer.c VHDLLexer.h")
@@ -154,7 +156,6 @@ ADD_CUSTOM_COMMAND(
 SET_SOURCE_FILES_PROPERTIES(ExpressionScanner GENERATED)
 
 
-# DT10 - On cygwin cmake can't deal with the FloPoCo vs flopoco
 ADD_LIBRARY(FloPoCoLib STATIC
  src/FloPoCo.hpp
  src/Operator
@@ -162,9 +163,34 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/utils
  src/FlopocoStream
  VHDLLexer
+ 
+ # Resource Estimation related ---------------------------------------
+ #--------------------------------------------------------------------
+ src/Tools/ResourceEstimationHelper
+ #--------------------------------------------------------------------
+ 
+ # Floorplanning related ---------------------------------------------
+ #--------------------------------------------------------------------
+ src/Tools/FloorplanningHelper
+ #--------------------------------------------------------------------
 
  src/Targets/DSP
- src/Target src/Targets/Virtex4 src/Targets/Spartan3 src/Targets/Virtex6 src/Targets/StratixII src/Targets/StratixIII src/Targets/Virtex5 src/Targets/StratixIV
+ src/Target 
+ 
+ src/Targets/Spartan3 
+ src/Targets/Virtex4 
+ src/Targets/Virtex5 
+ src/Targets/Virtex6 
+ 
+ src/Targets/StratixII 
+ src/Targets/StratixIII 
+ src/Targets/StratixIV
+ src/Targets/StratixV
+ 
+ src/Targets/CycloneII 
+ src/Targets/CycloneIII 
+ src/Targets/CycloneIV 
+ src/Targets/CycloneV 
 
 
  src/Table 
@@ -205,23 +231,29 @@ ADD_LIBRARY(FloPoCoLib STATIC
 
 # ---------- Multioperand -------------------------------------------
  src/IntMultiAdder src/IntAddition/IntNAdder  src/IntAddition/IntCompressorTree
-
+ src/IntAddition/PopCount src/IntAddition/NewCompressorTree
+ src/IntAddition/BasicCompressor
+ src/BitHeap
+src/WeightedBit
  src/IntComparator
  src/IntDualSub
+
+#---------Plotting-related ---------------------------------------
+src/Plotter
+
+
  
 # Multiplication related --------------------------------------------
 #--------------------------------------------------------------------
  src/IntMultiplier
- src/IntMultipliers/SignedIntMultiplier
- src/IntMultipliers/UnsignedIntMultiplier
- src/IntMultipliers/IntTilingMult
- src/IntMultipliers/LogicIntMultiplier 
- src/IntMultipliers/IntTruncMultiplier
  src/IntMultipliers/IntKaratsuba
  src/IntSquarer
+ src/FixMultAdd
  src/IntMultipliers/FormalBinaryProduct
  src/IntMultipliers/GenericBinaryPolynomial
  src/IntMultipliers/IntPower
+
+src/IntMultipliers/MultiplierBlock
 
 # Shifters/LZOC related ---------------------------------------------
 #--------------------------------------------------------------------
@@ -263,7 +295,6 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/FixSinCos.cpp
  src/CORDIC/FixedPointSinOrCos.cpp
  src/CORDIC/CordicSinCos
- src/CORDIC/CordicSinCosRedIter
 
 # Floating-Point ----------------------------------------------------
 #--------------------------------------------------------------------
@@ -308,23 +339,29 @@ ADD_LIBRARY(FloPoCoLib STATIC
 
  src/FPSumOfSquares
 
+# ---------- Complex arithmetic --------------------------------------------- 
+src/Complex/FixedComplexAdder
+src/Complex/FixedComplexMultiplier
+
 # ---------- Conversion --------------------------------------------- 
+
+ src/FP2Fix
  src/Fix2FP
  src/InputIEEE
  src/OutputIEEE
 
 #---------------------LNS arithmetic--------------------------------
-		src/LNS/LNSAdd
-		src/LNS/Cotran
-		src/LNS/CotranHybrid
-		src/LNS/CotranTables
-		src/LNS/LNSAddSub
-		src/LNS/LNSMul
-		src/LNS/LNSDiv
-		src/LNS/LNSSqrt
-		src/LNS/AtanPow
-		src/FixedPointFunctions/GenericEvaluator
-		src/LNS/LogSinCos
+ src/LNS/LNSAdd
+ src/LNS/Cotran
+ src/LNS/CotranHybrid
+ src/LNS/CotranTables
+ src/LNS/LNSAddSub
+ src/LNS/LNSMul
+ src/LNS/LNSDiv
+ src/LNS/LNSSqrt
+ src/LNS/AtanPow
+ src/FixedPointFunctions/GenericEvaluator
+ src/LNS/LogSinCos
 
 
 # Applications ------------------------------------------------------
@@ -383,6 +420,9 @@ SET(FLOPOCO_LIB FloPoCoLib)
 ADD_EXECUTABLE(flopoco
  src/main 
 )
+TARGET_LINK_LIBRARIES(
+ flopoco ${FLOPOCO_LIB}
+)
 
 
 ADD_EXECUTABLE(fpadder_example
@@ -406,10 +446,4 @@ ADD_EXECUTABLE(longacc2fp src/Tools/longacc2fp  src/utils)
 TARGET_LINK_LIBRARIES(longacc2fp  mpfr gmp gmpxx)
 
 add_subdirectory(src/random)
-
-TARGET_LINK_LIBRARIES(
-  flopoco  
-	${FLOPOCO_LIB}
-    flopoco_random_lib
-  )
- 
+target_link_libraries(${FLOPOCO_LIB} flopoco_random_lib)

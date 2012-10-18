@@ -29,7 +29,6 @@
 
 using namespace std;
 namespace flopoco{
-extern vector<Operator*> oplist;
 
 	LongIntAdderCmpAddIncGen2::LongIntAdderCmpAddIncGen2(Target* target, int wIn, map<string, double> inputDelays):
 		Operator(target), wIn_(wIn), inputDelays_(inputDelays) 
@@ -40,7 +39,7 @@ extern vector<Operator*> oplist;
 		// Set up the IO signals
 		addInput ( "X" , wIn_);
 		addInput ( "Y" , wIn_);
-		addInput ( "Cin", 1  );
+		addInput( "Cin");
 		addOutput( "R"  , wIn_);
 
 

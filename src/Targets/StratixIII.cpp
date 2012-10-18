@@ -1,14 +1,14 @@
 /*
   A model of Stratix III FPGA (Exact model: FIXME)
 
-  Authors: Florent de Dinechin, Sebastian Banescu, Bogdan Pasca
+  Authors: Florent de Dinechin, Sebastian Banescu, Bogdan Pasca, Matei Istoan
 
   This file is part of the FloPoCo project
   developed by the Arenaire team at Ecole Normale Superieure de Lyon
   
   Initial software.
   Copyright © ENS-Lyon, INRIA, CNRS, UCBL,  
-  2008-2011.
+  2008-2012.
   All rights reserved.
 */
 
@@ -20,30 +20,59 @@
 
 namespace flopoco{
 	
-	double StratixIII::adderDelay(int size) {
-		return (distantWireDelay(10) + fdCtoQ_ + lutDelay() + 
-		((size-3) * fastcarryDelay_) + 
-		((size/almsPerLab_) * (innerLABcarryDelay_- fastcarryDelay_)) + 
-		((size/(almsPerLab_*2)) * (interLABcarryDelay_ - innerLABcarryDelay_)) + 
-		carryInToSumOut_ + ffDelay_); 
+	double StratixIII::adderDelay(int size) 
+	{
+		int subAdd = 0;
+		
+		suggestSubaddSize(subAdd, size);
+		
+		return (
+			lutDelay_ + 
+			((size-ceil((size/almsPerLab_)/2.0)-(size/(2*almsPerLab_))) * fastcarryDelay_) + 
+			(ceil((size/almsPerLab_)/2.0) * innerLABcarryDelay_) + 
+			((size/(2*almsPerLab_)) * interLABcarryDelay_) + 
+			carryInToSumOut_ + 
+			(size/subAdd)  * (ffDelay_ + fdCtoQ_ + elemWireDelay_)
+		);
+	};
+	
+	double StratixIII::adder3Delay(int size) 
+	{
+		int subAdd = 0;
+		
+		suggestSubadd3Size(subAdd, size);
+		
+		return (
+			lutDelay_ +
+			shareOutToCarryOut_ +  
+			((size - 1 - (size/almsPerLab_)) * fastcarryDelay_) + 
+			((size/almsPerLab_) * interLABcarryDelay_) + 
+			carryInToSumOut_ + 
+			(size/subAdd)  * (ffDelay_ + fdCtoQ_ + elemWireDelay_)
+		);
 	};
 	
 	void StratixIII::getAdderParameters(double &k1, double &k2, int size){
-		//TODO
-		//TODO
-		k1 = fdCtoQ_ + lut2_ + muxStoO_ + carryInToSumOut_ + ffDelay_;
-		k2 = double(((size-3) * fastcarryDelay_) + 
-		((size/almsPerLab_) * (innerLABcarryDelay_- fastcarryDelay_)) + 
-		((size/(almsPerLab_*2)) * (interLABcarryDelay_ - innerLABcarryDelay_)))/double(size-1); 
-	}
+		int subAdd = 0;
+		
+		suggestSubaddSize(subAdd, size);
+		
+		k1 = lutDelay_ + carryInToSumOut_;
+		k2 = double(
+						((size-1-ceil((2*size/almsPerLab_)/2.0)-(size/almsPerLab_)) * fastcarryDelay_) + 
+						(ceil((2*size/almsPerLab_)/2.0) * innerLABcarryDelay_) + 
+						((size/almsPerLab_) * interLABcarryDelay_) + 
+						(size/subAdd)  * (ffDelay_ + fdCtoQ_)
+			) / double(size-1); 
+	};
 	
 	double StratixIII::eqComparatorDelay(int size){
-		return adderDelay(size);//FIXME
-	}
+		return adderDelay(size) + elemWireDelay_ + lut2_; // TODO: check correctness
+	};
 	
 	double StratixIII::eqConstComparatorDelay(int size){
-		return adderDelay(size/2); //FIXME
-	}
+		return adderDelay(size/2) + elemWireDelay_ + lut2_; // // TODO: check correctness
+	};
 	
 	double StratixIII::carryPropagateDelay() {
 		return  fastcarryDelay_; 
@@ -83,8 +112,6 @@ namespace flopoco{
 	
 	bool StratixIII::suggestSubmultSize(int &x, int &y, int wInX, int wInY){
 		// (DSP blocks are 36x36 and my be split as 9x9, 12x12 or 18x18)
-		if (getUseHardMultipliers()){
-			
 			x =18;
 			y = 18;
 			return true; //FIXME
@@ -182,75 +209,121 @@ namespace flopoco{
 				x = y = 18;
 				return false;
 			}
-		}else{
-			// TODO functional approximation of multiplier size based on frequency
-			x = y = lutInputs_/2;
-			return true;
-		}
-		
-		// control should never get here
-		return false;
 	}	 
 	
 	bool StratixIII::suggestSubaddSize(int &x, int wIn){
 		
-		//int chunkSize = (int)floor( (1./frequency() - (fdCtoQ_ + lutDelay() + carryInToSumOut_ + ffDelay_ + interLABcarryDelay_)) / carryPropagateDelay()); // 1 if no need for pipeline
 		suggestSlackSubaddSize(x, wIn, 0);
 		
-		//x = chunkSize;		
-		if (x>0) return true;
-		else {
+		if (x>0) 
+			return true;
+		else 
+		{
 			x=1;		
 			return false;
 		} 
 	}
 	
-	bool  StratixIII::suggestSlackSubaddSize(int &x, int wIn, double slack){
+	bool StratixIII::suggestSubadd3Size(int &x, int wIn)
+	{
+		suggestSlackSubadd3Size(x, wIn, 0);
 		
-		float time = 1./frequency() - slack - (distantWireDelay(10) + fdCtoQ_ + lutDelay() + carryInToSumOut_ + ffDelay_);
-		int carryFlag = 0;
+		if (x>0) 
+			return true;
+		else 
+		{
+			x=1;		
+			return false;
+		}
+	};
+	
+	bool  StratixIII::suggestSlackSubaddSize(int &x, int wIn, double slack)
+	{		
+		float time = 1./frequency() - slack - (lutDelay_ + carryInToSumOut_);
 		int chunkSize = 0;
 		
 		while (time > 0)
 		{
 			chunkSize++;
 			
-			if (carryFlag == 0) 
-			{
-				time -= fastcarryDelay_;
-				if (chunkSize % (almsPerLab_*2) == 0)
-					carryFlag = 2;
-				else if (chunkSize % almsPerLab_ == 0)
-					carryFlag = 1;
-				
-			}
-			else if (carryFlag == 1)
+			if ((chunkSize % almsPerLab_ == 0) && (chunkSize % (almsPerLab_*2) != 0))
 			{
 				time -= innerLABcarryDelay_;
-				carryFlag = 0;
-			}	
-			else if (carryFlag == 2)
+			}else if (chunkSize % (almsPerLab_*2) == 0)
 			{
 				time -= interLABcarryDelay_;
-				carryFlag = 0;
+			}else
+			{
+				time -= fastcarryDelay_;
 			}
 		}
-		chunkSize--; // decremented because of the loop condition (time > 0). When exiting the loop the time is negative
+		
+		if(time<0)
+			chunkSize--; // decremented because of the loop condition (time > 0). When exiting the loop the time is negative
 		
 		x = chunkSize;		
-		if (x>0) return true;
-		else {
+		if (x>0)
+		{ 
+			return true;
+		}else 
+		{
 			x=1;		
 			return false;
 		} 
-	}
+	};
+	
+	bool  StratixIII::suggestSlackSubadd3Size(int &x, int wIn, double slack)
+	{
+		float time = 1./frequency() - slack - (lutDelay_ + shareOutToCarryOut_ + carryInToSumOut_);
+		int chunkSize = 1;
+		
+		while (time > 0)
+		{
+			chunkSize++;
+			
+			if (chunkSize % almsPerLab_ == 0)
+			{
+				time -= interLABcarryDelay_;
+			}else
+			{
+				time -= fastcarryDelay_;
+			}
+		}
+		
+		if(time<0)
+			chunkSize--; // decremented because of the loop condition (time > 0). When exiting the loop the time is negative
+		
+		x = chunkSize;		
+		if (x>0)
+		{ 
+			return true;
+		}else 
+		{
+			x=1;		
+			return false;
+		}
+	};
 	
 	bool StratixIII::suggestSlackSubcomparatorSize(int& x, int wIn, double slack, bool constant)
 	{
-		bool succes = true;
+		float time = 1.0/frequency();
+		unsigned int count;
 		
-		x = wIn; //FIXME
-		return succes;
+		while(time > eqComparatorDelay(wIn))
+			count++;
+			
+		if(time < eqComparatorDelay(count))
+			count--;
+		
+		x = count;
+		if (x>0)
+		{ 
+			return true;
+		}else 
+		{
+			x=1;		
+			return false;
+		}
 	}
 	
 	int StratixIII::getIntMultiplierCost(int wInX, int wInY){
@@ -301,27 +374,24 @@ namespace flopoco{
 		return cost/2;
 	}
 	
-	void StratixIII::getDSPWidths(int &x, int &y, bool sign){
-		// set the multiplier width acording to the desired frequency
-		bool widthSet = false;
-		
+	//TODO: give the meaning for sign
+	//		check validity
+	void StratixIII::getDSPWidths(int &x, int &y, bool sign)
+	{ 
+	
 		if (sign == false)
 			x = y = 18;
 		else
 			x = y = 18;
 		
-		//FIXME
-		return;
-		
-		for (int i=0; i<4; i++)
-			if (this->frequency() < 1/multiplierDelay_[i])
+		// set the multiplier width acording to the desired frequency
+		for (int i=0; i<nrConfigs_; i++)
+			if (frequency_ < 1.0/multiplierDelay_[i])
 			{
-				x = y = multiplierWidth_[i];
-				widthSet = true;
+				x = multiplierWidth_[i];
+				y = multiplierWidth_[i];
+				
 			}
-			
-			if (!widthSet) // this happens when the desired freqency is too high
-				x = y = 18;
 	}
 	
 	int StratixIII::getEquivalenceSliceDSP(){

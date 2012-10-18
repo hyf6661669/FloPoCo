@@ -28,14 +28,12 @@
 #include "../Operator.hpp"
 
 #include "FPFMAcc.hpp"
-#include "../IntMultipliers/IntTruncMultiplier.hpp"
+#include "../IntMultiplier.hpp"
 
 
 using namespace std;
 
 namespace flopoco{
-
-	extern vector<Operator*> oplist;
 
 	FPFMAcc::FPFMAcc(Target* target, int wE, int wF, int adderLatency):
 		Operator(target), wE(wE), wF(wF) {
@@ -50,7 +48,7 @@ namespace flopoco{
 		/* Set up the I/O signals of of the entity */
 		addFPInput ("X", wE, wF);
 		addFPInput ("Y", wE, wF);
-		addInput   ("S", 1);
+		addInput("S");
 		addFPOutput("A", wE, wF ); 
 		
 		FPMultiplier *fmt = new FPMultiplier(target, wE, wF, wE, wF, wE, wF);//, 1, 0.6, -1);

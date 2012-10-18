@@ -12,15 +12,33 @@
 #include "FlopocoStream.hpp"
 
 
+/* resource estimation ---------------------------------------- */
+#include "Tools/ResourceEstimationHelper.hpp"
+/* resource estimation ---------------------------------------- */
+
+
+/* floorplanning ---------------------------------------------- */
+#include "Tools/ResourceEstimationHelper.hpp"
+/* floorplanning ---------------------------------------------- */
+
+/* targets ---------------------------------------------------- */
 #include "Target.hpp"
 #include "Targets/DSP.hpp"
+
 #include "Targets/Spartan3.hpp"
 #include "Targets/Virtex4.hpp"
 #include "Targets/Virtex5.hpp"
 #include "Targets/Virtex6.hpp"
+
 #include "Targets/StratixII.hpp"
 #include "Targets/StratixIII.hpp"
 #include "Targets/StratixIV.hpp"
+#include "Targets/StratixV.hpp"
+
+#include "Targets/CycloneII.hpp"
+#include "Targets/CycloneIII.hpp"
+#include "Targets/CycloneIV.hpp"
+#include "Targets/CycloneV.hpp"
 
 /* shifters + lzoc ------------------------------------------- */
 #include "Shifters.hpp"
@@ -31,10 +49,18 @@
 #include "IntAdder.hpp"
 #include "IntDualSub.hpp"
 
+/* General purpose heap of weighted bits  -------------------- */
+#include "BitHeap.hpp"
+#include "WeightedBit.hpp"
+
+
 /* multioperand adders --------------------------------------- */
 #include "IntMultiAdder.hpp"
 #include "IntAddition/IntNAdder.hpp"
 #include "IntAddition/IntCompressorTree.hpp"
+#include "IntAddition/PopCount.hpp"
+#include "IntAddition/BasicCompressor.hpp"
+#include "IntAddition/NewCompressorTree.hpp"
 
 /* comparator(s) --------------------------------------------- */
 #include "IntComparator.hpp"
@@ -56,10 +82,7 @@
 
 /* multiplication-related ------------------------------------ */
 #include "IntMultiplier.hpp"
-#include "IntMultipliers/IntTilingMult.hpp"
-#include "IntMultipliers/SignedIntMultiplier.hpp"
-#include "IntMultipliers/UnsignedIntMultiplier.hpp"
-#include "IntMultipliers/IntTruncMultiplier.hpp"
+#include "FixMultAdd.hpp"
 #include "IntMultipliers/IntKaratsuba.hpp"
 #include "IntSquarer.hpp"
 #include "IntMultipliers/GenericBinaryPolynomial.hpp"
@@ -73,6 +96,8 @@
 #include "IntConstDiv.hpp"
 #include "FPConstDiv.hpp"
 
+
+#include "IntMultipliers/MultiplierBlock.hpp"
 
 /* fixed-point function evaluation---------------------------- */
 #ifndef _WIN32
@@ -93,7 +118,6 @@
 
 //#include "CORDIC/FixMicroRotation.hpp"
 #include "CORDIC/CordicSinCos.hpp"
-#include "CORDIC/CordicSinCosRedIter.hpp"
 #endif
 
 /* floating-point -------------------------------------------- */ 
@@ -129,8 +153,14 @@
 #include "FPPipeline.hpp"
 
 #include "Fix2FP.hpp"
+#include "FP2Fix.hpp"
 #include "InputIEEE.hpp"
 #include "OutputIEEE.hpp"
+
+
+/* Complex arithmetic */
+#include "Complex/FixedComplexAdder.hpp"
+#include "Complex/FixedComplexMultiplier.hpp"
 
 
 /* test-bench related ---------------------------------------- */
@@ -175,6 +205,7 @@ use withing matrix-multiplication scenarios ------------------ */
 /* misc ------------------------------------------------------ */
 #include "Wrapper.hpp"
 #include "UserDefinedOperator.hpp"
+#include "Plotter.hpp"
 
 
 #endif //FLOPOCO_HPP

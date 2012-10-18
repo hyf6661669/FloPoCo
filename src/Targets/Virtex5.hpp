@@ -49,7 +49,38 @@ namespace flopoco{
 			DSPToLogicWireDelay_ = 0.436e-9;
 
 			RAMDelay_ = 1.750e-9; 
-			RAMToLogicWireDelay_ = 0.436e-9; 
+			RAMToLogicWireDelay_ = 0.436e-9;
+
+			hasFastLogicTernaryAdders_ = false;
+			
+			//---------------Floorplanning related----------------------
+			multiplierPosition.push_back(47);
+			multiplierPosition.push_back(51);
+			multiplierPosition.push_back(75);
+			multiplierPosition.push_back(79);
+			
+			memoryPosition.push_back(7);
+			memoryPosition.push_back(19);
+			memoryPosition.push_back(31);
+			memoryPosition.push_back(43);
+			memoryPosition.push_back(55);
+			memoryPosition.push_back(71);
+			memoryPosition.push_back(83);
+			memoryPosition.push_back(95);
+			memoryPosition.push_back(111);
+			
+			topSliceX = 111;
+			topSliceY = 159;
+			
+			lutPerSlice = 4;
+			ffPerSlice = 4;
+			
+			dspHeightInLUT = 3;		// actually 2.5
+			ramHeightInLUT = 5;
+			
+			dspPerColumn = 63;
+			ramPerColumn = 31;
+			//----------------------------------------------------------
 		}
 
 		/** The destructor */
@@ -60,6 +91,7 @@ namespace flopoco{
 		 */
 		double carryPropagateDelay();
 		double adderDelay(int size);
+		double adder3Delay(int size){return 0;}; // currently irrelevant for Xilinx
 		double eqComparatorDelay(int size);
 		double eqConstComparatorDelay(int size);
 		
@@ -80,7 +112,9 @@ namespace flopoco{
 		double distantWireDelay(int n);
 		bool   suggestSubmultSize(int &x, int &y, int wInX, int wInY);
 		bool   suggestSubaddSize(int &x, int wIn);
+		bool   suggestSubadd3Size(int &x, int wIn){return 0;}; // currently irrelevant for Xilinx
 		bool   suggestSlackSubaddSize(int &x, int wIn, double slack);
+		bool   suggestSlackSubadd3Size(int &x, int wIn, double slack){return 0;}; // currently irrelevant for Xilinx
 		bool   suggestSlackSubcomparatorSize(int &x, int wIn, double slack, bool constant);
 		
 		int    getIntMultiplierCost(int wInX, int wInY);

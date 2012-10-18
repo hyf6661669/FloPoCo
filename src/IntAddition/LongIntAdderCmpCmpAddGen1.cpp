@@ -30,7 +30,6 @@
 
 using namespace std;
 namespace flopoco{
-extern vector<Operator*> oplist;
 
 	LongIntAdderCmpCmpAddGen1::LongIntAdderCmpCmpAddGen1(Target* target, int wIn, map<string, double> inputDelays):
 		Operator(target), wIn_(wIn), inputDelays_(inputDelays) 
@@ -42,7 +41,7 @@ extern vector<Operator*> oplist;
 		// Set up the IO signals
 		for (int i=0; i<2; i++)
 			addInput ( join("X",i) , wIn_);
-		addInput ("Cin", 1  );
+		addInput("Cin");
 		addOutput("R"  , wIn_);
 
 		if (verbose){
@@ -258,7 +257,7 @@ exit(1);
 						vhdl << tab << declare (name.str(),cSize[j],true) << " <= X"<<i<<range(high-1,low)<<";"<<endl;
 				}
 			}	
-			vhdl << tab << declare("scIn",1) << " <= Cin;"<<endl;
+			vhdl << tab << declare("scIn") << " <= Cin;"<<endl;
 			
 			int l=1;
 			for (int j=0; j<nbOfChunks; j++){

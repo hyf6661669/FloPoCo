@@ -21,9 +21,9 @@ import fileinput
 
 
 test_cases_per_combination = 1000
-useModelSim=False # if True, use modelsim; if False, use ghdl
+useModelSim=False #False # if True, use modelsim; if False, use ghdl
 testBench = "TestBenchFile"   #one of TestBench or TestBenchFile
-timeUntilDiscardTest = 5
+timeUntilDiscardTest = 50
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -151,8 +151,8 @@ if __name__ == '__main__':
 														
 							while ((not finished) and (did_compile) and (not timeUp)):
 								currentTime = time.clock()	
-								print "the start time was:" + str(startTime)
-								print "the currentTime time was" + str(currentTime)
+								#print "the start time was:" + str(startTime)
+								#print "the currentTime time was" + str(currentTime)
 								if (currentTime - startTime > float(timeUntilDiscardTest)):
 									timeUp = True
 									
@@ -221,7 +221,7 @@ if __name__ == '__main__':
 							logfile.write(cmd+"\n")
 							print(cmd)
 							try:
-								status=subprocess.check_output(cmd,shell=True)
+								status=subprocess.check_output(cmd,stderr=subprocess.STDOUT,shell=True)
 							except subprocess.CalledProcessError, e:
 								errorstring=e.output
 								if string.find(errorstring, "Incorrect") !=-1:
@@ -230,7 +230,7 @@ if __name__ == '__main__':
 									logfile.write(errorstring+"\n")
 									pass_test=False
 
-							subprocess.call("rm *.vcd e~testbench* testbench*", shell=True)
+							subprocess.call("rm *.vcd e~testbench* testbench* *.svg", shell=True)
 
 					pass_test = pass_test and did_generate_vhdl
 					res.append([run_cmd, `did_generate_vhdl`, `did_compile`, `pass_test`])

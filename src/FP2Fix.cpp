@@ -29,17 +29,22 @@
 #include <stdio.h>
 #include <mpfr.h>
 
+#include "Shifters.hpp"
+
 using namespace std;
 
 namespace flopoco{
 
-   extern vector<Operator*> oplist;
-
 #define DEBUGVHDL 0
 
 
-   FP2Fix::FP2Fix(Target* target, int LSB, int MSB, int Signed,int wE, int wF, bool trunc_p) :
-         Operator(target) {
+   FP2Fix::FP2Fix(Target* target, int _LSBO, int _MSBO, int _Signed,int _wEI, int _wFI, bool _trunc_p) :
+         Operator(target), wEI(_wEI), wFI(_wFI), Signed(_Signed), LSBO(_LSBO), MSBO(_MSBO), trunc_p(_trunc_p) {
+
+      int MSB=MSBO;
+      int LSB=LSBO;
+      Shifter*FXP_shifter;
+      IntAdder* Exponent_difference;
 
       ostringstream name;
 
@@ -47,17 +52,21 @@ namespace flopoco{
          cerr << " FP2Fix: Input constraint LSB <= MSB not met."<<endl;
          exit (EXIT_FAILURE);
       }
+      if(LSB<0 && -LSB > wFI){
+         cerr << " FP2Fix: Input constraint -LSB <= wFI not met."<<endl;
+         exit (EXIT_FAILURE);
+      }
 
-      int wFX = MSB - LSB + 1;
-      mpz_class maxExpWE = mpz_class(1)<<(wE-1);
+      int wFO = MSB - LSB + 1;
+      mpz_class maxExpWE = mpz_class(1)<<(wEI-1);
       mpz_class minExpWE = 1 - maxExpWE;
 
       int eMax = static_cast<int>(maxExpWE.get_si()) - 1;
-      int wFX0;
+      int wFO0;
       if(eMax+1 < MSB + 1)
-         wFX0 = eMax + 1 - LSB;
+         wFO0 = eMax + 1 - LSB;
       else
-         wFX0 = MSB + 1 - LSB;
+         wFO0 = MSB + 1 - LSB;
 
       if (( maxExpWE < MSB ) || ( minExpWE > LSB)){
          cerr << " The exponent is too small for full coverage. Try increasing the exponent !"<<endl;
@@ -65,113 +74,137 @@ namespace flopoco{
       }
       int absMSB = MSB>=0?MSB:-MSB;
       int absLSB = LSB>=0?LSB:-LSB;
-      name<<"FP2Fix_"<< (LSB<0?"M":"")<<absLSB<<"_"<<(MSB<0?"M":"")<<absMSB <<"_"<< (Signed==1?"S":"US") << "_" <<wE<<"_"<<wF;
+      name<<"FP2Fix_" << wEI << "_" << wFI << (LSB<0?"M":"") << "_" << absLSB << "_" << (MSB<0?"M":"") << absMSB <<"_"<< (Signed==1?"S":"US") << "_" << (trunc_p==1?"T":"NT");
       setName(name.str());
 
-      setCopyrightString("Fabrizio Ferrandi (2011)");
+      setCopyrightString("Fabrizio Ferrandi (2012)");
 
       /* Set up the IO signals */
 
-      addFPInput ("I", wE,wF);
+      addFPInput ("I", wEI,wFI);
       addOutput ("O", MSB-LSB+1);
 
       /*	VHDL code description	*/
-      vhdl << tab << declare("neA0",wE) << " <= not I" << range(wE+wF-1,wF) << ";"<<endl;
-      mpz_class tobeshiftedof;
-      if(eMax < MSB)
-         tobeshiftedof = eMax + eMax;
-      else
-         tobeshiftedof = eMax+MSB;
-      vhdl << tab << declare("tobeshiftedof",wE) << " <= conv_std_logic_vector(" << tobeshiftedof << ", "<< wE<<");"<<endl;
+      vhdl << tab << declare("eA0",wEI) << " <= I" << range(wEI+wFI-1,wFI) << ";"<<endl;
+      vhdl << tab << declare("fA0",wFI+1) << " <= \"1\" & I" << range(wFI-1, 0)<<";"<<endl;
+      mpz_class bias;
+      bias = eMax - 1;
+      vhdl << tab << declare("bias",wEI) << " <= not conv_std_logic_vector(" << bias << ", "<< wEI<<");"<<endl;
 
-      Exponent_difference = new IntAdder(target, wE);
+      Exponent_difference = new IntAdder(target, wEI);
       Exponent_difference->changeName(getName()+"Exponent_difference");
       oplist.push_back(Exponent_difference);
-      inPortMap  (Exponent_difference, "X", "tobeshiftedof");
-      inPortMap  (Exponent_difference, "Y", "neA0");
+      inPortMap  (Exponent_difference, "X", "bias");
+      inPortMap  (Exponent_difference, "Y", "eA0");
       inPortMapCst(Exponent_difference, "Cin", "'1'");
       outPortMap (Exponent_difference, "R","eA1");
       vhdl << instance(Exponent_difference, "Exponent_difference");
+      
+      setCycleFromSignal("eA1");
+      setCriticalPath(Exponent_difference->getOutputDelay("R"));
 
-      setCycleFromSignal("Exponent_differenceS");
-
-      if (wF+1 < wFX0+2)
-      {
-         vhdl << tab << declare("fA0",wFX0+2) << " <= \"1\" & I" << range(wF-1, 0) << " & " << rangeAssign(wFX0-wF,0,"'0'")<<";"<<endl;
-      }
+      
+      manageCriticalPath(target->localWireDelay() + target->lutDelay());
+      int wShiftIn = intlog2(wFO0+2);
+      if(wShiftIn < wEI)
+        vhdl << tab << declare("shiftedby", wShiftIn) <<  " <= eA1" << range(wShiftIn-1, 0)                 << " when eA1" << of(wEI-1) << " = '0' else " << rangeAssign(wShiftIn-1,0,"'0'") << ";"<<endl;
       else
-      {
-         vhdl << tab << declare("fA0",wFX0+2) << range(wFX0+1,1) << " <= \"1\" & I" << range(wF-1, wF-wFX0) << ";" << endl;
-         vhdl << tab << "fA0" << of(0) << " <= '0' when I" << range(wF-wFX0-1, 0) << " = " << rangeAssign(wF-wFX0-1,0,"'0'") << " else '1';"<<endl;
-      }
+        vhdl << tab << declare("shiftedby", wShiftIn) <<  " <= " << rangeAssign(wShiftIn-wEI,0,"'0'") << " & eA1 when eA1" << of(wEI-1) << " = '0' else " << rangeAssign(wShiftIn-1,0,"'0'") << ";"<<endl;
+
       //FXP shifter mappings
-      FXP_shifter = new FXP_Shift(target, wE, wFX0);
+      FXP_shifter = new Shifter(target, wFI+1, wFO0+2, Shifter::Left);
       oplist.push_back(FXP_shifter);
 
-      inPortMap (FXP_shifter, "fA", "fA0");
-      inPortMap (FXP_shifter, "n", "eA1");
-      outPortMap (FXP_shifter, "fR", "fA1");
+      inPortMap (FXP_shifter, "X", "fA0");
+      inPortMap (FXP_shifter, "S", "shiftedby");
+      outPortMap (FXP_shifter, "R", "fA1");
       vhdl << instance(FXP_shifter, "FXP_shifter");
 
-      syncCycleFromSignal("FXP_shifter");
+      syncCycleFromSignal("fA1");
+      setCriticalPath(FXP_shifter->getOutputDelay("R"));
 
       if(trunc_p)
       {
-         vhdl << tab << declare("fA2",wFX+1) <<  "<= " << rangeAssign(wFX-wFX0,0,"'0'") << " & fA1" << range(wFX0+1, 2)<< ";"<<endl;
+         if(Signed == 0)
+         {
+            vhdl << tab << declare("fA4",wFO) <<  "<= fA1" << range(wFO0+wFI+LSB, wFI+1+LSB)<< ";"<<endl;
+         }
+         else
+         {
+            vhdl << tab << declare("fA2",wFO) <<  "<= fA1" << range(wFO0+wFI+LSB, wFI+1+LSB)<< ";"<<endl;
+            manageCriticalPath(target->localWireDelay() + target->adderDelay(wFO));
+            vhdl << tab << declare("fA4",wFO) <<  "<= fA2 when I" << of(wEI+wFI) <<" = '0' else -signed(fA2);" <<endl;
+         }
       }
       else
       {
-         vhdl << tab << declare("round",1) << " <= fA1(1) and (fA1(2) or fA1(0));"<<endl;
-
-         vhdl << tab << declare("fA2a",wFX+1) <<  "<= " << rangeAssign(wFX-wFX0,0,"'0'") << " & fA1" << range(wFX0+1, 2)<< ";"<<endl;
-         vhdl << tab << declare("fA2b",wFX+1) <<  "<= " << rangeAssign(wFX,1,"'0'") << " & round;"<<endl;
-         MantSum = new IntAdder(target, wFX+1);
+         vhdl << tab << declare("fA2a",wFO+1) <<  "<= '0' & fA1" << range(wFO0+wFI+LSB, wFI+1+LSB)<< ";"<<endl;
+         IntAdder* MantSum;
+         if(Signed == 0)
+         {
+            manageCriticalPath(target->localWireDelay() + target->lutDelay());
+            vhdl << tab << declare("notallzero") << " <= '0' when fA1" << range(wFI+LSB-1, 0) << " = " << rangeAssign(wFI+LSB-1, 0,"'0'") << " else '1';"<<endl;
+            vhdl << tab << declare("round") << " <= fA1" << of(wFI+LSB) << " and notallzero ;"<<endl;
+         }
+         else
+         {
+            manageCriticalPath(target->localWireDelay() + target->lutDelay());
+            vhdl << tab << declare("notallzero") << " <= '0' when fA1" << range(wFI+LSB-1, 0) << " = " << rangeAssign(wFI+LSB-1, 0,"'0'") << " else '1';"<<endl;
+            vhdl << tab << declare("round") << " <= (fA1" << of(wFI+LSB) << " and I" << of(wEI+wFI) << ") or (fA1" << of(wFI+LSB) << " and notallzero and not I" << of(wEI+wFI) << ");"<<endl;
+         }   
+         vhdl << tab << declare("fA2b",wFO+1) <<  "<= '0' & " << rangeAssign(wFO-1,1,"'0'") << " & round;"<<endl;
+         MantSum = new IntAdder(target, wFO+1);
          MantSum->changeName(getName()+"MantSum");
          oplist.push_back(MantSum);
          inPortMap  (MantSum, "X", "fA2a");
          inPortMap  (MantSum, "Y", "fA2b");
          inPortMapCst(MantSum, "Cin", "'0'");
-         outPortMap (MantSum, "R","fA2");
+         outPortMap (MantSum, "R","fA3");
          vhdl << instance(MantSum, "MantSum");
-
-         setCycleFromSignal("MantSumS");
+         setCycleFromSignal("fA3");
+         setCriticalPath(MantSum->getOutputDelay("R"));
+         if(Signed == 0)
+         {
+            vhdl << tab << declare("fA4",wFO) <<  "<= fA3" << range(wFO-1, 0)<< ";"<<endl;
+         }
+         else
+         {
+            manageCriticalPath(target->localWireDelay() + target->adderDelay(wFO+1));
+            vhdl << tab << declare("fA3b",wFO+1) <<  "<= -signed(fA3);" <<endl;
+            manageCriticalPath(target->localWireDelay() + target->lutDelay());
+            vhdl << tab << declare("fA4",wFO) <<  "<= fA3" << range(wFO-1, 0) << " when I" << of(wEI+wFI) <<" = '0' else fA3b" << range(wFO-1, 0) << ";" <<endl;
+         }
       }
-      if (eMax+1 > MSB+1)
+      if (eMax > MSB)
       {
-         vhdl << tab << declare("overFl0",1) << "<= '1' when I" << range(wE+wF-1,wF) << " > conv_std_logic_vector("<< eMax+MSB << "," << wE << ") else I" << of(wE+wF+2)<<";"<<endl;
+         vhdl << tab << declare("overFl0") << "<= '1' when I" << range(wEI+wFI-1,wFI) << " > conv_std_logic_vector("<< eMax+MSB << "," << wEI << ") else I" << of(wEI+wFI+2)<<";"<<endl;
       }
       else
       {
-         vhdl << tab << declare("overFl0",1) << "<= I" << of(wE+wF+2)<<";"<<endl;
+         vhdl << tab << declare("overFl0") << "<= I" << of(wEI+wFI+2)<<";"<<endl;
       }
-      vhdl << tab << declare("overFl1",1) << " <= fA2" << of(wFX) << " or fA2" << of(wFX-1)<<";"<<endl;
-      if (minExpWE < LSB)
-         vhdl << tab << declare("undrFl0",1) << " <= '1' when I" << range(wE+wF-1,wF) << " < conv_std_logic_vector(" << eMax+LSB-1 << "," << wE <<
-               ") else not (I" << of (wE+wF+2) << " or I" << of(wE+wF+1) << ");" << endl;
+      
+      if(trunc_p)
+      {
+         if(Signed == 0)
+            vhdl << tab << declare("overFl1") << " <= fA1" << of(wFO0+wFI+1+LSB) << ";"<<endl;
+         else
+         {
+            manageCriticalPath(target->localWireDelay() + target->lutDelay());
+            vhdl << tab << declare("overFl1") << " <= fA4" << of(wFO-1) << " xor I" << of(wEI+wFI) << ";"<<endl;
+         }
+      }
       else
-         vhdl << tab << declare("undrFl0",1) << " <= not (I" << of (wE+wF+2) << " or I" << of(wE+wF+1) << ");" << endl;
-      vhdl << tab << declare("fA3", wFX) << of(0) << " <= fA2" << of(0) << " xor I" << of(wE+wF) << ";" << endl;
-      for(int i=1; i < wFX; ++i)
-         vhdl << tab << "fA3" << of(i) << " <= fA2" << of(i) << " xor I" << of(wE+wF) << ";" << endl;
-      vhdl << tab << declare("fA3b", wFX) << " <= " << rangeAssign(wFX-1,1,"'0'") << " & I(" << wE+wF << ");" << endl;
+      {
+         vhdl << tab << declare("overFl1") << " <= fA3" << of(wFO) << ";"<<endl;
+      }
 
-      MantSum2 = new IntAdder(target, wFX);
-      MantSum2->changeName(getName()+"MantSum2");
-      oplist.push_back(MantSum2);
-      inPortMap  (MantSum2, "X", "fA3");
-      inPortMap  (MantSum2, "Y", "fA3b");
-      inPortMapCst(MantSum2, "Cin", "'0'");
-      outPortMap (MantSum2, "R","fA4");
-      vhdl << instance(MantSum2, "MantSum2");
+      manageCriticalPath(target->localWireDelay() + target->lutDelay());
+      vhdl << tab << declare("eTest") << " <= (overFl0 or overFl1);" << endl;
 
-      setCycleFromSignal("MantSum2S");
-
-      vhdl << tab << declare("eTest",2) << " <= (overFl0 or overFl1) & undrFl0;" << endl;
-
-      vhdl << tab << "with eTest select" << endl;
-      vhdl << tab << tab << "O <= " << rangeAssign(wFX-1,0,"'0'") << " when \"01\"," << endl;
-      vhdl << tab << tab << "I" << of(wE+wF) << " & (" << wFX-2 << " downto 0 => not I" << of(wE+wF) << ") when \"10\","<<endl;
-      vhdl << tab << tab << "fA4 when others;"<<endl;
+      manageCriticalPath(target->localWireDelay() + target->lutDelay());
+      vhdl << tab << "O <= fA4 when eTest = '0' else" << endl;
+      vhdl << tab << tab << "I" << of(wEI+wFI) << " & (" << wFO-2 << " downto 0 => not I" << of(wEI+wFI) << ");"<<endl;
    }
 
 
@@ -181,11 +214,62 @@ namespace flopoco{
 
    void FP2Fix::emulate(TestCase * tc)
    {
-      // TODO
-   }
+      /* Get I/O values */
+      mpz_class svI = tc->getInputValue("I");
+      FPNumber  fpi(wEI, wFI, svI);
+      mpfr_t i;
+      mpfr_init2(i, 1+wFI);
+      fpi.getMPFR(i);
+      //std::cerr << "FP " << printMPFR(i, 100) << std::endl;
+      mpz_class svO;
+      
+      mpfr_t cst, tmp2;
+      mpfr_init2(cst, 10000); //init to infinite prec
+      mpfr_init2(tmp2, 10000); //init to infinite prec
+      mpfr_set_ui(cst, 2 , GMP_RNDN);
+      mpfr_set_si(tmp2, -LSBO , GMP_RNDN);
+      mpfr_pow(cst, cst, tmp2, GMP_RNDN);
+      mpfr_mul(i, i, cst, GMP_RNDN);
 
+      if(trunc_p)
+         mpfr_get_z(svO.get_mpz_t(), i, GMP_RNDZ);
+      else
+         mpfr_get_z(svO.get_mpz_t(), i, GMP_RNDN);
+      
+      if (Signed != 0)
+      {
+         mpz_class tmpCMP = (mpz_class(1)  << (MSBO-LSBO))-1;
+         if (svO > tmpCMP){ //negative number 
+            mpz_class tmpSUB = (mpz_class(1) << (MSBO-LSBO+1));
+            svO = svO - tmpSUB;
+	 }
+      }
+      //std::cerr << "FIX " << svO << std::endl;
+      tc->addExpectedOutput("O", svO);
+      // clean-up
+      mpfr_clears(i,cst, tmp2, NULL);
+  }
+  
+  TestCase* FP2Fix::buildRandomTestCase(int i)
+  {
+     TestCase *tc;
+     mpz_class a;
+     tc = new TestCase(this); 
+     mpz_class e = (getLargeRandom(wEI+wFI) % (MSBO+(Signed?0:1))); // Should be between 0 and MSBO+1/0
+     mpz_class normalExn = mpz_class(1)<<(wEI+wFI+1);
+     mpz_class bias = ((1<<(wEI-1))-1);
+     mpz_class sign = Signed ? getLargeRandom(1) : 0;
+     e = bias + e;
+     a = getLargeRandom(wFI) + (e << wFI) + (sign << wFI+wEI) + normalExn;
+     tc->addInput("I", a);
+     /* Get correct outputs */
+     emulate(tc);
+     return tc;		
+   }
+   
 
    void FP2Fix::buildStandardTestCases(TestCaseList* tcl){
+	   // please fill me with regression tests or corner case tests!
 
    }
 

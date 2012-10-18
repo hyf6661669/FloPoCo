@@ -28,7 +28,6 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 using namespace std;
 
 namespace flopoco {
-	extern vector<Operator*> oplist;
 	
 	IntAdderShortLatency::IntAdderShortLatency ( Target* target, int wIn, map<string, double> inputDelays, int optimizeType, bool srl) :
 	IntAdder ( target, wIn, inputDelays, true ), wIn_ ( wIn ), shortLatencyInputRegister ( 0 ) {
@@ -42,7 +41,7 @@ namespace flopoco {
 		// Set up the IO signals
 		addInput ( "X"  , wIn_, true );
 		addInput ( "Y"  , wIn_, true );
-		addInput ( "Cin", 1 );
+		addInput( "Cin");
 		addOutput ( "R"  , wIn_, 1 , true );
 		
 		vhdl << tab << "--ShortLatency"<<endl;
@@ -80,7 +79,7 @@ namespace flopoco {
 						low+=cSize[k];
 					vhdl << tab << declare ( name.str(),cSize[j]+1 ) << " <=  \"0\" & "<< ( i==0?"X":"Y" ) <<range ( high-1,low ) <<";"<<endl;
 				}
-				vhdl << tab << declare ( "scIn",1 ) << " <= Cin;"<<endl;
+				vhdl << tab << declare( "scIn") << " <= Cin;"<<endl;
 				
 				//				if (shortLatencyInputRegister ==1)
 				//					nextCycle();///////////////////
@@ -439,7 +438,7 @@ namespace flopoco {
 		double tSelect = target->lutDelay() + target->localWireDelay();
 		
 		double k1,k2;
-		target->getAdderParameters ( k1,k2,wIn );
+		target->getAdderParameters ( k1,k2,wIn );  /* adder delay is modeled as d = k1 + (w-1)k2 */
 		target->suggestSlackSubaddSize ( alpha0, wIn, tSelect );
 		int alpha;
 		target->suggestSubaddSize ( alpha,wIn );

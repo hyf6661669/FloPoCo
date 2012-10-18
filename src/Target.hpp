@@ -23,10 +23,13 @@
 
 #include "Targets/DSP.hpp"
 #include <string>
+#include <vector>
 
 using namespace std;
 
 namespace flopoco{
+
+	class Operator;
 
 
 	/** Abstract target Class. All classes which model real chips inherit from this class */
@@ -40,12 +43,19 @@ namespace flopoco{
 			pipeline_          = true;
 			lutInputs_         = 4;
 			frequency_         = 400000000.;
-			useHardMultipliers_= true;
+			hasHardMultipliers_= true;
+			hasFastLogicTernaryAdders_ = false;
 			id_                = "generic";
 		}
 	
 		/** The destructor */
 		virtual ~Target() {}
+
+
+
+		vector<Operator*> * getGlobalOpListRef(){
+			return & globalOpList;
+		}
 
 		/** Returns ID of instantiated target. This ID is represented by the name
 		 * @return the ID
@@ -80,6 +90,13 @@ namespace flopoco{
 		 * @param[in] wIn the widths of X and Y
 		 */
 		virtual bool suggestSubaddSize(int &x, int wIn)=0; 	
+		
+		/** Function for determining the ternary subadition sizes so that the design is able 
+		 * to function at a desired frequency ( addition is considerd X + Y +Z )
+		 * @param[in,out] x the size of the subaddition for x and y and z
+		 * @param[in] wIn the widths of X and Y and Z
+		 */
+		virtual bool suggestSubadd3Size(int &x, int wIn)=0; 	
 
 		/** Function for determining the subadition sizes so that the design is able 
 		 * to function at a desired frequency ( addition is considerd X + Y )
@@ -88,6 +105,14 @@ namespace flopoco{
 		 * @param[in] slack the time delay consumed out of the input period 
 		 */
 		virtual bool   suggestSlackSubaddSize(int &x, int wIn, double slack)=0;
+		
+		/** Function for determining the ternary subadition sizes so that the design is able 
+		 * to function at a desired frequency ( addition is considerd X + Y + Z )
+		 * @param[in,out] x the size of the subaddition for x and y and z
+		 * @param[in] wIn the widths of X and Y and Z
+		 * @param[in] slack the time delay consumed out of the input period 
+		 */
+		virtual bool   suggestSlackSubadd3Size(int &x, int wIn, double slack)=0;
 
 		/** Function for determining the subcomparator sizes so that the design is able 
 		* to function at a desired frequency 
@@ -115,7 +140,7 @@ namespace flopoco{
 		virtual double ffDelay() =0;
 	
 		/** Function which returns the carry propagate delay
-		 * @return the carry propagate dealy
+		 * @return the carry propagate delay
 		 */
 		virtual double carryPropagateDelay() =0;
 
@@ -124,6 +149,13 @@ namespace flopoco{
 		 * @return the addition delay for an n bit addition
 		 */
 		virtual double adderDelay(int n) =0;
+		
+		/** Function which returns addition delay for an n bit ternary addition
+		 * NOTE: only relevant for architectures supporting native ternary addition
+		 * @param n the number of bits of the addition (n-bit + n-bit + n-bit )
+		 * @return the addition delay for an n bit ternary addition
+		 */
+		virtual double adder3Delay(int n) =0;
 
 		/** Function which returns the delay for an n bit equality comparison 
 		* @param n the number of bits of the comparisson
@@ -217,10 +249,12 @@ namespace flopoco{
 		virtual int getNumberOfDSPs() = 0;
 	
 		/** Function which returns the maximum widths of the operands of a DSP
-		 * @return widths
+		 * @return widths with x>y
 		 */
 		virtual void getDSPWidths(int &x, int &y, bool sign = false) = 0;
-	
+
+
+		/** adder delay is modeled as d = k1 + (size-1)k2 */
 		virtual void getAdderParameters(double &k1, double &k2, int size) = 0;
 
 		// Methods related to target behaviour and performance
@@ -258,15 +292,23 @@ namespace flopoco{
 		 */	
 		void setFrequency(double f);
 
-		/** Sets the use of hardware multipliers 
-		 * @param v use or not harware multipliers
-		 */
-		void setUseHardMultipliers(bool v);
+		 /** Sets the use of hardware multipliers 
+		  * @param v use or not harware multipliers
+		  */
+		 void setUseHardMultipliers(bool v);
 
 		/** Returns true if the operator for this target is allowed to use hardware multipliers
 		 * @return the status of hardware multipliers usage
 		 */
-		bool getUseHardMultipliers(); 
+		bool hasHardMultipliers();
+
+		/** Returns true if the target has fast ternary adders in the logic blocks
+		 * @return the status of the hasFastLogicTernaryAdder_ parameter
+		 */ 
+		bool hasFastLogicTernaryAdders();	
+		
+		/** Returns true if it is worth using hard multipliers for implementing a multiplier of size wX times wY */
+		bool worthUsingDSP(int wX, int wY);
 
 		/** Function which returns the number of LUTs needed to implement
 		 *	 a multiplier of the given width
@@ -286,6 +328,257 @@ namespace flopoco{
 	
 		/** Constructs a specific DSP to each target */
 		virtual DSP* createDSP() = 0;
+		
+		
+		/*------------ Resource Estimation - target specific ---------*/
+		/*------------------------------------------------------------*/
+		
+		/**
+		 * NOTE: These functions return values that are specific 
+		 * to the target FPGA. If the results are not satisfactory, 
+		 * the class that implements Target can just as well override 
+		 * the functions to provide better ones.
+		 */
+		
+		
+		/**
+		 * Determine whether a LUT can be split to implement multiple 
+		 * independent functions. The decision is taken based on the type 
+		 * of LUT being added (currently the type is the number of inputs 
+		 * of the LUT).
+		 * @param nrInputs the number of inputs of the LUT being added
+		 * @return whether the LUTs in the specific architecture can/cannot 
+		 * be split to perform multiple independent functions
+		 */
+		virtual bool lutSplitInputs(int nrInputs);
+		
+		/**
+		 * Determine whether the DSP can be used to implement multiple
+		 * independent multiplications. The decision is taken based on 
+		 * the target FPGA's characteristics.
+		 * @return whether or not the specific architecture can be use a
+		 * DSP block to implement several independent multiplications
+		 */
+		virtual bool dspSplitMult();
+		
+		/**
+		 * The DSP can house several independent multiplications, so this
+		 * function determines the required number of DSPs for creating
+		 * @count multipliers having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the multiplier
+		 * @param widthY the width of the second input to the multiplier
+		 * @return the number of required DSP blocks
+		 */
+		virtual double getMultPerDSP(int widthX, int widthY);
+		
+		/**
+		 * Determine the required number of LUTs for creating
+		 * @count multipliers having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the multiplier
+		 * @param widthY the width of the second input to the multiplier
+		 * @return the number of required LUTs
+		 */
+		virtual double getLUTPerMultiplier(int widthX, int widthY);
+		
+		/**
+		 * Determine the required number of FFs for creating
+		 * @count multipliers having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the multiplier
+		 * @param widthY the width of the second input to the multiplier
+		 * @return the number of required FFs
+		 */
+		virtual double getFFPerMultiplier(int widthX, int widthY);
+		
+		/**
+		 * Determine the required number of LUTs for creating @count
+		 * adders/subtracters having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the adder
+		 * @param widthY the width of the second input to the adder
+		 * @return the number of required LUTs
+		 */
+		virtual double getLUTPerAdderSubtracter(int widthX, int widthY);
+		
+		/**
+		 * Determine the required number of FFs for creating @count
+		 * adders/subtracters having the inputs of widths @widthX and
+		 * @widthY, respectively.
+		 * @param widthX the width of the first input to the adder
+		 * @param widthY the width of the second input to the adder
+		 * @return the number of required FFs
+		 */
+		virtual double getFFPerAdderSubtracter(int widthX, int widthY);
+		
+		/**
+		 * Determine the number of words in a memory block that has the
+		 * width given by the @width parameter. Memory blocks can have 
+		 * multiple configurations, according to the required width and 
+		 * depth. This function is useful for further determining the 
+		 * necessary memory blocks.
+		 * @param width the width of the memory words in bits
+		 * @return the standard number of words per block
+		 */
+		virtual int wordsPerBlock(int width);
+		
+		/**
+		 * Determine the depth of the shift register, according to the 
+		 * required depth, given by the @depth parameter. Shift registers 
+		 * can be configured to different depths on the target FPGA, thus 
+		 * allowing the use of several SRLs with less resources.
+		 * @param depth the required depth of the shift registers
+		 * @return the default depth for a shift register, best suiting 
+		 * a shift register of @depth depth
+		 */
+		virtual int getSRLDepth(int depth);
+		
+		/**
+		 * Determine the required number of LUTs for a shift register 
+		 * having the depth given by the @depth parameter. The number of
+		 * LUTs depends on the target FPGA. A return value of 0 symbolizes
+		 * that no LUTs are used to build a SRL of the given depth on the
+		 * target FPGA.
+		 * @param depth the required depth of the shift register
+		 * @return the number of LUTs required for creating a shift 
+		 * register of depth @depth; return value of 0 means that the 
+		 * resource is not required
+		 */
+		virtual double getLUTPerSRL(int depth);
+		
+		/**
+		 * Determine the required number of FFs for a shift register 
+		 * having the depth given by the @depth parameter. The number of
+		 * FFs depends on the target FPGA. A return value of 0 symbolizes
+		 * that no FFs are used to build a SRL of the given depth on the
+		 * target FPGA.
+		 * @param depth the required depth of the shift register
+		 * @return the number of FFs required for creating a shift 
+		 * register of depth @depth; return value of 0 means that the 
+		 * resource is not required
+		 */
+		virtual double getFFPerSRL(int depth);
+		
+		/**
+		 * Determine the required number of RAM elements for a shift 
+		 * register having the depth given by the @depth parameter. The 
+		 * number of RAM elements depends on the target FPGA. A return 
+		 * value of 0 symbolizes that no RAM elements are used to build 
+		 * a SRL of the given depth on the target FPGA.
+		 * @param depth the required depth of the shift register
+		 * @return the number of RAM elements required for creating a 
+		 * shift register of depth @depth; return value of 0 means that 
+		 * the resource is not required
+		 */
+		virtual double getRAMPerSRL(int depth);
+		
+		/**
+		 * Determine the required number of LUTs for a multiplexer having 
+		 * @nrInputs inputs. The number of LUTs depends on the target
+		 * FPGA (the function generator architecture and other available 
+		 * resources on the chip might influence the resource count).
+		 */
+		virtual double getLUTFromMux(int nrInputs);
+		
+		/**
+		 * Determine the required number of LUTs for a counter having a
+		 * bitwidth of @width bits. The number of LUTs can vary according 
+		 * to the properties of the FPGA and the width of the counter.
+		 * This function computes a factor that symbolizes the ratio of
+		 * LUTs per counter bits.
+		 * @param width the width of the counter
+		 * @return the ratio of LUTs per counter bits
+		 */
+		virtual double getLUTPerCounter(int width);
+		
+		/**
+		 * Determine the required number of FFs for a counter having a
+		 * bitwidth of @width bits. The number of FFs can vary according 
+		 * to the properties of the FPGA and the width of the counter.
+		 * This function computes a factor that symbolizes the ratio of
+		 * FFs per counter bits.
+		 * @param width the width of the counter
+		 * @return the ratio of LUTs per counter bits
+		 */
+		virtual double getFFPerCounter(int width);
+		
+		/**
+		 * Determine the required number of LUTs for an accumulator having a
+		 * bitwidth of @width bits. The number of LUTs can vary according 
+		 * to the properties of the FPGA, the width of the accumulator and 
+		 * the use of DSP blocks.
+		 * This function computes a factor that symbolizes the ratio of
+		 * LUTs per accumulator bits.
+		 * @param width the width of the counter
+		 * @return the ratio of LUTs per counter bits
+		 */
+		virtual double getLUTPerAccumulator(int width, bool useDSP);
+		
+		/**
+		 * Determine the required number of FFs for an accumulator having a
+		 * bitwidth of @width bits. The number of FFs can vary according 
+		 * to the properties of the FPGA, the width of the accumulator and 
+		 * the use of DSP blocks.
+		 * This function computes a factor that symbolizes the ratio of
+		 * FFs per accumulator bits.
+		 * @param width the width of the counter
+		 * @return the ratio of FFs per counter bits
+		 */
+		virtual double getFFPerAccumulator(int width, bool useDSP);
+		
+		/**
+		 * Determine the required number of DSPs for an accumulator having a
+		 * bitwidth of @width bits. The number of DSPs can vary according 
+		 * to the properties of the FPGA and the width of the accumulator.
+		 * This function computes a factor that symbolizes the ratio of
+		 * DSPs per accumulator bits.
+		 * @param width the width of the counter
+		 * @return the ratio of DSPs per counter bits
+		 */
+		virtual double getDSPPerAccumulator(int width);
+		
+		/**
+		 * Determine the required number of LUTs for a decoder having a
+		 * bitwidth of @width bits. The number of LUTs can vary according 
+		 * to the properties of the FPGA, the width of the decoder.
+		 * This function computes a factor that symbolizes the ratio of
+		 * LUTs per decoder bits.
+		 * @param width the width of the decoder
+		 * @return the ratio of LUTs per decoder bits
+		 */
+		virtual double getLUTPerDecoder(int width);
+		
+		/**
+		 * Determine the required number of FFs for a decoder having a
+		 * bitwidth of @width bits. The number of FFs can vary according 
+		 * to the properties of the FPGA, the width of the decoder.
+		 * This function computes a factor that symbolizes the ratio of
+		 * FFs per decoder bits.
+		 * @param width the width of the decoder
+		 * @return the ratio of FFs per decoder bits
+		 */
+		virtual double getFFPerDecoder(int width);
+		/*------------------------------------------------------------*/
+		
+		
+		/*------------ Floorplanning Related Items -------------------*/
+		/**
+		 * NOTE: These variables should be set for each different FPGA 
+		 * architecture, in their corresponding constructor.
+		 */
+		vector<int> multiplierPosition;			/**< The position of the columns of multipliers. The Position represents the neighboring LUT column, on the left. */
+		vector<int> memoryPosition;				/**< The position of the columns of memories. The Position represents the neighboring LUT column, on the left. */
+		int topSliceX;							/**< The x coordinate of the top right slice. */
+		int topSliceY;							/**< The y coordinate of the top right slice. */
+		int lutPerSlice;						/**< The number of function generators per slice. */
+		int ffPerSlice;							/**< The number of registers per slice. */
+		int dspHeightInLUT;						/**< The height of a DSP cell, expressed using the height of one LUT as unit of measure */
+		int ramHeightInLUT;						/**< The height of a RAM block, expressed using the height of one LUT as unit of measure */
+		int dspPerColumn;						/**< The number of DSP blocks in a column of DSPs */
+		int ramPerColumn;						/**< The number of RAM blocks in a column of RAMs */
+		/*------------------------------------------------------------*/
+		
 	
 		//todo
 		
@@ -296,12 +589,15 @@ namespace flopoco{
 		int    lutInputs_;          /**< The number of inputs for the LUTs */
 		bool   pipeline_;           /**< True if the target is pipelined/ false otherwise */
 		double frequency_;          /**< The desired frequency for the operator in Hz */
-		int    multXInputs_;        /**< The size for the X dimmension of the hardware multipliers */
-		int    multYInputs_;        /**< The size for the Y dimmension of the hardware multipliers */
-		bool   useHardMultipliers_; /**< If true the operator design can use the hardware multipliers */
-		long   sizeOfBlock_;		/**< The size of a primitive memory block */
-		double maxFrequencyMHz_ ;/**< The maximum practical frequency attainable on this target. An indicator of relative performance of FPGAs. 400 is for Virtex4 */
-	
+		bool   hasHardMultipliers_; /**< If true, this target offers hardware multipliers */
+		bool   hasFastLogicTernaryAdders_; /**< If true, this target offers support for ternary addition at the cost of binary addition */
+		int    multXInputs_;        /**< The size for the X dimension of the hardware multipliers (the largest, if they are not equal) */
+		int    multYInputs_;        /**< The size for the Y dimension of the hardware multipliers  (the smallest, if they are not equal)*/
+		long   sizeOfBlock_;		    /**< The size of a primitive memory block */
+		double maxFrequencyMHz_ ;   /**< The maximum practical frequency attainable on this target. An indicator of relative performance of FPGAs. 400 is for Virtex4 */
+
+		vector<Operator*>  globalOpList;  /**< A list of sub-operators that should be shared with most operators. Semantically it shouldn't be here but it makes code simpler */
+
 	};
 
 }

@@ -33,13 +33,9 @@ using namespace std;
 
 namespace flopoco{
 
-	extern vector<Operator*> oplist;
 
 
-
-
-
-	FixRealKCM::FixRealKCM(Target* target, int lsbIn_, int msbIn_, int signedInput_, int lsbOut_, string constant_, double targetUlpError_, map<string, double> inputDelays) :
+	FixRealKCM::FixRealKCM(Target* target, int lsbIn_, int msbIn_, bool signedInput_, int lsbOut_, string constant_, double targetUlpError_, map<string, double> inputDelays) :
 		Operator(target, inputDelays), lsbIn(lsbIn_), msbIn(msbIn_), signedInput(signedInput_),
 		wIn(msbIn_-lsbIn_+1), lsbOut(lsbOut_), constant(constant_), targetUlpError(targetUlpError_) 
 	{

@@ -32,7 +32,6 @@ using namespace std;
 
 namespace flopoco{
 
-	extern vector<Operator*> oplist;
 
 #define DEBUGVHDL 0
 
@@ -197,7 +196,8 @@ FPAdderSinglePath::FPAdderSinglePath(Target* target, int wEX, int wFX, int wEY, 
 		//pad fraction of Y [overflow][shifted frac having inplicit 1][guard][round]
 		vhdl<<tab<< declare("fracYfar", wF+4)      << " <= \"0\" & shiftedFracY("<<2*wF+3<<" downto "<<wF+1<<");"<<endl;	
 		manageCriticalPath(target->localWireDelay() + target->lutDelay());
-		vhdl<<tab<< declare("fracYfarXorOp", wF+4) << " <= fracYfar xor ("<<wF+3<<" downto 0 => EffSub);"<<endl;
+		vhdl<<tab<< declare("EffSubVector", wF+4) << " <= ("<<wF+3<<" downto 0 => EffSub);"<<endl;
+		vhdl<<tab<< declare("fracYfarXorOp", wF+4) << " <= fracYfar xor EffSubVector;"<<endl;
 		//pad fraction of X [overflow][inplicit 1][fracX][guard bits]				
 		vhdl<<tab<< declare("fracXfar", wF+4)      << " <= \"01\" & (newX("<<wF-1<<" downto 0)) & \"00\";"<<endl;
 		
@@ -322,6 +322,8 @@ FPAdderSinglePath::FPAdderSinglePath(Target* target, int wEX, int wFX, int wEY, 
 		/*		manageCriticalPath(target->localWireDelay() +  target->lutDelay());
 		vhdl<<tab<<"with sdExnXY select"<<endl;
 		vhdl<<tab<<"R <= newX when \"0100\"|\"1000\"|\"1001\", newY when \"0001\"|\"0010\"|\"0110\", computedR when others;"<<endl;*/
+
+
 	}
 
 	FPAdderSinglePath::~FPAdderSinglePath() {
@@ -335,9 +337,8 @@ FPAdderSinglePath::FPAdderSinglePath(Target* target, int wEX, int wFX, int wEY, 
 		mpz_class svY = tc->getInputValue("Y");
 	
 		/* Compute correct value */
-		FPNumber fpx(wEX, wFX), fpy(wEY, wFY);
-		fpx = svX;
-		fpy = svY;
+		FPNumber fpx(wEX, wFX, svX);
+		FPNumber fpy(wEY, wFY, svY);
 		mpfr_t x, y, r;
 		mpfr_init2(x, 1+wFX);
 		mpfr_init2(y, 1+wFY);

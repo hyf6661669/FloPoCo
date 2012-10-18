@@ -60,6 +60,8 @@ namespace flopoco{
 		setCombinatorial();
 		addInput("X", wI);
 		addOutput("R", wO+1, 2);  // faithful rounding
+
+		genVHDL();
 	}
 
 	HOTBM::~HOTBM()
@@ -68,22 +70,10 @@ namespace flopoco{
 			delete inst;
 	}
 
-	// Overloading the virtual functions of Operator
-	void HOTBM::outputVHDL(std::ostream& o, std::string name)
-	{
-		if (!inst)
-			return;
-
-		inst->genVHDL(o, name);
-	}
-
-
-	void HOTBM::fillTestCase(mpz_class a[])
+	void HOTBM::emulate(TestCase* tc)
 	{
 		/* Get inputs / outputs */
-		mpz_class &x  = a[0];
-		mpz_class &rd = a[1]; // rounded down
-		mpz_class &ru = a[2]; // rounded up
+		mpz_class sx = tc->getInputValue ("X");
 
 		// int outSign = 0;
 
@@ -91,7 +81,7 @@ namespace flopoco{
 		mpfr_inits(mpX, mpR, 0, NULL);
 
 		/* Convert a random signal to an mpfr_t in [0,1[ */
-		mpfr_set_z(mpX, x.get_mpz_t(), GMP_RNDN);
+		mpfr_set_z(mpX, sx.get_mpz_t(), GMP_RNDN);
 		mpfr_div_2si(mpX, mpX, wI, GMP_RNDN);
 
 		/* Compute the function */
@@ -109,49 +99,15 @@ namespace flopoco{
 		 * rounding, so we will round down here,
 		 * add both the upper and lower neighbor.
 		 */
-		mpfr_get_z(rd.get_mpz_t(), mpR, GMP_RNDD);
-		ru = rd + 1;
+		mpz_t rd_t;
+		mpz_init (rd_t);
+		mpfr_get_z(rd_t, mpR, GMP_RNDD);
+		mpz_class rd (rd_t), ru = rd + 1;
+		tc->addExpectedOutput ("R", rd);
+		tc->addExpectedOutput ("R", ru);
+		
+		mpz_clear (rd_t);
+		mpfr_clear (mpX);
+		mpfr_clear (mpR);
 	}
-	
-	void HOTBM::emulate(TestCase * tc)
-	{
-		//Apologies for the copy-and-pastieness
-		
-		mpz_class x=tc->getInputValue("X");
-
-		mpz_class rd;
-		mpz_class ru;
-
-		// int outSign = 0;
-
-		mpfr_t mpX, mpR;
-		mpfr_inits(mpX, mpR, 0, NULL);
-
-		/* Convert a random signal to an mpfr_t in [0,1[ */
-		mpfr_set_z(mpX, x.get_mpz_t(), GMP_RNDN);
-		mpfr_div_2si(mpX, mpX, wI, GMP_RNDN);
-		
-		/* Compute the function */
-		f.eval(mpR, mpX);
-		
-		/* Compute the signal value */
-		if (mpfr_signbit(mpR))
-			{
-				// outSign = 1;
-				mpfr_abs(mpR, mpR, GMP_RNDN);
-			}
-		mpfr_mul_2si(mpR, mpR, wO, GMP_RNDN);
-			
-
-		/* NOT A TYPO. HOTBM only guarantees faithful
-		 * rounding, so we will round down here,
-		 * add both the upper and lower neighbor.
-		 */
-		mpfr_get_z(rd.get_mpz_t(), mpR, GMP_RNDD);
-		ru = rd + 1;
-		
-		tc->addExpectedOutput("R", ru);
-		tc->addExpectedOutput("R", rd);
-	}
-
 }

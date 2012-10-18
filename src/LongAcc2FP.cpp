@@ -34,8 +34,6 @@ using namespace std;
 
 namespace flopoco{
 
-	extern vector<Operator*> oplist;
-
 	LongAcc2FP::LongAcc2FP(Target* target, int LSBA, int MSBA, int wEOut, int wFOut): 
 		Operator(target), 
 		LSBA_(LSBA), MSBA_(MSBA), wEOut_(wEOut), wFOut_(wFOut)
@@ -55,7 +53,7 @@ namespace flopoco{
 		//inputs and outputs
 		addInput    ("A", sizeAcc_);
 		addInput    ("C", sizeAcc_);
-		addInput    ("AccOverflow",1);
+		addInput("AccOverflow");
 		addFPOutput ("R", wEOut_, wFOut_);
 
 		vhdl << tab <<declare("signA") << " <= A" << of(sizeAcc_-1)<<";"<<endl;

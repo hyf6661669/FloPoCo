@@ -28,7 +28,6 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 using namespace std;
 
 namespace flopoco {
-	extern vector<Operator*> oplist;
 	
 	IntAdderAlternative::IntAdderAlternative ( Target* target, int wIn, map<string, double> inputDelays, int optimizeType, bool srl) :
 	IntAdder(target, wIn, inputDelays, true), wIn_(wIn), alternativeSlackVersion(0) {
@@ -42,7 +41,7 @@ namespace flopoco {
 		// Set up the IO signals
 		addInput ( "X"  , wIn_, true );
 		addInput ( "Y"  , wIn_, true );
-		addInput ( "Cin", 1 );
+		addInput( "Cin");
 		addOutput ( "R"  , wIn_, 1 , true );
 		
 		inputsGotRegistered = false;

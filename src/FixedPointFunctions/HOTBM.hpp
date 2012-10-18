@@ -25,14 +25,14 @@ namespace flopoco{
 		~HOTBM();
 
 		// Overloading the virtual functions of Operator
-		void outputVHDL(std::ostream& o, std::string name);
-
-		void fillTestCase(mpz_class a[]);
+		void emulate(TestCase* tc);
 	
 		int wIn() const { return wI; }
 		int wOut() const { return wO + 1; }
 
-		void emulate(TestCase * tc);
+		// defined in HOTBMInstance.cc
+		void genVHDL();
+
 	private:
 		HOTBMInstance *inst;
 		Function &f;

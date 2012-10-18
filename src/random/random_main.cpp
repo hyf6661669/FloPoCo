@@ -48,7 +48,8 @@ extern int checkStrictlyPositive(char* s, char* cmd);
 extern int checkPositiveOrNull(char* s, char* cmd);
 extern bool checkBoolean(char* s, char* cmd);
 extern int checkSign(char* s, char* cmd);
-extern void addOperator(vector<Operator*> &oplist, Operator *op);
+
+extern void addOperator(Operator *op);
 
 std::vector<boost::shared_ptr<Operator> > g_pinOperator;
 
@@ -107,8 +108,7 @@ void random_usage(char *name, string opName = ""){
 
 bool random_parseCommandLine(
 	int argc, char* argv[], Target *target,
-	std::string opname, int &i,
-	vector<Operator*> &oplist
+	std::string opname, int &i
 ){
 	
 	/*
@@ -139,7 +139,7 @@ bool random_parseCommandLine(
 
 
 		cerr << "> lut_sr_rng: r=" << tr << "	t= " << t << "	k= " << k <<endl;
-		addOperator(oplist, new flopoco::random::LutSrRng(target, tr, t, k));
+		addOperator(new flopoco::random::LutSrRng(target, tr, t, k));
 		return true;
 	}
 	
@@ -156,7 +156,7 @@ bool random_parseCommandLine(
 		if(k!=2)
 			throw std::string("clt_transform - Only k==2 is supported at the moment.");
 		
-		addOperator(oplist, new flopoco::random::CLTTransform(target, wBase));
+		addOperator(new flopoco::random::CLTTransform(target, wBase));
 		return true;
 	}
 	
@@ -176,7 +176,7 @@ bool random_parseCommandLine(
 		acc<<"CLTRng_w"<<wBase<<"_k"<<k;
 		
 		flopoco::random::RngTransformOperator *base=new flopoco::random::CLTTransform(target, wBase);
-		addOperator(oplist, flopoco::random::LutSrRng::DriveTransform(acc.str(), base));
+		addOperator(flopoco::random::LutSrRng::DriveTransform(acc.str(), base));
 		return true;
 	}
 	
@@ -193,7 +193,7 @@ bool random_parseCommandLine(
 		
 		flopoco::random::RngTransformOperator *base=new flopoco::random::CLTTransform(target, wBase);
 		assert(base);
-		addOperator(oplist, new flopoco::random::HadamardTransform(target, log2n, base));
+		addOperator(new flopoco::random::HadamardTransform(target, log2n, base));
 		return true;
 	}
 	
@@ -214,7 +214,7 @@ bool random_parseCommandLine(
 		
 		flopoco::random::RngTransformOperator *hadamard=new flopoco::random::HadamardTransform(target, log2n, base);
 		
-		addOperator(oplist, flopoco::random::LutSrRng::DriveTransform(acc.str(), hadamard));
+		addOperator(flopoco::random::LutSrRng::DriveTransform(acc.str(), hadamard));
 		return true;
 	}
 	
@@ -243,7 +243,7 @@ bool random_parseCommandLine(
 				fracWidth
 			)
 		);
-		addOperator(oplist, table.get());
+		addOperator(table.get());
 		pinOperator(table);
 		
 		return true;
@@ -279,7 +279,7 @@ bool random_parseCommandLine(
 			tableWidth
 		));
 		pinOperator(table);
-		addOperator(oplist, table.get());
+		addOperator(table.get());
 		
 		boost::shared_ptr<flopoco::random::MultiplierExpStage> stage(
 			new flopoco::random::MultiplierExpStage(target,
@@ -288,7 +288,7 @@ bool random_parseCommandLine(
 			outputResultWidth
 		));
 		pinOperator(stage);
-		addOperator(oplist, stage.get());
+		addOperator(stage.get());
 		
 		return true;
 	}
@@ -318,7 +318,7 @@ bool random_parseCommandLine(
 				std::min(addressWidth, inputResidual.Width()),
 				tableResultWidth
 			));
-			addOperator(oplist, table.get());
+			addOperator(table.get());
 			inputResidual=table->OutputResidualType();
 			
 			if(stages.size()==0){
@@ -331,7 +331,7 @@ bool random_parseCommandLine(
 						inputResidual.Width()==0 ? outputResultWidth : calcResultWidth
 					)
 				);
-				addOperator(oplist, m.get());
+				addOperator(m.get());
 				stages.push_back(m);
 			}
 		}
@@ -342,7 +342,7 @@ bool random_parseCommandLine(
 			)
 		);
 		pinOperator(chain);
-		addOperator(oplist, chain.get());
+		addOperator(chain.get());
 		
 		return true;
 	}
@@ -378,7 +378,7 @@ bool random_parseCommandLine(
 			)
 		);
 		pinOperator(table);
-		addOperator(oplist, table.get());
+		addOperator(table.get());
 		return true;
 	}
 	if (opname == "FuncApproxExpStage")
@@ -404,7 +404,7 @@ bool random_parseCommandLine(
 			)
 		);
 		pinOperator(table);
-		addOperator(oplist, table.get());
+		addOperator(table.get());
 		return true;
 	}
 	else if (opname == "ChainedMultiplierCloseTableExp")
@@ -455,7 +455,7 @@ bool random_parseCommandLine(
 					-stageErr, stageErr
 				));
 			}
-			addOperator(oplist, table.get());
+			addOperator(table.get());
 			inputResidual=table->OutputResidualType();
 			
 			if(stages.size()==0){
@@ -468,7 +468,7 @@ bool random_parseCommandLine(
 						inputResidual.Width()==0 ? outputResultWidth : std::min((unsigned)calcResultWidth, stages.back()->OutputResultType().FracWidth()+table->OutputResultType().FracWidth())
 					)
 				);
-				addOperator(oplist, m.get());
+				addOperator(m.get());
 				stages.push_back(m);
 			}
 		}
@@ -479,7 +479,7 @@ bool random_parseCommandLine(
 			)
 		);
 		pinOperator(chain);
-		addOperator(oplist, chain.get());
+		addOperator(chain.get());
 		
 		return true;
 	}else if (opname == "ExpStageTester"){
@@ -496,7 +496,7 @@ bool random_parseCommandLine(
 			)
 		);
 		pinOperator(chain);
-		addOperator(oplist, chain.get());
+		addOperator(chain.get());
 		
 		return true;
 	}
@@ -510,7 +510,7 @@ bool random_parseCommandLine(
 		int wF = checkStrictlyPositive(argv[i++], argv[0]);
 
 		flopoco::random::ComparableFloatType type(wE, wF);
-		addOperator(oplist, type.MakeEncoder(target));
+		addOperator(type.MakeEncoder(target));
 		return true;
 	}
 	

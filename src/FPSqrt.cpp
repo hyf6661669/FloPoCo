@@ -37,8 +37,6 @@ using namespace std;
 
 namespace flopoco{
 
-	extern vector<Operator*> oplist;
-
 #define DEBUGVHDL 0
 	//#define LESS_DSPS
 
@@ -68,7 +66,7 @@ namespace flopoco{
 		vhdl << tab << declare(join("w",wF+3), wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
 		     << tab << "       \"1101\" & fracX;" << endl;
 		//		vhdl << tab << declare(join("d",wF+3)) << " <= '0';" << endl;
-		//		vhdl << tab << declare(join("s",wF+3),1) << " <= '1';" << endl;
+		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
 
 		double delay= target->lutDelay() + target->localWireDelay() + target->ffDelay(); // estimated delay so far (one mux)
 		for(int step=1; step<=wF+2; step++) {
@@ -101,7 +99,7 @@ namespace flopoco{
 		    vhdl << ";" << endl; 
 		  vhdl << tab << declare(si, step) << " <= ";
 		  if(step==1)
-		    vhdl << "not " << di << " ;"<< endl; 
+		    vhdl << "\"\" & (not " << di << ") ;"<< endl; 
 		  else
 		    vhdl << sip /*<< range(step-1,1)*/ << " & not " << di << ";"<< endl; 
 				
@@ -195,28 +193,7 @@ namespace flopoco{
 
 		// One test out of 4 fully random (tests NaNs etc)
 		// All the remaining ones test positive numbers.
-
-		void FPSqrt::buildRandomTestCases(TestCaseList* tcl, int n){
-
-			TestCase *tc;
-			mpz_class a;
-
-			for (int i = 0; i < n; i++) {
-				tc = new TestCase(this); 
-				/* Fill inputs */
-				if ((i & 3) == 0)
-					a = getLargeRandom(wE+wF+3);
-				else
-					a  = getLargeRandom(wE+wF) + (mpz_class(1)<<(wE+wF+1)); // 010xxxxxx
-				tc->addInput("X", a);
-
-				/* Get correct outputs */
-				emulate(tc);
-
-				tcl->add(tc);
-			}
-		}
-		TestCase* FPSqrt::buildRandomTestCases(int i){
+		TestCase* FPSqrt::buildRandomTestCase(int i){
 
 			TestCase *tc;
 			mpz_class a;

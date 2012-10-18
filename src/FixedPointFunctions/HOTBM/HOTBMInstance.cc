@@ -23,6 +23,7 @@
 #include "TermROM.hh"
 #include "TermPowMult.hh"
 #include "HOTBMInstance.hh"
+#include "../HOTBM.hpp"
 
 namespace flopoco{
 
@@ -177,65 +178,65 @@ namespace flopoco{
 			throw "HOTBMInstance::tune: Not enough guard bits.";
 	}
 
-	void HOTBMInstance::dump(ostream &os, list<int> &dumpList)
+	void HOTBMInstance::dump(flopoco::FlopocoStream& vhdl, list<int> &dumpList)
 	{
-		os.precision(50);
+		vhdl.vhdlCodeBuffer.precision(50);
 		for (long long int i = 0; i < P(p.wI); i++) {
 			double x = i * E(-p.wI);
 
 			for (list<int>::iterator k = dumpList.begin(); k != dumpList.end(); k++) {
 				if (k != dumpList.begin())
-					os << " ";
+					vhdl << " ";
 
 				switch (*k) {
 				case HOTBM_DUMP_X:
-					os << x;
+					vhdl << x;
 					break;
 
 				case HOTBM_DUMP_FUNCTION:
-					//os << f.eval(x);
+					//vhdl << f.eval(x);
 					break;
 
 				case HOTBM_DUMP_APPROX: {
 					Polynomial p_;
 					for (int j = 0; j <= p.n; j++)
 						p_ = p_ + Polynomial(j, kList[j][I(i,p.wI,p.alpha)]);
-					os << p_.eval(I(i,p.beta,p.beta) * E(-p.wI) - (E(-p.alpha)-E(-p.wI))/2);
+					vhdl << p_.eval(I(i,p.beta,p.beta) * E(-p.wI) - (E(-p.alpha)-E(-p.wI))/2);
 					break;
 				}
 
 				case HOTBM_DUMP_METHOD:
-					os << eval(i);
+					vhdl << eval(i);
 					break;
 
 				case HOTBM_DUMP_ROUND:
-					os << (evalRound(i) * E(-p.wO));
+					vhdl << (evalRound(i) * E(-p.wO));
 					break;
 
 				case HOTBM_DUMP_ERR_POLY:
-					os << errPoly.eval(x);
+					vhdl << errPoly.eval(x);
 					break;
 
 				case HOTBM_DUMP_ERR_METHOD:
-					os << errMethod[0].eval(x) << " " << errMethod[1].eval(x);
+					vhdl << errMethod[0].eval(x) << " " << errMethod[1].eval(x);
 					break;
 
 				case HOTBM_DUMP_ERR_ROUND: {
 					double err = nT * E(-p.wO-p.g-1) + E(-p.wO-1) * (1 - E(-p.g));
-					os << err << " " << -err;
+					vhdl << err << " " << -err;
 					break;
 				}
 
 				case HOTBM_DUMP_ERR_MAX:
-					os << E(-p.wO) << " " << (-E(-p.wO));
+					vhdl << E(-p.wO) << " " << (-E(-p.wO));
 					break;
 
 				case HOTBM_DUMP_INPUT_WORD:
-					os << i;
+					vhdl << i;
 					break;
 
 				case HOTBM_DUMP_OUTPUT_WORD:
-					os << evalRound(i);
+					vhdl << evalRound(i);
 					break;
 
 				default:
@@ -243,7 +244,7 @@ namespace flopoco{
 				}
 			}
 
-			os << endl;
+			vhdl << endl;
 		}
 	}
 
@@ -566,90 +567,57 @@ namespace flopoco{
 		return delay;
 	}
 
-	void HOTBMInstance::genVHDL(ostream &os, string name)
+	void flopoco::HOTBM::genVHDL()
 	{
-		os << "--------------------------------------------------------------------------------" << endl;
-		os << "--------------------------------------------------------------------------------" << endl;
-		os << "-- HOTBM instance for function " << f.getName() << "." << endl;
-		os << "-- wI = " << p.wI << "; wO = " << p.wO << "." << endl;
-		os << "-- Order-" << p.n << " polynomial approximation." << endl;
-		os << "-- Decomposition:" << endl;
-		os << "--   alpha = " << p.alpha << "; beta = " << p.beta << ";" << endl;
+		Param& p = inst->p;
+		Term** tList = inst->tList;
+
+		vhdl << "--------------------------------------------------------------------------------" << endl;
+		vhdl << "--------------------------------------------------------------------------------" << endl;
+		vhdl << "-- HOTBM instance for function " << f.getName() << "." << endl;
+		vhdl << "-- wI = " << p.wI << "; wO = " << p.wO << "." << endl;
+		vhdl << "-- Order-" << p.n << " polynomial approximation." << endl;
+		vhdl << "-- Decomposition:" << endl;
+		vhdl << "--   alpha = " << p.alpha << "; beta = " << p.beta << ";" << endl;
 		for (int i = 0; i <= p.n; i++) {
-			os << "--   T_" << i << " " << (p.t[i]->type == TERM_TYPE_ROM ? "(ROM):    " : "(PowMult):")
+			vhdl << "--   T_" << i << " " << (p.t[i]->type == TERM_TYPE_ROM ? "(ROM):    " : "(PowMult):")
 				<< " alpha_" << i << " = " << p.t[i]->alpha << "; beta_" << i << " = " << p.t[i]->beta
 				<< (i == p.n ? "." : ";") << endl;
 		}
-		os << "-- Guard bits: g = " << p.g << "." << endl;
-		os << "-- Command line: " << f.getName() << " ";
-		p.print(os);
-		os << endl;
-		os << endl << endl;
+		vhdl << "-- Guard bits: g = " << p.g << "." << endl;
+		vhdl << "-- Command line: " << f.getName() << " ";
+		{
+			ostringstream os;
+			p.print(os);
+			vhdl << os.str();
+		}
+		vhdl << endl;
 
 		for (int i = 0; i <= p.n; i++) {
+			if (p.t[i]->alpha)
+				vhdl << declare (join("a_",i),p.t[i]->alpha) << " <= x"
+				     << range (p.wI-1, p.wI-p.t[i]->alpha) << ";\n";
+			if (p.t[i]->beta)
+				vhdl << declare (join("b_",i),p.t[i]->beta) << " <= x"
+				     << range (p.beta-1, p.beta-p.t[i]->beta) << ";\n";
+
 			ostringstream buf;
-			buf << name << "_t" << i;
-			tList[i]->genVHDL(os, buf.str());
-			os << endl << endl;
+			buf << getName() << "_t" << i;
+			Operator* op = tList[i]->toComponent (getTarget(), buf.str());
+
+			outPortMap (op, "r", join("r_",i));
+			if (p.t[i]->beta)
+				inPortMap (op, "b", join("b_",i));
+			if (p.t[i]->alpha)
+				inPortMap (op, "a", join("a_",i));
+
+			oplist.push_back(op);
+			vhdl << instance(op, join("t_",i));
 		}
-
-		os << "--------------------------------------------------------------------------------" << endl;
-		os << "-- HOTBM main component." << endl;
-		os << endl;
-
-		os << "library ieee;" << endl;
-		os << "use ieee.std_logic_1164.all;" << endl;
-		os << "use ieee.std_logic_arith.all;" << endl;
-		os << "use ieee.std_logic_unsigned.all;" << endl;
-		os << endl;
-
-		os << "entity " << name << " is" << endl;
-		os << "  port ( x : in  std_logic_vector(" << (p.wI-1) << " downto 0);" << endl;
-		os << "         r : out std_logic_vector(" << (p.wO) << " downto 0) );" << endl;
-		os << "end entity;" << endl;
-		os << endl;
-
-		os << "architecture arch of " << name << " is" << endl;
-		for (int i = 0; i <= p.n; i++) {
-			if (p.t[i]->alpha)
-				os << "  signal a_" << i << " : std_logic_vector(" << (p.t[i]->alpha-1) << " downto 0);" << endl;
-			if (p.t[i]->beta)
-				os << "  signal b_" << i << " : std_logic_vector(" << (p.t[i]->beta-1) << " downto 0);" << endl;
-			os << "  signal r_" << i << " : std_logic_vector(" << (p.wO+p.g) << " downto 0);" << endl;
-			os << "  component " << name << "_t" << i << " is" << endl;
-			os << "    port ( ";
-			if (p.t[i]->alpha)
-				os << "a : in  std_logic_vector(" << (p.t[i]->alpha-1) << " downto 0);" << endl << "           ";
-			if (p.t[i]->beta)
-				os << "b : in  std_logic_vector(" << (p.t[i]->beta-1) << " downto 0);" << endl << "           ";
-			os << "r : out std_logic_vector(" << (p.wO+p.g) << " downto 0) );" << endl;
-			os << "  end component;" << endl;
-			os << endl;
-		}
-		os << "  signal sum : std_logic_vector(" << (p.wO+p.g) << " downto 0);" << endl;
-		os << "begin" << endl;
-
-		for (int i = 0; i <= p.n; i++) {
-			if (p.t[i]->alpha)
-				os << "  a_" << i << " <= x(" << (p.wI-1) << " downto " << (p.wI-p.t[i]->alpha) << ");" << endl;
-			if (p.t[i]->beta)
-				os << "  b_" << i << " <= x(" << (p.beta-1) << " downto " << (p.beta-p.t[i]->beta) << ");" << endl;
-			os << "  t_" << i << " : " << name << "_t" << i << endl;
-			os << "    port map ( ";
-			if (p.t[i]->alpha)
-				os << "a => a_" << i << "," << endl << "               ";
-			if (p.t[i]->beta)
-				os << "b => b_" << i << "," << endl << "               ";
-			os << "r => r_" << i << " );" << endl;
-			os << endl;
-		}
-
-		os << "  sum <= ";
+		vhdl << declare ("sum", p.wO+p.g+1) << " <= ";
 		for (int i = 0; i <= p.n; i++)
-			os << (i ? " + " : "") << "r_" << i;
-		os << ";" << endl;
-		os << "  r <= sum(" << (p.wO+p.g) << " downto " << (p.g) << ");" << endl;
-
-		os << "end architecture;" << endl;
+			vhdl << (i ? " + " : "") << "r_" << i;
+		vhdl << ";" << endl;
+		vhdl << "  r <= sum" << range (p.wO+p.g, p.g) << ";" << endl;
 	}
 }

@@ -22,9 +22,12 @@ public:
 	double eval(long long int a, long long int b) const;
 	long long int evalRound(long long int a, long long int b) const;
 
-	void genVHDL(ostream &os, string name);
+	friend Component::Component (flopoco::Target*, TermROM, std::string);
+	flopoco::Operator* toComponent (flopoco::Target* t, std::string name) {
+		return new Component (t, *this, name);
+	}
 
-private:
+protected:
 	PWPolynomial calcErrTab(double shift = 0);
 
 	TermROMParam &tp;

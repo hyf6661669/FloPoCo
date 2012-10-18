@@ -35,7 +35,6 @@
 using namespace std;
 
 namespace flopoco{
-	extern vector<Operator*> oplist;
 
 	FPSqrtPoly::FPSqrtPoly(Target* target, int wE, int wF, bool correctlyRounded, int degree):
 		Operator(target), wE(wE), wF(wF), correctRounding(correctlyRounded) {
@@ -305,7 +304,7 @@ namespace flopoco{
 #endif // KEEP_HANDCRAFTER_VERSION
 
 		vhdl << tab << declare("excsX",3) << " <= X"<<range(wE+wF+2,wE+wF)<<";"<<endl;
-		vhdl << tab << declare("sX",1) << "  <= X"<<of(wE+wF)<<";"<<endl;
+		vhdl << tab << declare("sX") << "  <= X"<<of(wE+wF)<<";"<<endl;
 		
 		//first estimation of the exponent
 		vhdl << tab << declare("expBiasPostDecrement", wE+1) << " <= CONV_STD_LOGIC_VECTOR("<< (1<<(wE-1))-2 <<","<<wE+1<<");"<<endl;
@@ -511,28 +510,7 @@ namespace flopoco{
 
 	// One test out of 4 fully random (tests NaNs etc)
 	// All the remaining ones test positive numbers.
-
-	void FPSqrtPoly::buildRandomTestCases(TestCaseList* tcl, int n){
-
-		TestCase *tc;
-		mpz_class a;
-
-		for (int i = 0; i < n; i++) {
-			tc = new TestCase(this); 
-			/* Fill inputs */
-			if ((i & 3) == 0)
-				a = getLargeRandom(wE+wF+3);
-			else
-				a  = getLargeRandom(wE+wF) + (mpz_class(1)<<(wE+wF+1)); // 010xxxxxx
-			tc->addInput("X", a);
-
-			/* Get correct outputs */
-			emulate(tc);
-
-			tcl->add(tc);
-		}
-	}
-	TestCase* FPSqrtPoly::buildRandomTestCases(int i){
+	TestCase* FPSqrtPoly::buildRandomTestCase(int i){
 
 		TestCase *tc;
 		mpz_class a;

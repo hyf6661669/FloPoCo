@@ -1,6 +1,5 @@
 #include "FormalBinaryProduct.hpp"
 #include <iostream>
-#include <gmpxx.h>
 
 using namespace flopoco;
 using std::cout;
@@ -245,16 +244,18 @@ ProductIR ProductIR::operator* (const ProductIR& rhs) const
 	}
 	return res;
 }
-ProductIR ProductIR::toPow (size_t n)
+ProductIR ProductIR::toPow (size_t n) const
 {
 	if (n <= 0)
 		throw "wrong argument (ProductIR::toPow)";
 	ProductIR res = *this;;
-	for (int i = 0; i < n-1; i++) {
+	for (unsigned i = 0; i < n-1; i++) {
 		res = res * *this;
 	}
 	return res;
 }
+
+
 ProductIR& ProductIR::simplifyInPlace (void)
 {
 	// we begin by lsb: non-rev iterator
@@ -291,6 +292,22 @@ ProductIR& ProductIR::simplifyInPlace (void)
 			}
 		}
 	}
+	return *this;
+}
+
+
+ProductIR& ProductIR::setMSB (int newMSB)
+{
+	if (newMSB <= msb) {
+		for (size_t i = 0; i < (msb - newMSB); i++) {
+			data.pop_back ();
+		}
+		return *this;
+	}
+	for (size_t i = 0; i < (newMSB - msb); i++) {
+		data.push_back (ProductBitIR (mon_size));
+	}
+	msb = newMSB;
 	return *this;
 }
 // won't work well if simplify() isn't called before
@@ -342,6 +359,23 @@ ProductIRQuoRem ProductIR::div (int divisor)
 		}
 	}
 	return res;
+}
+ProductIR ProductIR::truncate (mpz_class ulps) const
+{
+	mpz_class cur_err(0), cur_ulp(1);
+	std::vector<ProductBitIR>::const_iterator it;
+	for (it = data.begin(); it != data.end(); it++) {
+		std::map<MonomialOfBits,int>::const_iterator i;
+		for (i = it->data.begin(); i != it->data.end(); i++) {
+			cur_err += (i->second * cur_ulp);
+		}
+		if (cur_err > ulps)
+			break;
+		cur_ulp <<= 1;
+	}
+	return ProductIR (std::vector<ProductBitIR> (it, data.end()),
+	                  msb,
+		          mon_size);
 }
 // must call ProductIR::simplify() on rhs before
 Product::Product (const ProductIR& rhs)

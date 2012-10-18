@@ -50,6 +50,29 @@ namespace flopoco{
 			RAMDelay_ = 2.970e-9; //TODO
 			RAMToLogicWireDelay_ = 0.436e-9; //TODO
 
+
+			hasFastLogicTernaryAdders_ = false;
+			
+			//---------------Floorplanning related----------------------
+			multiplierPosition.push_back(3);
+			multiplierPosition.push_back(35);
+			
+			memoryPosition.push_back(3);
+			memoryPosition.push_back(35);
+			
+			topSliceX = 39;
+			topSliceY = 47;
+			
+			lutPerSlice = 2;
+			ffPerSlice = 2;
+			
+			dspHeightInLUT = 8;
+			ramHeightInLUT = 8;
+			
+			dspPerColumn = 6;
+			ramPerColumn = 6;
+			//----------------------------------------------------------
+
 		}
 
 		/** The destructor */
@@ -60,6 +83,7 @@ namespace flopoco{
 		 */
 		double carryPropagateDelay();
 		double adderDelay(int size);
+		double adder3Delay(int size);
 		double eqComparatorDelay(int size);
 		double eqConstComparatorDelay(int size);
 		
@@ -80,7 +104,9 @@ namespace flopoco{
 		double distantWireDelay(int n);
 		bool   suggestSubmultSize(int &x, int &y, int wInX, int wInY);
 		bool   suggestSubaddSize(int &x, int wIn);
+		bool   suggestSubadd3Size(int &x, int wIn);
 		bool   suggestSlackSubaddSize(int &x, int wIn, double slack);
+		bool   suggestSlackSubadd3Size(int &x, int wIn, double slack);
 		bool   suggestSlackSubcomparatorSize(int &x, int wIn, double slack, bool constant);
 		
 		int    getIntMultiplierCost(int wInX, int wInY);

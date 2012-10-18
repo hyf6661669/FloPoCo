@@ -31,7 +31,6 @@
 //#define MAXSIZE
 using namespace std;
 namespace flopoco{
-extern vector<Operator*> oplist;
 
 	LongIntAdderAddAddMuxGen1::LongIntAdderAddAddMuxGen1(Target* target, int wIn, map<string, double> inputDelays):
 		Operator(target), wIn_(wIn), inputDelays_(inputDelays) 
@@ -43,7 +42,7 @@ extern vector<Operator*> oplist;
 		// Set up the IO signals
 		for (int i=0; i<2; i++)
 			addInput ( join("X",i) , wIn_);
-		addInput ("Cin", 1  );
+		addInput("Cin");
 		addOutput("R"  , wIn_);
 
 		if (verbose){
@@ -155,23 +154,22 @@ extern vector<Operator*> oplist;
 				
 				int ll,l0;
 				double xordelay;
-				double dcarry;
-				double muxcystoo;
+				// double dcarry, muxcystoo;
 				if (target->getID()=="Virtex5"){
 					xordelay = 0.300e-9;
-					dcarry = 0.023e-9;
-					muxcystoo = 0.305e-9;
+					// dcarry = 0.023e-9;
+					// muxcystoo = 0.305e-9;
 					
 				}else{ 
 					if (target->getID()=="Virtex6"){
 						xordelay = 0.180e-9;
-						dcarry = 0.015e-9;
-						muxcystoo =	0.219e-9;
+						// dcarry = 0.015e-9;
+						// muxcystoo =	0.219e-9;
 					}else{ 
 						if (target->getID()=="Virtex4"){
 							xordelay = 0.273e-9;
-							dcarry = 0.034e-9;
-							muxcystoo = 0.278e-9;
+							// dcarry = 0.034e-9;
+							// muxcystoo = 0.278e-9;
 						}
 					}
 				}
@@ -263,7 +261,7 @@ exit(1);
 							low+=cSize[k];
 						vhdl << tab << declare (name.str(),cSize[j]+1) << " <=  \"0\" & X"<<i<<range(high-1,low)<<";"<<endl;
 					}
-				vhdl << tab << declare("scIn",1) << " <= Cin;"<<endl;
+				vhdl << tab << declare("scIn") << " <= Cin;"<<endl;
 			
 				int l=1;
 				for (int j=0; j<nbOfChunks; j++){
@@ -459,7 +457,7 @@ exit(1);
 							low+=cSize[k];
 						vhdl << tab << declare (join("sX",j,"_",i),cSize[j]+1) << " <=  \"0\" & X"<<i<<range(high-1,low)<<";"<<endl;
 					}
-				vhdl << tab << declare("scIn",1) << " <= Cin;"<<endl;
+				vhdl << tab << declare("scIn") << " <= Cin;"<<endl;
 
 				for (int j=0; j<nbOfChunks; j++){
 					REPORT(3, "ITERATION " << j);

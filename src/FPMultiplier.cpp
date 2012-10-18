@@ -30,8 +30,6 @@ using namespace std;
 
 namespace flopoco{
 
-	extern vector<Operator*> oplist;
-
 	FPMultiplier::FPMultiplier(Target* target, int wEX, int wFX, int wEY, int wFY, int wER, int wFR, 
 	                           bool norm, bool correctlyRounded, double ratio, int maxTimeInMinutes, map<string, double> inputDelays) :
 		Operator(target), wEX_(wEX), wFX_(wFX), wEY_(wEY), wFY_(wFY), wER_(wER), wFR_(wFR), normalized_(norm), correctlyRounded_(correctlyRounded)  {
@@ -51,7 +49,7 @@ namespace flopoco{
 			addOutput  ("ResultExponent"   , wER_    );  
 			addOutput ("ResultSignificand", wFR_    );
 			addOutput ("ResultException"  , 2      );
-			addOutput ("ResultSign"       , 1      ); 
+			addOutput("ResultSign"       ); 
 		}
 
 		setCriticalPath(getMaxInputDelays(inputDelays));
@@ -88,10 +86,10 @@ namespace flopoco{
 			// faithful rounding will be computed by IntTruncMultiplier
 			// but we still  have to re-round behind 
 			sigProdSize = wFR_+g; 
-		int useLimits=1; // TODO WTF is it? 
-#if 0
-		IntMultiplier* intmult_ = new IntMultiplier(target, wFX_+1, wFY_+1);
+#if 1
+		IntMultiplier* intmult_ = new IntMultiplier(target, wFX_+1, wFY_+1, sigProdSize, false /*signedIO*/);
 #else
+		int useLimits=1; // TODO WTF is it? 
 		IntTruncMultiplier* intmult_ = new IntTruncMultiplier(target, wFX_+1, wFY_+1, sigProdSize, ratio, useLimits, maxTimeInMinutes,
 		                                                     false, /* interactive */
 		                                                     false, /* signed */ 

@@ -28,7 +28,6 @@
 	
 using namespace std;
 namespace flopoco{
-extern vector<Operator*> oplist;
 
 	LongIntAdderCmpCmpAddGen2::LongIntAdderCmpCmpAddGen2(Target* target, int wIn, map<string, double> inputDelays):
 		Operator(target), wIn_(wIn), inputDelays_(inputDelays) 
@@ -39,7 +38,7 @@ extern vector<Operator*> oplist;
 		// Set up the IO signals
 		addInput ( "X", wIn_);
 		addInput ( "Y", wIn_);
-		addInput ( "Cin", 1  );
+		addInput( "Cin");
 		addOutput( "R"  , wIn_);
 
 		if (isSequential()){
@@ -178,7 +177,7 @@ exit(-1);
 						vhdl << tab << declare (name.str(),cSize[j],true) << " <= "<<(i==0?"X":"Y")<<range(high-1,low)<<";"<<endl;
 				}
 			}	
-			vhdl << tab << declare("scIn",1) << " <= Cin;"<<endl;
+			vhdl << tab << declare("scIn") << " <= Cin;"<<endl;
 			
 			int l=1;
 			for (int j=0; j<nbOfChunks; j++){

@@ -8,7 +8,6 @@
 
 #include "Operator.hpp"
 #include "FPNumber.hpp"
-#include "FXP_Shift.hpp"
 #include "IntAdder.hpp"
 
 
@@ -37,19 +36,23 @@ namespace flopoco{
 
       void emulate(TestCase * tc);
       void buildStandardTestCases(TestCaseList* tcl);
-
-
+      /* Overloading the Operator method to limit testing of negative numbers when Signed is 0*/
+      TestCase* buildRandomTestCase(int i);
 
    private:
 
-      /** The integer adder object to compute the correct value of the exponent*/
-      IntAdder* Exponent_difference;
-      IntAdder* MantSum;
-      IntAdder* MantSum2;
-      FXP_Shift*FXP_shifter;
-
-      int MSB;
-      int LSB;
+      /** The width of the exponent for the input */
+      int wEI;
+      /** The width of the fraction for the input */
+      int wFI;
+      /** are all numbers positive or not */
+      int Signed;
+      /** The LSB for the output */
+      int LSBO;
+      /** The MSB for the output */
+      int MSBO; 
+      /** when true the output is not rounded */
+      bool trunc_p;
 
 
    };

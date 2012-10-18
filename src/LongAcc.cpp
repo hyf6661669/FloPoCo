@@ -33,12 +33,14 @@ using namespace std;
 
 namespace flopoco{
 
-	extern vector<Operator*> oplist;
-
 	LongAcc::LongAcc(Target* target, int wEX, int wFX, int MaxMSBX, int LSBA, int MSBA, map<string, double> inputDelays,  bool forDotProd, int wFY): 
 		Operator(target), 
 		wEX_(wEX), wFX_(wFX), MaxMSBX_(MaxMSBX), LSBA_(LSBA), MSBA_(MSBA), AccValue_(0), xOvf(0)
 	{
+		// You probably want to remove the following line to have the warnings come back
+		//if you modify this operator
+		setHasDelay1Feedbacks(); 
+
 		if (!forDotProd)
 			wFY=wFX;
 		
@@ -124,12 +126,12 @@ namespace flopoco{
 		if (!forDotProd){
 			vhdl << tab << declare("fracX",wFX_+1) << " <=  \"1\" & X" << range(wFX_-1,0) << ";" << endl;
 			vhdl << tab << declare("expX" ,wEX_  ) << " <= X" << range(wEX_+wFX_-1,wFX_) << ";" << endl;
-			vhdl << tab << declare("signX",1     ) << " <= X" << of(wEX_+wFX_) << ";" << endl;
+			vhdl << tab << declare("signX") << " <= X" << of(wEX_+wFX_) << ";" << endl;
 			vhdl << tab << declare("exnX" ,2     ) << " <= X" << range(wEX_+wFX_+2,wEX_+wFX_+1) << ";" << endl;
 		}else{
 			vhdl << tab << declare("fracX",wFX_ + wFY +2) << " <= fracX_dprod;" << endl;
 			vhdl << tab << declare("expX" ,wEX_  ) << " <= expX_dprod;" << endl;
-			vhdl << tab << declare("signX",1     ) << " <= sigX_dprod;" << endl;
+			vhdl << tab << declare("signX") << " <= sigX_dprod;" << endl;
 			vhdl << tab << declare("exnX" ,2     ) << " <= excX_dprod;" << endl;
 		}
 
@@ -161,7 +163,7 @@ namespace flopoco{
 
 		/* determine if the input has been shifted out from the accumulator. 
 		In this case the accumulator will added 0 */
-		vhdl << tab << declare("flushedToZero",1) << " <= '1' when (shiftVal" << of(wEX_)<<"='1' or exnX=\"00\") else '0';" << endl;
+		vhdl << tab << declare("flushedToZero") << " <= '1' when (shiftVal" << of(wEX_)<<"='1' or exnX=\"00\") else '0';" << endl;
 
 		/* in most FPGAs computation of the summand2c will be done in one LUT level */
 		vhdl << tab << declare("summand", sizeSummand_, true, Signal::registeredWithSyncReset) << "<= " << 

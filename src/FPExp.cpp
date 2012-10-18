@@ -35,7 +35,6 @@ using namespace std;
 #define LARGE_PREC 1000 // 1000 bits should be enough for everybody
 
 namespace flopoco{
-	extern vector<Operator *> oplist;
 
 
 	mpz_class FPExp::magicTable::function(int x){
@@ -287,7 +286,8 @@ namespace flopoco{
 		
 		int sizeXfix = wE+wF+g; // still unsigned; msb=wE-1; lsb = -wF-g
 		manageCriticalPath( target->localWireDelay(sizeXfix) + target->lutDelay());
-		vhdl << tab << declare("fixX", sizeXfix) << " <= " << " fixX0" << range(wE-1 + wF+g + wFIn+1 -1, wFIn) << " and "<<rangeAssign(sizeXfix-1,0,"not(resultWillBeOne)")<<";" << endl;
+
+		vhdl << tab << declare("fixX", sizeXfix) << " <= " << " fixX0" << range(wE-1 + wF+g + wFIn+1 -1, wFIn) << "when resultWillBeOne='0' else " << zg(sizeXfix) <<  ";" << endl;		
 
 		int lsbXforFirstMult=-3; 
 		int sizeXMulIn = wE-2 - lsbXforFirstMult +1; // msb=wE-2, lsb=-3
@@ -521,7 +521,10 @@ namespace flopoco{
 		Operator* lowProd;
 		if(false && wF+g-k>17){ // commented out because 1/ it fails the test, do,n't understand why and 2/ it adds 4 cycles to the latency TODO
 			sizeProd = (sizeExpA-k+1); 
-			lowProd = new IntTruncMultiplier(target, sizeMultIn, sizeExpZm1, sizeProd, 0.95, 1, -1, false, false);  //inDelayMap("X", target->LogicToDSPWireDelay() + getCriticalPath() ) );
+			//			lowProd = new IntTruncMultiplier(target, sizeMultIn, sizeExpZm1, sizeProd, 0.95, 1, -1, false, false);  //inDelayMap("X", target->LogicToDSPWireDelay() + getCriticalPath() ) );
+			lowProd = new IntMultiplier(target, sizeMultIn, sizeExpZm1, sizeProd, 
+			                            true, /*signedIO*/
+			                            0.9 /*DSP threshold */);  //inDelayMap("X", target->LogicToDSPWireDelay() + getCriticalPath() ) );
 		}
 		else {
 			sizeProd = sizeMultIn + sizeExpZm1;
@@ -532,7 +535,10 @@ namespace flopoco{
 			//}// else
 		 			// 		lowProd = new IntMultiplier(target, sizeMultIn, sizeExpZm1, inDelayMap("X", target->LogicToDSPWireDelay() + getCriticalPath() ) );
 		}
-		lowProd = new IntMultiplier(target, sizeMultIn, sizeExpZm1, 0 /*unsigned*/, 
+		lowProd = new IntMultiplier(target, sizeMultIn, sizeExpZm1,  
+		                            0,  // untruncated
+		                            false,  /*unsigned*/
+		                            1.0,
 		                            inDelayMap("X", target->LogicToDSPWireDelay() + getCriticalPath() ) );
 			oplist.push_back(lowProd);
 		
@@ -654,8 +660,7 @@ namespace flopoco{
 		mpz_class svX = tc->getInputValue("X");
 
 		/* Compute correct value */
-		FPNumber fpx(wE, wF);
-		fpx = svX;
+		FPNumber fpx(wE, wF, svX);
 
 		mpfr_t x, ru,rd;
 		mpfr_init2(x,  1+wF);

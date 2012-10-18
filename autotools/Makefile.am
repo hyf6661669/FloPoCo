@@ -1,6 +1,7 @@
 # Makefile for flopoco
 
 SUBDIRS = src
+DIST_SUBDIRS = src
 ACLOCAL_AMFLAGS = -I m4
 
 bin_PROGRAMS = flopoco longacc2fp fp2bin bin2fp fpadder_example
@@ -9,7 +10,7 @@ bin_PROGRAMS = flopoco longacc2fp fp2bin bin2fp fpadder_example
 
 
 flopoco_SOURCES = src/main.cpp
-flopoco_CPPFLAGS = $(CPPFLAGS)
+flopoco_CPPFLAGS = $(CPPFLAGS) -I$(top_srcdir)/src/
 flopoco_CXXFLAGS = $(CXXFLAGS)
 flopoco_LDADD = $(LIBS) src/libflopoco.la
 
@@ -46,6 +47,6 @@ longacc2fp_LDADD = $(LIBS)
 
 
 fpadder_example_SOURCES = src/main_minimal.cpp
-fpadder_example_CPPFLAGS = $(CPPFLAGS)
+fpadder_example_CPPFLAGS = $(CPPFLAGS) -I$(top_srcdir)/src/
 fpadder_example_CXXFLAGS = $(CXXFLAGS)
 fpadder_example_LDADD = $(LIBS) src/libflopoco.la

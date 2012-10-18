@@ -5,6 +5,7 @@
 #include <set>
 
 #include "Operator.hpp"
+#include "../transforms/RngTransformOperator.hpp"
 
 /* This file contains a lot of useful functions to manipulate vhdl */
 #include "utils.hpp"

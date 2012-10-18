@@ -38,8 +38,6 @@ using namespace std;
 
 namespace flopoco{
 
-	extern vector<Operator*> oplist;
-
 	FPJacobi::FPJacobi(Target* target, int wE, int wF, int l0, int l1, int l2, int version):
 		Operator(target), wE(wE), wF(wF) {
 		srcFileName="FPJacobi1";
@@ -56,8 +54,8 @@ namespace flopoco{
 		addFPInput ("Z", wE, wF);
 		addFPInput ("Q", wE, wF);
 		
-		addInput("S",1);
-		addInput("oS",1);
+		addInput("S");
+		addInput("oS");
 		addFPOutput("R", wE, wF);
 		
 		//input muxes

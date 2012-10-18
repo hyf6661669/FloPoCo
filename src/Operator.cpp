@@ -29,6 +29,7 @@ namespace flopoco{
 	int verbose=0;
 	
 	Operator::Operator(Target* target, map<string, double> inputDelays){
+		stdLibType_                 = 0; // unfortunately this is the historical default.
 		target_                     = target;
 		numberOfInputs_             = 0;
 		numberOfOutputs_            = 0;
@@ -42,7 +43,8 @@ namespace flopoco{
 		inputDelayMap               = inputDelays;
 		myuid                       = getNewUId();
 		architectureName_			      = "arch";
-		indirectOperator_           =NULL;
+		indirectOperator_           = NULL;
+		hasDelay1Feedbacks_         = false;
 		hasDelay1Feedbacks_ = false;
 		
 		if (target_->isPipelined())
@@ -51,8 +53,53 @@ namespace flopoco{
 			setCombinatorial();	
 		
 		vhdl.disableParsing(!target_->isPipelined());	
+
+		//------- Resource estimation and floorplanning ----------------
+		resourceEstimate << "Starting Resource estimation report for entity: " << uniqueName_ << " --------------- " << endl;
+		resourceEstimateReport << "";
+		
+		reHelper = new ResourceEstimationHelper(target_, this);
+		reHelper->initResourceEstimation();
+		
+		reActive = false;
+		
+		//--------------------------------------------------------------
+		floorplan << "";
+		
+		flpHelper = new FloorplanningHelper(target_, this);
+		flpHelper->initFloorplanning(0.75); 							// ratio (to what degree will the sub-components' bounding boxes 
+																		// be filled), see Tools/FloorplanningHelper
+		//--------------------------------------------------------------
 	}
 	
+
+
+
+
+	void Operator::addSubComponent(Operator* op) {
+		oplist.push_back(op);
+	}
+
+
+
+
+	void Operator::addToGlobalOpList() {
+		bool alreadyPresent=false;
+
+		vector<Operator*> * globalOpListRef=target_->getGlobalOpListRef();
+			for (unsigned i=0; i<globalOpListRef->size(); i++){
+					if( getName() == (*globalOpListRef)[i]->getName() ){
+					alreadyPresent=true;
+					REPORT(DEBUG,"Operator::addToGlobalOpListRef(): " << uniqueName_ <<" already present in globalOpList");
+				}
+			}
+			if(!alreadyPresent)
+				globalOpListRef->push_back(this);
+
+	}
+	
+
+
 	
 	void Operator::addInput(const std::string name, const int width, const bool isBus) {
 		if (signalMap_.find(name) != signalMap_.end()) {
@@ -314,6 +361,7 @@ namespace flopoco{
 		this->outputVHDLComponent(o,  this->uniqueName_); 
 	}
 	
+
 	
 	void Operator::outputVHDLEntity(std::ostream& o) {
 		unsigned int i;
@@ -383,6 +431,28 @@ namespace flopoco{
 			o<<"-- combinatorial"  <<endl <<endl;
 	}
 	
+
+	void Operator::stdLibs(std::ostream& o){
+		o << "library ieee;"<<endl
+		  << "use ieee.std_logic_1164.all;"<<endl;
+		if(stdLibType_==0){
+			o << "use ieee.std_logic_arith.all;"<<endl
+			  << "use ieee.std_logic_unsigned.all;"<<endl; 
+		}
+		if(stdLibType_==-1){
+			o << "use ieee.std_logic_arith.all;"<<endl
+			  << "use ieee.std_logic_signed.all;"<<endl; 
+		}
+		if(stdLibType_==1){
+			o << "use ieee.numeric_std.all;"<<endl; 
+		}
+
+		o << "library std;" << endl
+		  << "use std.textio.all;"<< endl 
+		  << "library work;"<<endl<< endl;
+	};
+
+
 	void Operator::outputVHDL(std::ostream& o) {
 		this->outputVHDL(o, this->uniqueName_); 
 	}
@@ -441,7 +511,7 @@ namespace flopoco{
 				ctabs << "|" << tab;
 			}
 			
-			cerr << tabs.str() << "Entity " << uniqueName_ <<":"<< endl;
+			cerr << tabs.str() << "Entity " << uniqueName_ << endl;
 			if(this->getPipelineDepth()!=0)
 				cerr << ctabs.str() << tab << "Pipeline depth = " << getPipelineDepth() << endl;
 			else
@@ -451,6 +521,7 @@ namespace flopoco{
 
 
 	void Operator::setCycle(int cycle, bool report) {
+		criticalPath_ = 0;
 		// lexing part
 		vhdl.flush(currentCycle_);
 		if(isSequential()) {
@@ -682,15 +753,21 @@ namespace flopoco{
 
 	bool Operator::manageCriticalPath(double delay, bool report){
 		//		criticalPath_ += delay;
-		if ( target_->ffDelay() + (criticalPath_ + delay) > (1.0/target_->frequency())){
-			nextCycle(report); //TODO Warning
-			criticalPath_ = min(delay, 1.0/target_->frequency());
-			return true;
-		}
-		else{
-			criticalPath_ += delay;
-			return false;
-		}
+				if(isSequential()) {
+					if ( target_->ffDelay() + (criticalPath_ + delay) > (1.0/target_->frequency())){
+						nextCycle(report); //TODO Warning
+						criticalPath_ = min(delay, 1.0/target_->frequency());
+						return true;
+					}
+					else{
+						criticalPath_ += delay;
+						return false;
+					}
+				}
+				else {
+					criticalPath_ += delay;
+					return false;
+				}
 	}
 
 	
@@ -950,6 +1027,14 @@ namespace flopoco{
 			//op->portMap_.erase(it);
 		}
 		o << ");" << endl;
+		
+		
+		//Floorplanning related-----------------------------------------
+		floorplan << manageFloorplan();
+		flpHelper->addToFlpComponentList(op->getName());
+		flpHelper->addToInstanceNames(op->getName(), instanceName);
+		//--------------------------------------------------------------
+		
 		
 		// add the operator to the subcomponent list 
 		subComponents_[op->getName()]  = op;
@@ -1391,7 +1476,9 @@ namespace flopoco{
 		for (unsigned i = 2; i < (lineLength - 2- comment.size()) / 2; i++) align += "-";
 		vhdl << align << " " << comment << " " << align << endl; 
 	}
-	
+
+
+
 
 	void Operator::outputVHDLToFile(vector<Operator*> &oplist, ofstream& file){
 		string srcFileName = "Operator.cpp"; // for REPORT
@@ -1422,16 +1509,273 @@ namespace flopoco{
 			}
 		}
 	}
-	
 
+
+
+
+#if 1
 	void Operator::outputVHDLToFile(ofstream& file){
 		vector<Operator*> oplist;
+
+		REPORT(DEBUG, "outputVHDLToFile");
+
+		//build a copy of the global oplist hidden in Target (if it exists):
+		vector<Operator*> *goplist = target_->getGlobalOpListRef();
+		for (unsigned i=0; i<goplist->size(); i++)
+			oplist.push_back((*goplist)[i]);
+		// add self (and all its subcomponents) to this list
 		oplist.push_back(this);
+		// generate the code
 		Operator::outputVHDLToFile(oplist, file);
 	}
 	
+#endif
 	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////Functions used for resource estimations
 
+	
+	//--Logging functions
+	
+	std::string Operator::addFF(int count){
+		
+		reActive = true;
+		return reHelper->addFF(count);
+	}
+	
+	std::string Operator::addLUT(int nrInputs, int count){
+		
+		reActive = true;
+		return reHelper->addLUT(nrInputs, count);
+	}
+	
+	std::string Operator::addReg(int width, int count){
+				
+		reActive = true;
+		return reHelper->addReg(width, count);
+	}
+	
+	//TODO: verify increase in the DSP count
+	std::string Operator::addMultiplier(int count){
+		
+		reActive = true;
+		return reHelper->addMultiplier(count);
+	}
+	
+	//TODO: verify increase in the DSP count 
+	std::string Operator::addMultiplier(int widthX, int widthY, double ratio, int count){
+		
+		reActive = true;
+		return reHelper->addMultiplier(widthX, widthY, ratio, count);
+	}
+	
+	//TODO: verify increase in the element count
+	std::string Operator::addAdderSubtracter(int widthX, int widthY, double ratio, int count){
+		
+		reActive = true;
+		return reHelper->addAdderSubtracter(widthX, widthY, ratio, count);
+	}
+	
+	//TODO: take into account the memory type (RAM or ROM); depending on 
+	//		the type, might be implemented through distributed memory or
+	//		dedicated memory blocks
+	std::string Operator::addMemory(int size, int width, int type, int count){
+		
+		reActive = true;
+		return reHelper->addMemory(size, width, type, count);
+	}
+	
+	//---More particular resource logging
+	std::string Operator::addDSP(int count){
+		
+		reActive = true;
+		return reHelper->addDSP(count);
+	}
+	
+	std::string Operator::addRAM(int count){
+		
+		reActive = true;
+		return reHelper->addRAM(count);
+	}
+	
+	std::string Operator::addROM(int count){
+		
+		reActive = true;
+		return reHelper->addROM(count);
+	}
+	
+	//TODO: should count the shift registers according to their bitwidths
+	std::string Operator::addSRL(int width, int depth, int count){
+				
+		reActive = true;
+		return reHelper->addSRL(width, depth, count);
+	}
+	
+	std::string Operator::addWire(int count, std::string signalName){
+		
+		reActive = true;
+		return reHelper->addWire(count, signalName);
+	}
+	
+	std::string Operator::addIOB(int count, std::string portName){
+		
+		reActive = true;
+		return reHelper->addIOB(count, portName);
+	}
+	
+	//---Even more particular resource logging-------------------------
+	
+	//TODO: get a more accurate count of the number of multiplexers 
+	//		needed; currently specific resources are not taken into account
+	std::string Operator::addMux(int width, int nrInputs, int count){
+				
+		reActive = true;
+		return reHelper->addMux(width, nrInputs, count);
+	}
+	
+	//TODO: count the counters according to their bitwidth
+	//TODO: get estimations when using specific resources (like DSPs)
+	//		involves also changes to getLUTPerCounter() getFFPerCounter()
+	std::string Operator::addCounter(int width, int count){
+				
+		reActive = true;
+		return reHelper->addCounter(width, count);
+	}
+	
+	//TODO: count the accumulators according to their bitwidth
+	std::string Operator::addAccumulator(int width, bool useDSP, int count){
+		
+		reActive = true;
+		return reHelper->addAccumulator(width, useDSP, count);
+	}
+	
+	//TODO: count the decoders according to their input and output 
+	//		bitwidths
+	std::string Operator::addDecoder(int wIn, int wOut, int count){
+		
+		reActive = true;
+		return reHelper->addDecoder(wIn, wOut, count);
+	}
+	
+	std::string Operator::addArithOp(int width, int nrInputs, int count){
+		
+		reActive = true;
+		return reHelper->addArithOp(width, nrInputs, count);
+	}
+	
+	//TODO: find a better approximation for the resources
+	//		currently just logic corresponding to the multiplexers
+	//TODO: find a better approximation for the resources
+	//		currently just logic corresponding to the state register
+	//TODO: find a better approximation for the resources
+	//		for now, RAM blocks are not used
+	std::string Operator::addFSM(int nrStates, int nrTransitions, int count){
+		
+		reActive = true;
+		return reHelper->addFSM(nrStates, nrTransitions, count);
+	}
+	
+	//--Resource usage statistics---------------------------------------
+	std::string Operator::generateStatistics(int detailLevel){
+		
+		reActive = true;
+		return reHelper->generateStatistics(detailLevel);
+	}
+	
+	//--Utility functions related to the generation of resource usage statistics
+	
+	//TODO: find a more precise way to determine the required number of
+	//		registers due to pipeline
+	std::string Operator::addPipelineFF(){
+		
+		reActive = true;
+		return reHelper->addPipelineFF();
+	}
+	
+	std::string Operator::addWireCount(){
+		
+		reActive = true;
+		return reHelper->addWireCount();
+	}
+	
+	std::string Operator::addPortCount(){
+		
+		reActive = true;
+		return reHelper->addPortCount();
+	}
+	
+	//TODO: add function to add resource count from specified component
+	std::string Operator::addComponentResourceCount(){
+		
+		reActive = true;
+		return reHelper->addComponentResourceCount();
+	}
+	
+	void Operator::addAutomaticResourceEstimations(){
+				
+		reActive = true;
+		resourceEstimate << reHelper->addAutomaticResourceEstimations();
+	}
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////Functions used for floorplanning
+	
+	std::string Operator::manageFloorplan(){
+		
+		return flpHelper->manageFloorplan();
+	}
+	
+	std::string Operator::addPlacementConstraint(std::string source, std::string sink, int type){
+		
+		return flpHelper->addPlacementConstraint(source, sink, type);
+	}
+	
+	std::string Operator::addConnectivityConstraint(std::string source, std::string sink, int nrWires){
+		
+		return flpHelper->addConnectivityConstraint(source, sink, nrWires);
+	}
+	
+	std::string Operator::addAspectConstraint(std::string source, double ratio){
+		
+		return flpHelper->addAspectConstraint(source, ratio);
+	}
+	
+	std::string Operator::addContentConstraint(std::string source, int value, int length){
+		
+		return flpHelper->addContentConstraint(source, value, length);
+	}
+	
+	std::string Operator::processConstraints(){
+				
+		return flpHelper->processConstraints();
+	}
+	
+	std::string Operator::createVirtualGrid(){
+				
+		return flpHelper->createVirtualGrid();
+	}
+	
+	std::string Operator::createPlacementGrid(){
+				
+		return flpHelper->createPlacementGrid();
+	}
+	
+	std::string Operator::createConstraintsFile(){
+		
+		return flpHelper->createConstraintsFile();
+	}
+	
+	std::string Operator::createPlacementForComponent(std::string moduleName){
+				
+		return flpHelper->createPlacementForComponent(moduleName);
+	}
+	
+	std::string Operator::createFloorplan(){
+				
+		return flpHelper->createFloorplan();
+	}
+	/////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 

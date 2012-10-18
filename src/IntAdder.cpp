@@ -32,7 +32,6 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
  
 using namespace std;
 namespace flopoco {
-	extern vector<Operator*> oplist;
 	
 	IntAdder::IntAdder ( Target* target, int wIn, map<string, double> inputDelays, int optimizeType, bool srl, int implementation):
 	Operator ( target, inputDelays), wIn_ ( wIn )  {
@@ -45,7 +44,7 @@ namespace flopoco {
 		// Set up the IO signals
 		addInput ( "X"  , wIn_, true );
 		addInput ( "Y"  , wIn_, true );
-		addInput ( "Cin", 1 );
+		addInput( "Cin");
 		addOutput ( "R"  , wIn_, 1 , true );
 		
 		REPORT(DETAILED, "Implementing IntAdder " << wIn << " implementation="<<implementation);
@@ -107,14 +106,17 @@ namespace flopoco {
 	
 	/******************************************************************************/
 	void IntAdder::emulate ( TestCase* tc ) {
+		// get the inputs from the TestCase
 		mpz_class svX = tc->getInputValue ( "X" );
 		mpz_class svY = tc->getInputValue ( "Y" );
 		mpz_class svC = tc->getInputValue ( "Cin" );
 		
+		// compute the multiple-precision output
 		mpz_class svR = svX + svY + svC;
-		// Don't allow overflow
-		mpz_clrbit ( svR.get_mpz_t(),wIn_ );
+		// Don't allow overflow: the output is modulo 2^wIn
+		svR = svR & ((mpz_class(1)<<wIn_)-1);
 		
+		// complete the TestCase with this expected output
 		tc->addExpectedOutput ( "R", svR );
 	}
 	

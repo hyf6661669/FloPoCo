@@ -897,6 +897,7 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
 		
 		REPORT(DETAILED, "LutSrRng : Looking for parameters with r>="<<want_r<<", t>="<<want_t<<", k>="<<want_k);
 
+        n=0;
 		for(unsigned i=0;i<no_tuple;i++){
 			if ((table[i].t>=want_t) && (table[i].r >= want_r) && (table[i].k>=want_k)){
 				n=table[i].n;

@@ -20,6 +20,7 @@
 #include "PowerROM.hh"
 #include "PowerAdHoc.hh"
 #include "TermPowMult.hh"
+#include "Operator.hpp"
 
 
 
@@ -284,185 +285,172 @@ PWPolynomial TermPowMult::calcErrPow(int k_)
 	return errP;
 }
 
-void TermPowMult::genVHDL(ostream &os, string name)
-{
-	{
-		ostringstream buf;
-		buf << name << "_pow";
-		pow->genVHDL(os, buf.str());
-		os << endl << endl;
-	}
+class TermPowMultTableInstance: public flopoco::Operator {
+	public:
+	TermPowMultTableInstance (flopoco::Target* target, int d, int mM,
+	                          int mT,
+	                          int alpha, int sigma, int wTable, int i,
+	                          long long int table[], std::string name)
+		:Operator (target) {
+		setName (name);
+		vhdl << "--------------------------------------------------------------------------------" << endl;
+		vhdl << "-- TermPowMult::Table instance for order-" << d << " term Q_" << (i+1) << "." << endl;
+		vhdl << "-- Decomposition:" << endl;
+		vhdl << "--   alpha_" << d << "," << (i+1) << " = " << alpha << "; ";
+		if (i >= mM)
+			vhdl << "sigma'_" << d << "," << (i+1) << " = " << (sigma-1) << "; ";
+		vhdl << "wO_" << d << "," << (i+1) << " = " << wTable << "." << endl;
+		vhdl << endl;
 
-	for (int i = 0; i < tp.mM+tp.mT; i++) {
-		os << "--------------------------------------------------------------------------------" << endl;
-		os << "-- TermPowMult::Table instance for order-" << d << " term Q_" << (i+1) << "." << endl;
-		os << "-- Decomposition:" << endl;
-		os << "--   alpha_" << d << "," << (i+1) << " = " << tp.alphas[i] << "; ";
-		if (i >= tp.mM)
-			os << "sigma'_" << d << "," << (i+1) << " = " << (tp.sigmas[i]-1) << "; ";
-		os << "wO_" << d << "," << (i+1) << " = " << wTable[i] << "." << endl;
-		os << endl;
+		if (alpha)
+			addInput ("a", alpha);
+		if ((i >= mM) && (sigma > 1))
+			addInput ("s", sigma-1);
+		addOutput ("r", wTable);
 
-		os << "library ieee;" << endl;
-		os << "use ieee.std_logic_1164.all;" << endl;
-		os << "use ieee.std_logic_arith.all;" << endl;
-		os << "use ieee.std_logic_unsigned.all;" << endl;
-		os << endl;
-
-		os << "entity " << name << "_t" << (i+1) << " is" << endl;
-		os << "  port ( ";
-		if (tp.alphas[i])
-			os << "a : in  std_logic_vector(" << (tp.alphas[i]-1) << " downto 0);" << endl << "         ";
-		if ((i >= tp.mM) && (tp.sigmas[i] > 1))
-			os << "s : in  std_logic_vector(" << (tp.sigmas[i]-2) << " downto 0);" << endl << "         ";
-		os << "r : out std_logic_vector(" << (wTable[i]-1) << " downto 0) );" << endl;
-		os << "end entity;" << endl;
-		os << endl;
-
-		int wI = i < tp.mM ? tp.alphas[i] : tp.alphas[i]+tp.sigmas[i]-1;
-		os << "architecture arch of " << name << "_t" << (i+1) << " is" << endl;
+		int wI = i < mM ? alpha : alpha+sigma-1;
 		if (wI)
-			os << "  signal x : std_logic_vector(" << (wI-1) << " downto 0);" << endl;
-		os << "begin" << endl;
+			declare ("x", wI);
 
 		if (wI) {
-			if ((i < tp.mM) || (tp.sigmas[i] <= 1))
-				os << "  x <= a;" << endl;
-			else if (!tp.alphas[i])
-				os << "  x <= s;" << endl;
+			if ((i < mM) || (sigma <= 1))
+				vhdl << "  x <= a;" << endl;
+			else if (!alpha)
+				vhdl << "  x <= s;" << endl;
 			else
-				os << "  x <= a & s;" << endl;
-			os << endl;
-			VHDLGen::genROM(os, table[i], wI, wTable[i], "x", "r");
+				vhdl << "  x <= a & s;" << endl;
+			vhdl << endl;
+			VHDLGen::genROM(vhdl, table, wI, wTable, "x", "r");
 		}
 		else {
-			os << "  r <= ";
-			VHDLGen::genInteger(os, table[i][0], wTable[i]);
-			os << ";" << endl;
+			vhdl << "  r <= ";
+			VHDLGen::genInteger(vhdl, table[0], wTable);
+			vhdl << ";" << endl;
 		}
 
-		os << "end architecture;" << endl;
-		os << endl << endl;
+		vhdl << endl << endl;
+	}
+	~TermPowMultTableInstance() {
+	}
+};
+
+Component::Component (flopoco::Target* t, TermPowMult tpm, std::string name)
+	:Operator (t)
+{
+	int d = tpm.d;
+	int* wTable = tpm.wTable;
+	long long int** table = tpm.table;
+	TermPowMultParam& tp = tpm.tp;
+	bool signTable = tpm.signTable;
+	Param& p = tpm.p;
+	Power* pow = tpm.pow;
+	setName (name);
+	using namespace flopoco;
+
+	for (int i = 0; i < tp.mM+tp.mT; i++) {
 	}
 
-	os << "--------------------------------------------------------------------------------" << endl;
-	os << "-- TermPowMult instance for order-" << d << " term." << endl;
-	os << "-- Decomposition:" << endl;
-	os << "--   alpha_" << d << " = " << tp.alpha << "; " << "beta_" << d << " = " << tp.beta << "; "
+	vhdl << "--------------------------------------------------------------------------------" << endl;
+	vhdl << "-- TermPowMult instance for order-" << d << " term." << endl;
+	vhdl << "-- Decomposition:" << endl;
+	vhdl << "--   alpha_" << d << " = " << tp.alpha << "; " << "beta_" << d << " = " << tp.beta << "; "
 		 << "lambda_" << d << " = " << tp.p->lambda << "; " << " m_" << d << " = " << (tp.mM+tp.mT) << ";" << endl;
-	os << "--   Pow   " << (tp.p->type == POWER_TYPE_ROM ? "(ROM)" : "(AdHoc)") << ";" << endl;
+	vhdl << "--   Pow   " << (tp.p->type == POWER_TYPE_ROM ? "(ROM)" : "(AdHoc)") << ";" << endl;
 	for (int i = 0; i < tp.mM+tp.mT; i++) {
-		os << "--   Q_" << d << "," << (i+1) << " " << (i < tp.mM ? "(Mult):" : "(ROM): ")
+		vhdl << "--   Q_" << d << "," << (i+1) << " " << (i < tp.mM ? "(Mult):" : "(ROM): ")
 			 << " alpha_" << d << "," << (i+1) << " = " << tp.alphas[i] << "; "
 			 << "rho_" << d << "," << (i+1) << " = " << tp.rhos[i] << "; "
 			 << "sigma_" << d << "," << (i+1) << " = " << tp.sigmas[i] << "; "
 			 << "wO_" << d << "," << (i+1) << " = " << wTable[i] << (i < tp.mM+tp.mT-1 ? ";" : ".") << endl;
 	}
-	os << endl;
+	vhdl << endl;
 
-	os << "library ieee;" << endl;
-	os << "use ieee.std_logic_1164.all;" << endl;
-	os << "use ieee.std_logic_arith.all;" << endl;
-	os << "use ieee.std_logic_unsigned.all;" << endl;
-	os << endl;
-
-	os << "entity " << name << " is" << endl;
-	os << "  port ( ";
 	if (tp.alpha)
-		os << "a : in  std_logic_vector(" << (tp.alpha-1) << " downto 0);" << endl << "         ";
-	os << "b : in  std_logic_vector(" << (tp.beta-1) << " downto 0);" << endl << "         ";
-	os << "r : out std_logic_vector(" << (p.wO+p.g) << " downto 0) );" << endl;
-	os << "end entity;" << endl;
-	os << endl;
+		addInput ("a", tp.alpha);
+	addInput ("b", tp.beta);
+	addOutput ("r", p.wO+p.g+1);
 
-	os << "architecture arch of " << name << " is" << endl;
-	os << "  signal sign   : std_logic;" << endl;
+	declare ("sign");
 	if(tp.beta >= 2)
-		os << "  signal b0     : std_logic_vector(" << (tp.beta-2) << " downto 0);" << endl;
-	os << "  signal s      : std_logic_vector(" << (tp.p->lambda-1) << " downto 0);" << endl;
-	os << "  component " << name << "_pow is" << endl;
-	os << "    port ( ";
-	if(tp.beta >= 2)
-		os << "x : in  std_logic_vector(" << (tp.beta-2) << " downto 0);" << endl << "           ";
-	os << "r : out std_logic_vector(" << (tp.p->lambda-1) << " downto 0) );" << endl;
-	os << "  end component;" << endl;
+		declare ("b0", tp.beta-1);
 
 	for (int i = 0; i < tp.mM+tp.mT; i++) {
-		os << endl;
+		vhdl << endl;
 		if (tp.alphas[i])
-			os << "  signal a_" << (i+1) << "    : std_logic_vector(" << (tp.alphas[i]-1) << " downto 0);" << endl;
-		os << "  signal sign_" << (i+1) << " : std_logic;" << endl;
+			declare (join("a_",i+1), tp.alphas[i]);
+		declare (join("sign_",i+1));
 		if (tp.sigmas[i] > 1)
-			os << "  signal s_" << (i+1) << "    : std_logic_vector(" << (tp.sigmas[i]-2) << " downto 0);" << endl;
+			declare (join("s_",i+1), tp.sigmas[i]-1);
+		// exclude outPortMapped r0's:
 		if (i < tp.mM)
-			os << "  signal k_" << (i+1) << "    : std_logic_vector(" << (wTable[i]-1) << " downto 0);" << endl;
-		os << "  signal r0_" << (i+1) << "   : std_logic_vector("
-			 << (i < tp.mM ? tp.sigmas[i]+wTable[i]-1 : wTable[i]-1) << " downto 0);" << endl;
-		os << "  signal r_" << (i+1) << "    : std_logic_vector(" << (p.wO+p.g) << " downto 0);" << endl;
-		os << "  component " << name << "_t" << (i+1) << " is" << endl;
-		os << "    port ( ";
-		if (tp.alphas[i])
-			os << "a : in  std_logic_vector(" << (tp.alphas[i]-1) << " downto 0);" << endl << "           ";
-		if ((i >= tp.mM) && (tp.sigmas[i] > 1))
-			os << "s : in  std_logic_vector(" << (tp.sigmas[i]-2) << " downto 0);" << endl << "           ";
-		os << "r : out std_logic_vector(" << (wTable[i]-1) << " downto 0) );" << endl;
-		os << "  end component;" << endl;
+			declare (join("r0_",i+1), tp.sigmas[i]+wTable[i]);
+		declare (join("r_",i+1), p.wO+p.g+1);
 	}
 
-	os << "begin" << endl;
-	os << "  sign <= not b(" << (tp.beta-1) << ");" << endl;
+	vhdl << "  sign <= not b(" << (tp.beta-1) << ");" << endl;
 	if(tp.beta >= 2)
-		os << "  b0 <= b(" << (tp.beta-2) << " downto 0) xor (" << (tp.beta-2) << " downto 0 => sign);" << endl;
-	os << endl;
+		vhdl << "  b0 <= b(" << (tp.beta-2) << " downto 0) xor (" << (tp.beta-2) << " downto 0 => sign);" << endl;
+	vhdl << endl;
 
-	os << "  pow : " << name << "_pow" << endl;
-	os << "    port map ( ";
-	if(tp.beta >= 2)
-		os << "x => b0," << endl << "               ";
-	os << "r => s );" << endl;
-	os << endl;
+	{
+		ostringstream buf;
+		buf << name << "_pow";
+		Operator* op = pow->toComponent(t, buf.str());
+		oplist.push_back (op);
+
+		outPortMap (op, "r", "s");
+		if (tp.beta >= 2)
+			inPortMap (op, "x", "b0");
+
+		vhdl << instance (op, "pow");
+	}
 
 	for (int i = 0; i < tp.mM+tp.mT; i++) {
 		if (tp.alphas[i])
-			os << "  a_" << (i+1) << " <= a(" << (tp.alpha-1) << " downto " << (tp.alpha-tp.alphas[i]) << ");" << endl;
-		os << "  sign_" << (i+1) << " <= not s(" << (tp.p->lambda-tp.rhos[i]-1) << ");" << endl;
+			vhdl << "  a_" << (i+1) << " <= a" << range(tp.alpha-1, tp.alpha-tp.alphas[i]) << ";" << endl;
+		vhdl << "  sign_" << (i+1) << " <= not s" << of(tp.p->lambda-tp.rhos[i]-1) << ";" << endl;
 		if (tp.sigmas[i] > 1) {
-			os << "  s_" << (i+1) << " <= s(" << (tp.p->lambda-tp.rhos[i]-2) << " downto "
-				 << (tp.p->lambda-tp.rhos[i]-tp.sigmas[i]) << ") xor (" << (tp.p->lambda-tp.rhos[i]-2)
-				 << " downto " << (tp.p->lambda-tp.rhos[i]-tp.sigmas[i]) << " => sign_" << (i+1) << ");" << endl;
+			vhdl << "  s_" << (i+1) << " <= s" << range(tp.p->lambda-tp.rhos[i]-2, tp.p->lambda-tp.rhos[i]-tp.sigmas[i])
+			     << " xor " << rangeAssign(tp.p->lambda-tp.rhos[i]-2, tp.p->lambda-tp.rhos[i]-tp.sigmas[i], join("sign_",i+1))
+			     << ";" << endl;
 		}
-		os << "  t_" << (i+1) << " : " << name << "_t" << (i+1) << endl;
-		os << "    port map ( ";
-		if (tp.alphas[i])
-			os << "a => a_" << (i+1) << "," << endl << "               ";
-		if ((i >= tp.mM) && (tp.sigmas[i] > 1))
-			os << "s => s_" << (i+1) << "," << endl << "               ";
-		os << "r => " << (i < tp.mM ? "k_" : "r0_") << (i+1) << " );" << endl;
+
+		{
+			TermPowMultTableInstance* op = new TermPowMultTableInstance
+				(t, d, tp.mM, tp.mT, tp.alphas[i], tp.sigmas[i], wTable[i], i, table[i], getName() + flopoco::join("_t",i+1));
+			oplist.push_back (op);
+
+			outPortMap (op, "r", join(i < tp.mM ? "k_" : "r0_",i+1));
+			if ((i >= tp.mM) && (tp.sigmas[i] > 1))
+				inPortMap (op, "s", join("s_",i+1));
+			if (tp.alphas[i])
+				inPortMap (op, "a", join("a_",i+1));
+
+			vhdl << instance (op, join("t_",i+1));
+		}
 
 		if (i < tp.mM)
-			os << "  r0_" << (i+1) << " <= k_" << (i+1) << " * (s_" << (i+1) << " & \"1\");" << endl;
-		os << "  r_" << (i+1) << "(" << (wTable[i]-1) << " downto 0) <=" << endl << "    r0_" << (i+1);
+			vhdl << "  r0_" << (i+1) << " <= k_" << (i+1) << " * (s_" << (i+1) << " & \"1\");" << endl;
+		vhdl << "  r_" << (i+1) << "(" << (wTable[i]-1) << " downto 0) <=" << endl << "    r0_" << (i+1);
 		if (i < tp.mM)
-			os << "(" << (tp.sigmas[i]+wTable[i]-1) << " downto " << tp.sigmas[i] << ")";
-		os << " xor (";
+			vhdl << "(" << (tp.sigmas[i]+wTable[i]-1) << " downto " << tp.sigmas[i] << ")";
+		vhdl << " xor (";
 		if (i < tp.mM)
-			os << (tp.sigmas[i]+wTable[i]-1) << " downto " << tp.sigmas[i];
+			vhdl << (tp.sigmas[i]+wTable[i]-1) << " downto " << tp.sigmas[i];
 		else
-			os << (wTable[i]-1) << " downto 0";
-		os << " => (" << (signTable ? "not " : "") << "(" << (d%2 ? "sign xor " : "") << "sign_" << (i+1) << ")));" << endl;
+			vhdl << (wTable[i]-1) << " downto 0";
+		vhdl << " => (" << (signTable ? "not " : "") << "(" << (d%2 ? "sign xor " : "") << "sign_" << (i+1) << ")));" << endl;
 
 		if (p.wO+p.g+1 > wTable[i]) {
-			os << "  r_" << (i+1) << "(" << (p.wO+p.g) << " downto " << wTable[i] << ") <= ("
+			vhdl << "  r_" << (i+1) << "(" << (p.wO+p.g) << " downto " << wTable[i] << ") <= ("
 				 << (p.wO+p.g) << " downto " << wTable[i] << " => (" << (signTable ? "not " : "")
 				 << "(" << (d%2 ? "sign xor " : "") << "sign_" << (i+1) << ")));" << endl;
 		}
-		os << endl;
+		vhdl << endl;
 	}
 
-	os << "  r <= ";
+	vhdl << "  r <= ";
 	for (int i = 0; i < tp.mM+tp.mT; i++)
-		os << (i ? " + " : "") << "r_" << (i+1);
-	os << ";" << endl;
-
-	os << "end architecture;" << endl;
+		vhdl << (i ? " + " : "") << "r_" << (i+1);
+	vhdl << ";" << endl;
 }

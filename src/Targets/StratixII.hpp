@@ -19,43 +19,47 @@ namespace flopoco{
 
 		/** The default constructor. */  
 		StratixII() : Target()	{
-			id_                = "StratixII";
-			vendor_           = "Altera";
-			maxFrequencyMHz_= 400;
-			sizeOfBlock_ 		= 4608; 	// the size of a primitive block is 2^9 * 9
-			fastcarryDelay_ 	= 3.5e-11; 	// aproximately right    
-			elemWireDelay_  	= 0.222e-11; 	// an average value over R4, R24, C4, C16 interconnects delays
-			lut2lutDelay_   	= 1.5e-10; 	// ???
-			lutDelay_       	= 0.378e-9; 	// 378 ps  
-			ffDelay_        	= 0.127e-9; 	// 127 ps LE register clock-to-output max delay for -3 speed grade
-			multXInputs_    	= 36;
-			multYInputs_    	= 36;
-			lutInputs_		= 6;
-			almsPerLab_		= 8;		// there are 8 ALMs per LAB
+			id_						= "StratixII";
+			vendor_					= "Altera";
+			maxFrequencyMHz_		= 400;
+			sizeOfBlock_			= 4608; 		// the size of a primitive block is 2^9 * 9
+			fastcarryDelay_			= 0.035e-9; 	// aproximately right    
+			elemWireDelay_			= 0.222e-9; 	// an average value over R4, R24, C4, C16 interconnects delays
+			lut2lutDelay_			= 0.720e-9;		// ???
+			
+			lutDelay_				= 0.350e-9; 	// obtained from Quartus 11.1
+			ffDelay_				= 0.097e-9; 	// obtained from Quartus 11.1
+			
+			multXInputs_			= 36;
+			multYInputs_			= 36;
+			lutInputs_				= 6;
+			almsPerLab_				= 8;			// there are 8 ALMs per LAB
 			// all these values are set precisely to match the Stratix 2
-			lut2_ 			= 0.162e-9; 	// obtained from Handbook
-			lut3_			= 0.280e-9; 	// obtained from Handbook
-			lut4_			= 0.378e-9; 	// obtained from Handbook
-			innerLABcarryDelay_	= 0.136e-9; 	// obtained from Quartus 2 Chip Planner
-			interLABcarryDelay_	= 0.235e-9; 	// obtained from Quartus 2 Chip Planner
-			shareOutToCarryOut_	= 0.172e-9; 	// obtained from Quartus 2 Chip Planner
-			muxStoO_		= 0.189e-9; 	// obtained from Quartus 2 Chip Planner by subtraction
-			fdCtoQ_			= 0.352e-9; 	// obtained from Quartus 2 Chip Planner by subtraction
-			carryInToSumOut_	= 0.125e-9;	// obtained from Quartus 2 Chip Planner
+			lut2_					= 0.162e-9; 	// obtained from Handbook
+			lut3_					= 0.280e-9; 	// obtained from Handbook
+			lut4_					= 0.378e-9; 	// obtained from Handbook
+			
+			innerLABcarryDelay_		= 0.124e-9; 	// obtained from Quartus 2 Chip Planner 11.1
+			interLABcarryDelay_		= 0.168e-9; 	// obtained from Quartus 2 Chip Planner 11.1
+			shareOutToCarryOut_		= 0.172e-9; 	// obtained from Quartus 2 Chip Planner
+			muxStoO_				= 0.189e-9; 	// obtained from Quartus 2 Chip Planner by subtraction
+			fdCtoQ_					= 0.352e-9; 	// obtained from Quartus 2 Chip Planner by subtraction
+			carryInToSumOut_		= 0.125e-9;		// obtained from Quartus 2 Chip Planner
+			
 			// DSP parameters
-			totalDSPs_ 		= 12;		
-			nrConfigs_ 		= 3;		// StratixII has 9, 18, 36 bit multipliers by default
+			totalDSPs_				= 12;		
+			nrConfigs_				= 3;			// StratixII has 9, 18, 36 bit multipliers by default
 		
 			multiplierWidth_[0] 	= 9;
 			multiplierWidth_[1] 	= 18;
 			multiplierWidth_[2] 	= 36;
-		
-			multiplierDelay_[0] 	= 2.439e-9; 	// obtained experimentaly from Quartus 2. Value in handbook is: 2.880e-9
-			multiplierDelay_[1] 	= 2.724e-9; 	// obtained experimentaly from Quartus 2. Value in handbook is: 2.990e-9
-			multiplierDelay_[2] 	= 4.000e-9; 	// obtained experimentaly from Quartus 2. Value in handbook is: 4.450e-9
 			
-			RAMDelay_ = 2.439e-9; //TODO
-			RAMToLogicWireDelay_ = 0.439e-9; //TODO
+			multiplierDelay_[0] 	= 2.610e-9; 	// obtained experimentaly from Quartus 2 11.1
+			multiplierDelay_[1] 	= 2.670e-9; 	// obtained experimentaly from Quartus 2 11.1
+			multiplierDelay_[2] 	= 3.950e-9; 	// obtained experimentaly from Quartus 2 11.1
+			
+			RAMDelay_				= 2.439e-9; 	// TODO
+			RAMToLogicWireDelay_	= 0.439e-9; 	// TODO
 		}
 	
 		/** The destructor */
@@ -66,14 +70,15 @@ namespace flopoco{
 		 */
 		double carryPropagateDelay();
 		double adderDelay(int size);
+		double adder3Delay(int size);
 		double eqComparatorDelay(int size);
 		double eqConstComparatorDelay(int size);
 
-		double DSPMultiplierDelay(){ return multiplierDelay_[2];}
-		double DSPAdderDelay(){ return 2.439e-9;} //TODO
+		double DSPMultiplierDelay(){ return multiplierDelay_[1];}
+		double DSPAdderDelay(){ return 1.280e-9;} //TODO
 		double DSPCascadingWireDelay(){ return 0.378e-9;}//TODO
-		double DSPToLogicWireDelay(){ return 0.724e-9;}	
-		double LogicToDSPWireDelay(){ return 0.724e-9;}
+		double DSPToLogicWireDelay(){ return 0.580e-9;}	
+		double LogicToDSPWireDelay(){ return 0.580e-9;}
 		
 		double RAMDelay() { return RAMDelay_; }
 		double RAMToLogicWireDelay() { return RAMToLogicWireDelay_; }
@@ -87,7 +92,9 @@ namespace flopoco{
 		double distantWireDelay(int n);
 		bool   suggestSubmultSize(int &x, int &y, int wInX, int wInY);
 		bool   suggestSubaddSize(int &x, int wIn);
+		bool   suggestSubadd3Size(int &x, int wIn);
 		bool   suggestSlackSubaddSize(int &x, int wIn, double slack);
+		bool   suggestSlackSubadd3Size(int &x, int wIn, double slack);
 		bool   suggestSlackSubcomparatorSize(int &x, int wIn, double slack, bool constant);
 		
 		int    getIntMultiplierCost(int wInX, int wInY);
@@ -96,8 +103,9 @@ namespace flopoco{
 		int    getEquivalenceSliceDSP();
 		int    getNumberOfDSPs();
 		void   getDSPWidths(int &x, int &y, bool sign = false);
-		int    getIntNAdderCost(int wIn, int n);	
-
+		int    getIntNAdderCost(int wIn, int n);
+		int*   getDSPMultiplierWidths(){return multiplierWidth_;};	
+		int    getNrDSPMultiplier(){return nrConfigs_;};	
 	private:
 
 		double fastcarryDelay_; 	/**< The delay of the fast carry chain */
@@ -106,7 +114,6 @@ namespace flopoco{
 		double elemWireDelay_;  	/**< The elementary wire dealy (for computing the distant wire delay) */
 		double lutDelay_;       	/**< The LUT delay (in seconds)*/
 	
-		// Added by Sebi
 		double lut2_;           	/**< The LUT delay for 2 inputs */
 		double lut3_;           	/**< The LUT delay for 3 inputs */
 		double lut4_;           	/**< The LUT delay for 4 inputs */

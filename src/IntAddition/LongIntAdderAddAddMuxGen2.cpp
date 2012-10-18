@@ -27,7 +27,6 @@
 
 using namespace std;
 namespace flopoco{
-extern vector<Operator*> oplist;
 
 	LongIntAdderAddAddMuxGen2::LongIntAdderAddAddMuxGen2(Target* target, int wIn, map<string, double> inputDelays, int regular):
 		Operator(target), wIn_(wIn), inputDelays_(inputDelays) 
@@ -38,7 +37,7 @@ extern vector<Operator*> oplist;
 		// Set up the IO signals
 		for (int i=0; i<2; i++)
 			addInput ( join("X",i) , wIn_, true);
-		addInput ("Cin", 1  );
+		addInput("Cin");
 		addOutput("R"  , wIn_, true, 1);
 
 				//compute the maximum input delay
@@ -140,35 +139,35 @@ extern vector<Operator*> oplist;
 				
 				
 				int ll,l0;
-				double xordelay;
-				double dcarry;
-				double muxcystoo;
+				// double xordelay;
+				// double dcarry;
+				// double muxcystoo;
+				// double fdcq;
 				double muxcystooOut;
-				double fdcq;
 
 				int fanOutWeight;
 
 				if (target->getID()=="Virtex5"){
-					fdcq = 0.396e-9; 
-					xordelay = 0.300e-9;
-					dcarry = 0.023e-9;
-					muxcystoo = 0.305e-9;
+					// fdcq = 0.396e-9; 
+					// xordelay = 0.300e-9;
+					// dcarry = 0.023e-9;
+					// muxcystoo = 0.305e-9;
 					muxcystooOut = 0.504e-9; 
 					fanOutWeight = 45;					
 				}else{ 
 					if (target->getID()=="Virtex6"){
-						fdcq = 0.280e-9;
-						xordelay = 0.180e-9;
-						dcarry = 0.015e-9;
-						muxcystoo =	0.219e-9;
+						// fdcq = 0.280e-9;
+						// xordelay = 0.180e-9;
+						// dcarry = 0.015e-9;
+						// muxcystoo =	0.219e-9;
 						muxcystooOut = 0.373e-9;
 						fanOutWeight = 51;
 					}else{ 
 						if (target->getID()=="Virtex4"){
-							fdcq = 0.272e-9;
-							xordelay = 0.273e-9;
-							dcarry = 0.034e-9;
-							muxcystoo = 0.278e-9;
+							// fdcq = 0.272e-9;
+							// xordelay = 0.273e-9;
+							// dcarry = 0.034e-9;
+							// muxcystoo = 0.278e-9;
 							muxcystooOut = 0.524e-9;
 							fanOutWeight = 60;
 						}

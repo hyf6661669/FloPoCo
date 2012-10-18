@@ -65,6 +65,16 @@ namespace flopoco{
 	 */
 	string fp2bin(mpfr_t x, int wE, int wF);
 
+	/** return the binary representation of an MPFR, with bits ranging from msb to lsb
+	 * (total size msb-lsb+1) 
+	 * @param x the number to be represented
+	 * @param msb the weight of the MSB. 
+	 * @param lsb the weight of the LSB
+	 * @param[in] margins	integer argument determining the position of the quotes in the output string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
+*/
+	std::string unsignedFixPointNumber(mpfr_t x, int msb, int lsb, int margins=0);
+
+
 	/** Prints the binary representation of a integer on size bits
 	 * @param o the output stream
 	 * @param number [uint64_t] the number to be represented
@@ -78,6 +88,9 @@ namespace flopoco{
 	 * @param size the number of bits of the output
 	 */
 	void printBinNumGMP(ostream& o, mpz_class number, int size);
+
+	/** returns a string for a mpfr_t*/
+	string printMPFR(mpfr_t x, int n);
 
 	/** Prints the binary representation of a positive integer on size bits
 	 * @param o the output stream
@@ -164,6 +177,12 @@ namespace flopoco{
 	 * @return the number of bits
 	 */
 	int intlog2(mpz_class number);
+
+	/** How many bits are set at 1 in the mnumber.
+	 * @param number the number of which we count the bits at 1
+	 * @return the number of these bits
+	 */
+	mpz_class popcnt(mpz_class number);
 
 
 
@@ -273,10 +292,12 @@ namespace flopoco{
 
 	string join( std::string id, int n1, int n2);
 	string join( std::string id, int n1, int n2, int n3);
+	string join( std::string id, string sep, int n);
 	string join( std::string id1, int n, std::string id2);
 	string join( std::string id, int n, std::string id2 , int n2);
 	string join( std::string id, int n, std::string id2 , int n2, std::string id3);
 	string join( std::string id, int n, std::string id2 , int n2, std::string id3, int n3);
+	string join( std::string id, std::string id2 , int n2, std::string id3);
 	
 	/** Same for concatenating two ids. Maybe + would do? */
 	string join( std::string id, std::string);

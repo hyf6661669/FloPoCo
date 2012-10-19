@@ -39,6 +39,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	utils/comparable_float_type.cpp
 	transforms/blocks/HadamardTransform.cpp
 	transforms/blocks/CLTTransform.cpp
+	transforms/blocks/TableTransform.cpp
 )
 target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB})
 

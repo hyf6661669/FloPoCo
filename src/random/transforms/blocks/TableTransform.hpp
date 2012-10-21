@@ -1,7 +1,7 @@
 /* Each Operator declared within the flopoco framework has 
 to inherit the class Operator and overload some functions listed below*/
-#ifndef random_clt_transform_hpp
-#define random_clt_transform_hpp
+#ifndef random_table_transform_hpp
+#define random_table_transform_hpp
 #include <vector>
 #include <sstream>
 #include <string>
@@ -64,6 +64,8 @@ public:
 	
 	virtual std::string nonUniformOutputName(int i) const
 	{ return "oRng"; }
+	
+	static void registerFactory();
 };
 
 

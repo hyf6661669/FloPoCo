@@ -34,6 +34,7 @@ ENDIF (NTL_H AND NTL_LIB)
 
 ADD_LIBRARY(flopoco_random_lib STATIC
 	random_main.cpp
+	utils/operator_factory.cpp	
 	urng/lut_sr_rng.cpp
 	float_approx/static_quantiser.cpp
 	utils/comparable_float_type.cpp

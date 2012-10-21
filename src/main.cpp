@@ -60,17 +60,13 @@ using namespace flopoco;
 extern void random_usage(char *name, string opName);
 	
 extern bool random_parseCommandLine(
-	int argc, char *argv[], Target *target,
-	std::string opname, int &i,
-	vector<Operator*> &oplist
-);
-
-extern void random_usage(char *name, string opName);
-	
-extern bool random_parseCommandLine(
-	int argc, char *argv[], Target *target,
+	int argc, char* argv[], Target *target,
 	std::string opname, int &i
-);
+);	
+
+// Tells self-describing operators to register their factories
+extern void random_register_factories();
+
 
 void usage(char *name, string opName = ""){
 	bool full = (opName=="");
@@ -2543,6 +2539,12 @@ int main(int argc, char* argv[] )
 	
 	srand48(1);
 	
+	/* DT10 : This is to allow my self-describing operators to register their factories, so
+		that they can automatically hook into usage and parseCommandLine later on.
+		See random/utils/operator_factory.hpp
+	*/
+	random_register_factories();
+
 
 	target = new Virtex5(); // this also creates a global operator list
 

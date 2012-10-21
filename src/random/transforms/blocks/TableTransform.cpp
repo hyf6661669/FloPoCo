@@ -14,6 +14,10 @@
 
 // include the header of the Operator
 #include "TableTransform.hpp"
+#include "random/utils/operator_factory.hpp"
+
+// For twos complement stuff
+#include "CLTTransform.hpp"
 
 #include "Table.hpp"
 
@@ -93,14 +97,14 @@ TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_
 		vhdl << declare("index",m_log2n) << "<= iUniformBits;\n";
 	}
 	
-	Operator *table=MakeSinglePortTable(target, acc.str()+"_Contents", wElts, m_log2n, m_elements);	
+	Operator *table=MakeSinglePortTable(target, acc.str()+"_Contents", wElts, m_elements);	
 	inPortMap(table, "X", "index");
 	outPortMap(table,"Y", "elt");
 	syncCycleFromSignal("elt");
-	instance(table);
+	instance(table, "elements");
 	
 	if(m_addRandomSign){
-		vhdl<<declare("res",baseWidth+1) << " <= "<<zeroExtend("left",baseWidth+1) << " when (sign_bit='1') else (- "<<zeroExtend("right",baseWidth+1)<<");\n";
+		vhdl<<declare("res",wElts+1) << " <= "<<zeroExtend("left",wElts+1) << " when (sign_bit='1') else (- "<<zeroExtend("right",wElts+1)<<");\n";
 		nextCycle();
 		vhdl<<nonUniformOutputName(0)<<" <= res;\n";
 	}else{
@@ -112,7 +116,7 @@ TableTransform::~TableTransform()
 {}
 	
 
-void CLTTransform::emulate(TestCase * tc)
+void TableTransform::emulate(TestCase * tc)
 {
 	mpz_class bits=tc->getInputValue(uniformInputName());
 	
@@ -121,18 +125,18 @@ void CLTTransform::emulate(TestCase * tc)
 		mpz_tdiv_r_2exp(index.get_mpz_t(), bits.get_mpz_t(), m_log2n);
 		sign_bit=index>>m_log2n;
 		
-		mpz_class res=m_elements.at(index.get_uint());
+		mpz_class res=m_elements.at(index.get_ui());
 		
 		if(sign_bit!=0)
 			res=-res;
 		
-		return toTwosComplement(res, m_baseWidth+1);
+		tc->addExpectedOutput(nonUniformOutputName(0), flopoco::random::toTwosComplement(res, m_wElts+1));
 	}else{
-		return m_elements.at(bits.get_uint());
+		tc->addExpectedOutput(nonUniformOutputName(0), m_elements.at(bits.get_ui()));
 	}
 }
 	
-TestCase* CLTTransform::buildRandomTestCase(int i)
+TestCase* TableTransform::buildRandomTestCase(int i)
 {
 	TestCase *tc=new TestCase(this);
 	
@@ -142,5 +146,51 @@ TestCase* CLTTransform::buildRandomTestCase(int i)
   	return tc;
 }
 
+
+static void TableFactoryUsage(std::ostream &dst)
+{
+	OperatorFactory::classic_OP(dst, "table_transform", "k w func addSign", false);
+	dst << "    Generates a table transform according to the given function\n";
+	dst << "	      k - Number of input address bits, table will have 2^k elements.\n";
+	dst << "	      w - Width of each element\n";
+	dst << "        func - Function over [0,1] -> [0,1] defining entries.\n";
+	dst << "        addSign - Whether to use the MSB of the input to attach a sign (resulting in output of w+1 bits, and an input of k+1 bits).\n";
+	dst << "    The table will contain the entries:\n";
+	dst << "      round(2^w * func[ (i+0.5)/(2^k) ] ) for i in [0..2^k)\n";
+}
+
+static Operator *TableFactoryParser(Target *target ,const std::vector<std::string> &args,int &consumed)
+{
+	unsigned nargs = 4;
+	if (args.size()<nargs)
+		throw std::string("TableFactory - Not enough arguments, check usage.");
+	consumed += nargs;
+	
+	int k = atoi(args[0].c_str());
+	int w = atoi(args[1].c_str());
+	std::string funcStr = args[2];
+	bool addSign=atoi(args[3].c_str())!=0;
+
+	if(k<1)
+		throw std::string("TableFactory - k must be a positive integer.");
+	if(w<1)
+		throw std::string("TableFactory - w must be a positive integer.");
+	
+	throw std::string("Not implemented.");
+	return 0;
+}
+
+void TableTransform::registerFactory()
+{
+	DefaultOperatorFactory::Register(
+		"table_transform",
+		"operator;rng_transform",
+		flopoco::random::TableFactoryUsage,
+		flopoco::random::TableFactoryParser
+	);
+}
+
 };
 };
+
+

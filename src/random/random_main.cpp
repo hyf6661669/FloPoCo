@@ -10,6 +10,7 @@
 
 #include "transforms/blocks/HadamardTransform.hpp"
 #include "transforms/blocks/CLTTransform.hpp"
+#include "transforms/blocks/TableTransform.hpp"
 
 #include "fixed_point_exp/func_approx_exp_stage.hpp"
 #include "fixed_point_exp/fixed_point_exp_stage.hpp"
@@ -19,6 +20,7 @@
 #include "fixed_point_exp/multiplier_exp_stage.hpp"
 #include "fixed_point_exp/chained_exp_stage.hpp"
 
+#include "utils/operator_factory.hpp"
 #include "utils/comparable_float_type.hpp"
 
 //#include "FloPoCo.hpp"
@@ -57,8 +59,16 @@ void pinOperator(boost::shared_ptr<Operator> op)
 {
 	g_pinOperator.push_back(op);
 }
+
+void random_register_factories()
+{
+	flopoco::random::TableTransform::registerFactory();
+	flopoco::random::CLTTransform::registerFactory();
+}
 	
 void random_usage(char *name, string opName = ""){
+	flopoco::random::OperatorFactory::classic_usage(name, opName);
+	
 	bool full = (opName=="");
 
 	if( full || opName=="lut_sr_rng"){
@@ -68,14 +78,8 @@ void random_usage(char *name, string opName = ""){
 		cerr << "	t - XOR gate input count\n";
 		cerr << "	k - Maximum Shift Register length\n";
 	}
-	if( opName=="clt_transform"){
-		OP("clt_hadamard_stage", "baseWidth k");
-		cerr << "       Generates a CLT transform with k uniform inputs\n";
-		cerr << "	baseWidth - How many bits per base uniform generator.\n";
-		cerr << "	k - Number of input uniforms (must be even, and greater than zero)\n";
-	}
 	if( opName=="clt_hadamard_transform"){
-		OP("clt_hadamard_stage", "log2n baseWidth");
+		OP("clt_hadamard_transform", "log2n baseWidth");
 		cerr << "       Generates vectors of Gaussian Random numbers\n";
 		cerr << "	log2n - Number of output variates (n=2^log2n)\n";
 		cerr << "	baseWidth - How many bits per base generator.\n";
@@ -110,6 +114,8 @@ bool random_parseCommandLine(
 	int argc, char* argv[], Target *target,
 	std::string opname, int &i
 ){
+	if(flopoco::random::OperatorFactory::classic_parseCommandLine(argc, argv, target, opname, i))
+		return true;
 	
 	/*
 	if (opname == "bitwise")
@@ -140,23 +146,6 @@ bool random_parseCommandLine(
 
 		cerr << "> lut_sr_rng: r=" << tr << "	t= " << t << "	k= " << k <<endl;
 		addOperator(new flopoco::random::LutSrRng(target, tr, t, k));
-		return true;
-	}
-	
-	else
-	if (opname == "clt_transform")
-	{
-		int nargs = 2;
-		if (i+nargs > argc)
-			usage(argv[0], opname); // and exit
-		int wBase = checkStrictlyPositive(argv[i++], argv[0]);
-		int k = checkStrictlyPositive(argv[i++], argv[0]);
-
-		cerr << "> clt_transform: wBase="<<wBase<<", k="<<k<<endl;
-		if(k!=2)
-			throw std::string("clt_transform - Only k==2 is supported at the moment.");
-		
-		addOperator(new flopoco::random::CLTTransform(target, wBase));
 		return true;
 	}
 	

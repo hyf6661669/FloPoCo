@@ -15,6 +15,8 @@
 // include the header of the Operator
 #include "CLTTransform.hpp"
 
+#include "random/utils/operator_factory.hpp"
+
 using namespace std;
 
 namespace flopoco
@@ -99,6 +101,44 @@ TestCase* CLTTransform::buildRandomTestCase(int i)
 	emulate(tc);
 	
   	return tc;
+}
+
+static void CLTFactoryUsage(std::ostream &dst)
+{
+	OperatorFactory::classic_OP(dst, "clt_transform", "baseWidth k", false);
+	dst << "       Generates a CLT transform with k uniform inputs\n";
+	dst << "	baseWidth - How many bits per base uniform generator.\n";
+	dst << "	k - Number of input uniforms (must be even, and greater than zero)\n";
+}
+
+static Operator *CLTFactoryParser(Target *target ,const std::vector<std::string> &args,int &consumed)
+{
+	int nargs = 2;
+	if (args.size()<nargs)
+		throw std::string("Not enough arguments.");
+	
+	int wBase = atoi(args[0].c_str());
+	int k = atoi(args[1].c_str());
+	
+	if(k!=2)
+		throw std::string("clt_transform - Only k==2 is supported at the moment.");
+		
+	return new flopoco::random::CLTTransform(target, wBase);
+	consumed += nargs;
+}
+
+void CLTTransform::registerFactory()
+{
+	DefaultOperatorFactory::Register(
+		"clt_transform",
+		"operator;rng_transform",
+		flopoco::random::CLTFactoryUsage,
+		flopoco::random::CLTFactoryParser,
+		DefaultOperatorFactory::ParameterList(
+			DefaultOperatorFactory::Parameters("8", "2"),
+			DefaultOperatorFactory::Parameters("8", "2")
+		)
+	);
 }
 
 };

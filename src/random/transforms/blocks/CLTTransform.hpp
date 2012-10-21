@@ -54,6 +54,8 @@ public:
 	
 	virtual std::string nonUniformOutputName(int i) const
 	{ return "oRng"; }
+	
+	static void registerFactory();
 };
 
 mpz_class toTwosComplement(const mpz_class &x, unsigned bits);

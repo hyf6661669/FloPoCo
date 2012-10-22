@@ -99,7 +99,7 @@ TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_
 	
 	if(m_addRandomSign){
 		vhdl << declare("index",m_log2n) << "<= iUniformBits"<<range(m_log2n-1,0)<<";\n";
-		vhdl << declare("sign_bit",1) << "<= iUniformBits("<<m_log2n<<");\n";
+		vhdl << declare("sign_bit") << "<= iUniformBits("<<m_log2n<<");\n";
 	}else{
 		vhdl << declare("index",m_log2n) << "<= iUniformBits;\n";
 	}
@@ -117,7 +117,7 @@ TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_
 	REPORT(DETAILED, "    Sorting out output and/or sign change.");
 	
 	if(m_addRandomSign){
-		vhdl<<declare("res",wElts+1) << " <= "<<zeroExtend("elt",wElts+1) << " when (sign_bit='1') else (- "<<zeroExtend("elt",wElts+1)<<");\n";
+		vhdl<<declare("res",wElts+1) << " <= "<<zeroExtend("elt",wElts+1) << " when (sign_bit='0') else ("<<zg(wElts-1)<<" - "<<zeroExtend("elt",wElts+1)<<");\n";
 		nextCycle();
 		vhdl<<nonUniformOutputName(0)<<" <= res;\n";
 	}else{
@@ -138,7 +138,7 @@ void TableTransform::emulate(TestCase * tc)
 	if(m_addRandomSign){
 		mpz_class sign_bit, index;
 		mpz_tdiv_r_2exp(index.get_mpz_t(), bits.get_mpz_t(), m_log2n);
-		sign_bit=index>>m_log2n;
+		sign_bit=bits>>m_log2n;
 		
 		mpz_class res=m_elements.at(index.get_ui());
 		
@@ -207,7 +207,7 @@ static Operator *TableFactoryParser(Target *target ,const std::vector<std::strin
 		double ry=round(ldexp(y,w));
 		
 		if(DEBUG<=::flopoco::verbose)
-			std::cerr<<"    "<<i<<", x="<<x<<", y="<<y<<"\n";
+			std::cerr<<"    "<<i<<", x="<<x<<", y="<<y<<", ry="<<ry<<"\n";
 		
 		if((ry<0.0) || (ry>=ldexp(1.0,w))){
 			std::stringstream acc;

@@ -140,7 +140,6 @@ public:
 		uint64_t vx=*(uint64_t*)&x;
 		
 		unsigned e=((vx>>52)&0x7FF)+1;
-		assert((x==0) || (e>1)); // we don't deal with denormals
 		
 		int64_t m=(vx&0xFFFFFFFFFFFFFul);
 		

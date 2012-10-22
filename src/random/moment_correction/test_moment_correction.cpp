@@ -12,7 +12,7 @@ BOOST_AUTO_TEST_CASE(SymmetricCubicTest)
 {
 	ContinuousDistribution<double>::TypePtr target=boost::make_shared<GaussianDistribution<double> >();
 	
-	int n=64;
+	int n=8;
 	std::vector<double> x(n);
 	for(int i=0;i<n/2;i++){
 		double u=(i+0.5)/n;
@@ -34,6 +34,12 @@ BOOST_AUTO_TEST_CASE(SymmetricCubicTest)
 			std::cerr<<" + "<<poly[i]<<"*x^"<<i;
 		}
 		std::cerr<<"\n";
+	}
+	
+	TableDistribution<double>::TypePtr corrected=current->ApplyPolynomial(poly);
+	
+	for(int i=0;i<=6;i++){
+		fprintf(stderr, "%12.10lg, %12.10lg, %12.10lg\n", target->RawMoment(i), current->RawMoment(i), corrected->RawMoment(i));
 	}
 }
 
@@ -76,7 +82,7 @@ BOOST_AUTO_TEST_CASE(QuinticTest)
 {
 	ContinuousDistribution<double>::TypePtr target=boost::make_shared<GaussianDistribution<double> >(1,1);
 	
-	int n=1024;
+	int n=64;
 	std::vector<double> x(n);
 	for(int i=0;i<n/2;i++){
 		double u=(i+0.5)/n;
@@ -111,7 +117,7 @@ BOOST_AUTO_TEST_CASE(SymmetricQuinticTest)
 {
 	ContinuousDistribution<double>::TypePtr target=boost::make_shared<GaussianDistribution<double> >(0,1);
 	
-	int n=1024;
+	int n=32;
 	std::vector<double> x(n);
 	for(int i=0;i<n/2;i++){
 		double u=(i+0.5)/n;
@@ -181,7 +187,7 @@ BOOST_AUTO_TEST_CASE(SymmetricNonicTest)
 {
 	ContinuousDistribution<double>::TypePtr target=boost::make_shared<GaussianDistribution<double> >(0,1);
 	
-	int n=65536;
+	int n=16384;
 	std::vector<double> x(n);
 	for(int i=0;i<n/2;i++){
 		double u=(i+0.5)/n;

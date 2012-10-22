@@ -200,5 +200,59 @@ char *sPrintBinaryZ(mpfr_t x) {
   free(temp3);
   return resultStr;
 }
+
+namespace flopoco
+{
+  // Try to undo sollya's additions
+  void unblockSignals()
+  {
+    sigset_t mask;
+
+    sigemptyset(&mask);
+    sigaddset(&mask,SIGINT);
+    sigaddset(&mask,SIGSEGV);
+    sigaddset(&mask,SIGBUS);
+    sigaddset(&mask,SIGFPE);
+    sigaddset(&mask,SIGPIPE);
+    sigprocmask(SIG_UNBLOCK, &mask, NULL);
+    signal(SIGINT,SIG_DFL);
+    signal(SIGSEGV,SIG_DFL);
+    signal(SIGBUS,SIG_DFL);
+    signal(SIGFPE,SIG_DFL);
+    signal(SIGPIPE,SIG_DFL);
+  }
+  
+  void parseSollyaConstant(mpfr_t val, const std::string &x)
+  {
+    boost::shared_ptr<sollya_node> tree(parseString(name_.c_str(),free_memory));
+    unblockSignals();   // Allow signal handlers back in
+    
+    if(!isConstant(tree.get()))
+      throw std::string("parseSollyaConstant - Expression '"+x+"' is not a constant.");
+    
+    evaluateConstantExpression(val, tree.get(), getToolPrecison());
+  }
+	
+  double parseSollyaConstant(const std::string &x)
+  {
+    double res;    
+    mpfr_t tmp;
+    try{
+      mpfr_init2(tmp, 53);
+      
+      parseSollyaConstant(tmp, x);
+    
+      res=mpfr_get_d(tmp, MPFR_RNDN);
+      mpfr_clear(tmp);
+      return res;
+    }catch(...){
+      mpfr_clear(tmp);
+      throw;
+    }    
+  }
+  
+  
+}; // flopoco
+
 #endif //HAVE_SOLLYA
 

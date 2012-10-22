@@ -67,7 +67,6 @@ BOOST_AUTO_TEST_CASE(TestLadderAcc)
 	acc.Add(nextafter(0.0,1.0));
 	BOOST_CHECK_EQUAL(acc.SumDouble(), 3*nextafter(0.0,1.0));
 	
-	
 	std::pair<double,double> xx_double=TimeAcc((double)0);
 	std::cerr<<"double, time="<<xx_double.first<<", acc="<<xx_double.second<<"\n";
 	std::pair<double,double> xx_ladder=TimeAcc(acc);

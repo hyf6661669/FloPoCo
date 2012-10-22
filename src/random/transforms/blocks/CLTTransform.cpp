@@ -113,18 +113,21 @@ static void CLTFactoryUsage(std::ostream &dst)
 
 static Operator *CLTFactoryParser(Target *target ,const std::vector<std::string> &args,int &consumed)
 {
-	int nargs = 2;
+	unsigned nargs = 2;
 	if (args.size()<nargs)
 		throw std::string("Not enough arguments.");
+	
+	if(::flopoco::verbose >= DETAILED)
+		std::cerr<<"CLTFactoryParser, wBase="<<args[0]<<", k="<<args[1]<<"\n";
 	
 	int wBase = atoi(args[0].c_str());
 	int k = atoi(args[1].c_str());
 	
 	if(k!=2)
 		throw std::string("clt_transform - Only k==2 is supported at the moment.");
-		
+	
+	consumed = nargs;
 	return new flopoco::random::CLTTransform(target, wBase);
-	consumed += nargs;
 }
 
 void CLTTransform::registerFactory()
@@ -132,11 +135,11 @@ void CLTTransform::registerFactory()
 	DefaultOperatorFactory::Register(
 		"clt_transform",
 		"operator;rng_transform",
-		flopoco::random::CLTFactoryUsage,
-		flopoco::random::CLTFactoryParser,
+		CLTFactoryUsage,
+		CLTFactoryParser,
 		DefaultOperatorFactory::ParameterList(
 			DefaultOperatorFactory::Parameters("8", "2"),
-			DefaultOperatorFactory::Parameters("8", "2")
+			DefaultOperatorFactory::Parameters("16", "2")
 		)
 	);
 }

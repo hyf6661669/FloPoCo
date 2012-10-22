@@ -107,11 +107,12 @@ TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_
 	REPORT(DETAILED, "    Building single port table.");
 	
 	Operator *table=MakeSinglePortTable(target, acc.str()+"_Contents", wElts, m_elements);	
+	oplist.push_back(table);
 		
 	inPortMap(table, "X", "index");
 	outPortMap(table,"Y", "elt");
 	syncCycleFromSignal("elt");
-	instance(table, "elements");
+	vhdl << instance(table, "elements");
 	
 	REPORT(DETAILED, "    Sorting out output and/or sign change.");
 	

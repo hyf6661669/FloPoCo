@@ -78,12 +78,14 @@ TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_
 	if((1<<m_log2n) != elements.size())
 		throw std::string("TableTransform - Table must have binary power size.");
 	
-	mpz_class mm=mpz_class(1)<<m_log2n;
+	mpz_class mm=mpz_class(1)<<wElts;
 	for(unsigned i=0;i<elements.size();i++){
 		if(elements[i] <0)
 			throw std::string("TableTransform - Elements should not be negative (should be encoded already).");
-		if(elements[i] >=mm)
+		if(elements[i] >=mm){
+			std::cerr<<"  Element "<<i<<" = "<<elements[i]<<", max="<<mm<<"\n";
 			throw std::string("TableTransform - Element exceeds specified width of table.");
+		}
 	}
 	
 	std::stringstream acc;

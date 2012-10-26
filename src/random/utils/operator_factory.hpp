@@ -115,6 +115,9 @@ public:
 	static std::vector<std::string> Parameters(std::string a, std::string b, std::string c, std::string d)
 	{ std::vector<std::string> res; res.push_back(a); res.push_back(b); res.push_back(c); res.push_back(d); return res; }
 	
+	static std::vector<std::string> Parameters(std::string a, std::string b, std::string c, std::string d, std::string e)
+	{ std::vector<std::string> res; res.push_back(a); res.push_back(b); res.push_back(c); res.push_back(d); res.push_back(e); return res; }
+	
 	
 	static std::vector<std::vector<std::string> > ParameterList(const std::vector<std::string> &a)
 	{ std::vector<std::vector<std::string> > res; res.push_back(a); return res; }

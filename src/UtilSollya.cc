@@ -224,13 +224,16 @@ namespace flopoco
   
   void parseSollyaConstant(mpfr_t val, const std::string &x)
   {
-    boost::shared_ptr<sollya_node> tree(parseString(name_.c_str(),free_memory));
+    sollya_node_t tree=parseString(x.c_str());
     unblockSignals();   // Allow signal handlers back in
     
-    if(!isConstant(tree.get()))
+    if(!isConstant(tree)){
+      free_memory(tree);
       throw std::string("parseSollyaConstant - Expression '"+x+"' is not a constant.");
+    }
     
-    evaluateConstantExpression(val, tree.get(), getToolPrecison());
+    evaluateConstantExpression(val, tree, getToolPrecision());
+    free_memory(tree);
   }
 	
   double parseSollyaConstant(const std::string &x)

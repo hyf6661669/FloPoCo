@@ -21,6 +21,11 @@
 
 #include "FixedPointFunctions/Function.hpp"
 #include "Table.hpp"
+#include "UtilSollya.hh"
+
+#include "random/distributions/table_distribution.hpp"
+#include "random/distributions/gaussian_distribution.hpp"
+#include "random/moment_correction/correct_distribution.hpp"
 
 using namespace std;
 
@@ -33,72 +38,69 @@ namespace random
 {
 
 template<class T>
-typename TableDistribution<T>::TypePtr CorrectTable(std::string correction, typename TableDistribution<T>::TypePtr current)
-{
-	int n=current->ElementCount();
+typename TableDistribution<T>::TypePtr CorrectTable(
+	std::string correction,
+	typename ContinuousDistribution<T>::TypePtr targetDist,
+	typename TableDistribution<T>::TypePtr current
+){
+	unsigned n=current->ElementCount();
 	
 	// These are empirical limits on how many elements are needed before the solver becomes stable
 	// using double precision. For higher-precision solvers more might be possible, but the value of doing
 	// so is debatable, as it would require very high precision tables.
-	static const unsigned stability={
+	static const unsigned stability[]={
 		1,					// linear is always fine
 		8,					// cubic is very stable, and goes way down, but the curve is hugely distorted
 		64,				// quintic is very stable, and works down to 32, but the distribution looks very distorted
 		(1<<16),		// heptic, stable, but not convincing
 		(1<<17)		// nonic, seems more stable than heptic (actually works at 2^14), but is very worrying
-	}
+	};
 	
 	if(correction=="auto"){
 		// These are empirically derived, and by no means optimal
 		if(n>=2*stability[4]){
 			correction="poly9";
-		}else if(elements.size()>=2*stability[3]){
+		}else if(n>=2*stability[3]){
 			correction="poly7";
-		}else if(elements.size()>=2*stability[2]){
+		}else if(n>=2*stability[2]){
 			correction="poly5";
-		}else if(elements.size()>=2*stability[1]){
+		}else if(n>=2*stability[1]){
 			correction="poly3";
 		}else{
 			correction="poly1";
 		}
 		if(::flopoco::verbose>=INFO)
-			std::cerr<<"CorrectTable : chose correction="<<correction<<" for table with "<<elements.size()<<" elements.";
+			std::cerr<<"CorrectTable : chose correction="<<correction<<" for table with "<<n<<" elements.\n";
 	}
 	
 	if(correction=="none"){
-		std::cerr<<"WARNING : CorrectTable is using correction=none, this should only be used if you intend to create broken GRNGs. ";
-		return elements;
+		std::cerr<<"WARNING : CorrectTable is using correction=none, this should only be used if you intend to create broken GRNGs.\n";
+		return current;
 	}else if(correction.substr(0,4)=="poly"){
 		std::string index=correction.substr(4,-1);
 		int degree=atoi(index.c_str());
 		
 		if(::flopoco::verbose>=DETAILED)
-			std::cerr<<"CorrectTable : got correction="<<correction<<" for table with "<<elements.size()<<" elements.";
+			std::cerr<<"CorrectTable : got correction="<<correction<<" for table with "<<n<<" elements.\n";
 		
 		if((degree<1) || (degree>9) || ((degree%2)==0))
 			throw std::string("CorrectTable - Degree (N) for polyN must be odd and between 1 and 9.");
 		
+		assert(current->IsSymmetric() && targetDist->IsSymmetric());
+		
 		// Now we know the degree, look for the correction
-		std::vector<T> poly=FindPolynomialCorrection(current, targetDist, degree);
+		std::vector<T> poly=FindPolynomialCorrection<T>(current, targetDist, degree);
 		if(::flopoco::verbose>=INFO){
 			std::cerr<<"CorrectTable : correction poly = "<<poly[0];
-			for(int i=1;i<poly.size();i++){
-				std::cerr<<"=x^"<<i<<"*"<<poly[i];
+			for(unsigned i=1;i<poly.size();i++){
+				std::cerr<<"+x^"<<i<<"*"<<poly[i];
 			}
 			std::cerr<<"\n";
 		}
 		
-		typename TableDistribution<T>::TypePtr corrected=current->ApplyPolynomial(poly);
-		if(::flopoco::verbose>=DETAILED){
-			std::cerr<<"mom, original, wanted, corrected, relError\n";
-			for(int i=2;i<=12;i+=2){
-				double gg=corrected->StandardMoment(i);
-				double ee=distrib->StandardMoment(i);
-				std::cerr<<"m(x^"<<i<<"), "<<current->StandardMoment(i)<<", "<<ee<<", "<<gg<<", "<<(gg-ee)/ee<<"\n";
-			}
-		}
-		
-		return corrected;
+		if(::flopoco::verbose>=DETAILED)
+			std::cerr<<"CorrectTable :applying correction.\n";
+		return current->ApplyPolynomial(poly);
 	}else{
 		throw std::string("CorrectTable : Didn't understand correction method '"+correction+"'.");
 	}
@@ -107,48 +109,74 @@ typename TableDistribution<T>::TypePtr CorrectTable(std::string correction, type
 template<class T>
 typename TableDistribution<T>::TypePtr QuantiseTable(
 	std::string correction,
-	typename Distribution<T>::TypePtr distrib,	//! Target distribution
+	typename ContinuousDistribution<T>::TypePtr targetDistrib,	//! Target distribution
 	typename TableDistribution<T>::TypePtr current,	//! discrete distribution with continuous elements
 	int wF	//! Number of fractional bits to quantise to
 ){
+	int n=current->ElementCount();
+	
 	if(correction=="auto"){
 		correction="round";
 	}
 	
-	std::vector<T,T> contents(current->ElementCount());
-	GetElements(0, contents.size(), &contents);
-	
-	if(correction=="round"){
-		for(int i=0;i<contents.size();i++){
-			for(int i=0;i<n/2;i++){
-				contents[i].first=ldexp(round(ldexp(contents[i].first, wF)),-wF);
-				contents[n-i-1].first=-contents[i].first;
-			}
-		}
-	}else{
-		throw std::string("QuantiseTable - Unknown method '"+correction+"'");
+	std::vector<T> contents(current->ElementCount());
+	for(int i=0;i<n;i++){
+		contents[i]=current->GetElement(i).first;
 	}
 	
-	return boost::make_shared<TableDistribution<T> >(contents);
+	if(::flopoco::verbose>=DETAILED)
+			std::cerr<<"QuantiseTable : applying quantisation '"+correction+"'.\n";
+	if(correction=="round"){
+		for(int i=0;i<n/2;i++){
+			contents.at(i)=ldexp(round(ldexp(contents.at(i), wF)),-wF);
+			contents.at(n-i-1)=-contents[i];
+		}
+	}else{
+		throw std::string("QuantiseTable - Unknown quantisation method '"+correction+"'");
+	}
+	
+	if(::flopoco::verbose>=DETAILED)
+		std::cerr<<"CorrectTable : rebuilding distribution.\n";
+	return boost::make_shared<TableDistribution<T> >(&contents[0], &contents[n]);
 }
 
 template<class T>
 std::vector<mpz_class> BuildTable(
-	int k, int w, T stddev, std::string correction, std::string quantisation
+	int k, T stddev, int wF,
+	std::string correction, std::string quantisation
 ){
-	ContinuousDistribution<double>::TypePtr norm=boost::make_shared<GaussianDistribution<double> >(0, stddev);
+	ContinuousDistribution<double>::TypePtr targetDist=boost::make_shared<GaussianDistribution<T> >(0, stddev);
 	
 	int n=1<<k;
-	std::vector<double> x(n);
+	std::vector<T> x(n);
+	T half=0.5;
 	for(int i=0;i<n/2;i++){
-		double u=(i+0.5)/n;
-		x[i]=target->InvCdf(u);
+		T u=(i+half)/n;
+		x[i]=targetDist->InvCdf(u);
 		x[n-i-1]=-x[i];
 	}
 	
-	TableDistribution<double>::TypePtr current=boost::make_shared<TableDistribution<double> >(&x[0], &x[n]);
+	typename TableDistribution<T>::TypePtr original=boost::make_shared<TableDistribution<double> >(&x[0], &x[n]);
+	typename TableDistribution<T>::TypePtr corrected=CorrectTable<T>(correction, targetDist, original);
+	typename TableDistribution<T>::TypePtr quantised=QuantiseTable<T>(quantisation, targetDist, corrected, wF);
 	
+	if(::flopoco::verbose>=DETAILED){
+		std::cerr<<"  metric, raw, corrected, quantised, target\n";
+		for(int i=2;i<=12;i++){
+			T want=targetDist->StandardMoment(i), got=quantised->StandardMoment(i);
+			std::cerr<<" mu_"<<i<<", "<<original->StandardMoment(i)<<", "<<corrected->StandardMoment(i)<<", "<<got<<", "<<want<<", "<<(got-want)/want<<"\n";
+		}
+	}
 	
+	if(::flopoco::verbose>=DETAILED)
+		std::cerr<<"BuildTable : converting table to fixed-point.\n";
+	std::vector<mpz_class> res(n/2);
+	T scale=pow(2.0, wF);
+	for(unsigned i=0;i<res.size();i++){
+		res[i]=(mpz_class)round(scale*corrected->GetElement(i+n/2).first);
+	}
+	
+	return res;
 }
 	
 
@@ -173,48 +201,36 @@ static void GRNGTableFactoryUsage(std::ostream &dst)
 
 static Operator *GRNGTableFactoryParser(Target *target ,const std::vector<std::string> &args,int &consumed)
 {
-	unsigned nargs = 4;
+	unsigned nargs = 5;
 	if (args.size()<nargs)
-		throw std::string("TableFactory - Not enough arguments, check usage.");
+		throw std::string("GRNGTableFactory - Not enough arguments, check usage.");
 	consumed += nargs;
 	
 	int k = atoi(args[0].c_str());
-	int w = atoi(args[1].c_str());
-	std::string funcStr = args[2];
-	bool addSign=atoi(args[3].c_str())!=0;
+	int wF = atoi(args[1].c_str());
+	double stddev=parseSollyaConstant(args[2]);
+	std::string correction=args[3];
+	std::string quantisation=args[4];
 
 	if(k<1)
 		throw std::string("TableFactory - k must be a positive integer.");
-	if(w<1)
+	if(wF<1)
 		throw std::string("TableFactory - w must be a positive integer.");
-	if(w>=48)
-		throw std::string("TableFactory - w must be less than 48 (currently table is built in double-precision).");
 	
-	if(DETAILED<=::flopoco::verbose)
-		std::cerr<<"  Parsing sollya string \""<<funcStr<<"\" ... ";
-	Function func(funcStr);
-	if(DETAILED<=::flopoco::verbose)
-		std::cerr<<"done\n";
+	if(wF>32)
+		throw std::string("TableFactory - w must be less than 32 (currently table is built in double-precision).");
 	
-	std::vector<mpz_class> contents(1<<k);
-	for(int i=0;i<(1<<k);i++){
-		double x=(i+0.5)/(1<<k);
-
-		double y=func.eval(x);
-		double ry=round(ldexp(y,w));
-		
-		if(DEBUG<=::flopoco::verbose)
-			std::cerr<<"    "<<i<<", x="<<x<<", y="<<y<<", ry="<<ry<<"\n";
-		
-		if((ry<0.0) || (ry>=ldexp(1.0,w))){
-			std::stringstream acc;
-			acc<<"TableFactoryParser : For index "<<i<<", the value "<<y<<"=f("<<x<<") leads to out of range value "<<ry;
-			throw std::string(acc.str());
+	std::vector<mpz_class> contents=BuildTable<double>(k, stddev, wF, correction, quantisation);
+	unsigned wO=0;
+	for(unsigned i=0;i<contents.size();i++){
+		unsigned ww=mpz_sizeinbase(contents[i].get_mpz_t(), 2);
+		if(::flopoco::verbose>=DETAILED){
+			std::cerr<<"table["<<i<<"]="<<contents[i]<<", w="<<ww<<"\n";
 		}
-		contents[i]=ry;
+		wO=std::max(wO, ww);
 	}
 	
-	return new TableTransform(target, w, contents, addSign);
+	return new TableTransform(target, wO, contents, true);
 }
 
 void GRNGTableTransform_registerFactory()
@@ -222,11 +238,10 @@ void GRNGTableTransform_registerFactory()
 	DefaultOperatorFactory::Register(
 		"grng_table_transform",
 		"operator;rng_transform",
-		flopoco::random::TableFactoryUsage,
-		flopoco::random::TableFactoryParser,
+		GRNGTableFactoryUsage,
+		GRNGTableFactoryParser,
 		DefaultOperatorFactory::ParameterList(
-			DefaultOperatorFactory::Parameters("8", "8", "sin(x)", "0"),
-			DefaultOperatorFactory::Parameters("8", "8", "sin(x)", "1")
+			DefaultOperatorFactory::Parameters("6", "12", "1.0", "auto", "auto")
 		)
 	);
 }

@@ -190,7 +190,7 @@ public:
 
 	void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
 	{
-		if((end<begin) || (end>=ElementCount()))
+		if((end<begin) || (end>ElementCount()))
 			throw std::range_error("Requested elements are out of range.");
 		std::copy(m_elements.begin()+begin, m_elements.end()+end, dest);
 	}

@@ -11,6 +11,7 @@
 #include "transforms/blocks/HadamardTransform.hpp"
 #include "transforms/blocks/CLTTransform.hpp"
 #include "transforms/blocks/TableTransform.hpp"
+#include "transforms/blocks/GRNGTableTransform.hpp"
 
 #include "fixed_point_exp/func_approx_exp_stage.hpp"
 #include "fixed_point_exp/fixed_point_exp_stage.hpp"
@@ -64,6 +65,7 @@ void random_register_factories()
 {
 	flopoco::random::TableTransform::registerFactory();
 	flopoco::random::CLTTransform::registerFactory();
+	flopoco::random::GRNGTableTransform_registerFactory();
 }
 	
 void random_usage(char *name, string opName = ""){

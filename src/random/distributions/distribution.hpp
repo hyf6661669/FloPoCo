@@ -74,6 +74,7 @@ public:
 	typedef boost::shared_ptr<DiscreteDistribution> TypePtr;
 };
 
+/*! A distribution consisting of multiple distinct points. Note that elements must be returned in sorted order. */
 template<class T>
 class EnumerableDistribution
 	: public DiscreteDistribution<T>

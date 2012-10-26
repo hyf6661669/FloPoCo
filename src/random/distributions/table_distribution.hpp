@@ -89,7 +89,7 @@ public:
 			throw std::invalid_argument("TableDistribution - Table must contain at least one element.");
 		
 		m_elements.assign(src.begin(), src.end());
-		double acc=sum_weighted_powers(m_elements.begin(), m_elements.end(), 0);
+		T acc=sum_weighted_powers(m_elements.begin(), m_elements.end(), 0);
 		if(fabs(acc-1)>1e-12)
 			throw std::logic_error("TableDistribution - Element probabilities are more than 1e-12 from one.");
 		

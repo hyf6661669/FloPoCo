@@ -32,10 +32,14 @@ extern vector<Operator *> oplist;
 namespace random
 {
 
-std::vector<double> CorrectTable(std::string correction, const std::vector<double> &elements)
+template<class T>
+typename TableDistribution<T>::TypePtr CorrectTable(std::string correction, typename TableDistribution<T>::TypePtr current)
 {
+	int n=current->ElementCount();
+	
 	// These are empirical limits on how many elements are needed before the solver becomes stable
-	// using double precision. For higher-precision solvers more might be possible, but the value is debatable.
+	// using double precision. For higher-precision solvers more might be possible, but the value of doing
+	// so is debatable, as it would require very high precision tables.
 	static const unsigned stability={
 		1,					// linear is always fine
 		8,					// cubic is very stable, and goes way down, but the curve is hugely distorted
@@ -46,7 +50,7 @@ std::vector<double> CorrectTable(std::string correction, const std::vector<doubl
 	
 	if(correction=="auto"){
 		// These are empirically derived, and by no means optimal
-		if(elements.size()>=2*stability[4]){
+		if(n>=2*stability[4]){
 			correction="poly9";
 		}else if(elements.size()>=2*stability[3]){
 			correction="poly7";
@@ -61,20 +65,76 @@ std::vector<double> CorrectTable(std::string correction, const std::vector<doubl
 			std::cerr<<"CorrectTable : chose correction="<<correction<<" for table with "<<elements.size()<<" elements.";
 	}
 	
-	if(correction.substr(0,4)=="poly"){
+	if(correction=="none"){
+		std::cerr<<"WARNING : CorrectTable is using correction=none, this should only be used if you intend to create broken GRNGs. ";
+		return elements;
+	}else if(correction.substr(0,4)=="poly"){
 		std::string index=correction.substr(4,-1);
-		int index=atoi(index.c_str());
+		int degree=atoi(index.c_str());
 		
-		#error "Here"
 		if(::flopoco::verbose>=DETAILED)
 			std::cerr<<"CorrectTable : got correction="<<correction<<" for table with "<<elements.size()<<" elements.";
+		
+		if((degree<1) || (degree>9) || ((degree%2)==0))
+			throw std::string("CorrectTable - Degree (N) for polyN must be odd and between 1 and 9.");
+		
+		// Now we know the degree, look for the correction
+		std::vector<T> poly=FindPolynomialCorrection(current, targetDist, degree);
+		if(::flopoco::verbose>=INFO){
+			std::cerr<<"CorrectTable : correction poly = "<<poly[0];
+			for(int i=1;i<poly.size();i++){
+				std::cerr<<"=x^"<<i<<"*"<<poly[i];
+			}
+			std::cerr<<"\n";
+		}
+		
+		typename TableDistribution<T>::TypePtr corrected=current->ApplyPolynomial(poly);
+		if(::flopoco::verbose>=DETAILED){
+			std::cerr<<"mom, original, wanted, corrected, relError\n";
+			for(int i=2;i<=12;i+=2){
+				double gg=corrected->StandardMoment(i);
+				double ee=distrib->StandardMoment(i);
+				std::cerr<<"m(x^"<<i<<"), "<<current->StandardMoment(i)<<", "<<ee<<", "<<gg<<", "<<(gg-ee)/ee<<"\n";
+			}
+		}
+		
+		return corrected;
 	}else{
 		throw std::string("CorrectTable : Didn't understand correction method '"+correction+"'.");
 	}
 }
 
+template<class T>
+typename TableDistribution<T>::TypePtr QuantiseTable(
+	std::string correction,
+	typename Distribution<T>::TypePtr distrib,	//! Target distribution
+	typename TableDistribution<T>::TypePtr current,	//! discrete distribution with continuous elements
+	int wF	//! Number of fractional bits to quantise to
+){
+	if(correction=="auto"){
+		correction="round";
+	}
+	
+	std::vector<T,T> contents(current->ElementCount());
+	GetElements(0, contents.size(), &contents);
+	
+	if(correction=="round"){
+		for(int i=0;i<contents.size();i++){
+			for(int i=0;i<n/2;i++){
+				contents[i].first=ldexp(round(ldexp(contents[i].first, wF)),-wF);
+				contents[n-i-1].first=-contents[i].first;
+			}
+		}
+	}else{
+		throw std::string("QuantiseTable - Unknown method '"+correction+"'");
+	}
+	
+	return boost::make_shared<TableDistribution<T> >(contents);
+}
+
+template<class T>
 std::vector<mpz_class> BuildTable(
-	int k, int w, double stddev, std::string correction, std::string fixation
+	int k, int w, T stddev, std::string correction, std::string quantisation
 ){
 	ContinuousDistribution<double>::TypePtr norm=boost::make_shared<GaussianDistribution<double> >(0, stddev);
 	
@@ -101,6 +161,7 @@ static void GRNGTableFactoryUsage(std::ostream &dst)
 	dst << "          stddev - Target standard deviation for the table (sollya expression)\n";
 	dst << "          correctMethod - How to correct the table in the continuous domain.\n";
 	dst << "            auto - Select some sensible correction method.\n";
+	dst << "            none - Don't correct at all (not advised; at least do poly1 to fix the stddev).\n";
 	dst << "            poly1,poly3,...,poly9 - Apply odd polynomial correction of given degree.\n";
 	dst << "          fixMethod - How to convert the continous table to fixed.\n";
 	dst << "            auto - Select some sensible fixation method.\n";

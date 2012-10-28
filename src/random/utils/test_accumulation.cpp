@@ -48,6 +48,27 @@ std::pair<double,double> TimeAcc(T acc)
 	return std::make_pair(TT/n,vv);
 }
 
+BOOST_AUTO_TEST_CASE(TestLadderAcc2)
+{
+	srand48(1);
+	
+	NTL::RR::SetPrecision(2200);	// Can do any double-precision calcs exactly
+	
+	for(int i=0;i<10;i++){
+		NTL::RR alt;
+		flopoco::random::LadderAccumulator acc;
+		
+		for(int j=0;j<10;j++){
+			double x=ldexp(drand48(), (lrand48()%1000)-500);
+			acc += x;
+			alt += x;
+		}
+		
+		// Check they are rounding the right way
+		BOOST_CHECK_EQUAL(acc.SumDouble(), NTL::to_double(alt));
+	}
+}
+
 BOOST_AUTO_TEST_CASE(TestLadderAcc)
 {
 	srand48(1);
@@ -66,18 +87,6 @@ BOOST_AUTO_TEST_CASE(TestLadderAcc)
 	acc.Add(1);
 	acc.Add(nextafter(0.0,1.0));
 	BOOST_CHECK_EQUAL(acc.SumDouble(), 3*nextafter(0.0,1.0));
-	
-	std::pair<double,double> xx_double=TimeAcc((double)0);
-	std::cerr<<"double, time="<<xx_double.first<<", acc="<<xx_double.second<<"\n";
-	std::pair<double,double> xx_ladder=TimeAcc(acc);
-	std::cerr<<"ladder, time="<<xx_ladder.first<<", acc="<<xx_ladder.second<<"\n";
-	std::pair<double,double> xx_quad=TimeAcc(NTL::to_quad_float(0.0));
-	std::cerr<<"quad_float, time="<<xx_quad.first<<", acc="<<xx_quad.second<<"\n";
-	std::pair<double,double> xx_rr=TimeAcc(NTL::to_RR(0.0));
-	std::cerr<<"RR128, time="<<xx_quad.first<<", acc="<<xx_quad.second<<"\n";
-	std::cerr<<"  ladder penalty = "<<xx_ladder.first/xx_double.first<<"\n";
-	std::cerr<<"  quad penalty = "<<xx_quad.first/xx_double.first<<"\n";
-	std::cerr<<"  RR128 penalty = "<<xx_rr.first/xx_double.first<<"\n";
 	
 	acc.Clear();
 	acc.Add(DBL_MIN);
@@ -130,13 +139,13 @@ BOOST_AUTO_TEST_CASE(TestLadderAcc)
 	for(int i=1;i<5;i++){
 		double tmp=0;
 		acc.Clear();
-		for(int j=-10000000;j<10000000;j++){
+		for(int j=-100000;j<100000;j++){
 			double v=pow(sin(j),i)*pow(0.99999,j);
 			acc.Add(v);
 			tmp+=v;
 		}
 		std::cerr<<" double acc = "<<tmp<<", ladder = "<<acc.SumDouble()<<", rel="<<(tmp-acc.SumDouble())/acc.SumDouble()<<"\n";
-		for(int j=10000000-1;j>=-10000000;j--){
+		for(int j=100000-1;j>=-100000;j--){
 			double v=-pow(sin(j),i)*pow(0.99999,j);
 			acc.Add(v);
 			tmp+=v;
@@ -144,4 +153,22 @@ BOOST_AUTO_TEST_CASE(TestLadderAcc)
 		std::cerr<<" double acc = "<<tmp<<", ladder = "<<acc.SumDouble()<<"\n";
 		BOOST_CHECK(acc.SumDouble()==0);
 	}
+}
+
+
+BOOST_AUTO_TEST_CASE(TimeLadderAcc)
+{
+	
+	std::pair<double,double> xx_double=TimeAcc((double)0);
+	std::cerr<<"double, time="<<xx_double.first<<", acc="<<xx_double.second<<"\n";
+	std::pair<double,double> xx_ladder=TimeAcc(flopoco::random::LadderAccumulator());
+	std::cerr<<"ladder, time="<<xx_ladder.first<<", acc="<<xx_ladder.second<<"\n";
+	std::pair<double,double> xx_quad=TimeAcc(NTL::to_quad_float(0.0));
+	std::cerr<<"quad_float, time="<<xx_quad.first<<", acc="<<xx_quad.second<<"\n";
+	std::pair<double,double> xx_rr=TimeAcc(NTL::to_RR(0.0));
+	std::cerr<<"RR128, time="<<xx_quad.first<<", acc="<<xx_quad.second<<"\n";
+	std::cerr<<"  ladder penalty = "<<xx_ladder.first/xx_double.first<<"\n";
+	std::cerr<<"  quad penalty = "<<xx_quad.first/xx_double.first<<"\n";
+	std::cerr<<"  RR128 penalty = "<<xx_rr.first/xx_double.first<<"\n";
+	
 }

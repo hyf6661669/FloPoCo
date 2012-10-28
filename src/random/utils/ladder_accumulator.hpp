@@ -10,6 +10,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "NTL/quad_float.h"
+
 namespace flopoco
 {
 namespace random
@@ -166,6 +168,12 @@ public:
 		}
 	}
 	
+	void Add(const NTL::quad_float &x)
+	{
+		Add(x.hi);
+		Add(x.lo);
+	}
+	
 	void Add(const LadderAccumulator &a)
 	{
 		for(unsigned i=0;i<a.m_sums.size();i++){
@@ -249,6 +257,19 @@ public:
 	{ Add(x); }
 	
 	void operator-=(const double &x)
+	{ Add(-x); }
+	
+	
+	void operator=(const NTL::quad_float &x)
+	{
+		Clear();
+		Add(x);
+	}
+	
+	void operator+=(const NTL::quad_float &x)
+	{ Add(x); }
+	
+	void operator-=(const NTL::quad_float &x)
 	{ Add(-x); }
 	
 	LadderAccumulator operator+(const LadderAccumulator &o) const

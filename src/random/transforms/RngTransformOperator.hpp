@@ -24,6 +24,16 @@ public:
 	virtual std::string nonUniformOutputName(int i) const=0;
 };
 
+template<class T>
+class IRngTransformDistributions
+{
+public:
+	virtual ~IRngTransformDistributions()
+	{}
+		
+	Distribution<NTL::RR> nonUniformOutputDistribution(int i) const=0;
+}
+
 };
 };
 

@@ -23,6 +23,9 @@ namespace flopoco
 	//! Given a function specifying a constant (i.e. no free variable), turn into into an mpfr_t
 	void parseSollyaConstant(mpfr_t val, const std::string &x);
 	
+	//! Given a function specifying a constant (i.e. no free variable), turn into into an mpfr_t with the specific rounding dir
+	void parseSollyaConstant(mpfr_t val, const std::string &x, mpfr_rnd_t mode);
+	
 	//! Given a function specifying a constant (i.e. no free variable), turn into into a double
 	double parseSollyaConstant(const std::string &x);
 };

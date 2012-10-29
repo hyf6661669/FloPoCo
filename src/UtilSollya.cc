@@ -235,6 +235,20 @@ namespace flopoco
     evaluateConstantExpression(val, tree, getToolPrecision());
     free_memory(tree);
   }
+  
+  void parseSollyaConstant(mpfr_t val, const std::string &x, mpfr_rnd_t mode)
+  {
+    mpfr_t tmp;
+    mpfr_init2(tmp, std::max(getToolPrecision(), mpfr_get_prec(val)+64));
+    try{
+      parseSollyaConstant(tmp, x);
+    }catch(...){
+      mpfr_clear(tmp);
+      throw;
+    }
+    mpfr_set(val, tmp, mode);
+    mpfr_clear(tmp);
+  }
 	
   double parseSollyaConstant(const std::string &x)
   {

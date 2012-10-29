@@ -235,6 +235,10 @@ namespace flopoco{
 	 * @return an mpz_class representing the random number.
 	 */
 	mpz_class getLargeRandom(int n);
+	
+	/** Generate an integer uniformly in the range [a,b), where a<b
+	*/
+	mpz_class getRandomBetween(const mpz_class &a, const mpz_class &b);
 
 	/**
 	 * A zero generator method which takes as input two arguments and returns a string of zeros with quotes as stated by the second argurment

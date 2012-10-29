@@ -394,6 +394,13 @@ namespace flopoco{
 		mpz_urandomb(o.get_mpz_t(), FloPoCoRandomState::m_state, n);
 		return o;
 	}
+	
+	mpz_class getRandomBetween(const mpz_class &a, const mpz_class &b)
+	{
+		mpz_class res;
+		mpz_urandomm (res.get_mpz_t(), FloPoCoRandomState::m_state, mpz_class(b-a).get_mpz_t());
+		return res+a;
+	}
 
 #endif 
 

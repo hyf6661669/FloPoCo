@@ -3,6 +3,13 @@
 
 #include "Table.hpp"
 
+#include "random/utils/comparable_float_type.hpp"
+#include "random/utils/chain_operator.hpp"
+#include "random/utils/operator_factory.hpp"
+
+#include "mpreal.h"
+#include <sstream>
+
 namespace flopoco
 {
 namespace random
@@ -33,6 +40,8 @@ StaticQuantiser::StaticQuantiser(Target *target, int wValue, const std::vector<m
 		nBuckets++;
 	}
 	
+	REPORT(DETAILED, "StaticQuantiser, orig(n)="<<_boundaries.size()-1<<", curr(n)="<<boundaries.size()-1<<"\n");
+	
 	addInput ("iX" , wValue);
 	addOutput("oY", wIndex);
 	
@@ -41,13 +50,34 @@ StaticQuantiser::StaticQuantiser(Target *target, int wValue, const std::vector<m
 		AddLevel(i);
 	}
 	
-	vhdl << "index <= "<<join("idx_",wIndex)<<";\n";
-	outDelayMap["index"] = getCriticalPath();
+	vhdl << "oY <= "<<join("idx_",wIndex)<<";\n";
+	outDelayMap["oY"] = getCriticalPath();
 }
 
 StaticQuantiser::~StaticQuantiser()
 {}
-
+	
+void StaticQuantiser::emulate(TestCase * tc)
+{
+	
+	mpz_class iX=tc->getInputValue("iX");
+	
+	unsigned i=1;
+	while(true){
+		if(boundaries[i]>iX){
+			break;
+		}
+		i++;
+		if(i==boundaries.size()-1)
+			break;
+	}
+	
+	mpz_class oY(i-1);
+	
+	//std::cerr<<std::hex<<" StaticQuantiser::emulate("<<iX<<") -> "<<oY<<"\n"<<std::dec;
+	
+	tc->addExpectedOutput("oY", oY);
+}
 
 void StaticQuantiser::AddLevel(int level)
 {
@@ -59,6 +89,7 @@ void StaticQuantiser::AddLevel(int level)
 	public:
 		StaticQuantiserTable(Target* target, int _wIn, int _wOut, const std::vector<mpz_class> &values, int logicTable = 0,  map<string, double> inputDelays = emptyDelayMap )
 			: Table(target, _wIn, _wOut, 0, values.size()-1, logicTable, inputDelays)
+			, m_values(values)
 		{
 			ostringstream name;
 			name << "StaticQuantiser_Table"<<"_uid"<<getNewUId();
@@ -72,7 +103,7 @@ void StaticQuantiser::AddLevel(int level)
 	};
 	
 	if(level==1){
-		vhdl << declare(join("bit_",level),1) << " <= '0' when (x < "<<unsignedBinary(GetBoundary(1, 0),m_wValue)<<" ) else '1';\n";
+		vhdl << declare(join("bit_",level),1) << " <= \"0\" when (iX < \""<<unsignedBinary(GetBoundary(1, 0),m_wValue)<<"\" ) else \"1\";\n";
 		vhdl << declare(join("idx_",level),level) << " <= "<< join("bit_",level)<<";\n";
 	}else{
 		std::vector<mpz_class> boundaries(1<<(level-1));
@@ -93,7 +124,7 @@ void StaticQuantiser::AddLevel(int level)
 		}
 
 		manageCriticalPath(target_->adderDelay(m_wValue));
-		vhdl << declare(join("bit_",level),1) << " <= '0' when (x < "<<join("thresh_",level)<<" ) else '1';\n";
+		vhdl << declare(join("bit_",level),1) << " <= \"0\" when (iX < "<<join("thresh_",level)<<" ) else \"1\";\n";
 		
 		// No delay, just joining
 		vhdl << declare(join("idx_",level),level) << " <= " << join("idx_",level-1) <<" & "<<join("bit_",level)<<";\n";
@@ -112,69 +143,142 @@ mpz_class StaticQuantiser::GetBoundary(int level, int index)
 	return boundaries.at(address);
 }
 
-/*
-Operator *StaticQuantiser::BuildFloatQuantiser(Target *target, int wE, int WF, const MPFRVec &boundaries, map<string, double> inputDelays = emptyDelayMap)
-{
-	std::vector<mpz_class> fixBoundaries;
-	
-	ComparableFloatType type(wE, wF);
-	for(unsigned i=1;i<boundaries.size()-1;i++){
-		fixBoundaries.push_back(type.ToBits(boundaries[i]));
-	}
-	
-	Operator *encoder=type.MakeEncoder(target, inputDelays);
-	oplist.push_back(encoder);
-	
-	map<string, double> interDelays;
-	interDelays["iX"]=encoder->getOutputDelay("oY");
-	Operator *quantiser=new StaticQuantiser(target, type.GetWidth(), fixBoundaries, interDelays);
-	oplist.push_back(quantiser);
-	
-	std::strstream acc;
-	acc<<"StaticQuantiser_wE"<<wE<<"_wF"<<wF<<"_n"<<(boundaries.size()-1)<<"_uid"<<getNewUid();
-	Operator *res=ChainOperator::Create(acc.str(), encoder, quantiser);
-	oplist.push_back(res);
-	
-	return res;
-}
-*/
-
 // Apply a quantisation of the form y=floor( f(x)*n )
-/*
-Operator *StaticQuantiser::BuildFloatQuantiser(Target *target, int wE, int WF, int n, Function *f, map<string, double> inputDelays = emptyDelayMap)
+
+mpfr::mpreal eval(const Function *f, mpfr::mpreal x)
 {
-	MPFRVec vec(wF, n+1);
+	mpfr::mpreal tmp(0, getToolPrecision());
+	f->eval(tmp.mpfr_ptr(), x.mpfr_ptr());
+	return tmp;
+}
+
+Operator *StaticQuantiser::BuildFloatQuantiser(Target *target, int wE, int wF, int n, const Function *f, map<string, double> inputDelays)
+{
+	std::vector<mpz_class> boundaries(n+1);
 	
-	mpfr_t tmp, a, b;
-	mpfr_inits2(getToolPrecision(), a,b,tmp ,(mpfr_ptr)0);
+	mpfr::mpreal a(-pow(2.0,wE+1),getToolPrecision());
+	mpfr::mpreal b=-a;	// Use interval over all representable values...
 	
-	mpfr_set_d(a,0.0, MPFR_RNDN);
+	mpfr::mpreal x(0, getToolPrecision());
 	
+	ComparableFloatType type(wE,wF);
+	
+	boundaries[0]=mpz_class(0);
 	for(int i=1;i<n;i++){
 		// Values in bucket i  have to lie in the range [ f(x)*(i-1)..f(x)*i ), so the
-		// upper boundary of bucket (i-1) is at f(x)=1/i
-		mpfr_set_d(tmp, (double)i, MPFR_RNDN);
-		mpfr_div_d(tmp, tmp, (double)n, MPFR_RNDN);
+		// upper boundary of bucket (i-1) is at f(x)=i/n
 		
-		f->eval_inverse(vec[i], tmp, 
+		mpfr::mpreal y(i, getToolPrecision());
+		y=y/n;
+		f->eval_inverse(x.mpfr_ptr(), y.mpfr_ptr(), a.mpfr_ptr(), b.mpfr_ptr());
+		
+		boundaries[i]=type.ToBits(x.mpfr_ptr(), true);	// round and convert
+		if(::flopoco::verbose>=DETAILED){
+			std::cerr<<" Quantiser["<<i<<"] : f("<<x<<")="<<y<<", bits="<<std::hex<<boundaries[i]<<std::dec<<"\n";
+		}
+	}
+	boundaries[n]=(mpz_class(1)<<(type.Width()))-1;
+	
+	for(int i=0;i<n;i++){
+		if(boundaries[i] > boundaries[i+1]){
+
+			throw std::string("BuildFloatQuantiser - Function does not result in monotonically increasing intervals.");
+		}
 	}
 	
 	Operator *encoder=type.MakeEncoder(target, inputDelays);
-	oplist.push_back(encoder);
 	
 	map<string, double> interDelays;
 	interDelays["iX"]=encoder->getOutputDelay("oY");
-	Operator *quantiser=new StaticQuantiser(target, type.GetWidth(), fixBoundaries, interDelays);
-	oplist.push_back(quantiser);
+	Operator *quantiser=new StaticQuantiser(target, type.Width(), boundaries, interDelays);
 	
-	std::strstream acc;
-	acc<<"StaticQuantiser_wE"<<wE<<"_wF"<<wF<<"_n"<<(boundaries.size()-1)<<"_uid"<<getNewUid();
-	Operator *res=ChainOperator::Create(acc.str(), encoder, quantiser);
-	oplist.push_back(res);
+	std::stringstream acc;
+	acc<<"StaticQuantiser_wE"<<wE<<"_wF"<<wF<<"_n"<<(boundaries.size()-1)<<"_uid"<<Operator::getNewUId();
+	ChainOperator::mapping_list_t mapping;
+	mapping.push_back(ChainOperator::mapping_t("oY","iX"));
+	
+	ChainOperator *res=ChainOperator::Create(acc.str(), encoder, mapping, quantiser);
+	
+	FloPoCoRandomState::init(1);	// Eventually this will move to main?
+	
+	FPNumber fpRep(wE,wF);
+	mpfr::mpreal vv(0, wF+1);
+	for(unsigned i=1;i<boundaries.size();i++){
+		mpz_class a=boundaries[i-1], b=boundaries[i];
+		
+		type.FromBits(vv.mpfr_ptr(), a);
+		fpRep=vv.mpfr_ptr();
+		res->addStandardTestCaseInputs("iX", fpRep.getSignalValue());
+	
+		type.FromBits(vv.mpfr_ptr(), b);
+		fpRep=vv.mpfr_ptr();
+		res->addStandardTestCaseInputs("iX", fpRep.getSignalValue());
+		
+		if(b>a){
+			for(int i=0;i<10;i++){
+				mpz_class v=getRandomBetween(a,b);
+				type.FromBits(vv.mpfr_ptr(), v);
+				fpRep=vv.mpfr_ptr();
+				res->addStandardTestCaseInputs("iX", fpRep.getSignalValue());
+			}
+		}
+	}
 	
 	return res;
 }
-*/
+
+static void StaticQuantiserFactoryUsage(std::ostream &dst)
+{
+	OperatorFactory::classic_OP(dst, "static_quantiser", "wE wF n f", false);
+	dst << "    Generates a non-linear quantiser that calculates y=floor(f(x)*n).\n";
+	dst << "	      wE - Exponent bits of input.\n";
+	dst << "	      wF - Fractional bits of each table element\n";
+	dst << "	      n - How many levels to quantise into (storage requirements are O(n))\n";
+	dst << "      The transform will take a (wE,wF) input float, and produced a log2ceil(n) bit unsigned output.\n";
+}
+
+static Operator *StaticQuantiserFactoryParser(Target *target ,const std::vector<std::string> &args,int &consumed)
+{
+	unsigned nargs = 4;
+	if (args.size()<nargs)
+		throw std::string("StaticQuantiserFactoryParser - Not enough arguments, check usage.");
+	consumed += nargs;
+	
+	if(::flopoco::verbose>=INFO){
+		std::cerr<<"StaticQuantiserFactoryParser(wE='"<<args[0]<<"',wF='"<<args[1]<<"',n='"<<args[2]<<"',f='"<<args[3]<<"\n";
+	}
+	
+	int wE = atoi(args[0].c_str());
+	int wF = atoi(args[1].c_str());
+	int n=atoi(args[2].c_str());
+	Function f(args[3]);
+
+	if(wE<1)
+		throw std::string("StaticQuantiserFactoryParser - wE must be a positive integer.");
+	if(wF<1)
+		throw std::string("StaticQuantiserFactoryParser - wF must be a positive integer.");
+	if(n<1)
+		throw std::string("StaticQuantiserFactoryParser - n must be a positive integer.");
+	
+	if((n>16384) && (::flopoco::verbose>=INFO)){
+		std::cerr<<"Warning : Building a quantiser with "<<n<<" output levels, this will require huge amounts of RAM.\n";
+	}
+	
+	return StaticQuantiser::BuildFloatQuantiser(target, wE, wF, n, &f);
+}
+
+void StaticQuantiser_registerFactory()
+{
+	DefaultOperatorFactory::Register(
+		"static_quantiser",
+		"operator",
+		StaticQuantiserFactoryUsage,
+		StaticQuantiserFactoryParser,
+		DefaultOperatorFactory::ParameterList(
+			DefaultOperatorFactory::Parameters("6", "12", "1.0", "auto", "auto")
+		)
+	);
+}
 
 }; 
 };

@@ -29,8 +29,12 @@ public:
 
 	~StaticQuantiser();
 
-	StaticQuantiser *BuildFloatQuantiser(Target *target, int wE, int WF, const MPFRVec &boundaries, map<string, double> inputDelays = emptyDelayMap);
+	void emulate(TestCase * tc);
+
+	static Operator *BuildFloatQuantiser(Target *target, int wE, int WF, int n, const Function *f, map<string, double> inputDelays = emptyDelayMap);
 };
+
+void StaticQuantiser_registerFactory();
 
 }; 
 };

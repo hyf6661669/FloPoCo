@@ -105,7 +105,7 @@ public:
 
 struct Range
 {
-	Function &m_function;
+	const Function &m_function;
 	int m_domainWF;
 	int m_rangeWF;
 	
@@ -122,7 +122,7 @@ struct Range
 	typedef std::map<std::string,boost::any> property_map_t;
 	property_map_t properties;
 	
-	Range(Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish);
+	Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish);
 	
 	// Return a (wE,wF) pair that can represent all values in the domain
 	std::pair<int,int> GetFloatTypeEnclosingDomain() const;

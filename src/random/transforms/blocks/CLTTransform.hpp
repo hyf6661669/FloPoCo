@@ -49,6 +49,9 @@ public:
 	virtual unsigned nonUniformOutputCount() const
 	{ return 1; }
 	
+	virtual bool nonUniformOutputsAreHomogenous() const
+	{ return true; }
+	
 	virtual unsigned nonUniformOutputWidth(int) const
 	{ return m_baseWidth+1; }
 	

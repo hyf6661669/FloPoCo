@@ -12,6 +12,7 @@
 #include "transforms/blocks/CLTTransform.hpp"
 #include "transforms/blocks/TableTransform.hpp"
 #include "transforms/blocks/GRNGTableTransform.hpp"
+#include "float_approx/static_quantiser.hpp"
 
 #include "fixed_point_exp/func_approx_exp_stage.hpp"
 #include "fixed_point_exp/fixed_point_exp_stage.hpp"
@@ -22,7 +23,10 @@
 #include "fixed_point_exp/chained_exp_stage.hpp"
 
 #include "utils/operator_factory.hpp"
+
 #include "utils/comparable_float_type.hpp"
+
+#include "float_approx/FloatApprox.hpp"
 
 //#include "FloPoCo.hpp"
 
@@ -66,6 +70,8 @@ void random_register_factories()
 	flopoco::random::TableTransform::registerFactory();
 	flopoco::random::CLTTransform::registerFactory();
 	flopoco::random::GRNGTableTransform_registerFactory();
+	flopoco::random::StaticQuantiser_registerFactory();
+	flopoco::random::FloatApprox_registerFactory();
 }
 	
 void random_usage(char *name, string opName = ""){

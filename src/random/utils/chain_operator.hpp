@@ -29,11 +29,15 @@ public:
 	*/
 	typedef std::pair<std::string,std::string> mapping_t;
 	typedef std::list<std::pair<std::string,std::string> > mapping_list_t;
+
+	typedef std::map<std::string,mpz_class> test_inputs_t;
 	
 private:	
 	Operator *m_a;
 	mapping_list_t m_mappings;
 	Operator *m_b;
+
+	std::vector<test_inputs_t> m_testInputs;
 
 	// Get mapping for output of first operator
 	mapping_t getOutputMapping(std::string name)
@@ -169,7 +173,7 @@ private:
 		return res;
 	}
 public:
-	static Operator *Create(std::string name,Operator *a,const mapping_list_t &mapping,Operator *b)
+	static ChainOperator *Create(std::string name,Operator *a,const mapping_list_t &mapping,Operator *b)
 	{
 		return new ChainOperator(name, a, mapping, b);
 	}
@@ -177,7 +181,7 @@ public:
 	void emulate(TestCase *t)
 	{
 		if(m_a->getNumberOfInputs() < getNumberOfInputs())
-			throw std::string("ChainOperator - can't emulate if inputs of second operator come to top level.");
+			throw std::string("ChainOperator - can't (currently) emulate if inputs of second operator come to top level.");
 		
 		TestCase *ta=new TestCase(m_a);
 		for(int i=0;i<m_a->getNumberOfInputs();i++){
@@ -221,27 +225,68 @@ public:
 		delete tb;
 	}
 	
+	TestCase* buildRandomTestCase(int i)
+	{		
+		TestCase *ta=m_a->buildRandomTestCase(i);
+		
+		TestCase *actual=MapTestCase(ta);
+		delete ta;
+		emulate(actual);		
+		return actual;
+	}
+	
+	/*! By default this pulls the inputs from the first operator in the list */
 	void buildStandardTestCases(TestCaseList* tcl)
 	{
-		fprintf(stderr, "Here\n");
-		
-		TestCaseList *firstLevel=new TestCaseList();
-		
-		m_a->buildStandardTestCases(firstLevel);
-		
-		for(int i=0;i<firstLevel->getNumberOfTestCases();i++){
+		if(m_testInputs.empty()){
+			TestCaseList *firstLevel=new TestCaseList();
 			
-			// This will give us the inputs for the firstlevel
-			TestCase *src=firstLevel->getTestCase(i);
+			m_a->buildStandardTestCases(firstLevel);
 			
-			TestCase *actual=MapTestCase(src);
-			emulate(actual);
-			tcl->add(actual);
+			for(int i=0;i<firstLevel->getNumberOfTestCases();i++){
+				
+				// This will give us the inputs for the firstlevel
+				TestCase *src=firstLevel->getTestCase(i);
+				
+				TestCase *actual=MapTestCase(src);
+				emulate(actual);
+				tcl->add(actual);
+			}
+			
+			delete firstLevel;
+		}else{
+			for(unsigned i=0;i<m_testInputs.size();i++){
+				TestCase *tc=new TestCase(this);
+				test_inputs_t::const_iterator it=m_testInputs[i].begin();
+				while(it!=m_testInputs[i].end()){
+					tc->setInputValue(it->first, it->second);
+					++it;
+				}
+				emulate(tc);
+				tcl->add(tc);
+			}
 		}
-		
-		fprintf(stderr, "There\n");
-		
-		delete firstLevel;
+	}
+	
+	
+	void addStandardTestCaseInputs(std::string na, mpz_class va)
+	{
+		test_inputs_t tt;
+		tt.insert(std::make_pair(na,va));
+		m_testInputs.push_back(tt);
+	}
+	
+	void addStandardTestCaseInputs(std::string na, mpz_class va, std::string nb, mpz_class vb)
+	{
+		test_inputs_t tt;
+		tt.insert(std::make_pair(na,va));
+		tt.insert(std::make_pair(nb,vb));
+		m_testInputs.push_back(tt);
+	}
+	
+	void addStandardTestCaseInputs(const test_inputs_t &tt)
+	{
+		m_testInputs.push_back(tt);
 	}
 };
 

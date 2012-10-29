@@ -136,20 +136,35 @@ public:
 		
 	int Width() const
 	{ return 2+wE+wF; }
+	
+	void Round(mpfr_t y, mpfr_t x)
+	{
+		mpfr_t tmp;
+		mpfr_init2(tmp, wF+1);
+		
+		mpfr_set(tmp, x, MPFR_RNDN);
+		mpfr_set(y, tmp, MPFR_RNDN);
+		
+		mpfr_clear(tmp);
+	}
 
-	mpz_class ToBits(mpfr_t x)
+	mpz_class ToBits(mpfr_t x, bool doRound=false)
 	{
 		mpfr_t tmp;
 		mpfr_init2(tmp, wF+1);
 		try{
 			//mpfr_fprintf(stderr, "Encode(%Rg)\n", x);
 			
-			if(mpfr_set(tmp, x, MPFR_RNDN)!=0)
-				throw std::invalid_argument("ComparableFloatType::Encode - Given value cannot be exactly represented in this format.");
+			if(doRound){
+				mpfr_set(tmp, x, MPFR_RNDN);
+			}else{
+				if(mpfr_set(tmp, x, MPFR_RNDN)!=0)
+					throw std::invalid_argument("ComparableFloatType::Encode - Given value cannot be exactly represented in this format.");
+			}
 			
-			mpz_class res=EncodePrefix(x);
-			res=(res<<wE)+EncodeExponent(x);
-			res=(res<<wF)+EncodeFraction(x);
+			mpz_class res=EncodePrefix(tmp);
+			res=(res<<wE)+EncodeExponent(tmp);
+			res=(res<<wF)+EncodeFraction(tmp);
 	
 			mpfr_clear(tmp);
 			
@@ -185,8 +200,6 @@ public:
 			mpz_class wFpow=(mpz_class(1)<<wF);
 			
 			if(prefix==0){
-				if((fraction!=0) || (exponent!=0))
-					throw std::invalid_argument("ComparableFloatType::Decode - exponent and mantissa should be zero for zero prefix.");
 				mpfr_set_zero(res, prefix==-0.0 ? -1 : +1);
 			}else{
 				if(prefix<0){

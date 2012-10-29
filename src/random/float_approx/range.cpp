@@ -401,7 +401,7 @@ sollya_node_t Segment::fpminimax(unsigned degree, int coeffWidths, sollya_node_t
 	return fpminimax(coeffWidthsVec, minimax);
 }
 
-Range::Range(Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish)
+Range::Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish)
 	: m_function(f)
 	, m_domainWF(domainWF)
 	, m_rangeWF(rangeWF)

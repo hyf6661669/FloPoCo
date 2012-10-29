@@ -19,6 +19,14 @@ IF (NTL_H AND NTL_LIB)
 	LINK_DIRECTORIES(${NTL_LIB}  )
 ENDIF (NTL_H AND NTL_LIB)
 
+FIND_PATH(MPREAL_H mpreal.h)
+
+IF(MPREAL_H)
+	INCLUDE_DIRECTORIES(${MPREAL_H})
+ELSE(MPREAL_H)
+	INCLUDE_DIRECTORIES(utils/mpreal)
+ENDIF(MPREAL_H)
+
 #ADD_LIBRARY(flopoco_random_asa_lib STATIC
 #	utils/asa/asa.c
 #	utils/asa/asa_usr.c
@@ -35,13 +43,19 @@ ENDIF (NTL_H AND NTL_LIB)
 ADD_LIBRARY(flopoco_random_lib STATIC
 	random_main.cpp
 	utils/operator_factory.cpp	
-	urng/lut_sr_rng.cpp
-	float_approx/static_quantiser.cpp
 	utils/comparable_float_type.cpp
+	
+	urng/lut_sr_rng.cpp
+	
 	transforms/blocks/HadamardTransform.cpp
 	transforms/blocks/CLTTransform.cpp
 	transforms/blocks/TableTransform.cpp
 	transforms/blocks/GRNGTableTransform.cpp
+	
+	float_approx/static_quantiser.cpp
+	float_approx/range.cpp
+	float_approx/range_polys.cpp
+	float_approx/FloatApprox.cpp
 )
 target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES}  ${NTL_LIB})
 

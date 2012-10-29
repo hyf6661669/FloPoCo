@@ -40,20 +40,20 @@ ComparableFloatEncoder::ComparableFloatEncoder(
 		"\"11\" when prefix_in=\"010\" else\n" <<	// positive regular
 		"\"10\" when prefix_in=\"000\" else\n" <<	// positive zero
 		"\"01\" when prefix_in=\"001\" else\n" <<	// negative zero
-		"\"00\" when prefix_in=\"011\" else\n" <<	// negative zero
+		"\"00\" when prefix_in=\"011\" else\n" <<	// negative regular
 		"\"XX\";\n";
 	
 
 	vhdl << declare("exponent_out",wE) << " <= "
 		"(exponent_in + \"1\") when prefix_in=\"010\" else\n" <<	// positive regular
 		"("<<zg(wE)<<") when (prefix_in=\"000\" or prefix_in=\"001\") else\n" <<	// both zeros
-		"("<<og(wE)<<" - exponent_in - \"1\") when prefix_in=\"011\" else\n" <<	// negative zero
+		"("<<og(wE)<<" - exponent_in - \"1\") when prefix_in=\"011\" else\n" <<	// negative regular
 		xg(wE)<<";\n";
 	
 	vhdl << declare("fraction_out",wF) << " <= "
 		"fraction_in when prefix_in=\"010\" else\n" <<	// positive regular
 		"("<<zg(wF)<<") when (prefix_in=\"000\" or prefix_in=\"001\") else\n" <<	// both zeros
-		"("<<og(wF)<<" - fraction_in) when prefix_in=\"011\" else\n" <<	// negative zero
+		"("<<og(wF)<<" - fraction_in) when prefix_in=\"011\" else\n" <<	// negative regular
 		xg(wF)<<";\n";
 	
 	vhdl << "oY <= prefix_out & exponent_out & fraction_out;\n";
@@ -72,8 +72,6 @@ void ComparableFloatEncoder::emulate(TestCase * tc)
 	
 	mpz_class y=type.ToBits(tmp);
 	tc->addExpectedOutput("oY", y);
-	
-	mpfr_fprintf(stderr, "  emulate : iX=%Rg, oY=%Zu\n", tmp, y.get_mpz_t());
 	
 	mpfr_clear(tmp);
 }
@@ -124,10 +122,8 @@ void ComparableFloatEncoder::buildStandardTestCases(TestCaseList* tcl)
 
 void ComparableFloatEncoder::addTestCase(TestCaseList* tcl, mpfr_t val)
 {
-	mpfr_fprintf(stderr, " iX=%Rg\n", val);
 	TestCase *tc=new TestCase(this);
 	FPNumber fpx(wE, wF, val);
-	mpfr_fprintf(stderr, "  excep=%Zu\n", fpx.getExceptionSignalValue().get_mpz_t());
 	tc->addFPInput("iX", &fpx);
 	emulate(tc);
 	tcl->add(tc);
@@ -136,7 +132,6 @@ void ComparableFloatEncoder::addTestCase(TestCaseList* tcl, mpfr_t val)
 	
 	tc=new TestCase(this);
 	fpx=val;
-	mpfr_fprintf(stderr, "  excep=%Zu\n", fpx.getExceptionSignalValue().get_mpz_t());
 	tc->addFPInput("iX", &fpx);
 	emulate(tc);
 	tcl->add(tc);
@@ -146,8 +141,6 @@ void ComparableFloatEncoder::addTestCase(TestCaseList* tcl, mpfr_t val)
 
 TestCase* ComparableFloatEncoder::buildRandomTestCase(int i)
 {
-	fprintf(stderr, "Wibble\n");
-	
 	mpfr_t tmp, tmp2;
 	mpfr_init2(tmp, wF+1);
 	mpfr_init2(tmp2, wF+1);
@@ -160,8 +153,6 @@ TestCase* ComparableFloatEncoder::buildRandomTestCase(int i)
 	
 	if(drand48()>0.5)
 		mpfr_setsign(tmp, tmp, -1, MPFR_RNDN);
-	
-	mpfr_fprintf(stderr, " random: iX=%Rg\n", tmp);
 	
 	mpz_class vv=type.ToBits(tmp);
 	type.FromBits(tmp2, vv);

@@ -19,7 +19,11 @@
 #include "UtilSollya.hh"
 
 namespace flopoco{
-	
+	Function::Function(const Function &o)
+		: name(o.name)
+		, node(copyTree(o.node))
+		, diff(o.diff ? copyTree(o.diff) : NULL)
+	{}
 
 	Function::Function(string name_, double xmin, double xmax, double scale)
 		: diff(NULL)
@@ -96,12 +100,16 @@ namespace flopoco{
 	void Function::eval_inverse(mpfr_t x, mpfr_t y, mpfr_t a, mpfr_t b) const
 	{
 		// DT10 : todo, check this works when time allows...
-		throw std::string("Not tested.");
-		/*if(!diff){
+		if(!diff){
 			diff=differentiate(node);
 		}
 		sollya_node_t tmp=makeSub(copyTree(node),makeConstant(y));
-		newtonFaithful(x, diff a, b, getToolPrecision());
-		free_memory(tmp);*/
+		int nres=newtonMPFR(x, tmp, diff, a, b, getToolPrecision());
+		if(!nres){
+			mpfr_fprintf(stderr, "Function::eval_inverse(x=?,y=%Rg,%Rg,%Rg) - newton failed.\n", y, a, b);
+			throw std::string("Function::eval_inverse - Newton failed.");
+		}
+		
+		free_memory(tmp);
 	}
 }

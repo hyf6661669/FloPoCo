@@ -8,7 +8,7 @@
 #include <boost/format.hpp>
 #include <boost/utility.hpp>
 
-#include "mpfr_vec.hpp"
+#include "random/utils/mpfr_vec.hpp"
 
 #include "FixedPointFunctions/PolynomialEvaluator.hpp"
 
@@ -89,10 +89,12 @@ public:
 			
 			MPFRVec serror=boost::any_cast<MPFRVec>(it->properties["minimax_error"]);
 			if( mpfr_greaterequal_p(serror[0],tol)){
-				mpfr_fprintf(stderr, "Splitting [%Rf,%Rf]",
-					it->domainStart, it->domainFinish
-				);
-				mpfr_fprintf(stderr, " error=%Rg\n", serror[0]);
+				if(::flopoco::verbose>=DEBUG){
+					mpfr_fprintf(stderr, "Splitting [%Rf,%Rf]",
+						it->domainStart, it->domainFinish
+					);
+					mpfr_fprintf(stderr, " error=%Rg\n", serror[0]);
+				}
 				m_range.split_segment(it);
 				update_segment_minimax(it);
 			}			
@@ -117,11 +119,13 @@ public:
 		
 		mpfr_t tol;
 		mpfr_init2(tol, getToolPrecision());
-		mpfr_set_d(tol, pow(2.0, -m_range.m_rangeWF-guard-1), MPFR_RNDN);
+		mpfr_set_d(tol, pow(2.0, -m_range.m_rangeWF-2), MPFR_RNDN);
 		
 		MPFRVec serror=boost::any_cast<MPFRVec>(curr->properties["minimax_error"]);
-		if(mpfr_greater_p(serror[0],tol))
+		if(mpfr_greater_p(serror[0],tol)){
+			mpfr_clear(tol);
 			throw std::runtime_error("calc_faithful_fixed_point - poly is not accurate enough to be faithful (?).");
+		}
 		
 		// Ok, let's try to do this properly. Heuristic from ASAP 2010 is that where:
 		// k = leading zeros. Equivalent to index bits in a table-poly over [0,1). Here k=1, as we always have a leading zero due to range over [0,1)
@@ -144,8 +148,11 @@ public:
 		MPFRVec coeffs=getPolyCoeffs(fp);
 		free_memory(fp);
 		
-		if(mpfr_greater_p(error[0],tol))
+		mpfr_set_d(tol, pow(2.0, -m_range.m_rangeWF-1), MPFR_RNDN);
+		if(mpfr_greater_p(error[0],tol)){
+			mpfr_clear(tol);
 			throw std::runtime_error("calc_faithful_fixed_point - fixed-point poly was not faithful.");
+		}
 		
 		std::string pnLsbs=boost::str(boost::format("minimax_fixed%1%_lsbs")%guard);
 		std::string pnError=boost::str(boost::format("minimax_fixed%1%_error")%guard);
@@ -161,7 +168,7 @@ public:
 	{
 		// TODO : We split it so that the minimax is twice as accurate as needed. This means we use too
 		// many segments, and should be optimised. Yes, I suck at maths.
-		split_to_error(pow(2.0, -m_range.m_rangeWF-guard-2));
+		split_to_error(pow(2.0, -m_range.m_rangeWF-2));
 		
 		segment_it_t curr=m_range.m_segments.begin();
 		while(curr!=m_range.m_segments.end()){
@@ -173,7 +180,6 @@ public:
 	MPFRVec m_concretePartition;
 	std::vector<int> m_concreteExp;
 	std::vector<int> m_concreteCoeffMsbs, m_concreteCoeffLsbs;
-	std::vector<mpf_class> m_concreteTableRamContents;
 	MPFRVec m_concreteApproxError;	// worst polynomial error
 	
 	// Signed number with bits:  sign,  msb, msb-1, ... lsb+1, lsb
@@ -181,7 +187,7 @@ public:
 	mpz_class ToTwosComplement(mpz_class x, int msb, int lsb)
 	{
 		int w=1+msb-lsb;
-		mpfr_fprintf(stderr, "   x=%Zd=%Zx, msb=%d, lsb=%d, width=%d\n", x.get_mpz_t(), x.get_mpz_t(), msb, lsb, w);
+		//mpfr_fprintf(stderr, "   x=%Zd=%Zx, msb=%d, lsb=%d, width=%d\n", x.get_mpz_t(), x.get_mpz_t(), msb, lsb, w);
 		
 		mpz_class ret;
 		if(x>=0){
@@ -191,7 +197,7 @@ public:
 				ret=(ret<<1) + mpz_tstbit(x.get_mpz_t(), i);	// manually read out two's complements bits. Heh.
 			}
 		}
-		mpfr_fprintf(stderr, "  ret=%Zd = %Zx\n", ret.get_mpz_t(), ret.get_mpz_t());
+		//mpfr_fprintf(stderr, "  ret=%Zd = %Zx\n", ret.get_mpz_t(), ret.get_mpz_t());
 		mpz_class tmp;
 		mpz_ui_pow_ui(tmp.get_mpz_t(), 2, w);
 		assert(ret>=0);
@@ -228,7 +234,9 @@ public:
 			for(unsigned j=0;j<=m_degree;j++){
 				coeffLsbs[j]=std::min(coeffLsbs[j], lsbs[j]);
 				coeffMsbs[j]=std::max(coeffMsbs[j], (int)mpfr_get_exp(coeffs[j])-1);	// 0.5*2^0=0.5 -> mpfr_get_exp(0.5)==0,  0.5*2^1=1 -> mpfr_get_exp(1)==1
-				mpfr_fprintf(stderr, "coeff = %Rg, msb=%d, lsb=%d\n", coeffs[j], lsbs[j], mpfr_get_exp(coeffs[j])-1);
+				if(::flopoco::verbose>=DEBUG){
+					mpfr_fprintf(stderr, "coeff = %Rg, msb=%d, lsb=%d\n", coeffs[j], lsbs[j], mpfr_get_exp(coeffs[j])-1);
+				}
 			}
 			
 			mpfr_set(m_concretePartition[i], curr->domainFinish, MPFR_RNDN);
@@ -241,33 +249,71 @@ public:
 		}
 		m_concreteCoeffMsbs=coeffMsbs;
 		m_concreteCoeffLsbs=coeffLsbs;
+	}
 		
-		fprintf(stderr, "  Building table.\n");
+	// Convert the polynomial coefficients into the actual data-values
+	/* The format is  |prefix|an|...|a0|, where prefix is the floating point exponent+sign that goes on the front
+	*/
+	std::vector<mpz_class> build_ram_contents(int guard, int wRangeE)
+	{
+		std::string pnCoeffs=boost::str(boost::format("minimax_fixed%1%_coeffs")%guard);
+		
+		mpfr_t tmp;
+		mpfr_init2(tmp, getToolPrecision());
+		
+		int totalCoeffBits=0;
+		for(unsigned i=0;i<=m_degree;i++){
+			totalCoeffBits+=1+m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i];
+		}
+		
+		if(::flopoco::verbose>=INFO){
+			fprintf(stderr, "  Building table.\n");
+		}
+		
+		std::vector<mpz_class> contents;
 		
 		// Now we know the precise types of the coefficients - they are all signed with
-		// bits in the range coeffMsbs..coeffLsbs. Let's build the table first
-		curr=m_range.m_segments.begin();
+		// bits in the range coeffMsbs..coeffLsbs. Let's build the table...
+		segment_it_t curr=m_range.m_segments.begin();
 		while(curr!=m_range.m_segments.end()){
 			MPFRVec coeffs=boost::any_cast<MPFRVec>(curr->properties[pnCoeffs]);
 			
 			mpz_class acc, local;
 			for(int i=m_degree;i>=0;i--){
 				mpfr_set(tmp, coeffs[i], MPFR_RNDN);
-				mpfr_mul_2si(tmp, tmp, -coeffLsbs[i], MPFR_RNDN);
+				mpfr_mul_2si(tmp, tmp, -m_concreteCoeffLsbs[i], MPFR_RNDN);
 				mpfr_get_z(local.get_mpz_t(), tmp, MPFR_RNDN);
 				
-				acc=(acc<<(1+coeffMsbs[i]-coeffLsbs[i])) + ToTwosComplement(local, coeffMsbs[i], coeffLsbs[i]);
+				acc=(acc<<(1+m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i])) + ToTwosComplement(local, m_concreteCoeffMsbs[i], m_concreteCoeffLsbs[i]);
 			}
-			mpfr_fprintf(stderr, "%Zx\n", acc.get_mpz_t());
-			m_concreteTableRamContents.push_back(acc);
+			
+			// Now we tack the exponent on. For the moment we only support positive numbers,
+			// so it will be "010|(e-2^wE/2)|...
+			assert(mpfr_sgn(curr->domainStart)>00);
+			
+			mpz_class prefix=mpfr_get_exp(curr->domainStart)-(1<<(wRangeE-1));
+			if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix))
+				throw std::string("Exponent out of range.");
+			acc=(mpz_class(2)<<(wRangeE+totalCoeffBits)) + (prefix<<totalCoeffBits) + acc;
+			
+			contents.push_back(acc);
+			
+			if(::flopoco::verbose>=INFO){
+				mpfr_fprintf(stderr, "  table[%d]=0x%Zx\n", contents.size(), acc.get_mpz_t());
+			}
 			
 			++curr;
 		}
 		
-		fprintf(stderr, "Done build concrete.\n");
+		if(::flopoco::verbose>=INFO){
+			fprintf(stderr, "Done build concrete.\n");
+		}
 		
 		mpfr_clear(tmp);
+		
+		return contents;
 	}
+	
 	
 	PolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
 	{

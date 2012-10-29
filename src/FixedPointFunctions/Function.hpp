@@ -13,7 +13,11 @@ using namespace std;
 namespace flopoco{
 
 	class Function {
+	private:
+		Function();	// no default
+		Function &operator=(const Function &);	// Disable copy
 	public:
+		Function(const Function &o);
 		Function(string name_, double xmin = 0, double xmax = 1, double scale = 1);
 		virtual ~Function();
 
@@ -28,7 +32,7 @@ namespace flopoco{
 	private:
 		string name;
 		sollya_node_t node;
-		sollya_node_t diff;
+		mutable sollya_node_t diff;
 	
 	};
 }

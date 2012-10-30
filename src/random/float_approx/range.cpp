@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <boost/utility.hpp>
 
+#include "Operator.hpp"
+
+#include "mpreal.h"
+
 namespace flopoco
 {
 namespace random
@@ -47,6 +51,8 @@ void mpfr_fix(mpfr_t x, int bits, mpfr_rnd_t rnd)
 
 void Segment::set_domain(mpfr_t _domainStart, mpfr_t _domainFinish)
 {
+	flatFunction.reset();
+	
 	assert(mpfr_sgn(_domainStart) > 0);
 	assert(mpfr_lessequal_p (_domainStart, _domainFinish));
 	
@@ -61,10 +67,8 @@ void Segment::set_domain(mpfr_t _domainStart, mpfr_t _domainFinish)
 	mpfr_sub_d(domainFinishFrac, domainFinishFrac, 0.5, MPFR_RNDN);
 	mpfr_fix(domainFinishFrac, parent->m_domainWF);
 	
-	mpfr_fprintf(stderr, "Pre eval\n");
 	parent->eval(rangeStart, _domainStart);
 	parent->eval(rangeFinish, _domainFinish);
-	mpfr_fprintf(stderr, "Post eval : (%Rf, %Rf)\n", rangeStart, rangeFinish);
 	
 	assert(mpfr_sgn(rangeStart) > 0);
 	
@@ -79,8 +83,6 @@ Segment::Segment(Range *_parent, mpfr_t _domainStart, mpfr_t _domainFinish)
 	mpfr_inits2(parent->m_rangeWF, rangeStart, rangeFinish, (mpfr_ptr)0);
 	
 	set_domain(_domainStart, _domainFinish);
-	
-	fprintf(stderr, "Finish Segment()\n");
 }
 
 Segment::Segment(const Segment &o)
@@ -96,6 +98,7 @@ Segment::Segment(const Segment &o)
 	mpfr_set(rangeStart, o.rangeStart, MPFR_RNDN);
 	mpfr_set(rangeFinish, o.rangeFinish, MPFR_RNDN);
 	
+	flatFunction=o.flatFunction;
 	isRangeFlat=o.isRangeFlat;
 	isDomainFlat=o.isDomainFlat;	
 	properties=o.properties;
@@ -103,7 +106,6 @@ Segment::Segment(const Segment &o)
 
 Segment &Segment::operator=(const Segment &o)
 {
-	fprintf(stderr, "Begin copy\n");
 	assert(parent==o.parent);
 	if(this!=&o){
 		mpfr_set(domainStart, o.domainStart, MPFR_RNDN);
@@ -112,11 +114,11 @@ Segment &Segment::operator=(const Segment &o)
 		mpfr_set(domainFinishFrac, o.domainFinishFrac, MPFR_RNDN);
 		mpfr_set(rangeStart, o.rangeStart, MPFR_RNDN);
 		mpfr_set(rangeFinish, o.rangeFinish, MPFR_RNDN);
+		flatFunction=o.flatFunction;
 		isRangeFlat=o.isRangeFlat;
 		isDomainFlat=o.isDomainFlat;
 		properties=o.properties;
 	}
-	fprintf(stderr, "End copy\n");
 	return *this;
 }
 
@@ -173,9 +175,7 @@ sollya_node_t Range::get_scaled_flat_function(int eD, int eR)
 		tx=makeMul(tx, makeConstantDouble(pow(2.0, -eR)));
 		tx=makeSub(tx, makeConstantDouble(0.5));
 		
-		fprintf(stderr, "Created tree : ");
-		fprintTree(stderr, tx);
-		fprintf(stderr, "\n");
+		//fprintTree(stderr, tx);
 		
 		m_flatFunctions[std::make_pair(eD,eR)]=tx;
 		return tx;
@@ -187,7 +187,19 @@ sollya_node_t Range::get_scaled_flat_function(int eD, int eR)
 sollya_node_t Segment::get_scaled_flat_function()
 {
 	assert(isRangeFlat && isDomainFlat);
-	return parent->get_scaled_flat_function(mpfr_get_exp(domainStart), mpfr_get_exp(rangeStart));
+	if(parent->m_offsetPolyInputs){
+		if(!flatFunction){
+			// We want a function where the input starts at 0, so we add on domainFracStart beforehand
+			sollya_node_t offset=makeConstant(domainStartFrac);
+			offset=makeAdd(makeVariable(), offset);
+			
+			sollya_node_t tree=substitute(parent->get_scaled_flat_function(mpfr_get_exp(domainStart), mpfr_get_exp(rangeStart)), offset);
+			flatFunction.reset(tree, free_memory);
+		}
+		return flatFunction.get();
+	}else{
+		return parent->get_scaled_flat_function(mpfr_get_exp(domainStart), mpfr_get_exp(rangeStart));
+	}
 }
 
 static void real_to_frac(mpfr_t frac, mpfr_t real)
@@ -262,6 +274,8 @@ std::pair<int,int> Range::GetFloatTypeEnclosingRange() const
 
 void Range::eval_scaled_flat_function(mpfr_t res, mpfr_t x, int eD, int eR)
 {
+	throw std::string("Here");	// Is this function used?
+	
 	mpfr_t tx;
 	mpfr_init_copy(tx, x);
 	
@@ -296,9 +310,9 @@ sollya_node_t Segment::minimax(unsigned degree)
 	real_to_frac(fracStart, domainStart);
 	real_to_frac(fracFinish, domainFinish);
 	
-	mpfr_fprintf(stderr, " minimax, dRange=[%Rf,%Rf] -> [%Rf,%Rf]\n", domainStart, domainFinish, rangeStart, rangeFinish);
+	//mpfr_fprintf(stderr, " minimax, dRange=[%Rf,%Rf] -> [%Rf,%Rf]\n", domainStart, domainFinish, rangeStart, rangeFinish);
 	
-	sollya_node_t func=parent->get_scaled_flat_function(mpfr_get_exp(domainStart), mpfr_get_exp(rangeStart));
+	sollya_node_t func=get_scaled_flat_function();
 	sollya_node_t weight=makeConstantDouble(1.0);
 	sollya_chain_t monom=makeIntPtrChainFromTo(0, degree);
 	
@@ -306,6 +320,8 @@ sollya_node_t Segment::minimax(unsigned degree)
 	mpfr_t requestedQuality;
 	mpfr_init2(requestedQuality, prec);
 	mpfr_set_d(requestedQuality, pow(2.0, -parent->m_rangeWF-10), MPFR_RNDN);
+	
+	mpfr::mpreal zero;
 
 	if(mpfr_equal_p(domainStart, domainFinish)){
 		mpfr_t *coeffs=(mpfr_t*)malloc(sizeof(mpfr_t)*(degree+1));
@@ -313,16 +329,25 @@ sollya_node_t Segment::minimax(unsigned degree)
 			mpfr_init2(coeffs[i], getToolPrecision());
 			mpfr_set_d(coeffs[i], 0.0, MPFR_RNDN);
 		}
-		evaluateFaithful(coeffs[0], func, fracStart, prec);
+		if(!parent->m_offsetPolyInputs){
+			evaluateFaithful(coeffs[0], func, fracStart, prec);
+		}else{
+			evaluateFaithful(coeffs[0], func, zero.mpfr_ptr(), prec);
+		}
 		//mpfr_fix(coeffs[0], parent->m_rangeWF);
-		mpfr_fprintf(stderr, "  creating constant : %Rf -> %Rf\n", fracStart, coeffs[0]);
 		res=makePolynomial(&coeffs[0], degree);
 		for(unsigned i=0;i<=degree;i++){
 			mpfr_clear(coeffs[i]);
 		}
 		free(coeffs);
 	}else{	
-		res=remez(func, weight, monom, fracStart, fracFinish, &requestedQuality, prec);
+		if(!parent->m_offsetPolyInputs){
+			res=remez(func, weight, monom, fracStart, fracFinish, &requestedQuality, prec);
+		}else{
+			mpfr::mpreal length(fracFinish);
+			length=length-fracStart;
+			res=remez(func, weight, monom, zero.mpfr_ptr(), length.mpfr_ptr(), &requestedQuality, prec);
+		}
 	}
 		
 	// func doesn't need freeing
@@ -356,11 +381,12 @@ sollya_node_t Segment::fpminimax(const std::vector<int> &coeffWidths, sollya_nod
 	
 	sollya_node_t res=NULL;
 	
-	mpfr_fprintf(stderr, " fpminimax, dRange=[%Rf,%Rf] -> [%Rf,%Rf]\n", domainStart, domainFinish, rangeStart, rangeFinish);
+	//mpfr_fprintf(stderr, " fpminimax, dRange=[%Rf,%Rf] -> [%Rf,%Rf]\n", domainStart, domainFinish, rangeStart, rangeFinish);
 	
 	sollya_node_t func=get_scaled_flat_function();
 	
 	mp_prec_t prec=getToolPrecision();
+	mpfr::mpreal zero;
 	
 	if(mpfr_equal_p(domainStart, domainFinish)){
 		mpfr_t *coeffs=(mpfr_t*)malloc(sizeof(mpfr_t)*(degree+1));
@@ -368,12 +394,15 @@ sollya_node_t Segment::fpminimax(const std::vector<int> &coeffWidths, sollya_nod
 			mpfr_init2(coeffs[i], getToolPrecision());
 			mpfr_set_d(coeffs[i], 0.0, MPFR_RNDN);
 		}
-		evaluateFaithful(coeffs[0], func, domainStartFrac, prec);
+		if(!parent->m_offsetPolyInputs){
+			evaluateFaithful(coeffs[0], func, domainStartFrac, prec);
+		}else{
+			evaluateFaithful(coeffs[0], func, zero.mpfr_ptr(), prec);
+		}
 		
 		// We need to round to whatever the format of coeff zero should be
 		mpfr_fix(coeffs[0], coeffWidths[0]);
 		
-		mpfr_fprintf(stderr, "  creating constant : %Rf -> %Rf\n", domainStartFrac, coeffs[0]);
 		res=makePolynomial(&coeffs[0], degree);
 		for(unsigned i=0;i<=degree;i++){
 			mpfr_clear(coeffs[i]);
@@ -384,7 +413,13 @@ sollya_node_t Segment::fpminimax(const std::vector<int> &coeffWidths, sollya_nod
 		sollya_chain_t formats=makeIntPtrChain(coeffWidths);
 		sollya_node_t constantPart=makeConstantDouble(0.0);
 		
-		res=FPminimax(func, monom, formats, /*points*/NULL, domainStartFrac, domainFinishFrac, FIXED, ABSOLUTESYM, constantPart,minimax);
+		if(!parent->m_offsetPolyInputs){
+			res=FPminimax(func, monom, formats, /*points*/NULL, domainStartFrac, domainFinishFrac, FIXED, ABSOLUTESYM, constantPart,minimax);
+		}else{
+			mpfr::mpreal length(domainFinishFrac);
+			length=length-domainStartFrac;
+			res=FPminimax(func, monom, formats, /*points*/NULL, zero.mpfr_ptr(), length.mpfr_ptr(), FIXED, ABSOLUTESYM, constantPart,minimax);
+		}
 		
 		free_memory(constantPart);
 		freeChain(monom,freeIntPtr);
@@ -405,6 +440,7 @@ Range::Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, m
 	: m_function(f)
 	, m_domainWF(domainWF)
 	, m_rangeWF(rangeWF)
+	, m_offsetPolyInputs(false)
 {
 	if(mpfr_sgn(domainStart)<0)
 		throw std::invalid_argument("Domain must be strictly positive.");
@@ -418,7 +454,6 @@ Range::Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, m
 	mpfr_set_d(m_rangeFractionEnd, 0.5, MPFR_RNDN);
 	
 	Segment base(this, domainStart, domainFinish);
-	fprintf(stderr, "Pre push_back\n");
 	m_segments.push_back(base);
 }
 
@@ -433,7 +468,9 @@ Range::~Range()
 */
 void Range::split_segment(segment_it_t src, mpfr_t newFinish)
 {
-	mpfr_fprintf(stderr, "split_segment, [%Rf,%Rf] < %Rf\n", src->domainStart, src->domainFinish, newFinish);
+	if(::flopoco::verbose>=DEBUG){
+		mpfr_fprintf(stderr, "split_segment, [%Rf,%Rf] < %Rf,  ", src->domainStart, src->domainFinish, newFinish);
+	}
 	
 	// require:   start<=newFinish   and   newFinish < finish
 	assert(mpfr_lessequal_p(src->domainStart, newFinish));
@@ -444,11 +481,13 @@ void Range::split_segment(segment_it_t src, mpfr_t newFinish)
 	mpfr_nextabove(newStart);
 	
 	Segment left(this, src->domainStart, newFinish), right(this, newStart, src->domainFinish);
-	fprintf(stderr, "  left=");
-	left.dump(stderr);
-	fprintf(stderr, "\n  right=");
-	right.dump(stderr);
-	fprintf(stderr, "\n");
+	if(::flopoco::verbose>=DEBUG){
+		fprintf(stderr, "  left=");
+		left.dump(stderr);
+		fprintf(stderr, ", right=");
+		right.dump(stderr);
+		fprintf(stderr, "\n");
+	}
 	
 	*src=left;
 	segment_it_t tmp=src;
@@ -614,7 +653,7 @@ void Range::find_range_jump(mpfr_t newFinish, mpfr_t start, mpfr_t finish)
 	assert(lowE!=highE);
 	
 	while(true){
-		mpfr_fprintf(stderr, "  low=%Rf, high=%Rf, lowE=%d, highE=%d\n", low, high, lowE, highE);
+		//mpfr_fprintf(stderr, "  low=%Rf, high=%Rf, lowE=%d, highE=%d\n", low, high, lowE, highE);
 		
 		int finish=false;
 		mpfr_nextabove(low);
@@ -641,7 +680,7 @@ void Range::find_range_jump(mpfr_t newFinish, mpfr_t start, mpfr_t finish)
 	
 	mpfr_set(newFinish, low, MPFR_RNDN);
 	
-	mpfr_printf("  newFinish=%Rf\n", newFinish);
+	//mpfr_printf("  newFinish=%Rf\n", newFinish);
 	
 	mpfr_clears(low, mid, high, val, (mpfr_ptr)0);
 }
@@ -659,7 +698,7 @@ void Range::flatten_range(bool domainAlreadyFlat)
 		
 			find_range_jump(newFinish, curr->domainStart, curr->domainFinish);
 		
-			mpfr_fprintf(stderr, "  newFinish=%Rf\n", newFinish);
+			//mpfr_fprintf(stderr, "  newFinish=%Rf\n", newFinish);
 			split_segment(curr, newFinish);
 			
 			assert(curr->isRangeFlat);

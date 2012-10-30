@@ -9,6 +9,7 @@
 #include "UtilSollya.hh"
 
 #include "random/utils/operator_factory.hpp"
+#include "random/utils/make_table.hpp"
 
 using namespace std;
 
@@ -51,19 +52,25 @@ public:
     , m_maxError(maxError)
     // Start building stuff (though not much happens yet)
     , m_range(f, wDomainF, wRangeF, domainMin.mpfr_ptr(), domainMax.mpfr_ptr())
-    , m_polys(m_range, m_degree)
   {       
+    std::stringstream acc;
+    acc<<"FloatApprox_uid"<<getNewUId();
+    std::string name=acc.str();
+    setName(name);
+    
     REPORT(INFO, "Making range monotonic.");
     m_range.make_monotonic_or_range_flat();
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
     
     REPORT(INFO, "Flattening domain.");
-    m_range.flatten_range();
+    m_range.flatten_domain();
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
     
     REPORT(INFO, "Flattening range.");
     m_range.flatten_range();
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
+    
+    m_polys=RangePolys(&m_range, m_degree);
     
     REPORT(INFO, "Splitting int polynomials with error < "<<maxError);
     m_polys.split_to_error(maxError.toDouble());
@@ -81,15 +88,88 @@ public:
         if(msg!="calc_faithful_fixed_point - fixed-point poly was not faithful."){
           throw;    // All other problems should throw
         }
+        continue;
       }
+      break;
     }
     REPORT(INFO, "Successful, using "<<guard<<" guard bits.");
-    
     
     REPORT(INFO, "Building fixed-point coefficient tables.");
     m_polys.build_concrete(guard);
     
+    int wSegmentIndex=(int)ceil(log(m_range.m_segments.size())/log(2.0));
     
+    REPORT(INFO, "Constructing static quantiser.");
+    Operator *codec=ComparableFloatType(wDomainE,wDomainF).MakeEncoder(target);
+    oplist.push_back(codec);
+    Operator *quantiser=m_polys.make_static_quantiser(target, wDomainE);
+    oplist.push_back(quantiser);
+    
+    REPORT(INFO, "Constructing lookup table.");
+    int coeffWidths=0;
+    for(unsigned i=0;i<=m_degree;i++){
+      coeffWidths+=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
+    }
+    int tableWidth=3+wRangeE+coeffWidths;
+    Operator *table=MakeSinglePortTable(target, name+"_table", tableWidth, m_polys.build_ram_contents(guard, wRangeE));
+    oplist.push_back(table);
+    
+    REPORT(INFO, "Constructing polynomial evaluator.");
+    Operator *poly=m_polys.make_polynomial_evaluator(target);
+    oplist.push_back(poly);
+    
+    REPORT(INFO, "Now constructing VHDL for FloatApprox.");
+    
+    addFPInput("iX", wDomainE, wDomainF);
+    addFPOutput("oY", wRangeE, wRangeF);
+    
+    inPortMap(codec, "iX", "iX");
+    outPortMap(codec, "oY", "comparable_iX");
+    vhdl<<instance(codec, "comparable_codec");
+    syncCycleFromSignal("comparable_iX");
+    
+    inPortMap(quantiser, "iX", "comparable_iX");
+    outPortMap(quantiser, "oY", "table_index");
+    vhdl<<instance(quantiser, "quantiser");
+    syncCycleFromSignal("table_index");
+    
+    inPortMap(table, "X", "table_index");
+    outPortMap(table, "Y", "table_contents");
+    vhdl<<instance(table, "table");
+    syncCycleFromSignal("table_index");
+    
+    ///////////////////////////////////
+    // Split the coefficients into the different parts
+    int offset=0;
+    for(unsigned i=0;i<=m_degree;i++){
+      int w=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
+      vhdl<<declare(join("coeff_",i),w)<<" <= table_contents"<<range(w+offset-1,offset)<<";\n";
+      offset+=w;
+    }
+    vhdl<<declare("coeff_prefix",3+wRangeE)<<" <= table_contents"<<range(tableWidth-1,offset)<<";\n";
+    vhdl<<declare("fraction_iX", wDomainF)<<" <= iX"<<range(wDomainF-1,0)<<";\n";
+    
+    ////////////////////////////////
+    // Now connet to polynomial evaluator
+    for(unsigned i=0;i<=m_degree;i++){
+      inPortMap(poly, join("a",i), join("coeff_",i));
+    }
+    inPortMap(poly, "Y", "fraction_iX");
+    // NOTE : Something is going wrong here! result_fraction is too small by two bits (one of them is sign, what is other?)
+    outPortMap(poly, "R", "result_fraction");
+    vhdl<<instance(poly, "poly");
+    syncCycleFromSignal("result_fraction");
+    
+    vhdl<<"oY <= coeff_prefix & result_fraction"<<range(wRangeF-1,0)<<";\n";    // TODO : What are the extra bits
+    
+    addOutput("debug_result_fraction", wRangeF+2);  // TODO : why two bits bigger?
+    vhdl<<"debug_result_fraction<=result_fraction;\n";
+    
+    addOutput("debug_segment", wSegmentIndex);
+    vhdl<<"debug_segment<=table_index;\n";
+    
+    addOutput("debug_table_contents", tableWidth);
+    vhdl<<"debug_table_contents<=table_contents;\n";
   }
 
   void emulate(TestCase * tc)

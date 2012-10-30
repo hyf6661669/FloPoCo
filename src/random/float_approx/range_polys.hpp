@@ -9,10 +9,13 @@
 #include <boost/utility.hpp>
 
 #include "random/utils/mpfr_vec.hpp"
+#include "random/utils/comparable_float_type.hpp"
 
 #include "FixedPointFunctions/PolynomialEvaluator.hpp"
 
 #include "static_quantiser.hpp"
+
+#include "mpreal.h"
 
 
 namespace flopoco
@@ -40,7 +43,7 @@ public:
 	typedef Range::segment_it_t segment_it_t;
 private:
 	
-	Range &m_range;
+	Range *m_range;
 	unsigned m_degree;
 
 	void infNorm(mpfr_t error, sollya_node_t func, sollya_node_t poly, mpfr_t a, mpfr_t b, unsigned points)
@@ -60,18 +63,29 @@ private:
 		sollya_node_t func=curr->get_scaled_flat_function(); // doesn't need to be freed
 		
 		MPFRVec error(1, getToolPrecision());
-		infNorm(error[0], func, poly.get(), curr->domainStartFrac, curr->domainFinishFrac, 71);
+		if(!m_range->m_offsetPolyInputs){
+			infNorm(error[0], func, poly.get(), curr->domainStartFrac, curr->domainFinishFrac, 71);
+		}else{
+			mpfr::mpreal length(curr->domainFinishFrac);
+			length=length-curr->domainStartFrac;
+			mpfr::mpreal zero;
+			infNorm(error[0], func, poly.get(), zero.mpfr_ptr(), length.mpfr_ptr(), 71);
+		}
 		
 		curr->properties["minimax"]=poly;
 		curr->properties["minimax_error"]=error;
 	}
 public:
-	RangePolys(Range &range, unsigned degree)
+	RangePolys()
+		: m_range(NULL)
+	{}
+
+	RangePolys(Range *range, unsigned degree)
 		: m_range(range)
 		, m_degree(degree)
 	{
-		segment_it_t it=m_range.m_segments.begin();
-		while(it!=m_range.m_segments.end()){
+		segment_it_t it=m_range->m_segments.begin();
+		while(it!=m_range->m_segments.end()){
 			update_segment_minimax(it);
 			++it;
 		}
@@ -83,8 +97,8 @@ public:
 		mpfr_init2(tol, getToolPrecision());
 		mpfr_set_d(tol, error, MPFR_RNDN);
 		
-		segment_it_t it=m_range.m_segments.begin();
-		while(it!=m_range.m_segments.end()){
+		segment_it_t it=m_range->m_segments.begin();
+		while(it!=m_range->m_segments.end()){
 			update_segment_minimax(it);
 			
 			MPFRVec serror=boost::any_cast<MPFRVec>(it->properties["minimax_error"]);
@@ -95,7 +109,7 @@ public:
 					);
 					mpfr_fprintf(stderr, " error=%Rg\n", serror[0]);
 				}
-				m_range.split_segment(it);
+				m_range->split_segment(it);
 				update_segment_minimax(it);
 			}			
 			assert(it->has_property("minimax_error"));
@@ -119,7 +133,7 @@ public:
 		
 		mpfr_t tol;
 		mpfr_init2(tol, getToolPrecision());
-		mpfr_set_d(tol, pow(2.0, -m_range.m_rangeWF-2), MPFR_RNDN);
+		mpfr_set_d(tol, pow(2.0, -m_range->m_rangeWF-2), MPFR_RNDN);
 		
 		MPFRVec serror=boost::any_cast<MPFRVec>(curr->properties["minimax_error"]);
 		if(mpfr_greater_p(serror[0],tol)){
@@ -137,19 +151,27 @@ public:
 		//   lsb(c[i]) = -p + j
 		std::vector<int> lsbs(m_degree+1), fmts(m_degree+1);
 		for(unsigned j=0;j<=m_degree;j++){
-			lsbs[j]= -(m_range.m_rangeWF+guard+1) + j -1;	// TODO : I seem to need one more LSB than the paper says, otherwise PolynomialEvaluator doesn't converge
+			lsbs[j]= -(m_range->m_rangeWF+guard+1) + j -1;	// TODO : I seem to need one more LSB than the paper says, otherwise PolynomialEvaluator doesn't converge
 			fmts[j]=-lsbs[j]; // format is negative of lsb
 		}
 		sollya_node_t fp=curr->fpminimax(fmts, boost::any_cast<sollya_node_ptr_t>(curr->properties["minimax"]).get() );
 		
 		MPFRVec error(1, getToolPrecision());
-		infNorm(error[0], curr->get_scaled_flat_function(), fp, curr->domainStartFrac, curr->domainFinishFrac, 71);
+		if(!m_range->m_offsetPolyInputs){
+			infNorm(error[0], curr->get_scaled_flat_function(), fp, curr->domainStartFrac, curr->domainFinishFrac, 71);
+		}else{
+			mpfr::mpreal length(curr->domainFinishFrac);
+			length=length-curr->domainStartFrac;
+			mpfr::mpreal zero;
+			infNorm(error[0], curr->get_scaled_flat_function(), fp, zero.mpfr_ptr(), length.mpfr_ptr(), 71);
+		}
 		mpfr_abs(error[0],error[0],MPFR_RNDN);
 		MPFRVec coeffs=getPolyCoeffs(fp);
 		free_memory(fp);
 		
-		mpfr_set_d(tol, pow(2.0, -m_range.m_rangeWF-1), MPFR_RNDN);
+		mpfr_set_d(tol, pow(2.0, -m_range->m_rangeWF-1), MPFR_RNDN);
 		if(mpfr_greater_p(error[0],tol)){
+			mpfr_fprintf(stderr, " didn't meet error: wanted=%Rg, got=%Rg\n", tol, error[0]);
 			mpfr_clear(tol);
 			throw std::runtime_error("calc_faithful_fixed_point - fixed-point poly was not faithful.");
 		}
@@ -168,10 +190,10 @@ public:
 	{
 		// TODO : We split it so that the minimax is twice as accurate as needed. This means we use too
 		// many segments, and should be optimised. Yes, I suck at maths.
-		split_to_error(pow(2.0, -m_range.m_rangeWF-2));
+		split_to_error(pow(2.0, -m_range->m_rangeWF-2));
 		
-		segment_it_t curr=m_range.m_segments.begin();
-		while(curr!=m_range.m_segments.end()){
+		segment_it_t curr=m_range->m_segments.begin();
+		while(curr!=m_range->m_segments.end()){
 			calc_faithful_fixed_point(curr, guard);
 			++curr;
 		}
@@ -217,26 +239,33 @@ public:
 		std::string pnLsbs=boost::str(boost::format("minimax_fixed%1%_lsbs")%guard);
 		std::string pnError=boost::str(boost::format("minimax_fixed%1%_error")%guard);
 		
-		m_concretePartition.resize(m_range.m_segments.size(), m_range.m_domainWF);
+		m_concretePartition.resize(m_range->m_segments.size(), m_range->m_domainWF);
 		m_concreteExp.resize(0);
 		
 		std::vector<int> coeffLsbs(m_degree+1, INT_MAX);
 		std::vector<int> coeffMsbs(m_degree+1, -INT_MAX);
 		
 		// First walk over all the coefficients, and find the min lsb and max msb of each coefficient
-		segment_it_t curr=m_range.m_segments.begin();
-		for(unsigned i=0;i<m_range.m_segments.size();i++){
+		segment_it_t curr=m_range->m_segments.begin();
+		for(unsigned i=0;i<m_range->m_segments.size();i++){
 			assert(curr->has_property(pnCoeffs));
 			MPFRVec coeffs=boost::any_cast<MPFRVec>(curr->properties[pnCoeffs]);
 			std::vector<int> lsbs=boost::any_cast<std::vector<int> >(curr->properties[pnLsbs]);
 			MPFRVec error=boost::any_cast<MPFRVec>(curr->properties[pnError]);
 			
+			if(::flopoco::verbose>=DEBUG){
+				mpfr_fprintf(stderr, "segment[%d] :\n", i);
+			}
 			for(unsigned j=0;j<=m_degree;j++){
 				coeffLsbs[j]=std::min(coeffLsbs[j], lsbs[j]);
-				coeffMsbs[j]=std::max(coeffMsbs[j], (int)mpfr_get_exp(coeffs[j])-1);	// 0.5*2^0=0.5 -> mpfr_get_exp(0.5)==0,  0.5*2^1=1 -> mpfr_get_exp(1)==1
+				int msb=std::max(lsbs[j], (int)mpfr_get_exp(coeffs[j])-1);// 0.5*2^0=0.5 -> mpfr_get_exp(0.5)==0,  0.5*2^1=1 -> mpfr_get_exp(1)==1
+				coeffMsbs[j]=std::max(coeffMsbs[j], msb);	
 				if(::flopoco::verbose>=DEBUG){
-					mpfr_fprintf(stderr, "coeff = %Rg, msb=%d, lsb=%d\n", coeffs[j], lsbs[j], mpfr_get_exp(coeffs[j])-1);
+					mpfr_fprintf(stderr, "  format[%d:%d] = %Rg\n", msb, lsbs[j], coeffs[j]);
 				}
+			}
+			if(::flopoco::verbose>=DEBUG){
+				mpfr_fprintf(stderr, "\n");
 			}
 			
 			mpfr_set(m_concretePartition[i], curr->domainFinish, MPFR_RNDN);
@@ -247,6 +276,15 @@ public:
 			
 			++curr;
 		}
+		
+		if(::flopoco::verbose>=INFO){
+			mpfr_fprintf(stderr, "overall coeff formats :\n");
+			for(unsigned j=0;j<=m_degree;j++){
+				mpfr_fprintf(stderr, "  format[%d:%d], width=%d\n", coeffMsbs[j], coeffLsbs[j], coeffMsbs[j]-coeffLsbs[j]+1);
+			}
+			mpfr_fprintf(stderr, "\n");
+		}
+		
 		m_concreteCoeffMsbs=coeffMsbs;
 		m_concreteCoeffLsbs=coeffLsbs;
 	}
@@ -274,8 +312,8 @@ public:
 		
 		// Now we know the precise types of the coefficients - they are all signed with
 		// bits in the range coeffMsbs..coeffLsbs. Let's build the table...
-		segment_it_t curr=m_range.m_segments.begin();
-		while(curr!=m_range.m_segments.end()){
+		segment_it_t curr=m_range->m_segments.begin();
+		while(curr!=m_range->m_segments.end()){
 			MPFRVec coeffs=boost::any_cast<MPFRVec>(curr->properties[pnCoeffs]);
 			
 			mpz_class acc, local;
@@ -291,9 +329,11 @@ public:
 			// so it will be "010|(e-2^wE/2)|...
 			assert(mpfr_sgn(curr->domainStart)>00);
 			
-			mpz_class prefix=mpfr_get_exp(curr->domainStart)-(1<<(wRangeE-1));
-			if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix))
-				throw std::string("Exponent out of range.");
+			mpz_class prefix=mpfr_get_exp(curr->rangeStart)+(1<<(wRangeE-1));
+			if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix)){
+				std::cerr<<"  exponent="<<mpfr_get_exp(curr->rangeStart)<<", wRangeE="<<wRangeE<<"\n";
+				throw std::string("Exponent out of range (increase wRangeE?).");
+			}
 			acc=(mpz_class(2)<<(wRangeE+totalCoeffBits)) + (prefix<<totalCoeffBits) + acc;
 			
 			contents.push_back(acc);
@@ -315,6 +355,8 @@ public:
 	}
 	
 	
+	
+	
 	PolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
 	{
 		std::vector<FixedPointCoefficient*> coeffs(m_degree+1);
@@ -329,14 +371,14 @@ public:
 			coeffs[i]=new FixedPointCoefficient(/*size*/ -m_concreteCoeffLsbs[i], /*weight*/ m_concreteCoeffMsbs[i]);
 		}
 		
-		// Input : msb is -1, lsb is -m_range.m_domainWF
-		YVar y( m_range.m_domainWF, -1);
+		// Input : msb is -1, lsb is -m_range->m_domainWF
+		YVar y( m_range->m_domainWF, -1);
 		
 		mpfr_t approxError;
 		mpfr_init2(approxError, getToolPrecision());
 		mpfr_set(approxError, m_concreteApproxError[0], MPFR_RNDN);
 		
-		flopoco::PolynomialEvaluator *res=new PolynomialEvaluator(target, coeffs, &y, /*targetPrec*/ m_range.m_domainWF, &approxError, inputDelays);
+		flopoco::PolynomialEvaluator *res=new PolynomialEvaluator(target, coeffs, &y, /*targetPrec*/ m_range->m_rangeWF, &approxError, inputDelays);
 		
 		for(unsigned i=0;i<=m_degree;i++){
 			delete coeffs[i];
@@ -360,20 +402,20 @@ public:
 		return acc;
 	}
 	
-	StaticQuantiser *make_static_quantiser(Target *target, map<string, double> inputDelays = map<string, double>())
+	StaticQuantiser *make_static_quantiser(Target *target, int wDomainE, map<string, double> inputDelays = map<string, double>())
 	{
-		std::pair<int,int> rep=m_range.GetFloatTypeEnclosingDomain();
-		
 		std::vector<mpz_class> boundaries;
 		
-		segment_it_t curr=m_range.m_segments.begin();
-		while(curr!=m_range.m_segments.end()){
-			boundaries.push_back(ToPositiveConstant(rep, curr->domainStart));
+		ComparableFloatType type(wDomainE, m_range->m_domainWF);
+		
+		segment_it_t curr=m_range->m_segments.begin();
+		while(curr!=m_range->m_segments.end()){
+			boundaries.push_back(type.ToBits(curr->domainStart));
 			++curr;
 		}
-		boundaries.push_back(ToPositiveConstant(rep, boost::prior(curr)->domainFinish)+1);	// This won't actually be used by the quantiser
+		boundaries.push_back((mpz_class(1)<<type.Width())-1);	// Not used by quantiser
 		
-		StaticQuantiser *sq=new StaticQuantiser(target, (2+rep.first+rep.second), boundaries, inputDelays);
+		StaticQuantiser *sq=new StaticQuantiser(target, type.Width(), boundaries, inputDelays);
 		
 		return sq;
 	}
@@ -435,22 +477,22 @@ public:
 	{
 		mpfr_t x, got, want, actual, err, tol;
 		
-		mpfr_init2(got, m_range.m_rangeWF);
-		mpfr_init2(want, m_range.m_rangeWF);
+		mpfr_init2(got, m_range->m_rangeWF);
+		mpfr_init2(want, m_range->m_rangeWF);
 		mpfr_init2(actual, getToolPrecision());
 		mpfr_init2(err, getToolPrecision());
 		mpfr_init2(tol, getToolPrecision());
-		mpfr_init_copy(x, m_range.m_segments.begin()->domainStart);
+		mpfr_init_copy(x, m_range->m_segments.begin()->domainStart);
 		
-		mpfr_set_si_2exp(tol, 1, -m_range.m_rangeWF, MPFR_RNDN);
+		mpfr_set_si_2exp(tol, 1, -m_range->m_rangeWF, MPFR_RNDN);
 		
 		int start=time(NULL);
 		int delta_print=2;
 		int next_print=start+delta_print;
 		
-		while(mpfr_lessequal_p(x, boost::prior(m_range.m_segments.end())->domainFinish)){
+		while(mpfr_lessequal_p(x, boost::prior(m_range->m_segments.end())->domainFinish)){
 			unsigned seg=eval_concrete(got, x);
-			m_range.m_function.eval(actual, x);
+			m_range->m_function.eval(actual, x);
 			mpfr_set(want, actual, MPFR_RNDN);
 			
 			mpfr_sub(err, got, actual, MPFR_RNDN);
@@ -466,7 +508,7 @@ public:
 			mpfr_nextabove(x);
 			
 			if(time(NULL) > next_print){
-				mpfr_fprintf(stderr, "  curr=%Rg, range=[%Rg,%Rg]\n", x, m_range.m_segments.begin()->domainStart, boost::prior(m_range.m_segments.end())->domainFinish);
+				mpfr_fprintf(stderr, "  curr=%Rg, range=[%Rg,%Rg]\n", x, m_range->m_segments.begin()->domainStart, boost::prior(m_range->m_segments.end())->domainFinish);
 				delta_print=std::min(60, delta_print*2);
 				next_print=time(NULL)+delta_print;
 			}

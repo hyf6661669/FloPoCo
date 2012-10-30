@@ -22,6 +22,8 @@
 #include "FixedPointFunctions/Function.hpp"
 #include "Table.hpp"
 
+#include "random/utils/make_table.hpp"
+
 using namespace std;
 
 namespace flopoco
@@ -31,40 +33,6 @@ extern vector<Operator *> oplist;
 	
 namespace random
 {
-	
-Operator *MakeSinglePortTable(Target *target, std::string name, int wElts, const std::vector<mpz_class> &contents, map<string, double> inputDelays = emptyDelayMap )
-{
-	class SinglePortTable
-		: public Table
-	{
-	private:
-		std::vector<mpz_class> m_elements;
-	public:
-		SinglePortTable(Target* target, std::string name, int wIn, int wOut, const std::vector<mpz_class> &elements, map<string, double> inputDelays = emptyDelayMap )
-			: Table(target, wIn, wOut, /*minIn*/ 0, /*maxIn*/-1, /*logicTable*/0,  inputDelays)
-			, m_elements(elements)
-		{
-			setName(name);
-		}
-		
-		virtual mpz_class function(int x)
-		{ return m_elements.at(x);	}
-	};
-	
-	int wIn=(int)round(log(contents.size())/log(2.0));
-	if((1<<wIn) != contents.size())
-		throw std::string("MakeSinglePortTable - Number of elements must currently be a power of two.");
-	
-	mpz_class mm=mpz_class(1)<<wElts;
-	for(unsigned i=0;i<contents.size();i++){
-		if(contents[i] < 0)
-			throw std::string("MakeSinglePortTable - Currently elements must be positive (need to be encoded for signed values).");
-		if(contents[i] >=mm)
-			throw std::string("MakeSinglePortTable - Element is not in range [0,2^wElts).");
-	}
-	
-	return new SinglePortTable(target, name, wIn, wElts, contents, inputDelays);
-}
 	
 TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_class> &elements, bool addRandomSign)
 	: RngTransformOperator(target)

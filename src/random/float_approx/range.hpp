@@ -59,6 +59,8 @@ struct Segment
 {
 private:
 	Segment();
+
+	boost::shared_ptr<sollya_node> flatFunction;
 public:
 	
 	Range *parent;
@@ -108,6 +110,7 @@ struct Range
 	const Function &m_function;
 	int m_domainWF;
 	int m_rangeWF;
+	bool m_offsetPolyInputs;
 	
 	// upper (exclusive) bound for integer value of the domain and range, not including the implicit bit
 	mpfr_t m_domainFractionEnd, m_rangeFractionEnd;

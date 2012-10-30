@@ -57,7 +57,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	float_approx/range_polys.cpp
 	float_approx/FloatApprox.cpp
 )
-target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES}  ${NTL_LIB})
+target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES})
 
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})

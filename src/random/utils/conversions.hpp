@@ -5,6 +5,8 @@
 #include "NTL/quad_float.h"
 #endif
 
+#include "mpreal.h"
+
 namespace flopoco
 {
 namespace random
@@ -33,6 +35,21 @@ namespace random
 	double convert<double>(const NTL::quad_float &x)
 	{ return NTL::to_double(x); }
 #endif
+	
+	template<class T>
+	T convert(const mpfr::mpreal &x);
+	
+	template<>
+	double convert<double>(const mpfr::mpreal &x)
+	{ return x.toDouble(); }
+	
+	template<>
+	mpfr::mpreal convert<mpfr::mpreal>(const mpfr::mpreal &x)
+	{ return x; }
+	
+	template<>
+	mpfr::mpreal convert<mpfr::mpreal>(const double x)
+	{ return mpfr::mpreal(x); }
 	
 }; // random
 }; // flopoco

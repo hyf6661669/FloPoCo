@@ -53,8 +53,21 @@ public:
     , m_range(f, wDomainF, wRangeF, domainMin.mpfr_ptr(), domainMax.mpfr_ptr())
     , m_polys(m_range, m_degree)
   {       
+    REPORT(INFO, "Making range monotonic.");
+    m_range.make_monotonic_or_range_flat();
+    REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
+    
+    REPORT(INFO, "Flattening domain.");
+    m_range.flatten_range();
+    REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
+    
+    REPORT(INFO, "Flattening range.");
+    m_range.flatten_range();
+    REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
+    
     REPORT(INFO, "Splitting int polynomials with error < "<<maxError);
     m_polys.split_to_error(maxError.toDouble());
+    REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
     
     int guard=0;
     for(guard=0;guard<=9;guard++){
@@ -70,7 +83,7 @@ public:
         }
       }
     }
-    REPORT(INFO, "Ok, "<<guard<<" guard bits works.");
+    REPORT(INFO, "Successful, using "<<guard<<" guard bits.");
     
     
     REPORT(INFO, "Building fixed-point coefficient tables.");

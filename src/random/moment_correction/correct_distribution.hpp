@@ -124,11 +124,14 @@ std::vector<T> FindSymmetricHepticPolynomialCorrection(
 	for(int i=0;i<=8;i++)
 		ssTarget[i]=target->RawMoment(i);
 	
-	systems::SymmetricHepticSystem<T,NTL::quad_float> sys(&ssCurrent[0], &ssTarget[0]);
+	int cp=mpfr_get_default_prec();
+	mpfr_set_default_prec(160);
 	
+	systems::SymmetricHepticSystem<T,mpfr::mpreal> sys(&ssCurrent[0], &ssTarget[0]);
 	std::pair<std::vector<T>,T> mm=MinimiseGSL(sys);
-	
 	std::pair<std::vector<T>,std::vector<T> > rr=FindRootsGSL(sys, &mm.first[0]);
+	
+	mpfr_set_default_prec(cp);
 	
 	std::vector<T> res;
 	res.push_back(current->RawMoment(1)-target->RawMoment(1));
@@ -158,11 +161,14 @@ std::vector<T> FindSymmetricNonicPolynomialCorrection(
 	for(int i=0;i<=10;i++)
 		ssTarget[i]=target->RawMoment(i);
 	
-	systems::SymmetricNonicSystem<T,NTL::quad_float> sys(&ssCurrent[0], &ssTarget[0]);
+	int cp=mpfr_get_default_prec();
+	mpfr_set_default_prec(256);
 	
+	systems::SymmetricNonicSystem<T,mpfr::mpreal> sys(&ssCurrent[0], &ssTarget[0]);
 	std::pair<std::vector<T>,T> mm=MinimiseGSL(sys);
-	
 	std::pair<std::vector<T>,std::vector<T> > rr=FindRootsGSL(sys, &mm.first[0]);
+	
+	mpfr_set_default_prec(cp);
 	
 	std::vector<T> res;
 	res.push_back(current->RawMoment(1)-target->RawMoment(1));
@@ -209,7 +215,10 @@ std::vector<T> FindQuinticPolynomialCorrection(
 	for(int i=0;i<=6;i++)
 		ssTarget[i]=target->RawMoment(i);
 	
-	systems::QuinticSystem<T,NTL::quad_float> sys(&ssCurrent[0], &ssTarget[0]);
+	int cp=mpfr_get_default_prec();
+	mpfr_set_default_prec(160);
+	
+	systems::QuinticSystem<T,mpfr::mpreal> sys(&ssCurrent[0], &ssTarget[0]);
 	
 	// Look for an initial point, and give up if there is nothing good
 	
@@ -225,6 +234,8 @@ std::vector<T> FindQuinticPolynomialCorrection(
 	
 	// Try to polish down
 	std::pair<std::vector<T>,std::vector<T> > rr=FindRootsGSL(sys, &mm.first[0]);
+	
+	mpfr_set_default_prec(cp);
 	
 	return rr.first;
 }

@@ -20,10 +20,11 @@ inline Operator *MakeSinglePortTable(Target *target, std::string name, int wElts
 		std::vector<mpz_class> m_elements;
 	public:
 		SinglePortTable(Target* target, std::string name, int wIn, int wOut, const std::vector<mpz_class> &elements, map<string, double> inputDelays = emptyDelayMap )
-			: Table(target, wIn, wOut, /*minIn*/ 0, /*maxIn*/elements.size()-1, /*logicTable*/0,  inputDelays)
+			: Table(target, wIn, wOut, /*minIn*/ 0, /*maxIn*/elements.size()-1, /*logicTable*/1,  inputDelays)
 			, m_elements(elements)
 		{
 			setName(name);
+			assert((1<<wIn) >=elements.size());
 		}
 		
 		virtual mpz_class function(int x)

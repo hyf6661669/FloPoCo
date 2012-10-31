@@ -120,15 +120,15 @@ public:
 	
 	mpfr_t &operator[](int i)
 	{
-		assert(i>=0);
-		assert(i<len);
+		if((i<0) || (i>=len))
+			throw std::string("MPFRVec - Out of range.");
 		return values[i];
 	}
 	
 	const mpfr_t &operator[](int i) const
 	{
-		assert(i>=0);
-		assert(i<len);
+		if((i<0) || (i>=len))
+			throw std::string("MPFRVec - Out of range.");
 		return values[i];
 	}
 };

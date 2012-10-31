@@ -61,20 +61,24 @@ public:
     REPORT(INFO, "Making range monotonic.");
     m_range.make_monotonic_or_range_flat();
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
+    int nMonoSegments=m_range.m_segments.size();
     
     REPORT(INFO, "Flattening domain.");
     m_range.flatten_domain();
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
+    int nDomFlatSegments=m_range.m_segments.size();
     
     REPORT(INFO, "Flattening range.");
     m_range.flatten_range();
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
+    int nRanFlatSegments=m_range.m_segments.size();
     
     m_polys=RangePolys(&m_range, m_degree);
     
-    REPORT(INFO, "Splitting int polynomials with error < "<<maxError);
+    REPORT(INFO, "Splitting into polynomials with error < "<<maxError);
     m_polys.split_to_error(maxError.toDouble());
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
+    int nErrSplitSegments=m_range.m_segments.size();
     
     int guard=0;
     for(guard=0;guard<=9;guard++){
@@ -96,6 +100,8 @@ public:
     
     REPORT(INFO, "Building fixed-point coefficient tables.");
     m_polys.build_concrete(guard);
+    
+    int nFinalSegments=m_range.m_segments.size();
     
     int wSegmentIndex=(int)ceil(log(m_range.m_segments.size())/log(2.0));
     
@@ -155,21 +161,29 @@ public:
       inPortMap(poly, join("a",i), join("coeff_",i));
     }
     inPortMap(poly, "Y", "fraction_iX");
-    // NOTE : Something is going wrong here! result_fraction is too small by two bits (one of them is sign, what is other?)
+    // NOTE : At the moment PolynomialEvaluator cannot tell that we only use small sub-sections of the input range,
+    // and so thinks that the results can get much bigger than they do (and thinks that they can go negative). So we just
+    // truncate off the bottom bits later on.
     outPortMap(poly, "R", "result_fraction");
     vhdl<<instance(poly, "poly");
     syncCycleFromSignal("result_fraction");
     
-    vhdl<<"oY <= coeff_prefix & result_fraction"<<range(wRangeF-1,0)<<";\n";    // TODO : What are the extra bits
+    vhdl<<"oY <= coeff_prefix & result_fraction"<<range(wRangeF-1,0)<<";\n";
     
-    addOutput("debug_result_fraction", wRangeF+2);  // TODO : why two bits bigger?
-    vhdl<<"debug_result_fraction<=result_fraction;\n";
+    addOutput("debug_result_fraction", wRangeF);
+    vhdl<<"debug_result_fraction<=result_fraction"<<range(wRangeF-1,0)<<";\n";
     
     addOutput("debug_segment", wSegmentIndex);
     vhdl<<"debug_segment<=table_index;\n";
     
     addOutput("debug_table_contents", tableWidth);
     vhdl<<"debug_table_contents<=table_contents;\n";
+    
+    vhdl<<"--nSeg_Monotonic = "<<nMonoSegments<<"\n";
+    vhdl<<"--nSeg_FlatDomain = "<<nDomFlatSegments<<"\n";
+    vhdl<<"--nSeg_FlatDomainAndRange = "<<nRanFlatSegments<<"\n";
+    vhdl<<"--nSeg_ErrSplit = "<<nErrSplitSegments<<"\n";
+    vhdl<<"--nSeg_Final = "<<nFinalSegments<<"\n";
   }
 
   void emulate(TestCase * tc)

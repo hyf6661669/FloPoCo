@@ -355,6 +355,7 @@ sollya_node_t Segment::minimax(unsigned degree)
 	free_memory(weight);
 	mpfr_clears(fracStart, fracFinish, (mpfr_ptr)0);
 	
+	assert(getDegree(res)==degree);
 	return res;
 }
 

@@ -25,9 +25,8 @@ namespace random
 namespace float_approx
 {
 
-MPFRVec getPolyCoeffs(sollya_node_t poly)
+MPFRVec getPolyCoeffs(sollya_node_t poly, unsigned degree)
 {
-	unsigned degree=getDegree(poly);
 	MPFRVec res(degree+1, getToolPrecision());
 	for(unsigned i=0;i<=degree;i++){
 		sollya_node_t c=getIthCoefficient(poly, i);
@@ -166,7 +165,8 @@ public:
 			infNorm(error[0], curr->get_scaled_flat_function(), fp, zero.mpfr_ptr(), length.mpfr_ptr(), 71);
 		}
 		mpfr_abs(error[0],error[0],MPFR_RNDN);
-		MPFRVec coeffs=getPolyCoeffs(fp);
+		MPFRVec coeffs=getPolyCoeffs(fp, m_degree);
+		assert(coeffs.size()==m_degree+1);
 		free_memory(fp);
 		
 		mpfr_set_d(tol, pow(2.0, -m_range->m_rangeWF-1), MPFR_RNDN);
@@ -250,6 +250,7 @@ public:
 		for(unsigned i=0;i<m_range->m_segments.size();i++){
 			assert(curr->has_property(pnCoeffs));
 			MPFRVec coeffs=boost::any_cast<MPFRVec>(curr->properties[pnCoeffs]);
+			assert((int)coeffs.size()==m_degree+1);
 			std::vector<int> lsbs=boost::any_cast<std::vector<int> >(curr->properties[pnLsbs]);
 			MPFRVec error=boost::any_cast<MPFRVec>(curr->properties[pnError]);
 			

@@ -330,7 +330,7 @@ public:
 			// so it will be "010|(e-2^wE/2)|...
 			assert(mpfr_sgn(curr->domainStart)>00);
 			
-			mpz_class prefix=mpfr_get_exp(curr->rangeStart)+(1<<(wRangeE-1));
+			mpz_class prefix=mpfr_get_exp(curr->rangeStart)-2+(1<<(wRangeE-1));
 			if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix)){
 				std::cerr<<"  exponent="<<mpfr_get_exp(curr->rangeStart)<<", wRangeE="<<wRangeE<<"\n";
 				throw std::string("Exponent out of range (increase wRangeE?).");

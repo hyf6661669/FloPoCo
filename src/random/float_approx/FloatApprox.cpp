@@ -31,6 +31,8 @@ private:
   Range m_range;
   RangePolys m_polys;
 
+  std::vector<mpz_class> m_tableContents;
+
 public:
   FloatApproxOperator(Target* target,
     int wDomainE, int wDomainF, mpfr::mpreal domainMin, mpfr::mpreal domainMax,
@@ -117,7 +119,8 @@ public:
       coeffWidths+=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
     }
     int tableWidth=3+wRangeE+coeffWidths;
-    Operator *table=MakeSinglePortTable(target, name+"_table", tableWidth, m_polys.build_ram_contents(guard, wRangeE));
+    m_tableContents=m_polys.build_ram_contents(guard, wRangeE);
+    Operator *table=MakeSinglePortTable(target, name+"_table", tableWidth, m_tableContents);
     oplist.push_back(table);
     
     REPORT(INFO, "Constructing polynomial evaluator.");
@@ -139,10 +142,16 @@ public:
     vhdl<<instance(quantiser, "quantiser");
     syncCycleFromSignal("table_index");
     
+    if(nFinalSegments>=256){
+      nextCycle();  // BRAM input stage
+    }
     inPortMap(table, "X", "table_index");
     outPortMap(table, "Y", "table_contents");
     vhdl<<instance(table, "table");
     syncCycleFromSignal("table_index");
+    if(nFinalSegments>=256){
+      nextCycle();  // BRAM output register
+    }
     
     ///////////////////////////////////
     // Split the coefficients into the different parts
@@ -173,6 +182,9 @@ public:
     addOutput("debug_result_fraction", wRangeF);
     vhdl<<"debug_result_fraction<=result_fraction"<<range(wRangeF-1,0)<<";\n";
     
+    addOutput("debug_result_prefix", 3+wRangeE);
+    vhdl<<"debug_result_prefix<=coeff_prefix;\n";
+    
     addOutput("debug_segment", wSegmentIndex);
     vhdl<<"debug_segment<=table_index;\n";
     
@@ -188,18 +200,72 @@ public:
 
   void emulate(TestCase * tc)
   {
-    throw std::string("Not Implemented.");
+    mpz_class iX=tc->getInputValue("iX");
+    FPNumber vx(m_wDomainE,m_wDomainF, iX);
+    
+    int prec=std::max(m_wRangeF+64, (int)getToolPrecision());
+    
+    mpfr_t x, exact, rounded;
+    mpfr_init2(x, m_wDomainF);
+    mpfr_init2(exact, prec);
+    
+    vx.getMPFR(x);
+    m_f.eval(exact, x);
+    
+    mpfr_init2(rounded, m_wRangeF);
+    mpfr_set(rounded, exact, MPFR_RNDD);
+    FPNumber rd(m_wRangeE,m_wRangeF, rounded);
+    
+    mpfr_set(rounded, exact, MPFR_RNDU);
+    FPNumber ru(m_wRangeE, m_wRangeF, rounded);
+    
+    mpz_class v=rd.getSignalValue();
+    tc->addExpectedOutput("oY", v);
+    tc->addExpectedOutput("debug_result_prefix", v>>m_wRangeF);
+    mpz_cdiv_r_2exp(v.get_mpz_t(), v.get_mpz_t(), m_wRangeF);
+    tc->addExpectedOutput("debug_result_fraction", v);
+    
+    v=ru.getSignalValue();
+    tc->addExpectedOutput("oY", v);
+    tc->addExpectedOutput("debug_result_prefix", v>>m_wRangeF);
+    mpz_cdiv_r_2exp(v.get_mpz_t(), v.get_mpz_t(), m_wRangeF);
+    tc->addExpectedOutput("debug_result_fraction", v);
+    
+    mpfr_clears(x, exact, rounded, (mpfr_ptr)0);
   }
 
   void buildStandardTestCases(TestCaseList* tcl)
   {
-    throw std::string("Not Implemented.");
+    FPNumber dom(m_wDomainE, m_wDomainF);
+    
+    mpz_class index;
+    Range::segment_it_t curr=m_range.m_segments.begin();
+    while(curr!=m_range.m_segments.end()){
+      dom=curr->domainStart;
+      TestCase *tc=new TestCase(this);
+      tc->addFPInput("iX", &dom);
+      emulate(tc);
+      tc->addExpectedOutput("debug_segment", index);
+      tc->addExpectedOutput("debug_table_contents", m_tableContents[index.get_ui()]);
+      tcl->add(tc);
+      
+      dom=curr->domainFinish;
+      tc=new TestCase(this);
+      tc->addFPInput("iX", &dom);
+      emulate(tc);
+      tc->addExpectedOutput("debug_segment", index);
+      tc->addExpectedOutput("debug_table_contents", m_tableContents[index.get_ui()]);
+      tcl->add(tc);
+      
+      ++curr;
+      ++index;
+    }
   }
 
-  TestCase* buildRandomTestCase(int i)
-  {
-    throw std::string("Not Implemented.");
-  }
+  //TestCase* buildRandomTestCase(int i)
+  //{
+  //  throw std::string("Not Implemented.");
+  //}
 }; // FloatApproxOperator
 
 

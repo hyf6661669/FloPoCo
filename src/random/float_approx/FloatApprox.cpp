@@ -124,8 +124,9 @@ public:
     oplist.push_back(table);
     
     REPORT(INFO, "Constructing polynomial evaluator.");
-    Operator *poly=m_polys.make_polynomial_evaluator(target);
+    PolynomialEvaluator *poly=m_polys.make_polynomial_evaluator(target);
     oplist.push_back(poly);
+    REPORT(INFO, "  width of poly eval result is "<<poly->getRWidth()<<", weight of msb is "<<poly->getRWeight());
     
     REPORT(INFO, "Now constructing VHDL for FloatApprox.");
     
@@ -170,9 +171,11 @@ public:
       inPortMap(poly, join("a",i), join("coeff_",i));
     }
     inPortMap(poly, "Y", "fraction_iX");
-    // NOTE : At the moment PolynomialEvaluator cannot tell that we only use small sub-sections of the input range,
-    // and so thinks that the results can get much bigger than they do (and thinks that they can go negative). So we just
-    // truncate off the bottom bits later on.
+    
+    // We have to convert from this format to the target format
+    PolynomialEvaluator::format_t iX_format=poly->getOutputFormat();
+    if(iX_format.lsb > -wRangeF)
+    
     outPortMap(poly, "R", "result_fraction");
     vhdl<<instance(poly, "poly");
     syncCycleFromSignal("result_fraction");

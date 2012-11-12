@@ -215,8 +215,8 @@ namespace flopoco{
 			outputVHDLSignalDeclarations(o);
 			beginArchitecture(o);
 			if (maxIn-minIn <= 256 && wOut>36){
-				o << "Z0 <= '1' & X;"<<endl;
-				o << "Z1 <= '0' & X;"<<endl;
+				o << "Z0 <= '1' & "<<zeroExtend("X",8)<<";"<<endl;
+				o << "Z1 <= '0' & "<<zeroExtend("X",8)<<";"<<endl;
 			}
 					
 			if(isSequential()){

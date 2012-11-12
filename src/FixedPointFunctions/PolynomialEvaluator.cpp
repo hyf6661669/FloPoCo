@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
+#include <assert.h>
 #include <gmp.h>
 #include <mpfr.h>
 #include <stdio.h>
@@ -32,6 +33,66 @@
 using namespace std;
 
 namespace flopoco{
+	
+	PolynomialEvaluator *PolynomialEvaluator::Create(Target *target,
+			const std::vector<format_t> &coeffFormats,
+			format_t inputFormat,
+			int outputLsb,
+			mpfr_t approxError,
+			map<string, double> inputDelays
+		)
+	{
+		if(inputFormat.isSigned)
+			throw std::string("PolynomialEvaluator::Create - Input Y must be unsigned.");
+		if(inputFormat.msb < inputFormat.lsb)
+			throw std::string("PolynomialEvaluator::Create - Input Y must have msb>=lsb.");
+		for(unsigned i=0;i<coeffFormats.size();i++){
+			if(!coeffFormats[i].isSigned)
+				throw std::string("PolynomialEvaluator::Create - All coefficients must be signed.");
+			if(coeffFormats[i].msb < coeffFormats[i].lsb)
+				throw std::string("PolynomialEvaluator::Create - All coefficients must have msb>=lsb.");
+		}
+		
+		if(mpfr_cmp_d(approxError, pow(2.0, outputLsb-1)) >= 0)
+			throw std::string("PolynomialEvaluator::Create - Must have approxError < 2^(outputLsb-1).");
+			
+		std::vector<FixedPointCoefficient*> coeffs(coeffFormats.size());
+		for(unsigned i=0;i<coeffFormats.size();i++){
+			int size=-coeffFormats[i].lsb;
+			assert(coeffFormats[i].isSigned);
+			int weight=coeffFormats[i].msb-1;	// crop off sign bit
+			coeffs[i]=new FixedPointCoefficient(size, weight);
+		}
+		
+		assert(!inputFormat.isSigned);
+		YVar y(-inputFormat.lsb, inputFormat.msb);
+		
+		int targetPrec=-outputLsb;
+		
+		PolynomialEvaluator *res=new PolynomialEvaluator(target,
+			coeffs,
+			&y,
+			targetPrec,
+			(mpfr_t*)&approxError[0],	// get pointer to mpfr_t
+			inputDelays
+		);
+		
+		for(unsigned i=0;i<coeffFormats.size();i++){
+			delete coeffs[i];
+		}
+		
+		return res;
+	}
+	
+	PolynomialEvaluator::format_t PolynomialEvaluator::getOutputFormat() const
+	{
+		format_t res={
+			true, // always signed
+			getOutputWeight()+1, //need to add on sign
+			-getOutputSize()
+		};
+		return res;
+	}
 	
 	PolynomialEvaluator::PolynomialEvaluator(Target* target, vector<FixedPointCoefficient*> coef, YVar* y, int targetPrec, mpfr_t* approxError,map<string, double> inputDelays):
 		Operator(target, inputDelays), y_(y), targetPrec_(targetPrec), sol(false) {

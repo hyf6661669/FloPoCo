@@ -166,7 +166,7 @@ public:
 		}
 		mpfr_abs(error[0],error[0],MPFR_RNDN);
 		MPFRVec coeffs=getPolyCoeffs(fp, m_degree);
-		assert(coeffs.size()==m_degree+1);
+		assert((int)coeffs.size()==(int)m_degree+1);
 		free_memory(fp);
 		
 		mpfr_set_d(tol, pow(2.0, -m_range->m_rangeWF-1), MPFR_RNDN);
@@ -250,19 +250,19 @@ public:
 		for(unsigned i=0;i<m_range->m_segments.size();i++){
 			assert(curr->has_property(pnCoeffs));
 			MPFRVec coeffs=boost::any_cast<MPFRVec>(curr->properties[pnCoeffs]);
-			assert((int)coeffs.size()==m_degree+1);
+			assert((int)coeffs.size()==(int)m_degree+1);
 			std::vector<int> lsbs=boost::any_cast<std::vector<int> >(curr->properties[pnLsbs]);
 			MPFRVec error=boost::any_cast<MPFRVec>(curr->properties[pnError]);
 			
 			if(::flopoco::verbose>=DEBUG){
-				mpfr_fprintf(stderr, "segment[%d] :\n", i);
+				mpfr_fprintf(stderr, "segment[%d] : [%Rg,%Rg] -> [%Rg,%Rg]\n", i, curr->domainStart, curr->domainFinish, curr->rangeStart, curr->rangeFinish);
 			}
 			for(unsigned j=0;j<=m_degree;j++){
 				coeffLsbs[j]=std::min(coeffLsbs[j], lsbs[j]);
 				int msb=std::max(lsbs[j], (int)mpfr_get_exp(coeffs[j])-1);// 0.5*2^0=0.5 -> mpfr_get_exp(0.5)==0,  0.5*2^1=1 -> mpfr_get_exp(1)==1
 				coeffMsbs[j]=std::max(coeffMsbs[j], msb);	
 				if(::flopoco::verbose>=DEBUG){
-					mpfr_fprintf(stderr, "  format[%d:%d] = %Rg\n", msb, lsbs[j], coeffs[j]);
+					mpfr_fprintf(stderr, "  x^%d : format[%d:%d] = %Rg\n", j, msb, lsbs[j], coeffs[j]);
 				}
 			}
 			if(::flopoco::verbose>=DEBUG){
@@ -360,32 +360,21 @@ public:
 	
 	PolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
 	{
-		std::vector<FixedPointCoefficient*> coeffs(m_degree+1);
+		typedef PolynomialEvaluator::format_t format_t;
+		
+		std::vector<format_t> coeffs(m_degree+1);
 		for(unsigned i=0;i<=m_degree;i++){
-			/*
-			 * The input coefficients have the format: 
-			 *           size   = #of bits at the right of the .
-			 *           weight = the weight of the MSB
-			 * for example 0.000CCCCCC would be size=9 and weight=-3		// DT10 : <- do this format
-			 * and will get converted to        size=9-3=6 (#of C) weight = -3  
-			*/
-			coeffs[i]=new FixedPointCoefficient(/*size*/ -m_concreteCoeffLsbs[i], /*weight*/ m_concreteCoeffMsbs[i]);
+			coeffs[i].isSigned=true;
+			coeffs[i].msb=m_concreteCoeffMsbs[i]+1;	// need +1 for sign bit
+			coeffs[i].lsb=m_concreteCoeffLsbs[i];
 		}
 		
-		// Input : msb is -1, lsb is -m_range->m_domainWF
-		YVar y( m_range->m_domainWF, -1);
-		
-		mpfr_t approxError;
-		mpfr_init2(approxError, getToolPrecision());
-		mpfr_set(approxError, m_concreteApproxError[0], MPFR_RNDN);
-		
-		flopoco::PolynomialEvaluator *res=new PolynomialEvaluator(target, coeffs, &y, /*targetPrec*/ m_range->m_rangeWF, &approxError, inputDelays);
-		
-		for(unsigned i=0;i<=m_degree;i++){
-			delete coeffs[i];
-		}
-		
-		return res;
+		format_t inputFormat;
+		inputFormat.isSigned=false;
+		inputFormat.msb=-1;
+		inputFormat.lsb=-m_range->m_domainWF;
+	
+		return PolynomialEvaluator::Create(target, coeffs, inputFormat, /*outputLsb*/ m_range->m_rangeWF, m_concreteApproxError[0], inputDelays);
 	}
 	
 	mpz_class ToPositiveConstant(std::pair<int,int> format, mpfr_t x)

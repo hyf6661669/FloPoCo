@@ -47,15 +47,15 @@ namespace flopoco{
 			mpfr_set(*valueMpfr_, valueMpfr, GMP_RNDN);
 		}
 			
-			/** Destructor */
-			~FixedPointCoefficient()
-			{
-				// DT10 : This wasn't declared before, presumably because they are leaked?
-				if(valueMpfr_){
-					mpfr_clear(*valueMpfr_);
-					free(valueMpfr_);
-				}
-			}	
+		/** Destructor */
+		virtual ~FixedPointCoefficient()
+		{
+			// DT10 : This wasn't declared before, presumably because they are leaked?
+			if(valueMpfr_){
+				mpfr_clear(*valueMpfr_);
+				free(valueMpfr_);
+			}
+		}	
 
 		/** 
 		 * Fetch the weight of the MSB
@@ -237,12 +237,37 @@ namespace flopoco{
 	class PolynomialEvaluator : public Operator
 	{
 	public:
-
 		/**
 		 * The polynomial evaluator class. FIXME the parameters are subhect to change
 		 * TODO document them
+			\note (Documentation inferred by dt10 from various places)
+			* The input coefficients have the format: 
+			*           size   = #of bits at the right of the "."
+			*           weight = the weight of the MSB
+			* for example 0.000CCCCCC would be size=9 and weight=-3
+			* DT10 : so equivalently, lsb=-size, and msb=weight
 		 */
-		PolynomialEvaluator(Target* target, vector<FixedPointCoefficient*> coef, YVar* y, int targetPrec, mpfr_t* approxError, map<string, double> inputDelays = emptyDelayMap);
+		PolynomialEvaluator(Target* target, vector<FixedPointCoefficient*> coef, YVar* y, int targetPrec, mpfr_t *approxError, map<string, double> inputDelays = emptyDelayMap);
+	
+		/*! Represents fixed-point types as (isSigned,msb,lsb)
+			The type has bits 2^msb..2^lsb inclusive, so width is always (msb-lsb+1).
+			isSigned indicates if msb is negative or not.
+		*/
+		struct format_t{ bool isSigned; int msb; int lsb; };
+	
+		/*! This is a helper function which takes all formats specified explicitly. During construction the
+			types will be checked to ensure they match what the operator wants internally. 
+			\note The poly eval may decide to produce more LSBs than are requested, so it is necessary
+			to check via getOutputFormat after construction.
+		*/
+		static PolynomialEvaluator *Create(Target *target,
+			const std::vector<format_t> &coeffFormats,	//! Format for each of the coefficients, with coeffFormats[0]=a0, etc.
+			format_t inputFormat,	//! The polynomial input format
+			int outputLsb,				//! The LSB to which the evaluator should be accurate
+			mpfr_t approxError,	//! The maximum approximation error which already occurred. Must have approxError < 2^(outputLsb-1)
+			map<string, double> inputDelays = emptyDelayMap
+		);
+			
 
 		/** Destructor */
 		~PolynomialEvaluator();
@@ -377,11 +402,14 @@ namespace flopoco{
 		 */
 		bool nextStateA();
 		
-		unsigned getOutputSize(){
+		/*! Get the fixed-point type of the output. This may differ from what is expected, so it needs to be checked */
+		format_t getOutputFormat() const;
+		
+		unsigned getOutputSize() const {
 			return wR;
 		}
 			
-		int getOutputWeight(){
+		int getOutputWeight() const {
 			return weightR;
 		}
 
@@ -394,6 +422,7 @@ namespace flopoco{
 			return wR;
 		}
 			
+		/* (From FunctionEvaluator comments) number of digits to the left of the "." */
 		int getRWeight(){
 			return weightR;
 		}

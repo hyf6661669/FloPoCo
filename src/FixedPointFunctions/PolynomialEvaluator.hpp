@@ -246,6 +246,7 @@ namespace flopoco{
 			*           weight = the weight of the MSB
 			* for example 0.000CCCCCC would be size=9 and weight=-3
 			* DT10 : so equivalently, lsb=-size, and msb=weight
+			* From looking at PolyCoeffTable: if a coefficient is zero, then choose weight=0, size=1 -> msb=0, lsb=-1
 		 */
 		PolynomialEvaluator(Target* target, vector<FixedPointCoefficient*> coef, YVar* y, int targetPrec, mpfr_t *approxError, map<string, double> inputDelays = emptyDelayMap);
 	
@@ -271,6 +272,16 @@ namespace flopoco{
 
 		/** Destructor */
 		~PolynomialEvaluator();
+		
+		/*! Return the input format specified when the operator was created. */
+		format_t getInputFormat() const;
+		
+		/*! Return the format specified when the operator was created. */
+		format_t getCoefficientFormat(unsigned i) const;
+		
+		/*! Get the fixed-point type of the output. This may differ from what might be expected due to
+		uncertainty about rounding, so it needs to be checked */
+		format_t getOutputFormat() const;
 			
 			
 		/* ------------------------------ EXTRA -----------------------------*/
@@ -402,9 +413,6 @@ namespace flopoco{
 		 */
 		bool nextStateA();
 		
-		/*! Get the fixed-point type of the output. This may differ from what is expected, so it needs to be checked */
-		format_t getOutputFormat() const;
-		
 		unsigned getOutputSize() const {
 			return wR;
 		}
@@ -464,13 +472,13 @@ namespace flopoco{
 		vector<signed> sigmakPWeight, pikPWeight, pikPTWeight;
 		    
 	private:
-		multimap<int, int> objectiveStatesY;
-	
 		/* for efficiency we move these variables here */
+		multimap<int, int> objectiveStatesY;
 		
-
-
-
+		// Captured at operator creation, before any coefficient reformatting. Should
+		// reflect the format requested by the creator.
+		format_t inputFormat_;
+		std::vector<format_t> coefficientFormats_;
 
 	};
 }

@@ -33,6 +33,10 @@ private:
 
   std::vector<mpz_class> m_tableContents;
 
+  Operator *m_codec;
+  Operator *m_quantiser;
+  Operator *m_table;
+  PolynomialEvaluator *m_poly;
 public:
   FloatApproxOperator(Target* target,
     int wDomainE, int wDomainF, mpfr::mpreal domainMin, mpfr::mpreal domainMax,
@@ -108,10 +112,10 @@ public:
     int wSegmentIndex=(int)ceil(log(m_range.m_segments.size())/log(2.0));
     
     REPORT(INFO, "Constructing static quantiser.");
-    Operator *codec=ComparableFloatType(wDomainE,wDomainF).MakeEncoder(target);
-    oplist.push_back(codec);
-    Operator *quantiser=m_polys.make_static_quantiser(target, wDomainE);
-    oplist.push_back(quantiser);
+    m_codec=ComparableFloatType(wDomainE,wDomainF).MakeEncoder(target);
+    oplist.push_back(m_codec);
+    m_quantiser=m_polys.make_static_quantiser(target, wDomainE);
+    oplist.push_back(m_quantiser);
     
     REPORT(INFO, "Constructing lookup table.");
     int coeffWidths=0;
@@ -120,36 +124,36 @@ public:
     }
     int tableWidth=3+wRangeE+coeffWidths;
     m_tableContents=m_polys.build_ram_contents(guard, wRangeE);
-    Operator *table=MakeSinglePortTable(target, name+"_table", tableWidth, m_tableContents);
-    oplist.push_back(table);
+    m_table=MakeSinglePortTable(target, name+"_table", tableWidth, m_tableContents);
+    oplist.push_back(m_table);
     
     REPORT(INFO, "Constructing polynomial evaluator.");
-    PolynomialEvaluator *poly=m_polys.make_polynomial_evaluator(target);
-    oplist.push_back(poly);
-    REPORT(INFO, "  width of poly eval result is "<<poly->getRWidth()<<", weight of msb is "<<poly->getRWeight());
+    m_poly=m_polys.make_polynomial_evaluator(target);
+    oplist.push_back(m_poly);
+    REPORT(INFO, "  width of poly eval result is "<<m_poly->getRWidth()<<", weight of msb is "<<m_poly->getRWeight());
     
     REPORT(INFO, "Now constructing VHDL for FloatApprox.");
     
     addFPInput("iX", wDomainE, wDomainF);
     addFPOutput("oY", wRangeE, wRangeF);
     
-    inPortMap(codec, "iX", "iX");
-    outPortMap(codec, "oY", "comparable_iX");
-    vhdl<<instance(codec, "comparable_codec");
+    inPortMap(m_codec, "iX", "iX");
+    outPortMap(m_codec, "oY", "comparable_iX");
+    vhdl<<instance(m_codec, "comparable_codec");
     syncCycleFromSignal("comparable_iX");
     
-    inPortMap(quantiser, "iX", "comparable_iX");
-    outPortMap(quantiser, "oY", "table_index");
-    vhdl<<instance(quantiser, "quantiser");
+    inPortMap(m_quantiser, "iX", "comparable_iX");
+    outPortMap(m_quantiser, "oY", "table_index");
+    vhdl<<instance(m_quantiser, "quantiser");
     syncCycleFromSignal("table_index");
     
     if(nFinalSegments>=256){
       nextCycle();  // BRAM input stage
     }
-    inPortMap(table, "X", "table_index");
-    outPortMap(table, "Y", "table_contents");
-    vhdl<<instance(table, "table");
-    syncCycleFromSignal("table_index");
+    inPortMap(m_table, "X", "table_index");
+    outPortMap(m_table, "Y", "table_contents");
+    vhdl<<instance(m_table, "table");
+    syncCycleFromSignal("table_contents");
     if(nFinalSegments>=256){
       nextCycle();  // BRAM output register
     }
@@ -166,24 +170,33 @@ public:
     vhdl<<declare("fraction_iX", wDomainF)<<" <= iX"<<range(wDomainF-1,0)<<";\n";
     
     ////////////////////////////////
-    // Now connet to polynomial evaluator
+    // Now connect to polynomial evaluator
     for(unsigned i=0;i<=m_degree;i++){
-      inPortMap(poly, join("a",i), join("coeff_",i));
+      inPortMap(m_poly, join("a",i), join("coeff_",i));
     }
-    inPortMap(poly, "Y", "fraction_iX");
-    
-    // We have to convert from this format to the target format
-    PolynomialEvaluator::format_t iX_format=poly->getOutputFormat();
-    if(iX_format.lsb > -wRangeF)
-    
-    outPortMap(poly, "R", "result_fraction");
-    vhdl<<instance(poly, "poly");
+    inPortMap(m_poly, "Y", "fraction_iX");
+        
+    outPortMap(m_poly, "R", "result_fraction");
+    vhdl<<instance(m_poly, "poly");
     syncCycleFromSignal("result_fraction");
     
-    vhdl<<"oY <= coeff_prefix & result_fraction"<<range(wRangeF-1,0)<<";\n";
+    // We have to convert from this format to the target format
+    PolynomialEvaluator::format_t result_format=m_poly->getOutputFormat();
+    REPORT(INFO, "poly-eval result_format={isSigned="<<result_format.isSigned<<",msb="<<result_format.msb<<",lsb="<<result_format.lsb);
+    
+    if(!result_format.isSigned)
+      throw std::string("Currently FloatApprox assumes the output of PolynomialEvaluator will always be signed.");
+    if(result_format.lsb > -wRangeF)
+      throw std::string("The LSB of the poly-eval is higher than that requested.");
+    if(result_format.msb < -1)
+      throw std::string("Currently FloatApprox needs PolynomialEvaluator to return at least the interval [-0.5,0.5). This is my fault not yours, try increasing approximation range to cover entire binade.");
+    
+    int drop_bits=(- wRangeF) - result_format.lsb ;
+    
+    vhdl<<"oY <= coeff_prefix & result_fraction"<<range(wRangeF-1+drop_bits,drop_bits)<<";\n";
     
     addOutput("debug_result_fraction", wRangeF);
-    vhdl<<"debug_result_fraction<=result_fraction"<<range(wRangeF-1,0)<<";\n";
+    vhdl<<"debug_result_fraction<=result_fraction"<<range(wRangeF-1+drop_bits,drop_bits)<<";\n";
     
     addOutput("debug_result_prefix", 3+wRangeE);
     vhdl<<"debug_result_prefix<=coeff_prefix;\n";
@@ -209,13 +222,13 @@ public:
     int prec=std::max(m_wRangeF+64, (int)getToolPrecision());
     
     mpfr_t x, exact, rounded;
-    mpfr_init2(x, m_wDomainF);
+    mpfr_init2(x, m_wDomainF+1);
     mpfr_init2(exact, prec);
     
     vx.getMPFR(x);
     m_f.eval(exact, x);
     
-    mpfr_init2(rounded, m_wRangeF);
+    mpfr_init2(rounded, m_wRangeF+1);
     mpfr_set(rounded, exact, MPFR_RNDD);
     FPNumber rd(m_wRangeE,m_wRangeF, rounded);
     
@@ -235,6 +248,60 @@ public:
     tc->addExpectedOutput("debug_result_fraction", v);
     
     mpfr_clears(x, exact, rounded, (mpfr_ptr)0);
+  }
+  
+  std::vector<mpz_class> emulate(const char *retSig, Operator *op, const char *n1, const std::vector<mpz_class> &v1) const
+  {
+    std::set<mpz_class> res;
+    for(unsigned i=0;i<v1.size();i++){
+      TestCase tc(op);
+      tc->addInput(n1, v1[i]);
+      op->emulate(tc);
+      const std::vector<mpz_class> &values=tc->getExpectedOutputValues(retSig);
+      res.insert(values.begin(), values.end());
+    }
+    return std::vector<mpz_class>(res.begin(), res.end());
+  }
+  
+  std::vector<mpz_class> emulate(
+    const char *retSig, Operator *op,
+    const char *n1, const std::vector<mpz_class> &v1,
+    const char *n2, const std::vector<mpz_class> &v2
+  ) const
+  {
+    std::set<mpz_class> res;
+    for(unsigned i1=0;i1<v1.size();i1++){
+      for(unsigned i2=0;i2<v2.size();i2++){
+        TestCase tc(op);
+        tc->addInput(n1, v1[i1]);
+        tc->addInput(n2, v2[i2]);
+        op->emulate(tc);
+        const std::vector<mpz_class> &values=tc->getExpectedOutputValues(retSig);
+        res.insert(values.begin(), values.end());
+      }
+    }
+    return std::vector<mpz_class>(res.begin(), res.end());
+  }
+  
+  void emulate_ops(TestCase *tc)
+  {
+    std::vector<mpz_class> iX=std::vector<mpz_class>(1, tc->getInputValue("iX"));
+    
+    std::vector<mpz_class> comparable_iX=emulate("oY", m_codec, "iX", iX);
+    std::vector<mpz_class> table_index=emulate("oY", m_quantiser, "iX", comparable_iX);
+    std::vector<mpz_class> table_contents=emulate("Y", m_table, "X", table_index);
+    
+    for(unsigned i=0;i<table_contents.size();i++){
+      std::vector<std::pair<std::string,std::vector<mpz_class> > > polyEvalArgs;
+    
+      int offset=0;
+      for(unsigned i=0;i<=m_degree;i++){
+        int w=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
+        vhdl<<declare(join("coeff_",i),w)<<" <= table_contents"<<range(w+offset-1,offset)<<";\n";
+        offset+=w;
+      }
+      vhdl<<declare("coeff_prefix",3+wRangeE)<<" <= table_contents"<<range(tableWidth-1,offset)<<";\n";
+      vhdl<<declare("fraction_iX", wDomainF)<<" <= iX"<<range(wDomainF-1,0)<<";\n";
   }
 
   void buildStandardTestCases(TestCaseList* tcl)
@@ -315,8 +382,8 @@ static Operator *FloatApproxFactoryParser(Target *target ,const std::vector<std:
 	Function f(args[6]);
     
     int degree=atoi(args[7].c_str());
-    if(degree<1)
-      throw std::string("FloatApproxFactoryParser - degree must be at least 1.");
+    if(degree<0)
+      throw std::string("FloatApproxFactoryParser - degree must be at least 0.");
     
     mpfr::mpreal maxError(pow(2.0,-wRanF-1), getToolPrecision());
 

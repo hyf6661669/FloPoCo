@@ -145,8 +145,8 @@ bool Segment::has_property(std::string name) const
 /* This function is flat, with eD=binade(domainStart), eR=binade(f(domainStart))
 	That means that 	2^(eD-1) <= domainStart <= domainFinish < 2^eD
 	and 2^(eR-1) <= f(domainStart) <= f(domainFinish) < 2^eR
-	we want to convert to fixed-point, so we have inputs in [0,1) with domainWF-1
-	fractional bits, and outputs in [0,1) with rangeWF-1 fractional bits.
+	we want to convert to fixed-point, so we have inputs in [0,0.5) with domainWF
+	fractional bits, and outputs in [0,0.5) with rangeWF fractional bits.
 	
 	To move a real x to fixed-point we have:
 	0.5*2^eD <= x < 1.0*2^eD
@@ -154,10 +154,7 @@ bool Segment::has_property(std::string name) const
 	0 <= x * 2^-eD - 0.5 < 0.5
 	0 <= 2*(x * 2^-eD - 0.5) < 1.0
 	0 <= x*2^(-eD+1) -1.0 < 1.0
-
-	To convert a fixed-point r to real we have
-	0 <= r < 1.0
-	0 <= (r+1.0) * 2^(eR-1) < 1.0
+	0 <= x*2^(-eD) -0.5 < 0.5
 */
 sollya_node_t Range::get_scaled_flat_function(int eD, int eR)
 {	

@@ -242,8 +242,10 @@ public:
 		m_concretePartition.resize(m_range->m_segments.size(), m_range->m_domainWF);
 		m_concreteExp.resize(0);
 		
-		std::vector<int> coeffLsbs(m_degree+1, INT_MAX);
-		std::vector<int> coeffMsbs(m_degree+1, -INT_MAX);
+		// These are chosen to coincide with setting for zero coefficients from PolynomialEvaluator.cpp
+		//	It is just a two-bit signed format of 0s.x00
+		std::vector<int> coeffMsbs(m_degree+1, 0);
+		std::vector<int> coeffLsbs(m_degree+1, -1);		
 		
 		// First walk over all the coefficients, and find the min lsb and max msb of each coefficient
 		segment_it_t curr=m_range->m_segments.begin();

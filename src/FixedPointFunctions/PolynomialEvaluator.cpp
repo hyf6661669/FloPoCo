@@ -125,6 +125,18 @@ namespace flopoco{
 		   |<-- coef[i]->getWeight() --->|
 		   .--------------------------[s][coef[i]->getSize()-1 downto 0 ]
 		   |<--- coef[i]_->getSize() ---->|        */
+		   
+		// Capture these in a sensible format that is safe from later conversions
+		// Will be use in emulate function.
+		inputFormat_.isSigned=false;
+		inputFormat_.msb=y->getWeight();
+		inputFormat_.lsb=-y->getSize();
+		coefficientFormats_.resize(degree+1);		
+		for(unsigned i=0;i<(unsigned)degree;i++){
+			coefficientFormats_.isSigned=true;
+			coefficientFormats_.msb=coef[i]->getWeight()+1;
+			coefficientFormats_.lsb=-coef[i]->getSize();
+		}
 		
 		updateCoefficients(coef);
 		REPORT(DETAILED, "Polynomial to evaluate: " << printPolynomial(coef, y, 0));
@@ -840,6 +852,16 @@ namespace flopoco{
 		else
 			return false;
 	}
+	
+	/*! Return the input format specified when the operator was created. */
+	format_t PolynomialEvaluator::getInputFormat() const
+	{ return inputFormat_; }
+		
+	/*! Return the format specified when the operator was created. */
+	format_t getCoefficientFormat(unsigned i) const
+	{ return coefficientFormats_.at(i); }
+	
+	void emulate(
 
 }
 

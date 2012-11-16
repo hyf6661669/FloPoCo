@@ -861,7 +861,49 @@ namespace flopoco{
 	format_t getCoefficientFormat(unsigned i) const
 	{ return coefficientFormats_.at(i); }
 	
-	void emulate(
+	void emulate(TestCase *tc)
+	{
+		//addInput("Y", y_->getSize()); /* y is positive so we don't store the sign */
+		assert(!inputFormat_.isSigned());
+		mpz_class rawInput=tc->getInputValue("Y");
+		
+		std::vector<mpz_class> rawCoeffs(degree_+1);		
+		for (unsigned i=0; i <= unsigned(degree_); i++){
+			//addInput(join("a",i), coef_[i]->getSize()+1); /* the size does not contain the sign bit */
+			mpz_class raw= tc->getInputValue(join("a",i));
+			if(coefficientFormats_[i].isSigned){
+				int msb=mpz_class(1)<<(coefficientsFormats[i].msb-coefficientFormats[i].lsb+1);
+				if(raw >=msb)
+					raw -= msb;
+			}
+			rawCoeffs[i]=raw;
+		}
+		
+		assert(!inputFormat_.isSigned());
+		mpfr::mpreal y(rawInput.get_mpz_t(), getToolPrecision());
+		y=mul_2si(y, inputFormat._lsb);
+		
+		mpfr::mpreal acc(0.0, getToolPrecision());
+		for(unsigned i=0;i<=degree_;i++){
+			mpfr::mpreal coeff(rawCoeffs[i], getToolPrecision());
+			coeff=mul_2si(coeff, coefficientFormats_[i].lsb);
+			
+			acc = acc*y + coeff;
+		}
+		
+		mpfr::mpreal resUp=mul_2si(acc, targetPrec_);
+		resUp=rint(resUp, MPFR_RNDU);
+		resUp=mul_2si(resUp, -targetPrec_);
+		
+		mpfr::mpreal resDown=mul_2si(acc, targetPrec_);
+		resDown=rint(resDown, MPFR_RNDD);
+		resDown=mul_2si(resDown, -targetPrec_);
+		
+		assert(resDown <= resUp);
+		
+		mpz_class rawResUp=
+		#error
+	}
 
 }
 

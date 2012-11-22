@@ -67,6 +67,7 @@ namespace flopoco{
 		virtual ~Table() {};
 
 
+		void emulate(TestCase *tc);
 
 		/** The function that will define the values contained in the table
 		 * @param[in] x  input to the table, an integer value between minIn and maxIn

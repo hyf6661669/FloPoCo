@@ -682,16 +682,6 @@ public:
 	 * @return pointer to the i'th signal of ioList 
 	 */
 	Signal * getIOListSignal(int i);
-		
-	
-	/** Return the number of inputs
-	 * @return The total number of inputs for the operator */
-	int getInputCount() const;
-	
-	/** Return the number of outputs
-	 * @return The total number of outputs for the operator */
-	int getOutputCount() const;
-
 	
 	/** DEPRECATED, better use setCopyrightString
 		 Output the licence

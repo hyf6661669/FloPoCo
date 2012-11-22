@@ -18,6 +18,8 @@
 #include <vector>
 #include <math.h>
 #include <string.h>
+#include <cassert>
+#include <set>
 
 #include <gmp.h>
 #include <mpfr.h>
@@ -80,6 +82,7 @@ namespace flopoco{
 		REPORT(INFO, "The width of the polynomial evaluator output is: "<< wR);
 		/* number of digits to the left of the . */
 		REPORT(INFO, "The weight of the PE output is: "<<weightR);
+		REPORT(INFO, "The PE output format is : isSign="<<pe->getOutputFormat().isSigned<<", msb="<<pe->getOutputFormat().msb<<", lsb="<<pe->getOutputFormat().lsb);
 
 
 		addInput ("X", wInX);
@@ -117,7 +120,7 @@ namespace flopoco{
 		syncCycleFromSignal("Rpe");
 		setCriticalPath(pe->getOutputDelay("R"));
 		
-		if (finalRounding_){
+		if (finalRounding_){			
 //			/* number of bits to recover is */
 			int recover = weightR + lsbOut;
 			vhdl << tab << "-- weight of poly result is : " << weightR << endl;
@@ -200,8 +203,76 @@ namespace flopoco{
 
 		tc->addExpectedOutput("R", rd);
 		tc->addExpectedOutput("R", ru);
+			
+		///////////////////////////////////////////////////////
+		// Sanity checking against emulation involving parts
+			
+		TestCase ptc(this);
+		if(::flopoco::verbose>=FULL){
+			mpfr_fprintf(stderr, " mpX=%Rg\n", mpX);
+		}
+		ptc.addInput("X", svX);
+		emulate_parts(&ptc);
+		std::set<mpz_class> partsRes(ptc.getExpectedOutputValues("R").begin(), ptc.getExpectedOutputValues("R").end());
+		std::set<mpz_class>::const_iterator it=partsRes.begin();
+		while(it!=partsRes.end()){
+			REPORT(FULL, "  partsEmulate = " <<*it);
+			++it;
+		}
+		if(partsRes.find(rd)==partsRes.end()){
+			REPORT(INFO, "  emulate value = "<<rd<<" not produced when emulating parts.");
+		}
+		if(partsRes.find(ru)==partsRes.end()){
+			REPORT(INFO, "  emulate value = "<<ru<<" not produced when emulating parts.");
+		}
+		
 		mpfr_clear(mpX);
 		mpfr_clear(mpR);
+	}
+	
+	void FunctionEvaluator::emulate_parts(TestCase *tc)
+	{
+		mpz_class svX = tc->getInputValue("X");
+		
+		mpz_class addr = svX>>(wInX_ - tg->wIn);	// take the top bits for table index
+		mpz_class residual = svX - (addr<<(wInX_ - tg->wIn));	// And the bottom bits to go into the polynomial
+		
+		TestCase tableParams(tg);
+		tableParams.addInput("X", addr);
+		tg->emulate(&tableParams);
+		const std::vector<mpz_class> &entries=tableParams.getExpectedOutputValues("Y");
+		assert(entries.size()==1);
+		mpz_class coefficients=entries[0];
+		
+		TestCase polyParams(pe);
+		polyParams.addInput("Y", residual);
+		/* get the coefficients */
+		int lsb = 0, sizeS = 0;
+		for (uint32_t i=0; i< pe->getCoeffParamVector().size(); i++){
+			lsb += sizeS;
+			sizeS = pe->getCoeffParamVector()[i]->getSize()+1;
+			
+			mpz_class coeff=coefficients>>lsb;
+			mpz_fdiv_r_ui (coeff.get_mpz_t(), coeff.get_mpz_t(), sizeS);
+			
+			//vhdl << tab << declare(join("a",i), sizeS ) << "<= Coef"<< range (lsb+sizeS-1, lsb) << ";" << endl;
+			polyParams.addInput(join("a",i), coeff);
+		}
+		pe->emulate(&polyParams);
+		const std::vector<mpz_class> &results=polyParams.getExpectedOutputValues("R");
+		assert(results.size()>0);
+		
+		for(unsigned i=0;i<results.size();i++){
+			if(finalRounding_){
+				int recover = weightR + lsbOut_;
+				
+				mpz_class tmp=results[i] >> (wR-recover); // VHDL simply truncates them off?
+				
+				tc->addExpectedOutput("R", tmp);
+			}else{
+				tc->addExpectedOutput("R", results.at(i));
+			}
+		}
 	}
 
 }

@@ -1122,7 +1122,7 @@ namespace flopoco{
 		pair<string,string> p = make_pair(attributeName,object);
 		attributesValues_[p] = value;
 	}
-	
+
 	Signal *Operator::getInputSignal(int i){
 		for(unsigned j=0;j<ioList_.size();j++){
 			if(ioList_[j]->type()==Signal::in){

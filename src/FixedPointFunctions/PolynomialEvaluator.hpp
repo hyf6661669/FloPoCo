@@ -254,7 +254,7 @@ namespace flopoco{
 			The type has bits 2^msb..2^lsb inclusive, so width is always (msb-lsb+1).
 			isSigned indicates if msb is negative or not.
 		*/
-		struct format_t{ bool isSigned; int msb; int lsb; };
+		struct format_t{ bool isSigned; int msb; int lsb; int width() const { return msb-lsb+1; } };
 	
 		/*! This is a helper function which takes all formats specified explicitly. During construction the
 			types will be checked to ensure they match what the operator wants internally. 
@@ -283,6 +283,8 @@ namespace flopoco{
 		uncertainty about rounding, so it needs to be checked */
 		format_t getOutputFormat() const;
 			
+		//! Standard emulator, gives all possible output values for a given input
+		void emulate(TestCase *tc);
 			
 		/* ------------------------------ EXTRA -----------------------------*/
 		/* ------------------------------------------------------------------*/

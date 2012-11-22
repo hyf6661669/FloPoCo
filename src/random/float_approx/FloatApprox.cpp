@@ -10,6 +10,7 @@
 
 #include "random/utils/operator_factory.hpp"
 #include "random/utils/make_table.hpp"
+#include "random/utils/simulate.hpp"
 
 using namespace std;
 
@@ -31,6 +32,7 @@ private:
   Range m_range;
   RangePolys m_polys;
 
+  int m_tableWidth;
   std::vector<mpz_class> m_tableContents;
 
   Operator *m_codec;
@@ -123,6 +125,7 @@ public:
       coeffWidths+=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
     }
     int tableWidth=3+wRangeE+coeffWidths;
+    m_tableWidth=tableWidth;
     m_tableContents=m_polys.build_ram_contents(guard, wRangeE);
     m_table=MakeSinglePortTable(target, name+"_table", tableWidth, m_tableContents);
     oplist.push_back(m_table);
@@ -183,6 +186,7 @@ public:
     // We have to convert from this format to the target format
     PolynomialEvaluator::format_t result_format=m_poly->getOutputFormat();
     REPORT(INFO, "poly-eval result_format={isSigned="<<result_format.isSigned<<",msb="<<result_format.msb<<",lsb="<<result_format.lsb);
+    int result_fraction_width=m_poly->getOutputSize();
     
     if(!result_format.isSigned)
       throw std::string("Currently FloatApprox assumes the output of PolynomialEvaluator will always be signed.");
@@ -193,10 +197,24 @@ public:
     
     int drop_bits=(- wRangeF) - result_format.lsb ;
     
-    vhdl<<"oY <= coeff_prefix & result_fraction"<<range(wRangeF-1+drop_bits,drop_bits)<<";\n";
+    int result_fraction_rounded_width=result_fraction_width-drop_bits;
+    if(drop_bits==0){
+      vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1,0)<<";\n";
+    }else{
+      vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< " <= result_fraction"<<range(result_fraction_rounded_width-1,drop_bits)<<" + result_fraction("<<drop_bits-1<<");\n";
+    }
+    
+    vhdl<<declare("result_fraction_clamped", wRangeF)<<" <= ";
+    vhdl<<"       "<<zg(wRangeF)<<" when result_fraction_rounded("<<result_fraction_rounded_width-1<<")='1' else\n";    // Negative overflow
+    if(result_fraction_rounded_width > (wRangeF+1)){
+      vhdl<<"      "<<og(wRangeF)<<" when result_fraction_rounded"<<range(result_fraction_rounded_width-2, wRangeF)<<"!="<<zg(wRangeF-(result_fraction_rounded_width-2)+1)<<" else\n";  // positive overflow
+    }
+    vhdl<<"    result_fraction_rounded"<<range(wRangeF-1,0)<<";\n"; // No overflow
+    
+    vhdl<<"oY <= coeff_prefix & result_fraction_clamped;\n";
     
     addOutput("debug_result_fraction", wRangeF);
-    vhdl<<"debug_result_fraction<=result_fraction"<<range(wRangeF-1+drop_bits,drop_bits)<<";\n";
+    vhdl<<"debug_result_fraction<=result_fraction_clamped;\n";
     
     addOutput("debug_result_prefix", 3+wRangeE);
     vhdl<<"debug_result_prefix<=coeff_prefix;\n";
@@ -213,6 +231,58 @@ public:
     vhdl<<"--nSeg_ErrSplit = "<<nErrSplitSegments<<"\n";
     vhdl<<"--nSeg_Final = "<<nFinalSegments<<"\n";
   }
+  
+  // Takes a signal in a given format, and rounds it to a given number of lsb places
+  /*
+  PolynomialEvaluator::format_t round_impl(std::string dst, int dstLsb, std::string src, PolynomialEvaluator::format_t srcFmt)
+  {
+    int srcWidth=srcFmt.width();
+    
+    PolynomialEvaluator::format_t dstFmt=srcFmt;
+    
+    if(dstFmt.lsb>srcFmt.lsb){
+      // Need to round the original. This might overflow, so we'll add a bit to the intermediate
+      dstFmt.msb=roundedFmt.msb+1;
+      dstFmt.lsb=dstLsb;
+      int drop_bits=dstFmt.lsb-srcFmt.lsb;
+      vhdl<<declare(dst, dstFmt.width()+1)<<" <= ";
+      if(srcFmt.isSigned){
+        vhdl<<"  "<<src<<"("<<srcWidth-1<<")&"<<src<<range(srcWidth-1,drop_bits);
+      }else{
+        vhdl<<"  '0'&"<<src<<range(srcWidth-1,drop_bits);
+      }
+      vhdl<<"    ("<<zg(dstFmt.width()-1)<<"&"<<src<<"("<<drop_bits-1<<")";
+    }else if(roundedFmt.lsb==srcFmt.lsb){
+      vhdl<<declare(dst, dstFmt.width())<<" <= "<<src<<";\n";
+    }else{
+      dstFmt.lsb=dstLsb;
+      vhdl<<declare(dst, dstFmt.width())<<" <= "<<src<<" & "<<zg(srcFmt.lsb-dstLsb)<<";\n";
+    }
+    return dstFmt;
+  }
+  
+  
+  
+  PolynomialEvaluator::format_t clamp_impl(std::string dst, PolynomialEvaluator::format_t dstFmt, std::string src, PolynomialEvaluator::format_t srcFmt)
+  {
+    if(dstFmt.lsb!=srcFmt.lsb){
+      std::string tmpSrc=src+"_preclamp_round";
+      srcFmt=round_impl(tmpSrc, dstFmt.lsb, src, srcFmt);
+      src=tmpSrc;
+    }
+    
+    vhdl<<declare(dst,dstFmt.width()) << " <= ";
+    if(!dstFmt.isSigned && srcFmt.isSigned){
+      if(dstFmt.msb+1 > srcFmt.msb){
+        vhdl << zg(dstFmt.width()) << " when "<<src<<"("<<srcFmt.width()-1<<")='1' else "<<src<<range(
+      }else{
+        throw std::string("Not implemented - clamp_impl.");
+      }
+    }else{
+      throw std::string("Not implemented - clamp_impl.");
+    }
+  }
+  */
 
   void emulate(TestCase * tc)
   {
@@ -250,59 +320,50 @@ public:
     mpfr_clears(x, exact, rounded, (mpfr_ptr)0);
   }
   
-  std::vector<mpz_class> emulate(const char *retSig, Operator *op, const char *n1, const std::vector<mpz_class> &v1) const
+  /*
+  mpz_class range(const mpz_class &src, int msb, int lsb)
   {
-    std::set<mpz_class> res;
-    for(unsigned i=0;i<v1.size();i++){
-      TestCase tc(op);
-      tc->addInput(n1, v1[i]);
-      op->emulate(tc);
-      const std::vector<mpz_class> &values=tc->getExpectedOutputValues(retSig);
-      res.insert(values.begin(), values.end());
-    }
-    return std::vector<mpz_class>(res.begin(), res.end());
-  }
+    assert(msb>=lsb);
+    int w=msb-lsb+1;
+    mpz_class res=src>>lsb;
+    mpz_fdiv_r_2exp(res.get_mpz_t(), res.get_mpz_t(), w);
+    return res;
+  }*/
   
-  std::vector<mpz_class> emulate(
-    const char *retSig, Operator *op,
-    const char *n1, const std::vector<mpz_class> &v1,
-    const char *n2, const std::vector<mpz_class> &v2
-  ) const
-  {
-    std::set<mpz_class> res;
-    for(unsigned i1=0;i1<v1.size();i1++){
-      for(unsigned i2=0;i2<v2.size();i2++){
-        TestCase tc(op);
-        tc->addInput(n1, v1[i1]);
-        tc->addInput(n2, v2[i2]);
-        op->emulate(tc);
-        const std::vector<mpz_class> &values=tc->getExpectedOutputValues(retSig);
-        res.insert(values.begin(), values.end());
-      }
-    }
-    return std::vector<mpz_class>(res.begin(), res.end());
-  }
-  
+  /*
   void emulate_ops(TestCase *tc)
   {
-    std::vector<mpz_class> iX=std::vector<mpz_class>(1, tc->getInputValue("iX"));
+    mpz_class iX=tc->getInputValue("iX");
     
-    std::vector<mpz_class> comparable_iX=emulate("oY", m_codec, "iX", iX);
-    std::vector<mpz_class> table_index=emulate("oY", m_quantiser, "iX", comparable_iX);
-    std::vector<mpz_class> table_contents=emulate("Y", m_table, "X", table_index);
+    mpz_class comparable_iX=simulate(m_codec, iX);
+    mpz_class table_index=simulate(m_quantiser, comparable_iX);
+    mpz_class table_contents=simulate(m_table, table_index);
     
-    for(unsigned i=0;i<table_contents.size();i++){
-      std::vector<std::pair<std::string,std::vector<mpz_class> > > polyEvalArgs;
+    std::map<std::string,mpz_class> polyEvalArgs;
     
-      int offset=0;
-      for(unsigned i=0;i<=m_degree;i++){
-        int w=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
-        vhdl<<declare(join("coeff_",i),w)<<" <= table_contents"<<range(w+offset-1,offset)<<";\n";
-        offset+=w;
-      }
-      vhdl<<declare("coeff_prefix",3+wRangeE)<<" <= table_contents"<<range(tableWidth-1,offset)<<";\n";
-      vhdl<<declare("fraction_iX", wDomainF)<<" <= iX"<<range(wDomainF-1,0)<<";\n";
+    int offset=0;
+    for(unsigned i=0;i<=m_degree;i++){
+      int w=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
+      //vhdl<<declare(join("coeff_",i),w)<<" <= table_contents"<<range(w+offset-1,offset)<<";\n";
+      polyEvalArgs[join("coeff_",i)] = range(table_contents, w+offset-1, offset);
+      
+      offset+=w;
+    }
+    //vhdl<<declare("coeff_prefix",3+wRangeE)<<" <= table_contents"<<range(tableWidth-1,offset)<<";\n";
+    mpz_class coeff_prefix=range(table_contents, m_tableWidth-1, offset);
+    //vhdl<<declare("fraction_iX", wDomainF)<<" <= iX"<<range(wDomainF-1,0)<<";\n";
+    mpz_class fraction_iX= range(iX, wDomainF-1, 0);
+    polyEvalArgs["Y"]=fraction_iX;
+    
+    std::vector<mpz_class> result_fraction_s=emulate(m_poly, polyEvalArgs);
+    
+    for(unsigned i=0;i<result_fraction_s.size();i++){
+      mpz_class result_fraction=result_fraction_s[i];
+      
+      mpz_class 
+    }
   }
+  */
 
   void buildStandardTestCases(TestCaseList* tcl)
   {

@@ -27,7 +27,8 @@ namespace flopoco{
 		 */
 		~FunctionEvaluator();
 		
-		void emulate(TestCase * tc);
+		void emulate(TestCase * tc);			// Emulates just the ideal function, without emulating sub-components
+		void emulate_parts(TestCase * tc);	// Emulates all sub-parts of the function evaluator
 
 		PiecewiseFunction *pf;
 		PolyCoeffTable *tg;

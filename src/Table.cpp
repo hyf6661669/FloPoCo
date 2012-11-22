@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include "utils.hpp"
 #include "Table.hpp"
+#include <cassert>
 
 using namespace std;
 
@@ -245,6 +246,15 @@ namespace flopoco{
 
 	int Table::size_in_LUTs() {
 		return wOut*int(intpow2(wIn-target_->lutInputs()));
+	}
+	
+	void Table::emulate(TestCase *tc)
+	{
+		mpz_class X=tc->getInputValue("X");
+		int i=X.get_si();
+		assert( (minIn <= i) && (i<=maxIn) );
+		
+		tc->addExpectedOutput("Y", function(i));
 	}
 
 }

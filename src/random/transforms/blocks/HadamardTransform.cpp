@@ -16,6 +16,8 @@
 #include "HadamardTransform.hpp"
 #include "CLTTransform.hpp"
 
+#include "random/distributions/sum_distribution.hpp"
+
 using namespace std;
 
 namespace flopoco
@@ -147,6 +149,24 @@ void HadamardTransform::emulate(TestCase * tc)
 		//mpfr_fprintf(stderr, "  out=%Zd, twos=%Zx, fwd=%Zd\n", curr[i].get_mpz_t(), v.get_mpz_t(), fromTwosComplement(v, m_baseWidth+m_log2n).get_mpz_t());
 		tc->addExpectedOutput(join(m_nonUniformOutputNameBase,i), v);
 	}
+}
+
+typename Distribution<mpfr::mpreal>::TypePtr HadamardTransform::nonUniformOutputDistribution(int i, unsigned prec) const
+{
+	if((i<0) || (i>=(int)m_n))
+		throw std::string("Distribution index out of range.");
+	
+	if(!m_distribution || (prec>=m_distributionPrec)){
+		IRngTransformDistributions<mpfr::mpreal> *src=dynamic_cast<IRngTransformDistributions<mpfr::mpreal>*>(m_base);
+		if(src==NULL)
+			throw std::string("HadamardTransform::nonUniformOutputDistribution - Base does not know its distribution.");
+		
+		typename EnumerableDistribution<mpfr::mpreal>::TypePtr part(boost::dynamic_pointer_cast<EnumerableDistribution<mpfr::mpreal> >(src->nonUniformOutputDistribution(0, prec)));
+		m_distribution=SelfAddDistributions<mpfr::mpreal>(part, (int)m_n);
+		m_distributionPrec=prec;
+	}
+		
+	return m_distribution;
 }
 
 	

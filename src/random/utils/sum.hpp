@@ -5,6 +5,8 @@
 
 #include <iterator>
 
+#include "mpreal.h"
+
 namespace flopoco
 {
 namespace random
@@ -19,6 +21,10 @@ namespace random
 	template<>
 	struct SelectAccumulator<double>
 	{ typedef LadderAccumulator type; };
+	
+	template<>
+	struct SelectAccumulator<mpfr::mpreal>
+	{ typedef mpfr::mpreal type; };
 	
 	template<class TIt>
 	typename std::iterator_traits<TIt>::value_type sum(TIt begin, TIt end)

@@ -8,6 +8,9 @@
 #include <algorithm>
 #include <numeric>
 
+#include "random/utils/mpreal/boost_math_mpreal.hpp"
+#include "boost/math/tools/real_cast.hpp"
+
 namespace flopoco
 {
 namespace random
@@ -103,7 +106,7 @@ public:
 		T ii=round(vi);
 		if(vi!=ii)
 			return 0;
-		size_t i=(size_t)ii;
+		size_t i=boost::math::tools::real_cast<long>(ii);
 		assert(i<m_elements.size());
 		return m_elements[i];
 	}
@@ -116,7 +119,7 @@ public:
 			return 1;
 		
 		T vi=(x-m_base)/m_step;
-		size_t i=floor(vi);
+		size_t i=boost::math::tools::real_cast<long>(floor(vi));
 		
 		return sum(m_elements.begin(), m_elements.begin()+i+1);
 	}
@@ -126,18 +129,19 @@ public:
 
 	// All legal distributions contain at least one element.
 	virtual std::pair<T,T> GetElement(uint64_t index) const
-	{ return std::make_pair(m_base+index*m_step, m_elements.at(index)); }
+	{ return std::make_pair(m_base+boost::math::tools::real_cast<T>(index)*m_step, m_elements.at(index)); }
 
 	void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
 	{
 		if((end<begin) || (end>ElementCount()))
 			throw std::range_error("Requested elements are out of range.");
-		T curr=m_base+m_step*begin;
+		T curr=m_base+m_step*boost::math::tools::real_cast<T>(begin);
 		const T *src=&m_elements[begin];
-		for(int i=0;i<(end-begin);i++){
-			dest=std::make_pair(curr, *src);
+		for(int i=0;i<(int)(end-begin);i++){
+			*dest=std::make_pair(curr, *src);
 			curr+=m_step;
 			src++;
+			dest++;
 		}
 	}
 	

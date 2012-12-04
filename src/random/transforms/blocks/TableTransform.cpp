@@ -3,6 +3,8 @@
 #include <sstream>
 #include <math.h>	// for NaN
 
+#include <random/utils/mpreal/boost_math_mpreal.hpp>
+
 
 
 /* header of libraries to manipulate multiprecision numbers
@@ -24,6 +26,7 @@
 
 #include "random/utils/make_table.hpp"
 
+
 using namespace std;
 
 namespace flopoco
@@ -34,12 +37,13 @@ extern vector<Operator *> oplist;
 namespace random
 {
 	
-TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_class> &elements, bool addRandomSign)
+TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_class> &elements, bool addRandomSign, int wF)
 	: RngTransformOperator(target)
 	, m_wElts(wElts)
 	, m_addRandomSign(addRandomSign)
 	, m_elements(elements)
 	, m_log2n((int)round(log(elements.size())/log(2.0)))
+	, m_wF(wF)
 {
 	REPORT(DETAILED, "  TableTransform() begin");	
 	
@@ -129,6 +133,26 @@ TestCase* TableTransform::buildRandomTestCase(int i)
 	emulate(tc);
 	
   	return tc;
+}
+
+typename Distribution<mpfr::mpreal>::TypePtr TableTransform::nonUniformOutputDistribution(int i, unsigned prec) const
+{
+	if(i!=0)
+		throw std::string("Only one output distribution.");
+	
+	if(!m_distribution || (prec>m_distributionPrec)){
+		std::vector<mpfr::mpreal> contents(m_elements.size() * (m_addRandomSign?2:0), mpfr::mpreal(0.0, prec));
+		for(unsigned i=0;i<m_elements.size();i++){
+			contents[i]=ldexp(mpfr::mpreal( m_elements[i].get_mpz_t(), prec), -m_wF);
+			if(m_addRandomSign){
+				contents[2*m_elements.size()-i-1]=-contents[i];
+			}
+		}
+		
+		m_distribution= boost::make_shared<TableDistribution<mpfr::mpreal> >(&contents[0], &contents[contents.size()]);
+		m_distributionPrec=prec;
+	}
+	return m_distribution;
 }
 
 

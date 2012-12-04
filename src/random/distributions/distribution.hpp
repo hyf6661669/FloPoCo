@@ -14,8 +14,14 @@ namespace flopoco
 namespace random
 {
 
+template<class T> class Distribution;
+template<class T> class ContinuousDistribution;
+template<class T> class DiscreteDistribution;
+template<class T> class EnumerableDistribution;
+
 template<class T>
 class Distribution
+	: public boost::enable_shared_from_this<Distribution<T> >
 {
 public:
 	virtual ~Distribution()
@@ -85,9 +91,9 @@ public:
 	// All legal distributions contain at least one element. Elements are returned as (x,p)
 	virtual std::pair<T,T> GetElement(uint64_t index) const=0;
 
-	void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
+	virtual void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
 	{
-		if((end>begin) || (end>=ElementCount()))
+		if((end>begin) || (end>ElementCount()))
 			throw std::range_error("Requested elements are out of range.");
 		while(begin!=end){
 			dest[begin]=GetElement(begin);

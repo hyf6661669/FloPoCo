@@ -31,7 +31,7 @@ T RawMomentsToCentralMoment(
 template<class T>
 T CentralMomentsToRawMoment(
 	unsigned k,
-	double mean,
+	T mean,
 	const T *central
 ){
 	if(k==0)

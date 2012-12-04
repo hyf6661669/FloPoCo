@@ -18,7 +18,7 @@ to inherit the class Operator and overload some functions listed below*/
 /* This file contains a lot of useful functions to manipulate vhdl */
 #include "utils.hpp"
 
-
+#include "random/distributions/table_distribution.hpp"
 
 /*  All flopoco operators and utility functions are declared within
 the flopoco namespace.
@@ -29,19 +29,25 @@ namespace random{
 /* Given an operator, it will create an array of them and apply a hadamard transform */
 class TableTransform
 	: public RngTransformOperator
+	, public IRngTransformDistributions<mpfr::mpreal>
 	{
 private:
 	unsigned m_wElts;
 	bool m_addRandomSign;
 	std::vector<mpz_class> m_elements;
 	unsigned m_log2n;
+	int m_wF;
+
+	mutable boost::shared_ptr<TableDistribution<mpfr::mpreal> > m_distribution;
+	mutable unsigned m_distributionPrec;
 public:
 	/*! Construct a table that will be uniformly sampled.
 		\param wElts How wide each element of the table is
 		\param elements A set of elements, which must be a binary power size
 		\param addRandomSize If true, then elements are treated as unsigned numbers, and output will be signed(eElts+1) with a random sign
+		\param wF The number of fractional bits (used for calculating the fixed-point distributions)
 	*/
-	TableTransform(Target* target, int wElts, const std::vector<mpz_class> &elements, bool addRandomSign);
+	TableTransform(Target* target, int wElts, const std::vector<mpz_class> &elements, bool addRandomSign, int wF=0);
 	~TableTransform();
 
 	void emulate(TestCase * tc);
@@ -67,6 +73,9 @@ public:
 	
 	virtual std::string nonUniformOutputName(int i) const
 	{ return "oRng"; }
+	
+	// IRngTransformDistributions
+	typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
 	
 	static void registerFactory();
 };

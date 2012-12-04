@@ -48,12 +48,12 @@ private:
 		return a.second<b.second;
 	};
 	
-	void CompleteInit(bool sorted, double acc)
+	void CompleteInit(bool sorted, const T &acc)
 	{
 		unsigned n=m_elements.size();
 		
 		if(acc!=1.0){
-			double scale=1.0/acc;
+			T scale=1.0/acc;
 			for(size_t i=0;i<m_elements.size();i++){
 				m_elements[i].second *=scale;
 			}
@@ -188,11 +188,12 @@ public:
 	virtual std::pair<T,T> GetElement(uint64_t index) const
 	{ return m_elements.at(index); }
 
-	void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
+	virtual void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
 	{
+		std::cerr<<"begin="<<begin<<", end="<<end<<"\n";
 		if((end<begin) || (end>ElementCount()))
 			throw std::range_error("Requested elements are out of range.");
-		std::copy(m_elements.begin()+begin, m_elements.end()+end, dest);
+		std::copy(m_elements.begin()+begin, m_elements.begin()+end, dest);
 	}
 	
 	TypePtr ApplyPolynomial(const std::vector<T> &poly) const

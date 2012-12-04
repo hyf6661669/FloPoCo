@@ -128,7 +128,7 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 		contents[i]=current->GetElement(i).first;
 	}
 	
-	if(::flopoco::verbose>=DETAILED)
+	if(::flopoco::verbose>=INFO)
 			std::cerr<<"QuantiseTable : applying quantisation '"+correction+"'.\n";
 	if(correction=="round"){
 		for(int i=0;i<n/2;i++){
@@ -138,22 +138,23 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 	}else if(correction=="stddev_greedy"){
 		assert((n%2)==0);
 		T delta=pow(2.0, -wF);
-		T target=targetDistrib->StandardMoment(2);
+		T target=sqrt(targetDistrib->StandardMoment(2));
 		T acc=0;
 		for(int i=n/2;i<n;i++){
 			contents[i]=ldexp(round(ldexp(contents.at(i), wF)),-wF);
 			contents[n-i-1]=-contents[i];
 			acc += contents[i] * contents[i];
 		}
-		T curr=sqrt(acc/n);
+		T curr=sqrt(acc/(n/2));
 		
 		for(int i=n-1;i>=n/2;i--){
+			std::cerr<<"  curr="<<curr<<", target="<<target<<"\n";
 			while(contents[i]>0){
 				//T accDown=acc-square(contents[i])+square(contents[i]-eps);
 				//T accDown=acc-contents[i]*contents+(contents[i]-eps)*(contents[i]-eps);
-				//T accDown=acc-contents[i]^2+contents[i]^2-2*eps*contents[i]-eps^2;
-				T accDown=acc-2*delta*contents[i]-square(delta);
-				T gotDown=sqrt(accDown/n);
+				//T accDown=acc-contents[i]^2+contents[i]^2-2*eps*contents[i]+eps^2;
+				T accDown=acc-2*delta*contents[i]+square(delta);
+				T gotDown=sqrt(accDown/(n/2));
 				if(abs(gotDown-target) < abs(curr-target)){
 					contents[i] -= delta;
 					acc=accDown;
@@ -163,8 +164,8 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 				}
 			}
 			while(true){
-				T accUp=acc+2*delta*contents[i]+square(delta);
-				T gotUp=sqrt(accUp/n);
+				T accUp=acc+2*delta*contents[i]-square(delta);
+				T gotUp=sqrt(accUp/(n/2));
 				if(abs(gotUp-target) < abs(curr-target)){
 					contents[i] += delta;
 					acc=accUp;
@@ -173,6 +174,9 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 					break;
 				}
 			}
+		}
+		for(int i=0;i<n/2;i++){
+			contents[i]=-contents[n-i-1];
 		}
 		
 		
@@ -269,13 +273,23 @@ static Operator *GRNGTableFactoryParser(Target *target ,const std::vector<std::s
 	unsigned wO=0;
 	for(unsigned i=0;i<contents.size();i++){
 		unsigned ww=mpz_sizeinbase(contents[i].get_mpz_t(), 2);
-		if(::flopoco::verbose>=DETAILED){
+		if(::flopoco::verbose>=DEBUG){
 			std::cerr<<"table["<<i<<"]="<<contents[i]<<", w="<<ww<<"\n";
 		}
 		wO=std::max(wO, ww);
 	}
 	
-	return new TableTransform(target, wO, contents, true);
+	TableTransform *result=new TableTransform(target, wO, contents, true, wF);
+	
+	/*
+	boost::shared_ptr<EnumerableDistribution<mpfr::mpreal> > distribution( boost::dynamic_pointer_cast<EnumerableDistribution<mpfr::mpreal> > (result->nonUniformOutputDistribution(0, 128)));
+	std::vector<std::pair<mpfr::mpreal,mpfr::mpreal> > dist(distribution->ElementCount());
+	distribution->GetElements(0, dist.size(), &dist[0]);
+	for(unsigned i=0;i<dist.size();i++){
+		std::cerr<<"  "<<dist[i].first<<", "<<dist[i].second<<"\n";
+	}*/
+	
+	return result;
 }
 
 void GRNGTableTransform_registerFactory()

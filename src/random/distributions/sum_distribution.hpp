@@ -2,13 +2,20 @@
 #define flopoco_random_distributions_sum_distribution_hpp
 
 #include "random/distributions/table_distribution.hpp"
+#include "random/distributions/histogram_distribution.hpp"
 
-#include <boost/unordered_map.hpp>
+#include <map>
 
 namespace flopoco
 {
 namespace random
 {
+	
+	template<class T>
+	std::vector<T> self_convolve(const std::vector<T> &values, int n);
+	
+	template<class T>
+	std::vector<T> convolve(const std::vector<T> &a, const std::vector<T> &b);
 	
 	template<class T,class TF>
 	typename EnumerableDistribution<T>::TypePtr ConvolveDistributions(
@@ -23,7 +30,7 @@ namespace random
 		a->GetElements(0, a->ElementCount(), &va[0]);
 		b->GetElements(0, b->ElementCount(), &vb[0]);
 				
-		boost::unordered_map<T,T> acc;
+		std::map<T,T> acc;	// should really be a hashtable
 		
 		for(size_t ia=0;ia<va.size();ia++){
 			std::pair<T,T> ca=va[ia];
@@ -55,14 +62,14 @@ namespace random
 		std::vector<T> vr=convolve(va,vb);
 		
 		return boost::make_shared<HistogramDistribution<T> >(
-			a->RangeBase()+b->RangBase(),
+			a->RangeBase()+b->RangeBase(),
 			a->RangeStep(),
 			vr
 		);
 	}
 	
 	template<class T>
-	typename HistogramDistribution<T>::TypePtr SelfAddHistogramDistribution(
+	typename HistogramDistribution<T>::TypePtr SelfAddHistogramDistributions(
 		typename HistogramDistribution<T>::TypePtr a,
 		int k
 	){
@@ -88,12 +95,12 @@ namespace random
 		
 		if(ha&&hb){
 			if(ha->RangeStep()==hb->RangeStep())
-				return AddHistogramDistributions(ha,hb);
+				return AddHistogramDistributions<T>(ha,hb);
 		}
 		
-		if(a->ElementCount() < b->ElementCount)
-			return AddDistributions(b,a);
-		return ConvolveDistributions(a,b,std::plus<T>());
+		if(a->ElementCount() < b->ElementCount())
+			return AddDistributions<T>(b,a);
+		return ConvolveDistributions<T>(a,b,std::plus<T>());
 	}
 	
 	template<class T>
@@ -108,11 +115,10 @@ namespace random
 		
 		typename HistogramDistribution<T>::TypePtr ha=boost::dynamic_pointer_cast<HistogramDistribution<T> >(a);
 		
-		if(a){
-			return SelfAddHistogramDistributions(a,k);
+		if(ha){
+			return SelfAddHistogramDistributions<T>(ha,k);
 		}
 		
-		T values[1]={0};
 		typename EnumerableDistribution<T>::TypePtr res;
 		typename EnumerableDistribution<T>::TypePtr ss=a;
 		while(k){
@@ -120,12 +126,12 @@ namespace random
 				if(!res)
 					res=ss;
 				else
-					res=AddDistributions(res, ss);
+					res=AddDistributions<T>(res, ss);
 			}
 			k=k/2;
 			if(k==0)
 				break;
-			ss=AddDistributions(ss, ss);
+			ss=AddDistributions<T>(ss, ss);
 		}
 		
 		return res;

@@ -27,7 +27,10 @@ namespace flopoco{
 namespace random{
 
 /* Given an operator, it will create an array of them and apply a hadamard transform */
-class HadamardTransform : public RngTransformOperator {
+class HadamardTransform
+	: public RngTransformOperator
+	, public IRngTransformDistributions<mpfr::mpreal>
+	{
 private:
 	unsigned m_log2n, m_n, m_baseWidth;
 	RngTransformOperator *m_base;
@@ -38,6 +41,9 @@ private:
 	unsigned m_nonUniformOutputCount;
 	unsigned m_nonUniformOutputWidth;
 	std::string m_nonUniformOutputNameBase; 
+
+	mutable typename Distribution<mpfr::mpreal>::TypePtr m_distribution;
+	mutable unsigned m_distributionPrec;
 
 	void Connect(std::string dstName, int dstIdx, std::string srcName, int srcL, int srcR, int dir, int srcW);
 	void HadamardStage(std::string dstName, std::string srcName, int totalSize, int size, int srcW);
@@ -71,6 +77,9 @@ public:
 	
 	virtual std::string nonUniformOutputName(int i) const
 	{ return join(m_nonUniformOutputNameBase,i); }
+	
+	// IRngTransformDistributions
+	typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
 };
 
 }; // random

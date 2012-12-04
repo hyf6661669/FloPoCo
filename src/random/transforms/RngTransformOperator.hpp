@@ -49,7 +49,7 @@ public:
 	{}
 		
 	//! Return the distribution of the output, with precision of prec or higher
-	typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const=0;
+	virtual typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const=0;
 };
 
 };

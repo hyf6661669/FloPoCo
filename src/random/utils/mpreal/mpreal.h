@@ -3237,7 +3237,12 @@ namespace std
         static const int max_exponent10 = (int) (MPFR_EMAX_DEFAULT * 0.3010299956639811); 
 
         // Should be constant according to standard, but 'digits' depends on precision in MPFR
-
+        // DT10 : This makes boost::math go a bit mad when it tries to initialise constants
+        #if 1
+        // Force to invalid values
+            static const int digits=-1;
+            static const int digits10=-1;
+        #else
         inline static int digits()                        {    return mpfr::mpreal::get_default_prec();    }
         inline static int digits(const mpfr::mpreal& x)   {    return x.getPrecision();                    }
 
@@ -3255,6 +3260,8 @@ namespace std
         {
             return digits10(precision);
         }
+        
+        #endif
     };
 
 }

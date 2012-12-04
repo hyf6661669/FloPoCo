@@ -107,6 +107,10 @@ typename TableDistribution<T>::TypePtr CorrectTable(
 }
 
 template<class T>
+T square(const T &x)
+{ return x*x; }
+
+template<class T>
 typename TableDistribution<T>::TypePtr QuantiseTable(
 	std::string correction,
 	typename ContinuousDistribution<T>::TypePtr targetDistrib,	//! Target distribution
@@ -131,6 +135,47 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 			contents.at(i)=ldexp(round(ldexp(contents.at(i), wF)),-wF);
 			contents.at(n-i-1)=-contents[i];
 		}
+	}else if(correction=="stddev_greedy"){
+		assert((n%2)==0);
+		T delta=pow(2.0, -wF);
+		T target=targetDistrib->StandardMoment(2);
+		T acc=0;
+		for(int i=n/2;i<n;i++){
+			contents[i]=ldexp(round(ldexp(contents.at(i), wF)),-wF);
+			contents[n-i-1]=-contents[i];
+			acc += contents[i] * contents[i];
+		}
+		T curr=sqrt(acc/n);
+		
+		for(int i=n-1;i>=n/2;i--){
+			while(contents[i]>0){
+				//T accDown=acc-square(contents[i])+square(contents[i]-eps);
+				//T accDown=acc-contents[i]*contents+(contents[i]-eps)*(contents[i]-eps);
+				//T accDown=acc-contents[i]^2+contents[i]^2-2*eps*contents[i]-eps^2;
+				T accDown=acc-2*delta*contents[i]-square(delta);
+				T gotDown=sqrt(accDown/n);
+				if(abs(gotDown-target) < abs(curr-target)){
+					contents[i] -= delta;
+					acc=accDown;
+					curr=gotDown;
+				}else{
+					break;
+				}
+			}
+			while(true){
+				T accUp=acc+2*delta*contents[i]+square(delta);
+				T gotUp=sqrt(accUp/n);
+				if(abs(gotUp-target) < abs(curr-target)){
+					contents[i] += delta;
+					acc=accUp;
+					curr=gotUp;
+				}else{
+					break;
+				}
+			}
+		}
+		
+		
 	}else{
 		throw std::string("QuantiseTable - Unknown quantisation method '"+correction+"'");
 	}

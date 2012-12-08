@@ -12,7 +12,7 @@ namespace random
 {
 	
 	template<class T>
-	std::vector<T> self_convolve(const std::vector<T> &values, int n);
+	std::vector<T> self_convolve(const std::vector<T> &values, unsigned n);
 	
 	template<class T>
 	std::vector<T> convolve(const std::vector<T> &a, const std::vector<T> &b);

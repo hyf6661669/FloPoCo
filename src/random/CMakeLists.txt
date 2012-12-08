@@ -96,3 +96,6 @@ target_link_libraries(test_comparable_float_type ${Boost_LIBRARIES} ${GMP_LIB} $
 add_executable(test_range float_approx/test_range.cpp float_approx/range.cpp)
 target_link_libraries(test_range flopoco_random_lib ${FLOPOCO_LIB})
 
+add_executable(test_fft utils/fft/test_fft.cpp)
+target_link_libraries(test_fft ${MPFR_LIB} ${GSL_LIBRARIES} ${GMP_LIB})
+

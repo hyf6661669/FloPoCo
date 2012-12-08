@@ -17,6 +17,7 @@
 #include "CLTTransform.hpp"
 
 #include "random/distributions/sum_distribution.hpp"
+#include "random/utils/fft/convolve_mpreal.hpp"
 
 using namespace std;
 

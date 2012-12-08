@@ -27,6 +27,8 @@
 #include "random/distributions/gaussian_distribution.hpp"
 #include "random/moment_correction/correct_distribution.hpp"
 
+#include "random/utils/fft/convolve_mpreal.hpp"
+
 using namespace std;
 
 namespace flopoco

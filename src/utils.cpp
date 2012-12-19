@@ -401,7 +401,27 @@ namespace flopoco{
 		mpz_urandomm (res.get_mpz_t(), FloPoCoRandomState::m_state, mpz_class(b-a).get_mpz_t());
 		return res+a;
 	}
-
+	
+	void getLargeRandomFloat(mpfr_t dst)
+	{
+		mpfr_urandomb(dst, FloPoCoRandomState::m_state);
+	}
+	
+	void getLargeRandomFloatBetween(mpfr_t dst, mpfr_t a, mpfr_t b)
+	{
+		mpfr_t u, d;
+		mpfr_init2(u, 128);
+		mpfr_init2(d, 128);
+		
+		do{
+			mpfr_urandomb(u, FloPoCoRandomState::m_state);
+			mpfr_sub(d, b,a, MPFR_RNDN);
+			mpfr_fma(dst, d, u, a, MPFR_RNDN);
+		}while(mpfr_less_p(dst, a) || mpfr_less_p(b, dst));
+		
+		mpfr_clear(u);
+		mpfr_clear(d);
+	}
 #endif 
 
 	string zg(int n, int margins){

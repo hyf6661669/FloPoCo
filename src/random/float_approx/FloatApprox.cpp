@@ -83,13 +83,15 @@ public:
     
     m_polys=RangePolys(&m_range, m_degree);
     
-    REPORT(INFO, "Splitting into polynomials with error < "<<maxError);
-    m_polys.split_to_error(maxError.toDouble());
+    // TODO / HACK : This is twice the accuracy it should need. This is to try to fixed very occasional
+    // errors of 2 ulps.
+    REPORT(INFO, "Splitting into polynomials with error < "<<maxError/2);
+    m_polys.split_to_error((maxError/2).toDouble());
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
     int nErrSplitSegments=m_range.m_segments.size();
     
-    int guard=0;
-    for(guard=0;guard<=9;guard++){
+    int guard;
+    for(guard=1;guard<=9;guard++){
       if(guard==8){
         throw std::string("FloatApprox - More than 8 guard bits needed, this probably means something is going horribly wrong.");
       }
@@ -122,7 +124,7 @@ public:
     REPORT(INFO, "Constructing lookup table.");
     int coeffWidths=0;
     for(unsigned i=0;i<=m_degree;i++){
-      coeffWidths+=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
+      coeffWidths+=(m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1;
     }
     int tableWidth=3+wRangeE+coeffWidths;
     m_tableWidth=tableWidth;
@@ -165,7 +167,7 @@ public:
     // Split the coefficients into the different parts
     int offset=0;
     for(unsigned i=0;i<=m_degree;i++){
-      int w=m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1;
+      int w=(m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1; // extra is for sign
       vhdl<<declare(join("coeff_",i),w)<<" <= table_contents"<<range(w+offset-1,offset)<<";\n";
       offset+=w;
     }
@@ -195,19 +197,21 @@ public:
     if(result_format.msb < -1)
       throw std::string("Currently FloatApprox needs PolynomialEvaluator to return at least the interval [-0.5,0.5). This is my fault not yours, try increasing approximation range to cover entire binade.");
     
-    int drop_bits=(- wRangeF) - result_format.lsb ;
+    int drop_bits=(- wRangeF) - result_format.lsb-1 ;
     
     int result_fraction_rounded_width=result_fraction_width-drop_bits;
     if(drop_bits==0){
       vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1,0)<<";\n";
     }else{
-      vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< " <= result_fraction"<<range(result_fraction_rounded_width-1,drop_bits)<<" + result_fraction("<<drop_bits-1<<");\n";
+      //vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< " <= result_fraction"<<range(result_fraction_width-1,drop_bits)<<" + result_fraction("<<drop_bits-1<<");\n";
+      // TODO : Why does this not want to be rounded???
+      vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< " <= result_fraction"<<range(result_fraction_width-1,drop_bits)<<";\n";
     }
     
     vhdl<<declare("result_fraction_clamped", wRangeF)<<" <= ";
     vhdl<<"       "<<zg(wRangeF)<<" when result_fraction_rounded("<<result_fraction_rounded_width-1<<")='1' else\n";    // Negative overflow
     if(result_fraction_rounded_width > (wRangeF+1)){
-      vhdl<<"      "<<og(wRangeF)<<" when result_fraction_rounded"<<range(result_fraction_rounded_width-2, wRangeF)<<"!="<<zg(wRangeF-(result_fraction_rounded_width-2)+1)<<" else\n";  // positive overflow
+      vhdl<<"      "<<og(wRangeF)<<" when result_fraction_rounded"<<range(result_fraction_rounded_width-2, wRangeF)<<"/="<<zg((result_fraction_rounded_width-2)-wRangeF+1)<<" else\n";  // positive overflow
     }
     vhdl<<"    result_fraction_rounded"<<range(wRangeF-1,0)<<";\n"; // No overflow
     
@@ -393,10 +397,20 @@ public:
     }
   }
 
-  //TestCase* buildRandomTestCase(int i)
-  //{
-  //  throw std::string("Not Implemented.");
-  //}
+  TestCase* buildRandomTestCase(int i)
+  {
+    mpfr::mpreal r(0.0, m_wDomainF);
+    
+    // Absolute
+    getLargeRandomFloatBetween(r.mpfr_ptr(), m_domainMin.mpfr_ptr(), m_domainMax.mpfr_ptr());
+    
+    FPNumber dom(m_wDomainE, m_wDomainF);
+    dom=r.mpfr_ptr();
+    TestCase *tc=new TestCase(this);
+    tc->addFPInput("iX", &dom);
+    emulate(tc);
+    return tc;
+  }
 }; // FloatApproxOperator
 
 

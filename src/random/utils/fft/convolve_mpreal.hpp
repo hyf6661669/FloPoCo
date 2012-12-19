@@ -17,6 +17,17 @@ namespace random
 		unsigned n=a.size()+b.size()-1;
 		unsigned nn=detail::NextBinaryPower(n);
 		
+		if(wPrec==0){
+			mpfr_prec_t wPrec=mpfr_get_default_prec();
+			for(unsigned i=0;i<a.size();i++){
+				wPrec=std::max(wPrec, a[i].get_prec());
+			}
+			for(unsigned i=0;i<b.size();i++){
+				wPrec=std::max(wPrec, b[i].get_prec());
+			}
+			wPrec=2*wPrec;
+		}
+		
 		std::vector<mpfr::mpreal> aa(nn, mpfr::mpreal(0,wPrec)), bb(nn, mpfr::mpreal(0,wPrec));
 		for(unsigned i=0;i<a.size();i++){
 			mpfr_set(aa[2*i].mpfr_ptr(), a[i].mpfr_srcptr(), MPFR_RNDN);
@@ -52,6 +63,14 @@ namespace random
 			throw std::string("self_convolve_mpreal - Self convolution of degree 0 is probably not intended.");
 		if(k==1)
 			return a;
+		
+		if(wPrec==0){
+			mpfr_prec_t wPrec=mpfr_get_default_prec();
+			for(unsigned i=0;i<a.size();i++){
+				wPrec=std::max(wPrec, a[i].get_prec());
+			}
+			wPrec=k*wPrec;
+		}
 		
 		unsigned n=a.size()*k-1;
 		unsigned nn=detail::NextBinaryPower(n);

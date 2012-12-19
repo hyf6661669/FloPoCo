@@ -44,6 +44,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	random_main.cpp
 	utils/operator_factory.cpp	
 	utils/comparable_float_type.cpp
+	utils/polynomial_evaluator_factory.cpp
 	
 	urng/lut_sr_rng.cpp
 	

@@ -239,6 +239,13 @@ namespace flopoco{
 	/** Generate an integer uniformly in the range [a,b), where a<b
 	*/
 	mpz_class getRandomBetween(const mpz_class &a, const mpz_class &b);
+	
+	/**
+	 * Generate a uniform floating-point number.
+	 * Due to rereusage of a PRNG, this function might be suboptimal.
+	 * @param dst Number to generate, also determines precision
+	 */
+	void getLargeRandomFloatBetween(mpfr_t dst, mpfr_t a, mpfr_t b);
 
 	/**
 	 * A zero generator method which takes as input two arguments and returns a string of zeros with quotes as stated by the second argurment

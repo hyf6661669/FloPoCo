@@ -285,6 +285,8 @@ namespace flopoco{
 			
 		//! Standard emulator, gives all possible output values for a given input
 		void emulate(TestCase *tc);
+		
+		void buildStandardTestCases(TestCaseList* tcl);
 			
 		/* ------------------------------ EXTRA -----------------------------*/
 		/* ------------------------------------------------------------------*/

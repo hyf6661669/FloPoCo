@@ -208,7 +208,7 @@ public:
 	// s, -1, -2, -3, -4 -> width=5=1+(-1- -4)=1+(msb-lsb)
 	mpz_class ToTwosComplement(mpz_class x, int msb, int lsb)
 	{
-		int w=1+msb-lsb;
+		int w=2+msb-lsb;
 		//mpfr_fprintf(stderr, "   x=%Zd=%Zx, msb=%d, lsb=%d, width=%d\n", x.get_mpz_t(), x.get_mpz_t(), msb, lsb, w);
 		
 		mpz_class ret;
@@ -304,7 +304,7 @@ public:
 		
 		int totalCoeffBits=0;
 		for(unsigned i=0;i<=m_degree;i++){
-			totalCoeffBits+=1+m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i];
+			totalCoeffBits+=(m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i]+1)+1;
 		}
 		
 		if(::flopoco::verbose>=INFO){
@@ -325,7 +325,7 @@ public:
 				mpfr_mul_2si(tmp, tmp, -m_concreteCoeffLsbs[i], MPFR_RNDN);
 				mpfr_get_z(local.get_mpz_t(), tmp, MPFR_RNDN);
 				
-				acc=(acc<<(1+m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i])) + ToTwosComplement(local, m_concreteCoeffMsbs[i], m_concreteCoeffLsbs[i]);
+				acc=(acc<<(2+m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i])) + ToTwosComplement(local, m_concreteCoeffMsbs[i], m_concreteCoeffLsbs[i]);
 			}
 			
 			// Now we tack the exponent on. For the moment we only support positive numbers,

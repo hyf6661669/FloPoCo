@@ -32,6 +32,12 @@ using namespace std;
 
 namespace flopoco{
 	
+	std::ostream &operator<<(std::ostream &dst, const PolynomialEvaluator::format_t &fmt)
+	{
+		dst<<(fmt.isSigned?"S":"U")<<";"<<fmt.msb<<";"<<fmt.lsb;
+		return dst;
+	}
+	
 	PolynomialEvaluator *PolynomialEvaluator::Create(Target *target,
 			const std::vector<format_t> &coeffFormats,
 			format_t inputFormat,
@@ -58,7 +64,7 @@ namespace flopoco{
 		for(unsigned i=0;i<coeffFormats.size();i++){
 			int size=-coeffFormats[i].lsb;
 			assert(coeffFormats[i].isSigned);
-			int weight=coeffFormats[i].msb-1;	// crop off sign bit
+			int weight=coeffFormats[i].msb;	
 			coeffs[i]=new FixedPointCoefficient(size, weight);
 		}
 		
@@ -76,8 +82,17 @@ namespace flopoco{
 		);
 		
 		for(unsigned i=0;i<coeffFormats.size();i++){
+			if(::flopoco::verbose>=DEBUG)
+				std::cerr<<"Coeff "<<i<<" : orig="<<coeffFormats[i]<<", got="<<res->coefficientFormats_[i]<<"\n";
+			assert(coeffFormats[i].isSigned == res->coefficientFormats_[i].isSigned);
+			assert(coeffFormats[i].msb == res->coefficientFormats_[i].msb);
+			assert(coeffFormats[i].lsb == res->coefficientFormats_[i].lsb);
 			delete coeffs[i];
 		}
+		
+		if(::flopoco::verbose>=DEBUG)
+			std::cerr<<"Output : outputLsb="<<outputLsb<<", got="<<res->getOutputFormat()<<"\n";
+		
 		
 		return res;
 	}
@@ -86,8 +101,8 @@ namespace flopoco{
 	{
 		format_t res={
 			true, // always signed
-			getOutputWeight()+1, //need to add on sign
-			getOutputWeight()+1-(getOutputSize()-1)
+			getOutputWeight(), //need to add on sign
+			getOutputWeight()-(getOutputSize()-1)
 		};
 		return res;
 	}
@@ -130,10 +145,10 @@ namespace flopoco{
 		inputFormat_.msb=y->getWeight()-1;
 		inputFormat_.lsb=y->getWeight()-y->getSize();
 		coefficientFormats_.resize(degree_+1);		
-		for(unsigned i=0;i<(unsigned)degree_;i++){
+		for(unsigned i=0;i<=(unsigned)degree_;i++){
 			coefficientFormats_[i].isSigned=true;
 			coefficientFormats_[i].msb=coef[i]->getWeight();
-			coefficientFormats_[i].lsb=coef[i]->getWeight()+1-coef[i]->getSize();
+			coefficientFormats_[i].lsb=-coef[i]->getSize();
 		}
 		
 		updateCoefficients(coef);
@@ -859,9 +874,43 @@ namespace flopoco{
 	PolynomialEvaluator::format_t PolynomialEvaluator::getCoefficientFormat(unsigned i) const
 	{ return coefficientFormats_.at(i); }
 	
+	void PolynomialEvaluator::buildStandardTestCases(TestCaseList* tcl)
+	{
+		// For test cases we try to push in a0..an == 0.5
+		
+		TestCase base(this);
+		
+		// Check that the coefficients include 0.5
+		for(unsigned i=0;i<=degree_;i++){
+			fprintf(stderr, "Check %d, isSigned=%d, msb=%d, lsb=%d\n", i, coefficientFormats_[i].isSigned?1:0, coefficientFormats_[i].msb, coefficientFormats_[i].lsb);
+			if(!coefficientFormats_[i].isSigned)
+				return;
+			if(coefficientFormats_[i].msb < 0)
+				return;
+			if(coefficientFormats_[i].lsb > -1)
+				return;
+			
+			// -1 -> 0
+			// -2 -> 1
+			// -3 -> 2
+			mpz_class half= mpz_class(1)<<(-coefficientFormats_[i].lsb-1);
+			std::cerr<<"half="<<half<<"\n";
+			base.setInputValue( join("a",i), half );
+		}
+		
+		for(unsigned i=0;i<10;i++){
+			TestCase *tc=new TestCase(base);
+			tc->setInputValue("Y", mpz_class(i));
+			
+			emulate(tc);
+			
+			tcl->add(tc);
+		}		
+	}
+	
 	void PolynomialEvaluator::emulate(TestCase *tc)
 	{
-		int prec=std::max(targetPrec_*2,100);	// Precision for mpfr
+		int prec=std::max(-targetPrec_*2,100);	// Precision for mpfr
 		
 		//addInput("Y", y_->getSize()); /* y is positive so we don't store the sign */
 		assert(!inputFormat_.isSigned);
@@ -887,26 +936,29 @@ namespace flopoco{
 		mpfr_set_z(y, rawInput.get_mpz_t(), MPFR_RNDN);
 		mpfr_mul_2si(y, y, inputFormat_.lsb, MPFR_RNDN);
 		
+		if(::flopoco::verbose>=FULL)
+			mpfr_fprintf(stderr, "  x = %Rg\n", y);
+		
 		mpfr_set_d(acc, 0.0, MPFR_RNDN);
 		for(int i=degree_;i>=0;i--){
 			mpfr_set_z(coeff, rawCoeffs[i].get_mpz_t(), MPFR_RNDN);
 			mpfr_mul_2si(coeff, coeff, coefficientFormats_[i].lsb, MPFR_RNDN);
 			
 			if(::flopoco::verbose>=FULL)
-				mpfr_fprintf(stderr, "  a%d = %Rg\n", i, coeff);
+				mpfr_fprintf(stderr, "  a%d = %Rg,  lsb=%d\n", i, coeff, coefficientFormats_[i].lsb);
 			
 			mpfr_mul(acc, acc, y, MPFR_RNDN);
 			mpfr_add(acc, acc, coeff, MPFR_RNDN);
 		}
 		
 		// Ok, now we have the precise value of the polynomial, and the output value of the
-		// polynomial evaluator must be within \pm 2.0^-(targetPrec_+1) in order to be valid.
+		// polynomial evaluator must be within \pm 2.0^(targetPrec_-1) in order to be valid.
 		
 		int outLsb=getOutputFormat().lsb;
-		double halfUlp=pow(2.0, -targetPrec_-1);
+		double halfUlp=pow(2.0, targetPrec_-1);
 		
-		mpfr_sub_d(outMin, acc, halfUlp, MPFR_RNDN);
-		mpfr_add_d(outMax, acc, halfUlp, MPFR_RNDN);
+		mpfr_sub_d(outMin, acc, halfUlp, MPFR_RNDD);
+		mpfr_add_d(outMax, acc, halfUlp, MPFR_RNDU);
 		
 		if(::flopoco::verbose>=FULL)
 			mpfr_fprintf(stderr, "  %Rg -> [%Rg,%Rg]\n", y, outMin, outMax);
@@ -914,8 +966,8 @@ namespace flopoco{
 		mpfr_mul_2si(outMin, outMin, -outLsb, MPFR_RNDN);		
 		mpfr_mul_2si(outMax, outMax, -outLsb, MPFR_RNDN);
 		
-		mpfr_rint(outMin, outMin, MPFR_RNDN);
-		mpfr_rint(outMax, outMax, MPFR_RNDN);
+		mpfr_rint(outMin, outMin, MPFR_RNDD);
+		mpfr_rint(outMax, outMax, MPFR_RNDU);
 		
 		mpfr_mul_2si(outMin, outMin, outLsb, MPFR_RNDN);
 		mpfr_mul_2si(outMax, outMax, outLsb, MPFR_RNDN);
@@ -939,11 +991,11 @@ namespace flopoco{
 				raw+=maxVal;
 			}
 			
-			assert((raw>=0) && (raw<maxVal));
-			
 			if(::flopoco::verbose>=FULL){
 				mpfr_fprintf(stderr, "  %Rg -> raw %Zd\n", outCurr, raw.get_mpz_t());
 			}
+			assert((raw>=0) && (raw<maxVal));
+			
 			tc->addExpectedOutput("R", raw);
 			
 			mpfr_add_d(outCurr, outCurr, outDelta, MPFR_RNDN);

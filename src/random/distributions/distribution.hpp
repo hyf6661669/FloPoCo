@@ -77,6 +77,14 @@ class DiscreteDistribution
 public:
 	virtual T Pmf(const T &x) const=0;
 
+	virtual void Pmf(const std::vector<T> &x, std::vector<T> &pmf) const
+	{
+		pmf.resize(x.size());
+		for(unsigned i=0;i<x.size();i++){
+			pmf[i]=Pmf(x[i]);
+		}
+	}
+
 	typedef boost::shared_ptr<DiscreteDistribution> TypePtr;
 };
 

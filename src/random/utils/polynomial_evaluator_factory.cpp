@@ -3,21 +3,10 @@
 #include <sstream>
 #include <math.h>	// for NaN
 
+#include <boost/lexical_cast.hpp>
+#include <mpreal.h>
 
-
-/* header of libraries to manipulate multiprecision numbers
-  There will be used in the emulate function to manipulate arbitraly large
-  entries */
-#include "gmp.h"
-#include "mpfr.h"
-#include "FPNumber.hpp"
-
-// include the header of the Operator
-#include "TableTransform.hpp"
 #include "random/utils/operator_factory.hpp"
-
-// For twos complement stuff
-#include "CLTTransform.hpp"
 
 #include "FixedPointFunctions/PolynomialEvaluator.hpp"
 
@@ -31,7 +20,7 @@ extern vector<Operator *> oplist;
 namespace random
 {
 
-static void PolynomialEvaluatorTableFactoryUsage(std::ostream &dst)
+static void PolynomialEvaluatorFactoryUsage(std::ostream &dst)
 {
 	OperatorFactory::classic_OP(dst, "PolynomialEvaluator", "degree targetPrec inputFormat coeffFormat+", false);
 	dst << "    Create a polynomial evaluator with given input and coefficient formats\n";
@@ -98,7 +87,7 @@ static Operator *PolynomialEvaluatorFactoryParser(Target *target ,const std::vec
 		throw std::string("PolynomialEvaluatorFactory - Not enough arguments, check usage.");
 	
 	int degree=boost::lexical_cast<int>(args[0]);
-	if(args.size()<4+degree)
+	if((int)args.size()<4+degree)
 		throw std::string("PolynomialEvaluatorFactory - Not enough arguments, check usage.");
 	
 	int targetPrec=boost::lexical_cast<int>(args[1]);
@@ -109,11 +98,13 @@ static Operator *PolynomialEvaluatorFactoryParser(Target *target ,const std::vec
 	}
 	consumed=4+degree;
 	
-	return PolynomialEvaluator::Create(Target *target,
+	mpfr::mpreal approxError(0.0);
+	
+	return PolynomialEvaluator::Create(target,
 		coeffFormats,	//! Format for each of the coefficients, with coeffFormats[0]=a0, etc.
-		format_t inputFormat,	//! The polynomial input format
+		inputFormat,	//! The polynomial input format
 		targetPrec,				//! The LSB to which the evaluator should be accurate
-		0.0					//! The maximum approximation error which already occurred. Must have approxError < 2^(outputLsb-1)
+		approxError.mpfr_ptr()	//! The maximum approximation error which already occurred. Must have approxError < 2^(outputLsb-1)
 	);
 }
 

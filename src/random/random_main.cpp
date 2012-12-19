@@ -65,6 +65,10 @@ void pinOperator(boost::shared_ptr<Operator> op)
 	g_pinOperator.push_back(op);
 }
 
+namespace flopoco{ namespace random{
+	void PolynomialEvaluator_registerFactory();
+}; }; 
+
 void random_register_factories()
 {
 	flopoco::random::TableTransform::registerFactory();
@@ -72,6 +76,8 @@ void random_register_factories()
 	flopoco::random::GRNGTableTransform_registerFactory();
 	flopoco::random::StaticQuantiser_registerFactory();
 	flopoco::random::FloatApprox_registerFactory();
+	
+	flopoco::random::PolynomialEvaluator_registerFactory();
 }
 	
 void random_usage(char *name, string opName = ""){

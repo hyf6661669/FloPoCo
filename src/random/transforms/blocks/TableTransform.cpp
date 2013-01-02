@@ -149,7 +149,7 @@ typename Distribution<mpfr::mpreal>::TypePtr TableTransform::nonUniformOutputDis
 			}
 		}
 		
-		m_distribution= boost::make_shared<TableDistribution<mpfr::mpreal> >(&contents[0], &contents[contents.size()]);
+		m_distribution= boost::make_shared<TableDistribution<mpfr::mpreal> >(&contents[0], &contents[contents.size()], m_wF);
 		m_distributionPrec=prec;
 	}
 	return m_distribution;

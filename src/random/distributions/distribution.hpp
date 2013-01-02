@@ -75,41 +75,69 @@ class DiscreteDistribution
 	: public Distribution<T>
 {
 public:
+	//! If the set is finite then return a positive number, else return 0
+	virtual uint64_t ElementCount() const=0;
+
+	virtual int64_t IndexFromRange(const T &x) const=0;
+
+	virtual T RangeFromIndex(int64_t x) const=0;
+
+	virtual int64_t ClosestIndexFromRange(const T &x) const=0;
+
 	virtual T Pmf(const T &x) const=0;
 
-	virtual void Pmf(const std::vector<T> &x, std::vector<T> &pmf) const
+	virtual T Cdf(const T &x) const=0;
+	
+	virtual std::pair<int64_t,int64_t> IndexSupport() const
 	{
-		pmf.resize(x.size());
-		for(unsigned i=0;i<x.size();i++){
-			pmf[i]=Pmf(x[i]);
+		if(ElementCount()==0)
+			throw std::logic_error("IndexSupport - Cannot get support of infinite range.");
+		std::pair<T,T> support=this->Support();
+		return std::make_pair(IndexFromRange(support.first), IndexFromRange(support.second));
+	}
+	
+	virtual T PmfByIndex(int64_t index) const
+	{ return Pmf(RangeFromIndex(index)); }
+	
+	virtual T CdfByIndex(int64_t index) const
+	{ return Cdf(RangeFromIndex(index)); }
+	
+	virtual std::pair<T,T> ElementByIndex(int64_t index) const
+	{ return std::make_pair(RangeFromIndex(index), PmfByIndex(index)); }
+	
+	virtual void PmfByIndex(int64_t begin, int64_t end, T *pmf) const
+	{
+		while(begin!=end){
+			*pmf++ = PmfByIndex(begin);
+			++begin;
+		}
+	}
+	
+	virtual void CdfByIndex(int64_t begin, int64_t end, T *cdf) const
+	{
+		while(begin!=end){
+			*cdf++ = CdfByIndex(begin);
+			++begin;
+		}
+	}
+	
+	virtual void RangeByIndex(int64_t begin, int64_t end, T *range) const
+	{
+		while(begin!=end){
+			*range++ = RangeFromIndex(begin);
+			++begin;
+		}
+	}
+	
+	virtual void ElementsByIndex(int64_t begin, int64_t end, std::pair<T,T> *range) const
+	{
+		while(begin!=end){
+			*range++ = ElementByIndex(begin);
+			++begin;
 		}
 	}
 
 	typedef boost::shared_ptr<DiscreteDistribution> TypePtr;
-};
-
-/*! A distribution consisting of multiple distinct points. Note that elements must be returned in sorted order. */
-template<class T>
-class EnumerableDistribution
-	: public DiscreteDistribution<T>
-{
-public:
-	virtual uint64_t ElementCount() const=0;
-
-	// All legal distributions contain at least one element. Elements are returned as (x,p)
-	virtual std::pair<T,T> GetElement(uint64_t index) const=0;
-
-	virtual void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
-	{
-		if((end>begin) || (end>ElementCount()))
-			throw std::range_error("Requested elements are out of range.");
-		while(begin!=end){
-			dest[begin]=GetElement(begin);
-			begin++;
-		}
-	}
-	
-	typedef boost::shared_ptr<EnumerableDistribution> TypePtr;
 };
 
 }; // random

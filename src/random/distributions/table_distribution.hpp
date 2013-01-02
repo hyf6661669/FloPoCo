@@ -15,18 +15,24 @@ namespace flopoco
 namespace random
 {
 
+/* This implements a distribution based on a table of (x,p) pairs. It is a bit odd,
+	as it internally remembers all the discting pairs, but when viewed as a distribution
+	we have to collapse all identical x values down to a single point.
+*/
 template<class T>
 class TableDistribution
-	: public EnumerableDistribution<T>
+	: public DiscreteDistribution<T>
 {
 public:	
 	typedef boost::shared_ptr<TableDistribution> TypePtr;
 private:
 	bool m_isSymmetric;
+	int m_fracBits;
 
 	// Elements are sorted as (x,p). Repeated x is allowed. Must have 0<=p<=1, so zero probability elements are allowed.
 	typedef std::vector<std::pair<T,T> > storage_t;
 	storage_t m_elements;
+	std::vector<T> m_range, m_pdf, m_cdf;
 	
 	mutable std::vector<T> m_rawMoments;
 
@@ -79,11 +85,41 @@ private:
 				}
 			}
 		}
+		
+		m_range.resize(m_elements.size(), 0);
+		m_pdf.resize(m_elements.size(), 0);
+		m_cdf.resize(m_elements.size(), 0);
+		
+		int dest_i=-1;
+		T dest_x=m_elements[0].first-1;
+		T running_acc=0.0;
+		for(int i=0;i<(int)m_elements.size();i++){
+			if(m_elements[i].first!=dest_x){
+				dest_i++;
+				dest_x=m_elements[i].first;
+				m_range[dest_i]=dest_x;
+				
+				if(m_fracBits!=INT_MAX){
+					T tmp=ldexp(round(ldexp(dest_x,m_fracBits)),-m_fracBits);
+					if(tmp!=dest_x)
+						throw std::string("Table is being created with fixed-point specification, but points are not aligned.");
+				}
+			}
+			T p=m_elements[i].second;
+			running_acc += p;
+			m_pdf[dest_i] += p;
+			m_cdf[dest_i] = running_acc;
+		}
+		
+		m_range.resize(dest_i+1);
+		m_cdf.resize(dest_i+1);
+		m_pdf.resize(dest_i+1);
 	}
 public:
 	template<class TC>
-	TableDistribution(const TC &src)
+	TableDistribution(const TC &src, int fracBits=INT_MAX)
 		: m_isSymmetric(true)
+		, m_fracBits(fracBits)
 	{
 		if(src.size()==0)
 			throw std::invalid_argument("TableDistribution - Table must contain at least one element.");
@@ -96,8 +132,9 @@ public:
 		CompleteInit(false, acc);
 	}
 
-	TableDistribution(const T *begin, const T *end)
+	TableDistribution(const T *begin, const T *end, int fracBits=INT_MAX)
 		: m_isSymmetric(true)
+		, m_fracBits(fracBits)
 	{
 		if(end<=begin)
 			throw std::invalid_argument("TableDistribution - Table must contain at least one element.");
@@ -115,6 +152,12 @@ public:
 		}
 
 		CompleteInit(sorted, 1.0);
+	}
+	
+	//! If the table has a specific resolution this will be returned, otherwise INT_MAX is returned
+	int FixedPointResolution() const
+	{
+		return m_fracBits;
 	}
 	
 	T RawMoment(unsigned k) const
@@ -153,47 +196,62 @@ public:
 	{ return m_isSymmetric; } // this is more strict than symmetric about the mean, but still is valid
 		
 	virtual std::pair<T,T> Support() const
-	{ return std::make_pair(m_elements.front().first, m_elements.back().second); }
+	{ return std::make_pair(m_elements.front().first, m_elements.back().first); }
 		
 	virtual T Pmf(const T &x) const
 	{
 		// Elements must have non-negative probability, so we always have (x-eps,p) < (x,-1) < (x,p)
-		typename storage_t::const_iterator it=std::lower_bound(m_elements.begin(), m_elements.end(), std::pair<T,T>(x,-1.0));
-		T acc=0.0;
-		while( it!=m_elements.end() ? it->first==x : false ){
-			acc+=it->second;
-			++it;
-		}
-		return acc;
+		typename std::vector<T>::const_iterator it=std::lower_bound(m_range.begin(), m_range.end(), x);
+		if(it==m_range.end())
+			return 0;
+		if(*it!=x)
+			return 0;
+		return m_pdf[it-m_range.begin()];
 	}
 	
 	virtual T Cdf(const T &x) const
 	{
-		if(x>=m_elements.back().first)
+		typename std::vector<T>::const_iterator it=std::lower_bound(m_range.begin(), m_range.end(), x);
+		if(it==m_range.end())
 			return 1.0;
-		typename SelectAccumulator<T>::type acc;
-		acc=0.0;
-		for(unsigned i=0;i<m_elements.size();i++){
-			if(x<m_elements[i].first)
-				return acc;
-			acc+=m_elements[i].second;
+		if(*it != x){
+			if(it==m_range.begin())
+				return 0.0;
+			else
+				return m_cdf[it-m_range.begin()-1];
 		}
-		assert(0);
+		return m_cdf[it-m_range.begin()];
 	}
 
 	virtual uint64_t ElementCount() const
 	{ return m_elements.size(); }
-
-	// All legal distributions contain at least one element.
-	virtual std::pair<T,T> GetElement(uint64_t index) const
-	{ return m_elements.at(index); }
-
-	virtual void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
+	
+	virtual int64_t IndexFromRange(const T &x) const
 	{
-		std::cerr<<"begin="<<begin<<", end="<<end<<"\n";
-		if((end<begin) || (end>ElementCount()))
-			throw std::range_error("Requested elements are out of range.");
-		std::copy(m_elements.begin()+begin, m_elements.begin()+end, dest);
+		typename std::vector<T>::const_iterator it=std::lower_bound(m_range.begin(), m_range.end(), x);
+		if(it==m_range.end())
+			throw std::string("IndexFromRange - Value ")+boost::lexical_cast<std::string>(x)+" is out of range.";
+		if(*it!=x)
+			throw std::string("IndexFromRange - Value ")+boost::lexical_cast<std::string>(x)+" does not occur.";
+		return it-m_range.begin();
+	}
+	
+	virtual int64_t ClosestIndexFromRange(const T &x) const
+	{
+		typename std::vector<T>::const_iterator it=std::lower_bound(m_range.begin(), m_range.end(), x);
+		if(it==m_range.end())
+			return m_range.size()-1;
+		return it-m_range.begin();
+	}
+
+	virtual T RangeFromIndex(int64_t x) const
+	{
+		return m_range.at(x);
+	}
+
+	std::vector<std::pair<T,T> > GetElements() const
+	{
+		return m_elements;
 	}
 	
 	TypePtr ApplyPolynomial(const std::vector<T> &poly) const

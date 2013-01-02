@@ -65,7 +65,8 @@ bool OperatorFactory::classic_parseCommandLine(int argc, char* argv[], Target *t
 	try{
 		int consumed=0;
 		Operator *res=factory->Parse(target, args, consumed);
-		addOperator(res);
+		if(res!=NULL)	// Some factories don't actually create an operator
+			addOperator(res);
 		assert((consumed>=0) && (consumed<=(int)args.size()));
 		i+=consumed;
 		

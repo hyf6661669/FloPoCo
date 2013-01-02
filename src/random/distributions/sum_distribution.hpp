@@ -18,17 +18,20 @@ namespace random
 	std::vector<T> convolve(const std::vector<T> &a, const std::vector<T> &b);
 	
 	template<class T,class TF>
-	typename EnumerableDistribution<T>::TypePtr ConvolveDistributions(
-		typename EnumerableDistribution<T>::TypePtr a,
-		typename EnumerableDistribution<T>::TypePtr b,
+	typename DiscreteDistribution<T>::TypePtr ConvolveDistributions(
+		typename DiscreteDistribution<T>::TypePtr a,
+		typename DiscreteDistribution<T>::TypePtr b,
 		const TF &f
 	){
 		if(a->ElementCount() * b->ElementCount() > pow(2.0,40))
 			throw std::runtime_error("Attempt to perform additive convolution with more than 2^40 combinations.");
 		
-		std::vector<std::pair<T,T> > va, vb;
-		a->GetElements(0, a->ElementCount(), &va[0]);
-		b->GetElements(0, b->ElementCount(), &vb[0]);
+		std::pair<int64_t,int64_t> aIndices=a->IndexSupport();
+		std::pair<int64_t,int64_t> bIndices=b->IndexSupport();
+		
+		std::vector<std::pair<T,T> > va(aIndices.second-aIndices.first), vb(bIndices.second-bIndices.first);
+		a->ElementsByIndex(aIndices.first, aIndices.second, &va[0]);
+		b->ElementsByIndex(bIndices.first, bIndices.second, &vb[0]);
 				
 		std::map<T,T> acc;	// should really be a hashtable
 		
@@ -56,10 +59,16 @@ namespace random
 			throw std::runtime_error("AddDistributions - histograms with unequal ranges are not supported yet.");
 		
 		std::vector<T> va(a->ElementCount()), vb(b->ElementCount());
-		a->GetProbabilities(0, a->ElementCount(), &va[0]);
-		b->GetProbabilities(0, b->ElementCount(), &vb[0]);
+		a->PmfByIndex(0, a->ElementCount(), &va[0]);
+		b->PmfByIndex(0, b->ElementCount(), &vb[0]);
 		
 		std::vector<T> vr=convolve(va,vb);
+		
+		if(a->IsSymmetric() && b->IsSymmetric()){
+			for(int i=0;i<(int)vr.size()/2;i++){
+				vr[vr.size()-i-1]=vr[i];
+			}
+		}
 		
 		return boost::make_shared<HistogramDistribution<T> >(
 			a->RangeBase()+b->RangeBase(),
@@ -74,9 +83,36 @@ namespace random
 		int k
 	){
 		std::vector<T> va(a->ElementCount());
-		a->GetProbabilities(0, a->ElementCount(), &va[0]);
+		a->PmfByIndex(0, a->ElementCount(), &va[0]);
+		
+		if(a->IsSymmetric()){
+			for(int i=0;i<(int)va.size()/2;i++){
+				assert(va[i]==va[va.size()-i-1]);
+			}
+		}
 		
 		std::vector<T> vr=self_convolve(va, k);
+		
+		if(a->IsSymmetric()){
+			T origSum=sum(vr.begin(), vr.end());
+			
+			for(int i=0;i<(int)vr.size()/2;i++){
+				std::cerr<<i<<" / "<<(vr.size()-i-1)<<" = "<<vr[i]<<" / "<<vr[vr.size()-i-1]<<"\n";
+				T avg=(vr[vr.size()-i-1]+vr[i])>>1;
+				vr[vr.size()-i-1]=avg;
+				vr[i]=avg;
+			}
+			assert(vr.front()==vr.back());
+			
+			T currSum=sum(vr.begin(), vr.end());
+			
+			std::cerr<<"OrigSum="<<origSum<<", currSum="<<currSum<<"\n";
+		}
+		
+		for(int i=0;i<(int)vr.size();i++){
+			if(vr[i]<0)
+				vr[i]=0;
+		}
 		
 		return boost::make_shared<HistogramDistribution<T> >(
 			k*a->RangeBase(),
@@ -86,9 +122,9 @@ namespace random
 	}
 	
 	template<class T>
-	typename EnumerableDistribution<T>::TypePtr AddDistributions(
-		typename EnumerableDistribution<T>::TypePtr a,
-		typename EnumerableDistribution<T>::TypePtr b
+	typename DiscreteDistribution<T>::TypePtr AddDistributions(
+		typename DiscreteDistribution<T>::TypePtr a,
+		typename DiscreteDistribution<T>::TypePtr b
 	){
 		typename HistogramDistribution<T>::TypePtr ha=boost::dynamic_pointer_cast<HistogramDistribution<T> >(a);
 		typename HistogramDistribution<T>::TypePtr hb=boost::dynamic_pointer_cast<HistogramDistribution<T> >(b);
@@ -104,8 +140,8 @@ namespace random
 	}
 	
 	template<class T>
-	typename EnumerableDistribution<T>::TypePtr SelfAddDistributions(
-		typename EnumerableDistribution<T>::TypePtr a,
+	typename DiscreteDistribution<T>::TypePtr SelfAddDistributions(
+		typename DiscreteDistribution<T>::TypePtr a,
 		int k
 	){
 		if(k<=0)
@@ -114,13 +150,30 @@ namespace random
 			return a;
 		
 		typename HistogramDistribution<T>::TypePtr ha=boost::dynamic_pointer_cast<HistogramDistribution<T> >(a);
+		typename TableDistribution<T>::TypePtr ta=boost::dynamic_pointer_cast<TableDistribution<T> >(a);
+		
+		if( !!ta && (pow((double)a->ElementCount(), k) > 100000)){
+			int fb=ta->FixedPointResolution();
+			if(fb != INT_MAX){
+				std::vector<std::pair<T,T> > elts=ta->GetElements();
+				
+				int iFirst=boost::math::tools::real_cast<long>(ldexp(elts.front().first,fb)), iLast=boost::math::tools::real_cast<long>(ldexp(elts.back().first,fb));
+				std::vector<T> pdf(iLast-iFirst+1);
+				
+				for(int i=0;i<(int)elts.size();i++){
+					pdf[boost::math::tools::real_cast<long>(ldexp(elts[i].first,fb)-iFirst)] += elts[i].second;
+				}
+				
+				ha=boost::make_shared<HistogramDistribution<T> >(elts.front().first, T(pow(2.0,-fb)), pdf);
+			}
+		}
 		
 		if(ha){
 			return SelfAddHistogramDistributions<T>(ha,k);
 		}
 		
-		typename EnumerableDistribution<T>::TypePtr res;
-		typename EnumerableDistribution<T>::TypePtr ss=a;
+		typename DiscreteDistribution<T>::TypePtr res;
+		typename DiscreteDistribution<T>::TypePtr ss=a;
 		while(k){
 			if(k&1){
 				if(!res)
@@ -137,15 +190,15 @@ namespace random
 		return res;
 	}
 	
+	/*
 	template<class T>
-	typename EnumerableDistribution<T>::TypePtr SubtractDistributions(
-		typename EnumerableDistribution<T>::TypePtr a,
-		typename EnumerableDistribution<T>::TypePtr b
+	typename DiscreteDistribution<T>::TypePtr SubtractDistributions(
+		typename DiscreteDistribution<T>::TypePtr a,
+		typename DiscreteDistribution<T>::TypePtr b
 	){
-		if(a->ElementCount() < b->ElementCount)
-			return AddDistributions(b,a);
 		return ConvolveDistributions(a,b,std::minus<T>());
 	}
+	*/
 	
 };
 };

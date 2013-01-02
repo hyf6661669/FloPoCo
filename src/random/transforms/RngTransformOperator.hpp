@@ -6,6 +6,7 @@
 #include "random/distributions/distribution.hpp"
 
 #include "mpreal.h"
+#include "random/utils/mpreal/boost_math_mpreal.hpp"
 
 namespace flopoco
 {
@@ -41,7 +42,6 @@ public:
 /*! Used for transforms which are able to precisely specify their output distribution. Not all
 	transforms can do this.
 */
-template<class T>
 class IRngTransformDistributions
 {
 public:

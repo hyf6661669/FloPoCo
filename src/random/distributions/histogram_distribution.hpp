@@ -9,6 +9,7 @@
 #include <numeric>
 
 #include "random/utils/mpreal/boost_math_mpreal.hpp"
+#include "random/utils/sum.hpp"
 #include "boost/math/tools/real_cast.hpp"
 
 namespace flopoco
@@ -20,7 +21,7 @@ namespace random
 	spaced set of discrete points */
 template<class T>
 class HistogramDistribution
-	: public EnumerableDistribution<T>
+	: public DiscreteDistribution<T>
 {
 public:	
 	typedef boost::shared_ptr<HistogramDistribution> TypePtr;
@@ -28,7 +29,7 @@ private:
 	bool m_isSymmetric;
 
 	typedef std::vector<T> storage_t;
-	storage_t m_elements;
+	storage_t m_elements, m_cdf;
 	T m_base, m_step;
 	
 	mutable std::vector<T> m_standardMoments;
@@ -44,16 +45,24 @@ public:
 		if(src.size()==0)
 			throw std::invalid_argument("HistogramDistribution - Table must contain at least one element.");
 		
-		T acc=sum(src.begin(), src.end());
+		m_cdf.resize(src.size());
 		
-		if(fabs(acc-1)>1e-12)
-			throw std::logic_error("HistogramDistribution - Element probabilities are more than 1e-12 from one.");
-		T scale=1.0/acc;
-		for(unsigned i=0;i<src.size();i++){
+		T acc=0.0;
+		for(int i=0;i<(int)src.size();i++){
 			if(m_elements[i] < 0){
 				throw std::logic_error("HistogramDistribution - Negative element probability.");
 			}
+			acc+=m_elements[i];
+			m_cdf[i]=acc;
+		}
+		
+		if(fabs(acc-1)>1e-12)
+			throw std::logic_error("HistogramDistribution - Element probabilities are more than 1e-12 from one.");
+		
+		T scale=1.0/acc;
+		for(unsigned i=0;i<src.size();i++){	
 			m_elements[i] = src[i] * scale;
+			m_cdf[i] = m_cdf[i] * scale;
 		}
 		
 		for(unsigned i=0;i<src.size()/2;i++){
@@ -80,10 +89,26 @@ public:
 			}else{
 				acc=0.0;
 				T curr=m_base;
-				for(size_t i=0;i<m_elements.size();i++){
-					acc += pow(curr, kc) * m_elements[i];
-					curr+=m_step;
+				if(k>1)
+					curr=curr-m_standardMoments[1];
+				if(m_isSymmetric){
+					for(size_t i=0;i<m_elements.size()/2;i++){
+						acc += 2 * pow(curr, kc) * m_elements[i];
+						curr+=m_step;
+					}
+					if(m_elements.size()%2){
+						acc += pow(curr, kc) * m_elements[m_elements.size()/2];
+					}
+				}else{
+					for(size_t i=0;i<m_elements.size();i++){
+						acc += pow(curr, kc) * m_elements[i];
+						curr+=m_step;
+					}
 				}
+				if(k==2)
+					acc=sqrt(acc);
+				if(k>2)
+					acc=acc / pow(m_standardMoments[2],k);
 				m_standardMoments.push_back(acc);
 			}
 		}
@@ -113,44 +138,76 @@ public:
 	
 	virtual T Cdf(const T &x) const
 	{
-		if(x<m_base)
-			return 0;
-		if(x > (m_base+m_step*(m_elements.size()-1)))
-			return 1;
-		
 		T vi=(x-m_base)/m_step;
-		size_t i=boost::math::tools::real_cast<long>(floor(vi));
-		
-		return sum(m_elements.begin(), m_elements.begin()+i+1);
+		T ii=floor(vi);
+		if(ii<0)
+			return 0;
+		if(ii>=m_cdf.size())
+			return 1.0;
+		size_t i=boost::math::tools::real_cast<long>(ii);
+		return m_cdf[i];
 	}
 
 	virtual uint64_t ElementCount() const
 	{ return m_elements.size(); }
-
-	// All legal distributions contain at least one element.
-	virtual std::pair<T,T> GetElement(uint64_t index) const
-	{ return std::make_pair(m_base+boost::math::tools::real_cast<T>(index)*m_step, m_elements.at(index)); }
-
-	void GetElements(uint64_t begin, uint64_t end, std::pair<T,T> *dest) const
+	
+	virtual int64_t IndexFromRange(const T &x) const
 	{
-		if((end<begin) || (end>ElementCount()))
-			throw std::range_error("Requested elements are out of range.");
-		T curr=m_base+m_step*boost::math::tools::real_cast<T>(begin);
-		const T *src=&m_elements[begin];
-		for(int i=0;i<(int)(end-begin);i++){
-			*dest=std::make_pair(curr, *src);
-			curr+=m_step;
-			src++;
-			dest++;
-		}
+		T vi=(x-m_base)/m_step;
+		T ii=round(vi);
+		if(vi!=ii)
+			throw std::invalid_argument("RangeToIndex - Value is not aligned to range.");
+		if((ii<0) || (ii>=m_elements.size()))
+			throw std::invalid_argument("RangeToIndex - Value is not aligned to range.");
+		return boost::math::tools::real_cast<long>(ii);
 	}
 	
-	void GetProbabilities(uint64_t begin, uint64_t end, T *dest) const
+	virtual int64_t ClosestIndexFromRange(const T &x) const
 	{
-		if((end<begin) || (end>ElementCount()))
-			throw std::range_error("Requested elements are out of range.");
+		T vi=(x-m_base)/m_step;
+		T ii=round(vi);
+		ii=std::max(T(0), std::min(T(m_elements.size()), ii));
+		return boost::math::tools::real_cast<long>(ii);
+	}
+
+	virtual T RangeFromIndex(int64_t index) const
+	{
+		if((index<0) || (index>=m_elements.size()))
+			throw std::invalid_argument("IndexToRange - Index is not valid.");
+		T xx=index;
+		return m_base+xx*m_step;
+	}
+	
+	virtual T PmfByIndex(int64_t index) const
+	{
+		assert((index>=0) && (index<m_elements.size()));
+		return m_elements[index];
+	}
+	
+	virtual T CdfByIndex(int64_t index) const
+	{ 
+		assert((index>=0) && (index<m_cdf.size()));
+		return m_cdf[index];
+	}
+	
+	virtual void PmfByIndex(int64_t begin, int64_t end, T *pmf) const
+	{
+		if((begin<0) || (end>m_elements.size()))
+			throw std::range_error("PmfByIndex - indices out of range.");
+		if(begin>end)
+			throw std::range_error("PmfByIndex - indices are not ordered.");
 		
-		std::copy(m_elements.begin()+ begin, m_elements.begin()+end, dest);
+		std::copy(m_elements.begin()+begin, m_elements.begin()+end, pmf);
+	}
+	
+	virtual void CdfByIndex(int64_t begin, int64_t end, T *cdf) const
+	{
+		if((begin<0) || (end>m_elements.size()))
+			throw std::range_error("PdfByIndex - indices out of range.");
+		if(begin>end)
+			throw std::range_error("PdfByIndex - indices are not ordered.");
+		
+		std::copy(m_cdf.begin()+begin, m_cdf.begin()+end, cdf);
 	}
 };
 

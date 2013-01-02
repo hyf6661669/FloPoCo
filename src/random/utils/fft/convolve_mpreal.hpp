@@ -2,6 +2,7 @@
 #define flopoco_random_utils_convolve_mpreal_hpp
 
 #include <complex>
+#include <vector>
 
 #include "random/utils/fft/fft.hpp"
 #include "random/utils/fft/fft_mpreal.hpp"
@@ -18,17 +19,16 @@ namespace random
 		unsigned nn=detail::NextBinaryPower(n);
 		
 		if(wPrec==0){
-			mpfr_prec_t wPrec=mpfr_get_default_prec();
+			wPrec=mpfr_get_default_prec();
 			for(unsigned i=0;i<a.size();i++){
-				wPrec=std::max(wPrec, a[i].get_prec());
+				wPrec=std::max(wPrec, (unsigned)a[i].get_prec());
 			}
 			for(unsigned i=0;i<b.size();i++){
-				wPrec=std::max(wPrec, b[i].get_prec());
+				wPrec=std::max(wPrec, (unsigned)b[i].get_prec());
 			}
-			wPrec=2*wPrec;
 		}
 		
-		std::vector<mpfr::mpreal> aa(nn, mpfr::mpreal(0,wPrec)), bb(nn, mpfr::mpreal(0,wPrec));
+		std::vector<mpfr::mpreal> aa(2*nn, mpfr::mpreal(0,wPrec)), bb(2*nn, mpfr::mpreal(0,wPrec));
 		for(unsigned i=0;i<a.size();i++){
 			mpfr_set(aa[2*i].mpfr_ptr(), a[i].mpfr_srcptr(), MPFR_RNDN);
 		}
@@ -65,17 +65,16 @@ namespace random
 			return a;
 		
 		if(wPrec==0){
-			mpfr_prec_t wPrec=mpfr_get_default_prec();
+			wPrec=mpfr_get_default_prec();
 			for(unsigned i=0;i<a.size();i++){
-				wPrec=std::max(wPrec, a[i].get_prec());
+				wPrec=std::max(wPrec, (unsigned)a[i].get_prec());
 			}
-			wPrec=k*wPrec;
 		}
 		
-		unsigned n=a.size()*k-1;
+		unsigned n=a.size()*k-(k-1);
 		unsigned nn=detail::NextBinaryPower(n);
 		
-		std::vector<mpfr::mpreal> aa(nn, mpfr::mpreal(0,wPrec));
+		std::vector<mpfr::mpreal> aa(2*nn, mpfr::mpreal(0,wPrec));
 		for(unsigned i=0;i<a.size();i++){
 			mpfr_set(aa[2*i].mpfr_ptr(), a[i].mpfr_srcptr(), MPFR_RNDN);
 		}
@@ -102,24 +101,13 @@ namespace random
 	template<>
 	inline std::vector<mpfr::mpreal> convolve(const std::vector<mpfr::mpreal> &a, const std::vector<mpfr::mpreal> &b)
 	{
-		mpfr_prec_t wPrec=mpfr_get_default_prec();
-		for(unsigned i=0;i<a.size();i++){
-			wPrec=std::max(wPrec, a[i].get_prec());
-		}
-		for(unsigned i=0;i<b.size();i++){
-			wPrec=std::max(wPrec, b[i].get_prec());
-		}
-		return convolve_mpreal(a,b,wPrec);
+		return convolve_mpreal(a,b,0);
 	}
 	
 	template<>
 	inline std::vector<mpfr::mpreal> self_convolve(const std::vector<mpfr::mpreal> &a, unsigned k)
 	{
-		mpfr_prec_t wPrec=mpfr_get_default_prec();
-		for(unsigned i=0;i<a.size();i++){
-			wPrec=std::max(wPrec, a[i].get_prec());
-		}
-		return self_convolve_mpreal(a,k,wPrec);
+		return self_convolve_mpreal(a,k,0);
 	}
 	
 	

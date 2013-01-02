@@ -1,6 +1,8 @@
 #include "fft_mpreal.hpp"
 #include "fft_double.hpp"
 
+#include "convolve_mpreal.hpp"
+
 #include <vector>
 #include <stdlib.h>
 
@@ -118,6 +120,19 @@ void compare_three(unsigned n, unsigned wPrec)
 	gmp_randclear(state);
 }
 
+void compare_convolve(int n, int k, int prec)
+{
+	std::vector<mpfr::mpreal> ones(n, mpfr::mpreal(1,prec));
+	
+	std::vector<mpfr::mpreal>  res(flopoco::random::self_convolve(ones, k));
+	
+	for(int i=0;i<res.size()/2;i++){
+		mpfr::mpreal fwd=res[i], rev=res[res.size()-i-1];
+		
+		std::cerr<<i<<", "<<fwd<<", "<<rev<<", "<<fwd-rev<<"\n";
+	}
+}
+
 int main(int argc, char *argg[])
 {
 	srand48(1);
@@ -147,7 +162,7 @@ int main(int argc, char *argg[])
 	
 	for(unsigned i=8;i<=1024;i*=2){
 		for(unsigned w=16;w<=128;w+=4){
-			compare_three(i,w);
+			//compare_three(i,w);
 		}
 	}
 	
@@ -156,6 +171,8 @@ int main(int argc, char *argg[])
 			//compare_two(i,w);
 		}
 	}
+	
+	compare_convolve(256, 16, 128);
 	
 	return 0;
 }

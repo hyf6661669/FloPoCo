@@ -145,9 +145,6 @@ namespace random
 			}
 			
 			if(inverse){
-				mpfr::mpreal scale(1.0, wPrec);
-				scale=1.0;
-				scale=scale/nn;
 				// Divide everything by nn. Given nn is a binary power, this is just shifting
 				int places=(int)round(log2(nn));
 				for(unsigned i=0;i<2*nn;i++){

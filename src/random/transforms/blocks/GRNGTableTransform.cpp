@@ -127,7 +127,7 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 	
 	std::vector<T> contents(current->ElementCount());
 	for(int i=0;i<n;i++){
-		contents[i]=current->GetElement(i).first;
+		contents[i]=current->RangeFromIndex(i);
 	}
 	
 	if(::flopoco::verbose>=INFO)
@@ -224,7 +224,7 @@ std::vector<mpz_class> BuildTable(
 	std::vector<mpz_class> res(n/2);
 	T scale=pow(2.0, wF);
 	for(unsigned i=0;i<res.size();i++){
-		res[i]=(mpz_class)round(scale*corrected->GetElement(i+n/2).first);
+		res[i]=(mpz_class)round(scale*corrected->RangeFromIndex(i+n/2));
 	}
 	
 	return res;
@@ -248,7 +248,30 @@ static void GRNGTableFactoryUsage(std::ostream &dst)
 	dst << "      The transform will take a (k+1) bit uniform input, and produce a (w+1) bit signed output.\n";
 }
 
-
+TableTransform *MakeGRNGTable(Target *target, int k, int wF, mpfr::mpreal stddev, std::string correction, std::string quantisation)
+{
+	if(k<1)
+		throw std::string("TableFactory - k must be a positive integer.");
+	if(wF<1)
+		throw std::string("TableFactory - w must be a positive integer.");
+	
+	if(wF>32)
+		throw std::string("TableFactory - w must be less than 32 (currently table is built in double-precision).");
+	
+	std::vector<mpz_class> contents=BuildTable<double>(k, stddev.toDouble(), wF, correction, quantisation);
+	unsigned wO=0;
+	for(unsigned i=0;i<contents.size();i++){
+		unsigned ww=mpz_sizeinbase(contents[i].get_mpz_t(), 2);
+		if(::flopoco::verbose>=DEBUG){
+			std::cerr<<"table["<<i<<"]="<<contents[i]<<", w="<<ww<<"\n";
+		}
+		wO=std::max(wO, ww);
+	}
+	
+	TableTransform *result=new TableTransform(target, wO, contents, true, wF);
+	
+	return result;
+}
 
 static Operator *GRNGTableFactoryParser(Target *target ,const std::vector<std::string> &args,int &consumed)
 {
@@ -262,36 +285,8 @@ static Operator *GRNGTableFactoryParser(Target *target ,const std::vector<std::s
 	double stddev=parseSollyaConstant(args[2]);
 	std::string correction=args[3];
 	std::string quantisation=args[4];
-
-	if(k<1)
-		throw std::string("TableFactory - k must be a positive integer.");
-	if(wF<1)
-		throw std::string("TableFactory - w must be a positive integer.");
 	
-	if(wF>32)
-		throw std::string("TableFactory - w must be less than 32 (currently table is built in double-precision).");
-	
-	std::vector<mpz_class> contents=BuildTable<double>(k, stddev, wF, correction, quantisation);
-	unsigned wO=0;
-	for(unsigned i=0;i<contents.size();i++){
-		unsigned ww=mpz_sizeinbase(contents[i].get_mpz_t(), 2);
-		if(::flopoco::verbose>=DEBUG){
-			std::cerr<<"table["<<i<<"]="<<contents[i]<<", w="<<ww<<"\n";
-		}
-		wO=std::max(wO, ww);
-	}
-	
-	TableTransform *result=new TableTransform(target, wO, contents, true, wF);
-	
-	/*
-	boost::shared_ptr<EnumerableDistribution<mpfr::mpreal> > distribution( boost::dynamic_pointer_cast<EnumerableDistribution<mpfr::mpreal> > (result->nonUniformOutputDistribution(0, 128)));
-	std::vector<std::pair<mpfr::mpreal,mpfr::mpreal> > dist(distribution->ElementCount());
-	distribution->GetElements(0, dist.size(), &dist[0]);
-	for(unsigned i=0;i<dist.size();i++){
-		std::cerr<<"  "<<dist[i].first<<", "<<dist[i].second<<"\n";
-	}*/
-	
-	return result;
+	return MakeGRNGTable(target, k, wF, stddev, correction, quantisation);
 }
 
 void GRNGTableTransform_registerFactory()

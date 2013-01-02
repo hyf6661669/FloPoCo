@@ -16,6 +16,7 @@
 #include "CLTTransform.hpp"
 
 #include "random/utils/operator_factory.hpp"
+#include "random/distributions/histogram_distribution.hpp"
 
 using namespace std;
 
@@ -101,6 +102,33 @@ TestCase* CLTTransform::buildRandomTestCase(int i)
 	emulate(tc);
 	
   	return tc;
+}
+
+typename Distribution<mpfr::mpreal>::TypePtr CLTTransform::nonUniformOutputDistribution(int i, unsigned prec) const
+{
+	int width=m_baseWidth;
+	
+	std::vector<mpfr::mpreal> probs( (1<<width)*2-1);
+	
+	mpfr::mpreal scale(1<<(2*width), prec);
+	scale=1/scale;
+	
+	for(int i=0;i<(1<<width);i++){
+		probs[i]=mpfr::mpreal(i+1, prec)*scale;
+	}
+	for(int i=(1<<width);i<probs.size();i++){
+		probs[i]=(probs.size()-i)*scale;
+	}
+	
+	mpfr::mpreal acc(0, prec);
+	for(int i=0;i<probs.size();i++){
+		acc+=probs[i];
+		std::cerr<<i<<", "<<probs[i]<<", "<<acc<<"\n";
+	}
+	
+	HistogramDistribution<mpfr::mpreal>::TypePtr res=boost::make_shared<HistogramDistribution<mpfr::mpreal> >(-(1<<width)+1, 1, probs);
+	
+	return res;
 }
 
 static void CLTFactoryUsage(std::ostream &dst)

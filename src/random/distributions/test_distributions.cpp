@@ -3,12 +3,14 @@
 #include "table_distribution.hpp"
 #include "histogram_distribution.hpp"
 #include "gaussian_distribution.hpp"
+#include "discrete_gaussian_distribution.hpp"
+#include "quantised_gaussian_distribution.hpp"
 
 #include "sum_distribution.hpp"
 
 #include "moment_conversions.hpp"
 
-#define BOOST_TEST_MODULE BaseTests
+#define BOOST_TEST_MODULE TestDistributions
 #include <boost/test/unit_test.hpp>
 
 using namespace flopoco::random;
@@ -43,7 +45,7 @@ BOOST_AUTO_TEST_CASE(HistogramDistributionTests)
 	BOOST_CHECK_EQUAL(ptr->Cdf(+1), 1);
 	BOOST_CHECK_EQUAL(ptr->Cdf(1.5), 1.0);
 	
-	typename EnumerableDistribution<double>::TypePtr tri=SelfAddHistogramDistribution<double>(ptr,2);
+	typename DiscreteDistribution<double>::TypePtr tri=SelfAddHistogramDistributions<double>(ptr,2);
 	
 	BOOST_CHECK_CLOSE(tri->Pmf(-2.5), 0, 1e-10);
 	BOOST_CHECK_CLOSE(tri->Pmf(-2), 0.0625, 1e-10);
@@ -65,8 +67,10 @@ BOOST_AUTO_TEST_CASE(CLTDistributionTests)
 	
 	TableDistributionPtr clt=flopoco::random::MakeCLTDistribution<double>(3, 2);
 	
-	for(unsigned i=0;i<clt->ElementCount();i++){
-		std::pair<double,double> v=clt->GetElement(i);
+	std::vector<std::pair<double,double> > elements=clt->GetElements();
+	
+	for(unsigned i=0;i<elements.size();i++){
+		std::pair<double,double> v=elements[i];
 		fprintf(stderr, "%lg, %lg\n", v.first, v.second);
 	}
 	
@@ -261,3 +265,169 @@ BOOST_AUTO_TEST_CASE(GaussianDistributionTests)
 	BOOST_CHECK_CLOSE(ptr->InvCdf(0.841344746068543), 1.0*2.0+1.0, 1e-10);
 	BOOST_CHECK_CLOSE(ptr->InvCdf(0.1586552539314573), -1.0*2.0+1.0 , 1e-10);	
 }
+
+BOOST_AUTO_TEST_CASE(DiscreteGaussianDistributionTests)
+{
+	typedef DiscreteGaussianDistribution<double>::TypePtr DiscreteGaussianDistributionPtr;
+	
+	for(double sigma=0.2;sigma<=5.0;sigma*=1.5){
+		for(int fb=-1;fb<=3;fb++){
+			if(ldexp(sigma,fb)<2)
+				continue;
+			
+			DiscreteGaussianDistributionPtr ptr=boost::make_shared<DiscreteGaussianDistribution<double> >(sigma, fb);
+	
+			BOOST_CHECK_CLOSE(ptr->StandardMoment(0),1.0, 1e-8);
+			BOOST_CHECK_CLOSE(ptr->StandardMoment(2),sigma, 1e-8);
+			BOOST_CHECK_CLOSE(ptr->StandardMoment(4),3.0, 1e-8);
+			BOOST_CHECK_CLOSE(ptr->StandardMoment(6),15.0, 1e-8);
+			BOOST_CHECK_CLOSE(ptr->StandardMoment(8),105.0,1e-8);
+			BOOST_CHECK_EQUAL(ptr->StandardMoment(1),0.0);
+			BOOST_CHECK_EQUAL(ptr->StandardMoment(3),0.0);
+			BOOST_CHECK_EQUAL(ptr->StandardMoment(5),0.0);
+			
+			double x_scale=1/(sigma*sigma*2);
+			double p_scale=1/(pow(2.0,fb)*sigma*sqrt(2*3.1415926535897932384626433832795));
+			BOOST_CHECK_CLOSE(ptr->Pmf(0), p_scale, 1e-10);
+			BOOST_CHECK_CLOSE(ptr->Pmf(-1), exp(-x_scale)*p_scale, 1e-10);
+			BOOST_CHECK_CLOSE(ptr->Pmf(1), exp(-x_scale)*p_scale, 1e-10);
+			BOOST_CHECK_CLOSE(ptr->Pmf(-2), exp(-4*x_scale)*p_scale, 1e-10);
+			BOOST_CHECK_CLOSE(ptr->Pmf(2), exp(-4*x_scale)*p_scale, 1e-10);
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE(QuantisedGaussianDistributionFixedTests)
+{
+	typedef QuantisedGaussianDistribution<double>::TypePtr QuantisedGaussianDistributionPtr;
+	
+	QuantisedGaussianDistributionPtr ptr=boost::make_shared<QuantisedGaussianDistribution<double> >(2, 1);
+	
+	const double values[]={
+		5.3312349751089005e-5,
+1.4448072588124639e-4,
+3.6907845427508468e-4,
+8.8902529910844796e-4,
+0.002020137489946,
+0.0043324483630126,
+0.0087744750957384,
+0.016793306448449,
+0.030396361765261,
+0.05208127941522,
+0.084565722351336,
+0.13029451713681,
+0.19078695285251,
+0.2659855290487,
+0.35383023332728,
+0.45026177516989,
+0.54973822483011,
+0.64616976667272,
+0.7340144709513,
+0.80921304714749,
+0.86970548286319,
+0.91543427764866,
+0.94791872058478,
+0.96960363823474,
+0.98320669355155,
+0.99122552490426,
+0.99566755163699,
+0.99797986251005,
+0.99911097470089,
+0.99963092154572,
+0.99985551927412,
+0.99994668765025,
+0.99998146326215
+	};
+	
+	int i=0;
+	for(double x=-8;x<8;x+=0.5){
+		BOOST_CHECK_CLOSE(ptr->Cdf(x), values[i], 1e-10);
+		++i;
+	}
+}
+
+
+BOOST_AUTO_TEST_CASE(QuantisedGaussianDistributionTests)
+{
+	srand48(0);
+	
+	typedef QuantisedGaussianDistribution<double>::TypePtr QuantisedGaussianDistributionPtr;
+	
+	for(double sigma=0.2;sigma<=5.0;sigma*=1.5){
+		for(int fb=-1;fb<=3;fb++){
+			QuantisedGaussianDistributionPtr ptr=boost::make_shared<QuantisedGaussianDistribution<double> >(sigma, fb);
+			
+			boost::math::normal_distribution<double> dist(0, sigma);
+			double delta=pow(2.0, -fb);
+			
+			BOOST_CHECK_EQUAL(ptr->IndexFromRange(delta)-ptr->IndexFromRange(0), 1);
+			
+			for(int j=0;j<100;j++){
+				double x=boost::math::quantile(dist, drand48());
+				x=ldexp(round(ldexp(x,fb)),-fb);
+				
+				double pup=boost::math::cdf(dist, x+delta/2) ;
+				double pdown=boost::math::cdf(dist, x-delta/2);
+				
+				BOOST_CHECK_CLOSE(ptr->Pmf(x), pup-pdown, 1e-10);
+				BOOST_CHECK_EQUAL(ptr->Pmf(x+delta/2), 0.0);
+				
+				BOOST_CHECK_CLOSE(ptr->Cdf(x-delta/4), pdown, 1e-10);
+				BOOST_CHECK_CLOSE(ptr->Cdf(x), pup, 1e-10);
+				BOOST_CHECK_CLOSE(ptr->Cdf(x+delta/4), pup, 1e-10);
+			}			
+		}
+	}
+	
+	QuantisedGaussianDistributionPtr sig4=boost::make_shared<QuantisedGaussianDistribution<double> >(4.0, 0);
+	BOOST_CHECK_CLOSE(sig4->RawMoment(2), 16.08333333333333, 1e-10);
+	BOOST_CHECK_CLOSE(sig4->RawMoment(4), 776.0125000000001, 1e-10);
+	BOOST_CHECK_CLOSE(sig4->RawMoment(6), 62403.00223214286, 1e-10);
+	BOOST_CHECK_CLOSE(sig4->RawMoment(8), 7025313.000434028, 1e-10);
+	
+	QuantisedGaussianDistributionPtr sig16=boost::make_shared<QuantisedGaussianDistribution<double> >(16.0, 0);
+	BOOST_CHECK_CLOSE(sig16->RawMoment(2), 256.0833333333333, 1e-10);
+	BOOST_CHECK_CLOSE(sig16->RawMoment(4), 196736.0125, 1e-10);
+	BOOST_CHECK_CLOSE(sig16->RawMoment(6), 2.5190404800223213e8, 1e-10);
+	BOOST_CHECK_CLOSE(sig16->RawMoment(8), 4.5155894068800043e11, 1e-10);
+	
+	QuantisedGaussianDistributionPtr sig4p2=boost::make_shared<QuantisedGaussianDistribution<double> >(4.0, 2);
+	BOOST_CHECK_CLOSE(sig4p2->RawMoment(2), 256.0833333333333/16.0, 1e-10);
+	BOOST_CHECK_CLOSE(sig4p2->RawMoment(4), 196736.0125/(16.0*16.0), 1e-10);
+	BOOST_CHECK_CLOSE(sig4p2->RawMoment(6), 2.5190404800223213e8 / pow(4.0,6), 1e-10);
+	BOOST_CHECK_CLOSE(sig4p2->RawMoment(8), 4.5155894068800043e11 / pow(4.0,8), 1e-10);
+}
+
+
+BOOST_AUTO_TEST_CASE(QuantisedGaussianDistributionMprealTests)
+{
+	typedef QuantisedGaussianDistribution<mpfr::mpreal>::TypePtr QuantisedGaussianDistributionPtr;
+	
+	int prec=128;
+	
+	srand48(0);
+	
+	for(double sigma=0.2;sigma<=5.0;sigma*=1.5){
+		for(int fb=-1;fb<=3;fb++){
+			QuantisedGaussianDistributionPtr ptr=boost::make_shared<QuantisedGaussianDistribution<mpfr::mpreal> >(mpfr::mpreal(sigma,prec), fb);
+			
+			boost::math::normal_distribution<double> dist(0, sigma);
+			double delta=pow(2.0, -fb);
+			
+			for(int j=0;j<100;j++){
+				double x=boost::math::quantile(dist, drand48());
+				x=ldexp(round(ldexp(x,fb)),-fb);
+				
+				double pup=boost::math::cdf(dist, x+delta/2) ;
+				double pdown=boost::math::cdf(dist, x-delta/2);
+				
+				BOOST_CHECK_CLOSE(ptr->Pmf(x), pup-pdown, 1e-10);
+				BOOST_CHECK_EQUAL(ptr->Pmf(x+delta/2), 0.0);
+				
+				BOOST_CHECK_CLOSE(ptr->Cdf(x), pup, 1e-10);
+			}			
+		}
+	}
+	
+}
+

@@ -29,7 +29,7 @@ namespace random{
 /* Given an operator, it will create an array of them and apply a hadamard transform */
 class TableTransform
 	: public RngTransformOperator
-	, public IRngTransformDistributions<mpfr::mpreal>
+	, public IRngTransformDistributions
 	{
 private:
 	unsigned m_wElts;

@@ -52,6 +52,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	transforms/blocks/CLTTransform.cpp
 	transforms/blocks/TableTransform.cpp
 	transforms/blocks/GRNGTableTransform.cpp
+	transforms/TransformStats.cpp
 	
 	float_approx/static_quantiser.cpp
 	float_approx/range.cpp
@@ -71,7 +72,7 @@ add_executable(test_accumulation utils/test_accumulation.cpp)
 target_link_libraries(test_accumulation ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
 
 add_executable(test_distributions distributions/test_distributions.cpp)
-target_link_libraries(test_distributions ${Boost_LIBRARIES} ${GSL_LIBRARIES})
+target_link_libraries(test_distributions ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${MPFR_LIB})
 
 add_executable(test_optimisation utils/test_optimisation.cpp)
 target_link_libraries(test_optimisation ${Boost_LIBRARIES} ${GSL_LIBRARIES})

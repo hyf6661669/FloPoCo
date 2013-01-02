@@ -1,0 +1,109 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 12.04.0 ] */
+
+/* [wxMaxima: input   start ] */
+load(distrib);
+kill(Phi);
+Phi[x] := bfloat(cdf_normal(bfloat(x),0,1));
+mom_k_true(sig,k) :=
+    if k=0 then 1
+    elseif k=1 then 0
+    elseif k=2 then sig*sig
+    elseif mod(k,2)=1 then 0
+    else sig*sig*(k-1)*mom_k_true(sig,k-2);
+mom_k_q(sig,k):=block([x_scale:1/sig,acc:0],
+    for i:-round(32*sig) thru -1 do(
+        acc:acc+(Phi[(i+0.5)*x_scale]-Phi[(i-0.5)*x_scale])*bfloat(i)^k
+    ),
+    2*acc
+);
+fpprec:32;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+log2(x):=log(x)/log(bfloat(2));
+errbits(a,e) := if a=e then -inf else ceiling(log2(abs((a-e)/e)));
+pmf_errbits(sig,k) := errbits(mom_k_q(sig,k),mom_k_true(sig,k));
+for log2_sig:1.0b0 thru 8.0b0 step 1.0 do(
+    sig:2^log2_sig,
+    print(
+        "sig=",sig,
+        " m2=2^",pmf_errbits(sig,2),
+        " m4=2^",pmf_errbits(sig,4),
+        " m8=2^",pmf_errbits(sig,8),
+        " m16=2^",pmf_errbits(sig,16),
+        " m32=2^",pmf_errbits(sig,32),
+        " m64=2^",pmf_errbits(sig,64),
+        " m128=2^",pmf_errbits(sig,128)
+    )
+  );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+std_quick(sig):=block([
+        acc:0.0,
+        ss:float(sig)
+    ],
+    for i:-float(round(32*sig)) thru -1 do(
+        acc:acc+(float(cdf_normal(i+0.5,0,ss))-float(cdf_normal(i-0.5,0,ss)))*i^2
+    ),
+    2*acc
+);
+
+find_sig_alt(sig):=block([hi_sig:sig*1.01,lo_sig:sig*0.99,hi_std,lo_std,mid_sig, mid_std],
+    do(
+        lo_std:sqrt(std_quick(lo_sig)),
+        if lo_std < sig then return (),
+        lo_sig:lo_sig*0.99
+    ),
+    do(
+        hi_std:sqrt(std_quick(hi_sig)),
+        if hi_std > sig then return (),
+        hi_sig:hi_sig*1.01
+    ),
+    do(
+        mid_sig:(lo_sig+hi_sig)/2,
+        mid_std:sqrt(std_quick(mid_sig)),
+        if abs((mid_std-sig)/sig)<1e-12 then
+            return([mid_sig,mid_std]),
+        if mid_std > sig then (
+            hi_sig:mid_sig,
+            hi_std:mid_std
+        )else(
+            lo_sig:mid_sig,
+            lo_std:mid_std
+        )
+    )
+);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+find_sig_alt(4);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+for log2_sig:1.0b0 thru 6.0b0 step 1.0 do(
+    sig:2^log2_sig,
+    sigalt:find_sig_alt(sig)[1],
+    print(
+        "sig=",sig,
+        "sigalt=",sigalt,
+        " m2=2^",errbits(mom_k_q(sigalt,2),mom_k_true(sig,2)),
+        " m4=2^",errbits(mom_k_q(sigalt,4),mom_k_true(sig,4)),
+        " m8=2^",errbits(mom_k_q(sigalt,8),mom_k_true(sig,8)),
+        " m16=2^",errbits(mom_k_q(sigalt,16),mom_k_true(sig,16)),
+        " m32=2^",errbits(mom_k_q(sigalt,32),mom_k_true(sig,32)),
+        " m64=2^",errbits(mom_k_q(sigalt,64),mom_k_true(sig,64)),
+        " m128=2^",errbits(mom_k_q(sigalt,128),mom_k_true(sig,128))
+    )
+  );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+for k:2 thru 8 step 2 do(
+    print(errbits(mom_k_true(4,k), mom_k_q(3.989569734528607,k)))
+);
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

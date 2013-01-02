@@ -27,7 +27,10 @@ namespace flopoco{
 namespace random{
 
 /* Given an operator, it will create an array of them and apply a hadamard transform */
-class CLTTransform : public RngTransformOperator {
+class CLTTransform
+	: public RngTransformOperator
+	, public IRngTransformDistributions
+{
 private:
 	unsigned m_baseWidth;
 public:
@@ -57,6 +60,8 @@ public:
 	
 	virtual std::string nonUniformOutputName(int i) const
 	{ return "oRng"; }
+	
+	virtual typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
 	
 	static void registerFactory();
 };

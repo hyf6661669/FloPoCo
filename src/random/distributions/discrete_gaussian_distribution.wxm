@@ -1,0 +1,153 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 12.04.0 ] */
+
+/* [wxMaxima: input   start ] */
+pmf_scale_exact(sig) := 1.0/(exp(0)+2*sum(exp(-(bfloat(x)^2/(2*sig^2))),x,-round(32*sig),-1));
+
+
+pmf_scale_asymptotic(sig):=1/(sig*bfloat(sqrt(2*%pi)));
+
+
+fpprec:64;
+
+
+for sig:0.5b0 thru 4b0 step 0.5 do print(sig," : ", (pmf_scale_exact(sig)-pmf_scale_asymptotic(sig))/pmf_scale_exact(sig));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+pmf_mom_exact(sig,k) := pmf_scale_exact(sig)*2*sum(exp(-(bfloat(x)^2/(2*sig^2)))*x^k,x,-round(32*sig),-1);
+
+
+pmf_mom_asymptotic(sig,k) :=
+
+
+    if k=0 then 1
+
+
+    elseif k=1 then 0
+
+
+    elseif k=2 then sig*sig
+
+
+    elseif mod(k,2)=1 then 0
+
+
+    else sig*sig*(k-1)*pmf_mom_asymptotic(sig,k-2);
+
+
+log2(x):=log(x)/log(bfloat(2));
+
+
+errbits(a,e) := if a=e then -inf else ceiling(log2(abs((a-e)/e)));
+
+
+pmf_errbits(sig,k) := errbits(pmf_mom_asymptotic(sig,k),pmf_mom_exact(sig,k));
+
+
+for sig:0.5b0 thru 4.0b0 step 0.5 do(
+
+
+    print(
+
+
+        "sig=",sig,
+
+
+        " m2=2^",pmf_errbits(sig,2),
+
+
+        " m4=2^",pmf_errbits(sig,4),
+
+
+        " m8=2^",pmf_errbits(sig,8),
+
+
+        " m16=2^",pmf_errbits(sig,16),
+
+
+        " m32=2^",pmf_errbits(sig,32),
+
+
+        " m64=2^",pmf_errbits(sig,64),
+
+
+        " m128=2^",pmf_errbits(sig,128)
+
+
+    )
+
+
+  );
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+load(distrib);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fpprec:32;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+pmf_to_cdf(sig):=block([
+        x_scale:1b0/(sig*sig*2),
+        p_scale:pmf_scale_exact(sig),
+        acc:0b0,
+        boundary, res:[]
+    ],
+    acc:0b0,
+    for x:-round(16*sig) thru 0 do(
+      acc:acc+p_scale*exp(-x^2*x_scale),
+      if x>=-12*sig then(
+        boundary:float(sig*InvPhi(bfloat(acc))),
+        res:cons([x/sig,boundary/sig],res)
+      )
+    ),
+res
+);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+tt:pmf_to_cdf(2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+wxplot2d([discrete,tt]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+inverse_erf(1.206661386364776b-18,0,4);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+Phi(x) := 0.5*erfc(-x/sqrt(2));
+InvPhi(p) := -sqrt(2)*inverse_erfc(2*p);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+solve(p=Phi(x),x);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+InvPhi(0.1),float;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+-sqrt(2)*inverse_erfc(2*0.1),float;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+InvPhi(2^-100),bfloat;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+fpprec:128;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+bfloat(log((cdf_normal(bfloat(-24+1b0/1024),0,1)-cdf_normal(-24b0,0,1))*24^32)/log(2));
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

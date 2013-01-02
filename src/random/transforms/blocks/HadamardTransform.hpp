@@ -29,7 +29,7 @@ namespace random{
 /* Given an operator, it will create an array of them and apply a hadamard transform */
 class HadamardTransform
 	: public RngTransformOperator
-	, public IRngTransformDistributions<mpfr::mpreal>
+	, public IRngTransformDistributions
 	{
 private:
 	unsigned m_log2n, m_n, m_baseWidth;
@@ -70,7 +70,7 @@ public:
 	{ return m_nonUniformOutputCount; }
 	
 	virtual bool nonUniformOutputsAreHomogenous() const
-	{ return m_base->nonUniformOutputsAreHomogenous(); }
+	{ return true; }
 	
 	virtual unsigned nonUniformOutputWidth(int) const
 	{ return m_nonUniformOutputWidth; }

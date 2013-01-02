@@ -8,6 +8,8 @@
 
 #include "urng/lut_sr_rng.hpp"
 
+#include "UtilSollya.hh"
+
 #include "transforms/blocks/HadamardTransform.hpp"
 #include "transforms/blocks/CLTTransform.hpp"
 #include "transforms/blocks/TableTransform.hpp"
@@ -67,6 +69,7 @@ void pinOperator(boost::shared_ptr<Operator> op)
 
 namespace flopoco{ namespace random{
 	void PolynomialEvaluator_registerFactory();
+	void TransformStats_registerFactory();
 }; }; 
 
 void random_register_factories()
@@ -74,7 +77,9 @@ void random_register_factories()
 	flopoco::random::TableTransform::registerFactory();
 	flopoco::random::CLTTransform::registerFactory();
 	flopoco::random::GRNGTableTransform_registerFactory();
-	flopoco::random::StaticQuantiser_registerFactory();
+	flopoco::random::TransformStats_registerFactory();
+	
+	flopoco::random::StaticQuantiser_registerFactory();	
 	flopoco::random::FloatApprox_registerFactory();
 	
 	flopoco::random::PolynomialEvaluator_registerFactory();
@@ -97,6 +102,14 @@ void random_usage(char *name, string opName = ""){
 		cerr << "       Generates vectors of Gaussian Random numbers\n";
 		cerr << "	log2n - Number of output variates (n=2^log2n)\n";
 		cerr << "	baseWidth - How many bits per base generator.\n";
+	}
+	if( opName=="table_hadamard_transform"){
+		OP("table_hadamard_transform", "log2n log2k stddev fb");
+		cerr << "       Generates vectors of Gaussian Random numbers using table generators and a hadamard matrix\n";
+		cerr << "	log2n - Number of output variates (n=2^log2n)\n";
+		cerr << "	log2k - How many table entries per base generator.\n";
+		cerr << "	stddev - Target standard deviation.\n";
+		cerr << "	fb - Number of fractional bits of output.\n";
 	}
 	if(opName=="TableExpStage"){
 		OP("TableExpStage", "msb lsb addrW resultW");
@@ -197,6 +210,31 @@ bool random_parseCommandLine(
 		flopoco::random::RngTransformOperator *base=new flopoco::random::CLTTransform(target, wBase);
 		assert(base);
 		addOperator(new flopoco::random::HadamardTransform(target, log2n, base));
+		return true;
+	}
+	
+	else
+	if (opname == "table_hadamard_transform")
+	{
+		int nargs = 4;
+		if (i+nargs > argc)
+			usage(argv[0], opname); // and exit
+		int log2n = checkStrictlyPositive(argv[i++], argv[0]);
+		int log2k = checkStrictlyPositive(argv[i++], argv[0]);
+		mpfr::mpreal stddev(0,getToolPrecision());
+		parseSollyaConstant(stddev.mpfr_ptr(), argv[i++]);
+		int fb=checkStrictlyPositive(argv[i++], argv[0]);
+
+		cerr << "> clt_hadamard_transform: log2n=" << log2n <<", log2k="<<log2k<<", stddev="<<stddev<<", fb="<<fb<<"\n";
+		
+		mpfr::mpreal partStddev=sqrt(stddev*stddev*pow(2.0, -log2n));
+		
+		flopoco::random::RngTransformOperator * base=flopoco::random::MakeGRNGTable(target, log2k, fb, partStddev, "auto", "auto");
+		
+		assert(base);
+		addOperator(new flopoco::random::HadamardTransform(target, log2n, base));
+		cerr << "> clt_hadamard_transform: done\n";
+		
 		return true;
 	}
 	

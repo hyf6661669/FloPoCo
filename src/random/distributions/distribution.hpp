@@ -84,6 +84,9 @@ public:
 
 	virtual int64_t ClosestIndexFromRange(const T &x) const=0;
 
+	//! If the range is regular (e.g. fixed point), then this is the step. Otherwise 0
+	virtual T RangeGranularity() const=0;
+
 	virtual T Pmf(const T &x) const=0;
 
 	virtual T Cdf(const T &x) const=0;

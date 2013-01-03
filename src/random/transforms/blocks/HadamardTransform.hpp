@@ -42,7 +42,7 @@ private:
 	unsigned m_nonUniformOutputWidth;
 	std::string m_nonUniformOutputNameBase; 
 
-	mutable typename Distribution<mpfr::mpreal>::TypePtr m_distribution;
+	mutable typename DiscreteDistribution<mpfr::mpreal>::TypePtr m_distribution;
 	mutable unsigned m_distributionPrec;
 
 	void Connect(std::string dstName, int dstIdx, std::string srcName, int srcL, int srcR, int dir, int srcW);

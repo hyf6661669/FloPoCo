@@ -104,12 +104,14 @@ void random_usage(char *name, string opName = ""){
 		cerr << "	baseWidth - How many bits per base generator.\n";
 	}
 	if( opName=="table_hadamard_transform"){
-		OP("table_hadamard_transform", "log2n log2k stddev fb");
+		OP("table_hadamard_transform", "log2n log2k stddev fb correction quantisation");
 		cerr << "       Generates vectors of Gaussian Random numbers using table generators and a hadamard matrix\n";
 		cerr << "	log2n - Number of output variates (n=2^log2n)\n";
 		cerr << "	log2k - How many table entries per base generator.\n";
 		cerr << "	stddev - Target standard deviation.\n";
 		cerr << "	fb - Number of fractional bits of output.\n";
+		cerr << "	correction - How to correct the table .\n";
+		cerr << "	quantisation - How to quantise the table .\n";
 	}
 	if(opName=="TableExpStage"){
 		OP("TableExpStage", "msb lsb addrW resultW");
@@ -216,7 +218,7 @@ bool random_parseCommandLine(
 	else
 	if (opname == "table_hadamard_transform")
 	{
-		int nargs = 4;
+		int nargs = 6;
 		if (i+nargs > argc)
 			usage(argv[0], opname); // and exit
 		int log2n = checkStrictlyPositive(argv[i++], argv[0]);
@@ -224,12 +226,14 @@ bool random_parseCommandLine(
 		mpfr::mpreal stddev(0,getToolPrecision());
 		parseSollyaConstant(stddev.mpfr_ptr(), argv[i++]);
 		int fb=checkStrictlyPositive(argv[i++], argv[0]);
+		std::string corr=argv[i++];
+		std::string quant=argv[i++];
 
 		cerr << "> clt_hadamard_transform: log2n=" << log2n <<", log2k="<<log2k<<", stddev="<<stddev<<", fb="<<fb<<"\n";
 		
 		mpfr::mpreal partStddev=sqrt(stddev*stddev*pow(2.0, -log2n));
 		
-		flopoco::random::RngTransformOperator * base=flopoco::random::MakeGRNGTable(target, log2k, fb, partStddev, "auto", "auto");
+		flopoco::random::RngTransformOperator * base=flopoco::random::MakeGRNGTable(target, log2k, fb, partStddev, corr, quant);
 		
 		assert(base);
 		addOperator(new flopoco::random::HadamardTransform(target, log2n, base));

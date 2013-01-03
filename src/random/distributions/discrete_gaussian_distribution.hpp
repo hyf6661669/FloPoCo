@@ -173,6 +173,9 @@ public:
 	virtual std::pair<T,T> Support() const
 	{ return std::pair<T,T>(-m_base+m_step, m_base-m_step); }
 	
+	virtual T RangeGranularity() const
+	{ return m_step; }
+	
 	virtual int64_t IndexFromRange(const T &x) const
 	{
 		T q=ldexp(x, m_fb);
@@ -214,7 +217,7 @@ public:
 		if(i>=(int)m_cdf.size()){
 			throw std::string("DiscreteGaussianDistribution::Pmf - x out of range.");
 		}
-		return (x<0) ? m_cdf[i] : 1-m_cdf[i];
+		return (x<=0) ? m_cdf[i] : 1-m_cdf[i];
 	}
 	
 	virtual T PmfByIndex(int64_t i) const
@@ -232,7 +235,7 @@ public:
 		if(ai>=(int)m_cdf.size()){
 			throw std::string("DiscreteGaussianDistribution::Pmf - x out of range.");
 		}
-		return (i<0) ? m_cdf[ai] : 1-m_cdf[ai];
+		return (i<=0) ? m_cdf[ai] : 1-m_cdf[ai];
 	}
 		
 	typedef boost::shared_ptr<DiscreteGaussianDistribution> DiscreteGaussianDistributionPtr;

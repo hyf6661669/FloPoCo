@@ -173,7 +173,7 @@ private:
 
 	mpfr::mpreal ERFC(mpfr::mpreal x) const
 	{
-		mpfr::mpreal res;
+		mpfr::mpreal res(0, x.get_prec());
 		mpfr_erfc(res.mpfr_ptr(), x.mpfr_ptr(), MPFR_RNDN);
 		return res;
 	}
@@ -228,7 +228,7 @@ public:
 		, m_stddev(stddev)
 		, m_fb(fb)
 		, m_dist(0, m_stddev)
-	{
+	{		
 		m_step=m_one*pow(2.0,-fb);
 	}
 	
@@ -300,6 +300,9 @@ public:
 	{
 		return ldexp(m_one*T((long)x), -m_fb);
 	}
+	
+	virtual T RangeGranularity() const
+	{ return m_step; }
 		
 	virtual bool IsSymmetric() const
 	{ return true; }

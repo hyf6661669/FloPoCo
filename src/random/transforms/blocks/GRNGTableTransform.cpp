@@ -122,7 +122,7 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 	int n=current->ElementCount();
 	
 	if(correction=="auto"){
-		correction="round";
+		correction="stddev_greedy";
 	}
 	
 	std::vector<T> contents(current->ElementCount());
@@ -140,7 +140,7 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 	}else if(correction=="stddev_greedy"){
 		assert((n%2)==0);
 		T delta=pow(2.0, -wF);
-		T target=sqrt(targetDistrib->StandardMoment(2));
+		T target=targetDistrib->StandardMoment(2);
 		T acc=0;
 		for(int i=n/2;i<n;i++){
 			contents[i]=ldexp(round(ldexp(contents.at(i), wF)),-wF);
@@ -150,7 +150,7 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 		T curr=sqrt(acc/(n/2));
 		
 		for(int i=n-1;i>=n/2;i--){
-			std::cerr<<"  curr="<<curr<<", target="<<target<<"\n";
+			std::cerr<<"  curr="<<curr<<", target="<<target<<", err="<<(curr-target)/target<<"\n";
 			while(contents[i]>0){
 				//T accDown=acc-square(contents[i])+square(contents[i]-eps);
 				//T accDown=acc-contents[i]*contents+(contents[i]-eps)*(contents[i]-eps);
@@ -223,8 +223,10 @@ std::vector<mpz_class> BuildTable(
 		std::cerr<<"BuildTable : converting table to fixed-point.\n";
 	std::vector<mpz_class> res(n/2);
 	T scale=pow(2.0, wF);
+	
+	std::vector<std::pair<T,T> > elts=quantised->GetElements();
 	for(unsigned i=0;i<res.size();i++){
-		res[i]=(mpz_class)round(scale*corrected->RangeFromIndex(i+n/2));
+		res[i]=(mpz_class)round(scale*elts[i+n/2].first);
 	}
 	
 	return res;

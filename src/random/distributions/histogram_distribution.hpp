@@ -31,6 +31,8 @@ private:
 	typedef std::vector<T> storage_t;
 	storage_t m_elements, m_cdf;
 	T m_base, m_step;
+
+	T m_zero, m_one;
 	
 	mutable std::vector<T> m_standardMoments;
 public:
@@ -41,13 +43,15 @@ public:
 		, m_elements(src)
 		, m_base(base)
 		, m_step(step)
+		, m_zero(src[0]-src[0])
+		, m_one(m_zero+1)
 	{
 		if(src.size()==0)
 			throw std::invalid_argument("HistogramDistribution - Table must contain at least one element.");
 		
 		m_cdf.resize(src.size());
 		
-		T acc=0.0;
+		T acc=m_zero;
 		for(int i=0;i<(int)src.size();i++){
 			if(m_elements[i] < 0){
 				throw std::logic_error("HistogramDistribution - Negative element probability.");
@@ -59,7 +63,7 @@ public:
 		if(fabs(acc-1)>1e-12)
 			throw std::logic_error("HistogramDistribution - Element probabilities are more than 1e-12 from one.");
 		
-		T scale=1.0/acc;
+		T scale=m_one/acc;
 		for(unsigned i=0;i<src.size();i++){	
 			m_elements[i] = src[i] * scale;
 			m_cdf[i] = m_cdf[i] * scale;
@@ -79,15 +83,18 @@ public:
 	T RangeStep() const
 	{ return m_step; }
 	
+	virtual T RangeGranularity() const
+	{ return m_step;}
+	
 	virtual T StandardMoment(unsigned k) const
 	{
 		while(m_standardMoments.size()<=k){
 			typename SelectAccumulator<T>::type acc;
 			unsigned kc=m_standardMoments.size();
 			if((kc%2) && m_isSymmetric){
-				m_standardMoments.push_back(0);
+				m_standardMoments.push_back(m_zero);
 			}else{
-				acc=0.0;
+				acc=m_zero;
 				T curr=m_base;
 				if(k>1)
 					curr=curr-m_standardMoments[1];
@@ -124,13 +131,13 @@ public:
 	virtual T Pmf(const T &x) const
 	{
 		if(x<m_base)
-			return 0;
+			return m_zero;
 		if(x > (m_base+m_step*(m_elements.size()-1)))
-			return 0;
+			return m_zero;
 		T vi=(x-m_base)/m_step;
 		T ii=round(vi);
 		if(vi!=ii)
-			return 0;
+			return m_zero;
 		size_t i=boost::math::tools::real_cast<long>(ii);
 		assert(i<m_elements.size());
 		return m_elements[i];
@@ -141,9 +148,9 @@ public:
 		T vi=(x-m_base)/m_step;
 		T ii=floor(vi);
 		if(ii<0)
-			return 0;
+			return m_zero;
 		if(ii>=m_cdf.size())
-			return 1.0;
+			return m_one;
 		size_t i=boost::math::tools::real_cast<long>(ii);
 		return m_cdf[i];
 	}

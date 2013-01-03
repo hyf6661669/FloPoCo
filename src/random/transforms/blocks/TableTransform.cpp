@@ -144,6 +144,7 @@ typename Distribution<mpfr::mpreal>::TypePtr TableTransform::nonUniformOutputDis
 		std::vector<mpfr::mpreal> contents(m_elements.size() * (m_addRandomSign?2:0), mpfr::mpreal(0.0, prec));
 		for(unsigned i=0;i<m_elements.size();i++){
 			contents[i]=ldexp(mpfr::mpreal( m_elements[i].get_mpz_t(), prec), -m_wF);
+			assert(contents[i].get_prec()>=(int)prec);
 			if(m_addRandomSign){
 				contents[2*m_elements.size()-i-1]=-contents[i];
 			}
@@ -152,6 +153,7 @@ typename Distribution<mpfr::mpreal>::TypePtr TableTransform::nonUniformOutputDis
 		m_distribution= boost::make_shared<TableDistribution<mpfr::mpreal> >(&contents[0], &contents[contents.size()], m_wF);
 		m_distributionPrec=prec;
 	}
+	assert(m_distribution->Cdf(0).get_prec()>=(int)prec);
 	return m_distribution;
 }
 

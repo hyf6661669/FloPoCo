@@ -97,7 +97,7 @@ namespace random
 			T origSum=sum(vr.begin(), vr.end());
 			
 			for(int i=0;i<(int)vr.size()/2;i++){
-				std::cerr<<i<<" / "<<(vr.size()-i-1)<<" = "<<vr[i]<<" / "<<vr[vr.size()-i-1]<<"\n";
+				//std::cerr<<i<<" / "<<(vr.size()-i-1)<<" = "<<vr[i]<<" / "<<vr[vr.size()-i-1]<<"\n";
 				T avg=(vr[vr.size()-i-1]+vr[i])>>1;
 				vr[vr.size()-i-1]=avg;
 				vr[i]=avg;
@@ -111,7 +111,7 @@ namespace random
 		
 		for(int i=0;i<(int)vr.size();i++){
 			if(vr[i]<0)
-				vr[i]=0;
+				vr[i]=vr[i]-vr[i];	// Get zero of appropriate type
 		}
 		
 		return boost::make_shared<HistogramDistribution<T> >(
@@ -154,11 +154,13 @@ namespace random
 		
 		if( !!ta && (pow((double)a->ElementCount(), k) > 100000)){
 			int fb=ta->FixedPointResolution();
-			if(fb != INT_MAX){
+			if(fb != INT_MAX){				
 				std::vector<std::pair<T,T> > elts=ta->GetElements();
 				
+				T zero=elts.front().second-elts.front().second;
+				
 				int iFirst=boost::math::tools::real_cast<long>(ldexp(elts.front().first,fb)), iLast=boost::math::tools::real_cast<long>(ldexp(elts.back().first,fb));
-				std::vector<T> pdf(iLast-iFirst+1);
+				std::vector<T> pdf(iLast-iFirst+1, zero);
 				
 				for(int i=0;i<(int)elts.size();i++){
 					pdf[boost::math::tools::real_cast<long>(ldexp(elts[i].first,fb)-iFirst)] += elts[i].second;

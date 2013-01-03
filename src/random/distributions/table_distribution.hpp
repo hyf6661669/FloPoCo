@@ -28,6 +28,7 @@ public:
 private:
 	bool m_isSymmetric;
 	int m_fracBits;
+	T m_zero, m_one;
 
 	// Elements are sorted as (x,p). Repeated x is allowed. Must have 0<=p<=1, so zero probability elements are allowed.
 	typedef std::vector<std::pair<T,T> > storage_t;
@@ -58,8 +59,8 @@ private:
 	{
 		unsigned n=m_elements.size();
 		
-		if(acc!=1.0){
-			T scale=1.0/acc;
+		if(acc!=m_one){
+			T scale=m_one/acc;
 			for(size_t i=0;i<m_elements.size();i++){
 				m_elements[i].second *=scale;
 			}
@@ -86,13 +87,13 @@ private:
 			}
 		}
 		
-		m_range.resize(m_elements.size(), 0);
-		m_pdf.resize(m_elements.size(), 0);
-		m_cdf.resize(m_elements.size(), 0);
+		m_range.resize(m_elements.size(), m_zero);
+		m_pdf.resize(m_elements.size(), m_zero);
+		m_cdf.resize(m_elements.size(), m_zero);
 		
 		int dest_i=-1;
 		T dest_x=m_elements[0].first-1;
-		T running_acc=0.0;
+		T running_acc=m_zero;
 		for(int i=0;i<(int)m_elements.size();i++){
 			if(m_elements[i].first!=dest_x){
 				dest_i++;
@@ -120,6 +121,8 @@ public:
 	TableDistribution(const TC &src, int fracBits=INT_MAX)
 		: m_isSymmetric(true)
 		, m_fracBits(fracBits)
+		, m_zero(src.begin()->second-src.begin()->second)
+		, m_one(m_zero+1)
 	{
 		if(src.size()==0)
 			throw std::invalid_argument("TableDistribution - Table must contain at least one element.");
@@ -135,6 +138,8 @@ public:
 	TableDistribution(const T *begin, const T *end, int fracBits=INT_MAX)
 		: m_isSymmetric(true)
 		, m_fracBits(fracBits)
+		, m_zero(*begin-*begin)
+		, m_one(m_zero+1)
 	{
 		if(end<=begin)
 			throw std::invalid_argument("TableDistribution - Table must contain at least one element.");
@@ -142,7 +147,7 @@ public:
 		size_t n=end-begin;
 		
 		m_elements.reserve(n);
-		T p=1.0;
+		T p=m_one;
 		p=p/n;
 		bool sorted=true;
 		for(int i=0;i<(end-begin);i++){
@@ -151,7 +156,7 @@ public:
 				sorted=sorted && EltLessThan(*(m_elements.end()-1), m_elements.back());
 		}
 
-		CompleteInit(sorted, 1.0);
+		CompleteInit(sorted, m_one);
 	}
 	
 	//! If the table has a specific resolution this will be returned, otherwise INT_MAX is returned
@@ -160,13 +165,21 @@ public:
 		return m_fracBits;
 	}
 	
+	virtual T RangeDelta() const
+	{
+		if(m_fracBits==INT_MAX)
+			return m_zero;
+		else
+			return ldexp(m_one, -m_fracBits);
+	}
+	
 	T RawMoment(unsigned k) const
 	{
 		if(k>=m_rawMoments.size()){
 			while(k>=m_rawMoments.size()){
 				int kk=m_rawMoments.size();
 				if((kk%2) && m_isSymmetric){
-					m_rawMoments.push_back(0.0);
+					m_rawMoments.push_back(m_zero);
 				}else{
 					m_rawMoments.push_back(sum_weighted_powers(m_elements.begin(), m_elements.end(), (int)kk));
 				}
@@ -178,11 +191,11 @@ public:
 	virtual T StandardMoment(unsigned k) const
 	{
 		if(k==0)
-			return 1.0;
+			return m_one;
 		if(k==1)
 			return RawMoment(k);
 		if(k==2)
-			return CentralMoment(k);
+			return sqrt(CentralMoment(k));
 		return CentralMoment(k) / pow(CentralMoment(2), k/2.0);
 	}
 	
@@ -203,9 +216,9 @@ public:
 		// Elements must have non-negative probability, so we always have (x-eps,p) < (x,-1) < (x,p)
 		typename std::vector<T>::const_iterator it=std::lower_bound(m_range.begin(), m_range.end(), x);
 		if(it==m_range.end())
-			return 0;
+			return m_zero;
 		if(*it!=x)
-			return 0;
+			return m_zero;
 		return m_pdf[it-m_range.begin()];
 	}
 	
@@ -213,10 +226,10 @@ public:
 	{
 		typename std::vector<T>::const_iterator it=std::lower_bound(m_range.begin(), m_range.end(), x);
 		if(it==m_range.end())
-			return 1.0;
+			return m_one;
 		if(*it != x){
 			if(it==m_range.begin())
-				return 0.0;
+				return m_zero;
 			else
 				return m_cdf[it-m_range.begin()-1];
 		}

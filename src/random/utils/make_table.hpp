@@ -11,7 +11,7 @@ namespace flopoco
 namespace random
 {
 	
-inline Operator *MakeSinglePortTable(Target *target, std::string name, int wElts, const std::vector<mpz_class> &contents, map<string, double> inputDelays = emptyDelayMap )
+inline Operator *MakeSinglePortTable(Target *target, std::string name, int wElts, const std::vector<mpz_class> &contents, bool hardRam=false, map<string, double> inputDelays = emptyDelayMap )
 {
 	class SinglePortTable
 		: public Table
@@ -19,8 +19,8 @@ inline Operator *MakeSinglePortTable(Target *target, std::string name, int wElts
 	private:
 		std::vector<mpz_class> m_elements;
 	public:
-		SinglePortTable(Target* target, std::string name, int wIn, int wOut, const std::vector<mpz_class> &elements, map<string, double> inputDelays = emptyDelayMap )
-			: Table(target, wIn, wOut, /*minIn*/ 0, /*maxIn*/elements.size()-1, /*logicTable*/1,  inputDelays)
+		SinglePortTable(Target* target, std::string name, int wIn, int wOut, const std::vector<mpz_class> &elements, bool hardRam, map<string, double> inputDelays = emptyDelayMap )
+			: Table(target, wIn, wOut, /*minIn*/ 0, /*maxIn*/elements.size()-1, /*logicTable*/hardRam?0:1,  inputDelays)
 			, m_elements(elements)
 		{
 			setName(name);
@@ -43,7 +43,7 @@ inline Operator *MakeSinglePortTable(Target *target, std::string name, int wElts
 			throw std::string("MakeSinglePortTable - Element is not in range [0,2^wElts).");
 	}
 	
-	return new SinglePortTable(target, name, wIn, wElts, contents, inputDelays);
+	return new SinglePortTable(target, name, wIn, wElts, contents, hardRam, inputDelays);
 }
 
 }; // random

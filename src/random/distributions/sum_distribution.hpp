@@ -94,19 +94,12 @@ namespace random
 		std::vector<T> vr=self_convolve(va, k);
 		
 		if(a->IsSymmetric()){
-			T origSum=sum(vr.begin(), vr.end());
-			
 			for(int i=0;i<(int)vr.size()/2;i++){
 				//std::cerr<<i<<" / "<<(vr.size()-i-1)<<" = "<<vr[i]<<" / "<<vr[vr.size()-i-1]<<"\n";
-				T avg=(vr[vr.size()-i-1]+vr[i])>>1;
+				T avg=(vr[vr.size()-i-1]+vr[i])/2;
 				vr[vr.size()-i-1]=avg;
 				vr[i]=avg;
 			}
-			assert(vr.front()==vr.back());
-			
-			T currSum=sum(vr.begin(), vr.end());
-			
-			std::cerr<<"OrigSum="<<origSum<<", currSum="<<currSum<<"\n";
 		}
 		
 		for(int i=0;i<(int)vr.size();i++){
@@ -152,7 +145,7 @@ namespace random
 		typename HistogramDistribution<T>::TypePtr ha=boost::dynamic_pointer_cast<HistogramDistribution<T> >(a);
 		typename TableDistribution<T>::TypePtr ta=boost::dynamic_pointer_cast<TableDistribution<T> >(a);
 		
-		if( !!ta && (pow((double)a->ElementCount(), k) > 100000)){
+		if( !!ta ){
 			int fb=ta->FixedPointResolution();
 			if(fb != INT_MAX){				
 				std::vector<std::pair<T,T> > elts=ta->GetElements();

@@ -83,7 +83,7 @@ private:
 		// All inputs of first operator to first level
 		for(int i=0;i<a->getNumberOfInputs();i++){
 			Signal *sig=a->getInputSignal(i);
-			addInput(sig->getName(), sig->width());
+			addInput(sig->getName(), sig->width(), sig->width()>1);
 			inPortMap(a, sig->getName(), sig->getName());
 		}
 		
@@ -94,7 +94,7 @@ private:
 			if(m.second=="-"){
 				// do nothing
 			}else if(m.second=="+"){
-				addOutput(sig->getName(), sig->width());
+				addOutput(sig->getName(), sig->width(), 1, sig->width()>1);
 				outPortMap(a, sig->getName(), sig->getName()+"_out");
 			}else{
 				outPortMap(a, sig->getName(), m.first+"_to_"+m.second);
@@ -122,7 +122,7 @@ private:
 			if(m.first=="-"){
 				throw std::string("ChainOperator - inputs of second operator can't be unbound.");
 			}else if(m.first=="+"){
-				addInput(sig->getName(), sig->width());
+				addInput(sig->getName(), sig->width(), sig->width()>0);
 				inPortMap(b, sig->getName(), sig->getName());
 			}else{
 				inPortMap(b, sig->getName(), m.first+"_to_"+m.second);
@@ -131,7 +131,7 @@ private:
 		// All outputs go to top level
 		for(int i=0;i<b->getNumberOfOutputs();i++){
 			Signal *sig=b->getOutputSignal(i);
-			addOutput(sig->getName(), sig->width());
+			addOutput(sig->getName(), sig->width(), 1, sig->width()>1);
 			outPortMap(b, sig->getName(), join(sig->getName(),"_out"));
 		}
 		vhdl<<instance(b, "b");

@@ -34,6 +34,7 @@ class HadamardTransform
 private:
 	unsigned m_log2n, m_n, m_baseWidth;
 	RngTransformOperator *m_base;
+	bool m_extraPipeline;
 
 	unsigned m_uniformInputBits;
 	std::string m_uniformInputName;
@@ -50,7 +51,7 @@ private:
 	void Hadamard(std::string name, int log2size, int srcW);
 
 public:
-	HadamardTransform(Target* target, int log2n, RngTransformOperator *base);
+	HadamardTransform(Target* target, int log2n, RngTransformOperator *base, bool extraPipeline=false);
 
 	~HadamardTransform();
 

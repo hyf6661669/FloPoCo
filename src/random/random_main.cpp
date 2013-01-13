@@ -70,6 +70,7 @@ void pinOperator(boost::shared_ptr<Operator> op)
 namespace flopoco{ namespace random{
 	void PolynomialEvaluator_registerFactory();
 	void TransformStats_registerFactory();
+	void OutputCombiner_registerFactory();
 }; }; 
 
 void random_register_factories()
@@ -81,7 +82,7 @@ void random_register_factories()
 	
 	flopoco::random::StaticQuantiser_registerFactory();	
 	flopoco::random::FloatApprox_registerFactory();
-	
+	flopoco::random::OutputCombiner_registerFactory();
 	flopoco::random::PolynomialEvaluator_registerFactory();
 }
 	
@@ -89,6 +90,12 @@ void random_usage(char *name, string opName = ""){
 	flopoco::random::OperatorFactory::classic_usage(name, opName);
 	
 	bool full = (opName=="");
+	
+	if(full || opName=="Exit"){
+		OP("Exit", "");
+		cerr<<"    Immediately exit flopoco without writing VHDL (useful\n";
+		cerr<<"    if you are calculating stats or something).\n";
+	}
 
 	if( full || opName=="lut_sr_rng"){
 		OP("lut_sr_rng", "r t k");
@@ -104,7 +111,7 @@ void random_usage(char *name, string opName = ""){
 		cerr << "	baseWidth - How many bits per base generator.\n";
 	}
 	if( opName=="table_hadamard_transform"){
-		OP("table_hadamard_transform", "log2n log2k stddev fb correction quantisation");
+		OP("table_hadamard_transform", "[-extra_pipeline] log2n log2k stddev fb correction quantisation");
 		cerr << "       Generates vectors of Gaussian Random numbers using table generators and a hadamard matrix\n";
 		cerr << "	log2n - Number of output variates (n=2^log2n)\n";
 		cerr << "	log2k - How many table entries per base generator.\n";
@@ -145,6 +152,11 @@ bool random_parseCommandLine(
 ){
 	if(flopoco::random::OperatorFactory::classic_parseCommandLine(argc, argv, target, opname, i))
 		return true;
+	
+	if(opname=="Exit"){
+		std::cerr<<"Exit command - quiting flopoco without writing operator.\n";
+		exit(0);
+	}
 	
 	/*
 	if (opname == "bitwise")
@@ -218,6 +230,15 @@ bool random_parseCommandLine(
 	else
 	if (opname == "table_hadamard_transform")
 	{
+		bool extraPipeline=false;
+		
+		if(i<argc){
+			if(!strcmp("-extra_pipeline", argv[i])){
+				i++;
+				extraPipeline=true;
+			}
+		}
+		
 		int nargs = 6;
 		if (i+nargs > argc)
 			usage(argv[0], opname); // and exit
@@ -229,14 +250,14 @@ bool random_parseCommandLine(
 		std::string corr=argv[i++];
 		std::string quant=argv[i++];
 
-		cerr << "> clt_hadamard_transform: log2n=" << log2n <<", log2k="<<log2k<<", stddev="<<stddev<<", fb="<<fb<<"\n";
+		cerr << "> clt_hadamard_transform: log2n=" << log2n <<", log2k="<<log2k<<", stddev="<<stddev<<", fb="<<fb<<", extraPipeline="<<extraPipeline<<"\n";
 		
 		mpfr::mpreal partStddev=sqrt(stddev*stddev*pow(2.0, -log2n));
 		
 		flopoco::random::RngTransformOperator * base=flopoco::random::MakeGRNGTable(target, log2k, fb, partStddev, corr, quant);
 		
 		assert(base);
-		addOperator(new flopoco::random::HadamardTransform(target, log2n, base));
+		addOperator(new flopoco::random::HadamardTransform(target, log2n, base, extraPipeline));
 		cerr << "> clt_hadamard_transform: done\n";
 		
 		return true;
@@ -260,6 +281,21 @@ bool random_parseCommandLine(
 		flopoco::random::RngTransformOperator *hadamard=new flopoco::random::HadamardTransform(target, log2n, base);
 		
 		addOperator(flopoco::random::LutSrRng::DriveTransform(acc.str(), hadamard));
+		return true;
+	}
+	
+	else if(opname=="connect_rng_transform_to_urng"){
+		vector<Operator*> * globalOpListRef=target->getGlobalOpListRef();
+		if(globalOpListRef->size()==0)
+			throw std::string("No existing op to connect to urng.");
+		flopoco::Operator *baseOp=globalOpListRef->back();
+		
+		flopoco::random::RngTransformOperator *baseTransform=dynamic_cast<flopoco::random::RngTransformOperator*>(baseOp);
+		if(baseTransform==NULL)
+			throw std::string("Previous op is not an RngTransformOperator.");
+		
+		addOperator(flopoco::random::LutSrRng::DriveTransform(baseTransform->getName()+"_rng", baseTransform));
+		
 		return true;
 	}
 	

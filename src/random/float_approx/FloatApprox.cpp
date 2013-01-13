@@ -129,7 +129,8 @@ public:
     int tableWidth=3+wRangeE+coeffWidths;
     m_tableWidth=tableWidth;
     m_tableContents=m_polys.build_ram_contents(guard, wRangeE);
-    m_table=MakeSinglePortTable(target, name+"_table", tableWidth, m_tableContents);
+    bool hardRam= nFinalSegments>=256;
+    m_table=MakeSinglePortTable(target, name+"_table", tableWidth, m_tableContents, hardRam);  
     oplist.push_back(m_table);
     
     REPORT(INFO, "Constructing polynomial evaluator.");
@@ -152,16 +153,13 @@ public:
     vhdl<<instance(m_quantiser, "quantiser");
     syncCycleFromSignal("table_index");
     
-    if(nFinalSegments>=256){
+    if(hardRam){
       nextCycle();  // BRAM input stage
     }
     inPortMap(m_table, "X", "table_index");
     outPortMap(m_table, "Y", "table_contents");
     vhdl<<instance(m_table, "table");
     syncCycleFromSignal("table_contents");
-    if(nFinalSegments>=256){
-      nextCycle();  // BRAM output register
-    }
     
     ///////////////////////////////////
     // Split the coefficients into the different parts

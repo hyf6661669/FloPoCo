@@ -74,6 +74,9 @@ template<class T>
 class DiscreteDistribution
 	: public Distribution<T>
 {
+private:	
+	int64_t BisectCdf(int64_t lo, int64_t hi, const T &p) const;
+	std::pair<int64_t,int64_t> BracketCdf(const T &p) const;
 public:
 	//! If the set is finite then return a positive number, else return 0
 	virtual uint64_t ElementCount() const=0;
@@ -90,6 +93,9 @@ public:
 	virtual T Pmf(const T &x) const=0;
 
 	virtual T Cdf(const T &x) const=0;
+
+	//! Should return the smallest x such that Cdf(x)>=p
+	virtual T InvCdf(const T &p) const;
 	
 	virtual std::pair<int64_t,int64_t> IndexSupport() const
 	{
@@ -107,6 +113,12 @@ public:
 	
 	virtual std::pair<T,T> ElementByIndex(int64_t index) const
 	{ return std::make_pair(RangeFromIndex(index), PmfByIndex(index)); }
+	
+	virtual T RangeNext(const T &x) const
+	{ return RangeFromIndex(IndexFromRange(x)+1); }
+	
+	virtual T RangePrev(const T &x) const
+	{ return RangeFromIndex(IndexFromRange(x)-1); }
 	
 	virtual void PmfByIndex(int64_t begin, int64_t end, T *pmf) const
 	{
@@ -142,6 +154,70 @@ public:
 
 	typedef boost::shared_ptr<DiscreteDistribution> TypePtr;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+template<class T>
+inline int64_t DiscreteDistribution<T>::BisectCdf(int64_t lo, int64_t hi, const T &p) const
+{
+	T lo_p=CdfByIndex(lo), hi_p=CdfByIndex(hi);
+	
+	while(true){
+		assert((lo_p < p) && (p <= hi_p));
+		
+		if(lo+1==hi){
+			return hi;
+		}
+		
+		int64_t mid=(lo+hi)/2;
+		T mid_p=CdfByIndex(mid);
+		
+		if(p <= mid_p){
+			hi=mid;
+			hi_p=mid_p;
+		}else{
+			lo=mid;
+			lo_p=mid_p;
+		}
+	}
+}
+
+template<class T>
+inline std::pair<int64_t,int64_t> DiscreteDistribution<T>::BracketCdf(const T &p) const
+{
+	std::pair<int64_t,int64_t> res;
+	if(ElementCount()>0){
+		res=IndexSupport();
+		res.first-=1;
+	}else{
+		T zero=p-p;
+		T lo=zero-1, hi=zero+1;
+		while(CdfByIndex(ClosestIndexFromRange(lo)) >= p)
+			lo=lo*2;
+		while(CdfByIndex(ClosestIndexFromRange(hi)) < p)
+			hi=hi*2;
+		res.first=ClosestIndexFromRange(lo);
+		res.second=ClosestIndexFromRange(hi);
+	}
+	return res;
+}
+
+template<class T>
+inline T DiscreteDistribution<T>::InvCdf(const T &p) const
+{
+	if((p<0) || (p>1))
+		throw std::logic_error("InvCdf - p out of range.");
+	if(p==0)
+		throw std::logic_error("InvCdf - InvCdf(0) is not currently defined for discrete distributions (should it always be -infty?).");
+	//std::cerr<<"InvCdf("<<p<<"):\n";
+	std::pair<int64_t,int64_t> bracket=BracketCdf(p);
+	//std::cerr<<"  Bracket=["<<bracket.first<<","<<bracket.second<<"] = ("<<RangeFromIndex(bracket.first)<<","<<RangeFromIndex(bracket.second)<<")\n";
+	int64_t point=BisectCdf(bracket.first, bracket.second, p);
+	T res=RangeFromIndex(point);
+	//std::cerr<<"  Res=["<<point<<"] = "<<res<<"\n";
+	return res;
+}
 
 }; // random
 }; // flopoco

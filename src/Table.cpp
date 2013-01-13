@@ -203,13 +203,18 @@ namespace flopoco{
 			o << tab << tab << "end init_rom;" << endl;
 			
 			o << "	signal rom : memory_t := init_rom;" << endl;
+			
+			// DT10 : Using the declare() approach causes a "declared Y0 twice" error
 			if (maxIn-minIn <= 256 && wOut>36){
-				declare("Y1",(wOut%2==0?wOut/2:(wOut+1)/2));
+				/*declare("Y1",(wOut%2==0?wOut/2:(wOut+1)/2));
 				declare("Y0",(wOut%2==0?wOut/2:(wOut+1)/2));
 				declare("Z1",9);
-				declare("Z0",9);
+				declare("Z0",9);*/
+				
+				o << tab << "signal Y1,Y0: std_logic_vector("<<(wOut%2==0?wOut/2-1:(wOut+1)/2-1) <<" downto 0);" << endl;
 			}else{
-				declare("Y0",wOut);
+				//declare("Y0",wOut);
+				o << tab << "signal Y0: std_logic_vector("<<wOut-1 <<" downto 0);" << endl;
 			}
 //				o << tab << "signal Y1,Y0: std_logic_vector("<<(wOut%2==0?wOut/2-1:(wOut+1)/2-1) <<" downto 0);" << endl;
 			

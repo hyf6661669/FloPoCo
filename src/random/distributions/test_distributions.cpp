@@ -8,6 +8,8 @@
 
 #include "sum_distribution.hpp"
 
+#include "random/distributions/chi2_partition.hpp"
+
 #include "moment_conversions.hpp"
 
 #define BOOST_TEST_MODULE TestDistributions
@@ -71,10 +73,10 @@ BOOST_AUTO_TEST_CASE(CLTDistributionTests)
 	
 	for(unsigned i=0;i<elements.size();i++){
 		std::pair<double,double> v=elements[i];
-		fprintf(stderr, "%lg, %lg\n", v.first, v.second);
+		//fprintf(stderr, "%lg, %lg\n", v.first, v.second);
 	}
 	
-	fprintf(stderr, "IsSym=%d\n", clt->IsSymmetric()?1:0);
+	//fprintf(stderr, "IsSym=%d\n", clt->IsSymmetric()?1:0);
 }
 
 
@@ -162,7 +164,7 @@ BOOST_AUTO_TEST_CASE(TableDistributionTests)
 	
 	BOOST_CHECK(ptr->StandardMoment(0)==1.0);
 	BOOST_CHECK(ptr->StandardMoment(1)==0.0);
-	BOOST_CHECK_CLOSE(ptr->StandardMoment(2), 2.0/3.0, 1e-10);
+	BOOST_CHECK_CLOSE(ptr->StandardMoment(2), sqrt(2.0/3.0), 1e-10);
 	BOOST_CHECK(ptr->StandardMoment(3)==0.0);
 	BOOST_CHECK_CLOSE(ptr->StandardMoment(4), 1.5, 1e-10);
 	BOOST_CHECK(ptr->StandardMoment(5)==0.0);
@@ -372,9 +374,13 @@ BOOST_AUTO_TEST_CASE(QuantisedGaussianDistributionTests)
 				BOOST_CHECK_CLOSE(ptr->Pmf(x), pup-pdown, 1e-10);
 				BOOST_CHECK_EQUAL(ptr->Pmf(x+delta/2), 0.0);
 				
+				BOOST_CHECK_EQUAL(ptr->Pmf(x), ptr->Pmf(-x));
+				
 				BOOST_CHECK_CLOSE(ptr->Cdf(x-delta/4), pdown, 1e-10);
 				BOOST_CHECK_CLOSE(ptr->Cdf(x), pup, 1e-10);
 				BOOST_CHECK_CLOSE(ptr->Cdf(x+delta/4), pup, 1e-10);
+				
+				BOOST_CHECK_CLOSE(ptr->Cdf(x) + ptr->Cdf(-(x+delta)), 1, 1e-10);
 			}			
 		}
 	}
@@ -428,6 +434,135 @@ BOOST_AUTO_TEST_CASE(QuantisedGaussianDistributionMprealTests)
 			}			
 		}
 	}
-	
 }
 
+struct rng_drand48
+{
+	double operator()()
+	{ return drand48(); }
+};
+
+BOOST_AUTO_TEST_CASE(Chi2PartitionTests)
+{
+	srand48(0);
+	
+	rng_drand48 rng;
+	
+	for(int fb=4;fb<=8;fb++){
+		for(int k=4;k<=8192;k*=2){
+			DiscreteDistribution<double>::TypePtr dist=boost::make_shared<QuantisedGaussianDistribution<double> >(1.0, fb);
+			boost::shared_ptr<const Chi2Partition<double> > part(Chi2Partition<double>::CreateEqualProbability(dist, k));
+			
+			for(int i=8;i<=50;i++){
+				double n=pow(2.0, i);
+				if(n>part->MinChi2SampleSize()){
+					std::vector<double> sample=part->GenerateSample<rng_drand48>(n, rng);
+					Chi2Res res=part->Chi2Test(sample);
+					//std::cerr<<"statistic="<<res.statistic<<", pvalue="<<res.pvalue<<"\n";
+					BOOST_CHECK(std::max(res.pvalue,1-res.pvalue) > 1e-6);
+				}
+			}
+		}
+	}
+}
+
+struct rng_mpfr
+{
+	int m_prec;
+	 gmp_randstate_t m_rng;
+	
+	rng_mpfr(int prec)
+		: m_prec(prec)
+	{
+		gmp_randinit_default(m_rng);
+	}
+		
+	~rng_mpfr()
+	{
+		gmp_randclear(m_rng);
+	}
+	
+	mpfr::mpreal operator()()
+	{ 
+		mpfr::mpreal res(0, m_prec);
+		mpfr_urandomb(res.mpfr_ptr(), m_rng);
+		return res;
+	}
+};
+
+BOOST_AUTO_TEST_CASE(Chi2PartitionMprealTests)
+{
+	int prec=128;
+	rng_mpfr rng(prec);
+	
+	mpfr::mpreal one(1, prec);
+	
+	for(int fb=4;fb<=8;fb+=2){
+		for(int k=4;k<=4096;k*=8){
+			DiscreteDistribution<mpfr::mpreal>::TypePtr dist=boost::make_shared<QuantisedGaussianDistribution<mpfr::mpreal> >(one, fb);
+			boost::shared_ptr<const Chi2Partition<mpfr::mpreal> > part(Chi2Partition<mpfr::mpreal>::CreateEqualProbability(dist, k));
+			
+			for(int i=16;i<=96;i+=16){
+				mpfr::mpreal n=pow(one*2, i);
+				if(n>part->MinChi2SampleSize()){
+					std::vector<mpfr::mpreal> sample=part->GenerateSample<rng_mpfr>(n, rng);
+					Chi2Res res=part->Chi2Test(sample);
+					//std::cerr<<"statistic="<<res.statistic<<", pvalue="<<res.pvalue<<"\n";
+					BOOST_CHECK(std::max(res.pvalue,1-res.pvalue) > 1e-6);
+				}
+			}
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE(Chi2PartitionRegularTests)
+{
+	srand48(0);
+	
+	rng_drand48 rng;
+	
+	for(int fb=4;fb<=4;fb++){
+		for(int k=16;k<=16;k*=2){
+			DiscreteDistribution<double>::TypePtr dist=boost::make_shared<QuantisedGaussianDistribution<double> >(1.0, fb);
+			boost::shared_ptr<const Chi2Partition<double> > part(Chi2Partition<double>::CreateEqualRange(dist, -4.0, 4.0, k));
+			
+			for(int i=8;i<=50;i++){
+				double n=pow(2.0, i);
+				if(n>part->MinChi2SampleSize()){
+					std::vector<double> sample=part->GenerateSample<rng_drand48>(n, rng);
+					Chi2Res res=part->Chi2Test(sample);
+					//std::cerr<<"statistic="<<res.statistic<<", pvalue="<<res.pvalue<<"\n";
+					BOOST_CHECK(std::max(res.pvalue,1-res.pvalue) > 1e-6);
+				}
+			}
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE(Chi2RePartitionRegularTests)
+{
+	srand48(0);
+	
+	rng_drand48 rng;
+	
+	for(int fb=4;fb<=4;fb++){
+		for(int k=16;k<=1024;k*=2){
+			DiscreteDistribution<double>::TypePtr dist=boost::make_shared<QuantisedGaussianDistribution<double> >(1.0, fb);
+			boost::shared_ptr<const Chi2Partition<double> > part(Chi2Partition<double>::CreateEqualRange(dist, -4.0, 4.0, k));
+			
+			for(int i=4;i<=50;i++){
+				double n=pow(2.0, i);
+				boost::shared_ptr<const Chi2Partition<double> > part_adapt=part->AdaptForSampleSize(n);
+				
+				if(part_adapt->NumBuckets()>1){
+					part_adapt->Dump(std::cerr);
+					
+					std::vector<double> sample=part_adapt->GenerateSample<rng_drand48>(n, rng);
+					Chi2Res res=part_adapt->Chi2Test(sample);
+					std::cerr<<"statistic="<<res.statistic<<", pvalue="<<res.pvalue<<"\n";
+					BOOST_CHECK(std::max(res.pvalue,1-res.pvalue) > 1e-6);
+				}
+			}
+		}
+	}
+}

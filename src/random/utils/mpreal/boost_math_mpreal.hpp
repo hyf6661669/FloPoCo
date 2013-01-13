@@ -340,11 +340,15 @@ inline int real_cast<int, mpfr::mpreal>(mpfr::mpreal t)
 {
    return t.get_si();
 }
+*/
+
+// DT10 : Need this
 template <>
 inline double real_cast<double, mpfr::mpreal>(mpfr::mpreal t)
 {
-   return t.get_d();
+   return t.toDouble();
 }
+/*
 template <>
 inline float real_cast<float, mpfr::mpreal>(mpfr::mpreal t)
 {

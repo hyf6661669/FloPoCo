@@ -165,7 +165,7 @@ public:
 		return m_fracBits;
 	}
 	
-	virtual T RangeDelta() const
+	virtual T RangeGranularity() const
 	{
 		if(m_fracBits==INT_MAX)
 			return m_zero;

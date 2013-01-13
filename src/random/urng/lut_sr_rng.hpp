@@ -43,7 +43,7 @@ class LutSrRng : public Operator {
   public:
 
     // constructor, defined there with two parameters (default value 0 for each)
-    LutSrRng(Target* target,int want_r, int want_t, int want_k);
+    LutSrRng(Target* target,int want_r, int want_t, int want_k, int want_n=0);
 
     // destructor
     ~LutSrRng();

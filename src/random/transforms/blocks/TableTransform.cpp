@@ -80,18 +80,31 @@ TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_
 	
 	REPORT(DETAILED, "    Building single port table.");
 	
-	Operator *table=MakeSinglePortTable(target, acc.str()+"_Contents", wElts, m_elements);	
+	bool hardRam=elements.size() > (1<<(1+target->lutInputs()));
+	Operator *table=MakeSinglePortTable(target, acc.str()+"_Contents", wElts, m_elements, hardRam);
 	oplist.push_back(table);
-		
+	
 	inPortMap(table, "X", "index");
 	outPortMap(table,"Y", "elt");
 	syncCycleFromSignal("elt");
 	vhdl << instance(table, "elements");
+	if(hardRam){
+		useHardRAM(table);
+		nextCycle(); // Force pipeline register in
+	}else{
+		useSoftRAM(table);
+		nextCycle();	// Wwant FF for soft RAM
+	}
 	
 	REPORT(DETAILED, "    Sorting out output and/or sign change.");
 	
 	if(m_addRandomSign){
-		vhdl<<declare("res",wElts+1) << " <= "<<zeroExtend("elt",wElts+1) << " when (sign_bit='0') else ("<<zg(wElts-1)<<" - "<<zeroExtend("elt",wElts+1)<<");\n";
+		// This seems to cause weirdness in xst
+		//vhdl<<declare("res",wElts+1) << " <= "<<zeroExtend("elt",wElts+1) << " when (sign_bit='0') else ("<<zg(wElts-1)<<" - "<<zeroExtend("elt",wElts+1)<<");\n";
+		vhdl << declare("elt_ext", wElts+1) << "<=" << zeroExtend("elt", wElts+1)<<";\n";
+		vhdl << declare("pos_mask", wElts+1) << "<= (others => not sign_bit);\n";
+		vhdl << declare("neg_mask", wElts+1) << "<= (others => sign_bit);\n";
+		vhdl<<declare("res",wElts+1) << " <= (pos_mask and elt_ext) - (neg_mask and elt_ext);\n";
 		nextCycle();
 		vhdl<<nonUniformOutputName(0)<<" <= res;\n";
 	}else{

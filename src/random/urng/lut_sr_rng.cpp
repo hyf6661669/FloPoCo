@@ -15,6 +15,9 @@
 #include "lut_sr_rng.hpp"
 #include "../utils/chain_operator.hpp"
 
+#include <boost/math/common_factor.hpp>
+#include <boost/lexical_cast.hpp>
+
 using namespace std;
 
 namespace flopoco
@@ -876,14 +879,11 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
 	{ for(int j=p.size();j>1;j--) swap(p[j-1],p[LCG(s)%j]); }
 
 
-	LutSrRng::LutSrRng(Target* target, int want_r, int want_t, int want_k)
+	LutSrRng::LutSrRng(Target* target, int want_r, int want_t, int want_k, int want_n)
 	: Operator(target), seedtap(0), want_r(want_r)
 	{
 		if(want_t==0){
 			want_t=std::max(3,target->lutInputs()-1);
-		}
-		if(want_k==0){
-			want_k=0;
 		}
 		
   		// Copyright 
@@ -900,23 +900,25 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
         n=0;
 		for(unsigned i=0;i<no_tuple;i++){
 			if ((table[i].t>=want_t) && (table[i].r >= want_r) && (table[i].k>=want_k)){
-				n=table[i].n;
-				r=table[i].r;
-				t=table[i].t;
-				k=table[i].k;
-				s=table[i].s;
-				break;
+				if(want_n==0 || table[i].n==want_n){
+					n=table[i].n;
+					r=table[i].r;
+					t=table[i].t;
+					k=table[i].k;
+					s=table[i].s;
+					break;
+				}
 			}
 		}
 		if(n==0){
 			throw std::string("LutSrRng : No valid parameter set found - the set of tables may not cover this bitwidth.");
 		}
 		
-		REPORT(DETAILED, "LutSrRng : Found parameters n="<<n<<", r="<<r<<", t="<<t<<", k="<<k<<", s=0x"<<std::hex<<s);
+		REPORT(DETAILED, "LutSrRng : Found parameters n="<<n<<", r="<<r<<", t="<<t<<", k="<<k<<", s=0x"<<std::hex<<s<<std::dec);
 		
 		// definition of the name of the operator
   		ostringstream name;
-  		name << "lut_sr_rng_"<<n<<"_" << r << "_" << t << "_" << k << "_"<<std::hex<<s;
+  		name << "lut_sr_rng_"<<n<<"_" << r << "_" << t << "_" << k << "_"<<std::hex<<s<<std::dec;
   		setName(name.str());
 
 	//define the size of taps and cycle
@@ -1021,7 +1023,7 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
 		set<int>:: iterator it=taps[i].begin();	//set it points to the first element of tap[i]
 	// seedtap case
 		if (i==seedtap)			
- 		{	//vhdl << tab << declare(join("state_",i))<< " <= ";
+ 		{
 			vhdl << tab << declare(join("state_",i))<< " <=  Sin WHEN m='1' ELSE ";
 			while (it!= taps[i].end()) 
 			{ vhdl << use(join("SR_",*it++)) <<" XOR ";}
@@ -1036,7 +1038,6 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
 				vhdl << tab << declare(join("state_",i)) << " <= " << use(join("SR_",cycle[i])) << ";\n";
 			}else{
 				vhdl << tab << declare(join("state_",i)) << " <= " << use(join("SR_",cycle[i])) << " WHEN m='1' ELSE ";
-
 				set<int>:: iterator it=taps[i].begin();
 				while (it!= taps[i].end()) 
 				{ vhdl <<use(join("SR_",*it++)) <<" XOR ";}
@@ -1053,8 +1054,9 @@ unsigned  int no_tuple=sizeof(table)/sizeof(table[0]);
 
 // 7: r XOR connections for outputs
 
+	// TODO : This was originally pulling out of state_i. Make sure it still lines up with emulate
 	for (int i=0; i<want_r; i++)
-		{vhdl << tab << "RNG" << of(i) << " <= " << use(join("state_", perm[i])) << ";" << endl;}
+		{vhdl << tab << "RNG" << of(i) << " <= " << use(join("SR_", perm[i])) << ";" << endl;}
 
 	vhdl << tab << "Sout <= " << use(join("SR_",cycle[seedtap])) << ";" << endl;
 
@@ -1069,6 +1071,8 @@ LutSrRng::~LutSrRng(){
 //============================================================================================================================
 void LutSrRng::emulate(TestCase * tc) {
 	//std::cerr<<"LutSrRng::emulate\n";
+	
+	throw std::string("LutSrRng::emulate - DT10 - Check that fix to register output hasn't broken test-case.");
 	
   mpz_class smode = tc->getInputValue("m");
   mpz_class ssin= tc->getInputValue("Sin");
@@ -1204,12 +1208,192 @@ void LutSrRng::buildStandardTestCases(TestCaseList* tcl)
 }
 
 
-//============================================================================================================================
+/*! If we look at  for 2<= i < j <=1024 and gcd(i,j)<=p, then  max(gcd(2^i-1,2^j-1)) <= 2^p-1
+  for pairs I looked at. This may be strictly true, I'm too tired to check right now. So we only
+  lose a little pair-wise period if we are careful.
+*/
+struct CompositeLutSrRng : Operator
+{
+	int m_r;
+  int m_p;
+  std::vector<rng_para> m_generators; // LUT-SRs we have generators for
+  
+  int GCD(int n1, int n2) const
+  {
+	// may eventually make into true gcd(2^n1-1,2^n2-1), or into cached version
+	return boost::math::gcd(n1,n2);
+  }
+  
+  // Try to extend upwards from each point. If we find any valid combination, we always take
+  // the first one, as this will have the largest seed.
+  bool Extend(std::vector<int> &curr, int sum, std::vector<std::vector<int> > &best) const
+  {
+	  if(::flopoco::verbose>=DEBUG){
+		  std::stringstream aa;
+		  aa<<"[";
+		  for(int i=0;i<(int)curr.size();i++){
+			  if(i!=0)
+				  aa<<",";
+			  aa<<m_generators.at(curr.at(i)).n;
+		  }
+		  aa<<"]";
+		REPORT(DEBUG, "Curr="<<aa.str());
+	  }
+	  
+    if(sum>=m_r){
+		int extra=sum-m_r;
+		REPORT(INFO, " Solution : extra="<<extra);
+		if((int)best.size()<=extra)
+			best.resize(extra+1);
+		if(best.at(extra).size()==0)
+			best[extra]=curr;
+      if(extra<8)
+        return true;
+	  
+    }else{
+      int i=curr.back()+1;
+      while(i<(int)m_generators.size()){
+		if(sum + m_generators[i].r < best.size()-1){
+			int n1=m_generators.at(i).n;
+			
+			bool ok=true;
+			for(int j=0;j<(int)curr.size();j++){
+				int g=GCD(n1, m_generators.at(curr.at(j)).n);
+				//REPORT(DEBUG, "GCD("<<n1<<","<<m_generators[curr[j]].n<<") = "<<g);
+			  if(g> m_p){
+				ok=false;
+				break;
+			  }
+			}
+			if(ok){
+			  curr.push_back(i);
+			  bool found=Extend(curr, sum+m_generators.at(i).r, best);
+			  curr.pop_back();
+				if(found)
+					return true;
+			}
+		}
+        i++;
+      }
+    }
+    return false;
+  }
+  
+  // Try to create decomposition from seed. Work through seeds in descending order
+  std::vector<int> Search()
+  {
+	  std::vector<std::vector<int> > best;
+	  
+    for(int i=m_generators.size()-1;i>=0;i--){
+		REPORT(DEBUG, "Trying seed="<<m_generators[i].n);
+      std::vector<int> curr(1, i);
+      if(Extend(curr, m_generators[i].r, best))
+        break;
+    }
+    
+    for(int i=0;i<(int)best.size();i++){
+      if(best[i].size()!=0){
+		return best[i];
+	  }
+    }
+	
+	throw std::string("CompositeLutSr::Search - No valid decomposition into sub-generators found.");
+  }
+  
+  CompositeLutSrRng(Target *target, int r)
+    : Operator(target)
+	, m_r(r)
+  {
+    int min_r=128, max_r=512;
+	m_p=16;
+	// for min_r=128 and m_p=7, all individual generators have period at least 2^128-1,
+	// and all pairs of bits have period at least 2^256 / 2^7 ~ 2^249.
+	// The overall period of the generator will be at least  2^(floor(r/128)*(128-7))
+	  
+	ostringstream name;
+	name << "composite_lut_sr_"<<r;
+	setName(name.str());
+	  
+	  int t=std::min(4, std::max(3,target->lutInputs()-1));
+    
+    // Build a table of all the pairs that are useful
+	int total_r=0;
+    for(int i=0;i<(int)no_tuple;i++){
+      if(table[i].n==table[i].r && table[i].n>=min_r && table[i].n <= max_r && table[i].t==t){
+        m_generators.push_back(table[i]);
+		  total_r+=table[i].r;
+      }
+    }
+	
+	if(total_r<r)
+		throw std::string("CompositeLutSrRng - Number of bits ")+boost::lexical_cast<std::string>(r)+" is so large that this method won't work.";
+	
+	REPORT(INFO, "Got "<<m_generators.size()<<" candidate generators.");
+    
+    std::vector<int> sol=Search();
+	std::vector<rng_para> choices;
+	for(int i=0;i<(int)sol.size();i++){
+		choices.push_back(m_generators[sol[i]]);
+	}
+	
+	
+	// Get them ordered from long to short, that way if we have to throw any bits
+	// away they'll go from the lowest period generator
+	std::reverse(choices.begin(), choices.end());
+	
+	addInput("m");			//mode-> m=1 load; m=0 RNG
+	addInput("Sin");		//serial load input in load mode
+	addOutput("RNG", r, 1, true);
+	addOutput("Sout");
+	
+	// Pipeline the m part, as they will have a large fanout
+	syncCycleFromSignal("m");
+	nextCycle();
+	
+	mpz_class got_period=1, max_period=1;
+	
+	int acc_r=0;
+	for(int i=0;i<(int)choices.size();i++){
+		Operator *op=new LutSrRng(target, choices[i].r, choices[i].t, choices[i].k, choices[i].n);
+		oplist.push_back(op);
+		
+		inPortMap(op, "m", "m");
+		inPortMap(op, "Sin", "Sin");
+		outPortMap(op, "RNG", join("RNG_",i));
+		
+		vhdl << instance(op, join("inst_",i,"_r_",choices[i].r));
+		
+		int taken=std::min(r-acc_r, choices[i].r);
+		vhdl<<"RNG"<<range(taken+acc_r-1, acc_r)<<" <= "<<join("RNG_",i)<<range(taken-1,0)<<";\n";
+		
+		mpz_class pp=(mpz_class(1)<<choices[i].n)-1;
+		mpz_lcm(got_period.get_mpz_t(), got_period.get_mpz_t(), pp.get_mpz_t());
+		max_period=(max_period<<choices[i].n)-max_period;
+		
+		acc_r += choices[i].r;
+	}
+	
+	REPORT(INFO, "MinPeriod=2^"<<choices.back().n<<"-1");
+	REPORT(INFO, "EnsemblePeriod=~2^"<<mpz_sizeinbase(got_period.get_mpz_t(),2));
+	REPORT(INFO, "LostPeriod=~2^"<<mpz_sizeinbase(mpz_class(max_period/got_period).get_mpz_t(),2));
+  }
+};
 
+Operator *MakeLutOptGenerator(Target *target, int r)
+{
+	if(r<=256){
+    return new LutSrRng(target, r, 0, 0);
+  }else{
+    return new CompositeLutSrRng(target, r);
+  }
+}
+
+
+//============================================================================================================================
 
 Operator *LutSrRng::DriveTransform(std::string name, RngTransformOperator *base)
 {	
-	Operator *urng=new LutSrRng(base->getTarget(), base->uniformInputBits(), 0, 0);
+	Operator *urng=MakeLutOptGenerator(base->getTarget(), base->uniformInputBits());
 	
 	ChainOperator::mapping_list_t mapping;
 	mapping.push_back(std::pair<std::string,std::string>("RNG", base->uniformInputName()));

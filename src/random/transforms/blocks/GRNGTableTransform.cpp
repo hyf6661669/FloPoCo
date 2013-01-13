@@ -150,7 +150,7 @@ typename TableDistribution<T>::TypePtr QuantiseTable(
 		T curr=sqrt(acc/(n/2));
 		
 		for(int i=n-1;i>=n/2;i--){
-			std::cerr<<"  curr="<<curr<<", target="<<target<<", err="<<(curr-target)/target<<"\n";
+			//std::cerr<<"  curr="<<curr<<", target="<<target<<", err="<<(curr-target)/target<<"\n";
 			while(contents[i]>0){
 				//T accDown=acc-square(contents[i])+square(contents[i]-eps);
 				//T accDown=acc-contents[i]*contents+(contents[i]-eps)*(contents[i]-eps);

@@ -6,6 +6,7 @@
 
 #include "random/distributions/discrete_gaussian_distribution.hpp"
 #include "random/distributions/quantised_gaussian_distribution.hpp"
+#include "random/distributions/chi2_partition.hpp"
 
 #include "random/utils/operator_factory.hpp"
 
@@ -87,7 +88,7 @@ void DumpCdfStats(std::string prefix, std::ostream &dest_file, typename Discrete
 			
 			if(pmf==0){
 				currently_contiguous=false;
-			}else{
+			}else if(currently_contiguous){
 				max_contiguous=range_target[i];
 			}
 			
@@ -153,6 +154,9 @@ void DumpCdfStats(std::string prefix, std::ostream &dest_file, typename Discrete
 	}
 	
 	dest_file<<prefix<<"MaxContiguous, - ,"<<max_contiguous<<"\n";
+	dest_file<<prefix<<"MaxContiguousSigma, - ,"<<max_contiguous*target_sigma<<"\n";
+	dest_file<<prefix<<"MaxSupport, - ,"<<got->Support().first<<"\n";
+	dest_file<<prefix<<"MaxSupportSigma, - ,"<<got->Support().first*target_sigma<<"\n";
 }
 
 template<class T>
@@ -163,6 +167,92 @@ void DumpMomentStats(std::string prefix, std::ostream &dest_file, typename Discr
 		dest_file<<prefix<<"MomentTarget, "<<i<<", "<<e<<"\n";
 		dest_file<<prefix<<"MomentGot, "<<i<<", "<<o<<"\n";
 		dest_file<<prefix<<"MomentRelErr, "<<i<<", "<<(o-e)/e<<"\n";
+	}
+}
+
+struct rng_mpfr
+{
+	int m_prec;
+	 gmp_randstate_t m_rng;
+	
+	rng_mpfr(int prec)
+		: m_prec(prec)
+	{
+		gmp_randinit_default(m_rng);
+	}
+		
+	~rng_mpfr()
+	{
+		gmp_randclear(m_rng);
+	}
+	
+	mpfr::mpreal operator()()
+	{ 
+		mpfr::mpreal res(0, m_prec);
+		mpfr_urandomb(res.mpfr_ptr(), m_rng);
+		return res;
+	}
+};
+
+template<class T>
+void DumpChi2Stats(std::string prefix, std::ostream &dest_file, typename DiscreteDistribution<T>::TypePtr got, typename DiscreteDistribution<T>::TypePtr target)
+{	
+	T zero=target->Pmf(0);
+	zero=zero-zero;
+	T one=zero+1;
+	
+	rng_mpfr rng(one.get_prec());
+	
+	for(int k=4;k<=8192;k*=2){
+		boost::shared_ptr<const Chi2Partition<T> > part(Chi2Partition<T>::CreateEqualProbability(target, k));
+		bool fail=false;
+		double lastGood=0;
+		for(double log2n=8;log2n<=64;log2n+=0.5){
+			T n=ceil(pow(2*one, log2n));
+			boost::shared_ptr<const Chi2Partition<T> > part_adapt(part->AdaptForSampleSize(n));
+			boost::shared_ptr<const Chi2Partition<T> > part_got(part_adapt->Resample(got));
+			
+			std::vector<T> sample=part_got->GenerateSample(n, rng);
+			Chi2Res res=part_adapt->Chi2Test(sample);
+			
+			if(::flopoco::verbose >= DEBUG)
+				std::cerr<<"k="<<k<<", n=2^"<<log2n<<", stat="<<res.statistic<<", pvalue="<<res.pvalue<<"\n";
+			if(res.pvalue >= 0.01){
+				lastGood=log2n;
+			}
+			if(res.pvalue < 1e-6){
+				fail=true;
+				break;
+			}
+		}
+		dest_file<<prefix<<"Chi2EqualProbFail, "<<k<<", "<<(fail?"True":"False")<<"\n";
+		dest_file<<prefix<<"Chi2EqualProbLastGoodLog2, "<<k<<", "<<lastGood<<"\n";
+	}
+	
+	for(int k=4;k<=8192;k*=2){
+		boost::shared_ptr<const Chi2Partition<T> > part(Chi2Partition<T>::CreateEqualRange(target, -16, +16, k));
+		bool fail=false;
+		double lastGood=0;
+		for(double log2n=8;log2n<=64;log2n+=0.5){
+			T n=ceil(pow(2*one, log2n));
+			boost::shared_ptr<const Chi2Partition<T> > part_adapt(part->AdaptForSampleSize(n));
+			boost::shared_ptr<const Chi2Partition<T> > part_got(part_adapt->Resample(got));
+			
+			std::vector<T> sample=part_got->GenerateSample(n, rng);
+			Chi2Res res=part_adapt->Chi2Test(sample);
+			
+			if(::flopoco::verbose >= DEBUG)
+				std::cerr<<"k="<<k<<", n=2^"<<log2n<<", stat="<<res.statistic<<", pvalue="<<res.pvalue<<"\n";
+			if(res.pvalue >= 0.01){
+				lastGood=log2n;
+			}
+			if(res.pvalue < 1e-6){
+				fail=true;
+				break;
+			}
+		}
+		dest_file<<prefix<<"Chi2EqualRangeFail, "<<k<<", "<<(fail?"True":"False")<<"\n";
+		dest_file<<prefix<<"Chi2EqualRangeLastGoodLog2, "<<k<<", "<<lastGood<<"\n";
 	}
 }
 
@@ -188,9 +278,9 @@ DiscreteDistribution<mpfr::mpreal>::TypePtr ParseDistribution(std::string spec, 
 	if(parts.size()==0)
 		throw std::string("ParseDistribution('")+spec+"') - Doesn't contain any parts.";
 	
-	for(int i=0;i<(int)parts.size();i++){
-		std::cerr<<i<<" : '"<<parts[i]<<"', len="<<parts[i].size()<<"\n";
-	}
+	//for(int i=0;i<(int)parts.size();i++){
+	//	std::cerr<<i<<" : '"<<parts[i]<<"', len="<<parts[i].size()<<"\n";
+	//}
 	
 	if(parts[0]=="QuantisedGaussian" || parts[0]=="DiscreteGaussian"){
 		if(parts.size()<3)
@@ -211,7 +301,7 @@ DiscreteDistribution<mpfr::mpreal>::TypePtr ParseDistribution(std::string spec, 
 	}
 }
 
-void DumpRngInfo(std::string prefix, std::ostream &dest, RngTransformOperator *op, int fb, DiscreteDistribution<mpfr::mpreal>::TypePtr gotDist, DiscreteDistribution<mpfr::mpreal>::TypePtr targetDist)
+void DumpRngInfo(std::string prefix, std::ostream &dest, RngTransformOperator *op,DiscreteDistribution<mpfr::mpreal>::TypePtr gotDist, DiscreteDistribution<mpfr::mpreal>::TypePtr targetDist)
 {
 	dest<<prefix<<"NumOutputs, - , "<<op->nonUniformOutputCount()<<"\n";
 	dest<<prefix<<"HomogenousOutputs, - , "<<op->nonUniformOutputCount()<<"\n";
@@ -226,13 +316,31 @@ static Operator *TransformStatsParser(Target *target ,const std::vector<std::str
 {
 	consumed=0;
 	
+	std::ostream *dest_stream=&std::cout;
+	std::ofstream dest_file;
 	std::ofstream dump_stream;
 	int prec=128;
 	std::string startsigma_str="-12";
 	std::string prefix;
 	
 	while(args.size()-consumed > 0){
-		if(args[consumed]=="-dump"){
+		if(args[consumed]=="-dest"){
+			consumed++;
+			if(args.size()<2){
+				throw std::string("TransformStatsPaser - Need at least three arguments if -dest option is used.");
+			}
+			std::string filename=args[consumed++];
+			
+			if(::flopoco::verbose > 0)
+				std::cerr<<"TransformStats - Writing stats to file '"<<filename<<"'.\n";
+			
+			dest_file.open(filename.c_str());
+			
+			if(!dest_file.is_open())
+				throw std::string("TranformStatsParser - Couldn't open dump target file.");
+			
+			dest_stream=&dest_file;
+		}else if(args[consumed]=="-dump"){
 			consumed++;
 			if(args.size()<2){
 				throw std::string("TransformStatsPaser - Need at least three arguments if -dump option is used.");
@@ -270,6 +378,8 @@ static Operator *TransformStatsParser(Target *target ,const std::vector<std::str
 	if(args.size()-consumed <1)
 		throw std::string("TransformStatsParser - No distribution specified.");
 	
+	if(::flopoco::verbose>=INFO)
+		std::cerr<<prefix<<"Getting target distribution\n";
 	DiscreteDistribution<mpfr::mpreal>::TypePtr targetDist=ParseDistribution(args[consumed++], prec);
 	
 	mpfr::mpreal startsigma(0, prec);
@@ -292,16 +402,27 @@ static Operator *TransformStatsParser(Target *target ,const std::vector<std::str
 	if(!transform->nonUniformOutputsAreHomogenous() && transform->nonUniformOutputCount() > 1)
 		throw std::string("TransformStatsParser - Can't deal with multiple non-homogeneous output distributions.");
 	
+	if(::flopoco::verbose>=INFO)
+		std::cerr<<prefix<<"Getting RNG's CDF.\n";
 	Distribution<mpfr::mpreal>::TypePtr got=opDists->nonUniformOutputDistribution(0, prec);
 	DiscreteDistribution<mpfr::mpreal>::TypePtr gotDist=boost::dynamic_pointer_cast<DiscreteDistribution<mpfr::mpreal> >(got);
 	assert(gotDist->Cdf(0).get_prec()>=prec);
 	
-	int pp=std::cout.precision();
-	std::cout.precision(16);
-	DumpCdfStats(prefix, std::cout, gotDist, targetDist, startsigma, dump_stream.is_open() ? &dump_stream : NULL);
-	DumpMomentStats<mpfr::mpreal>(prefix, std::cout, gotDist, targetDist);
-	DumpRngInfo(prefix, std::cout, transform);
-	std::cout.precision(pp);
+	int pp=dest_stream->precision();
+	dest_stream->precision(16);
+	if(::flopoco::verbose>=INFO)
+		std::cerr<<prefix<<"Calculating Cdf Stats\n";
+	DumpCdfStats(prefix, *dest_stream, gotDist, targetDist, startsigma, dump_stream.is_open() ? &dump_stream : NULL);
+	if(::flopoco::verbose>=INFO)
+		std::cerr<<prefix<<"Calculating moment Stats\n";
+	DumpMomentStats<mpfr::mpreal>(prefix, *dest_stream, gotDist, targetDist);
+	if(::flopoco::verbose>=INFO)
+		std::cerr<<prefix<<"Calculating Chi2 Stats\n";
+	DumpChi2Stats<mpfr::mpreal>(prefix, *dest_stream, gotDist, targetDist);
+	DumpRngInfo(prefix, *dest_stream, transform, gotDist, targetDist);
+	dest_stream->precision(pp);
+	if(::flopoco::verbose>=INFO)
+		std::cerr<<prefix<<"Finished stats.\n";
 	
 	return NULL;
 }

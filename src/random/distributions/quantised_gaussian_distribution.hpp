@@ -324,6 +324,11 @@ public:
 	
 	virtual T Cdf(const T &x) const
 	{
+		if(x< -m_stddev*1024)
+			return m_zero;
+		if(x>m_stddev *1024)
+			return m_one;
+		
 		T q=ldexp(x, m_fb);
 		int64_t i=boost::math::tools::real_cast<long>(floor(q));
 		

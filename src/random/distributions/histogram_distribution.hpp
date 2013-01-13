@@ -216,6 +216,50 @@ public:
 		
 		std::copy(m_cdf.begin()+begin, m_cdf.begin()+end, cdf);
 	}
+	
+	template<class TTransform>
+	static boost::make_shared<HistogramDistribution<T> > BuildFromTransform(
+		typename DiscreteDistribution<T>::TypePtr source,
+		const TTransform &transform,
+		T step
+	){
+		if(source->ElementCount()==0)
+			throw std::string("BuildFromTransform - Can't apply transform to infinite distribution.");
+		
+		std::pair<int64_t> support=source->IndexSupport();
+		
+		std::vector<T> range, pdf;
+		source->RangeByIndex(support.first, support.second+1, range);
+		source->PmfByIndex(support.first, support.second+1, pdf);
+		
+		T minValue=std::min(transform(range.front()), transform(range.back()));
+		T maxValue=std::max(transform(range.front()), transform(range.back()));
+		
+		T scale=1.0/step;
+		
+		int currStart=boost::math::tools::real_cast<int>(floor(minValue*scale));
+		int currEnd=boost::math::tools::real_cast<int>(floor(maxValue*scale));
+		
+		std::vector<T> result(currEnd-currStart);
+		for(int i=0;i<range.size();i++){
+			T x=transform(range[i])*scale;
+			T xi=boost::math::tools::real_cast<int>(x);
+			if(xi!=x)
+				throw std::string("BuildFromTransform - Result of transform is not grid aligned.");
+			
+			if(xi<currStart){
+				result.resize(result.size()+currStart-xi);
+				std::copy_backward(result.begin(), result.end()-(currStart-xi), result.begin()+(currStart-xi));
+				std::fill(result.begin(), result.begin()+(currStart-xi), m_zero);
+				currStart=xi;
+			}
+			xi-=currStart;
+			if(xi >= result.size()){
+				result.resize(xi+1, m_zero);
+			}
+			result[xi] += pdf[i];
+		}
+	}
 };
 
 }; // random

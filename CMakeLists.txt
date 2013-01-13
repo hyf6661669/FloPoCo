@@ -25,11 +25,11 @@ INCLUDE(CPack)
 # Uncomment for profiling
 #SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
-# DT10 : These changes are not designed for trunk
-#SET(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG=1")
-SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -g")
+
+SET(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG=1 -O3")
+
 # Do you want an executable of 12MB ?
-SET(CMAKE_BUILD_TYPE DEBUG)
+#SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_BUILD_TYPE release)
 
 

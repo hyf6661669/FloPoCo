@@ -15,7 +15,7 @@ namespace random
 	T convert(const double x);
 	
 	template<>
-	double convert<double>(const double x)
+	inline double convert<double>(const double x)
 	{ return x; }
 	
 #ifdef HAVE_NTL
@@ -24,15 +24,15 @@ namespace random
 	T convert(const NTL::quad_float &x);
 	
 	template<>
-	NTL::quad_float convert<NTL::quad_float>(const NTL::quad_float &x)
+	inline NTL::quad_float convert<NTL::quad_float>(const NTL::quad_float &x)
 	{ return x; }
 	
 	template<>
-	NTL::quad_float convert<NTL::quad_float>(const double x)
+	inline NTL::quad_float convert<NTL::quad_float>(const double x)
 	{ return NTL::to_quad_float(x); }
 	
 	template<>
-	double convert<double>(const NTL::quad_float &x)
+	inline double convert<double>(const NTL::quad_float &x)
 	{ return NTL::to_double(x); }
 #endif
 	
@@ -40,15 +40,15 @@ namespace random
 	T convert(const mpfr::mpreal &x);
 	
 	template<>
-	double convert<double>(const mpfr::mpreal &x)
+	inline double convert<double>(const mpfr::mpreal &x)
 	{ return x.toDouble(); }
 	
 	template<>
-	mpfr::mpreal convert<mpfr::mpreal>(const mpfr::mpreal &x)
+	inline mpfr::mpreal convert<mpfr::mpreal>(const mpfr::mpreal &x)
 	{ return x; }
 	
 	template<>
-	mpfr::mpreal convert<mpfr::mpreal>(const double x)
+	inline mpfr::mpreal convert<mpfr::mpreal>(const double x)
 	{ return mpfr::mpreal(x); }
 	
 }; // random

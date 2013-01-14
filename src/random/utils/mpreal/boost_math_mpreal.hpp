@@ -289,7 +289,7 @@ inline int digits<mpfr::mpreal>(BOOST_MATH_EXPLICIT_TEMPLATE_TYPE_SPEC(mpfr::mpr
 namespace detail{
 
 template<class I>
-void convert_to_long_result(mpfr::mpreal const& r, I& result)
+inline void convert_to_long_result(mpfr::mpreal const& r, I& result)
 {
    result = 0;
    I last_result(0);
@@ -335,12 +335,14 @@ inline unsigned real_cast<unsigned, mpfr::mpreal>(mpfr::mpreal t)
 {
    return t.get_ui();
 }
+*/
+
+// DT10 : Need this
 template <>
 inline int real_cast<int, mpfr::mpreal>(mpfr::mpreal t)
 {
-   return t.get_si();
+   return t.toLong();
 }
-*/
 
 // DT10 : Need this
 template <>

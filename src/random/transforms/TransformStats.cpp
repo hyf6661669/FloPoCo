@@ -44,11 +44,15 @@ void DumpCdfStats(std::string prefix, std::ostream &dest_file, typename Discrete
 {
 	T one=start_sigma/start_sigma;
 	
-	if(!(target->IsSymmetric()&&got->IsSymmetric()))
-		throw std::string("DumpStats - Currently only strictly symmetric distributions are supported.");
-	
-	if(!(target->StandardMoment(1)==0 &&got->StandardMoment(1)==0))
+	if(!target->IsSymmetric())
+		throw std::string("DumpStats - Currently only strictly symmetric target distributions are supported.");
+	if(target->StandardMoment(1)!=0)
 		throw std::string("DumpStats - Currently only zero mean distributions are supported.");
+	
+	if(!got->IsSymmetric())
+		std::cerr<<"WARNING : Asymmetric distribution. This isn't handled explicitly (or well) right now.\n";
+	if(got->StandardMoment(1)!=0)
+		std::cerr<<"WARNING : Non zero-mean distribution. This isn't handled explicitly (or well) right now.\n";
 	
 	std::vector<segment> segments;
 	

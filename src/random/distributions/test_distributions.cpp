@@ -522,7 +522,7 @@ BOOST_AUTO_TEST_CASE(Chi2PartitionRegularTests)
 	rng_drand48 rng;
 	
 	for(int fb=4;fb<=4;fb++){
-		for(int k=16;k<=16;k*=2){
+		for(int k=16;k<=16;k*=4){
 			DiscreteDistribution<double>::TypePtr dist=boost::make_shared<QuantisedGaussianDistribution<double> >(1.0, fb);
 			boost::shared_ptr<const Chi2Partition<double> > part(Chi2Partition<double>::CreateEqualRange(dist, -4.0, 4.0, k));
 			
@@ -546,7 +546,7 @@ BOOST_AUTO_TEST_CASE(Chi2RePartitionRegularTests)
 	rng_drand48 rng;
 	
 	for(int fb=4;fb<=4;fb++){
-		for(int k=16;k<=1024;k*=2){
+		for(int k=16;k<=1024;k*=4){
 			DiscreteDistribution<double>::TypePtr dist=boost::make_shared<QuantisedGaussianDistribution<double> >(1.0, fb);
 			boost::shared_ptr<const Chi2Partition<double> > part(Chi2Partition<double>::CreateEqualRange(dist, -4.0, 4.0, k));
 			
@@ -555,14 +555,74 @@ BOOST_AUTO_TEST_CASE(Chi2RePartitionRegularTests)
 				boost::shared_ptr<const Chi2Partition<double> > part_adapt=part->AdaptForSampleSize(n);
 				
 				if(part_adapt->NumBuckets()>1){
-					part_adapt->Dump(std::cerr);
+					//part_adapt->Dump(std::cerr);
 					
 					std::vector<double> sample=part_adapt->GenerateSample<rng_drand48>(n, rng);
 					Chi2Res res=part_adapt->Chi2Test(sample);
-					std::cerr<<"statistic="<<res.statistic<<", pvalue="<<res.pvalue<<"\n";
+					//std::cerr<<"statistic="<<res.statistic<<", pvalue="<<res.pvalue<<"\n";
 					BOOST_CHECK(std::max(res.pvalue,1-res.pvalue) > 1e-6);
 				}
 			}
 		}
 	}
+}
+
+struct square_op
+{
+	template<class T>
+	T operator()(const T &x) const
+	{ return x*x; }
+};
+
+struct square_signed_op
+{
+	template<class T>
+	T operator()(const T &x) const
+	{ return (x<0) ? -x*x : x*x; }
+};
+
+BOOST_AUTO_TEST_CASE(HistogramDistributionTransform)
+{
+	typedef HistogramDistribution<double>::TypePtr HistogramDistributionPtr;
+	
+	std::vector<double> data;
+	data.push_back(0.25);
+	data.push_back(0);
+	data.push_back(0.50);
+	data.push_back(0);
+	data.push_back(0.25);
+	
+	HistogramDistributionPtr ptr=boost::make_shared<HistogramDistribution<double> >(-2, 1, data);
+	
+	square_op op;
+	
+	HistogramDistributionPtr trans=ptr->BuildFromTransform(ptr, op, 1);
+	BOOST_CHECK_EQUAL(trans->Pmf(0), 0.5);
+	BOOST_CHECK_EQUAL(trans->Pmf(2), 0.0);
+	BOOST_CHECK_EQUAL(trans->Pmf(4), 0.5);
+	
+	
+	data.clear();
+	data.push_back(0.125);	// -3
+	data.push_back(0.25);
+	data.push_back(0);
+	data.push_back(0.25);	// 0
+	data.push_back(0);
+	data.push_back(0.25); // 2
+	data.push_back(0.125/2); // 3
+	data.push_back(0.125/2); // 4
+	
+	ptr=boost::make_shared<HistogramDistribution<double> >(-3, 1, data);
+	
+	square_signed_op sop;
+	
+	trans=ptr->BuildFromTransform(ptr, sop, 1);
+	BOOST_CHECK_EQUAL(trans->Pmf(-9), 0.125);
+	BOOST_CHECK_EQUAL(trans->Pmf(-4), 0.25);
+	BOOST_CHECK_EQUAL(trans->Pmf(-2), 0.0);
+	BOOST_CHECK_EQUAL(trans->Pmf(0), 0.25);
+	BOOST_CHECK_EQUAL(trans->Pmf(4), 0.25);
+	BOOST_CHECK_EQUAL(trans->Pmf(9), 0.125/2);
+	BOOST_CHECK_EQUAL(trans->Pmf(16), 0.125/2);
+	
 }

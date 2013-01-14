@@ -218,7 +218,7 @@ public:
 	}
 	
 	template<class TTransform>
-	static boost::make_shared<HistogramDistribution<T> > BuildFromTransform(
+	static boost::shared_ptr<HistogramDistribution<T> > BuildFromTransform(
 		typename DiscreteDistribution<T>::TypePtr source,
 		const TTransform &transform,
 		T step
@@ -226,11 +226,14 @@ public:
 		if(source->ElementCount()==0)
 			throw std::string("BuildFromTransform - Can't apply transform to infinite distribution.");
 		
-		std::pair<int64_t> support=source->IndexSupport();
+		T zero=(step-step)+(source->Pmf(0)-source->Pmf(0));
 		
-		std::vector<T> range, pdf;
-		source->RangeByIndex(support.first, support.second+1, range);
-		source->PmfByIndex(support.first, support.second+1, pdf);
+		std::pair<int64_t,int64_t> support=source->IndexSupport();
+		
+		int64_t n=support.second-support.first+1;
+		std::vector<T> range(n), pdf(n);
+		source->RangeByIndex(support.first, support.second+1, &range[0]);
+		source->PmfByIndex(support.first, support.second+1, &pdf[0]);
 		
 		T minValue=std::min(transform(range.front()), transform(range.back()));
 		T maxValue=std::max(transform(range.front()), transform(range.back()));
@@ -240,25 +243,32 @@ public:
 		int currStart=boost::math::tools::real_cast<int>(floor(minValue*scale));
 		int currEnd=boost::math::tools::real_cast<int>(floor(maxValue*scale));
 		
-		std::vector<T> result(currEnd-currStart);
-		for(int i=0;i<range.size();i++){
+		std::vector<T> result(currEnd-currStart+1, zero);
+		for(int i=0;i<(int)range.size();i++){
+			if(pdf[i]==0)
+				continue;
 			T x=transform(range[i])*scale;
-			T xi=boost::math::tools::real_cast<int>(x);
+			int xi=boost::math::tools::real_cast<int>(x);
 			if(xi!=x)
 				throw std::string("BuildFromTransform - Result of transform is not grid aligned.");
 			
 			if(xi<currStart){
-				result.resize(result.size()+currStart-xi);
-				std::copy_backward(result.begin(), result.end()-(currStart-xi), result.begin()+(currStart-xi));
-				std::fill(result.begin(), result.begin()+(currStart-xi), m_zero);
+				int curr=result.size();
+				int needed=currStart-xi;
+				result.resize(curr+needed, zero);
+				std::copy_backward(result.begin(), result.begin()+curr, result.end());
+				std::fill(result.begin(), result.begin()+needed, zero);
 				currStart=xi;
 			}
 			xi-=currStart;
-			if(xi >= result.size()){
-				result.resize(xi+1, m_zero);
+			if(xi >= (int)result.size()){
+				result.resize(xi+1, zero);
 			}
-			result[xi] += pdf[i];
+			result.at(xi) += pdf[i];
 		}
+		
+		boost::shared_ptr<HistogramDistribution<T> > res=boost::make_shared<HistogramDistribution<T> >(currStart*step, step, result);
+		return res;
 	}
 };
 

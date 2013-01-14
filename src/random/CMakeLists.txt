@@ -53,6 +53,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	transforms/blocks/CLTTransform.cpp
 	transforms/blocks/TableTransform.cpp
 	transforms/blocks/GRNGTableTransform.cpp
+	transforms/blocks/CLTCorrectedTransform.cpp
 	transforms/TransformStats.cpp
 	
 	float_approx/static_quantiser.cpp
@@ -82,8 +83,8 @@ target_link_libraries(test_distributions ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${M
 #target_link_libraries(test_moment_correction ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
 
 
-#add_executable(gaussian_moment_correction_tables moment_correction/gaussian_moment_correction_tables.cpp)
-#target_link_libraries(gaussian_moment_correction_tables ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
+add_executable(gaussian_moment_correction_tables moment_correction/gaussian_moment_correction_tables.cpp)
+target_link_libraries(gaussian_moment_correction_tables ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB} ${MPFR_LIB})
 
 #add_executable(find_hadamard_table moment_correction/find_hadamard_table.cpp)
 #target_link_libraries(find_hadamard_table ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})

@@ -35,7 +35,7 @@ std::vector<T> FindLinearPolynomialCorrection(
 	// If we have (mu_c,std_c) and (mu_t,std_t),
 	// a decent correction is:
 	// ((x-mu_c)/std_c) * std_t + mu_t
-	T scale=sqrt(targStd/currStd);
+	T scale=targStd/currStd;
 	std::vector<T> res(2);
 	res[0]=targMean-scale*currMean;
 	res[1]=scale;

@@ -6,6 +6,8 @@
 
 #include "random/utils/sum.hpp"
 
+#include <boost/make_shared.hpp>
+
 #include <vector>
 #include <algorithm>
 #include <numeric>
@@ -148,7 +150,7 @@ public:
 		
 		m_elements.reserve(n);
 		T p=m_one;
-		p=p/n;
+		p=p/(int)n;
 		bool sorted=true;
 		for(int i=0;i<(end-begin);i++){
 			m_elements.push_back(std::make_pair(begin[i],p));

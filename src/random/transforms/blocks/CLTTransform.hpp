@@ -61,7 +61,7 @@ public:
 	virtual std::string nonUniformOutputName(int i) const
 	{ return "oRng"; }
 	
-	virtual typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
+	virtual Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
 	
 	static void registerFactory();
 };

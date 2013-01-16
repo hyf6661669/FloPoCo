@@ -105,7 +105,7 @@ public:
 			
 		}
 	};*/
-	
+	/*
 	struct pseudo_minimax
 	{
 		std::vector<double> x;	// Values in the input 
@@ -121,11 +121,10 @@ public:
 		{
 			int start_index=indices[i], finish_index=indices[i+1]-1;
 			
-			/* We want:
-				x[start_index]*scale+offset=endpoints[i]
-				x[finish_index]*scale+offset=endpoints[i+1];
-			
-				So:*/
+			// We want:
+			//	x[start_index]*scale+offset=endpoints[i]
+			//	x[finish_index]*scale+offset=endpoints[i+1];
+			//So:
 			double scale=(endpoints[i]-endpoints[i+1]) / (x[start_index]-x[finish_index]);
 			double offset=(endpoints[i+1]*x[start_index] - x[finish_index]*endpoints[i]) / / (x[start_index]-x[finish_index]);
 			return std::make_pair(scale,offset);
@@ -147,9 +146,10 @@ public:
 		{
 			
 		}
-	}
+	};
+	*/
 	
-	virtual typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const
+	virtual Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const
 	{
 		if(!m_distribution){
 			// First, build up the CLT distribution. The stated technique is to start

@@ -43,7 +43,7 @@ private:
 	unsigned m_nonUniformOutputWidth;
 	std::string m_nonUniformOutputNameBase; 
 
-	mutable typename DiscreteDistribution<mpfr::mpreal>::TypePtr m_distribution;
+	mutable DiscreteDistribution<mpfr::mpreal>::TypePtr m_distribution;
 	mutable unsigned m_distributionPrec;
 
 	void Connect(std::string dstName, int dstIdx, std::string srcName, int srcL, int srcR, int dir, int srcW);
@@ -80,7 +80,7 @@ public:
 	{ return join(m_nonUniformOutputNameBase,i); }
 	
 	// IRngTransformDistributions
-	typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
+	Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
 };
 
 }; // random

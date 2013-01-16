@@ -75,7 +75,7 @@ public:
 	{ return "oRng"; }
 	
 	// IRngTransformDistributions
-	typename Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
+	Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;
 	
 	static void registerFactory();
 };

@@ -8,6 +8,10 @@
 // Also requires the gmp and mpfr libraries.
 //
 
+//#include <boost/math/bindings/mpreal.hpp>
+
+//#if 0
+
 #ifndef BOOST_MATH_MPREAL_BINDINGS_HPP
 #define BOOST_MATH_MPREAL_BINDINGS_HPP
 
@@ -939,4 +943,6 @@ inline mpfr::mpreal bessel_i1(mpfr::mpreal x)
 }
 
 #endif // BOOST_MATH_MPLFR_BINDINGS_HPP
+
+//#endif
 

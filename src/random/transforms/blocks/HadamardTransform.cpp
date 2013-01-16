@@ -222,7 +222,7 @@ void HadamardTransform::emulate(TestCase * tc)
 	}
 }
 
-typename Distribution<mpfr::mpreal>::TypePtr HadamardTransform::nonUniformOutputDistribution(int i, unsigned prec) const
+Distribution<mpfr::mpreal>::TypePtr HadamardTransform::nonUniformOutputDistribution(int i, unsigned prec) const
 {
 	if((i<0) || (i>=(int)m_n))
 		throw std::string("Distribution index out of range.");
@@ -232,7 +232,7 @@ typename Distribution<mpfr::mpreal>::TypePtr HadamardTransform::nonUniformOutput
 		if(src==NULL)
 			throw std::string("HadamardTransform::nonUniformOutputDistribution - Base does not know its distribution.");
 		
-		typename DiscreteDistribution<mpfr::mpreal>::TypePtr part(boost::dynamic_pointer_cast<DiscreteDistribution<mpfr::mpreal> >(src->nonUniformOutputDistribution(0, prec)));
+		DiscreteDistribution<mpfr::mpreal>::TypePtr part(boost::dynamic_pointer_cast<DiscreteDistribution<mpfr::mpreal> >(src->nonUniformOutputDistribution(0, prec)));
 		assert(part->Cdf(0).get_prec() >= (int)prec);
 		assert(part->Pmf(0).get_prec() >= (int)prec);
 		m_distribution=SelfAddDistributions<mpfr::mpreal>(part, (int)m_n);

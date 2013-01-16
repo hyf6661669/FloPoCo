@@ -148,7 +148,7 @@ TestCase* TableTransform::buildRandomTestCase(int i)
   	return tc;
 }
 
-typename Distribution<mpfr::mpreal>::TypePtr TableTransform::nonUniformOutputDistribution(int i, unsigned prec) const
+Distribution<mpfr::mpreal>::TypePtr TableTransform::nonUniformOutputDistribution(int i, unsigned prec) const
 {
 	if(i!=0)
 		throw std::string("Only one output distribution.");

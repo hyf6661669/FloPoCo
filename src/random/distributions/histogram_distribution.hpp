@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <numeric>
 
+#include "boost/make_shared.hpp"
 #include "random/utils/mpreal/boost_math_mpreal.hpp"
 #include "random/utils/sum.hpp"
 #include "boost/math/tools/real_cast.hpp"
@@ -126,13 +127,13 @@ public:
 	{ return m_isSymmetric; } // this is more strict than symmetric about the mean, but still is valid
 		
 	virtual std::pair<T,T> Support() const
-	{ return std::make_pair(m_base, m_base+m_step*(m_elements.size()-1)); }
+	{ return std::make_pair(m_base, m_base+m_step*(int)(m_elements.size()-1)); }
 		
 	virtual T Pmf(const T &x) const
 	{
 		if(x<m_base)
 			return m_zero;
-		if(x > (m_base+m_step*(m_elements.size()-1)))
+		if(x > (m_base+m_step*(int)(m_elements.size()-1)))
 			return m_zero;
 		T vi=(x-m_base)/m_step;
 		T ii=round(vi);

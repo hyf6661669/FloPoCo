@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <vector>
 #include <stdlib.h>
+#include <signal.h>
 #include <boost/utility.hpp>
 
 #include "Operator.hpp"

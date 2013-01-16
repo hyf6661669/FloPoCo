@@ -101,8 +101,8 @@ public:
 			throw std::invalid_argument("CloseTableExpStage - Can't have less than two address bits.");
 		
 		m_table.resize(1<<addressBits);
-		typename residual_type<T>::iterator curr=m_tableIndexType.begin_msbs(addressBits);
-		typename residual_type<T>::iterator end=m_tableIndexType.end_msbs(addressBits);
+		residual_type<T>::iterator curr=m_tableIndexType.begin_msbs(addressBits);
+		residual_type<T>::iterator end=m_tableIndexType.end_msbs(addressBits);
 		
 		close_value_table_t<T> ct=FindCloseValues(
 			expMu, expSigma,

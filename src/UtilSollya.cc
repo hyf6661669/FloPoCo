@@ -4,6 +4,8 @@
 
 #ifdef HAVE_SOLLYA
 
+#include <signal.h>
+
 #include "UtilSollya.hh"
 sollya_chain_t makeIntPtrChainToFromBy(int m, int n, int k) {
   int i,j;

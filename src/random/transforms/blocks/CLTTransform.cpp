@@ -104,7 +104,7 @@ TestCase* CLTTransform::buildRandomTestCase(int i)
   	return tc;
 }
 
-typename Distribution<mpfr::mpreal>::TypePtr CLTTransform::nonUniformOutputDistribution(int i, unsigned prec) const
+Distribution<mpfr::mpreal>::TypePtr CLTTransform::nonUniformOutputDistribution(int i, unsigned prec) const
 {
 	int width=m_baseWidth;
 	
@@ -117,7 +117,7 @@ typename Distribution<mpfr::mpreal>::TypePtr CLTTransform::nonUniformOutputDistr
 		probs[i]=mpfr::mpreal(i+1, prec)*scale;
 	}
 	for(int i=(1<<width);i<probs.size();i++){
-		probs[i]=(probs.size()-i)*scale;
+		probs[i]=int(probs.size()-i)*scale;
 	}
 	
 	mpfr::mpreal acc(0, prec);

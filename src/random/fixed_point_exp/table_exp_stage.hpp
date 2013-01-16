@@ -88,8 +88,8 @@ public:
 	{
 		
 		m_table.resize(1<<addressBits);
-		typename residual_type<T>::iterator curr=m_tableIndexType.begin_msbs(addressBits);
-		typename residual_type<T>::iterator end=m_tableIndexType.end_msbs(addressBits);
+		residual_type<T>::iterator curr=m_tableIndexType.begin_msbs(addressBits);
+		residual_type<T>::iterator end=m_tableIndexType.end_msbs(addressBits);
 		
 		m_tableMinIndex=INT_MAX;
 		m_tableMaxIndex=0;

@@ -7,6 +7,7 @@
 #include "random/utils/binomial_sampler.hpp"
 
 #include <boost/math/distributions/chi_squared.hpp>
+#include <boost/make_shared.hpp>
 
 #include <random/utils/mpreal/boost_math_mpreal.hpp>
 

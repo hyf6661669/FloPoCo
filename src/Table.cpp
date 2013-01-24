@@ -211,6 +211,7 @@ namespace flopoco{
 				declare("Z1",9);
 				declare("Z0",9);*/
 				
+				o << tab << "signal Z0, Z1 : std_logic_vector(8 downto 0);"<< endl;
 				o << tab << "signal Y1,Y0: std_logic_vector("<<(wOut%2==0?wOut/2-1:(wOut+1)/2-1) <<" downto 0);" << endl;
 			}else{
 				//declare("Y0",wOut);

@@ -103,6 +103,9 @@ target_link_libraries(gaussian_moment_correction_tables ${Boost_LIBRARIES} ${GSL
 #add_executable(test_fft utils/fft/test_fft.cpp)
 #target_link_libraries(test_fft ${MPFR_LIB} ${GSL_LIBRARIES} ${GMP_LIB})
 
+add_executable(test_poly_min_max utils/test_poly_min_max.cpp)
+target_link_libraries(test_poly_min_max FloPoCoLib ${Boost_LIBRARIES})
+
 add_executable(test_decompose_period urng/test_decompose_period.cpp)
 target_link_libraries(test_decompose_period ${GMP_LIB})
 

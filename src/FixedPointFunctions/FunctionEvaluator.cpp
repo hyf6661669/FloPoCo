@@ -206,7 +206,7 @@ namespace flopoco{
 			
 		///////////////////////////////////////////////////////
 		// Sanity checking against emulation involving parts
-			
+			/*
 		TestCase ptc(this);
 		if(::flopoco::verbose>=FULL){
 			mpfr_fprintf(stderr, " mpX=%Rg\n", mpX);
@@ -225,6 +225,7 @@ namespace flopoco{
 		if(partsRes.find(ru)==partsRes.end()){
 			REPORT(INFO, "  emulate value = "<<ru<<" not produced when emulating parts.");
 		}
+		*/
 		
 		mpfr_clear(mpX);
 		mpfr_clear(mpR);

@@ -119,11 +119,12 @@ namespace flopoco{
 				REPORT(INFO, "Now approximating "<<fi->getName());
 				/*start with one interval; subdivide until the error is satisfied for all functions involved*/
 
-				int nrIntervals = 256;
-				int precShift=7;
+				// DT10 : Not sure why 256 became the default
+//				int nrIntervals = 256;
+//				int precShift=7;
 
-//				int nrIntervals = 1;
-//				int precShift=0;
+				int nrIntervals = 1;
+				int precShift=0;
 
 				errBoundBool =0;
 		

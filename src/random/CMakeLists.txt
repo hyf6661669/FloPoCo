@@ -48,6 +48,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	utils/output_combiner.cpp
 	
 	urng/lut_sr_rng.cpp
+	urng/mwc_rng.cpp
 	
 	transforms/blocks/HadamardTransform.cpp
 	transforms/blocks/CLTTransform.cpp
@@ -73,8 +74,8 @@ LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} ${GSL_LIBRARY_DIRS})
 #add_executable(test_accumulation utils/test_accumulation.cpp)
 #target_link_libraries(test_accumulation ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
 
-add_executable(test_distributions distributions/test_distributions.cpp)
-target_link_libraries(test_distributions ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${MPFR_LIB} ${GMP_LIB})
+#add_executable(test_distributions distributions/test_distributions.cpp)
+#target_link_libraries(test_distributions ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${MPFR_LIB} ${GMP_LIB})
 
 #add_executable(test_optimisation utils/test_optimisation.cpp)
 #target_link_libraries(test_optimisation ${Boost_LIBRARIES} ${GSL_LIBRARIES})
@@ -83,8 +84,8 @@ target_link_libraries(test_distributions ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${M
 #target_link_libraries(test_moment_correction ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
 
 
-add_executable(gaussian_moment_correction_tables moment_correction/gaussian_moment_correction_tables.cpp)
-target_link_libraries(gaussian_moment_correction_tables ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB} ${MPFR_LIB})
+#add_executable(gaussian_moment_correction_tables moment_correction/gaussian_moment_correction_tables.cpp)
+#target_link_libraries(gaussian_moment_correction_tables ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB} ${MPFR_LIB})
 
 #add_executable(find_hadamard_table moment_correction/find_hadamard_table.cpp)
 #target_link_libraries(find_hadamard_table ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
@@ -103,11 +104,11 @@ target_link_libraries(gaussian_moment_correction_tables ${Boost_LIBRARIES} ${GSL
 #add_executable(test_fft utils/fft/test_fft.cpp)
 #target_link_libraries(test_fft ${MPFR_LIB} ${GSL_LIBRARIES} ${GMP_LIB})
 
-add_executable(test_poly_min_max utils/test_poly_min_max.cpp)
-target_link_libraries(test_poly_min_max FloPoCoLib ${Boost_LIBRARIES})
+#add_executable(test_poly_min_max utils/test_poly_min_max.cpp)
+#target_link_libraries(test_poly_min_max FloPoCoLib ${Boost_LIBRARIES})
 
-add_executable(test_decompose_period urng/test_decompose_period.cpp)
-target_link_libraries(test_decompose_period ${GMP_LIB})
+#add_executable(test_decompose_period urng/test_decompose_period.cpp)
+#target_link_libraries(test_decompose_period ${GMP_LIB})
 
 
 

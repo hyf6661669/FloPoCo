@@ -214,7 +214,7 @@ namespace flopoco{
 	 */
 	inline int min(int x, int y) {return (x < y ? x : y);}
 
-	/** Minimum.
+	/** Maximum.
 	 * @param[int] x first number 
 	 * @param[int] y second number
 	 * @return maximum between x and y
@@ -352,6 +352,15 @@ namespace flopoco{
 	string printVectorContent( vector< pair<string, int> > table);
 	
 	string to_lowercase(const std::string& s);
+
+	/** a function that converts a bit vector (an mpz input to emulate()) to its signed value */
+	mpz_class bitVectorToSigned(mpz_class x, int size);
+
+	/** a function that converts a signed mpz_class to the corresponding bit vector represented as two's complement on size bits (sign bit included), to be used in the output of emulate() */
+	mpz_class signedToBitVector(mpz_class x, int size);
 }
+
+
+
 
 #endif

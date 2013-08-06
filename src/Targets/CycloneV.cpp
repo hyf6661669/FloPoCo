@@ -28,7 +28,7 @@ namespace flopoco{
 		
 		return (
 			lutDelay_ + 
-			((size/2-ceil((size/almsPerLab_)/2.0)-(size/(2*almsPerLab_))) * fastcarryDelay_) + 
+			((size-ceil((size/almsPerLab_)/2.0)-(size/(2*almsPerLab_))) * fastcarryDelay_) + 
 			(ceil((size/almsPerLab_)/2.0) * innerLABcarryDelay_) + 
 			((size/(2*almsPerLab_)) * interLABcarryDelay_) + 
 			carryInToSumOut_ + 
@@ -45,7 +45,7 @@ namespace flopoco{
 		return (
 			lutDelay_ +
 			shareOutToCarryOut_ +  
-			((size/2 - 1 - (size/almsPerLab_)) * fastcarryDelay_) + 
+			((size - 1 - (size/almsPerLab_)) * fastcarryDelay_) + 
 			((size/almsPerLab_) * interLABcarryDelay_) + 
 			carryInToSumOut_ + 
 			(size/subAdd)  * (ffDelay_ + fdCtoQ_ + elemWireDelay_)
@@ -254,8 +254,7 @@ namespace flopoco{
 				time -= interLABcarryDelay_;
 			}else
 			{
-				if(chunkSize % 2 == 1)
-					time -= fastcarryDelay_;
+				time -= fastcarryDelay_;
 			}
 		}
 		
@@ -287,8 +286,7 @@ namespace flopoco{
 				time -= interLABcarryDelay_;
 			}else
 			{
-				if((chunkSize % 2 == 1) && (chunkSize != 1))
-					time -= fastcarryDelay_;
+				time -= fastcarryDelay_;
 			}
 		}
 		
@@ -451,6 +449,24 @@ namespace flopoco{
 		cost = max(a,b)/2;
 		
 		return cost;
+	}
+	
+	void CycloneV::delayForDSP(MultiplierBlock* multBlock, double currentCp, int& cycleDelay, double& cpDelay)
+	{
+		double targetPeriod, totalPeriod;
+		int multIndex = nrConfigs_-1;
+		
+		while((abs(multBlock->getwX()-multiplierWidth_[multIndex]) > 1) || (abs(multBlock->getwY()-multiplierWidth_[multIndex]) > 1))
+			if(multIndex == 0)
+				break;
+			else
+				multIndex--;
+				
+		targetPeriod = 1.0/frequency();
+		totalPeriod = currentCp + multiplierDelay_[multIndex];
+		
+		cycleDelay = floor(totalPeriod/targetPeriod);
+		cpDelay = totalPeriod-targetPeriod*cycleDelay;
 	}
 	
 	

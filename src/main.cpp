@@ -170,7 +170,7 @@ void usage(char *name, string opName = ""){
 	 	cerr << "      Integer multiplier of two integers X and Y of sizes wInX and wInY \n";
 	 	cerr << "      Result is faithfully truncated to wOut bits  (wOut=0 means: full multiplier)\n";
 	 	cerr << "      signed=0: unsigned multiplier;     signed=1: signed inputs, signed outputs \n";
-		cerr << "      0 <= ratio <= 1; larger ratio => DSP dominant architectures\n";
+		cerr << "      0 <= ratio <= 1; shows how much of a DSP block's area is acceptable to be left unused\n";
 		cerr << "      enableSuperTiles=0 =>  lower latency, higher logic cost; enableSuperTiles=1=> lower logic cost, longer latency \n";
 	 }
 
@@ -178,7 +178,7 @@ void usage(char *name, string opName = ""){
 	 	OP("IntMultAdd","w signedIO ratio");
 	 	cerr << "      integer  R=A+X*Y where X and Y are of size w, A and R are of size 2w \n";
 	 	cerr << "      signedIO: if 0, unsigned IO; if 1, signedIO \n";
-		cerr << "      0 <= ratio <= 1; larger ratio => DSP dominant architectures\n";
+		cerr << "      0 <= ratio <= 1; shows how much of a DSP block's area is acceptable to be left unused\n";
 	 }
 
 
@@ -208,12 +208,22 @@ void usage(char *name, string opName = ""){
 		cerr << "      Faithful multiplier of a fixed-point input by a real constant\n";
 		cerr << "      The constant is provided as a Sollya expression, e.g \"log(2)\"\n";
 	}
+	if ( full || opName == "FixedPointFIR"){
+		OP("FixedPointFIR","p taps [coeff list]");
+		cerr << "      A faithful FIR on an (1,p) fixed-point format\n";
+	}
 #endif // HAVE_SOLLYA
 
 
 	if ( full || opName == "IntConstDiv"){					
 		OP( "IntConstDiv","n d alpha");
-		cerr << "      Euclidean division of input of size n by d\n";
+		cerr << "      Euclidean division of input of size n by d (returning q and r)\n";
+		cerr << "      Algorithm uses radix 2^alpha,   alpha=-1 means a sensible default.\n";
+	}
+
+	if ( full || opName == "IntConstRem"){					
+		OP( "IntConstDiv","n d alpha");
+		cerr << "      Remainder of Euclidean division of input of size n by d\n";
 		cerr << "      Algorithm uses radix 2^alpha,   alpha=-1 means a sensible default.\n";
 	}
 
@@ -232,7 +242,6 @@ void usage(char *name, string opName = ""){
 
 	if ( full || opName == "FPPipeline"){					
 	NEWOP("FPPipeline", "filename wE wF");
-		cerr << "      Early Alpha Release. \n";
 		cerr << "      Assembles the computational datapath described by the input file.\n";
 		cerr << "      The precision for all operators is given wE wF\n";
 		cerr << "      The datapath is described in an untyped and untimed Python-like syntax\n";
@@ -302,6 +311,12 @@ void usage(char *name, string opName = ""){
 		cerr << "      Floating-point square root, implemented using digit recurrence\n";
 		cerr << "      (no DSP, long latency)\n";
 	}
+#if 0
+	if ( full || opName == "FP2DNorm"){					
+		OP("FP2DNorm","wE wF");
+		cerr << "      Floating-point 2D norm\n";
+	}
+#endif
 #ifdef HAVE_SOLLYA
 	if ( full || opName == "FPSqrt" || opName == "FPSqrtPoly"){					
 		OP( "FPSqrtPoly","wE wF degree");
@@ -350,8 +365,8 @@ void usage(char *name, string opName = ""){
 	}
 	if ( full || opName == "DotProduct"){					
 		OP( "DotProduct","wE wFX wFY MaxMSB_in LSB_acc MSB_acc ratio");
-		cerr << "      Floating-point dot product unit. Ratio parameter controls  \n";
-		cerr << "      DSP/Logic tradeoff\n";
+		cerr << "      Floating-point dot product unit.\n";
+		cerr << "      0 <= ratio <= 1; shows how much of a DSP block's area is acceptable to be left unused\n";
 	}
 #ifdef HAVE_SOLLYA
 	if ( full || opName == "FPExp"){					
@@ -854,9 +869,22 @@ bool parseCommandLine(int argc, char* argv[]){
 			} 
 		}
 
+		else if(opname=="IntConstRem"){
+			int nargs = 3;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int n = checkStrictlyPositive(argv[i++], argv[0]);
+				int d = checkStrictlyPositive(argv[i++], argv[0]);
+				int alpha = atoi(argv[i++]);
+				op = new IntConstDiv(target, n, d, alpha, true);
+				addOperator(op);
+			} 
+		}
+
 
 		else if(opname=="FPConstMultRational"){
-			int nargs = 4;
+			int nargs = 6;
 			if (i+nargs > argc)
 				usage(argv[0],opname);
 			else {
@@ -1271,6 +1299,28 @@ bool parseCommandLine(int argc, char* argv[]){
 				}
 				op = new BasicCompressor(target,height);
 				addOperator(op);
+			}
+		}
+		
+
+		else if(opname=="FixedPointFIR")
+		{
+			if (i+3 > argc)
+				usage(argv[0],opname);
+			else {
+				int p = checkStrictlyPositive(argv[i++], argv[0]);
+				int taps = checkStrictlyPositive(argv[i++], argv[0]);
+				if (i+taps > argc)
+					usage(argv[0],opname);
+				else {
+					std::vector<string> coeff;
+					for (int j = 0; j < taps; j++) 
+						{
+							coeff.push_back(argv[i++]);
+						}
+					op = new FixedPointFIR(target, p, coeff);
+					addOperator(op);
+				}
 			}
 		}
 		
@@ -1885,6 +1935,18 @@ bool parseCommandLine(int argc, char* argv[]){
 			op = new FPSqrt(target, wE, wF);
 			addOperator(op);
 		}
+#if 0
+		else if (opname == "FP2DNorm")
+		{
+			int nargs = 2;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wE = checkStrictlyPositive(argv[i++], argv[0]);
+			int wF = checkStrictlyPositive(argv[i++], argv[0]);
+			op = new FP2DNorm(target, wE, wF);
+			addOperator(op);
+		}
+#endif
 #ifdef HAVE_SOLLYA
 		else if (opname == "FPSqrtPoly")
 		{
@@ -2496,8 +2558,14 @@ bool parseCommandLine(int argc, char* argv[]){
 			cerr << tab << "gtkwave " << op->getName() << ".vcd" << endl;
 		}
 		else  {
-			cerr << "ERROR: Problem parsing input line, exiting";
-			usage(argv[0]);
+			cerr << "ERROR: Problem parsing input line with opname='"<<opname<<"', and "<< argc-i <<" arguments remaining:\n";
+			for(int j=i;j<argc;j++){
+				cerr<<"  arg["<<j<<"] = '"<<argv[j]<<"\n";
+			}
+			cerr<< "Exiting.\n";
+			exit(1);
+			// dt10 - This made more sense to me, as otherwise there is loads of scroll-back, and you can't tell what caused the problem
+			//usage(argv[0]);
 		}
 	} while (i<argc);
 	return true;
@@ -2528,7 +2596,7 @@ int main(int argc, char* argv[] )
 	initTool();
 	if (setjmp(recover)) {
 	/* If we are here, we have come back from an error in the library */
-		std::cerr << "An error occurred somewhere.\n";
+		std::cerr << "An error occurred somewhere in the Sollya library.\n";
 		exit(1);
 	}
 	setRecoverEnvironment(&recover);

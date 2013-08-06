@@ -72,6 +72,7 @@ namespace flopoco{ namespace random{
 	void TransformStats_registerFactory();
 	void OutputCombiner_registerFactory();
 	void CLTCorrectedTransform_registerFactory();
+	void FixedPointPolynomialEvaluator_registerFactory();
 	void MWCRng_registerFactory();
 	void MWCTransform_registerFactory();
 }; }; 
@@ -88,7 +89,7 @@ void random_register_factories()
 	flopoco::random::FloatApprox_registerFactory();
 	flopoco::random::OutputCombiner_registerFactory();
 	flopoco::random::PolynomialEvaluator_registerFactory();
-	
+	flopoco::random::FixedPointPolynomialEvaluator_registerFactory();
 	flopoco::random::MWCRng_registerFactory();
 	flopoco::random::MWCTransform_registerFactory();
 }

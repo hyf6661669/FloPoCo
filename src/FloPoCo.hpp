@@ -112,9 +112,9 @@
 #ifdef HAVE_SOLLYA
 #include "FixSinCos.hpp"
 #include "CORDIC/FixedPointSinOrCos.hpp"
-
-//#include "CORDIC/FixMicroRotation.hpp"
 #include "CORDIC/CordicSinCos.hpp"
+
+#include "FixedPointFIR.hpp"
 #endif
 
 /* floating-point -------------------------------------------- */ 
@@ -137,6 +137,7 @@
 #include "FPPow.hpp"
 
 #include "FPSqrt.hpp"
+// #include "FP2DNorm.hpp" // The world is not ready yet 
 #include "FPSqrtPoly.hpp"
 
 #include "LongAcc.hpp"

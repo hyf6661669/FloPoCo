@@ -302,6 +302,7 @@ src/IntMultipliers/MultiplierBlock
  src/FixSinCos.cpp
  src/CORDIC/FixedPointSinOrCos.cpp
  src/CORDIC/CordicSinCos
+ src/FixedPointFIR
 
 # Floating-Point ----------------------------------------------------
 #--------------------------------------------------------------------
@@ -320,6 +321,8 @@ src/IntMultipliers/MultiplierBlock
  src/FPSqrtPoly
  src/squareroot/PolynomialTable 
  src/squareroot/PolynomialTableCorrectRounded
+
+# src/FP2DNorm
  
  src/DotProduct 
  

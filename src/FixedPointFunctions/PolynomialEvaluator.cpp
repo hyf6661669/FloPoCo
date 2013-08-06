@@ -955,22 +955,45 @@ namespace flopoco{
 		// polynomial evaluator must be within \pm 2.0^(targetPrec_-1) in order to be valid.
 		
 		int outLsb=getOutputFormat().lsb;
-		double halfUlp=pow(2.0, targetPrec_-1);
-		
-		mpfr_sub_d(outMin, acc, halfUlp, MPFR_RNDD);
-		mpfr_add_d(outMax, acc, halfUlp, MPFR_RNDU);
 		
 		if(::flopoco::verbose>=FULL)
 			mpfr_fprintf(stderr, "  %Rg -> [%Rg,%Rg]\n", y, outMin, outMax);
 		
-		mpfr_mul_2si(outMin, outMin, -outLsb, MPFR_RNDN);		
-		mpfr_mul_2si(outMax, outMax, -outLsb, MPFR_RNDN);
-		
+		// This is standard rounding up and down about the true number, using the precision
+		// that the user asked for
+		mpfr_mul_2si(outMin, acc, -targetPrec_, MPFR_RNDD);		
+		mpfr_mul_2si(outMax, acc, -targetPrec_, MPFR_RNDU);
 		mpfr_rint(outMin, outMin, MPFR_RNDD);
 		mpfr_rint(outMax, outMax, MPFR_RNDU);
+		mpfr_mul_2si(outMin, outMin, targetPrec_, MPFR_RNDD);
+		mpfr_mul_2si(outMax, outMax, targetPrec_, MPFR_RNDU);
 		
-		mpfr_mul_2si(outMin, outMin, outLsb, MPFR_RNDN);
-		mpfr_mul_2si(outMax, outMax, outLsb, MPFR_RNDN);
+		if(targetPrec_ > outLsb){
+			// So outMin and out Max are the values that are acceptable with outLsb bits of
+			// precision, but polynomial evaluator might give us more than that (sigh), in which case
+			// the number could be a bit higher or lower and still round correctly.
+			
+			int extra=targetPrec_ - outLsb;	// This is how many bits to drop
+			REPORT(DEBUG, "extra="<<extra);
+			
+			// Wrong Guess:
+			// Let's assume our rounding approach is:
+			//  x4 x3 x2 x1 x0 . x-1 x-2 x-3 ...
+			//  = (x[4:0]+1) if (x-1 and x[-2:...]!=0)
+			//  = x[4:0] if (! x-1)
+			//  = undefined if (x-1 and x[-2:...]==0), i.e. exactly on 0.5
+			/*if(extra==1){
+				// There isn't a lot to do here. It is either bang on a number, or +-0.5, which we can't do anything with
+			}else{
+				// There maximum we can accept is 2^(extra-1)-1 up or down
+				mpfr_sub_d(outMin, outMin, ldexp(pow(2.0, extra-1)-1, targetPrec_), MPFR_RNDN);
+				mpfr_add_d(outMax, outMax, ldexp(pow(2.0, extra-1)-1, targetPrec_), MPFR_RNDN);
+			}*/
+			
+			// Let's assume it's rounding by truncation
+			// There maximum we can accept is 2^extra-1 up, but only on the upper number
+			mpfr_add_d(outMax, outMax, ldexp(pow(2.0, extra)-1, targetPrec_), MPFR_RNDN);
+		}
 		
 		assert(mpfr_lessequal_p(outMin, outMax));
 		

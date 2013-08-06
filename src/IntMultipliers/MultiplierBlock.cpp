@@ -1,23 +1,5 @@
 #include "MultiplierBlock.hpp"
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <math.h>	
-#include <cstdlib>
-#include <math.h>
-#include <gmp.h>
-#include <mpfr.h>
-#include <gmpxx.h>
-#include "utils.hpp"
-#include "../Operator.hpp"
-#include "IntMultiplier.hpp"
-#include "IntAdder.hpp"
-#include "IntMultiAdder.hpp"
-#include "IntAddition/NewCompressorTree.hpp"
-#include "IntAddition/PopCount.hpp"
-#include "utils.hpp"
-#include<vector>
-#include<list>
+
 using namespace std;
 
 
@@ -31,18 +13,16 @@ namespace flopoco{
 			cycle=cycle;
 			weight=topX+topY-weightShift;
 			previous=NULL;
-			next=NULL;
-			
-			
+			next=NULL;			
 		}
 
 
 		bool MultiplierBlock::operator <= (MultiplierBlock* b){
-		if ((weight<=b->getWeight())) 
-			return true;
-		else
-			return false;
-	} 
+			if ((weight<=b->getWeight())) 
+				return true;
+			else
+				return false;
+		}
 
 		void MultiplierBlock::setSignalName(string name)
 		{
@@ -131,17 +111,16 @@ namespace flopoco{
 		}
 
 
-				//TODO improve the chaining
-				// - pass the full target
-				// - use the "double multiplier mode" on Altera
-				// ...
-
-		bool MultiplierBlock::canBeChained(MultiplierBlock* next, bool isXilinx)
+		//TODO improve the chaining
+		// - pass the full target
+		// - use the "double multiplier mode" on Altera
+		// ...
+		bool MultiplierBlock::canBeChained(MultiplierBlock* nextMultiplierBlock, bool isXilinx)
 		{
 			//for now just the stupid chaining
 			if (isXilinx)
 			{
-				if(neighbors(next))
+				if(neighbors(nextMultiplierBlock))
 					return true;
 				else
 					return false;
@@ -149,23 +128,24 @@ namespace flopoco{
 			//Altera chaining
 			else
 			{
-				if((next==NULL) && (previous==NULL) && (next->next==NULL) && (next->previous==NULL) 
-						&& (wX==next->wX) && (wY==next->wY))
+				if((next==NULL) && (previous==NULL) && (nextMultiplierBlock->getNext()==NULL) && (nextMultiplierBlock->getPrevious()==NULL) 
+						&& (abs(wX-nextMultiplierBlock->getwX())<=1) && (abs(wY-nextMultiplierBlock->getwY())<=1))
 				{
 					if((wX>18) || (wY>18))
 						return false;
 					else
 					{
-						if((getWeight() == next->getWeight()) && (this!=next))
+						if((getWeight() == nextMultiplierBlock->getWeight()) && (this != nextMultiplierBlock))
 							return true;
 						else
 							return false;
 					}
 				}
-				else 
-					return false;
+				else
+				{
+					return false;					
+				}
 			}
-
 		}
 
 		bool MultiplierBlock::neighbors(MultiplierBlock* next)
@@ -183,14 +163,6 @@ namespace flopoco{
 			else
 				return false;
 
-		}
-
-
-
-	
-
-
-
-     
+		}    
 
 }

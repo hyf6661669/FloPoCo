@@ -11,7 +11,8 @@
 #include "random/utils/mpfr_vec.hpp"
 #include "random/utils/comparable_float_type.hpp"
 
-#include "FixedPointFunctions/PolynomialEvaluator.hpp"
+//#include "FixedPointFunctions/PolynomialEvaluator.hpp"
+#include "random/poly/fixed_point_polynomial_evaluator.hpp"
 
 #include "static_quantiser.hpp"
 
@@ -291,6 +292,19 @@ public:
 		m_concreteCoeffMsbs=coeffMsbs;
 		m_concreteCoeffLsbs=coeffLsbs;
 	}
+	
+	std::vector<mpfr::mpreal> get_polynomial(segment_it_t it, int guard)
+	{
+		std::string pnCoeffs=boost::str(boost::format("minimax_fixed%1%_coeffs")%guard);
+
+		MPFRVec coeffs=boost::any_cast<MPFRVec>(it->properties[pnCoeffs]);
+		std::vector<mpfr::mpreal> res;
+		for(int i=0;i<coeffs.size();i++){
+			res.push_back(mpfr::mpreal(0, getToolPrecision()));
+			mpfr_set(res.back().mpfr_ptr(), coeffs[i], MPFR_RNDN);
+		}
+		return res;
+	}
 		
 	// Convert the polynomial coefficients into the actual data-values
 	/* The format is  |prefix|an|...|a0|, where prefix is the floating point exponent+sign that goes on the front
@@ -360,7 +374,7 @@ public:
 	
 	
 	
-	PolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
+	/*PolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
 	{
 		typedef PolynomialEvaluator::format_t format_t;
 		
@@ -376,8 +390,36 @@ public:
 		inputFormat.msb=-1;
 		inputFormat.lsb=-m_range->m_domainWF;
 	
-		return PolynomialEvaluator::Create(target, coeffs, inputFormat, /*outputLsb*/ m_range->m_rangeWF, m_concreteApproxError[0], inputDelays);
-	}
+		return PolynomialEvaluator::Create(target, coeffs, inputFormat,
+			m_range->m_rangeWF, //outputLsb
+			m_concreteApproxError[0], inputDelays);
+	} */
+	
+	FixedPointPolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
+	{
+		std::vector<fixed_format_t> coeffs(m_degree+1);
+		for(unsigned i=0;i<=m_degree;i++){
+			coeffs[i].isSigned=true;
+			coeffs[i].msb=m_concreteCoeffMsbs[i]+1;	// need +1 for sign bit
+			coeffs[i].lsb=m_concreteCoeffLsbs[i];
+		}
+		
+		fixed_format_t inputFormat;
+		inputFormat.isSigned=false;
+		inputFormat.msb=-1;
+		inputFormat.lsb=-m_range->m_domainWF;
+		
+		mpfr::mpreal budget(pow(2.0, -m_range->m_rangeWF-1), getToolPrecision());
+		mpfr_sub(budget.mpfr_ptr(), budget.mpfr_ptr(), m_concreteApproxError[0], MPFR_RNDN);
+	
+		return CreateFixedPointPolynomialEvaluator(
+			inputFormat,
+			coeffs,
+			-m_range->m_rangeWF, //outputLsb
+			budget,
+			target
+		);
+	} 
 	
 	mpz_class ToPositiveConstant(std::pair<int,int> format, mpfr_t x)
 	{
@@ -412,8 +454,7 @@ public:
 		return sq;
 	}
 	
-	/*
-	unsigned eval_concrete(mpfr_t res, mpfr_t x)
+	unsigned find_segment(mpfr_t x)
 	{
 		int i;
 		for(i=0;i<m_concretePartition.size();i++){
@@ -422,18 +463,9 @@ public:
 		}
 		if(i==m_concretePartition.size())
 			throw std::invalid_argument("eval_concrete - out of range.");
-		
-		throw std::invalid_argument("eval_concrete - Not implemented for now.");
+		return i;
 	}
-	
-	void dump_concrete(FILE *dst)
-	{
-		for(int i=0;i<m_concretePolys.size();i++){
-			m_concretePolys[i].dump(dst, "  ");
-		}
-		fprintf(stderr, "Total polys=%u\n", m_concretePolys.size());
-	}
-	*/
+
 	
 	int ulps(mpfr_t got, mpfr_t want)
 	{

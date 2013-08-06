@@ -435,6 +435,7 @@ namespace flopoco{
 	void Operator::stdLibs(std::ostream& o){
 		o << "library ieee;"<<endl
 		  << "use ieee.std_logic_1164.all;"<<endl;
+		  
 		if(stdLibType_==0){
 			o << "use ieee.std_logic_arith.all;"<<endl
 			  << "use ieee.std_logic_unsigned.all;"<<endl; 
@@ -445,6 +446,14 @@ namespace flopoco{
 		}
 		if(stdLibType_==1){
 			o << "use ieee.numeric_std.all;"<<endl; 
+		}
+		if(stdLibType_==2){
+			o << "use ieee.numeric_std.all;"<<endl
+			  << "use ieee.std_logic_signed.all;"<<endl; 
+		}
+		if(stdLibType_==3){
+			o << "use ieee.numeric_std.all;"<<endl
+			  << "use ieee.std_logic_unsigned.all;"<<endl;
 		}
 
 		o << "library std;" << endl

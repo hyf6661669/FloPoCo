@@ -65,6 +65,7 @@ namespace flopoco {
 		 * @param[in] lsbWeight     the weight, within this BitHeap, corresponding to the LSB of the multiplier output. 
 		 *                          Note that there should be enough bits below for guard bits in case of truncation.
 		 *                          The method neededGuardBits() provides this information.
+		 *                          For a stand-alone multiplier lsbWeight=g, otherwise lsbWeight>=g
 		 * @param[in] negate     if true, the multiplier result is subtracted from the bit heap 
 		 * @param[in] signedIO     false=unsigned, true=signed
 		 * @param[in] ratio            DSP block use ratio
@@ -126,7 +127,7 @@ namespace flopoco {
 		 */
 		void buildXilinxTiling();
 
-		void buildAlteraTiling( int blockTopX, int blockTopY, int blockBottomX, int blockBottomY, int dspIndex);
+		void buildAlteraTiling( int blockTopX, int blockTopY, int blockBottomX, int blockBottomY, int dspIndex, bool signedX, bool signedY);
 
 		void buildFancy41x41Tiling();
 
@@ -145,20 +146,20 @@ namespace flopoco {
 		int wYdecl;                     /**< the width for Y  as declared*/
 		int wX;                         /**< the width for X after possible swap such that wX>wY */
 		int wY;                         /**< the width for Y after possible swap such that wX>wY */
-		int wOut;						/**<the size of the output*/
+		int wOut;						/**< the size of the output*/
 		int wFull;                      /**< size of the full product: wX+wY  */
 		int wTruncated;                 /**< The number of truncated bits, wFull - wOut*/
 		int g ;                         /**< the number of guard bits */
 		int weightShift;                /**< the shift in weight for the LSB of a truncated multiplier compared to a full one,  wFull - (wOut+g)*/
-		double ratio;
-		double maxError;     /**< the max absolute value error of this multiplier, in ulps of the result. Should be 0 for untruncated, 1 or a bit less for truncated.*/  
-		double initialCP;     /**< the initial delay, getMaxInputDelays ( inputDelays_ ).*/  
+		double ratio;					/**< ratio = says what percentage of 1 DSP area is allowed to be lost */
+		double maxError;     			/**< the max absolute value error of this multiplier, in ulps of the result. Should be 0 for untruncated, 1 or a bit less for truncated.*/  
+		double initialCP;    			/**< the initial delay, getMaxInputDelays ( inputDelays_ ).*/  
 	private:
 		bool useDSP;
-		Operator* parentOp;  /**< For a virtual multiplier, adding bits to some external BitHeap, 
-		                        this is a pointer to the Operator that will provide the actual vhdl stream etc. */
-		BitHeap* bitHeap;    /**< The heap of weighted bits that will be used to do the additions */
-		int lsbWeight;       /**< the weight in the bit heap of the lsb of the multiplier result ; equals g for standalone multipliers */
+		Operator* parentOp;  			/**< For a virtual multiplier, adding bits to some external BitHeap, 
+												this is a pointer to the Operator that will provide the actual vhdl stream etc. */
+		BitHeap* bitHeap;    			/**< The heap of weighted bits that will be used to do the additions */
+		int lsbWeight;       			/**< the weight in the bit heap of the lsb of the multiplier result ; equals g for standalone multipliers */
 		//Plotter* plotter;
 		// TODO the three following variable pairs seem uglily redundant
 		Signal* x;
@@ -169,9 +170,9 @@ namespace flopoco {
 		string inputName2;
 		bool negate;                    /**< if true this multiplier checkThresholds -xy */
 		int signedIO;                   /**< true if the IOs are two's complement */
-		bool enableSuperTiles;     /** if true, supertiles are built (fewer resources, longer latency */
+		bool enableSuperTiles;     		/** if true, supertiles are built (fewer resources, longer latency */
 		int multiplierUid;
-		void initialize();     /**< initialization stuff common to both constructors*/
+		void initialize();     			/**< initialization stuff common to both constructors*/
 		vector<MultiplierBlock*> localSplitVector;	
 		vector<int> multWidths;	
 		//vector<DSP*> dsps;

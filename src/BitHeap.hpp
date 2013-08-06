@@ -23,8 +23,9 @@
 #include "IntAdder.hpp"
 #include "IntAddition/BasicCompressor.hpp"
 #include "IntMultipliers/MultiplierBlock.hpp"
-//#include "Plotter.hpp"
 
+// To enable SVG plotting, uncomment the following line
+ #define BITHEAP_GENERATE_SVG 1
 
 
 /* 
@@ -125,6 +126,13 @@ namespace flopoco{
 
 		/**  generates the VHDL code for the supertiles*/
 		void generateSupertileVHDL();
+		
+		/**
+		 * Generate the code VHDL for the process which implements the supertile,
+		 * in order to have the addition inferred inside the DSP block for Altera 
+		 * architectures.
+		 */
+		void generateAlteraSupertileVHDL(MultiplierBlock* x, MultiplierBlock* y, string resultName);
 
 
 		/** returns the maximum weight of the bit heap */
@@ -164,8 +172,9 @@ namespace flopoco{
 		//applies an adder with wIn = col1-col0+1; col0 always has size=3 and the other columns (includind col1) have size=2
 		void applyAdder(int col0, int col1, bool hasCin=true);
 
-		//** computes the latest bit from a column, in order to compress just the bits which are smaller than that one*/
-		WeightedBit* computeLatest(unsigned w, int c0, int c1);
+		/** returns a pointer to the  latest bit from the inputs to a compressor applied to the bottom of a bit heap
+		  w is the weight, c0 and c1 are the input heights of the compressor, e.g. 3,0 for a full adder */
+		WeightedBit* latestInputBitToCompressor(unsigned w, int c0, int c1);
 
 		//** computes the latest bit from the bitheap, in order to manage the cycle before the final adding*/
 		WeightedBit* getLatestBit(int lsbColumn, int msbColumn);

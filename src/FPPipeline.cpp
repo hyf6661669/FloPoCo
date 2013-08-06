@@ -418,6 +418,7 @@ namespace flopoco{
 			vhdl << instance(op1, tmp.str())<<endl;
 			break;
 		}
+
 		case 2:{ //subtracter 
 			REPORT(DETAILED, " instance subtracter");
 						
@@ -460,13 +461,13 @@ namespace flopoco{
 #if 0 // Not that it is bad, but it poorly handles special cases such as mult by 2
 				op1 = new FPRealKCM(target_, wE, wF, constant_expr.str());
 #else
-				cout << "JLTBB" << endl;
+				//				cout << "JLTBB" << endl;
 				op1 = new FPConstMult(target_, 
 				                      wE, wF, // in 
 				                      wE, wF, // out
 				                      wF+2 ,  // constant precision 
 				                      constant_expr.str()  );
-				cout << "JLTBB" << endl;
+				//				cout << "JLTBB" << endl;
 #endif
 				oplist.push_back(op1);
 							
@@ -491,6 +492,23 @@ namespace flopoco{
 			}
 			break;
 		}
+
+		case 4:{ //divider 
+			REPORT(DETAILED, " instance divider");
+						
+			op1 = new FPDiv(target_, wE, wF);
+			oplist.push_back(op1);
+
+			inPortMap( op1, "X", n->nodeArray->n->name);
+			inPortMap( op1, "Y", n->nodeArray->next->n->name);
+			outPortMap( op1, "R", n->name);
+						
+			ostringstream tmp;
+			tmp << "divider" << getNewUId();
+			vhdl << instance(op1, tmp.str())<<endl;
+			break;
+		}
+
 		case 5:{ //squarer
 			REPORT(DETAILED, " instance squarer");
 						

@@ -47,6 +47,10 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	utils/polynomial_evaluator_factory.cpp
 	utils/output_combiner.cpp
 	
+	poly/fixed_point_polynomial_evaluator.cpp
+	poly/full_precision_polynomial_evaluator.cpp
+	poly/fixed_format_t.cpp
+	
 	urng/lut_sr_rng.cpp
 	urng/mwc_rng.cpp
 	urng/mwc_transform.cpp

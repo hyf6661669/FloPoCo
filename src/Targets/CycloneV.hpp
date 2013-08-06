@@ -25,9 +25,9 @@ namespace flopoco{
 			maxFrequencyMHz_		= 550;
 			sizeOfBlock_			= 10240;		// the size of a primitive block is 2^10 * 10
 			
-			fastcarryDelay_			= 0.055e-9;		// obtained from Quartus 2 Chip Planner 11.1
-			elemWireDelay_			= 0.070e-9;		// obtained from Quartus 2 Chip Planner 11.1 - local line delay
-			lut2lutDelay_			= 1.5e-10;		// ???
+			fastcarryDelay_			= 0.014e-9;		// obtained from Quartus 2 Chip Planner 11.1
+			elemWireDelay_			= 0.180e-9;		// obtained from Quartus 2 Chip Planner 11.1 - local line delay
+			lut2lutDelay_			= 0.450e-9;		// ???
 			
 			lutDelay_				= 0.800e-9;		// obtained from Quartus 11.1
 			ffDelay_				= 0.055e-9;		// obtained from Quartus 11.1
@@ -81,6 +81,7 @@ namespace flopoco{
 		double DSPCascadingWireDelay(){ return 0.378e-9;}	// TODO
 		double DSPToLogicWireDelay(){ return 0.724e-9;}	// TODO
 		double LogicToDSPWireDelay(){ return 0.724e-9;}	// TODO
+		void delayForDSP(MultiplierBlock* multBlock, double currentCp, int& cycleDelay, double& cpDelay);
 		
 		double RAMDelay() { return RAMDelay_; }
 		double RAMToLogicWireDelay() { return RAMToLogicWireDelay_; }

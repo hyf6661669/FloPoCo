@@ -31,6 +31,10 @@ private:
   // The information we've built up about the function
   Range m_range;
   RangePolys m_polys;
+  int m_guard;
+
+  fixed_format_t m_polyInputFormat;
+  std::vector<fixed_format_t> m_polyCoeffFormats;
 
   int m_tableWidth;
   std::vector<mpz_class> m_tableContents;
@@ -38,7 +42,7 @@ private:
   Operator *m_codec;
   Operator *m_quantiser;
   Operator *m_table;
-  PolynomialEvaluator *m_poly;
+  FixedPointPolynomialEvaluator *m_poly;
 public:
   FloatApproxOperator(Target* target,
     int wDomainE, int wDomainF, mpfr::mpreal domainMin, mpfr::mpreal domainMax,
@@ -90,14 +94,13 @@ public:
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
     int nErrSplitSegments=m_range.m_segments.size();
     
-    int guard;
-    for(guard=1;guard<=9;guard++){
-      if(guard==8){
+    for(m_guard=1;m_guard<=9;m_guard++){
+      if(m_guard==8){
         throw std::string("FloatApprox - More than 8 guard bits needed, this probably means something is going horribly wrong.");
       }
-      REPORT(INFO, "Trying to find faithful polynomials with "<<guard<<" guard bits.");
+      REPORT(INFO, "Trying to find faithful polynomials with "<<m_guard<<" guard bits.");
       try{
-        m_polys.calc_faithful_fixed_point(guard);
+        m_polys.calc_faithful_fixed_point(m_guard);
       }catch(std::string msg){
         if(msg!="calc_faithful_fixed_point - fixed-point poly was not faithful."){
           throw;    // All other problems should throw
@@ -106,14 +109,24 @@ public:
       }
       break;
     }
-    REPORT(INFO, "Successful, using "<<guard<<" guard bits.");
+    REPORT(INFO, "Successful, using "<<m_guard<<" guard bits.");
     
     REPORT(INFO, "Building fixed-point coefficient tables.");
-    m_polys.build_concrete(guard);
+    m_polys.build_concrete(m_guard);
     
     int nFinalSegments=m_range.m_segments.size();
     
     int wSegmentIndex=(int)ceil(log(m_range.m_segments.size())/log(2.0));
+    
+    m_polyInputFormat.isSigned=false;
+    m_polyInputFormat.msb=-1;
+    m_polyInputFormat.lsb=-m_wRangeF;
+    m_polyCoeffFormats.resize(m_degree+1);
+    for(int i=0;i<=m_degree;i++){
+      m_polyCoeffFormats[i].isSigned=true;
+      m_polyCoeffFormats[i].msb=m_polys.m_concreteCoeffMsbs[i]+1;   // inlude sign bit
+      m_polyCoeffFormats[i].lsb=m_polys.m_concreteCoeffLsbs[i];
+    }
     
     REPORT(INFO, "Constructing static quantiser.");
     m_codec=ComparableFloatType(wDomainE,wDomainF).MakeEncoder(target);
@@ -128,7 +141,7 @@ public:
     }
     int tableWidth=3+wRangeE+coeffWidths;
     m_tableWidth=tableWidth;
-    m_tableContents=m_polys.build_ram_contents(guard, wRangeE);
+    m_tableContents=m_polys.build_ram_contents(m_guard, wRangeE);
     bool hardRam= nFinalSegments>=256;
     m_table=MakeSinglePortTable(target, name+"_table", tableWidth, m_tableContents, hardRam);  
     oplist.push_back(m_table);
@@ -136,7 +149,8 @@ public:
     REPORT(INFO, "Constructing polynomial evaluator.");
     m_poly=m_polys.make_polynomial_evaluator(target);
     oplist.push_back(m_poly);
-    REPORT(INFO, "  width of poly eval result is "<<m_poly->getRWidth()<<", weight of msb is "<<m_poly->getRWeight());
+    REPORT(INFO, "  width of poly eval result is "<<m_poly->getOutputFormat().width()<<", weight of msb is "<<m_poly->getOutputFormat().msb);
+    assert(m_poly->getOutputFormat().lsb == -wRangeF);
     
     REPORT(INFO, "Now constructing VHDL for FloatApprox.");
     
@@ -184,9 +198,9 @@ public:
     syncCycleFromSignal("result_fraction");
     
     // We have to convert from this format to the target format
-    PolynomialEvaluator::format_t result_format=m_poly->getOutputFormat();
+    fixed_format_t result_format=m_poly->getOutputFormat();
     REPORT(INFO, "poly-eval result_format={isSigned="<<result_format.isSigned<<",msb="<<result_format.msb<<",lsb="<<result_format.lsb);
-    int result_fraction_width=m_poly->getOutputSize();
+    int result_fraction_width=m_poly->getOutputFormat().width();
     
     if(!result_format.isSigned)
       throw std::string("Currently FloatApprox assumes the output of PolynomialEvaluator will always be signed.");
@@ -195,15 +209,14 @@ public:
     if(result_format.msb < -1)
       throw std::string("Currently FloatApprox needs PolynomialEvaluator to return at least the interval [-0.5,0.5). This is my fault not yours, try increasing approximation range to cover entire binade.");
     
-    int drop_bits=(- wRangeF) - result_format.lsb-1 ;
+    int drop_bits=(- wRangeF) - result_format.lsb;
     
     int result_fraction_rounded_width=result_fraction_width-drop_bits;
     if(drop_bits==0){
       vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1,0)<<";\n";
-    }else{
-      //vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< " <= result_fraction"<<range(result_fraction_width-1,drop_bits)<<" + result_fraction("<<drop_bits-1<<");\n";
-      // TODO : Why does this not want to be rounded???
-      vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< " <= result_fraction"<<range(result_fraction_width-1,drop_bits)<<";\n";
+    }else{      
+      // Making this somebody elses problem
+      throw std::string("Output of FixedPointPolynomialEvaluator is not rounded.");
     }
     
     vhdl<<declare("result_fraction_clamped", wRangeF)<<" <= ";
@@ -234,57 +247,6 @@ public:
     vhdl<<"--nSeg_Final = "<<nFinalSegments<<"\n";
   }
   
-  // Takes a signal in a given format, and rounds it to a given number of lsb places
-  /*
-  PolynomialEvaluator::format_t round_impl(std::string dst, int dstLsb, std::string src, PolynomialEvaluator::format_t srcFmt)
-  {
-    int srcWidth=srcFmt.width();
-    
-    PolynomialEvaluator::format_t dstFmt=srcFmt;
-    
-    if(dstFmt.lsb>srcFmt.lsb){
-      // Need to round the original. This might overflow, so we'll add a bit to the intermediate
-      dstFmt.msb=roundedFmt.msb+1;
-      dstFmt.lsb=dstLsb;
-      int drop_bits=dstFmt.lsb-srcFmt.lsb;
-      vhdl<<declare(dst, dstFmt.width()+1)<<" <= ";
-      if(srcFmt.isSigned){
-        vhdl<<"  "<<src<<"("<<srcWidth-1<<")&"<<src<<range(srcWidth-1,drop_bits);
-      }else{
-        vhdl<<"  '0'&"<<src<<range(srcWidth-1,drop_bits);
-      }
-      vhdl<<"    ("<<zg(dstFmt.width()-1)<<"&"<<src<<"("<<drop_bits-1<<")";
-    }else if(roundedFmt.lsb==srcFmt.lsb){
-      vhdl<<declare(dst, dstFmt.width())<<" <= "<<src<<";\n";
-    }else{
-      dstFmt.lsb=dstLsb;
-      vhdl<<declare(dst, dstFmt.width())<<" <= "<<src<<" & "<<zg(srcFmt.lsb-dstLsb)<<";\n";
-    }
-    return dstFmt;
-  }
-  
-  
-  
-  PolynomialEvaluator::format_t clamp_impl(std::string dst, PolynomialEvaluator::format_t dstFmt, std::string src, PolynomialEvaluator::format_t srcFmt)
-  {
-    if(dstFmt.lsb!=srcFmt.lsb){
-      std::string tmpSrc=src+"_preclamp_round";
-      srcFmt=round_impl(tmpSrc, dstFmt.lsb, src, srcFmt);
-      src=tmpSrc;
-    }
-    
-    vhdl<<declare(dst,dstFmt.width()) << " <= ";
-    if(!dstFmt.isSigned && srcFmt.isSigned){
-      if(dstFmt.msb+1 > srcFmt.msb){
-        vhdl << zg(dstFmt.width()) << " when "<<src<<"("<<srcFmt.width()-1<<")='1' else "<<src<<range(
-      }else{
-        throw std::string("Not implemented - clamp_impl.");
-      }
-    }else{
-      throw std::string("Not implemented - clamp_impl.");
-    }
-  }
-  */
 
   void emulate(TestCase * tc)
   {
@@ -307,17 +269,71 @@ public:
     mpfr_set(rounded, exact, MPFR_RNDU);
     FPNumber ru(m_wRangeE, m_wRangeF, rounded);
     
-    mpz_class v=rd.getSignalValue();
-    tc->addExpectedOutput("oY", v);
-    tc->addExpectedOutput("debug_result_prefix", v>>m_wRangeF);
-    mpz_cdiv_r_2exp(v.get_mpz_t(), v.get_mpz_t(), m_wRangeF);
-    tc->addExpectedOutput("debug_result_fraction", v);
+    mpz_class vd=rd.getSignalValue();
+    tc->addExpectedOutput("oY", vd);
+    assert(vd>=0);
+    tc->addExpectedOutput("debug_result_prefix", vd>>m_wRangeF);
+    mpz_fdiv_r_2exp(vd.get_mpz_t(), vd.get_mpz_t(), m_wRangeF);
+    tc->addExpectedOutput("debug_result_fraction", vd);
+    assert(vd>=0);
     
-    v=ru.getSignalValue();
-    tc->addExpectedOutput("oY", v);
-    tc->addExpectedOutput("debug_result_prefix", v>>m_wRangeF);
-    mpz_cdiv_r_2exp(v.get_mpz_t(), v.get_mpz_t(), m_wRangeF);
-    tc->addExpectedOutput("debug_result_fraction", v);
+    mpz_class vu=ru.getSignalValue();
+    tc->addExpectedOutput("oY", vu);
+    assert(vu>=0);
+    tc->addExpectedOutput("debug_result_prefix", vu>>m_wRangeF);
+    mpz_fdiv_r_2exp(vu.get_mpz_t(), vu.get_mpz_t(), m_wRangeF);
+    tc->addExpectedOutput("debug_result_fraction", vu);
+    assert(vu>=0);
+    
+    //// Now we'll do a sanity check against the polynomial implementation
+    unsigned index=m_polys.find_segment(x);
+    mpz_class fracX;    // This is the raw fraction for the input
+    mpz_fdiv_r_2exp(fracX.get_mpz_t(), iX.get_mpz_t(), m_wDomainF);
+    mpz_class coeffs=m_tableContents[index];
+    
+    TestCase *ptc=new TestCase(m_poly);
+    ptc->addInput("Y", fracX);
+    
+    mpfr::mpreal xx(0, prec);
+    mpfr_set_z(xx.mpfr_ptr(), fracX.get_mpz_t(), MPFR_RNDN);
+    xx=ldexp(xx, -m_wDomainF-1);
+    
+    // Double-check that we agree with the underlying range
+    Range::segment_it_t it=m_range.find_segment(x);
+    assert( mpfr_lessequal_p(it->domainStartFrac, xx.mpfr_ptr()));
+    assert( mpfr_lessequal_p(xx.mpfr_ptr(), it->domainFinishFrac));
+    
+    std::vector<mpfr::mpreal> truePoly=m_polys.get_polynomial(it, m_guard);
+    
+    mpfr::mpreal acc(0, prec);
+    int offset=0;
+    for(unsigned i=0;i<=m_degree;i++){
+      int w=(m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1; // extra is for sign
+      assert(w==m_polyCoeffFormats[i].width());
+      mpz_class tmp=coeffs >> offset;
+      mpz_fdiv_r_2exp(tmp.get_mpz_t(), tmp.get_mpz_t(), w);
+      ptc->addInput(join("a",i), tmp);
+      offset+=w;
+      
+      mpfr::mpreal a=DecodeRaw(m_polyCoeffFormats[i], tmp, prec);
+      acc+=pow(xx, i) * a;
+      
+      
+    }
+    
+    m_poly->emulate(ptc);
+    
+    mpz_class minFrac=0, maxFrac=(mpz_class(1)<<m_wRangeF)-1;   // We will clamp to these values
+    const std::vector<mpz_class> &polyOutputs=ptc->getExpectedOutputValues("R");
+    for(int i=0;i<polyOutputs.size();i++){
+      mpz_class tmp=polyOutputs[i];
+      tmp=std::max(minFrac, std::min(maxFrac, tmp));
+      if((tmp!=vu) && (tmp!=vd)){
+        std::cerr<<"xx="<<xx<<", vu="<<vu<<", vd="<<vd<<", got="<<tmp<<", acc="<<ldexp(acc,m_wRangeF+1)<<"\n";
+        //throw std::string("FloatApprox::emulate - emulator of FixedPointPolynomialEvaluator is returning an illegal value.");
+      }
+    }
+    
     
     mpfr_clears(x, exact, rounded, (mpfr_ptr)0);
   }

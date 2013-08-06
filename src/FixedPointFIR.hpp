@@ -1,35 +1,33 @@
-/* Each Operator declared within the flopoco framework has 
-   to inherit the class Operator and overload some functions listed below*/
 #include "Operator.hpp"
-
-/* This file contains a lot of useful functions to manipulate vhdl */
 #include "utils.hpp"
 
 /*  All flopoco operators and utility functions are declared within
-    the flopoco namespace.
+  the flopoco namespace.
     You have to use flopoco:: or using namespace flopoco in order to access these
-    functions.
+  functions.
 */
 
-namespace flopoco {
+namespace flopoco{
 
 	// new operator class declaration
-	class UserDefinedOperator : public Operator {
+	class FixedPointFIR : public Operator {
 	public:
-		/* operatorInfo is a user defined parameter (not a part of Operator class) for
-		   stocking information about the operator. The user is able to defined any number of parameter in this class, as soon as it does not affect Operator parameters undeliberatly*/
-		int param0; 
-		int param1;
+		int p;  /**< The precision of inputs and outputs */ 
+		int n;  /**< number of taps */
+		vector<string> coeff;  /**< the coefficients as strings */
+		mpfr_t mpcoeff[10000];  /**< the absolute values of the coefficients as MPFR numbers */
+		bool coeffsign[10000];  /**< the signs of the coefficients */
 
+		int wO;  /**< output size, will be computed out of the constants */
 
 	public:
 		// definition of some function for the operator    
 
-		// constructor, defined there with two parameters (default value 0 for each)
-		UserDefinedOperator(Target* target,int param0 = 0, int param1 = 0);
+		// constructor, defined there with two parameters
+		FixedPointFIR(Target* target, int p_, vector<string> coeff_);
 
 		// destructor
-		~UserDefinedOperator() {};
+		~FixedPointFIR() {};
 
 
 		// Below all the functions needed to test the operator
@@ -47,4 +45,4 @@ namespace flopoco {
 	};
 
 
-}//namespace
+}

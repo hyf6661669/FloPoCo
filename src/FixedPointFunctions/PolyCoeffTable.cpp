@@ -123,7 +123,7 @@ namespace flopoco{
 //				int nrIntervals = 256;
 //				int precShift=7;
 
-				int nrIntervals = 1;
+				int nrIntervals = 2;
 				int precShift=0;
 
 				errBoundBool =0;

@@ -10,7 +10,9 @@
 #include <iostream>
 #include <stdexcept>
 
+#ifdef HAVE_NTL
 #include "NTL/quad_float.h"
+#endif
 
 namespace flopoco
 {
@@ -168,11 +170,13 @@ public:
 		}
 	}
 	
+#ifdef HAVE_NTL
 	void Add(const NTL::quad_float &x)
 	{
 		Add(x.hi);
 		Add(x.lo);
 	}
+#endif
 	
 	void Add(const LadderAccumulator &a)
 	{
@@ -259,7 +263,7 @@ public:
 	void operator-=(const double &x)
 	{ Add(-x); }
 	
-	
+#ifdef HAVE_NTL	
 	void operator=(const NTL::quad_float &x)
 	{
 		Clear();
@@ -271,6 +275,7 @@ public:
 	
 	void operator-=(const NTL::quad_float &x)
 	{ Add(-x); }
+#endif
 	
 	LadderAccumulator operator+(const LadderAccumulator &o) const
 	{

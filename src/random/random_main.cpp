@@ -73,6 +73,7 @@ namespace flopoco{ namespace random{
 	void OutputCombiner_registerFactory();
 	void CLTCorrectedTransform_registerFactory();
 	void MWCRng_registerFactory();
+	void MWCTransform_registerFactory();
 }; }; 
 
 void random_register_factories()
@@ -89,6 +90,7 @@ void random_register_factories()
 	flopoco::random::PolynomialEvaluator_registerFactory();
 	
 	flopoco::random::MWCRng_registerFactory();
+	flopoco::random::MWCTransform_registerFactory();
 }
 	
 void random_usage(char *name, string opName = ""){

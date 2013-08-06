@@ -1,5 +1,5 @@
-#ifndef __lut_sr_urng_HPP
-#define __lut_sr_urng_HPP
+#ifndef __mwc_rng_HPP
+#define __mwc_rng_HPP
 #include <vector>
 #include <sstream>
 #include <set>
@@ -37,15 +37,26 @@ class MWCRng : public Operator {
       
     
   private:
-    MWCRngParams m_params;
+    MWCRngParams m_p;
     unsigned m_w;
     mpz_class m_M;
     unsigned m_wM;
     unsigned m_wO;
-    bool m_useCSAInternally;
-    bool m_useCSAExternally;
   
-    mpz_class m_state;
+    mpz_class m_state, m_state2;
+
+	void BuildCSA();
+    std::string Invert(std::string prefix, std::string x, bool dryRun);
+    std::pair<std::string,std::string> MakeHalfAdder(std::string prefix, std::string A, std::string B, bool dryRun);
+    std::pair<std::string,std::string> MakeFullAdder(std::string prefix, std::string A, std::string B, std::string C, bool dryRun);
+  
+    std::vector<int> DecomposeM();  
+  
+    std::vector<std::vector<std::string> > OptimiseOnesCSA(const std::vector<std::vector<std::string> > &curr);
+    std::vector<std::vector<std::string> > NegateCSA(std::string prefix, std::vector<std::vector<std::string> > curr, bool dryRun);  
+    std::vector<std::vector<std::string> > ProcessCSALevel(std::string prefix, const std::vector<std::vector<std::string> > &curr, bool dryRun);  
+	std::vector<std::vector<std::string> > MakeMWCFromCSA(const std::vector<std::vector<std::string> > &acc, bool dryRun);
+  
   public:
 
    /*! \note Output value has width w+log2ceil(M)*/

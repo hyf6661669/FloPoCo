@@ -246,6 +246,13 @@ namespace flopoco{
 	 * @param dst Number to generate, also determines precision
 	 */
 	void getLargeRandomFloatBetween(mpfr_t dst, mpfr_t a, mpfr_t b);
+	
+	/**
+	 * Generate a uniform double-precision number in [0,1)
+	 * Due to rereusage of a PRNG, this function might be suboptimal. It may
+	 * simply back onto drand48, if available in the platform
+	 */
+	double getRandomDouble();
 
 	/**
 	 * A zero generator method which takes as input two arguments and returns a string of zeros with quotes as stated by the second argurment

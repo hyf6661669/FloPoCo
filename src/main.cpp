@@ -2536,8 +2536,10 @@ int main(int argc, char* argv[] )
 	recoverEnvironmentReady=1;
 #endif
 	uint32_t i;
-	
+
+#ifndef WIN32	
 	srand48(1);
+#endif
 	
 	/* DT10 : This is to allow my self-describing operators to register their factories, so
 		that they can automatically hook into usage and parseCommandLine later on.

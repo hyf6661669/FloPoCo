@@ -27,6 +27,9 @@ INCLUDE(CPack)
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
 SET(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG=1 -O3")
 
+set(CMAKE_EXE_LINKER_FLAGS "-static, -Wl,-static")
+set(CMAKE_EXE_LINKER_FLAGS "-L/usr/local/lib")
+
 # Do you want an executable of 12MB ?
 #SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_BUILD_TYPE release)
@@ -54,7 +57,10 @@ FIND_LIBRARY(MPFI_LIB
 	HINTS "C:/Program Files/Microsoft Visual Studio 9.0/VC/lib"
 	DOC "Directory of the MPFI library")
 
+FIND_PATH(GMP_H gmp.h )
+FIND_LIBRARY(GMP_LIB NAMES gmp gmp.lib )
 
+FIND_LIBRARY(XML2_LIB NAMES xml2)
 
 # Detect Sollya's presence
 FIND_LIBRARY( SOLLYA_LIB sollya )
@@ -78,6 +84,8 @@ IF (MPFR_FOUND)
 ELSE (MPFR_FOUND)
     MESSAGE(FATAL_ERROR "Could not find MPFR.\nOn Debian-based systems type: 'sudo apt-get install libmpfr-dev'")
 ENDIF (MPFR_FOUND)
+
+INCLUDE_DIRECTORIES(${MPFR_H} ${GMP_H})  
 
 ADD_DEFINITIONS(-DHAVE_LNS)
 
@@ -397,21 +405,14 @@ src/Complex/FixedComplexMultiplier
  src/UtilSollya
 )
 IF(SOLLYA_LIB)
- IF(FPLLL_LIB)
   TARGET_LINK_LIBRARIES(
     FloPoCoLib
-    gmp gmpxx xml2 ${SOLLYA_LIB} ${MPFI_LIB}  ${FPLLL_LIB} ${MPFR_LIB} xml2
+    gmp gmpxx ${SOLLYA_LIB} ${FPLLL_LIB} ${MPFI_LIB} ${MPFR_LIB} iconv dl z
     )
- ELSE(FPLLL_LIB)
-  TARGET_LINK_LIBRARIES(
-    FloPoCoLib
-    gmp gmpxx ${SOLLYA_LIB} ${MPFI_LIB} ${MPFR_LIB} xml2
-    )
- ENDIF(FPLLL_LIB)
 ELSE(SOLLYA_LIB)
  TARGET_LINK_LIBRARIES(
    FloPoCoLib 
-   ${MPFR_LIB} gmp gmpxx ${MPFI_LIB}
+    gmp gmpxx ${MPFI_LIB} ${MPFR_LIB}
    )
 ENDIF(SOLLYA_LIB)
 SET(FLOPOCO_LIB FloPoCoLib)
@@ -423,6 +424,8 @@ TARGET_LINK_LIBRARIES(
  flopoco ${FLOPOCO_LIB}
 )
 
+# MinGW stuff
+set_target_properties(flopoco PROPERTIES LINK_SEARCH_START_STATIC 1)
 
 ADD_EXECUTABLE(fpadder_example
  src/main_minimal 

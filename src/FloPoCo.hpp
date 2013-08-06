@@ -100,15 +100,12 @@
 #include "IntMultipliers/MultiplierBlock.hpp"
 
 /* fixed-point function evaluation---------------------------- */
-#ifndef _WIN32
-
 #ifdef HAVE_SOLLYA
 #include "FixedPointFunctions/HOTBM.hpp"
 #include "FixedPointFunctions/FunctionTable.hpp"
 #include "FixedPointFunctions/PolyCoeffTable.hpp"
 #include "FixedPointFunctions/FunctionEvaluator.hpp"
 #include "FixedPointFunctions/PolynomialEvaluator.hpp"
-#endif
 #endif
 
 /* fixed-point ----------------------------------------------- */
@@ -125,10 +122,8 @@
 #include "FPMultiplierKaratsuba.hpp"
 #include "FPSquarer.hpp"
 
-#ifndef _WIN32
 #ifdef HAVE_SOLLYA
 #include "ConstMult/CRFPConstMult.hpp"
-#endif
 #endif
 
 #include "FPAdderDualPath.hpp"

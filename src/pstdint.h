@@ -185,6 +185,12 @@
 #include <limits.h>
 #include <signal.h>
 
+
+#include <stdint.h>
+#ifdef _STDINT_H
+#define _PSTDINT_H_INCLUDED
+#endif
+
 /*
  *  For gcc with _STDINT_H, fill in the PRINTF_INT*_MODIFIER macros, and
  *  do nothing else.  On the Mac OS X version of gcc this is _STDINT_H_.

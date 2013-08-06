@@ -19,6 +19,7 @@ namespace float_approx
 // Try to undo sollya's "helpful" stuff
 void unblockSignals()
 {
+#ifndef WIN32
   sigset_t mask;
 
   sigemptyset(&mask);
@@ -33,6 +34,7 @@ void unblockSignals()
   signal(SIGBUS,SIG_DFL);
   signal(SIGFPE,SIG_DFL);
   signal(SIGPIPE,SIG_DFL);
+#endif
 }
 
 // initialise and copy same value (with same precision)

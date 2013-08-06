@@ -51,7 +51,13 @@ struct result_type
 {
 protected:
 	T random() const
-	{ return drand48(); }
+	{
+		T acc=0;
+		for(int i=0;i<fracWidth;i++){
+			acc=2*acc+(rand()>(RAND_MAX/2) ? 1 : 0);
+		}
+		return ldexp(acc, -fracWidth);
+	}
 	
 public:
 	

@@ -145,13 +145,13 @@ TestCase* ComparableFloatEncoder::buildRandomTestCase(int i)
 	mpfr_init2(tmp, wF+1);
 	mpfr_init2(tmp2, wF+1);
 	
-	int e=(int)floor(drand48()*(1<<wE))-(1<<(wE-1));
+	int e=(int)floor(getRandomDouble()*(1<<wE))-(1<<(wE-1));
 	mpz_class fraction=getLargeRandom(wF)+(mpz_class(1)<<wF);
 	
 	mpfr_set_z(tmp, fraction.get_mpz_t(), MPFR_RNDN);
 	mpfr_mul_2si(tmp, tmp, e-wF, MPFR_RNDN);
 	
-	if(drand48()>0.5)
+	if(getRandomDouble()>0.5)
 		mpfr_setsign(tmp, tmp, -1, MPFR_RNDN);
 	
 	mpz_class vv=type.ToBits(tmp);

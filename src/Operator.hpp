@@ -363,7 +363,7 @@ public:
 	/** Declares a signal implicitely by having it appearing on the Left Hand Side of a VHDL assignment
 	 * @param name is the name of the signal
 	 * @param width is the width of the signal (optional, default 1)
-	 * @param isbus: a signal of width 1 is declared as std_logic when false, as std_logic_vector when true (optional, default false)
+	 * @param isbus: a signal of width 1 is declared as std_logic when false, as std_logic_vector when true (optional, default true)
 	 * @param regType: the registring type of this signal. See also the Signal Class for more info
 	 * @return name
 	 */

@@ -364,7 +364,7 @@ namespace flopoco{
 	}
 
 
-#ifdef _WIN32
+#if 0
 	mpz_class getLargeRandom(int n)
 	{
 		mpz_class o = 0;
@@ -387,7 +387,8 @@ namespace flopoco{
 	
 		return o;
 	}
-#else
+#endif
+
 	mpz_class getLargeRandom(int n)
 	{
 		mpz_class o;
@@ -422,7 +423,18 @@ namespace flopoco{
 		mpfr_clear(u);
 		mpfr_clear(d);
 	}
-#endif 
+	
+	double getRandomDouble()
+	{
+		double x;
+		if(sizeof(unsigned long)==8){
+			x=(double)gmp_urandomb_ui (FloPoCoRandomState::m_state, 53);
+		}else{
+			x=(double)gmp_urandomb_ui (FloPoCoRandomState::m_state, 32);
+			x+=ldexp((double)gmp_urandomb_ui (FloPoCoRandomState::m_state, 21), 32);
+		}
+		return ldexp(x,-53);
+	}
 
 	string zg(int n, int margins){
 		ostringstream left,full, right, zeros;

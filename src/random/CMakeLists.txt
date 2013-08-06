@@ -49,6 +49,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	
 	urng/lut_sr_rng.cpp
 	urng/mwc_rng.cpp
+	urng/mwc_transform.cpp
 	
 	transforms/blocks/HadamardTransform.cpp
 	transforms/blocks/CLTTransform.cpp

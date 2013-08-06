@@ -60,7 +60,13 @@ namespace detail
 		{ return ldexp((T)1, x); }
 		
 		T random() const
-		{ return drand48(); }
+		{
+			T acc=0;
+			for(int i=0;i<width;i++){
+				acc=acc*2+(rand()>(RAND_MAX/2) ? 1 : 0);
+			}
+			return ldexp(acc, -width);
+		}
 	public:	
 		residual_type(bool _hasSign, int _width, int _shift=0)
 			: hasSign(_hasSign)

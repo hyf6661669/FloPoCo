@@ -208,6 +208,7 @@ namespace flopoco
   // Try to undo sollya's additions
   void unblockSignals()
   {
+#ifndef WIN32
     sigset_t mask;
 
     sigemptyset(&mask);
@@ -222,6 +223,7 @@ namespace flopoco
     signal(SIGBUS,SIG_DFL);
     signal(SIGFPE,SIG_DFL);
     signal(SIGPIPE,SIG_DFL);
+#endif
   }
   
   void parseSollyaConstant(mpfr_t val, const std::string &x)

@@ -2058,6 +2058,16 @@ bool parseCommandLine(int argc, char* argv[]){
 			op = new FPSqrt(target, wE, wF);
 			addOperator(op);
 		}
+		else if (opname == "FPNormalCDF")
+		{
+			int nargs = 2;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wE = checkStrictlyPositive(argv[i++], argv[0]);
+			int wF = checkStrictlyPositive(argv[i++], argv[0]);
+			op = new FPNormalCDF(target, wE, wF, wE, wF);
+			addOperator(op);
+		}
 #if 0
 		else if (opname == "FP2DNorm")
 		{

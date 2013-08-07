@@ -339,6 +339,8 @@ src/ConstMult/IntConstDiv3
  src/FPExp 
  src/FPPow
  
+ src/FPNormalCDF
+ 
  src/LongAcc
  src/LongAcc2FP
 
@@ -404,7 +406,7 @@ src/Complex/FixedComplexMultiplier
 IF (SOLLYA_LIB)
 TARGET_LINK_LIBRARIES(
   FloPoCoLib
-  mpfr gmp gmpxx xml2 mpfi ${SOLLYA_LIB}
+  gmp gmpxx ${SOLLYA_LIB} /usr/local/lib/libfplll.a ${MPFI_LIB} ${MPFR_LIB} xml2
   )
 ELSE (SOLLYA_LIB)
 TARGET_LINK_LIBRARIES(

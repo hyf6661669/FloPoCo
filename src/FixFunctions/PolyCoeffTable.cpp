@@ -119,8 +119,8 @@ namespace flopoco{
 				REPORT(INFO, "Now approximating "<<fi->getName());
 				/*start with one interval; subdivide until the error is satisfied for all functions involved*/
 
-				int nrIntervals = 256;
-				int precShift=7;
+				int nrIntervals = 16; // 256;
+				int precShift=3; //7;
 
 //				int nrIntervals = 1;
 //				int precShift=0;

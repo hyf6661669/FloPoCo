@@ -103,6 +103,14 @@ namespace flopoco{
 		void addExpectedOutput(string s, mpz_class v);
 
 		/**
+		 * Returns the list of outputs which have been associated with the given signal
+		 * @param s The signal for which to assign an expected output
+		 * \return One or more outputs for the given signal
+		 * \throw If the signal does not exist, then will cause an error.
+		 */
+		const std::vector<mpz_class> &getExpectedOutputValues(string s) const;
+
+		/**
 		 * Adds a comment to the output VHDL. "--" are automatically prepended.
 		 * @param c Comment to add.
 		 */

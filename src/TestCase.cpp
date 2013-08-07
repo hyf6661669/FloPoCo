@@ -168,6 +168,13 @@ namespace flopoco{
 		outputs[name].push_back(v);
 	}
 
+	const std::vector<mpz_class> &TestCase::getExpectedOutputValues(string s) const
+	{
+		map<string, vector<mpz_class> >::const_iterator it=outputs.find(s);
+		if(it==outputs.end())
+			throw string("ERROR in TestCase::getExpectedOutputValues, cannot find given signal.");
+		return it->second;
+	}
  
 	string TestCase::getInputVHDL(string prepend)
 	{

@@ -141,6 +141,8 @@
 #include "FPLog.hpp"
 #include "FPPow.hpp"
 
+#include "FPNormalCDF.hpp"
+
 #include "FPSqrt.hpp"
 // #include "FP2DNorm.hpp" // The world is not ready yet 
 #include "FPSqrtPoly.hpp"

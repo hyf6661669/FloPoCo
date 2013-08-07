@@ -204,7 +204,10 @@ namespace flopoco{
 			
 			outputVHDLSignalDeclarations(o);
 			beginArchitecture(o);
-			if (maxIn-minIn <= 256 && wOut>36){
+			if (maxIn-minIn <= 128 && wOut>36){
+				o << "Z0 <= \"10\" & X;"<<endl;
+				o << "Z1 <= \"00\" & X;"<<endl;
+			}else if (maxIn-minIn <= 256 && wOut>36){
 				o << "Z0 <= '1' & X;"<<endl;
 				o << "Z1 <= '0' & X;"<<endl;
 			}

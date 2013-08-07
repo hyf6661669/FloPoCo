@@ -1,5 +1,5 @@
-#ifndef FP2Fix_HPP
-#define FP2Fix_HPP
+#ifndef FP2FixV2_HPP
+#define FP2FixV2_HPP
 #include <vector>
 #include <sstream>
 #include <gmp.h>
@@ -14,7 +14,7 @@
 namespace flopoco{
 
    /** The FP2Fix class */
-   class FP2Fix : public Operator
+   class FP2FixV2 : public Operator
    {
    public:
       /**
@@ -26,18 +26,20 @@ namespace flopoco{
                  * @param[in]		wFR			the with of the fraction in input
                  * @param[in]		trunc_p			the output is not rounded when trunc_p is true
                  */
-      FP2Fix(Target* target, int LSBO, int MSBO, int Signed,int wER, int wFR, bool trunc_p);
+      FP2FixV2(Target* target, int LSBO, int MSBO, int Signed,int wER, int wFR, bool trunc_p);
 
       /**
 		 *  destructor
 		 */
-      ~FP2Fix();
+      ~FP2FixV2();
 
 
       void emulate(TestCase * tc);
-      void buildStandardTestCases(TestCaseList* tcl);
-      /* Overloading the Operator method to limit testing of negative numbers when Signed is 0*/
+      
+      /* Make sure we exercise numbers in the right range, as well as pure random*/
       TestCase* buildRandomTestCase(int i);
+      
+      void buildStandardTestCases(TestCaseList* tcl);
 
    private:
 

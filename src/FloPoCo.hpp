@@ -157,6 +157,7 @@
 
 #include "Fix2FP.hpp"
 #include "FP2Fix.hpp"
+#include "FP2FixV2.hpp"
 #include "InputIEEE.hpp"
 #include "OutputIEEE.hpp"
 

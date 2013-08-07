@@ -720,4 +720,27 @@ namespace flopoco{
 			r = x;
 		return r;
 	}
+	
+	std::ostream &operator<<(std::ostream &dst, mpfr_t x)
+	{
+		const char *fmt="%Rb (%Rg)";
+		
+		int res=mpfr_snprintf(0,0, fmt, x, x);
+		if(res<0)
+			throw std::string("Couldn't serialise mpfr_t to output stream");
+		
+		char *buffer=(char*)malloc(res+1);
+		if(buffer==0){
+			throw std::string("Couldn't allocated memory to serialise mpfr_t to output stream");
+		}
+		memset(buffer, 0, res+1);
+		
+		mpfr_snprintf(buffer, res+1, fmt, x, x);
+		
+		dst<<buffer;
+		
+		free(buffer);
+		
+		return dst;
+	}
 }

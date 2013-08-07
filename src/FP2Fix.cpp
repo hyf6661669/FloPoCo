@@ -47,6 +47,8 @@ namespace flopoco{
       IntAdder* Exponent_difference;
 
       ostringstream name;
+            
+      int width=MSB-LSB+1;
 
       if ((MSB < LSB)){
          cerr << " FP2Fix: Input constraint LSB <= MSB not met."<<endl;
@@ -214,14 +216,26 @@ namespace flopoco{
 
    void FP2Fix::emulate(TestCase * tc)
    {
+     // NOTE : There is a question about what FP2Fix should do on overflow. For underflow it seems
+     // obvious to go to zero. I'm going to enforce a stronger condition on things than I think it
+     // had, which is that for overflow it saturates at the largest possible value, and for underflow
+     // it saturates at the most negative value. This adds a touch more hardware, but makes behaviour
+     // absolutely unambiguous for all inputs except NaN. For NaN I'll arbitrarily define it to be 0 output.
+      
+      int width=MSBO-LSBO+1;
+      
       /* Get I/O values */
       mpz_class svI = tc->getInputValue("I");
       FPNumber  fpi(wEI, wFI, svI);
-      mpfr_t i;
-      mpfr_init2(i, 1+wFI);
-      fpi.getMPFR(i);
+      mpfr_t input, output;
+      mpfr_init2(input, 1+wFI);
+      fpi.getMPFR(input);
       //std::cerr << "FP " << printMPFR(i, 100) << std::endl;
       mpz_class svO;
+      
+      mpfr_t i;
+      mpfr_init2(i, 1+wFI);
+      mpfr_set(i, input, MPFR_RNDN);
       
       mpfr_t cst, tmp2;
       mpfr_init2(cst, 10000); //init to infinite prec
@@ -242,12 +256,26 @@ namespace flopoco{
          if (svO > tmpCMP){ //negative number 
             mpz_class tmpSUB = (mpz_class(1) << (MSBO-LSBO+1));
             svO = svO - tmpSUB;
-	 }
+         }
       }
+      
+      // Clamp to correct values. The extra mpz_class(.) wrappers are because of expression templates
+      if(Signed){
+         svO=std::max(mpz_class(mpz_class(-1)<<(width-1)), std::min( mpz_class((mpz_class(1)<<(width-1))-1), svO));
+      }else{
+         svO=std::max(mpz_class(0), std::min( mpz_class((mpz_class(1)<<width)-1), svO));
+      }
+      
+      mpfr_init2(output, (MSBO-LSBO)+8);
+      mpfr_set_z(output, svO.get_mpz_t(), MPFR_RNDN);
+      mpfr_mul_2si(output, output, LSBO, MPFR_RNDN);
+      
+      REPORT(FULL, "Input : "<<input<<", Output : "<<output);
       //std::cerr << "FIX " << svO << std::endl;
+      
       tc->addExpectedOutput("O", svO);
       // clean-up
-      mpfr_clears(i,cst, tmp2, NULL);
+      mpfr_clears(i,input,cst, tmp2, NULL);
   }
   
   TestCase* FP2Fix::buildRandomTestCase(int i)
@@ -255,15 +283,48 @@ namespace flopoco{
      TestCase *tc;
      mpz_class a;
      tc = new TestCase(this); 
-     mpz_class e = (getLargeRandom(wEI+wFI) % (MSBO+(Signed?0:1))); // Should be between 0 and MSBO+1/0
-     mpz_class normalExn = mpz_class(1)<<(wEI+wFI+1);
-     mpz_class bias = ((1<<(wEI-1))-1);
-     mpz_class sign = Signed ? getLargeRandom(1) : 0;
-     e = bias + e;
-     a = getLargeRandom(wFI) + (e << wFI) + (sign << wFI+wEI) + normalExn;
-     tc->addInput("I", a);
-     /* Get correct outputs */
-     emulate(tc);
+    
+     // DT10 : This causes an exception for MSBO < 0, which seems an entirely valid thing to want to do
+     /*mpz_class e = (getLargeRandom(wEI+wFI) % (MSBO+(Signed?0:1))); // Should be between 0 and MSBO+1/0
+        mpz_class normalExn = mpz_class(1)<<(wEI+wFI+1);
+        mpz_class bias = ((1<<(wEI-1))-1);
+        mpz_class sign = Signed ? getLargeRandom(1) : 0;
+        e = bias + e;
+        a = getLargeRandom(wFI) + (e << wFI) + (sign << wFI+wEI) + normalExn;
+        tc->addInput("I", a);
+        */
+     
+     mpfr_t fp;
+      mpfr_init2(fp, 1+wFI);
+     FPNumber fpr(wEI, wFI);
+     
+      // DT10 : 1/8th of the time generate a floating-point number in the input range,
+      // rest of the time generate a fixed-point number with two more MSBs and four more LSBs
+      if(getLargeRandom(3)==7){
+         // floating-point number
+         mpz_class mantissa=getLargeRandom(wFI);
+         mpz_class exponent=getLargeRandom(wEI);
+         mpz_class sign = Signed ? getLargeRandom(1) : 0;
+         mpz_class flags = getLargeRandom(4)==0 ? 0 : 1;   // 1/16 chance of zero,  but still leaving rubbish in exponent and fraction
+         mpz_class raw= (flags << (1+wFI+wEI)) +  (sign<<(wFI+wEI)) + (exponent<<wFI) + mantissa;
+         fpr=FPNumber(wEI, wFI, raw);
+      }else{
+         // Fixed point value with MSB=MSB+1 and LSB=LSB-4
+         mpz_class raw=getLargeRandom((MSBO+1)-(LSBO-4));
+         
+         mpfr_set_z(fp, raw.get_mpz_t(), MPFR_RNDN);
+         mpfr_mul_2si(fp, fp, LSBO-4, MPFR_RNDN);
+         
+        fpr=FPNumber(wEI, wFI, fp);
+      }  
+      tc->addFPInput("I", &fpr);
+     
+      REPORT(FULL, "Emulate FP2Fix : input = "<<fp);
+      /* Get correct outputs */
+      emulate(tc);
+      
+      mpfr_clear(fp);
+      
      return tc;		
    }
    

@@ -297,6 +297,11 @@ void usage(char *name, string opName = ""){
 		cerr << "      Convert a floating point number into a 2's complement fixed-point number in \n";
 		cerr << "      the bit range MSB...LSB, truncated or not\n";
 	}	
+	if ( full || opName == "FP2FixV2"){					
+		OP("FP2FixV2","wE wF LSB MSB Signed trunc");
+		cerr << "      Convert a floating point number into a 2's complement fixed-point number in \n";
+		cerr << "      the bit range MSB...LSB, truncated or not\n";
+	}	
 
 	if ( full || opName == "FPAdder"){					
 		NEWOP( "FPAdder","wE wF");
@@ -1916,6 +1921,22 @@ bool parseCommandLine(int argc, char* argv[]){
 				int trunc_p = checkBoolean(argv[i++], argv[0]);
 				
 				op = new FP2Fix(target, LSB, MSB, sign,wE, wF, trunc_p);
+				addOperator(op);
+			}
+		}
+		else if(opname=="FP2FixV2"){
+			int nargs = 6;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int wE = checkStrictlyPositive(argv[i++], argv[0]);
+				int wF = checkStrictlyPositive(argv[i++], argv[0]);
+				int LSB = atoi(argv[i++]);
+				int MSB = atoi(argv[i++]);
+				int sign = atoi(argv[i++]);
+				int trunc_p = checkBoolean(argv[i++], argv[0]);
+				
+				op = new FP2FixV2(target, LSB, MSB, sign,wE, wF, trunc_p);
 				addOperator(op);
 			}
 		}

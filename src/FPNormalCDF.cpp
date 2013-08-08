@@ -36,6 +36,7 @@
 #include "FPExp.hpp"
 #include "FPMultiplier.hpp"
 #include "FP2Fix.hpp"
+#include "FP2FixV2.hpp"
 #include "Fix2FP.hpp"
 #include "FixFunctions/FunctionEvaluator.hpp"
 
@@ -258,7 +259,7 @@ namespace flopoco{
 		REPORT(DETAILED, "Building up B(x) part.");
 		
 		// Do sqr(X)=X^2
-		wSqrXF=wOutF+2;
+		wSqrXF=wOutF+8;
 		int wSqrX=2+1+wInE+wSqrXF;
 		FPSquarer *opSquarer=new FPSquarer(target, wInE, wInF, wSqrXF);
 		oplist.push_back(opSquarer);
@@ -273,9 +274,10 @@ namespace flopoco{
 		vhdl<<tab<<declare("sqrX_frac", wSqrXF)<<" <= sqrX"<<range(wSqrXF-1,0)<<";\n";
 		// TODO : Handle under-flow of numbers
 		vhdl<<tab<<declare("negHalfSqrX",wSqrX)<<" <= sqrX when not sqrX_flags=\"01\" else sqrX_flags & '1' & (sqrX_expnt-1) & sqrX_frac;\n";
+		syncCycleFromSignal("negHalfSqrX");
 		
 		// Bx=exp(-abs(x)^2/2)
-		wBxF=wOutF+2;
+		wBxF=wSqrXF;
 		wBxE=wInE;
 		int wB=2+1+wBxE+wBxF;
 		FPExp *opExp=new FPExp(target, wInE, wSqrXF, 0, 0);
@@ -294,16 +296,17 @@ namespace flopoco{
 		/* First produce absX=abs(X), and reflect_at_end=X<0 */
 		vhdl<<tab<<declare("reflect_at_end")<<" <= X("<<wInE+wInF<<");\n";
 		vhdl<<tab<<declare("absX",2+1+wInE+wInF)<<" <= X"<<range(2+1+wInE+wInF-1,1+wInE+wInF)<<"&'0'&X"<<range(wInE+wInF-1,0)<<";\n";
+		syncCycleFromSignal("absX");
 		
 		// Convert it to fixed-point.
-		fixXLSB=-(wInF+2);
+		fixXLSB=-(wInF+8);
 		fixXMSB=CalcFxInputMSB()+1;
 		REPORT(INFO, "fixX: MSB=2^"<<fixXMSB<<", fixXLSB=2^"<<fixXLSB);
 		// TODO : For some reason FP2Fix wants us to have more fractional bits in the input than there are in
 		// the output. I have no idea why this should be the case...
 		// TODO : Actually, it needs one _more_ bit as well.
 		// TODO: and another one! But I think that is my fault
-		int extraBits=(-fixXLSB)-wInF+1+1;
+		int extraBits=0; //(-fixXLSB)-wInF+1+1;
 		REPORT(DETAILED, "wInF="<<wInF<<", -fixXLSB="<<-fixXLSB);
 		if(extraBits<=0){
 			vhdl<<tab<<declare("absX_Hack", 3+wInE+wInF)<<" <= absX;\n";
@@ -311,8 +314,10 @@ namespace flopoco{
 			vhdl<<tab<<declare("absX_Hack", 3+wInE+wInF+extraBits)<<" <= absX & "<<zg(extraBits)<<";\n";
 			REPORT(DETAILED, "  adding "<<extraBits<<" to keep FP2Fix happy");
 		}
+		syncCycleFromSignal("absX_Hack");
+		
 		// TODO: There is something very fishy about this whole conversion, I think I am wasting LSBs here
-		FP2Fix *opFP2Fix=new FP2Fix(target, /*LSB0*/ fixXLSB-1, /*MSBO*/ fixXMSB-1, /*Signed*/ false, /*wER*/ wInE, wInF+extraBits, /*trunc_p*/ false);
+		FP2FixV2 *opFP2Fix=new FP2FixV2(target, /*LSB0*/ fixXLSB-1, /*MSBO*/ fixXMSB-1, /*Signed*/ false, /*wER*/ wInE, wInF+extraBits, /*trunc_p*/ false);
 		oplist.push_back(opFP2Fix);
 		inPortMap(opFP2Fix, "I", "absX_Hack");
 		outPortMap(opFP2Fix, "O", "fixX");
@@ -320,9 +325,9 @@ namespace flopoco{
 		syncCycleFromSignal("fixX");
 		
 		// Do the actual evaluation of F(x)
-		FxLSB=CalcFxOutputLSB(wOutF+3);
+		FxLSB=CalcFxOutputLSB(wOutF+2);
 		FxMSB=-1;	// The maximum is always 0.5
-		int degree=3;	// TODO
+		int degree=4;	// TODO
 		std::string funcStr;
 		{
 			std::stringstream xStr;
@@ -354,7 +359,9 @@ namespace flopoco{
 		wFxE=wOutE;
 		// The function evaluator may have produced more bits than we want
 		vhdl<<tab<<declare("fixFx_trunc", FxMSB-FxLSB+1)<<" <= fixFx"<<range(FxMSB-FxLSB,0)<<";\n";
+		
 		Fix2FP *opFix2FP=new Fix2FP(target, FxLSB, FxMSB+1, /*Signed*/ false, wFxE, wFxF);
+		
 		oplist.push_back(opFix2FP);
 		inPortMap(opFix2FP, "I", "fixFx_trunc");
 		outPortMap(opFix2FP, "O", "Fx");
@@ -366,16 +373,21 @@ namespace flopoco{
 		
 		syncCycleFromSignal("Fx");
 		syncCycleFromSignal("Bx");
+		nextCycle();
+		
+		vhdl<<tab<<declare("Fx_in",3+wFxE+wFxF)<<" <= Fx;\n";
+		vhdl<<tab<<declare("Bx_in",3+wBxE+wBxF)<<" <= Bx;\n";
 		
 		FPMultiplier *opMult=new FPMultiplier(target, wBxE, wBxF, wFxE, wFxF, wOutE, wOutF);
+		
 		oplist.push_back(opMult);
-		inPortMap(opMult, "X", "Bx");
-		inPortMap(opMult, "Y", "Fx");
+		inPortMap(opMult, "X", "Bx_in");
+		inPortMap(opMult, "Y", "Fx_in");
 		outPortMap(opMult, "R", "result");
 		vhdl<<tab<<instance(opMult, "finalMult")<<"\n";
-		syncCycleFromSignal("result");
 		
-		vhdl<<tab<<"R <= result;\n";
+		
+		syncCycleFromSignal("result");
 		
 		if(m_debugOutputs){
 			addFPOutput("oDebug_sqrX", wInE, wSqrXF);
@@ -393,11 +405,11 @@ namespace flopoco{
 			//vhdl<<tab<<"oDebug_negHalfSqrX_expnt <= negHalfSqrX"<<range(wInE+wSqrXF-1,wSqrXF)<<";\n";
 			
 			addFPOutput("oDebug_Bx", wBxE, wBxF);
-			vhdl<<tab<<"oDebug_Bx <= Bx;\n";
-			addOutput("oDebug_Bx_expnt", wBxE);
-			vhdl<<tab<<"oDebug_Bx_expnt <= Bx"<<range(wBxE+wBxF-1,wBxF)<<";\n";
-			addOutput("oDebug_Bx_frac", wBxF);
-			vhdl<<tab<<"oDebug_Bx_frac <= Bx"<<range(wBxF-1,0)<<";\n";
+			vhdl<<tab<<"oDebug_Bx <= Bx_in;\n";
+			//addOutput("oDebug_Bx_expnt", wBxE);
+			//vhdl<<tab<<"oDebug_Bx_expnt <= Bx"<<range(wBxE+wBxF-1,wBxF)<<";\n";
+			//addOutput("oDebug_Bx_frac", wBxF);
+			//vhdl<<tab<<"oDebug_Bx_frac <= Bx"<<range(wBxF-1,0)<<";\n";
 			
 			addOutput("oDebug_fixX", fixXMSB-fixXLSB+1);
 			vhdl<<tab<<"oDebug_fixX <= fixX;\n";
@@ -406,8 +418,10 @@ namespace flopoco{
 			vhdl<<tab<<"oDebug_fixFx_trunc <= fixFx_trunc;\n";
 			
 			addFPOutput("oDebug_Fx", wFxE,wFxF);
-			vhdl<<tab<<"oDebug_Fx <= Fx;\n";
+			vhdl<<tab<<"oDebug_Fx <= Fx_in;\n";
 		}
+		
+		vhdl<<tab<<"R <= result;\n";
 		
 		REPORT(DETAILED, "Done.");
 	}
@@ -489,8 +503,17 @@ namespace flopoco{
 		
 		while(mpfr_cmp_d(x, 0)<0){
 			tc=new TestCase(this);
-			
 			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
+			emulate(tc);
+			tcl->add(tc);
+			
+			tc=new TestCase(this);
+			tc->addFPInput("X", 0.0);
+			emulate(tc);
+			tcl->add(tc);
+			
+			tc=new TestCase(this);
+			tc->addFPInput("X", 0.0);
 			emulate(tc);
 			tcl->add(tc);
 			
@@ -564,7 +587,6 @@ namespace flopoco{
 		fpru.getMPFR(vUp);
 		mpz_class svru = fpru.getSignalValue();
 		REPORT(DEBUG, "  R(up="<<mpfr_get_d(vUp,MPFR_RNDN)<<",  R(up,raw) = "<<svru);
-		tc->addExpectedOutput("R", svru+1);
 		tc->addExpectedOutput("R", svru);
 		
 		/*if(mpfr_cmp(vUp, w) < 0){
@@ -582,7 +604,6 @@ namespace flopoco{
 		mpfr_fprintf(stderr, "out = %Rb\n", vDown);
 		mpz_class svrd = fprd.getSignalValue();
 		tc->addExpectedOutput("R", svrd);
-		tc->addExpectedOutput("R", svrd-1);
 		REPORT(DEBUG, "  R(down="<<mpfr_get_d(vDown,MPFR_RNDN)<<",  R(down,raw) = "<<svrd);
 		
 		/*if(mpfr_cmp(vDown, w) > 0){
@@ -600,13 +621,13 @@ namespace flopoco{
 			
 			mpfr_sqr(w, x, MPFR_RNDN);
 			FPNumber fpx(wInE, wSqrXF, w);
-			//tc->addExpectedOutput("oDebug_sqrX", fpx.getSignalValue());
+			tc->addExpectedOutput("oDebug_sqrX", fpx.getSignalValue());
 			//tc->addExpectedOutput("oDebug_sqrX_expnt", fpx.getExponentSignalValue());
 			//tc->addExpectedOutput("oDebug_sqrX_frac", fpx.getMantissaSignalValue());
 			
 			mpfr_div_si(w, w, -2, MPFR_RNDN);
 			fpx=FPNumber(wInE, wSqrXF, w);
-			//tc->addExpectedOutput("oDebug_negHalfSqrX", fpx.getSignalValue());
+			tc->addExpectedOutput("oDebug_negHalfSqrX", fpx.getSignalValue());
 			//tc->addExpectedOutput("oDebug_negHalfSqrX_expnt", fpx.getExponentSignalValue());
 			//tc->addExpectedOutput("oDebug_negHalfSqrX_frac", fpx.getMantissaSignalValue());
 			
@@ -614,13 +635,15 @@ namespace flopoco{
 			
 			mpfr_exp(BxDown, w, MPFR_RNDD);
 			fpx=FPNumber(wBxE, wBxF, BxDown);
-			//tc->addExpectedOutput("oDebug_Bx", fpx.getSignalValue());
+			REPORT(FULL, "    oDebug_Bx up = "<<BxDown<<", raw="<<fpx.getSignalValue());
+			tc->addExpectedOutput("oDebug_Bx", fpx.getSignalValue());
 			//tc->addExpectedOutput("oDebug_Bx_expnt", fpx.getExponentSignalValue());
 			//tc->addExpectedOutput("oDebug_Bx_frac", fpx.getMantissaSignalValue());
 			
 			mpfr_exp(BxUp, w, MPFR_RNDU);
 			fpx=FPNumber(wBxE, wBxF, BxUp);
-			//tc->addExpectedOutput("oDebug_Bx", fpx.getSignalValue());
+			REPORT(FULL, "    oDebug_Bx down = "<<BxUp<<", raw="<<fpx.getSignalValue());
+			tc->addExpectedOutput("oDebug_Bx", fpx.getSignalValue());
 			//tc->addExpectedOutput("oDebug_Bx_expnt", fpx.getExponentSignalValue());
 			//tc->addExpectedOutput("oDebug_Bx_frac", fpx.getMantissaSignalValue());
 			
@@ -633,6 +656,8 @@ namespace flopoco{
 			mpfr_mul_2si(w, w, -fixXLSB+1, MPFR_RNDN);
 			mpz_class fixX;
 			mpfr_get_z(fixX.get_mpz_t(), w, MPFR_RNDN);
+			// Clamp to valid range
+			fixX=std::max(mpz_class(0), std::min(mpz_class((mpz_class(1)<<(fixXMSB-fixXLSB+1))-1), fixX));
 			REPORT(DEBUG, "  oDebug_fixX="<<fixX);
 			tc->addExpectedOutput("oDebug_fixX", fixX);
 			
@@ -666,7 +691,7 @@ namespace flopoco{
 			}
 			
 			// Convert to fixed-point
-			mpfr_mul_2ui(tmp, tmp, -FxLSB, MPFR_RNDN);
+			mpfr_mul_2si(tmp, tmp, -FxLSB, MPFR_RNDN);
 			
 			// We have exact value in tmp, now do round up and down to fixed-point values
 			mpfr_ceil(FxUp, tmp);

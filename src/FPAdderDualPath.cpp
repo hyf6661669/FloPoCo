@@ -45,7 +45,7 @@ namespace flopoco{
 
 	FPAdderDualPath::FPAdderDualPath(Target* target, int wEX, int wFX, int wEY, int wFY, int wER, int wFR) :
 		Operator(target), wEX(wEX), wFX(wFX), wEY(wEY), wFY(wFY), wER(wER), wFR(wFR) {
-
+			
 		ostringstream name, synch, synch2;
 
 		srcFileName="FPAdderDualPath";

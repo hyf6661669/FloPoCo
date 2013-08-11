@@ -48,7 +48,7 @@ namespace flopoco{
       int wE=wEI, wF=wFI;
       
       ostringstream name;
-      name<<"FP2FixV2_" << wE << "_" << wF <<"_"<<(LSB<0?"M":"")<<std::abs(LSB)<<"_"<<(MSB<0?"M":"")<<std::abs(MSB)<<"_"<<(Signed==1?"S":"US") << "_" << (trunc_p==1?"T":"NT");
+      name<<"FP2FixV2_" << wE << "_" << wF <<"_"<<(LSB<0?"M":"")<<std::abs(LSB)<<"_"<<(MSB<0?"M":"")<<std::abs(MSB)<<"_"<<(Signed==1?"S":"US") << "_" << (trunc_p==1?"T":"NT")<<"_uid"<<getNewUId();
       setName(name.str());
 
       setCopyrightString("David B. Thomas & Fabrizio Ferrandi (2013)");

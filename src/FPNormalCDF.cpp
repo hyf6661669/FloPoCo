@@ -39,6 +39,7 @@
 #include "FP2FixV2.hpp"
 #include "Fix2FP.hpp"
 #include "FixFunctions/FunctionEvaluator.hpp"
+#include "FPAdderSinglePath.hpp"
 
 #include "FPNormalCDF.hpp"
 
@@ -229,7 +230,7 @@ namespace flopoco{
 		minInputValue(minInputValue),
 		funcFx(NULL)
 	{
-		m_debugOutputs=true;
+		m_debugOutputs=false;
 
 		ostringstream name;
 
@@ -270,10 +271,12 @@ namespace flopoco{
 		
 		// negHalfSqrX = -x^2/2
 		vhdl<<tab<<declare("sqrX_flags", 2)<<" <= sqrX"<<range(wSqrX-1,wSqrX-2)<<";\n";
+		vhdl<<tab<<declare("sqrX_sign")<<" <= sqrX("<<wSqrX-3<<");\n";
 		vhdl<<tab<<declare("sqrX_expnt", wInE)<<" <= sqrX"<<range(wInE+wSqrXF-1,wSqrXF)<<";\n";
 		vhdl<<tab<<declare("sqrX_frac", wSqrXF)<<" <= sqrX"<<range(wSqrXF-1,0)<<";\n";
 		// TODO : Handle under-flow of numbers
-		vhdl<<tab<<declare("negHalfSqrX",wSqrX)<<" <= sqrX when not sqrX_flags=\"01\" else sqrX_flags & '1' & (sqrX_expnt-1) & sqrX_frac;\n";
+		//vhdl<<tab<<declare("negHalfSqrX",wSqrX)<<" <= sqrX when not sqrX_flags=\"01\" else sqrX_flags & '1' & (sqrX_expnt-1) & sqrX_frac;\n";
+		vhdl<<tab<<declare("negHalfSqrX",wSqrX)<<" <= sqrX_flags & ('1' or sqrX_sign) & (sqrX_expnt-1) & sqrX_frac;\n";
 		syncCycleFromSignal("negHalfSqrX");
 		
 		// Bx=exp(-abs(x)^2/2)
@@ -294,8 +297,8 @@ namespace flopoco{
 		setCycleFromSignal("X");
 		
 		/* First produce absX=abs(X), and reflect_at_end=X<0 */
-		vhdl<<tab<<declare("reflect_at_end")<<" <= X("<<wInE+wInF<<");\n";
-		vhdl<<tab<<declare("absX",2+1+wInE+wInF)<<" <= X"<<range(2+1+wInE+wInF-1,1+wInE+wInF)<<"&'0'&X"<<range(wInE+wInF-1,0)<<";\n";
+		vhdl<<tab<<declare("reflect_at_end")<<" <= not X("<<wInE+wInF<<");\n";
+		vhdl<<tab<<declare("absX",2+1+wInE+wInF)<<" <= X"<<range(2+1+wInE+wInF-1,1+wInE+wInF)<<"&('0' and X("<<(wInE+wInF)<<"))&X"<<range(wInE+wInF-1,0)<<";\n";
 		syncCycleFromSignal("absX");
 		
 		// Convert it to fixed-point.
@@ -328,6 +331,12 @@ namespace flopoco{
 		FxLSB=CalcFxOutputLSB(wOutF+2);
 		FxMSB=-1;	// The maximum is always 0.5
 		int degree=4;	// TODO
+		if(wOutF>=40){
+			degree=5;
+		}
+		if(wOutF>=53){
+			degree=7;
+		}
 		std::string funcStr;
 		{
 			std::stringstream xStr;
@@ -383,11 +392,28 @@ namespace flopoco{
 		oplist.push_back(opMult);
 		inPortMap(opMult, "X", "Bx_in");
 		inPortMap(opMult, "Y", "Fx_in");
-		outPortMap(opMult, "R", "result");
+		outPortMap(opMult, "R", "neg_result");
 		vhdl<<tab<<instance(opMult, "finalMult")<<"\n";
+		syncCycleFromSignal("neg_result");
 		
+		vhdl<<tab<<declare("minus_neg_result",3+wOutE+wOutF)<<" <= ";
+		vhdl<<"neg_result"<<range(2+wOutE+wOutF,1+wOutE+wOutF)<<" & '1' & neg_result"<<range(wOutE+wOutF-1,0)<<";\n";
 		
-		syncCycleFromSignal("result");
+		// This is horribly wasteful, just to do 1-x
+		int wOneE=wOutE, wOneF=wOutF;	// Current adders don't allow custom widths.
+		Operator *finalSub=new FPAdderSinglePath(target, /*wEX*/wOneE, /*wFX*/ wOneF, /*wEY*/ wOutE, /*wFY*/wOutF,/*wER*/ wOutE, /*wFR*/ wOutF);
+		oplist.push_back(finalSub);
+		{	// Pure laziness to get a constant one
+			mpfr_t vOne;
+			mpfr_init2(vOne, 1+wOneF);
+			mpfr_set_d(vOne, 1.0, MPFR_RNDN);
+			inPortMapCst(finalSub, "X", std::string("\"")+fp2bin(vOne, wOneE, wOneF)+"\"");	// Constant one
+			mpfr_clear(vOne);
+		}
+		inPortMap(finalSub, "Y", "minus_neg_result");
+		outPortMap(finalSub, "R", "pos_result");
+		vhdl<<instance(finalSub, "finalReflect");
+		syncCycleFromSignal("pos_result");
 		
 		if(m_debugOutputs){
 			addFPOutput("oDebug_sqrX", wInE, wSqrXF);
@@ -405,7 +431,7 @@ namespace flopoco{
 			//vhdl<<tab<<"oDebug_negHalfSqrX_expnt <= negHalfSqrX"<<range(wInE+wSqrXF-1,wSqrXF)<<";\n";
 			
 			addFPOutput("oDebug_Bx", wBxE, wBxF);
-			vhdl<<tab<<"oDebug_Bx <= Bx_in;\n";
+			vhdl<<tab<<"oDebug_Bx <= Bx;\n";
 			//addOutput("oDebug_Bx_expnt", wBxE);
 			//vhdl<<tab<<"oDebug_Bx_expnt <= Bx"<<range(wBxE+wBxF-1,wBxF)<<";\n";
 			//addOutput("oDebug_Bx_frac", wBxF);
@@ -421,7 +447,7 @@ namespace flopoco{
 			vhdl<<tab<<"oDebug_Fx <= Fx_in;\n";
 		}
 		
-		vhdl<<tab<<"R <= result;\n";
+		vhdl<<tab<<"R <= pos_result when reflect_at_end='1' else neg_result;\n";
 		
 		REPORT(DETAILED, "Done.");
 	}
@@ -507,15 +533,12 @@ namespace flopoco{
 			emulate(tc);
 			tcl->add(tc);
 			
+			mpfr_neg(x,x,MPFR_RNDN);
 			tc=new TestCase(this);
-			tc->addFPInput("X", 0.0);
+			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
 			emulate(tc);
 			tcl->add(tc);
-			
-			tc=new TestCase(this);
-			tc->addFPInput("X", 0.0);
-			emulate(tc);
-			tcl->add(tc);
+			mpfr_neg(x,x,MPFR_RNDN);
 			
 			mpfr_add_d(x, x, 0.03, MPFR_RNDN);
 		}
@@ -597,11 +620,11 @@ namespace flopoco{
 		mpfr_init2(vDown, 1+wOutF);
 		mpfr_set(vDown, w, MPFR_RNDD);
 		REPORT(DEBUG, "  R(down="<<mpfr_get_d(vDown,MPFR_RNDN));
-		mpfr_fprintf(stderr, " in = %Rb\n", vDown);
+		//mpfr_fprintf(stderr, " in = %Rb\n", vDown);
 		FPNumber  fprd(wOutE, wOutF, vDown);
-		mpfr_fprintf(stderr, "        %Zx\n", fprd.getMantissaSignalValue().get_mpz_t());
+		//mpfr_fprintf(stderr, "        %Zx\n", fprd.getMantissaSignalValue().get_mpz_t());
 		fprd.getMPFR(vDown);
-		mpfr_fprintf(stderr, "out = %Rb\n", vDown);
+		//mpfr_fprintf(stderr, "out = %Rb\n", vDown);
 		mpz_class svrd = fprd.getSignalValue();
 		tc->addExpectedOutput("R", svrd);
 		REPORT(DEBUG, "  R(down="<<mpfr_get_d(vDown,MPFR_RNDN)<<",  R(down,raw) = "<<svrd);

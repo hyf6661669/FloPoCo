@@ -158,14 +158,25 @@ namespace flopoco{
 		
 		// Then see if the users range will help
 		mpfr_t minInputX;
-		mpfr_init2(minInputX, wInF);
+		mpfr_init2(minInputX, 1+wInF);
 		minInput.getMPFR(minInputX);
 		REPORT(DETAILED, "minInput from input range="<<mpfr_get_d(minInputX, MPFR_RNDN));
 		
-		if(mpfr_cmp_d(minInputX, minInputValue)<0){
-			mpfr_set_d(minInputX, minInputValue, MPFR_RNDN);
+		mpfr_t minUserX;
+		mpfr_init2(minUserX, 1+wInF);
+		if(minInputValue>=0){
+			mpfr_set_d(minUserX, -8, MPFR_RNDD);
+		}else{
+			mpfr_set_d(minUserX, minInputValue, MPFR_RNDU);
+		}
+		mpfr_nextabove(minUserX);	// It is much more efficient for function eval if we are just above whatever the user wants, e.g. if it is 8
+		
+		if(mpfr_cmp(minInputX, minUserX)<0){
+			mpfr_set(minInputX, minUserX, MPFR_RNDN);
 			REPORT(DETAILED, "minInput updated from user="<<mpfr_get_d(minInputX, MPFR_RNDN));	
 		}
+		
+		mpfr_clear(minUserX);
 		
 		// Now work backwards from output representation
 		FPNumber minProb(wOutE, wOutF, FPNumber::smallestPositive);
@@ -181,7 +192,7 @@ namespace flopoco{
 			REPORT(DETAILED, "minInput updated from output probability="<<mpfr_get_d(minInputX, MPFR_RNDN));
 		}
 
-		mpfr_init2(m_minInputX, wInF);
+		mpfr_init2(m_minInputX, 1+wInF);
 		mpfr_set(m_minInputX, minInputX, MPFR_RNDN);
 		
 		mpfr_clears(minInputX, minProbX, minProbP, NULL);
@@ -267,6 +278,7 @@ namespace flopoco{
 		inPortMap(opSquarer, "X", "X");
 		outPortMap(opSquarer, "R", "sqrX");
 		vhdl<<tab<<instance(opSquarer, "squarer")<<"\n";
+		
 		syncCycleFromSignal("sqrX");
 		
 		// negHalfSqrX = -x^2/2
@@ -299,33 +311,23 @@ namespace flopoco{
 		/* First produce absX=abs(X), and reflect_at_end=X<0 */
 		vhdl<<tab<<declare("reflect_at_end")<<" <= not X("<<wInE+wInF<<");\n";
 		vhdl<<tab<<declare("absX",2+1+wInE+wInF)<<" <= X"<<range(2+1+wInE+wInF-1,1+wInE+wInF)<<"&('0' and X("<<(wInE+wInF)<<"))&X"<<range(wInE+wInF-1,0)<<";\n";
+		
 		syncCycleFromSignal("absX");
 		
-		// Convert it to fixed-point.
+		// Convert it to fixed-point, and in parallel work out whether we are underlflowing
 		fixXLSB=-(wInF+8);
 		fixXMSB=CalcFxInputMSB()+1;
 		REPORT(INFO, "fixX: MSB=2^"<<fixXMSB<<", fixXLSB=2^"<<fixXLSB);
-		// TODO : For some reason FP2Fix wants us to have more fractional bits in the input than there are in
-		// the output. I have no idea why this should be the case...
-		// TODO : Actually, it needs one _more_ bit as well.
-		// TODO: and another one! But I think that is my fault
-		int extraBits=0; //(-fixXLSB)-wInF+1+1;
-		REPORT(DETAILED, "wInF="<<wInF<<", -fixXLSB="<<-fixXLSB);
-		if(extraBits<=0){
-			vhdl<<tab<<declare("absX_Hack", 3+wInE+wInF)<<" <= absX;\n";
-		}else{
-			vhdl<<tab<<declare("absX_Hack", 3+wInE+wInF+extraBits)<<" <= absX & "<<zg(extraBits)<<";\n";
-			REPORT(DETAILED, "  adding "<<extraBits<<" to keep FP2Fix happy");
-		}
-		syncCycleFromSignal("absX_Hack");
-		
-		// TODO: There is something very fishy about this whole conversion, I think I am wasting LSBs here
-		FP2FixV2 *opFP2Fix=new FP2FixV2(target, /*LSB0*/ fixXLSB-1, /*MSBO*/ fixXMSB-1, /*Signed*/ false, /*wER*/ wInE, wInF+extraBits, /*trunc_p*/ false);
+		FP2FixV2 *opFP2Fix=new FP2FixV2(target, /*LSB0*/ fixXLSB-1, /*MSBO*/ fixXMSB-1, /*Signed*/ false, /*wER*/ wInE, wInF, /*trunc_p*/ false);
 		oplist.push_back(opFP2Fix);
-		inPortMap(opFP2Fix, "I", "absX_Hack");
+		inPortMap(opFP2Fix, "I", "absX");
 		outPortMap(opFP2Fix, "O", "fixX");
 		vhdl<<tab<<instance(opFP2Fix, "fp2fix")<<"\n";
+
+		vhdl<<tab<<declare("have_underflow")<<" <= '1' when (absX >= \"" << fp2bin(m_minInputX, wInE, wInF) <<"\") else '0';\n";
+		
 		syncCycleFromSignal("fixX");
+		syncCycleFromSignal("have_underflow");
 		
 		// Do the actual evaluation of F(x)
 		FxLSB=CalcFxOutputLSB(wOutF+2);
@@ -373,8 +375,12 @@ namespace flopoco{
 		
 		oplist.push_back(opFix2FP);
 		inPortMap(opFix2FP, "I", "fixFx_trunc");
-		outPortMap(opFix2FP, "O", "Fx");
+		outPortMap(opFix2FP, "O", "Fx_preUnderflow");
 		vhdl<<tab<<instance(opFix2FP, "fix2fp")<<"\n";
+		syncCycleFromSignal("Fx_preUnderflow");
+		
+		vhdl<<tab<<declare("Fx",3+wFxE+wFxF)<<" <= "<< zg(3+wFxE+wFxF)<< " when have_underflow='1' else Fx_preUnderflow;\n";
+		
 		
 		///////////////////////////////////////////////////
 		// Part 3: Join them back up and handle any special cases
@@ -460,27 +466,6 @@ namespace flopoco{
   
 	void FPNormalCDF::buildStandardTestCases(TestCaseList* tcl)
 	{
-		{
-			mpfr_t a,b;
-			mpfr_init2(a, 1+wOutF);
-			mpfr_init2(b, 1+wOutF);
-			
-			gmp_randstate_t rng;
-			gmp_randinit_default(rng);
-			
-			for(unsigned i=0;i<1000;i++){
-				mpfr_urandomb(a, rng);
-				FPNumber fpr(wOutE, wOutF, a);
-				fpr.getMPFR(b);
-				if(mpfr_cmp(a,b)){
-					mpfr_printf("Had %bR -> %bR\n", a, b);
-					exit(1);
-				}
-			}
-			
-			gmp_randclear(rng);
-		}
-		
 		mpfr_t x;
 		
 		mpfr_init2(x, wInF);
@@ -527,6 +512,73 @@ namespace flopoco{
 		emulate(tc);
 		tcl->add(tc);
 		
+		for(int i=FPNumber::plusInfty;i<FPNumber::smallestNegative+1;i++){
+			tc=new TestCase(this);
+			fpx=FPNumber(wInE,wInF,static_cast<FPNumber::SpecialValue>(i));
+			tc->addFPInput("X", &fpx);
+			emulate(tc);
+			tcl->add(tc);
+		}
+		
+		// Go either side of the underflow boundary by a few ULPs
+		// First go below
+		mpfr_set(x, m_minInputX, MPFR_RNDU);
+		for(unsigned i=0;i<16;i++){
+			tc=new TestCase(this);
+			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
+			emulate(tc);
+			tcl->add(tc);
+			
+			mpfr_neg(x,x,MPFR_RNDN);
+			tc=new TestCase(this);
+			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
+			emulate(tc);
+			tcl->add(tc);
+			mpfr_neg(x,x,MPFR_RNDN);
+			
+			mpfr_nextbelow(x);
+		}
+		// Then above
+		mpfr_set(x, m_minInputX, MPFR_RNDU);
+		for(unsigned i=0;i<16;i++){
+			tc=new TestCase(this);
+			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
+			emulate(tc);
+			tcl->add(tc);
+			
+			mpfr_neg(x,x,MPFR_RNDN);
+			tc=new TestCase(this);
+			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
+			emulate(tc);
+			tcl->add(tc);
+			mpfr_neg(x,x,MPFR_RNDN);
+			
+			mpfr_nextabove(x);
+		}
+		
+		
+		// Now walk over values close to zero, as that is another danger zone (thought
+		// for this specific method, probably not)
+		mpfr_set_d(x, 0.0, MPFR_RNDU);
+		for(unsigned i=0;i<16;i++){
+			tc=new TestCase(this);
+			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
+			emulate(tc);
+			tcl->add(tc);
+			
+			mpfr_neg(x,x,MPFR_RNDN);
+			tc=new TestCase(this);
+			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
+			emulate(tc);
+			tcl->add(tc);
+			mpfr_neg(x,x,MPFR_RNDN);
+			
+			mpfr_nextbelow(x);
+		}
+		
+		// Now just choose values equally spread across the range.
+		mpfr_set(x, m_minInputX, MPFR_RNDU);
+		mpfr_mul_d(x, x, 1.1, MPFR_RNDN);	// Go slightly outside standard range
 		while(mpfr_cmp_d(x, 0)<0){
 			tc=new TestCase(this);
 			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
@@ -595,7 +647,7 @@ namespace flopoco{
 		mpfr_init2(x, 1+wInF);
 		fpx.getMPFR(x);
 		
-		mpfr_init2(w, getToolPrecision());
+		mpfr_init2(w, 10+wOutF);	// NCD is well behaved, but slow
 		mpfr_init2(tmp, getToolPrecision());
 		NCD(w, x);
 		
@@ -752,6 +804,33 @@ namespace flopoco{
 		}
 
 		mpfr_clears(x, r, w, tmp, vUp, vDown, NULL);
+	}
+	
+	TestCase* FPNormalCDF::buildRandomTestCase(int i)
+	{
+		if(getLargeRandom(3)==0){
+			return Operator::buildRandomTestCase(i);
+		}else{
+			mpfr_t input;
+			mpfr_init2(input, getToolPrecision());
+			mpfr_urandomb(input, FloPoCoRandomState::m_state);
+			mpfr_mul(input, input, m_minInputX, MPFR_RNDN);
+			mpfr_mul_d(input,input,1.05,MPFR_RNDN);
+			
+			if(getLargeRandom(1)==0){
+				mpfr_neg(input, input, MPFR_RNDN);
+			}
+				
+			
+			TestCase *tc=new TestCase(this);
+			FPNumber fpx(wInE,wInF,input);
+			tc->addFPInput("X", &fpx);
+			emulate(tc);
+			
+			mpfr_clear(input);
+			
+			return tc;
+		}
 	}
 
 }

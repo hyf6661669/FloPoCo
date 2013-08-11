@@ -22,13 +22,14 @@ namespace flopoco{
 		 * @param[in]		wOutF	the width of the fraction for the output f-p number R
 		* @param[in]			minInputValue	for values in [-inf,minInputValue], the implementation is allowed to return zero. By default is -8. Must be less than zero.
 		 */
-		FPNormalCDF(Target* target, int wInE, int wInF, int wOutE, int wOutF, double underflowPoint=-16);
+		FPNormalCDF(Target* target, int wInE, int wInF, int wOutE, int wOutF, double underflowPoint=0);
 
 		~FPNormalCDF();
 
 		void emulate(TestCase * tc);
 	
 		void buildStandardTestCases(TestCaseList* tcl);
+		TestCase* buildRandomTestCase(int i);
 
 	private:
 		int wInE, wInF, wOutE, wOutF;

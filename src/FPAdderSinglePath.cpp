@@ -41,6 +41,14 @@ FPAdderSinglePath::FPAdderSinglePath(Target* target, int wEX, int wFX, int wEY, 
 
 		srcFileName="FPAdderSinglePath";
 			
+		// DT10 : Added explicit error, otherwise it is silently ignored
+		if((wEX!=wEY) || (wFX!=wFY)){
+			THROWERROR("Currently both input types to FPAdderSinglePath must have the same floating-point type.");
+		}
+		if((wEX!=wEY) || (wFX!=wFR)){
+			THROWERROR("Currently inputs and output for FPAdderSinglePath must have the same floating-point type.");
+		}
+			
 		//parameter set up. For now all wEX=wEY=wER and the same holds for fractions
 		wF = wFX;
 		wE = wEX;

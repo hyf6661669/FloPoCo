@@ -604,29 +604,12 @@ namespace flopoco{
 				FunctionEvaluator *fe;
 				ostringstream function;
 				function << "1b"<<2*k<<"*(exp(x*1b-" << k << ")-x*1b-" << k << "-1), 0,1,1";
-				// DT10, 2013/08/11 : HACK! Making this non pipelined solves the problem, but not sure what the actual cause is yet
-				bool wasPipelined=target->isPipelined();
-				if(wasPipelined){
-					nextCycle();	// Offer up some pipeline registers for synthesis
-					nextCycle();
-					target->setNotPipelined();
-				}
 				fe = new FunctionEvaluator(target, function.str(), sizeZhigh, wF+g-2*k, d, true, inDelayMap("X", target->localWireDelay() + getCriticalPath()) );
-				// HACK!
-				if(wasPipelined){
-					target->setPipelined();
-				}
 				addSubComponent(fe);
 				inPortMap(fe, "X", "Zhigh");
 				outPortMap(fe, "R", "expZmZm1");
 				vhdl << instance(fe, "poly");
 				syncCycleFromSignal("expZmZm1", fe->getOutputDelay("R") );
-
-				// HACK!
-				if(wasPipelined){
-					nextCycle();	// post fe registers for synthesis tool to play with
-					nextCycle();
-				}
 			}// end if magic table/generic
 
 			// Do we need the adder that adds back Z to e^Z-Zm1? 
@@ -664,7 +647,8 @@ namespace flopoco{
 				addSubComponent(expArounded0);
 				
 				// DT10 : Was originally inPortMapCst, which works due to the setCycle above, but which is technically an error I think
-				inPortMap(expArounded0, "X", "expA"+range(sizeExpA-1, sizeExpA-sizeMultIn-1));
+				vhdl << declare("expA_part", sizeMultIn+1) << " <= expA"<<range(sizeExpA-1, sizeExpA-sizeMultIn-1)<<";"<<std::endl;
+				inPortMap(expArounded0, "X", "expA_part");
 				inPortMapCst(expArounded0, "Y", zg(sizeMultIn+1,0));
 				inPortMapCst( expArounded0, "Cin" , " '1' ");
 				outPortMap( expArounded0, "R", "expArounded0");

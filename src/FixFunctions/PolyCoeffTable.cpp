@@ -365,7 +365,10 @@ namespace flopoco{
 		addOutput ("Y"	, wOut, true,1);
 		
 		/* And that's it: this operator inherits from Table all the VHDL generation */
-		nextCycle();//this operator has one cycle delay, in order to be inferred by synthesis tools
+		// DT10 : This needs to be conditional, in case we want to use small tables.
+		if(wIn > target_->lutInputs()){
+			nextCycle();//this operator has one cycle delay, in order to be inferred by synthesis tools
+		}
 
 		file.close();
 

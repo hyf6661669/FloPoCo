@@ -54,7 +54,9 @@ namespace flopoco{
 		REPORT(INFO, "The degree of the polynomial used to approximate this function is: " << n );
 		
 		pf = new PiecewiseFunction(func);
+		//target->setNotPipelined();
 		tg = new PolyCoeffTable(target, pf, lsbOut+1, n);
+		//target->setPipelined();
 		oplist.push_back(tg);
 		
 		REPORT(INFO, "The number of intervals of the function: "<< intpow2(tg->wIn));

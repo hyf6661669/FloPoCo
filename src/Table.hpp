@@ -26,6 +26,8 @@
 
 	 A Table is, so far, always combinatorial. It does increase the critical path, 
 	 taking into account inputDelays and reporting outputDelay. 
+	 DT10 : I don't think this is true anymore, there is sequential logic in Table.cpp, and a call to nextCycle(),
+		though it only kicks in for logicTable=1
 
 	 On logic tables versus blockRam tables:
 	 This has unfortunately to be managed twice,

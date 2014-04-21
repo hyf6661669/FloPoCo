@@ -234,15 +234,14 @@ namespace flopoco{
 		return res;		
 	}
 
-	FPNormalCDF::FPNormalCDF(Target* target, int wInE, int wInF, int wOutE, int wOutF, double minInputValue) :
+	FPNormalCDF::FPNormalCDF(Target* target, int wInE, int wInF, int wOutE, int wOutF, double minInputValue, bool debugOutputs) :
 		Operator(target),
 		wInE(wInE), wInF(wInF),
 		wOutE(wOutE), wOutF(wOutF),
 		minInputValue(minInputValue),
-		funcFx(NULL)
+		funcFx(NULL),
+		m_debugOutputs(debugOutputs)
 	{
-		m_debugOutputs=false;
-
 		ostringstream name;
 
 		name<<"FPNormalCDF_"<<wInE<<"_"<<wInF<<"_"<<wOutE<<"_"<<wOutF<<"_n"<<int(-minInputValue);
@@ -262,9 +261,37 @@ namespace flopoco{
 			F(x) = NCD(x) / B(X)
 		So:
 			NCDa(x) = F(x) * B(x)
+		
+			F(x) = exp( -x^2*(1+epsSqr)/2) *(1+expExp)
+			NCDa(x) = (1+epsMul)*F(x) * (B(x)+epsBx)
+			
+			There are pretty much two parts: before the exp, and after the exp. So it
+			reduces to:
+			
+			F(x) = exp( -x^2*(1+epsPre)/2)*(1+epsPost)
+			NCDa(x) = (1+epsPost)*F(x) * (B(x)+epsPost)
+			
+			or:
+			
+			F(x) = exp( -x^2*(1+epsPre)/2)
+			NCDa(x) = (1+epsPost)^3 * F(x) * B(x)
+			
+			We only care about x<=0, as the other side we get by reflection. The output side is easy,
+			it is just (1+epsPost)^3 < 4*epsPost. The error on the pre exp part is not too bad either,
+			we just need, if we look at abs((F(x)-F'(x))/F(x)), then the largest error is simply for
+			negative x.
+			
+			So for taking epsPre=2^-fPre and epsPost=2^-fPost, we can check that it satisfies a
+			given output target by ensuring:
+			
+			2^(-wOutF-1) >= 4*2^-fPost + abs(  (exp(-minX^2/2 * (1-2^-fPre)) - exp(-minX^2/2) )/exp(-minX^2/2)) );
+			
+			So the strategy is to start at fPost= wOutF+3, and try to walk them up. Due to
+			restrictions on exp, we need to have fPre>=fPost.
 		*/		
 		
 		
+
 		
 		////////////////////////////////////////////////////////////////
 		// Part 1 : Calculate Bx=B(x)
@@ -286,16 +313,18 @@ namespace flopoco{
 		vhdl<<tab<<declare("sqrX_sign")<<" <= sqrX("<<wSqrX-3<<");\n";
 		vhdl<<tab<<declare("sqrX_expnt", wInE)<<" <= sqrX"<<range(wInE+wSqrXF-1,wSqrXF)<<";\n";
 		vhdl<<tab<<declare("sqrX_frac", wSqrXF)<<" <= sqrX"<<range(wSqrXF-1,0)<<";\n";
-		// TODO : Handle under-flow of numbers
 		//vhdl<<tab<<declare("negHalfSqrX",wSqrX)<<" <= sqrX when not sqrX_flags=\"01\" else sqrX_flags & '1' & (sqrX_expnt-1) & sqrX_frac;\n";
-		vhdl<<tab<<declare("negHalfSqrX",wSqrX)<<" <= sqrX_flags & ('1' or sqrX_sign) & (sqrX_expnt-1) & sqrX_frac;\n";
+		vhdl<<tab<<declare("negHalfSqrX",wSqrX)<<" <= sqrX_flags & ('1' or sqrX_sign) & (sqrX_expnt-1) & sqrX_frac when (sqrX_expnt>0)\n"; // No underflow
+		vhdl<<tab<<tab<<" else sqrX_flags & '1' & "<<zg(wInE)<<" & "<<zg(wSqrXF)<<";\n";
 		syncCycleFromSignal("negHalfSqrX");
 		
 		// Bx=exp(-abs(x)^2/2)
 		wBxF=wSqrXF;
 		wBxE=wInE;
 		int wB=2+1+wBxE+wBxF;
+		//target->setNotPipelined();
 		FPExp *opExp=new FPExp(target, wInE, wSqrXF, 0, 0);
+		//target->setPipelined();
 		oplist.push_back(opExp);
 		inPortMap(opExp, "X", "negHalfSqrX");
 		outPortMap(opExp, "R", "Bx");
@@ -437,7 +466,7 @@ namespace flopoco{
 			//vhdl<<tab<<"oDebug_negHalfSqrX_expnt <= negHalfSqrX"<<range(wInE+wSqrXF-1,wSqrXF)<<";\n";
 			
 			addFPOutput("oDebug_Bx", wBxE, wBxF);
-			vhdl<<tab<<"oDebug_Bx <= Bx;\n";
+			vhdl<<tab<<"oDebug_Bx <= Bx_in;\n";
 			//addOutput("oDebug_Bx_expnt", wBxE);
 			//vhdl<<tab<<"oDebug_Bx_expnt <= Bx"<<range(wBxE+wBxF-1,wBxF)<<";\n";
 			//addOutput("oDebug_Bx_frac", wBxF);
@@ -540,7 +569,7 @@ namespace flopoco{
 		}
 		// Then above
 		mpfr_set(x, m_minInputX, MPFR_RNDU);
-		for(unsigned i=0;i<16;i++){
+		for(unsigned i=0;i<8;i++){
 			tc=new TestCase(this);
 			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
 			emulate(tc);
@@ -560,7 +589,7 @@ namespace flopoco{
 		// Now walk over values close to zero, as that is another danger zone (thought
 		// for this specific method, probably not)
 		mpfr_set_d(x, 0.0, MPFR_RNDU);
-		for(unsigned i=0;i<16;i++){
+		for(unsigned i=0;i<8;i++){
 			tc=new TestCase(this);
 			tc->addFPInput("X", mpfr_get_d(x,MPFR_RNDN));
 			emulate(tc);
@@ -592,7 +621,7 @@ namespace flopoco{
 			tcl->add(tc);
 			mpfr_neg(x,x,MPFR_RNDN);
 			
-			mpfr_add_d(x, x, 0.03, MPFR_RNDN);
+			mpfr_add_d(x, x, 0.3, MPFR_RNDN);
 		}
 		
 		mpfr_clear(x);
@@ -664,10 +693,6 @@ namespace flopoco{
 		REPORT(DEBUG, "  R(up="<<mpfr_get_d(vUp,MPFR_RNDN)<<",  R(up,raw) = "<<svru);
 		tc->addExpectedOutput("R", svru);
 		
-		/*if(mpfr_cmp(vUp, w) < 0){
-			std::cerr<<"Ordering not maintained.\n";
-			exit(1);
-		}*/
 
 		mpfr_init2(vDown, 1+wOutF);
 		mpfr_set(vDown, w, MPFR_RNDD);
@@ -680,124 +705,132 @@ namespace flopoco{
 		mpz_class svrd = fprd.getSignalValue();
 		tc->addExpectedOutput("R", svrd);
 		REPORT(DEBUG, "  R(down="<<mpfr_get_d(vDown,MPFR_RNDN)<<",  R(down,raw) = "<<svrd);
-		
-		/*if(mpfr_cmp(vDown, w) > 0){
-			std::cerr<<"Ordering not maintained.\n";
-			exit(1);
-		}*/
+
 		
 		if(m_debugOutputs){
-			mpfr_prec_round(w, 1+wSqrXF, MPFR_RNDN);
-			
 			mpfr_t BxUp, BxDown, FxUp, FxDown, Res;
+			
 			mpfr_inits2(1+wBxF, BxUp, BxDown, NULL);
 			mpfr_inits2(1+wFxF, FxUp, FxDown, NULL);
 			mpfr_init2(Res, 1+wOutF);
 			
-			mpfr_sqr(w, x, MPFR_RNDN);
-			FPNumber fpx(wInE, wSqrXF, w);
-			tc->addExpectedOutput("oDebug_sqrX", fpx.getSignalValue());
-			//tc->addExpectedOutput("oDebug_sqrX_expnt", fpx.getExponentSignalValue());
-			//tc->addExpectedOutput("oDebug_sqrX_frac", fpx.getMantissaSignalValue());
+			mpfr_prec_round(w, 1+wSqrXF, MPFR_RNDN);
 			
-			mpfr_div_si(w, w, -2, MPFR_RNDN);
-			fpx=FPNumber(wInE, wSqrXF, w);
-			tc->addExpectedOutput("oDebug_negHalfSqrX", fpx.getSignalValue());
-			//tc->addExpectedOutput("oDebug_negHalfSqrX_expnt", fpx.getExponentSignalValue());
-			//tc->addExpectedOutput("oDebug_negHalfSqrX_frac", fpx.getMantissaSignalValue());
+			mpfr_set(tmp, x, MPFR_RNDN);
+			mpfr_abs(tmp, tmp, MPFR_RNDN);
+			mpfr_neg(tmp, tmp, MPFR_RNDN);
 			
-			mpfr_prec_round(tmp, 1+wBxF, MPFR_RNDN);
-			
-			mpfr_exp(BxDown, w, MPFR_RNDD);
-			fpx=FPNumber(wBxE, wBxF, BxDown);
-			REPORT(FULL, "    oDebug_Bx up = "<<BxDown<<", raw="<<fpx.getSignalValue());
-			tc->addExpectedOutput("oDebug_Bx", fpx.getSignalValue());
-			//tc->addExpectedOutput("oDebug_Bx_expnt", fpx.getExponentSignalValue());
-			//tc->addExpectedOutput("oDebug_Bx_frac", fpx.getMantissaSignalValue());
-			
-			mpfr_exp(BxUp, w, MPFR_RNDU);
-			fpx=FPNumber(wBxE, wBxF, BxUp);
-			REPORT(FULL, "    oDebug_Bx down = "<<BxUp<<", raw="<<fpx.getSignalValue());
-			tc->addExpectedOutput("oDebug_Bx", fpx.getSignalValue());
-			//tc->addExpectedOutput("oDebug_Bx_expnt", fpx.getExponentSignalValue());
-			//tc->addExpectedOutput("oDebug_Bx_frac", fpx.getMantissaSignalValue());
-			
-			//////////////////////////////////////////////
-			// Now do FX branch
-			
-			mpfr_prec_round(w, getToolPrecision(), MPFR_RNDN);
-			mpfr_set(w, x, MPFR_RNDN);
-			mpfr_abs(w,w,MPFR_RNDN);
-			mpfr_mul_2si(w, w, -fixXLSB+1, MPFR_RNDN);
-			mpz_class fixX;
-			mpfr_get_z(fixX.get_mpz_t(), w, MPFR_RNDN);
-			// Clamp to valid range
-			fixX=std::max(mpz_class(0), std::min(mpz_class((mpz_class(1)<<(fixXMSB-fixXLSB+1))-1), fixX));
-			REPORT(DEBUG, "  oDebug_fixX="<<fixX);
-			tc->addExpectedOutput("oDebug_fixX", fixX);
-			
-			std::vector<mpz_class> FxOutputs=emulate_Fx(fixX);
-			
-			mpfr_div_2si(w, w, -fixXLSB+1, MPFR_RNDN);
-			mpfr_prec_round(tmp, getToolPrecision(), MPFR_RNDN);
-			
-			mpfr_neg(w, w, MPFR_RNDN);
-			F(tmp, w, MPFR_RNDN);
-			
-			REPORT(DEBUG, "  F("<<mpfr_get_d(w,MPFR_RNDN)<<") = "<<mpfr_get_d(tmp,MPFR_RNDN));
-			{
-				mpfr_t t2;
-				mpfr_init2(t2,getToolPrecision());
-				emulate_Fx(t2, w);
-				double ratio=mpfr_get_d(tmp, MPFR_RNDN) / mpfr_get_d(t2,MPFR_RNDN);
-				REPORT(DEBUG, "   emulate_fx = "<<mpfr_get_d(t2, MPFR_RNDN)<<"  ratio="<<ratio);
+			if(mpfr_cmp(tmp, m_minInputX) > 0){
 				
-				mpfr_set(t2, w, MPFR_RNDN);
-				mpfr_neg(t2, t2, MPFR_RNDN);	
-				REPORT(DEBUG, "  fixXMSB="<<fixXMSB<<", multiplying by 2^"<<-fixXMSB);
-				mpfr_mul_2si(t2, t2, -fixXMSB, MPFR_RNDN);
-				REPORT(DEBUG, "   mapped to [0,1) = "<<mpfr_get_d(t2, MPFR_RNDN));
-				funcFx->eval(t2, t2);
-				ratio=mpfr_get_d(tmp, MPFR_RNDN) / mpfr_get_d(t2,MPFR_RNDN);
-				REPORT(DEBUG, "   evalute_FuncStr = "<<mpfr_get_d(t2, MPFR_RNDN)<<"  ratio="<<ratio);
-				mpfr_clear(t2);
+				mpfr_sqr(w, x, MPFR_RNDN);
+				FPNumber fpx(wInE, wSqrXF, w);
+				tc->addExpectedOutput("oDebug_sqrX", fpx.getSignalValue());
+				//tc->addExpectedOutput("oDebug_sqrX_expnt", fpx.getExponentSignalValue());
+				//tc->addExpectedOutput("oDebug_sqrX_frac", fpx.getMantissaSignalValue());
+				
+				mpfr_div_si(w, w, -2, MPFR_RNDN);
+				fpx=FPNumber(wInE, wSqrXF, w);
+				tc->addExpectedOutput("oDebug_negHalfSqrX", fpx.getSignalValue());
+				//tc->addExpectedOutput("oDebug_negHalfSqrX_expnt", fpx.getExponentSignalValue());
+				//tc->addExpectedOutput("oDebug_negHalfSqrX_frac", fpx.getMantissaSignalValue());
+				
+				mpfr_prec_round(tmp, 1+wBxF, MPFR_RNDN);
+				
+				mpfr_exp(BxDown, w, MPFR_RNDD);
+				fpx=FPNumber(wBxE, wBxF, BxDown);
+				REPORT(FULL, "    oDebug_Bx up = "<<BxDown<<", raw="<<fpx.getSignalValue());
+				tc->addExpectedOutput("oDebug_Bx", fpx.getSignalValue());
+				//tc->addExpectedOutput("oDebug_Bx_expnt", fpx.getExponentSignalValue());
+				//tc->addExpectedOutput("oDebug_Bx_frac", fpx.getMantissaSignalValue());
+				
+				mpfr_exp(BxUp, w, MPFR_RNDU);
+				fpx=FPNumber(wBxE, wBxF, BxUp);
+				REPORT(FULL, "    oDebug_Bx down = "<<BxUp<<", raw="<<fpx.getSignalValue());
+				tc->addExpectedOutput("oDebug_Bx", fpx.getSignalValue());
+				//tc->addExpectedOutput("oDebug_Bx_expnt", fpx.getExponentSignalValue());
+				//tc->addExpectedOutput("oDebug_Bx_frac", fpx.getMantissaSignalValue());
+				
+				//////////////////////////////////////////////
+				// Now do FX branch
+				
+				mpfr_prec_round(w, getToolPrecision(), MPFR_RNDN);
+				mpfr_set(w, x, MPFR_RNDN);
+				mpfr_abs(w,w,MPFR_RNDN);
+				
+				mpfr_mul_2si(w, w, -fixXLSB+1, MPFR_RNDN);
+				mpz_class fixX;
+				mpfr_get_z(fixX.get_mpz_t(), w, MPFR_RNDN);
+				// Clamp to valid range
+				fixX=std::max(mpz_class(0), std::min(mpz_class((mpz_class(1)<<(fixXMSB-fixXLSB+1))-1), fixX));
+				REPORT(DEBUG, "  oDebug_fixX="<<fixX);
+				tc->addExpectedOutput("oDebug_fixX", fixX);
+				
+				/*
+				std::vector<mpz_class> FxOutputs=emulate_Fx(fixX);
+				
+				mpfr_div_2si(w, w, -fixXLSB+1, MPFR_RNDN);
+				mpfr_prec_round(tmp, getToolPrecision(), MPFR_RNDN);
+				
+				mpfr_neg(w, w, MPFR_RNDN);
+				F(tmp, w, MPFR_RNDN);
+				
+				REPORT(DEBUG, "  F("<<mpfr_get_d(w,MPFR_RNDN)<<") = "<<mpfr_get_d(tmp,MPFR_RNDN));
+				{
+					mpfr_t t2;
+					mpfr_init2(t2,getToolPrecision());
+					emulate_Fx(t2, w);
+					double ratio=mpfr_get_d(tmp, MPFR_RNDN) / mpfr_get_d(t2,MPFR_RNDN);
+					REPORT(DEBUG, "   emulate_fx = "<<mpfr_get_d(t2, MPFR_RNDN)<<"  ratio="<<ratio);
+					
+					mpfr_set(t2, w, MPFR_RNDN);
+					mpfr_neg(t2, t2, MPFR_RNDN);	
+					REPORT(DEBUG, "  fixXMSB="<<fixXMSB<<", multiplying by 2^"<<-fixXMSB);
+					mpfr_mul_2si(t2, t2, -fixXMSB, MPFR_RNDN);
+					REPORT(DEBUG, "   mapped to [0,1) = "<<mpfr_get_d(t2, MPFR_RNDN));
+					funcFx->eval(t2, t2);
+					ratio=mpfr_get_d(tmp, MPFR_RNDN) / mpfr_get_d(t2,MPFR_RNDN);
+					REPORT(DEBUG, "   evalute_FuncStr = "<<mpfr_get_d(t2, MPFR_RNDN)<<"  ratio="<<ratio);
+					mpfr_clear(t2);
+					
+					
+				}
 				
 				
-			}
-			
-			// Convert to fixed-point
-			mpfr_mul_2si(tmp, tmp, -FxLSB, MPFR_RNDN);
-			
-			// We have exact value in tmp, now do round up and down to fixed-point values
-			mpfr_ceil(FxUp, tmp);
-			mpfr_get_z(fixX.get_mpz_t(), FxUp, MPFR_RNDN);
-			//tc->addExpectedOutput("oDebug_fixFx_trunc", fixX);
-			REPORT(DEBUG, "   roundDownFix="<<fixX<<" vs "<<FxOutputs.front());
-			mpfr_mul_2si(w, w, FxLSB, MPFR_RNDN);
-			fpx=FPNumber(wFxE,wFxF, w);
-			//tc->addExpectedOutput("oDebug_Fx", fpx.getSignalValue());
-			mpfr_mul_2si(FxUp, FxUp, FxLSB, MPFR_RNDN);
-			
-			mpfr_floor(FxDown, tmp);
-			mpfr_get_z(fixX.get_mpz_t(), FxDown, MPFR_RNDN);
-			//tc->addExpectedOutput("oDebug_fixFx_trunc", fixX);
-			REPORT(DEBUG, "   roundUpFix="<<fixX<<" vs "<<FxOutputs.back());
-			mpfr_mul_2si(w, w, FxLSB, MPFR_RNDN);
-			fpx=FPNumber(wFxE,wFxF, w);
-			//tc->addExpectedOutput("oDebug_Fx", fpx.getSignalValue());
-			mpfr_mul_2si(FxDown, FxDown, FxLSB, MPFR_RNDN);
-			
-			for(unsigned iF=0;iF<2;iF++){
-				for(unsigned iB=0;iB<2;iB++){
-					mpfr_mul(Res, iF?FxUp:FxDown, iB?BxUp:BxDown, MPFR_RNDN);
-					FPNumber grr(wOutE, wOutF, Res);
-					grr.getMPFR(Res);
-					REPORT(DEBUG, "  possible output="<<mpfr_get_d(Res, MPFR_RNDN));
-					if(mpfr_cmp(Res, vUp)!=0 && mpfr_cmp(Res, vDown)!=0){
-						std::cerr<<"Doesn't match either output.\n";
-						//exit(1);
+				// Convert to fixed-point
+				mpfr_mul_2si(tmp, tmp, -FxLSB, MPFR_RNDN);
+				
+				// We have exact value in tmp, now do round up and down to fixed-point values
+				mpfr_ceil(FxUp, tmp);
+				mpfr_get_z(fixX.get_mpz_t(), FxUp, MPFR_RNDN);
+				//tc->addExpectedOutput("oDebug_fixFx_trunc", fixX);
+				REPORT(DEBUG, "   roundDownFix="<<fixX<<" vs "<<FxOutputs.front());
+				mpfr_mul_2si(w, w, FxLSB, MPFR_RNDN);
+				fpx=FPNumber(wFxE,wFxF, w);
+				//tc->addExpectedOutput("oDebug_Fx", fpx.getSignalValue());
+				mpfr_mul_2si(FxUp, FxUp, FxLSB, MPFR_RNDN);
+				
+				mpfr_floor(FxDown, tmp);
+				mpfr_get_z(fixX.get_mpz_t(), FxDown, MPFR_RNDN);
+				//tc->addExpectedOutput("oDebug_fixFx_trunc", fixX);
+				REPORT(DEBUG, "   roundUpFix="<<fixX<<" vs "<<FxOutputs.back());
+				mpfr_mul_2si(w, w, FxLSB, MPFR_RNDN);
+				fpx=FPNumber(wFxE,wFxF, w);
+				//tc->addExpectedOutput("oDebug_Fx", fpx.getSignalValue());
+				mpfr_mul_2si(FxDown, FxDown, FxLSB, MPFR_RNDN);
+				
+				for(unsigned iF=0;iF<2;iF++){
+					for(unsigned iB=0;iB<2;iB++){
+						mpfr_mul(Res, iF?FxUp:FxDown, iB?BxUp:BxDown, MPFR_RNDN);
+						FPNumber grr(wOutE, wOutF, Res);
+						grr.getMPFR(Res);
+						REPORT(DEBUG, "  possible output="<<mpfr_get_d(Res, MPFR_RNDN));
+						if(mpfr_cmp(Res, vUp)!=0 && mpfr_cmp(Res, vDown)!=0){
+							std::cerr<<"Doesn't match either output.\n";
+							//exit(1);
+						}
 					}
 				}
+				*/
 			}
 		
 			mpfr_clears(BxUp, BxDown, FxUp, FxDown,NULL);	

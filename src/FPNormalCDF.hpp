@@ -21,8 +21,9 @@ namespace flopoco{
 		* @param[in]			wOutE	the width of the exponent for the output f-p number R
 		 * @param[in]		wOutF	the width of the fraction for the output f-p number R
 		* @param[in]			minInputValue	for values in [-inf,minInputValue], the implementation is allowed to return zero. By default is -8. Must be less than zero.
+		* @param[in]			debugOutputs Whether to include (and test) intermediate outputs from the operator
 		 */
-		FPNormalCDF(Target* target, int wInE, int wInF, int wOutE, int wOutF, double underflowPoint=0);
+		FPNormalCDF(Target* target, int wInE, int wInF, int wOutE, int wOutF, double underflowPoint=-8, bool debugOutputs=true);
 
 		~FPNormalCDF();
 
@@ -59,6 +60,7 @@ namespace flopoco{
 		void CalcMinX();
 		int CalcFxOutputLSB(int relativeBitsNeeded);
 		int CalcFxInputMSB();
+		bool PrecisionOk(int fPre, int fPost, int fOut, double minX);
 	};
 }
 #endif //FPNormalCDF_HPP

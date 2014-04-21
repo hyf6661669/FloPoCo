@@ -350,6 +350,10 @@ void usage(char *name, string opName = ""){
 		cerr << "      Floating-point square root, implemented using digit recurrence\n";
 		cerr << "      (no DSP, long latency)\n";
 	}
+	if ( full || opName == "FPNormalCDF"){					
+		OP("FPNormalCDF","wE wF");
+		cerr << "      Floating-point Gaussian CDF, faithfully rounded.\n";
+	}
 #if 0
 	if ( full || opName == "FP2DNorm"){					
 		OP("FP2DNorm","wE wF");
@@ -484,6 +488,14 @@ void usage(char *name, string opName = ""){
 		cerr << "      degree - degree of polynomial approximation (typically 2 to 5),\n";
 		cerr << "      function - sollya-syntaxed function to implement, between double quotes\n";
 		cerr << "      example: flopoco FunctionEvaluator \"sin(x*Pi/2)\" 16 16 3\n";
+	}
+	if ( full || opName == "FunctionEvaluatorEx"){					
+		OP( "FunctionEvaluatorEx","function wI lsbO degree");
+		cerr << "      Horner polynomial approximation, DSP based if available\n";
+		cerr << "      wI - input width (also weight of input LSB), lsbO - weight of output LSB,\n";
+		cerr << "      degree - degree of polynomial approximation (typically 2 to 5),\n";
+		cerr << "      function - raw list of functions, of form `[func,xmin,xmax,scale](;[func,xmin,xmax,scale])*' \n";
+		cerr << "      example: flopoco FunctionEvaluator \"sin(x*Pi/2),0,1,1;log(x),0,1,1\" 16 16 3\n";
 	}
 	if ( full || opName == "HOTBM" || opName == "FixFunction"){					
 		OP( "HOTBM","function wI wO degree");
@@ -2595,6 +2607,18 @@ bool parseCommandLine(int argc, char* argv[]){
 			int n  = checkStrictlyPositive(argv[i++], argv[0]);
 			string arg=func+",0,1,1"; // we are not sure it works for other values
 			Operator* tg = new FunctionEvaluator(target, arg, wI, wO, n);
+			addOperator(tg);
+		}
+		
+		else if (opname == "FunctionEvaluatorEx") {
+			int nargs = 4;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			string func = argv[i++];
+			int wI = checkStrictlyPositive(argv[i++], argv[0]);
+			int wO = atoi(argv[i++]);
+			int n  = checkStrictlyPositive(argv[i++], argv[0]);
+			Operator* tg = new FunctionEvaluator(target, func, wI, wO, n);
 			addOperator(tg);
 		}
 

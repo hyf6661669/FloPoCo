@@ -164,16 +164,14 @@ namespace flopoco{
 		
 		mpfr_t minUserX;
 		mpfr_init2(minUserX, 1+wInF);
-		if(minInputValue>=0){
-			mpfr_set_d(minUserX, -8, MPFR_RNDD);
-		}else{
+		if(minInputValue<0){
 			mpfr_set_d(minUserX, minInputValue, MPFR_RNDU);
-		}
-		mpfr_nextabove(minUserX);	// It is much more efficient for function eval if we are just above whatever the user wants, e.g. if it is 8
+			mpfr_nextabove(minUserX);	// It is much more efficient for function eval if we are just above whatever the user wants, e.g. if it is 8, as it makes the input range smaller
 		
-		if(mpfr_cmp(minInputX, minUserX)<0){
-			mpfr_set(minInputX, minUserX, MPFR_RNDN);
-			REPORT(DETAILED, "minInput updated from user="<<mpfr_get_d(minInputX, MPFR_RNDN));	
+			if(mpfr_cmp(minInputX, minUserX)<0){
+				mpfr_set(minInputX, minUserX, MPFR_RNDN);
+				REPORT(DETAILED, "minInput updated from user="<<mpfr_get_d(minInputX, MPFR_RNDN));	
+			}
 		}
 		
 		mpfr_clear(minUserX);
@@ -233,6 +231,49 @@ namespace flopoco{
 		mpfr_clear(tmp);
 		return res;		
 	}
+	
+	/*
+		2^(-wOutF-1) >= 4*2^-fPost + abs(  (exp(-minX^2/2 * (1-2^-fPre)) - exp(-minX^2/2) )/exp(-minX^2/2)) );
+		2^(-wOutF-1) >= 2^(-fPost+2) + abs(  (exp(-minX^2/2 * (1-2^-fPre)) - exp(-minX^2/2) )/exp(-minX^2/2)) );
+	*/
+	bool FPNormalCDF::PrecisionOk(int fPre, int fPost, int fOut)
+	{
+		mpfr_t x2;
+		mpfr_init2(x2, getToolPrecision());
+		
+		mpfr_set(x2, m_minInputX, MPFR_RNDN);
+		mpfr_sqr(x2,x2,MPFR_RNDN);
+		mpfr_neg(x2,x2,MPFR_RNDN);
+
+		mpfr_t correct;
+		mpfr_init2(correct, getToolPrecision());
+		mpfr_mul_d(correct, x2, 0.5, MPFR_RNDN);
+		mpfr_exp(correct, correct, MPFR_RNDN);
+		
+		mpfr_t approx;
+		mpfr_init2(approx, getToolPrecision());
+		mpfr_set_d(approx, pow(2.0, -fPre), MPFR_RNDN);
+		mpfr_add_d(approx, approx, 1.0, MPFR_RNDN);
+		mpfr_mul(approx, approx, x2, MPFR_RNDN);
+		mpfr_mul_d(approx, approx, 0.5, MPFR_RNDN);
+		mpfr_exp(approx, approx, MPFR_RNDN);
+		
+		mpfr_sub(approx, correct, approx, MPFR_RNDN);
+		mpfr_div(approx, approx, correct, MPFR_RNDN);
+		mpfr_abs(approx, approx, MPFR_RNDN);
+		
+		mpfr_add_d(approx, approx, pow(2.0, -fPost+2), MPFR_RNDN);
+		
+		REPORT(DETAILED, "  Precision("<<fPre<<","<<fPost<<","<<fOut<<","<<m_minInputX<<") - approx="<<approx<<", want="<<pow(2.0, -fOut-1));
+		
+		bool res=mpfr_cmp_d(approx, pow(2.0, -fOut-1)) < 0;
+		
+		mpfr_clear(x2);
+		mpfr_clear(correct);
+		mpfr_clear(approx);
+		
+		return res;
+	}
 
 	FPNormalCDF::FPNormalCDF(Target* target, int wInE, int wInF, int wOutE, int wOutF, double minInputValue, bool debugOutputs) :
 		Operator(target),
@@ -243,6 +284,11 @@ namespace flopoco{
 		m_debugOutputs(debugOutputs)
 	{
 		ostringstream name;
+		
+		if(minInputValue>0){
+			fprintf(stderr, "FPNormalCDF : minInputValue must be <= 0.");
+			exit(1);
+		}
 
 		name<<"FPNormalCDF_"<<wInE<<"_"<<wInF<<"_"<<wOutE<<"_"<<wOutF<<"_n"<<int(-minInputValue);
 		setName(name.str()); 
@@ -288,17 +334,44 @@ namespace flopoco{
 			
 			So the strategy is to start at fPost= wOutF+3, and try to walk them up. Due to
 			restrictions on exp, we need to have fPre>=fPost.
+			
+			The derivative of F(x) is strictly less than one, with a maximum at zero of ~0.4 (actually 1/sqrt(2*pi)).
+			We do F(x) with absolute precision which guarantees relative precision over the range of inputs,
+			so say that we choose lsbFx as the absolute precision, that means that on the input side there
+			is point using more than lsbX=lsbFx of one input lsb results in less than half an lsb on the output side.
 		*/		
 		
+		REPORT(INFO, "Finding precisions.");
+		int fPre=wOutF+3, fPost;
+		while(1){
+			bool ok=false;
+			for(int i=0;i<4;i++){
+				fPost=fPre+i;
+				
+				if(PrecisionOk(fPre, fPost, wOutF)){
+					ok=true;
+					break;
+				}
+			}
+			
+			if(ok)
+				break;
+			
+			fPre=fPre+1;
+			if(fPre>=wOutF+3+16){
+				fprintf(stderr, "Cannot find reasonable precision, quitting.\n");
+				exit(1);
+			}
+		}
+		REPORT(INFO, "  Chose fPre="<<fPre<<", fPost="<<fPost);
 		
-
 		
 		////////////////////////////////////////////////////////////////
 		// Part 1 : Calculate Bx=B(x)
 		REPORT(DETAILED, "Building up B(x) part.");
 		
 		// Do sqr(X)=X^2
-		wSqrXF=wOutF+8;
+		wSqrXF=fPre;
 		int wSqrX=2+1+wInE+wSqrXF;
 		FPSquarer *opSquarer=new FPSquarer(target, wInE, wInF, wSqrXF);
 		oplist.push_back(opSquarer);
@@ -343,8 +416,11 @@ namespace flopoco{
 		
 		syncCycleFromSignal("absX");
 		
+		FxLSB=CalcFxOutputLSB(fPost);
+		FxMSB=-1;	// The maximum is always 0.5
+		
 		// Convert it to fixed-point, and in parallel work out whether we are underlflowing
-		fixXLSB=-(wInF+8);
+		fixXLSB=FxLSB;	// Due to arguments on the gradient of F(0), we can take input precision = output precision
 		fixXMSB=CalcFxInputMSB()+1;
 		REPORT(INFO, "fixX: MSB=2^"<<fixXMSB<<", fixXLSB=2^"<<fixXLSB);
 		FP2FixV2 *opFP2Fix=new FP2FixV2(target, /*LSB0*/ fixXLSB-1, /*MSBO*/ fixXMSB-1, /*Signed*/ false, /*wER*/ wInE, wInF, /*trunc_p*/ false);
@@ -359,9 +435,10 @@ namespace flopoco{
 		syncCycleFromSignal("have_underflow");
 		
 		// Do the actual evaluation of F(x)
-		FxLSB=CalcFxOutputLSB(wOutF+2);
-		FxMSB=-1;	// The maximum is always 0.5
-		int degree=4;	// TODO
+		int degree=3;	// TODO
+		if(wOutF>=24){
+			degree=4;
+		}
 		if(wOutF>=40){
 			degree=5;
 		}
@@ -395,7 +472,7 @@ namespace flopoco{
 		REPORT(INFO, "Finished building function evaluator.");
 		
 		// Convert it back to floating-point
-		wFxF=wOutF+2;
+		wFxF=fPost;
 		wFxE=wOutE;
 		// The function evaluator may have produced more bits than we want
 		vhdl<<tab<<declare("fixFx_trunc", FxMSB-FxLSB+1)<<" <= fixFx"<<range(FxMSB-FxLSB,0)<<";\n";

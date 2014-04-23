@@ -706,6 +706,20 @@ int checkStrictlyPositive(char* s, char* cmd) {
 	return n;
 }
 
+double checkNegativeOrNullDouble(char* s, char* cmd) {
+	char *stop=NULL;
+	double d=strtod(s, &stop);
+	if(stop==s){
+		cerr<<"ERROR: couldn't parse '"<<s<<"' as a floating-point number."<<endl;
+		usage(cmd);
+	}
+	if (d>0){
+		cerr<<"ERROR: got "<<d<<", expected negative or zero real."<<endl;
+		usage(cmd);
+	}
+	return d;
+}
+
 int checkPositiveOrNull(char* s, char* cmd) {
 	int n=atoi(s);
 	if (n<0){
@@ -2093,12 +2107,13 @@ bool parseCommandLine(int argc, char* argv[]){
 		}
 		else if (opname == "FPNormalCDF")
 		{
-			int nargs = 2;
+			int nargs = 3;
 			if (i+nargs > argc)
 				usage(argv[0],opname); // and exit
 			int wE = checkStrictlyPositive(argv[i++], argv[0]);
 			int wF = checkStrictlyPositive(argv[i++], argv[0]);
-			op = new FPNormalCDF(target, wE, wF, wE, wF);
+			double minInputValue= checkNegativeOrNullDouble(argv[i++], argv[0]);
+			op = new FPNormalCDF(target, wE, wF, wE, wF, minInputValue);
 			addOperator(op);
 		}
 #if 0

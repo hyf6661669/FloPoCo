@@ -435,12 +435,12 @@ namespace flopoco{
 		syncCycleFromSignal("have_underflow");
 		
 		// Do the actual evaluation of F(x)
-		int degree=3;	// TODO
+		int degree=4;	// TODO
 		if(wOutF>=24){
-			degree=4;
+			degree=5;
 		}
 		if(wOutF>=40){
-			degree=5;
+			degree=6;
 		}
 		if(wOutF>=53){
 			degree=7;

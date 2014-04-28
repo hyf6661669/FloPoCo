@@ -22,12 +22,15 @@ INCLUDE(CPack)
 # 
 #Compilation flags
 #SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
+# SET(CMAKE_CXX_FLAGS_DEBUG "-O3 -DNDEBUG=1 -Wall")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -O3 -DNDEBUG=1 -Wall")
 # Uncomment for profiling
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
+# SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
 # SET(CMAKE_CXX_FLAGS_DEBUG "-pg -Wall")
 # Do you want an executable of 30MB ?
-SET(CMAKE_BUILD_TYPE DEBUG)
-#SET(CMAKE_BUILD_TYPE release)
+#SET(CMAKE_BUILD_TYPE DEBUG)
+
+SET(CMAKE_BUILD_TYPE release)
 
 
 FIND_PATH(MPFR_H

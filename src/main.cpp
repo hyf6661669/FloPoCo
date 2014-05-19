@@ -241,11 +241,33 @@ void usage(char *name, string opName = ""){
 		cerr << "      The filter may, or may not use bit heaps\n";
 	}
 	
-	if ( full || opName == "FixDCT"){
-		OP("FixDCT","p taps current_index");
-		cerr << "      A DCT2 on an (1,p) fixed-point format using bit heaps\n";
+	if ( full || opName == "FixDCT2"){
+		OP("FixDCT2","p taps current_index");
+		cerr << "      A DCT2 on a (1,p) fixed-point format\n";
 		cerr << "      The filter uses bit heaps\n";
 	}
+
+	if ( full || opName == "FixHalfSine"){
+		OP("FixHalfSine","p taps");
+		cerr << "      An half sine filter on a (1,p) fixed-point format\n";
+		cerr << "      The filter uses bit heaps\n";
+	}
+
+	if ( full || opName == "FixRCF"){
+		OP("FixRCF","p taps alpha");
+		cerr << "      A Raised Cosine filter on a (1,p) fixed-point format, with a roll-off factor alpha\n";
+		cerr << "	   alpha=1 by default";
+		cerr << "      The filter uses bit heaps\n";
+	}
+
+	if ( full || opName == "FixRRCF"){
+		OP("FixRRCF","p taps alpha");
+		cerr << "      A Root Raised Cosine filter on a (1,p) fixed-point format, with a roll-off factor alpha\n";
+		cerr << "	   alpha=1 by default";
+		cerr << "      The filter uses bit heaps\n";
+	}
+
+
 #endif // HAVE_SOLLYA
 
 
@@ -453,9 +475,14 @@ void usage(char *name, string opName = ""){
 		cerr << "    ____________ FIXED-POINT OPERATORS __________________________________________\n";
 	}
 #ifdef HAVE_SOLLYA
+	if ( full || opName == "CordicAtan2"){
+		NEWOP( "CordicAtan2","w");
+		cerr << "      Computes atan(x/y) as a=(angle in radian)/pi so a in [-1,1[;\n";
+		cerr << "      w is the size of both inputs and outputs, all being two's complement signals\n";
+	}
 	if ( full || opName == "CordicSinCos" || opName == "FixSinOrCos" || opName == "SinCos"){
 		NEWOP( "CordicSinCos","wIn wOut reduced");
-		cerr << "      Computes (1-2^(-w)) sin(pi*x) and (1-2^(-w)) cos(pi*x) for x in -[1,1[, ;\n";
+		cerr << "      Computes (1-2^(-w)) sin(pi*x) and (1-2^(-w)) cos(pi*x) for x in [-1,1[, ;\n";
 		cerr << "      wIn and wOut are the fixed-point precision of inputs and outputs (not counting the sign bit)\n";
 		cerr << "      reduced : if 1,  reduced number of iterations at the cost of two multiplications \n";
 	}
@@ -813,7 +840,7 @@ bool parseCommandLine(int argc, char* argv[]){
 					}
 					// if previous options had changed it
 					target->setFrequency(oldTarget->frequency());
-					target->setUseHardMultipliers(oldTarget->hasHardMultipliers());
+					target->setUseHardMultipliers(oldTarget->useHardMultipliers());
 					if (oldTarget->isPipelined()) 
 						target->setPipelined();
 					else 
@@ -1411,7 +1438,7 @@ bool parseCommandLine(int argc, char* argv[]){
 			}
 		}
 		
-		else if(opname=="FixDCT")
+		else if(opname=="FixDCT2")
 		{
 			int nargs = 3;
 			if (i+nargs > argc)
@@ -1421,11 +1448,56 @@ bool parseCommandLine(int argc, char* argv[]){
 				int taps 	= checkStrictlyPositive(argv[i++], argv[0]);
 				int k 		= checkPositiveOrNull(argv[i++], argv[0]);
 				
-				op = new FixDCT(target, p, taps, k, true);
+				op = new FixDCT2(target, p, taps, k, true);
 				addOperator(op);
 			}
 		}
 		
+		else if(opname=="FixHalfSine")
+		{
+			int nargs = 2;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int p 		= checkStrictlyPositive(argv[i++], argv[0]);
+				int taps 	= checkStrictlyPositive(argv[i++], argv[0]);
+
+				op = new FixHalfSine(target, p, taps, true);
+				addOperator(op);
+			}
+		}
+
+		else if(opname=="FixRCF")
+		{
+			int nargs = 3;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int p 			= checkStrictlyPositive(argv[i++], argv[0]);
+				int taps 		= checkStrictlyPositive(argv[i++], argv[0]);
+				double alpha	= atof(argv[i++]);
+
+				op = new FixRCF(target, p, taps, alpha, true);
+				addOperator(op);
+			}
+		}
+
+		else if(opname=="FixRRCF")
+		{
+			int nargs = 3;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int p 			= checkStrictlyPositive(argv[i++], argv[0]);
+				int taps 		= checkStrictlyPositive(argv[i++], argv[0]);
+				double alpha	= atof(argv[i++]);
+
+				op = new FixRRCF(target, p, taps, alpha, true);
+				addOperator(op);
+			}
+		}
+
+
 #endif
 
 		/* Exploration of other fast adders */
@@ -2688,6 +2760,15 @@ bool parseCommandLine(int argc, char* argv[]){
 			int wOut = checkStrictlyPositive(argv[i++], argv[0]); // must be >=2 actually
 			int reducedIterations = checkPositiveOrNull(argv[i++], argv[0]); 
 			Operator* tg = new CordicSinCos(target, wIn, wOut, reducedIterations);
+			addOperator(tg);
+		}
+
+		else if (opname == "CordicAtan2") {
+			int nargs = 1;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int w = checkStrictlyPositive(argv[i++], argv[0]); // must be >=2 actually
+			Operator* tg = new CordicAtan2(target, w);
 			addOperator(tg);
 		}
 

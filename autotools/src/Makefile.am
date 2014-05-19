@@ -164,6 +164,7 @@ noinst_HEADERS = \
           FixSinCos/FixSinCos.hpp \
           FixSinCos/FixSinOrCos.hpp \
           FixSinCos/CordicSinCos.hpp \
+          FixSinCos/CordicAtan2.hpp\
           FixFIR.hpp \
           FixDCT.hpp \
           FPAddSub.hpp \
@@ -264,6 +265,7 @@ libflopoco_la_SOURCES = \
                         FixSinCos/FixSinCos.cpp \
                         FixSinCos/FixSinOrCos.cpp \
                         FixSinCos/CordicSinCos.cpp \
+                        FixSinCos/CordicAtan2.cpp\
                         FixFIR.cpp \
                         FixDCT.cpp \
                         FPAdderDualPath.cpp \

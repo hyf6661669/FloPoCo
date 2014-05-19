@@ -25,7 +25,7 @@ INCLUDE(CPack)
 # SET(CMAKE_CXX_FLAGS_DEBUG "-O3 -DNDEBUG=1 -Wall")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -O3 -DNDEBUG=1 -Wall")
 # Uncomment for profiling
-# SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
+ SET(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb -pg -Wall")
 # SET(CMAKE_CXX_FLAGS_DEBUG "-pg -Wall")
 # Do you want an executable of 30MB ?
 #SET(CMAKE_BUILD_TYPE DEBUG)
@@ -298,9 +298,13 @@ src/ConstMult/IntConstDiv3
  src/FixSinCos/FixSinCos
  src/FixSinCos/FixSinOrCos
  src/FixSinCos/CordicSinCos
+ src/FixSinCos/CordicAtan2
 
  src/FixFIR
  src/FixDCT
+ src/FixHalfSine
+ src/FixRCF
+ src/FixRRCF
 
 # Floating-Point ----------------------------------------------------
 #--------------------------------------------------------------------

@@ -191,7 +191,7 @@ namespace flopoco {
 
 		multiplierUid=parentOp->getNewUId();
 		srcFileName="IntMultiplier";
-		useDSP = (DSPThreshold>=0) &&  parentOp->getTarget()->hasHardMultipliers();
+		useDSP = (DSPThreshold>=0) &&  parentOp->getTarget()->useHardMultipliers() && parentOp->getTarget()->useHardMultipliers();
 
 		ostringstream name;
 		name <<"VirtualIntMultiplier";
@@ -235,9 +235,8 @@ namespace flopoco {
 		setCopyrightString ( "Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012" );
 
 		// useDSP or not? 
-		//useDSP = (DSPThreshold>0) && target->hasHardMultipliers();
-		useDSP = (DSPThreshold>=0)&&target->hasHardMultipliers();
-
+		//useDSP = (DSPThreshold>0) && target->useHardMultipliers();
+		useDSP = (DSPThreshold>=0) && target->useHardMultipliers();
 
 		{
 			ostringstream name;
@@ -426,7 +425,7 @@ namespace flopoco {
 		//	the multiplication in a DSP, without passing through a bitheap
 		//	the last three conditions ensure that the multiplier can actually fit in a DSP
 		//if((1.0*wX*wY >= 1.0*SMALL_MULT_RATIO*dspXSize*dspYSize) && (1.0*wX*wY < 1.0*dspXSize*dspYSize) && (wX <= dspXSize) && (wY <= dspYSize))
-		if(worthUsingOneDSP(wX, wY, 0, 0, dspXSize, dspYSize) && (wX <= dspXSize) && (wY <= dspYSize))
+		if(useDSP && worthUsingOneDSP(wX, wY, 0, 0, dspXSize, dspYSize) && (wX <= dspXSize) && (wY <= dspYSize))
 		{
 			ostringstream s, zerosXString, zerosYString, zerosYNegString;
 			int zerosX = dspXSize - wX + (signedIO ? 0 : 1);

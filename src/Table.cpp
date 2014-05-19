@@ -204,12 +204,11 @@ namespace flopoco{
 			
 			outputVHDLSignalDeclarations(o);
 			beginArchitecture(o);
-			if (maxIn-minIn <= 128 && wOut>36){
-				o << "Z0 <= \"10\" & X;"<<endl;
-				o << "Z1 <= \"00\" & X;"<<endl;
-			}else if (maxIn-minIn <= 256 && wOut>36){
-				o << "Z0 <= '1' & X;"<<endl;
-				o << "Z1 <= '0' & X;"<<endl;
+			if (maxIn-minIn <= 256 && wOut>36){
+				int srcBits=intlog2(maxIn-minIn+1);
+				std::string padding=zg(intlog2(256)-srcBits);
+				o << "Z0 <= '1' & "<<padding<<" & X;"<<endl;
+				o << "Z1 <= '0' & "<<padding<<" & X;"<<endl;
 			}
 					
 			if(isSequential()){

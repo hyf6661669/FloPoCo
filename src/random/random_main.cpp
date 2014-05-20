@@ -14,6 +14,8 @@
 #include "transforms/blocks/CLTTransform.hpp"
 #include "transforms/blocks/TableTransform.hpp"
 #include "transforms/blocks/GRNGTableTransform.hpp"
+#include "transforms/blocks/OutputShuffle.hpp"
+#include "transforms/blocks/OutputShuffleTransform.hpp"
 #include "float_approx/static_quantiser.hpp"
 
 #include "fixed_point_exp/func_approx_exp_stage.hpp"
@@ -84,6 +86,8 @@ void random_register_factories()
 	flopoco::random::GRNGTableTransform_registerFactory();
 	flopoco::random::TransformStats_registerFactory();
 	flopoco::random::CLTCorrectedTransform_registerFactory();
+	flopoco::random::OutputShuffle::registerFactory();
+	flopoco::random::OutputShuffleTransform::registerFactory();
 	
 	flopoco::random::StaticQuantiser_registerFactory();	
 	flopoco::random::FloatApprox_registerFactory();

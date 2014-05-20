@@ -21,17 +21,12 @@ SET(CPACK_PACKAGE_VERSION_PATCH "0")
 INCLUDE(CPack)
 # 
 #Compilation flags
-#SET(CMAKE_CXX_FLAGS_DEBUG "-Wall")
+#SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
 # Uncomment for profiling
-#SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
-SET(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG=1 -O3")
-
-set(CMAKE_EXE_LINKER_FLAGS "-static, -Wl,-static")
-set(CMAKE_EXE_LINKER_FLAGS "-L/usr/local/lib")
-
-# Do you want an executable of 12MB ?
-#SET(CMAKE_BUILD_TYPE DEBUG)
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
+# SET(CMAKE_CXX_FLAGS_DEBUG "-pg -Wall")
+# Do you want an executable of 30MB ?
+SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_BUILD_TYPE release)
 
 
@@ -57,10 +52,7 @@ FIND_LIBRARY(MPFI_LIB
 	HINTS "C:/Program Files/Microsoft Visual Studio 9.0/VC/lib"
 	DOC "Directory of the MPFI library")
 
-FIND_PATH(GMP_H gmp.h )
-FIND_LIBRARY(GMP_LIB NAMES gmp gmp.lib )
 
-FIND_LIBRARY(XML2_LIB NAMES xml2)
 
 # Detect Sollya's presence
 FIND_LIBRARY( SOLLYA_LIB sollya )
@@ -68,8 +60,7 @@ FIND_LIBRARY( SOLLYA_LIB sollya )
 IF (SOLLYA_LIB)
 	ADD_DEFINITIONS(-DHAVE_SOLLYA)
 	MESSAGE(STATUS "Found Sollya: ${SOLLYA_LIB}")
-    
-    FIND_LIBRARY(FPLLL_LIB NAMES mpflll mpflll.lib)
+  ADD_DEFINITIONS(-DHAVE_LNS)
 ELSE (SOLLYA_LIB)
 	MESSAGE(STATUS "Sollya not found, many very nice operators won't be available")
 ENDIF (SOLLYA_LIB)
@@ -85,9 +76,6 @@ ELSE (MPFR_FOUND)
     MESSAGE(FATAL_ERROR "Could not find MPFR.\nOn Debian-based systems type: 'sudo apt-get install libmpfr-dev'")
 ENDIF (MPFR_FOUND)
 
-INCLUDE_DIRECTORIES(${MPFR_H} ${GMP_H})  
-
-ADD_DEFINITIONS(-DHAVE_LNS)
 
 # Create target for the lexer
  ADD_CUSTOM_TARGET(VHDLLexer echo "Creating VHDLLexer.c VHDLLexer.h")
@@ -262,6 +250,7 @@ src/Plotter
 
 src/IntMultipliers/MultiplierBlock
 
+
 # Shifters/LZOC related ---------------------------------------------
 #--------------------------------------------------------------------
  src/LZOC 
@@ -280,6 +269,7 @@ src/IntMultipliers/MultiplierBlock
  src/FixedPointFunctions/PolyCoeffTable
  src/FixedPointFunctions/PolynomialEvaluator
  src/FixedPointFunctions/FunctionEvaluator
+ src/FixedPointFunctions/GenericEvaluator
 
  src/FixedPointFunctions/HOTBM.cpp
  src/FixedPointFunctions/HOTBM/HOTBMInstance.cc
@@ -299,11 +289,8 @@ src/IntMultipliers/MultiplierBlock
 
 # Fixed-point operators ---------------------------------------------
 #--------------------------------------------------------------------
- src/FixSinCos.cpp
- src/CORDIC/FixedPointSinOrCos.cpp
- src/CORDIC/CordicSinCos
- src/FixedPointFIR
-
+ 
+ 
 # Floating-Point ----------------------------------------------------
 #--------------------------------------------------------------------
  src/FPAdderDualPath
@@ -335,11 +322,17 @@ src/IntMultipliers/MultiplierBlock
 
  src/IntConstDiv 
  src/FPConstDiv 
+ 
+ src/FixedPointFIR.cpp
+ 
+ src/FixSinCos.cpp
+ src/CORDIC/FixedPointSinOrCos.cpp
+ src/CORDIC/CordicSinCos.cpp
 
- src/fplogarithm/FirstInvTable
- src/fplogarithm/FirstLogTable
- src/fplogarithm/OtherLogTable
- src/FPLog
+ src/FPLog.cpp
+ src/fplogarithm/FirstInvTable.cpp
+ src/fplogarithm/FirstLogTable.cpp
+ src/fplogarithm/OtherLogTable.cpp
 
  src/FPExp 
  src/FPPow
@@ -370,7 +363,6 @@ src/Complex/FixedComplexMultiplier
  src/LNS/LNSDiv
  src/LNS/LNSSqrt
  src/LNS/AtanPow
- src/FixedPointFunctions/GenericEvaluator
  src/LNS/LogSinCos
 
 
@@ -407,28 +399,28 @@ src/Complex/FixedComplexMultiplier
 
  src/UtilSollya
 )
-IF(SOLLYA_LIB)
-  TARGET_LINK_LIBRARIES(
-    FloPoCoLib
-    gmp gmpxx ${SOLLYA_LIB} ${FPLLL_LIB} ${MPFI_LIB} ${MPFR_LIB} iconv dl z
-    )
-ELSE(SOLLYA_LIB)
- TARGET_LINK_LIBRARIES(
-   FloPoCoLib 
-    gmp gmpxx ${MPFI_LIB} ${MPFR_LIB}
-   )
-ENDIF(SOLLYA_LIB)
+IF (SOLLYA_LIB)
+TARGET_LINK_LIBRARIES(
+  FloPoCoLib
+  gmp gmpxx ${SOLLYA_LIB} /usr/local/lib/libfplll.a ${MPFI_LIB} ${MPFR_LIB} xml2
+  )
+ELSE (SOLLYA_LIB)
+TARGET_LINK_LIBRARIES(
+  FloPoCoLib 
+  gmp gmpxx xml2 mpfi ${MPFR_LIB}
+  )
+ENDIF (SOLLYA_LIB)
 SET(FLOPOCO_LIB FloPoCoLib)
 
 ADD_EXECUTABLE(flopoco
  src/main 
 )
-TARGET_LINK_LIBRARIES(
- flopoco ${FLOPOCO_LIB}
-)
 
-# MinGW stuff
-set_target_properties(flopoco PROPERTIES LINK_SEARCH_START_STATIC 1)
+TARGET_LINK_LIBRARIES(
+  flopoco  
+	${FLOPOCO_LIB}
+  )
+
 
 ADD_EXECUTABLE(fpadder_example
  src/main_minimal 
@@ -450,5 +442,7 @@ TARGET_LINK_LIBRARIES(bin2fp  mpfr gmp gmpxx)
 ADD_EXECUTABLE(longacc2fp src/Tools/longacc2fp  src/utils)
 TARGET_LINK_LIBRARIES(longacc2fp  mpfr gmp gmpxx)
 
+
+
 add_subdirectory(src/random)
-target_link_libraries(${FLOPOCO_LIB} flopoco_random_lib)
+target_link_libraries(FloPoCoLib flopoco_random_lib)

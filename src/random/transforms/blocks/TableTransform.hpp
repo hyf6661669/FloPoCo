@@ -35,6 +35,7 @@ private:
 	unsigned m_wElts;
 	bool m_addRandomSign;
 	std::vector<mpz_class> m_elements;
+	std::vector<int64_t> m_elementsFast;
 	unsigned m_log2n;
 	int m_wF;
 
@@ -73,6 +74,12 @@ public:
 	
 	virtual std::string nonUniformOutputName(int i) const
 	{ return "oRng"; }
+	
+	virtual void Simulate(
+		unsigned nSamples,
+		const mpz_class *pUniformInputs,	// Array of nSamples uniform input bits, with at least uniformInputBits() content
+		mpz_class *pNonUniformOutputs		// Array of nSamples*nonUniformOutputCount() gmp instances
+	) const;
 	
 	// IRngTransformDistributions
 	Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;

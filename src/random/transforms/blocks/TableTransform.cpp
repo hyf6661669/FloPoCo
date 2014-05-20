@@ -47,7 +47,7 @@ TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_
 {
 	REPORT(DETAILED, "  TableTransform() begin");	
 	
-	if((1<<m_log2n) != elements.size())
+	if((1u<<m_log2n) != elements.size())
 		throw std::string("TableTransform - Table must have binary power size.");
 	
 	mpz_class mm=mpz_class(1)<<wElts;
@@ -80,7 +80,7 @@ TableTransform::TableTransform(Target* target, int wElts, const std::vector<mpz_
 	
 	REPORT(DETAILED, "    Building single port table.");
 	
-	bool hardRam=elements.size() > (1<<(1+target->lutInputs()));
+	bool hardRam=elements.size() > (1u<<(1+target->lutInputs()));
 	Operator *table=MakeSinglePortTable(target, acc.str()+"_Contents", wElts, m_elements, hardRam);
 	oplist.push_back(table);
 	
@@ -168,6 +168,18 @@ Distribution<mpfr::mpreal>::TypePtr TableTransform::nonUniformOutputDistribution
 	}
 	assert(m_distribution->Cdf(0).get_prec()>=(int)prec);
 	return m_distribution;
+}
+
+void TableTransform::Simulate(
+		unsigned nSamples,
+		const mpz_class *pUniformInputs,	// Array of nSamples uniform input bits, with at least uniformInputBits() content
+		mpz_class *pNonUniformOutputs		// Array of nSamples*nonUniformOutputCount() gmp instances
+	)
+const
+{
+	for(unsigned i=0;i<nSamples;i++){
+		pNonUniformOutputs[i]=m_elements.at(pUniformInputs[i].get_si());
+	}
 }
 
 

@@ -3,7 +3,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR})
 message(${CMAKE_MODULE_PATH})
 
 FIND_PACKAGE(Boost COMPONENTS test_exec_monitor)
-FIND_PACKAGE(GSL)
+#FIND_PACKAGE(GSL)
+
+FIND_LIBRARY(GSL_LIBRARIES NAMES gsl )
 
 FIND_PATH(NTL_H NTL/RR.h )
 
@@ -60,6 +62,8 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	transforms/blocks/TableTransform.cpp
 	transforms/blocks/GRNGTableTransform.cpp
 	transforms/blocks/CLTCorrectedTransform.cpp
+	transforms/blocks/OutputShuffle.cpp
+	transforms/blocks/OutputShuffleTransform.cpp
 	transforms/TransformStats.cpp
 	
 	float_approx/static_quantiser.cpp
@@ -67,7 +71,8 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	float_approx/range_polys.cpp
 	float_approx/FloatApprox.cpp
 )
-target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES})
+#target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES})
+target_link_libraries(flopoco_random_lib ${GMP_LIB} ${GSL_LIBRARIES} ${GCC_S}  ${MPFR_LIB})
 
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})
@@ -85,8 +90,11 @@ LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} ${GSL_LIBRARY_DIRS})
 #add_executable(test_optimisation utils/test_optimisation.cpp)
 #target_link_libraries(test_optimisation ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 
-#add_executable(test_moment_correction moment_correction/test_moment_correction.cpp)
-#target_link_libraries(test_moment_correction ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB})
+add_executable(test_moment_correction moment_correction/test_moment_correction.cpp)
+target_link_libraries(test_moment_correction ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB} ${MPFR_LIB})
+
+add_executable(test_moment_correction_weighted moment_correction/test_moment_correction_weighted.cpp)
+target_link_libraries(test_moment_correction_weighted ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB}  ${MPFR_LIB})
 
 
 #add_executable(gaussian_moment_correction_tables moment_correction/gaussian_moment_correction_tables.cpp)

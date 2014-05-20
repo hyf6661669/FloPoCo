@@ -37,6 +37,15 @@ public:
 
 	//! The name of the output port associated with this signal
 	virtual std::string nonUniformOutputName(int i) const=0;
+		
+	virtual void Simulate(
+		unsigned nSamples,
+		const mpz_class *pUniformInputs,	// Array of nSamples uniform input bits, with at least uniformInputBits() content
+		mpz_class *pNonUniformOutputs		// Array of nSamples*nonUniformOutputCount() gmp instances
+	) const {
+		// There should be a default version done in terms of emulate, but I'm out of time
+		throw std::runtime_error("Simulate not implemented on this RngTransformOperator.");
+	}
 };
 
 /*! Used for transforms which are able to precisely specify their output distribution. Not all

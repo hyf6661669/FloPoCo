@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(SymmetricHepticTest)
 {
 	ContinuousDistribution<double>::TypePtr target=boost::make_shared<GaussianDistribution<double> >(0,1);
 	
-	int n=65536;
+	int n=128;
 	std::vector<double> x(n);
 	for(int i=0;i<n/2;i++){
 		double u=(i+0.5)/n;

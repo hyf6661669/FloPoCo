@@ -18,7 +18,7 @@ namespace random
 {
 
 /* This implements a distribution based on a table of (x,p) pairs. It is a bit odd,
-	as it internally remembers all the discting pairs, but when viewed as a distribution
+	as it internally remembers all the distinct pairs, but when viewed as a distribution
 	we have to collapse all identical x values down to a single point.
 */
 template<class T>

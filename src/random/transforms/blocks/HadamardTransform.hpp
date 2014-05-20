@@ -50,6 +50,8 @@ private:
 	void HadamardStage(std::string dstName, std::string srcName, int totalSize, int size, int srcW);
 	void Hadamard(std::string name, int log2size, int srcW);
 
+	void DoHadamard(std::vector<mpz_class> &curr, std::vector<mpz_class> &tmp) const;
+
 public:
 	HadamardTransform(Target* target, int log2n, RngTransformOperator *base, bool extraPipeline=false);
 
@@ -78,6 +80,12 @@ public:
 	
 	virtual std::string nonUniformOutputName(int i) const
 	{ return join(m_nonUniformOutputNameBase,i); }
+	
+	virtual void Simulate(
+		unsigned nSamples,
+		const mpz_class *pUniformInputs,	// Array of nSamples uniform input bits, with at least uniformInputBits() content
+		mpz_class *pNonUniformOutputs		// Array of nSamples*nonUniformOutputCount() gmp instances
+	) const;
 	
 	// IRngTransformDistributions
 	Distribution<mpfr::mpreal>::TypePtr nonUniformOutputDistribution(int i, unsigned prec) const;

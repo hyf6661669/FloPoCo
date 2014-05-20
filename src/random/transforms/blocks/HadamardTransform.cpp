@@ -177,6 +177,26 @@ HadamardTransform::HadamardTransform(Target* target,
 
 HadamardTransform::~HadamardTransform()
 {}
+	
+void HadamardTransform::DoHadamard(
+	std::vector<mpz_class> &curr,
+	std::vector<mpz_class> &tmp
+) const {
+	for(unsigned j=1;j<=m_log2n;j++){
+		unsigned size=1<<j;
+		for(unsigned offset=0;offset<m_n;offset+=size){
+			for(unsigned i=0;i<size/2;i++){
+				// Connect(dstName, offset+i, srcName, offset+i, offset+i+size/2, +1, srcW);
+				tmp[offset+i] = curr[offset+i] + curr[offset+i+size/2];
+			}
+			for(unsigned i=size/2;i<size;i++){
+				//Connect(dstName, offset+i, srcName, offset+i-size/2, offset+i, -1, srcW);
+				tmp[offset+i] = curr[offset+i-size/2] - curr[offset+i];
+			}
+		}
+		std::swap(curr, tmp);
+	}
+}
 
 void HadamardTransform::emulate(TestCase * tc)
 {
@@ -200,20 +220,7 @@ void HadamardTransform::emulate(TestCase * tc)
 		bits=bits>>m_base->uniformInputBits();
 	}
 	
-	for(unsigned j=1;j<=m_log2n;j++){
-		unsigned size=1<<j;
-		for(unsigned offset=0;offset<m_n;offset+=size){
-			for(unsigned i=0;i<size/2;i++){
-				// Connect(dstName, offset+i, srcName, offset+i, offset+i+size/2, +1, srcW);
-				next[offset+i] = curr[offset+i] + curr[offset+i+size/2];
-			}
-			for(unsigned i=size/2;i<size;i++){
-				//Connect(dstName, offset+i, srcName, offset+i-size/2, offset+i, -1, srcW);
-				next[offset+i] = curr[offset+i-size/2] - curr[offset+i];
-			}
-		}
-		std::swap(curr, next);
-	}
+	DoHadamard(curr, next);
 	
 	for(unsigned i=0;i<m_n;i++){
 		mpz_class v=toTwosComplement(curr[i], m_baseWidth+m_log2n);
@@ -241,6 +248,31 @@ Distribution<mpfr::mpreal>::TypePtr HadamardTransform::nonUniformOutputDistribut
 	assert(m_distribution->Pmf(0).get_prec() >= (int)prec);
 	assert(m_distribution->Cdf(0).get_prec() >= (int)prec);
 	return m_distribution;
+}
+
+void HadamardTransform::Simulate(
+		unsigned nSamples,
+		const mpz_class *pUniformInputs,	// Array of nSamples uniform input bits, with at least uniformInputBits() content
+		mpz_class *pNonUniformOutputs		// Array of nSamples*nonUniformOutputCount() gmp instances
+	) const
+{
+	std::vector<mpz_class> tmp1(m_n), tmp2(m_n);
+	
+	unsigned unifBits=m_base->uniformInputBits();
+	
+	for(unsigned i=0;i<nSamples;i++){
+		mpz_class u=pUniformInputs[i];
+		for(unsigned j=0;j<m_n;j++){
+			mpz_fdiv_r_2exp(tmp1[j].get_mpz_t(), u.get_mpz_t(), unifBits);
+			u=u>>unifBits;
+		}
+		
+		m_base->Simulate(m_n, &tmp1[0], &tmp2[0]);
+		
+		DoHadamard(tmp2, tmp1);
+		
+		std::copy(tmp2.begin(), tmp2.end(), pNonUniformOutputs+m_n*i);
+	}
 }
 
 	

@@ -72,7 +72,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	float_approx/FloatApprox.cpp
 )
 #target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES})
-target_link_libraries(flopoco_random_lib ${GMP_LIB} ${GSL_LIBRARIES} ${GCC_S}  ${MPFR_LIB})
+target_link_libraries(flopoco_random_lib ${GMP_LIB} ${GSL_LIBRARIES} ${MPFR_LIB})
 
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})
@@ -93,8 +93,8 @@ LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} ${GSL_LIBRARY_DIRS})
 add_executable(test_moment_correction moment_correction/test_moment_correction.cpp)
 target_link_libraries(test_moment_correction ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB} ${MPFR_LIB})
 
-add_executable(test_moment_correction_weighted moment_correction/test_moment_correction_weighted.cpp)
-target_link_libraries(test_moment_correction_weighted ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB}  ${MPFR_LIB})
+#add_executable(test_moment_correction_weighted moment_correction/test_moment_correction_weighted.cpp)
+#target_link_libraries(test_moment_correction_weighted ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB}  ${MPFR_LIB})
 
 
 #add_executable(gaussian_moment_correction_tables moment_correction/gaussian_moment_correction_tables.cpp)

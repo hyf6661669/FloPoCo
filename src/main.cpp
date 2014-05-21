@@ -166,19 +166,44 @@ void usage(char *name, string opName = ""){
 		cerr << "    ____________ INTEGER MULTIPLIERS/SQUARER/KARATSUBA _________________________\n";
 
 	 if ( full || opName == "IntMultiplier"){
-	 	OP("IntMultiplier","wInX wInY wOut signed ratio enableSupertiles");
+	 	OP("IntMultiplier","wInX wInY wOut signed DSP_threshold enableSupertiles");
 	 	cerr << "      Integer multiplier of two integers X and Y of sizes wInX and wInY \n";
 	 	cerr << "      Result is faithfully truncated to wOut bits  (wOut=0 means: full multiplier)\n";
 	 	cerr << "      signed=0: unsigned multiplier;     signed=1: signed inputs, signed outputs \n";
-		cerr << "      0 <= ratio <= 1; shows how much of a DSP block's area is acceptable to be left unused\n";
+	 	cerr << "      0 <= DSP_threshold <= 1;  proportion of a DSP block's area that may be left unused\n";
 		cerr << "      enableSuperTiles=0 =>  lower latency, higher logic cost; enableSuperTiles=1=> lower logic cost, longer latency \n";
+	 }
+	 
+	 if ( full || opName == "FixSinPoly"){
+	 	OP("FixSinPoly","msbIn lsbIn truncated msbOut lsbOut signed");
+	 	cerr << "      Operator computing X-X^3/6 for an integer X of size given by msbIn and lsbIn \n";
+	 	cerr << "      Result is faithfully truncated to the format msbOut lsbOut\n";
+	 	cerr << "      signed=0: unsigned;     signed=1: signed inputs, signed outputs \n";
+	 	cerr << "      truncated=0: full result;     truncated=1: truncated result \n";
+	 }
+	 
+	 if ( full || opName == "FixXPow3Div6"){
+	 	OP("FixXPow3Div6","msbIn lsbIn msbOut lsbOut signed");
+	 	cerr << "      Operator computing X^3/6 for an integer X of size given by msbIn and lsbIn \n";
+	 	cerr << "      Result is faithfully truncated to the format msbOut lsbOut\n";
+	 	cerr << "      signed=0: unsigned;     signed=1: signed inputs, signed outputs \n";
+	 }
+	 
+	 if ( full || opName == "IntConstDiv3"){
+	 	OP("IntConstDiv3", "wIn d alpha nbZeros");
+	 	cerr << "      Operator computing X/3 for an integer X of size wIn \n";
+	 	cerr << "      The division is performed on X_new=x_{n}00x_{n-1}00...x_{1}00x_{0}, where x_{i}, are the bits of the number inputted\n";
+	 	cerr << "      Result is faithfully truncated to 3*wIn\n";
+	 	cerr << "      d=the integer constant to divide by\n";
+	 	cerr << "      alpha=the size of the chunks of numbers to take from X and to tabulate (if unsure about the size, set to -1)\n";
+		cerr << "      nbZeros=the number of zeros to interleave in the original number\n";
 	 }
 
 	 if ( full  || opName == "IntMultiplier" || opName == "IntMultAdd"){
-	 	OP("IntMultAdd","w signedIO ratio");
+	 	OP("IntMultAdd","w signedIO DSPThreshold");
 	 	cerr << "      integer  R=A+X*Y where X and Y are of size w, A and R are of size 2w \n";
 	 	cerr << "      signedIO: if 0, unsigned IO; if 1, signedIO \n";
-		cerr << "      0 <= ratio <= 1; shows how much of a DSP block's area is acceptable to be left unused\n";
+		cerr << "      0 <= DSPThreshold <= 1; shows how much of a DSP block's area is acceptable to be left unused\n";
 	 }
 
 
@@ -199,18 +224,28 @@ void usage(char *name, string opName = ""){
 		cerr << "      Integer constant multiplier using shift-and-add: w - input size, c - the constant\n";
 	}
 	if ( full || opName == "IntMultiplier" || opName == "IntIntKCM"){					
-		OP( "IntIntKCM","w c signedInput");
+		OP( "IntIntKCM","w c signedInput useBitheap");
 		cerr << "      Integer constant multiplier using KCM: w - input size, c - the constant\n";
+		cerr << "      		useBitheap - if true, operator is uses bit heaps\n";
 	}
 #ifdef HAVE_SOLLYA
 	if ( full || opName == "FixRealKCM"){					
-		OP( "FixRealKCM","lsbIn msbIn signedInput lsbOut constant");
+		OP( "FixRealKCM","lsbIn msbIn signedInput lsbOut constant useBitheap");
 		cerr << "      Faithful multiplier of a fixed-point input by a real constant\n";
 		cerr << "      The constant is provided as a Sollya expression, e.g \"log(2)\"\n";
+		cerr << "      The multiplier might or might not us bit heaps, based on the value of the useBitheap parameter\n";
 	}
-	if ( full || opName == "FixedPointFIR"){
-		OP("FixedPointFIR","p taps [coeff list]");
+	
+	if ( full || opName == "FixFIR"){
+		OP("FixFIR","p useBitheap taps [coeff list]");
 		cerr << "      A faithful FIR on an (1,p) fixed-point format\n";
+		cerr << "      The filter may, or may not use bit heaps\n";
+	}
+	
+	if ( full || opName == "FixDCT"){
+		OP("FixDCT","p taps current_index");
+		cerr << "      A DCT2 on an (1,p) fixed-point format using bit heaps\n";
+		cerr << "      The filter uses bit heaps\n";
 	}
 #endif // HAVE_SOLLYA
 
@@ -295,7 +330,7 @@ void usage(char *name, string opName = ""){
 		cerr << "      Mantissa multiplier uses Karatsuba\n";
 	}
 	if ( full || opName == "FPMultiplier" || opName == "FPMultiplierExpert"){						
-		OP( "FPMultiplierExpert","wE wFX_in wFY_in wF_out correctRounding ratio optTimeInMinutes");
+		OP( "FPMultiplierExpert","wE wFX_in wFY_in wF_out correctRounding DSPThreshold optTimeInMinutes");
 		cerr << "      Floating-point multiplier, supporting different in/out precision. \n";
 	}
 	if ( full || opName == "FPMultiplier" || opName == "FPSquarer"){					
@@ -364,9 +399,9 @@ void usage(char *name, string opName = ""){
 		cerr << "      Post-normalisation unit for LongAcc \n";
 	}
 	if ( full || opName == "DotProduct"){					
-		OP( "DotProduct","wE wFX wFY MaxMSB_in LSB_acc MSB_acc ratio");
+		OP( "DotProduct","wE wFX wFY MaxMSB_in LSB_acc MSB_acc DSPThreshold");
 		cerr << "      Floating-point dot product unit.\n";
-		cerr << "      0 <= ratio <= 1; shows how much of a DSP block's area is acceptable to be left unused\n";
+		cerr << "      0 <= DSPThreshold <= 1; shows how much of a DSP block's area is acceptable to be left unused\n";
 	}
 #ifdef HAVE_SOLLYA
 	if ( full || opName == "FPExp"){					
@@ -379,6 +414,7 @@ void usage(char *name, string opName = ""){
 		cerr << "      k: number of bits addressing the table;   d: degree of the polynomial;\n";
 		cerr << "      g: number of guard bits\n";
 		cerr << "      fullInput (boolean): if 1, accepts extended (typically unrounded) input\n";
+		cerr << "      DSP_threshold (float): between 0 and 1, 1 meaning that all small multipliers go to DSPs, 0 meaning that only multipliers filling DSPs go to DSP\n";
 	}
 	if ( full || opName == "FPLog"){					
 		OP( "FPLog","wE wF InTableSize");
@@ -405,22 +441,22 @@ void usage(char *name, string opName = ""){
 		OP( "InputIEEE","wEI wFI wEO wFO");
 		cerr << "      Conversion from IEEE-754-like to FloPoCo floating-point formats\n";
 	}
-#ifdef HAVE_SOLLYA
 	if ( full ){
 		cerr << "    ____________ FIXED-POINT OPERATORS __________________________________________\n";
 	}
-	if ( full || opName == "FixSinCos" || opName == "FixSinOrCos" || opName == "FixCos"){
+#ifdef HAVE_SOLLYA
+	if ( full || opName == "CordicSinCos" || opName == "FixSinOrCos" || opName == "SinCos"){
+		NEWOP( "CordicSinCos","wIn wOut reduced");
+		cerr << "      Computes (1-2^(-w)) sin(pi*x) and (1-2^(-w)) cos(pi*x) for x in -[1,1[, ;\n";
+		cerr << "      wIn and wOut are the fixed-point precision of inputs and outputs (not counting the sign bit)\n";
+		cerr << "      reduced : if 1,  reduced number of iterations at the cost of two multiplications \n";
+	}
+	if ( full || opName == "FixSinCos" || opName == "FixSinOrCos" || opName == "SinCos"){
 		NEWOP( "FixSinCos","w");
 		cerr << "      For a fixed-point 2's complement input x in [-1,1[, calculates\n";
 		cerr << "      (1-2^(-w))*{sin,cos}(pi*x); w is the precision not counting the sign bit\n";
 	}
-	if ( full || opName == "CordicSinCos" || opName == "FixSinOrCos" || opName == "FixCos"){
-		NEWOP( "CordicSinCos","wIn wOut reduced");
-		cerr << "      Computes (1-2^(-w)) sin(pi*x) and (1-2^(-w)) cos(pi*x) for x in -[1,1[, ;\n";
-		cerr << "      wIn and wOut are the fixed-point precision of inputs and outputs (including  the sign bit)\n";
-		cerr << "      reduced : if 1,  reduced number of iterations at the cost of two multiplications \n";
-	}
-	if ( full || opName == "CordicSinCos" || opName == "FixSinOrCos" || opName == "FixCos"){
+	if ( full || opName == "CordicSinCos" || opName == "FixSinOrCos" || opName == "SinCos"){
 		NEWOP( "FixSinOrCos","w d");
 		cerr << "      Computes (1-2^(-w)) sin(pi*x) or (1-2^(-w)) cos(pi*x) for x in -[1,1[, ;\n";
 		cerr << "      w is the fixed-point precision of inputs and outputs, not counting the sign bit\n";
@@ -428,9 +464,16 @@ void usage(char *name, string opName = ""){
 	}
 	if ( full ){
 		cerr << "    ____________ GENERIC FUNCTION EVALUATORS ____________________________________\n";
-		cerr << "      We provide two methods to evaluate a fixed-point function on [0,1]\n";
+		cerr << "      We provide several methods to evaluate a fixed-point function\n";
 	}
-	if ( full || opName == "FunctionEvaluator"){					
+	if ( full || opName == "FunctionTable" || opName == "FixFunction"){					
+		OP( "FunctionTable","function wI lsbO msbO");
+		cerr << "      Simple tabulation of a function defined on [0,1)\n";
+		cerr << "      wI: input width (also weight of input LSB), \n";
+		cerr << "      lsbO and msbO: weights of output LSB and MSB,\n";
+		cerr << "      function: sollya-syntaxed function to implement, e.g. \"sin(x*Pi/2)\" \n";
+	}
+	if ( full || opName == "FunctionEvaluator" || opName == "FixFunction"){					
 		OP( "FunctionEvaluator","function wI lsbO degree");
 		cerr << "      Horner polynomial approximation, DSP based if available\n";
 		cerr << "      wI - input width (also weight of input LSB), lsbO - weight of output LSB,\n";
@@ -438,18 +481,18 @@ void usage(char *name, string opName = ""){
 		cerr << "      function - sollya-syntaxed function to implement, between double quotes\n";
 		cerr << "      example: flopoco FunctionEvaluator \"sin(x*Pi/2)\" 16 16 3\n";
 	}
-	if ( full || opName == "HOTBM"){					
+	if ( full || opName == "HOTBM" || opName == "FixFunction"){					
 		OP( "HOTBM","function wI wO degree");
 		cerr << "      High-Order Table-Based Method for fixed-point functions (NPY)\n";
 		cerr << "      wI - input width, wO - output width, degree - degree of polynomial approx\n";
 		cerr << "      function - sollya-syntaxed function to implement, between double quotes\n";
 	}
-	if ( full || opName == "HOTBM" || opName == "HOTBMFX"){					
+	if ( full || opName == "HOTBM" || opName == "HOTBMFX" || opName == "FixFunction"){					
 		OP( "HOTBMFX","function wE_in wF_in wE_out wF_out degree");
 		cerr << "      Same as HOTBM, with explicit fixed-point formats (NPY)\n";
 		cerr << "      Note: input is unsigned, output is signed.\n";
 	}
-	if ( full || opName == "HOTBM" || opName == "HOTBMRange"){					
+	if ( full || opName == "HOTBM" || opName == "HOTBMRange" || opName == "FixFunction"){					
 		OP( "HOTBMRange","function wI wO degree xmin xmax scale");
 		cerr << "      Same as HOTBM, with explicit range and scale (NPY)\n";
 		cerr << "      xmin xmax - bounds of the input range, mapped to [0,1[\n";
@@ -624,6 +667,7 @@ void usage(char *name, string opName = ""){
 		cerr << "Options affecting the operators that follow them:\n";
 		cerr << "   -pipeline=<yes|no>                       (default=yes)\n";
 		cerr << "   -frequency=<target frequency in MHz>     (default=400)\n";
+		cerr << "   -clockenable=<yes|no>                    (default is no)\n";
 		cerr << "   -DSP_blocks=<yes|no>\n";
 		cerr << "       optimize for the use of DSP blocks   (default=yes)\n";
 		cerr << "   -name=<entity name>\n";
@@ -747,6 +791,7 @@ bool parseCommandLine(int argc, char* argv[]){
 						target->setPipelined();
 					else 
 						target->setNotPipelined();
+					target->setClockEnable(oldTarget->useClockEnable());
 					delete(oldTarget);
 				}
 
@@ -755,6 +800,14 @@ bool parseCommandLine(int argc, char* argv[]){
 					else if(v=="no")  target->setNotPipelined();
 					else {
 						cerr<<"ERROR: pipeline option should be yes or no,    got "<<v<<"."<<endl; 
+						usage(argv[0],"options");
+					}
+				}
+				else if (o == "clockenable") {
+					if(v=="yes") target->setClockEnable(true);
+					else if(v=="no")  target->setClockEnable(false);
+					else {
+						cerr<<"ERROR: clockenable option should be yes or no,    got "<<v<<"."<<endl; 
 						usage(argv[0],"options");
 					}
 				}
@@ -831,19 +884,22 @@ bool parseCommandLine(int argc, char* argv[]){
 				}
 			}
 		}
+		
 		else if(opname=="IntIntKCM"){
-			int nargs = 3;
+			int nargs = 4;
 			if (i+nargs > argc)
 				usage(argv[0],opname);
 			else {
 				int w = atoi(argv[i++]);
 				mpz_class mpc(argv[i++]);
 				int signedInput = checkBoolean(argv[i++], argv[0]);
+				int useBitheap = checkBoolean(argv[i++], argv[0]);
 
-				op = new IntIntKCM(target, w, mpc, signedInput);
+				op = new IntIntKCM(target, w, mpc, signedInput, useBitheap);
 				addOperator(op);
 			}        
 		}
+		
 		else if(opname=="IntConstMult"){
 			int nargs = 2;
 			if (i+nargs > argc)
@@ -945,7 +1001,7 @@ bool parseCommandLine(int argc, char* argv[]){
 
 #ifdef HAVE_SOLLYA
 		else if(opname=="FixRealKCM"){
-			int nargs = 5;
+			int nargs = 6;
 			if (i+nargs > argc)
 				usage(argv[0],opname);
 			else {
@@ -954,10 +1010,12 @@ bool parseCommandLine(int argc, char* argv[]){
 				int signedInput = checkBoolean(argv[i++], argv[0]);
 				int lsbOut = atoi(argv[i++]);
 				string constant = argv[i++];
-				op = new FixRealKCM(target, lsbIn, msbIn, signedInput, lsbOut, constant);
+				int useBitheap = checkBoolean(argv[i++], argv[0]);
+				op = new FixRealKCM(target, lsbIn, msbIn, signedInput, lsbOut, constant, 1.0, emptyDelayMap, useBitheap);
 				addOperator(op);
-			}        
+			}
 		}
+		
 		else if(opname=="FixRealKCMExpert"){ // hidden, for debug
 			int nargs = 6;
 			if (i+nargs > argc)
@@ -1303,12 +1361,14 @@ bool parseCommandLine(int argc, char* argv[]){
 		}
 		
 
-		else if(opname=="FixedPointFIR")
+#ifdef HAVE_SOLLYA
+		else if(opname=="FixFIR")
 		{
 			if (i+3 > argc)
 				usage(argv[0],opname);
 			else {
 				int p = checkStrictlyPositive(argv[i++], argv[0]);
+				int useBitheap = checkBoolean(argv[i++], argv[0]);
 				int taps = checkStrictlyPositive(argv[i++], argv[0]);
 				if (i+taps > argc)
 					usage(argv[0],opname);
@@ -1318,12 +1378,28 @@ bool parseCommandLine(int argc, char* argv[]){
 						{
 							coeff.push_back(argv[i++]);
 						}
-					op = new FixedPointFIR(target, p, coeff);
+					op = new FixFIR(target, p, coeff, useBitheap);
 					addOperator(op);
 				}
 			}
 		}
 		
+		else if(opname=="FixDCT")
+		{
+			int nargs = 3;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int p 		= checkStrictlyPositive(argv[i++], argv[0]);
+				int taps 	= checkStrictlyPositive(argv[i++], argv[0]);
+				int k 		= checkPositiveOrNull(argv[i++], argv[0]);
+				
+				op = new FixDCT(target, p, taps, k, true);
+				addOperator(op);
+			}
+		}
+		
+#endif
 
 		/* Exploration of other fast adders */
 		else if(opname=="IntAdderSpecific"){ //Hidden
@@ -1435,13 +1511,13 @@ bool parseCommandLine(int argc, char* argv[]){
 			if (i+nargs > argc)
 				usage(argv[0],opname);
 			else {
-				int wInX    = checkStrictlyPositive(argv[i++], argv[0]);
-				int wInY    = checkStrictlyPositive(argv[i++], argv[0]);
-				int wOut    = atoi(argv[i++]);
-				int signedIO    =  checkBoolean(argv[i++], argv[0]);
-				float ratio = atof(argv[i++]);
+				int wInX		    = checkStrictlyPositive(argv[i++], argv[0]);
+				int wInY		    = checkStrictlyPositive(argv[i++], argv[0]);
+				int wOut		    = atoi(argv[i++]);
+				int signedIO	    =  checkBoolean(argv[i++], argv[0]);
+				float DSPThreshold			= atof(argv[i++]);
 				int buildSuperTiles =  checkBoolean(argv[i++], argv[0]);
-				IntMultiplier* mul=new IntMultiplier(target, wInX, wInY, wOut, signedIO, ratio, emptyDelayMap,buildSuperTiles);
+				IntMultiplier* mul=new IntMultiplier(target, wInX, wInY, wOut, signedIO, DSPThreshold, emptyDelayMap,buildSuperTiles);
 				op = mul;
 				addOperator(op);
 			}
@@ -1454,7 +1530,7 @@ bool parseCommandLine(int argc, char* argv[]){
 			else {
 				int wIn    = checkStrictlyPositive(argv[i++], argv[0]);
 				int signedIO    = checkBoolean(argv[i++], argv[0]);
-				float ratio = atof(argv[i++]);
+				float DSPThreshold = atof(argv[i++]);
 				int wInY=wIn;
 				int wInX=wIn;
 				int wA=2*wIn;
@@ -1464,7 +1540,58 @@ bool parseCommandLine(int argc, char* argv[]){
 				int wOut    = atoi(argv[i++]);
 				int buildSuperTiles = false ;// checkBoolean(argv[i++], argv[0]);
 #endif
-				FixMultAdd* op=new FixMultAdd(target, wInX, wInY, wA, wA, wA-1, 0, signedIO, ratio);
+				FixMultAdd* op=new FixMultAdd(target, wInX /*wX*/, wInY /*wY*/, wA /*wA*/, wA /*wOut*/, wA-1 /*msbP*/, 0 /*lsbA*/, signedIO, DSPThreshold);
+				addOperator(op);
+			}
+		}
+		
+		else if(opname=="FixSinPoly"){
+			int nargs = 6;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int msbIn    	= atoi(argv[i++]);
+				int lsbIn    	= atoi(argv[i++]);
+				int truncated   = checkBoolean(argv[i++], argv[0]);
+				int msbOut   	= atoi(argv[i++]);
+				int lsbOut   	= atoi(argv[i++]);
+				int signedIO    = checkBoolean(argv[i++], argv[0]);
+				
+				FixSinPoly* mul = new FixSinPoly(target, msbIn, lsbIn, (truncated==0 ? false : true), msbOut, lsbOut, (signedIO==0 ? false : true));
+				op = mul;
+				addOperator(op);
+			}
+		}
+		
+		else if(opname=="FixXPow3Div6"){
+			int nargs = 5;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int msbIn    	= atoi(argv[i++]);
+				int lsbIn    	= atoi(argv[i++]);
+				int msbOut   	= atoi(argv[i++]);
+				int lsbOut   	= atoi(argv[i++]);
+				int signedIO    =  checkBoolean(argv[i++], argv[0]);
+				
+				FixXPow3Div6* mul = new FixXPow3Div6(target, msbIn, lsbIn, msbOut, lsbOut, signedIO);
+				op = mul;
+				addOperator(op);
+			}
+		}
+		
+		else if(opname=="IntConstDiv3"){
+			int nargs = 4;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int wIn    	= atoi(argv[i++]);
+				int d	    	= atoi(argv[i++]);
+				int alpha   	= atoi(argv[i++]);
+				int nbZeros   	= checkPositiveOrNull(argv[i++], argv[0]);
+				
+				IntConstDiv3* div = new IntConstDiv3(target, wIn, d, alpha, nbZeros);
+				op = div;
 				addOperator(op);
 			}
 		}
@@ -1578,8 +1705,8 @@ bool parseCommandLine(int argc, char* argv[]){
 			else {
 				int wI = checkStrictlyPositive(argv[i++], argv[0]);
 				int wO = checkStrictlyPositive(argv[i++], argv[0]);
-				float ratio = atof(argv[i++]);
-				op = new FixedComplexMultiplier(target, wI, wO, ratio, true);
+				float DSPThreshold = atof(argv[i++]);
+				op = new FixedComplexMultiplier(target, wI, wO, DSPThreshold, true);
 				addOperator(op);
 			}
 		}
@@ -1990,7 +2117,6 @@ bool parseCommandLine(int argc, char* argv[]){
 				addOperator(op);
 			}
 		}
-#ifndef _WIN32
 		// hidden and undocumented
 		else if(opname=="DotProdPrecTest"){
 			int nargs = 7; // same as LongAcc, plus an iteration count
@@ -2008,7 +2134,6 @@ bool parseCommandLine(int argc, char* argv[]){
 				op->test_precision(n);
 			}    
 		}
-#endif
 		else if(opname=="DotProduct"){
 			int nargs = 6;
 			if (i+nargs > argc)
@@ -2025,29 +2150,7 @@ bool parseCommandLine(int argc, char* argv[]){
 				addOperator(op);
 			}
 		}
-//		else if(opname=="PolynomialEvaluator"){
-//			int nargs = 1;
-//			if (i+nargs > argc)
-//				usage(argv[0],opname);
-//			else {
-//				int prec = atoi(argv[i++]); // may be negative
-//				FixedPointCoefficient* f0 = new FixedPointCoefficient( 27, 0);
-//				FixedPointCoefficient* f1 = new FixedPointCoefficient( 17,-1);
-//				FixedPointCoefficient* f2 = new FixedPointCoefficient( 9, -3);
-
-//				YVar* y = new YVar(16, -6);
-//				
-//				vector<FixedPointCoefficient*> coef;
-//				coef.push_back(f0);
-//				coef.push_back(f1);
-//				coef.push_back(f2);
-
-//				op = new PolynomialEvaluator(target, coef, y, prec);
-//				addOperator(op);
-//			}
-//		}
 				
-#ifndef _WIN32
 #ifdef HAVE_SOLLYA
 		else if (opname == "HOTBM") {
 			int nargs = 4;
@@ -2102,8 +2205,6 @@ bool parseCommandLine(int argc, char* argv[]){
 		
 #endif // HAVE_SOLLYA
 
-#endif
-
 		else if (opname == "FPExp")
 		{
 			int nargs = 2;
@@ -2118,7 +2219,7 @@ bool parseCommandLine(int argc, char* argv[]){
 
 		else if (opname == "FPExpExpert")
 		{
-			int nargs = 6;
+			int nargs = 7;
 			if (i+nargs > argc)
 				usage(argv[0],opname); // and exit
 			int wE = checkStrictlyPositive(argv[i++], argv[0]);
@@ -2127,7 +2228,8 @@ bool parseCommandLine(int argc, char* argv[]){
 			int d=atoi(argv[i++]);
 			int g=atoi(argv[i++]);
 			int fullInput=checkBoolean(argv[i++],  argv[0]);
-			op = new FPExp(target, wE, wF, k, d, g, fullInput);
+			float DSPThreshold = atof(argv[i++]);
+			op = new FPExp(target, wE, wF, k, d, g, fullInput, DSPThreshold);
 			addOperator(op);
 		}
 
@@ -2253,7 +2355,7 @@ bool parseCommandLine(int argc, char* argv[]){
 			op = new IntPower(target, wIn, n);
 			addOperator(op);
 		}
-#ifndef _WIN32
+
 #ifdef HAVE_LNS
 		else if (opname == "LNSAddSub")
 		{
@@ -2392,8 +2494,6 @@ bool parseCommandLine(int argc, char* argv[]){
 			addOperator(op);
 		}
 #endif
-
-#endif //ifndef _WIN32
 		else if (opname == "Wrapper") {
 			int nargs = 0;
 			if (i+nargs > argc)
@@ -2408,7 +2508,6 @@ bool parseCommandLine(int argc, char* argv[]){
 				addOperator(op);
 			}
 		}
-#ifdef HAVE_SOLLYA
 #if 0
 		else if (opname == "PolyTableGenerator") {
 			int nargs = 4;
@@ -2422,6 +2521,9 @@ bool parseCommandLine(int argc, char* argv[]){
 			
 		}
 #endif		
+
+
+#ifdef HAVE_SOLLYA
 
 		else if (opname == "FunctionTable") {
 			int nargs = 4;
@@ -2458,7 +2560,9 @@ bool parseCommandLine(int argc, char* argv[]){
 			Operator* tg = new FPPipeline(target, filename, wE, wF);
 			addOperator(tg);
 		}
+#endif
 
+#ifdef HAVE_SOLLYA
 		else if (opname == "FixSinCos") {
 			int nargs = 1;
 			if (i+nargs > argc)
@@ -2468,13 +2572,23 @@ bool parseCommandLine(int argc, char* argv[]){
 			addOperator(tg);
 		}
 
+		else if (opname == "FixSinCosExpert") {
+			int nargs = 2;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int w = checkStrictlyPositive(argv[i++], argv[0]); // must be >=2 actually
+			float DSPThreshold = atof(argv[i++]);
+			Operator* tg = new FixSinCos(target, w,DSPThreshold);
+			addOperator(tg);
+		}
+
 		else if (opname == "FixSinOrCos") {
 			int nargs = 2;
 			if (i+nargs > argc)
 				usage(argv[0],opname); // and exit
 			int w = checkStrictlyPositive(argv[i++], argv[0]); // must be >=2 actually
 			int degree = atoi(argv[i++]); 
-			Operator* tg = new FixedPointSinOrCos(target, w, degree);
+			Operator* tg = new FixSinOrCos(target, w, degree);
 			addOperator(tg);
 		}
 
@@ -2519,10 +2633,10 @@ bool parseCommandLine(int argc, char* argv[]){
 				simlibs="--ieee=synopsys ";
 			if(op->getStdLibType()==1)
 				simlibs="--ieee=standard ";
-			cerr << tab << "ghdl -a " << simlibs << "-fexplicit "<< filename <<endl;
-			cerr << tab << "ghdl -e " << simlibs << "-fexplicit " << op->getName() <<endl;
-			cerr << tab << "ghdl -r " << simlibs << op->getName() << " --vcd=" << op->getName() << ".vcd" <<endl;
-			cerr << tab << "gtkwave " << op->getName() << ".vcd" << endl;
+			cerr <<  "ghdl -a " << simlibs << "-fexplicit "<< filename <<endl;
+			cerr <<  "ghdl -e " << simlibs << "-fexplicit " << op->getName() <<endl;
+			cerr <<  "ghdl -r " << simlibs << op->getName() << " --vcd=" << op->getName() << ".vcd" <<endl;
+			cerr <<  "gtkwave " << op->getName() << ".vcd" << endl;
 		}
 		
 		else if (opname == "TestBenchFile") {
@@ -2552,10 +2666,10 @@ bool parseCommandLine(int argc, char* argv[]){
 				simlibs="--ieee=synopsys ";
 			if(op->getStdLibType()==1)
 				simlibs="--ieee=standard ";
-			cerr << tab << "ghdl -a " << simlibs << "-fexplicit "<< filename <<endl;
-			cerr << tab << "ghdl -e " << simlibs << "-fexplicit " << op->getName() <<endl;
-			cerr << tab << "ghdl -r " << simlibs << op->getName() << " --vcd=" << op->getName() << ".vcd" <<endl;
-			cerr << tab << "gtkwave " << op->getName() << ".vcd" << endl;
+			cerr <<  "ghdl -a " << simlibs << "-fexplicit "<< filename <<endl;
+			cerr <<  "ghdl -e " << simlibs << "-fexplicit " << op->getName() <<endl;
+			cerr <<  "ghdl -r " << simlibs << op->getName() << " --vcd=" << op->getName() << ".vcd" <<endl;
+			cerr <<  "gtkwave " << op->getName() << ".vcd" << endl;
 		}
 		else  {
 			cerr << "ERROR: Problem parsing input line with opname='"<<opname<<"', and "<< argc-i <<" arguments remaining:\n";

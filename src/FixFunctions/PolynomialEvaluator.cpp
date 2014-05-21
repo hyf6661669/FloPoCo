@@ -28,6 +28,8 @@
 #include "FixMultAdd.hpp"
 #include "PolynomialEvaluator.hpp"
 
+
+
 using namespace std;
 
 namespace flopoco{
@@ -57,6 +59,13 @@ namespace flopoco{
 				throw std::string("PolynomialEvaluator::Create - All coefficients must have msb>=lsb.");
 		}
 		
+		if(::flopoco::verbose>=DEBUG){
+			fprintf(stderr, "Wibble\n");
+			mpfr_fprintf(stderr, "  approxError=%Rg\n", approxError);
+		}
+		
+		if(mpfr_cmp_d(approxError, 0.0) < 0)
+			throw std::string("PolynomialEvaluator::Create - Must have approxError >=0.");
 		if(mpfr_cmp_d(approxError, pow(2.0, outputLsb-1)) >= 0)
 			throw std::string("PolynomialEvaluator::Create - Must have approxError < 2^(outputLsb-1).");
 			
@@ -132,13 +141,13 @@ namespace flopoco{
 		
 		   |<-- y_->getWeight() --->|
 		   .---------------------[0][y_{size-1} downto 0    ]
-		                            |<--- y_getSize() ----->|
+		   |<--- y_getSize() ----->|
 		
 		   for the coefficients
 		   |<-- coef[i]->getWeight() --->|
 		   .--------------------------[s][coef[i]->getSize()-1 downto 0 ]
-		                                 |<--- coef[i]_->getSize() ---->|        */
-		   
+		   |<--- coef[i]_->getSize() ---->|        */
+		
 		// Capture these in a sensible format that is safe from later conversions
 		// Will be use in emulate function.
 		inputFormat_.isSigned=false;
@@ -191,7 +200,7 @@ namespace flopoco{
 			/* epsilon_approx + epsilon_eval <= 1/2 ulp. the other half ulp
 			   comes from the final rounding (which we incorporate in a0*/
 			mpfr_add( u, *approximationError, *e, GMP_RNDN);
-			
+
 			REPORT(DETAILED, "  Error : e="<<mpfr_get_d(*e,MPFR_RNDN)<<", total="<<mpfr_get_d(u,MPFR_RNDN)<<", target="<<mpfr_get_d(targetError,MPFR_RNDN));
 
 			if (  mpfr_cmp( u, targetError) <= 0 ){
@@ -256,14 +265,17 @@ namespace flopoco{
 					// orig					int k = 1 + y_->getSize() + yGuard_[i] + sigmakPSize[i-1] + 1 - (pikPTSize[i]+2);
 					int k =  y_->getSize() + yGuard_[i] + sigmakPSize[i-1] - pikPTSize[i]; // looks like the number of truncated bits
 
-					
+#if 0
+#else					
 #define USE_BITHEAP 0
 #if !USE_BITHEAP //
 
-					IntMultiplier *sm = new IntMultiplier ( target, wIn1, wIn2, wIn1+wIn2-k, true /*signedIO*/, thresholdForDSP); //inDelayMap("X",getCriticalPath()));
+					//					nextCycle(); //TODO fix it by feeding the input delay to IntTruncMultiplier
+
+
+					IntMultiplier *sm = new IntMultiplier ( target, wIn1, wIn2, wIn1+wIn2-k, true /*signedIO*/, thresholdForDSP,   inDelayMap("X",getCriticalPath()));
 					oplist.push_back(sm);
 					
-					nextCycle(); //TODO fix it by feeding the input delay to IntTruncMultiplier
 					inPortMap ( sm, "X", join("yT",i));
 					inPortMap ( sm, "Y", join("sigmaP",i-1));
 					outPortMap (sm, "R", join("piPT",i));
@@ -271,9 +283,6 @@ namespace flopoco{
 					syncCycleFromSignal(join("piPT",i)); 
 				
 					setCriticalPath( sm->getOutputDelay("R") );
-
-					IntAdder* sa = new IntAdder (target, sigmakPSize[i]+1, inDelayMap("X",getCriticalPath()));
-					oplist.push_back(sa);
 
 					// coeff: shifted and sign extended 
 					vhdl << tab << declare( join("op1_",i), sigmakPSize[i]+1 ) 
@@ -285,6 +294,11 @@ namespace flopoco{
 					     << " & " << join("piPT",i) << range(pikPTSize[i], pikPTSize[i] - pikPTWeight[i] - (coef_[degree_-i]->getSize()-coef_[degree_-i]->getWeight() + aGuard_[degree_ -i]))
 					     << " & "<< zg( - (pikPTSize[i] - pikPTWeight[i] - (coef_[degree_-i]->getSize()-coef_[degree_-i]->getWeight() + aGuard_[degree_ -i])) ,0)
 					     << ");" << endl;
+
+					nextCycle();
+					IntAdder* sa = new IntAdder (target, sigmakPSize[i]+1,  inDelayMap("X", getCriticalPath()));
+					oplist.push_back(sa);
+
 					inPortMap ( sa, "X", join("op1_",i) );
 					inPortMap ( sa, "Y", join("op2_",i) );
 					inPortMapCst ( sa, "Cin", "'1'");
@@ -293,6 +307,7 @@ namespace flopoco{
 					vhdl << instance ( sa, join("Sum",i));
 					syncCycleFromSignal( join("sigmaP",i) );
 					setCriticalPath( sa->getOutputDelay("R") );
+					nextCycle();
 
 #else //bitheap-based 347sl 15ns
 					int wA=coef_[degree_-i]->getSize()+1;
@@ -320,6 +335,7 @@ namespace flopoco{
 					syncCycleFromSignal( join("sigmaP",i) );
 					setCriticalPath( ma->getOutputDelay("R") );
 
+#endif
 #endif
 				                                                                   
 				}else{ // i=degree
@@ -349,7 +365,8 @@ namespace flopoco{
 					outPortMap (sm, "R", join("piP",i));
 					vhdl << instance ( sm, join("Product_",i) );
 					syncCycleFromSignal(join("piP",i)); 
-				
+					
+					nextCycle(); // Argh
 					setCriticalPath( sm->getOutputDelay("R") );
 					vhdl << tab << "-- the delay at the output of the multiplier is : " << sm->getOutputDelay("R") << endl;
 
@@ -865,7 +882,7 @@ namespace flopoco{
 		else
 			return false;
 	}
-	
+
 	/*! Return the input format specified when the operator was created. */
 	PolynomialEvaluator::format_t PolynomialEvaluator::getInputFormat() const
 	{ return inputFormat_; }
@@ -897,20 +914,20 @@ namespace flopoco{
 			std::cerr<<"half="<<half<<"\n";
 			base.setInputValue( join("a",i), half );
 		}
-		
+
 		for(unsigned i=0;i<10;i++){
 			TestCase *tc=new TestCase(base);
 			tc->setInputValue("Y", mpz_class(i));
-			
+
 			emulate(tc);
-			
+
 			tcl->add(tc);
 		}		
 	}
 	
 	void PolynomialEvaluator::emulate(TestCase *tc)
 	{
-		int prec=std::max(-targetPrec_*2,100);	// Precision for mpfr
+		int prec=160;	// Precision for mpfr
 		
 		//addInput("Y", y_->getSize()); /* y is positive so we don't store the sign */
 		assert(!inputFormat_.isSigned);
@@ -955,25 +972,27 @@ namespace flopoco{
 		// polynomial evaluator must be within \pm 2.0^(targetPrec_-1) in order to be valid.
 		
 		int outLsb=getOutputFormat().lsb;
-		
 		if(::flopoco::verbose>=FULL)
-			mpfr_fprintf(stderr, "  %Rg -> [%Rg,%Rg]\n", y, outMin, outMax);
+			mpfr_fprintf(stderr, "   result = %Rg,  outLsb=%d, targetPrec=%d\n", acc, outLsb, targetPrec_);
 		
 		// This is standard rounding up and down about the true number, using the precision
 		// that the user asked for
-		mpfr_mul_2si(outMin, acc, -targetPrec_, MPFR_RNDD);		
-		mpfr_mul_2si(outMax, acc, -targetPrec_, MPFR_RNDU);
+		mpfr_mul_2si(outMin, acc, targetPrec_, MPFR_RNDD);		
+		mpfr_mul_2si(outMax, acc, targetPrec_, MPFR_RNDU);
 		mpfr_rint(outMin, outMin, MPFR_RNDD);
 		mpfr_rint(outMax, outMax, MPFR_RNDU);
-		mpfr_mul_2si(outMin, outMin, targetPrec_, MPFR_RNDD);
-		mpfr_mul_2si(outMax, outMax, targetPrec_, MPFR_RNDU);
+		mpfr_mul_2si(outMin, outMin, -targetPrec_, MPFR_RNDD);
+		mpfr_mul_2si(outMax, outMax, -targetPrec_, MPFR_RNDU);
 		
-		if(targetPrec_ > outLsb){
+		if(::flopoco::verbose>=FULL)
+			mpfr_fprintf(stderr, "  %Rg -> [%Rg,%Rg],  targetPrec=2^%d\n", y, outMin, outMax, -targetPrec_);
+		
+		if(-targetPrec_ < outLsb){
 			// So outMin and out Max are the values that are acceptable with outLsb bits of
 			// precision, but polynomial evaluator might give us more than that (sigh), in which case
 			// the number could be a bit higher or lower and still round correctly.
 			
-			int extra=targetPrec_ - outLsb;	// This is how many bits to drop
+			int extra=targetPrec_ + outLsb;	// This is how many bits to drop
 			REPORT(DEBUG, "extra="<<extra);
 			
 			// Wrong Guess:
@@ -992,7 +1011,7 @@ namespace flopoco{
 			
 			// Let's assume it's rounding by truncation
 			// There maximum we can accept is 2^extra-1 up, but only on the upper number
-			mpfr_add_d(outMax, outMax, ldexp(pow(2.0, extra)-1, targetPrec_), MPFR_RNDN);
+			mpfr_add_d(outMax, outMax, ldexp(pow(2.0, extra)-1, -targetPrec_-extra), MPFR_RNDN);
 		}
 		
 		assert(mpfr_lessequal_p(outMin, outMax));
@@ -1001,6 +1020,11 @@ namespace flopoco{
 		int outWidth=getOutputFormat().width();
 		
 		mpz_class maxVal=mpz_class(1)<<outWidth;
+		
+		if(::flopoco::verbose>=FULL)
+			mpfr_fprintf(stderr, "  %Rg -> [%Rg,%Rg]\n", y, outMin, outMax);
+		
+		int considered=0;
 		
 		mpfr_set(outCurr, outMin, MPFR_RNDN);
 		while(mpfr_lessequal_p(outCurr, outMax)){
@@ -1015,13 +1039,19 @@ namespace flopoco{
 			}
 			
 			if(::flopoco::verbose>=FULL){
-				mpfr_fprintf(stderr, "  %Rg -> raw %Zd\n", outCurr, raw.get_mpz_t());
+				mpfr_fprintf(stderr, "  %Rg -> raw %Zd, considered=%d\n", outCurr, raw.get_mpz_t(), considered);
 			}
 			assert((raw>=0) && (raw<maxVal));
 			
 			tc->addExpectedOutput("R", raw);
 			
 			mpfr_add_d(outCurr, outCurr, outDelta, MPFR_RNDN);
+			
+			++considered;
+			if(considered>50){
+				mpfr_fprintf(stderr, "> PolynomialEvaluator.cpp: too many possible output values\n.");
+				exit(1);
+			}
 		}
 		
 		mpfr_clears(y, acc, coeff, outMin, outMax, outCurr, (mpfr_ptr)0);

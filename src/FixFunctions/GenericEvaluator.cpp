@@ -13,9 +13,12 @@
 
 */
 
+// works only with sollya
+#ifdef HAVE_SOLLYA
+
 #include "GenericEvaluator.hpp"
-#include "../FixedPointFunctions/HOTBM.hpp"
-#include "../FixedPointFunctions/FunctionEvaluator.hpp"
+#include "HOTBM.hpp"
+#include "FunctionEvaluator.hpp"
 #include <string>
 #include <sstream>
 
@@ -46,3 +49,4 @@ Operator * NewEvaluator(Target * target, char const * func, std::string const & 
 }
 
 }
+#endif// HAVE_SOLLYA

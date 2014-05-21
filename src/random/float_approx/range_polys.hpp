@@ -11,7 +11,7 @@
 #include "random/utils/mpfr_vec.hpp"
 #include "random/utils/comparable_float_type.hpp"
 
-//#include "FixedPointFunctions/PolynomialEvaluator.hpp"
+#include "FixFunctions/PolynomialEvaluator.hpp"
 #include "random/poly/fixed_point_polynomial_evaluator.hpp"
 
 #include "static_quantiser.hpp"
@@ -374,7 +374,7 @@ public:
 	
 	
 	
-	/*PolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
+	PolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
 	{
 		typedef PolynomialEvaluator::format_t format_t;
 		
@@ -391,11 +391,11 @@ public:
 		inputFormat.lsb=-m_range->m_domainWF;
 	
 		return PolynomialEvaluator::Create(target, coeffs, inputFormat,
-			m_range->m_rangeWF, //outputLsb
+			-m_range->m_rangeWF, //outputLsb
 			m_concreteApproxError[0], inputDelays);
-	} */
+	} 
 	
-	FixedPointPolynomialEvaluator *make_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
+	FixedPointPolynomialEvaluator *make_fixed_point_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
 	{
 		std::vector<fixed_format_t> coeffs(m_degree+1);
 		for(unsigned i=0;i<=m_degree;i++){
@@ -409,7 +409,7 @@ public:
 		inputFormat.msb=-1;
 		inputFormat.lsb=-m_range->m_domainWF;
 		
-		mpfr::mpreal budget(pow(2.0, -m_range->m_rangeWF-1), getToolPrecision());
+		mpfr::mpreal budget(pow(2.0, -m_range->m_rangeWF-2), getToolPrecision());
 		mpfr_sub(budget.mpfr_ptr(), budget.mpfr_ptr(), m_concreteApproxError[0], MPFR_RNDN);
 	
 		return CreateFixedPointPolynomialEvaluator(

@@ -18,15 +18,19 @@ SET(CPACK_PACKAGE_VERSION_MAJOR "0")
 SET(CPACK_PACKAGE_VERSION_MINOR "9")
 SET(CPACK_PACKAGE_VERSION_PATCH "0")
 
+# DT10: I used gnu11 instead of c++11 due to fileno buried in a lex generated file.
+
 INCLUDE(CPack)
 # 
 #Compilation flags
-#SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
+#SET(CMAKE_CXX_FLAGS_DEBUG "-std=gnu++11 -g -Wall")
 # Uncomment for profiling
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
-# SET(CMAKE_CXX_FLAGS_DEBUG "-pg -Wall")
+SET(CMAKE_CXX_FLAGS_DEBUG "-std=gnu++11 -g -pg -Wall")
+# SET(CMAKE_CXX_FLAGS_DEBUG "-std=gnu++11 -pg -Wall")
 # Do you want an executable of 30MB ?
 #SET(CMAKE_BUILD_TYPE DEBUG)
+
+SET(CMAKE_CXX_FLAGS_RELEASE "-std=gnu++11")
 SET(CMAKE_BUILD_TYPE release)
 
 
@@ -250,6 +254,9 @@ src/Plotter
 
 src/IntMultipliers/MultiplierBlock
 
+src/IntMultipliers/FixSinPoly
+src/IntMultipliers/FixXPow3Div6
+src/ConstMult/IntConstDiv3
 
 # Shifters/LZOC related ---------------------------------------------
 #--------------------------------------------------------------------
@@ -259,38 +266,44 @@ src/IntMultipliers/MultiplierBlock
 
 # Fixed-point function evaluation -----------------------------------
 #--------------------------------------------------------------------
- src/FixedPointFunctions/Function
- src/FixedPointFunctions/PiecewiseFunction
+ src/FixFunctions/Function
+ src/FixFunctions/PiecewiseFunction
 
- src/FixedPointFunctions/FunctionTable
+ src/FixFunctions/FunctionTable
 
-# src/FixedPointFunctions/Multipartite
+# src/FixFunctions/Multipartite
 
- src/FixedPointFunctions/PolyCoeffTable
- src/FixedPointFunctions/PolynomialEvaluator
- src/FixedPointFunctions/FunctionEvaluator
- src/FixedPointFunctions/GenericEvaluator
+ src/FixFunctions/PolyCoeffTable
+ src/FixFunctions/PolynomialEvaluator
+ src/FixFunctions/FunctionEvaluator
+ src/FixFunctions/GenericEvaluator
+ src/FixFunctions/GenericEvaluator
 
- src/FixedPointFunctions/HOTBM.cpp
- src/FixedPointFunctions/HOTBM/HOTBMInstance.cc
- src/FixedPointFunctions/HOTBM/Param.cc
- src/FixedPointFunctions/HOTBM/Exhaustive.cc
- src/FixedPointFunctions/HOTBM/Util.cc
- src/FixedPointFunctions/HOTBM/PWPolynomial.cc
- src/FixedPointFunctions/HOTBM/Polynomial.cc
- src/FixedPointFunctions/HOTBM/MPPolynomial.cc
- src/FixedPointFunctions/HOTBM/Power.cc
- src/FixedPointFunctions/HOTBM/PowerAdHoc.cc
- src/FixedPointFunctions/HOTBM/TermROM.cc
- src/FixedPointFunctions/HOTBM/Term.cc
- src/FixedPointFunctions/HOTBM/Minimax.cc
- src/FixedPointFunctions/HOTBM/PowerROM.cc
- src/FixedPointFunctions/HOTBM/TermPowMult.cc 
+ src/FixFunctions/HOTBM.cpp
+ src/FixFunctions/HOTBM/HOTBMInstance.cc
+ src/FixFunctions/HOTBM/Param.cc
+ src/FixFunctions/HOTBM/Exhaustive.cc
+ src/FixFunctions/HOTBM/Util.cc
+ src/FixFunctions/HOTBM/PWPolynomial.cc
+ src/FixFunctions/HOTBM/Polynomial.cc
+ src/FixFunctions/HOTBM/MPPolynomial.cc
+ src/FixFunctions/HOTBM/Power.cc
+ src/FixFunctions/HOTBM/PowerAdHoc.cc
+ src/FixFunctions/HOTBM/TermROM.cc
+ src/FixFunctions/HOTBM/Term.cc
+ src/FixFunctions/HOTBM/Minimax.cc
+ src/FixFunctions/HOTBM/PowerROM.cc
+ src/FixFunctions/HOTBM/TermPowMult.cc 
 
 # Fixed-point operators ---------------------------------------------
 #--------------------------------------------------------------------
+ src/FixSinCos/FixSinCos
+ src/FixSinCos/FixSinOrCos
+ src/FixSinCos/CordicSinCos
  
- 
+ src/FixFIR
+ src/FixDCT
+
 # Floating-Point ----------------------------------------------------
 #--------------------------------------------------------------------
  src/FPAdderDualPath
@@ -323,16 +336,15 @@ src/IntMultipliers/MultiplierBlock
  src/IntConstDiv 
  src/FPConstDiv 
  
- src/FixedPointFIR.cpp
- 
- src/FixSinCos.cpp
- src/CORDIC/FixedPointSinOrCos.cpp
- src/CORDIC/CordicSinCos.cpp
-
+ src/FPLog/FirstInvTable
+ src/FPLog/FirstLogTable
+ src/FPLog/OtherLogTable
  src/FPLog.cpp
- src/fplogarithm/FirstInvTable.cpp
- src/fplogarithm/FirstLogTable.cpp
- src/fplogarithm/OtherLogTable.cpp
+  
+ src/FPLog.cpp
+ src/FPLog/FirstInvTable.cpp
+ src/FPLog/FirstLogTable.cpp
+ src/FPLog/OtherLogTable.cpp
 
  src/FPExp 
  src/FPPow

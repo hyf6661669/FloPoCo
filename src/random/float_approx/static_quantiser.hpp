@@ -2,7 +2,7 @@
 #define flopoco_random_float_approx_static_quantiser_hpp
 
 #include "Operator.hpp"
-#include "FixedPointFunctions/Function.hpp"
+#include "FixFunctions/Function.hpp"
 
 #include "random/utils/mpfr_vec.hpp"
 

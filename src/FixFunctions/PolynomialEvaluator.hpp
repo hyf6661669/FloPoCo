@@ -24,20 +24,20 @@ namespace flopoco{
 	{
 	public:
 		
-			FixedPointCoefficient(FixedPointCoefficient *x){
-				size_= x->getSize();
-				weight_ = x->getWeight();
+		FixedPointCoefficient(FixedPointCoefficient *x){
+			size_= x->getSize();
+			weight_ = x->getWeight();
 				valueMpfr_=0;
-			}
+		}
 
-			/**
-			 * Constructor. Initializes the attributes.
-			 */
-			FixedPointCoefficient(unsigned size, int weight){
-				size_   = size;
-				weight_  = weight;
+		/**
+		 * Constructor. Initializes the attributes.
+		 */
+		FixedPointCoefficient(unsigned size, int weight){
+			size_   = size;
+			weight_  = weight;
 				valueMpfr_=0;
-			}
+		}
 
 		FixedPointCoefficient(unsigned size, int weight, mpfr_t valueMpfr){
 			size_   = size;
@@ -237,6 +237,7 @@ namespace flopoco{
 	class PolynomialEvaluator : public Operator
 	{
 	public:
+
 		/**
 		 * The polynomial evaluator class. FIXME the parameters are subhect to change
 		 * TODO document them
@@ -248,8 +249,8 @@ namespace flopoco{
 			* DT10 : so equivalently, lsb=-size, and msb=weight
 			* From looking at PolyCoeffTable: if a coefficient is zero, then choose weight=0, size=1 -> msb=0, lsb=-1
 		 */
-		PolynomialEvaluator(Target* target, vector<FixedPointCoefficient*> coef, YVar* y, int targetPrec, mpfr_t *approxError, map<string, double> inputDelays = emptyDelayMap);
-	
+		PolynomialEvaluator(Target* target, vector<FixedPointCoefficient*> coef, YVar* y, int targetPrec, mpfr_t* approxError, map<string, double> inputDelays = emptyDelayMap);
+
 		/*! Represents fixed-point types as (isSigned,msb,lsb)
 			The type has bits 2^msb..2^lsb inclusive, so width is always (msb-lsb+1).
 			isSigned indicates if msb is negative or not.
@@ -272,10 +273,10 @@ namespace flopoco{
 
 		/** Destructor */
 		~PolynomialEvaluator();
-		
+			
 		/*! Return the input format specified when the operator was created. */
 		format_t getInputFormat() const;
-		
+			
 		/*! Return the format specified when the operator was created. */
 		format_t getCoefficientFormat(unsigned i) const;
 		
@@ -400,8 +401,6 @@ namespace flopoco{
 		    * @return the corresponding value to the selected level 
 		    */ 
 		int getPossibleYValue(int i, int state);
-		
-		
 		/** advances to the next step in the design space exploration on the
 		 * y dimmension.
 		 * @return true if there is a next state, false if a solution has been
@@ -409,14 +408,13 @@ namespace flopoco{
 		 */
 		bool nextStateY();
 
-
 		/** advances to the next step in the design space exploration on the
 		 * coefficient guard bit direction.
 		 * @return true if there is a next state, false if a solution has been
 		 *found.
 		 */
 		bool nextStateA();
-		
+			
 		unsigned getOutputSize() const {
 			return wR;
 		}
@@ -434,7 +432,6 @@ namespace flopoco{
 			return wR;
 		}
 			
-		/* (From FunctionEvaluator comments) number of digits to the left of the "." */
 		int getRWeight(){
 			return weightR;
 		}
@@ -478,11 +475,15 @@ namespace flopoco{
 	private:
 		/* for efficiency we move these variables here */
 		multimap<int, int> objectiveStatesY;
-		
+	
 		// Captured at operator creation, before any coefficient reformatting. Should
 		// reflect the format requested by the creator.
 		format_t inputFormat_;
 		std::vector<format_t> coefficientFormats_;
+		
+
+
+
 
 	};
 }

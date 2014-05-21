@@ -278,7 +278,12 @@ namespace flopoco{
 	**/
 	string xg(int n, int margins=0);
 	
-	
+	/**
+	 * Generate an integer that is of the form : 111....11 (with the number of 
+	 * ones given by n)
+	 */
+	int oneGenerator(int n);
+
 	/**
 	 * Turns an arbitrary string (e.g. Sollya expression or FP number) to
 	 * part of a valid VHDL identifier. May (and usually will) loose information.

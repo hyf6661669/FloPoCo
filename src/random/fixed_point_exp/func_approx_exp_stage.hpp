@@ -5,9 +5,9 @@
 
 #include "find_close_value.hpp"
 
-#include "FixedPointFunctions/HOTBM.hpp"
-#include "FixedPointFunctions/HOTBM/Minimax.hh"
-#include "FixedPointFunctions/HOTBM/Exhaustive.hh"
+#include "FixFunctions/HOTBM.hpp"
+#include "FixFunctions/HOTBM/Minimax.hh"
+#include "FixFunctions/HOTBM/Exhaustive.hh"
 
 #include "sollya.h"
 

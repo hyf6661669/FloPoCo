@@ -1,6 +1,7 @@
 #ifndef flopoco_random_utils_convolve_mpreal_hpp
 #define flopoco_random_utils_convolve_mpreal_hpp
 
+#include <cmath>
 #include <complex>
 #include <vector>
 
@@ -57,6 +58,23 @@ namespace random
 		return res;
 	}
 	
+	inline std::complex<mpfr::mpreal> mini_pow(std::complex<mpfr::mpreal> x, int k, unsigned wPrec)
+	{
+		assert(0);	// This needs to be checked, never been tested or run yet
+		
+		std::complex<mpfr::mpreal> acc(mpfr::mpreal(1, wPrec));
+		while(k>0){
+			if(k&1){
+				acc=acc*x;
+			}
+			k=k/2;
+			if(k>0){
+				x=x*x;
+			}
+		}
+		return acc;
+	}
+
 	inline std::vector<mpfr::mpreal> self_convolve_mpreal(const std::vector<mpfr::mpreal> &a, unsigned k, unsigned wPrec)
 	{
 		if(k==0)
@@ -81,9 +99,11 @@ namespace random
 		
 		fft_radix2_complex(&aa[0], nn, wPrec);
 		
+		std::complex<mpfr::mpreal> one(mpfr::mpreal(1, wPrec));
 		for(unsigned i=0;i<nn;i++){
 			std::complex<mpfr::mpreal> av(aa[2*i], aa[2*i+1]);
-			av=pow(av,k);
+			//av=std::pow(av, k);	// No longer works in C++11...
+			av=mini_pow(av, k, wPrec);
 			aa[2*i]=real(av);
 			aa[2*i+1]=imag(av);
 		}

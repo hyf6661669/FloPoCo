@@ -8,7 +8,7 @@
 
 #include "random/utils/operator_factory.hpp"
 
-#include "FixedPointFunctions/PolynomialEvaluator.hpp"
+#include "FixFunctions/PolynomialEvaluator.hpp"
 
 using namespace std;
 
@@ -31,7 +31,7 @@ static void PolynomialEvaluatorFactoryUsage(std::ostream &dst)
 	dst << "      Formats are specified as \"U|S;msb;lsb\", where u or s says whether it is two's complement,\n";
 	dst << "      msb gives the weight of the msb, and lsb gives the weight of the lsb. Some examples are:,\n";
 	dst << "         \"U;15;0\"  : 16 bit unsigned integer, bits represent 2^15,2^14,...,2^1,2^0\n";
-	dst << "         \"S;32;0\"  : 32 bit signed integer, bits represent -2^31,2^30,...,2^1,2^0\n";
+	dst << "         \"S;31;0\"  : 32 bit signed integer, bits represent -2^31,2^30,...,2^1,2^0\n";
 	dst << "         \"U;-1;-16\"  : 16 bit unsigned number with 16 fractional bits in range [0,1)\n";
 	dst << "         \"S;0;-15\"  : 16 bit signed number with 15 fractional bits in range [-1,1)\n";
 	dst << "         \"S;7;-8\"  : 16 bit signed number with 8 fraction bits in range [-128,+128)\n";
@@ -98,7 +98,7 @@ static Operator *PolynomialEvaluatorFactoryParser(Target *target ,const std::vec
 	}
 	consumed=4+degree;
 	
-	mpfr::mpreal approxError(0.0);
+	mpfr::mpreal approxError(pow(2.0, targetPrec-2));
 	
 	return PolynomialEvaluator::Create(target,
 		coeffFormats,	//! Format for each of the coefficients, with coeffFormats[0]=a0, etc.

@@ -11,7 +11,7 @@
 #include <boost/any.hpp>
 #include <boost/smart_ptr.hpp>
 
-#include "FixedPointFunctions/Function.hpp"
+#include "FixFunctions/Function.hpp"
 
 namespace flopoco
 {

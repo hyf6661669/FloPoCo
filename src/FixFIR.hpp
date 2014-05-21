@@ -1,5 +1,10 @@
+#ifndef FixFIR_HPP
+#define FixFIR_HPP
+
 #include "Operator.hpp"
 #include "utils.hpp"
+
+#include "BitHeap.hpp"
 
 /*  All flopoco operators and utility functions are declared within
   the flopoco namespace.
@@ -10,24 +15,28 @@
 namespace flopoco{
 
 	// new operator class declaration
-	class FixedPointFIR : public Operator {
+	class FixFIR : public Operator {
 	public:
-		int p;  /**< The precision of inputs and outputs */ 
-		int n;  /**< number of taps */
-		vector<string> coeff;  /**< the coefficients as strings */
-		mpfr_t mpcoeff[10000];  /**< the absolute values of the coefficients as MPFR numbers */
-		bool coeffsign[10000];  /**< the signs of the coefficients */
+		int p;							/**< The precision of inputs and outputs */ 
+		int n;							/**< number of taps */
+		vector<string> coeff;			/**< the coefficients as strings */
+		mpfr_t mpcoeff[10000];			/**< the absolute values of the coefficients as MPFR numbers */
+		bool coeffsign[10000];			/**< the signs of the coefficients */
 
-		int wO;  /**< output size, will be computed out of the constants */
+		int wO;							/**< output size, will be computed out of the constants */
+		
+		BitHeap* bitHeap;    			/**< The heap of weighted bits that will be used to do the additions */
+		
+		bool useBitheap;
 
 	public:
 		// definition of some function for the operator    
 
 		// constructor, defined there with two parameters
-		FixedPointFIR(Target* target, int p_, vector<string> coeff_);
+		FixFIR(Target* target, int p_, vector<string> coeff_, bool useBitheap = false, map<string, double> inputDelays = emptyDelayMap);
 
 		// destructor
-		~FixedPointFIR() {};
+		~FixFIR() {};
 
 
 		// Below all the functions needed to test the operator
@@ -46,3 +55,5 @@ namespace flopoco{
 
 
 }
+
+#endif

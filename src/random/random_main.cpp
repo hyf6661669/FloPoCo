@@ -18,6 +18,8 @@
 #include "transforms/blocks/OutputShuffleTransform.hpp"
 #include "float_approx/static_quantiser.hpp"
 
+// TODO : Bring this back in - HOTBM has changed significantly
+/*
 #include "fixed_point_exp/func_approx_exp_stage.hpp"
 #include "fixed_point_exp/fixed_point_exp_stage.hpp"
 #include "fixed_point_exp/fixed_point_exp_tester.hpp"
@@ -25,6 +27,7 @@
 #include "fixed_point_exp/close_table_exp_stage.hpp"
 #include "fixed_point_exp/multiplier_exp_stage.hpp"
 #include "fixed_point_exp/chained_exp_stage.hpp"
+*/
 
 #include "utils/operator_factory.hpp"
 
@@ -132,6 +135,7 @@ void random_usage(char *name, string opName = ""){
 		cerr << "	correction - How to correct the table .\n";
 		cerr << "	quantisation - How to quantise the table .\n";
 	}
+	/*
 	if(opName=="TableExpStage"){
 		OP("TableExpStage", "msb lsb addrW resultW");
 	}
@@ -147,6 +151,7 @@ void random_usage(char *name, string opName = ""){
 		OP("ComparableFloatEncoder", "wE wF");
 		std::cerr<<" Converts a flopoco FP number into an alternate form that can be directly compared as bit patterns.";
 	}
+	*/
 	/*
 	//6.20 bitwise architecture Junfei Yan
 	if (full || opName=="bitwise"){
@@ -310,7 +315,7 @@ bool random_parseCommandLine(
 		
 		return true;
 	}
-	
+	/*
 	else
 	if (opname == "TableExpStage")
 	{
@@ -593,7 +598,8 @@ bool random_parseCommandLine(
 		
 		return true;
 	}
-	
+	*/
+	else
 	if (opname == "ComparableFloatEncoder")
 	{
 		int nargs = 2;

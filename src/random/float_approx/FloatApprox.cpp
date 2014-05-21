@@ -12,6 +12,8 @@
 #include "random/utils/make_table.hpp"
 #include "random/utils/simulate.hpp"
 
+#include "FixFunctions/PolynomialEvaluator.hpp"
+
 using namespace std;
 
 namespace flopoco{
@@ -42,7 +44,8 @@ private:
   Operator *m_codec;
   Operator *m_quantiser;
   Operator *m_table;
-  FixedPointPolynomialEvaluator *m_poly;
+  //FixedPointPolynomialEvaluator *m_poly;
+  PolynomialEvaluator *m_poly;
 public:
   FloatApproxOperator(Target* target,
     int wDomainE, int wDomainF, mpfr::mpreal domainMin, mpfr::mpreal domainMax,
@@ -120,7 +123,7 @@ public:
     
     m_polyInputFormat.isSigned=false;
     m_polyInputFormat.msb=-1;
-    m_polyInputFormat.lsb=-m_wRangeF;
+    m_polyInputFormat.lsb=-m_wRangeF-1;
     m_polyCoeffFormats.resize(m_degree+1);
     for(int i=0;i<=m_degree;i++){
       m_polyCoeffFormats[i].isSigned=true;
@@ -148,9 +151,15 @@ public:
     
     REPORT(INFO, "Constructing polynomial evaluator.");
     m_poly=m_polys.make_polynomial_evaluator(target);
+    //m_poly=m_polys.make_fixed_point_polynomial_evaluator(target);
     oplist.push_back(m_poly);
+    REPORT(INFO, "  input is "<<(m_poly->getInputFormat().isSigned?"S":"U")<<";"<<m_poly->getInputFormat().msb<<";"<<m_poly->getInputFormat().lsb);
+    for(unsigned i=0;i<=m_degree;i++){
+      REPORT(INFO, " coeff "<<i<<" : "<<(m_polyCoeffFormats[i].isSigned?"S":"U")<<";"<<m_polyCoeffFormats[i].msb<<";"<<m_polyCoeffFormats[i].lsb);
+    }
+    REPORT(INFO, "  output is "<<(m_poly->getOutputFormat().isSigned?"S":"U")<<";"<<m_poly->getOutputFormat().msb<<";"<<m_poly->getOutputFormat().lsb);
     REPORT(INFO, "  width of poly eval result is "<<m_poly->getOutputFormat().width()<<", weight of msb is "<<m_poly->getOutputFormat().msb);
-    assert(m_poly->getOutputFormat().lsb == -wRangeF);
+    //assert(m_poly->getOutputFormat().lsb == -wRangeF);
     
     REPORT(INFO, "Now constructing VHDL for FloatApprox.");
     
@@ -198,7 +207,8 @@ public:
     syncCycleFromSignal("result_fraction");
     
     // We have to convert from this format to the target format
-    fixed_format_t result_format=m_poly->getOutputFormat();
+    //fixed_format_t result_format=m_poly->getOutputFormat();
+    auto result_format=m_poly->getOutputFormat();
     REPORT(INFO, "poly-eval result_format={isSigned="<<result_format.isSigned<<",msb="<<result_format.msb<<",lsb="<<result_format.lsb);
     int result_fraction_width=m_poly->getOutputFormat().width();
     
@@ -214,9 +224,10 @@ public:
     int result_fraction_rounded_width=result_fraction_width-drop_bits;
     if(drop_bits==0){
       vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1,0)<<";\n";
-    }else{      
+    }else{
       // Making this somebody elses problem
-      throw std::string("Output of FixedPointPolynomialEvaluator is not rounded.");
+      //throw std::string("Output of FixedPointPolynomialEvaluator is not rounded.");
+      //vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1+drop_bits-1,drop_bits-1)<<";\n";
     }
     
     vhdl<<declare("result_fraction_clamped", wRangeF)<<" <= ";
@@ -227,6 +238,9 @@ public:
     vhdl<<"    result_fraction_rounded"<<range(wRangeF-1,0)<<";\n"; // No overflow
     
     vhdl<<"oY <= coeff_prefix & result_fraction_clamped;\n";
+    
+    addOutput("debug_poly_out", result_fraction_width);
+    vhdl<<"debug_poly_out<=result_fraction;\n";
     
     addOutput("debug_result_fraction", wRangeF);
     vhdl<<"debug_result_fraction<=result_fraction_clamped;\n";
@@ -239,6 +253,11 @@ public:
     
     addOutput("debug_table_contents", tableWidth);
     vhdl<<"debug_table_contents<=table_contents;\n";
+    
+    for(unsigned i=0;i<=m_degree;i++){
+      addOutput(join("debug_coeff_",i), (m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1);
+      vhdl<<join("debug_coeff_",i)<<"<="<<join("coeff_",i)<<";\n";
+    }
     
     vhdl<<"--nSeg_Monotonic = "<<nMonoSegments<<"\n";
     vhdl<<"--nSeg_FlatDomain = "<<nDomFlatSegments<<"\n";
@@ -318,7 +337,7 @@ public:
       mpfr::mpreal a=DecodeRaw(m_polyCoeffFormats[i], tmp, prec);
       acc+=pow(xx, i) * a;
       
-      
+      REPORT(INFO, " coeff "<<i<<" : true="<<truePoly[i]<<", got="<<a);
     }
     
     m_poly->emulate(ptc);
@@ -327,11 +346,13 @@ public:
     const std::vector<mpz_class> &polyOutputs=ptc->getExpectedOutputValues("R");
     for(int i=0;i<polyOutputs.size();i++){
       mpz_class tmp=polyOutputs[i];
-      tmp=std::max(minFrac, std::min(maxFrac, tmp));
+      mp=std::max(minFrac, std::min(maxFrac, tmp));
       if((tmp!=vu) && (tmp!=vd)){
         std::cerr<<"xx="<<xx<<", vu="<<vu<<", vd="<<vd<<", got="<<tmp<<", acc="<<ldexp(acc,m_wRangeF+1)<<"\n";
         //throw std::string("FloatApprox::emulate - emulator of FixedPointPolynomialEvaluator is returning an illegal value.");
       }
+      
+      tc->addExpectedOutput("debug_poly_out", polyOutputs[i]);
     }
     
     

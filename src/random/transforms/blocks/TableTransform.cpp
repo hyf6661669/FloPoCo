@@ -21,7 +21,7 @@
 // For twos complement stuff
 #include "CLTTransform.hpp"
 
-#include "FixedPointFunctions/Function.hpp"
+#include "FixFunctions/Function.hpp"
 #include "Table.hpp"
 
 #include "random/utils/make_table.hpp"

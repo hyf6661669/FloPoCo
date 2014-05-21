@@ -16,6 +16,9 @@
 
 #include <gmpxx.h>
 
+// No idea where this is coming from
+#undef T
+
 namespace flopoco
 {
 namespace random

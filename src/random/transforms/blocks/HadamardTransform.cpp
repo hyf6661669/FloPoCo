@@ -240,13 +240,13 @@ Distribution<mpfr::mpreal>::TypePtr HadamardTransform::nonUniformOutputDistribut
 			throw std::string("HadamardTransform::nonUniformOutputDistribution - Base does not know its distribution.");
 		
 		DiscreteDistribution<mpfr::mpreal>::TypePtr part(boost::dynamic_pointer_cast<DiscreteDistribution<mpfr::mpreal> >(src->nonUniformOutputDistribution(0, prec)));
-		assert(part->Cdf(0).get_prec() >= (int)prec);
-		assert(part->Pmf(0).get_prec() >= (int)prec);
+		assert(get_mpfr_prec(part->Cdf(0)) >= (int)prec);
+		assert(get_mpfr_prec(part->Pmf(0)) >= (int)prec);
 		m_distribution=SelfAddDistributions<mpfr::mpreal>(part, (int)m_n);
 		m_distributionPrec=prec;
 	}
-	assert(m_distribution->Pmf(0).get_prec() >= (int)prec);
-	assert(m_distribution->Cdf(0).get_prec() >= (int)prec);
+	assert(get_mpfr_prec(m_distribution->Pmf(0)) >= (int)prec);
+	assert(get_mpfr_prec(m_distribution->Cdf(0)) >= (int)prec);
 	return m_distribution;
 }
 

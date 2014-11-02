@@ -96,9 +96,9 @@ void DumpCdfStats(std::string prefix, std::ostream &dest_file, typename Discrete
 				max_contiguous=range_target[i];
 			}
 			
-			assert(cdf_target[i].get_prec()>=one.get_prec());
-			assert(cdf.get_prec()>=one.get_prec());
-			assert(pmf.get_prec()>=one.get_prec());
+			assert(get_mpfr_prec(cdf_target[i]));
+			assert(get_mpfr_prec(cdf));
+			assert(get_mpfr_prec(pmf));
 			
 			//std::cerr<<"prec(p)="<<p.get_prec()<<", prec(range)="<<range_target[i].get_prec()<<", prec(target)="<<cdf_target[i].get_prec()<<"\n";
 			
@@ -192,8 +192,9 @@ struct rng_mpfr
 	
 	mpfr::mpreal operator()()
 	{ 
-		mpfr::mpreal res(0, m_prec);
-		mpfr_urandomb(res.mpfr_ptr(), m_rng);
+		mpfr::mpreal res=mpfr::create_zero(m_prec);
+		res=0;
+		mpfr_urandomb(get_mpfr_ptr(res), m_rng);
 		return res;
 	}
 };
@@ -205,7 +206,7 @@ void DumpChi2Stats(std::string prefix, std::ostream &dest_file, typename Discret
 	zero=zero-zero;
 	T one=zero+1;
 	
-	rng_mpfr rng(one.get_prec());
+	rng_mpfr rng(get_mpfr_prec(one));
 	
 	for(int k=4;k<=8192;k*=2){
 		boost::shared_ptr<const Chi2Partition<T> > part(Chi2Partition<T>::CreateEqualProbability(target, k));
@@ -289,11 +290,11 @@ DiscreteDistribution<mpfr::mpreal>::TypePtr ParseDistribution(std::string spec, 
 	if(parts[0]=="QuantisedGaussian" || parts[0]=="DiscreteGaussian"){
 		if(parts.size()<3)
 			throw std::string("ParseDistribution('")+spec+"') - Need exactly three parts for this distribution.";
-		mpfr::mpreal stddev(0, prec);
-		parseSollyaConstant(stddev.mpfr_ptr(), parts[1], MPFR_RNDN);
+		mpfr::mpreal stddev=mpfr::create_zero(prec);
+		parseSollyaConstant(get_mpfr_ptr(stddev), parts[1], MPFR_RNDN);
 		int fracbits=boost::lexical_cast<int>(parts[2]);
 		
-		assert(stddev.get_prec()==prec);
+		assert(get_mpfr_prec(stddev)==prec);
 		
 		if(parts[0]=="QuantisedGaussian"){
 			return boost::make_shared<QuantisedGaussianDistribution<mpfr::mpreal> >(stddev, fracbits);
@@ -386,8 +387,8 @@ static Operator *TransformStatsParser(Target *target ,const std::vector<std::str
 		std::cerr<<prefix<<"Getting target distribution\n";
 	DiscreteDistribution<mpfr::mpreal>::TypePtr targetDist=ParseDistribution(args[consumed++], prec);
 	
-	mpfr::mpreal startsigma(0, prec);
-	parseSollyaConstant(startsigma.mpfr_ptr(), startsigma_str, MPFR_RNDN);
+	mpfr::mpreal startsigma=mpfr::create_zero(prec);
+	parseSollyaConstant(get_mpfr_ptr(startsigma), startsigma_str, MPFR_RNDN);
 	
 	vector<Operator*> *ops=target->getGlobalOpListRef();
 	if(ops->size()==0)
@@ -410,7 +411,7 @@ static Operator *TransformStatsParser(Target *target ,const std::vector<std::str
 		std::cerr<<prefix<<"Getting RNG's CDF.\n";
 	Distribution<mpfr::mpreal>::TypePtr got=opDists->nonUniformOutputDistribution(0, prec);
 	DiscreteDistribution<mpfr::mpreal>::TypePtr gotDist=boost::dynamic_pointer_cast<DiscreteDistribution<mpfr::mpreal> >(got);
-	assert(gotDist->Cdf(0).get_prec()>=prec);
+	assert(get_mpfr_prec(gotDist->Cdf(0))>=prec);
 	
 	int pp=dest_stream->precision();
 	dest_stream->precision(16);

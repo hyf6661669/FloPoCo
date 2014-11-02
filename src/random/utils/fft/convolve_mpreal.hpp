@@ -22,19 +22,19 @@ namespace random
 		if(wPrec==0){
 			wPrec=mpfr_get_default_prec();
 			for(unsigned i=0;i<a.size();i++){
-				wPrec=std::max(wPrec, (unsigned)a[i].get_prec());
+				wPrec=std::max(wPrec, (unsigned)get_mpfr_prec(a[i]));
 			}
 			for(unsigned i=0;i<b.size();i++){
-				wPrec=std::max(wPrec, (unsigned)b[i].get_prec());
+				wPrec=std::max(wPrec, (unsigned)get_mpfr_prec(b[i]));
 			}
 		}
 		
 		std::vector<mpfr::mpreal> aa(2*nn, mpfr::mpreal(0,wPrec)), bb(2*nn, mpfr::mpreal(0,wPrec));
 		for(unsigned i=0;i<a.size();i++){
-			mpfr_set(aa[2*i].mpfr_ptr(), a[i].mpfr_srcptr(), MPFR_RNDN);
+			mpfr_set(get_mpfr_ptr(aa[2*i]), get_mpfr_srcptr(a[i]), MPFR_RNDN);
 		}
 		for(unsigned i=0;i<b.size();i++){
-			mpfr_set(bb[2*i].mpfr_ptr(), b[i].mpfr_srcptr(), MPFR_RNDN);
+			mpfr_set(get_mpfr_ptr(bb[2*i]), get_mpfr_srcptr(b[i]), MPFR_RNDN);
 		}
 		
 		fft_radix2_complex(&aa[0], nn, wPrec);
@@ -85,7 +85,7 @@ namespace random
 		if(wPrec==0){
 			wPrec=mpfr_get_default_prec();
 			for(unsigned i=0;i<a.size();i++){
-				wPrec=std::max(wPrec, (unsigned)a[i].get_prec());
+				wPrec=std::max(wPrec, (unsigned)get_mpfr_prec(a[i]));
 			}
 		}
 		
@@ -94,7 +94,7 @@ namespace random
 		
 		std::vector<mpfr::mpreal> aa(2*nn, mpfr::mpreal(0,wPrec));
 		for(unsigned i=0;i<a.size();i++){
-			mpfr_set(aa[2*i].mpfr_ptr(), a[i].mpfr_srcptr(), MPFR_RNDN);
+			mpfr_set(get_mpfr_ptr(aa[2*i]), get_mpfr_srcptr(a[i]), MPFR_RNDN);
 		}
 		
 		fft_radix2_complex(&aa[0], nn, wPrec);

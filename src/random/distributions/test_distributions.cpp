@@ -485,7 +485,7 @@ struct rng_mpfr
 	mpfr::mpreal operator()()
 	{ 
 		mpfr::mpreal res(0, m_prec);
-		mpfr_urandomb(res.mpfr_ptr(), m_rng);
+		mpfr_urandomb(get_mpfr_ptr(res), m_rng);
 		return res;
 	}
 };

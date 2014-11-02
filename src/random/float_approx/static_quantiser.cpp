@@ -148,7 +148,7 @@ mpz_class StaticQuantiser::GetBoundary(int level, int index)
 mpfr::mpreal eval(const Function *f, mpfr::mpreal x)
 {
 	mpfr::mpreal tmp(0, getToolPrecision());
-	f->eval(tmp.mpfr_ptr(), x.mpfr_ptr());
+	f->eval(get_mpfr_ptr(tmp), get_mpfr_ptr(x));
 	return tmp;
 }
 
@@ -170,9 +170,9 @@ Operator *StaticQuantiser::BuildFloatQuantiser(Target *target, int wE, int wF, i
 		
 		mpfr::mpreal y(i, getToolPrecision());
 		y=y/n;
-		f->eval_inverse(x.mpfr_ptr(), y.mpfr_ptr(), a.mpfr_ptr(), b.mpfr_ptr());
+		f->eval_inverse(get_mpfr_ptr(x), get_mpfr_ptr(y), get_mpfr_ptr(a), get_mpfr_ptr(b));
 		
-		boundaries[i]=type.ToBits(x.mpfr_ptr(), true);	// round and convert
+		boundaries[i]=type.ToBits(get_mpfr_ptr(x), true);	// round and convert
 		if(::flopoco::verbose>=DETAILED){
 			std::cerr<<" Quantiser["<<i<<"] : f("<<x<<")="<<y<<", bits="<<std::hex<<boundaries[i]<<std::dec<<"\n";
 		}
@@ -202,23 +202,23 @@ Operator *StaticQuantiser::BuildFloatQuantiser(Target *target, int wE, int wF, i
 	FloPoCoRandomState::init(1);	// Eventually this will move to main?
 	
 	FPNumber fpRep(wE,wF);
-	mpfr::mpreal vv(0, wF+1);
+	mpfr::mpreal vv=mpfr::create_zero(wF+1);
 	for(unsigned i=1;i<boundaries.size();i++){
 		mpz_class a=boundaries[i-1], b=boundaries[i];
 		
-		type.FromBits(vv.mpfr_ptr(), a);
-		fpRep=vv.mpfr_ptr();
+		type.FromBits(get_mpfr_ptr(vv), a);
+		fpRep=get_mpfr_ptr(vv);
 		res->addStandardTestCaseInputs("iX", fpRep.getSignalValue());
 	
-		type.FromBits(vv.mpfr_ptr(), b);
-		fpRep=vv.mpfr_ptr();
+		type.FromBits(get_mpfr_ptr(vv), b);
+		fpRep=get_mpfr_ptr(vv);
 		res->addStandardTestCaseInputs("iX", fpRep.getSignalValue());
 		
 		if(b>a){
 			for(int i=0;i<10;i++){
 				mpz_class v=getRandomBetween(a,b);
-				type.FromBits(vv.mpfr_ptr(), v);
-				fpRep=vv.mpfr_ptr();
+				type.FromBits(get_mpfr_ptr(vv), v);
+				fpRep=get_mpfr_ptr(vv);
 				res->addStandardTestCaseInputs("iX", fpRep.getSignalValue());
 			}
 		}

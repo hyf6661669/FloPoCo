@@ -74,8 +74,11 @@ private:
 		int e=mpfr_get_exp(x)-1;
 		int bias=(1<<(wE-1));
 		
-		if(e < -bias)
-			throw std::invalid_argument("ComparableFloatType - exponent too small.");
+		if(e < -bias){
+		    std::stringstream acc;
+		    acc<<"ComparableFloatType - exponent too small, got="<<e<<", min="<<-bias;
+		    throw std::invalid_argument(acc.str());
+		}
 		if(e >= bias)
 			throw std::invalid_argument("ComparableFloatType - exponent too large.");
 		if(mpfr_sgn(x)>=0)

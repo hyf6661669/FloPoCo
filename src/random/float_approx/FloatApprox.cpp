@@ -66,13 +66,22 @@ public:
     , m_degree(degree)
     , m_maxError(maxError)
     // Start building stuff (though not much happens yet)
-    , m_range(f, wDomainF, wRangeF, domainMin.mpfr_ptr(), domainMax.mpfr_ptr())
+    , m_range(f, wDomainF, wRangeF, get_mpfr_ptr(domainMin), get_mpfr_ptr(domainMax), wDomainE)
   {       
     std::stringstream acc;
     acc<<"FloatApprox_uid"<<getNewUId();
     std::string name=acc.str();
     setName(name);
-    
+
+    unsigned origPrec=getToolPrecision();
+    setToolPrecision(2048);
+
+    if(::flopoco::verbose>=DEBUG){
+		std::cerr<<"Initial polynomial segments:\n";
+		m_range.dump(stderr);
+		std::cerr<<":\n";
+	}
+
     REPORT(INFO, "Making range monotonic.");
     m_range.make_monotonic_or_range_flat();
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
@@ -88,15 +97,28 @@ public:
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
     int nRanFlatSegments=m_range.m_segments.size();
     
+    if(::flopoco::verbose>=DEBUG){
+    	std::cerr<<"Pre-minimax segments:\n";
+    	m_range.dump(stderr);
+    	std::cerr<<":\n";
+    }
+
     m_polys=RangePolys(&m_range, m_degree);
     
     // TODO / HACK : This is twice the accuracy it should need. This is to try to fixed very occasional
     // errors of 2 ulps.
     REPORT(INFO, "Splitting into polynomials with error < "<<maxError/2);
-    m_polys.split_to_error((maxError/2).toDouble());
+    m_polys.split_to_error(maxError.convert_to<double>()/2);
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
     int nErrSplitSegments=m_range.m_segments.size();
     
+    if(::flopoco::verbose>=DEBUG){
+    	std::cerr<<"Final polynomial segments:\n";
+    	m_polys.dump(stderr);
+    	std::cerr<<":\n";
+    }
+
+
     for(m_guard=1;m_guard<=9;m_guard++){
       if(m_guard==8){
         throw std::string("FloatApprox - More than 8 guard bits needed, this probably means something is going horribly wrong.");
@@ -125,7 +147,7 @@ public:
     m_polyInputFormat.msb=-1;
     m_polyInputFormat.lsb=-m_wRangeF-1;
     m_polyCoeffFormats.resize(m_degree+1);
-    for(int i=0;i<=m_degree;i++){
+    for(int i=0;i<=(int)m_degree;i++){
       m_polyCoeffFormats[i].isSigned=true;
       m_polyCoeffFormats[i].msb=m_polys.m_concreteCoeffMsbs[i]+1;   // inlude sign bit
       m_polyCoeffFormats[i].lsb=m_polys.m_concreteCoeffLsbs[i];
@@ -264,6 +286,8 @@ public:
     vhdl<<"--nSeg_FlatDomainAndRange = "<<nRanFlatSegments<<"\n";
     vhdl<<"--nSeg_ErrSplit = "<<nErrSplitSegments<<"\n";
     vhdl<<"--nSeg_Final = "<<nFinalSegments<<"\n";
+
+    setToolPrecision(origPrec);
   }
   
 
@@ -313,18 +337,18 @@ public:
     TestCase *ptc=new TestCase(m_poly);
     ptc->addInput("Y", fracX);
     
-    mpfr::mpreal xx(0, prec);
-    mpfr_set_z(xx.mpfr_ptr(), fracX.get_mpz_t(), MPFR_RNDN);
+    mpfr::mpreal xx=mpfr::create_zero(prec);
+    mpfr_set_z(get_mpfr_ptr(xx), fracX.get_mpz_t(), MPFR_RNDN);
     xx=ldexp(xx, -m_wDomainF-1);
     
     // Double-check that we agree with the underlying range
     Range::segment_it_t it=m_range.find_segment(x);
-    assert( mpfr_lessequal_p(it->domainStartFrac, xx.mpfr_ptr()));
-    assert( mpfr_lessequal_p(xx.mpfr_ptr(), it->domainFinishFrac));
+    assert( mpfr_lessequal_p(it->domainStartFrac, get_mpfr_ptr(xx)));
+    assert( mpfr_lessequal_p(get_mpfr_ptr(xx), it->domainFinishFrac));
     
     std::vector<mpfr::mpreal> truePoly=m_polys.get_polynomial(it, m_guard);
     
-    mpfr::mpreal acc(0, prec);
+    mpfr::mpreal acc=mpfr::create_zero(prec);
     int offset=0;
     for(unsigned i=0;i<=m_degree;i++){
       int w=(m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1; // extra is for sign
@@ -344,9 +368,9 @@ public:
     
     mpz_class minFrac=0, maxFrac=(mpz_class(1)<<m_wRangeF)-1;   // We will clamp to these values
     const std::vector<mpz_class> &polyOutputs=ptc->getExpectedOutputValues("R");
-    for(int i=0;i<polyOutputs.size();i++){
+    for(int i=0;i<(int)polyOutputs.size();i++){
       mpz_class tmp=polyOutputs[i];
-      mp=std::max(minFrac, std::min(maxFrac, tmp));
+      //mp=std::max(minFrac, std::min(maxFrac, tmp));
       if((tmp!=vu) && (tmp!=vd)){
         std::cerr<<"xx="<<xx<<", vu="<<vu<<", vd="<<vd<<", got="<<tmp<<", acc="<<ldexp(acc,m_wRangeF+1)<<"\n";
         //throw std::string("FloatApprox::emulate - emulator of FixedPointPolynomialEvaluator is returning an illegal value.");
@@ -437,10 +461,10 @@ public:
     mpfr::mpreal r(0.0, m_wDomainF);
     
     // Absolute
-    getLargeRandomFloatBetween(r.mpfr_ptr(), m_domainMin.mpfr_ptr(), m_domainMax.mpfr_ptr());
+    getLargeRandomFloatBetween(get_mpfr_ptr(r), get_mpfr_ptr(m_domainMin), get_mpfr_ptr(m_domainMax));
     
     FPNumber dom(m_wDomainE, m_wDomainF);
-    dom=r.mpfr_ptr();
+    dom=get_mpfr_ptr(r);
     TestCase *tc=new TestCase(this);
     tc->addFPInput("iX", &dom);
     emulate(tc);
@@ -475,12 +499,12 @@ static Operator *FloatApproxFactoryParser(Target *target ,const std::vector<std:
     if((wDomE<1) || (wDomF<1))
       throw std::string("FloatApproxFactoryParser - wDomE and wDomF must be positive.");
     
-    mpfr::mpreal domMin(0, wDomF+1);
-    mpfr::mpreal domMax(0, wDomF+1);
-    parseSollyaConstant(domMin.mpfr_ptr(), args[2], MPFR_RNDU);
-    parseSollyaConstant(domMax.mpfr_ptr(), args[3], MPFR_RNDD);
-    if(domMin<=0)
-      throw std::string("FloatApproxFactoryParser - domMin must be positive.");
+    mpfr::mpreal domMin=mpfr::create_zero(wDomF+1);
+    mpfr::mpreal domMax=mpfr::create_zero(wDomF+1);
+    parseSollyaConstant(get_mpfr_ptr(domMin), args[2], MPFR_RNDU);
+    parseSollyaConstant(get_mpfr_ptr(domMax), args[3], MPFR_RNDD);
+    //if(domMin<0)
+     // throw std::string("FloatApproxFactoryParser - domMin must be non-negative.");
     if(domMax <= domMin)
       throw std::string("FloatApproxFactoryParser - Must have domMin < domMax.");
     
@@ -498,11 +522,11 @@ static Operator *FloatApproxFactoryParser(Target *target ,const std::vector<std:
     mpfr::mpreal maxError(pow(2.0,-wRanF-1), getToolPrecision());
 
 	return new FloatApproxOperator(target,
-      wDomE, wDomF, domMin.mpfr_ptr(), domMax.mpfr_ptr(),
+      wDomE, wDomF, domMin, domMax,
       wRanE, wRanF,
       f,
       degree,
-      maxError.mpfr_ptr()
+      maxError
     );
 }
 

@@ -1,6 +1,6 @@
 PROJECT(FloPoCo C CXX)
 
-MESSAGE("Trying to build FloPoCo on " ${CMAKE_SYSTEM_NAME} ", compiler is "${CMAKE_C_COMPILER})
+MESSAGE("Trying to build FloPoCo on " ${CMAKE_SYSTEM_NAME} ", compiler is " ${CMAKE_C_COMPILER})
 
 # CMake's way of handling various versions
 cmake_minimum_required(VERSION 2.4)
@@ -21,17 +21,10 @@ SET(CPACK_PACKAGE_VERSION_PATCH "0")
 # DT10: I used gnu11 instead of c++11 due to fileno buried in a lex generated file.
 
 INCLUDE(CPack)
-# 
-#Compilation flags
-#SET(CMAKE_CXX_FLAGS_DEBUG "-std=gnu++11 -g -Wall")
-# Uncomment for profiling
-SET(CMAKE_CXX_FLAGS_DEBUG "-std=gnu++11 -g -pg -Wall")
-# SET(CMAKE_CXX_FLAGS_DEBUG "-std=gnu++11 -pg -Wall")
-# Do you want an executable of 30MB ?
-#SET(CMAKE_BUILD_TYPE DEBUG)
 
-SET(CMAKE_CXX_FLAGS_RELEASE "-std=gnu++11")
-SET(CMAKE_BUILD_TYPE release)
+
+SET(CMAKE_CXX_FLAGS_DEBUG "-std=gnu++11 -Og -Wall")
+SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG=1 -std=gnu++11")
 
 
 FIND_PATH(MPFR_H

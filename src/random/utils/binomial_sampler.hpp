@@ -46,7 +46,8 @@ private:
 			return;
 		}
 		
-		r=std::min(p,1-p);
+		TCalc p_neg=1-p;
+		r=std::min(p,p_neg);
 		q=1-r;
 		
 		if(n*r<30){

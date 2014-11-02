@@ -262,7 +262,7 @@ bool random_parseCommandLine(
 		int log2n = checkStrictlyPositive(argv[i++], argv[0]);
 		int log2k = checkStrictlyPositive(argv[i++], argv[0]);
 		mpfr::mpreal stddev(0,getToolPrecision());
-		parseSollyaConstant(stddev.mpfr_ptr(), argv[i++]);
+		parseSollyaConstant(get_mpfr_ptr(stddev), argv[i++]);
 		int fb=checkStrictlyPositive(argv[i++], argv[0]);
 		std::string corr=argv[i++];
 		std::string quant=argv[i++];

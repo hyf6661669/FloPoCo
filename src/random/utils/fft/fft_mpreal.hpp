@@ -40,7 +40,7 @@ namespace random
 			
 			// We've been told to use wPrec bits, and that's what we're going to do, damnit!
 			for(unsigned i=0;i<2*nn;i++){
-				mpfr_prec_round(data[i].mpfr_ptr(), wPrec, MPFR_RNDN);
+				mpfr_prec_round(get_mpfr_ptr(data[i]), wPrec, MPFR_RNDN);
 			}
 			
 			const unsigned tMaxLen=4096;	// Maximum distance before refreshing sincos. Presumably 4096 recurrences cost less than one sin/cos?
@@ -53,8 +53,9 @@ namespace random
 			// tMaxLen = 4096 -> wPrec+3+5+8 = wPrec+ 16
 			// So it's not costing us a lot in extra precision
 			
-			mpfr::mpreal pi=mpfr::const_pi(tPrec);
 			
+			mpfr::mpreal pi=mpfr::calc_pi(tPrec);
+
 			unsigned n, mmax, m, j, istep, i;
 			
 			n=nn<<1;
@@ -86,10 +87,10 @@ namespace random
 			while(n>mmax){
 				istep=mmax<<1;
 				
-				delta_theta=(pi<<1)/mmax;
+				delta_theta=(pi*2)/mmax;
 				if(inverse)
 					delta_theta=-delta_theta;
-				alpha= sqr(sin(delta_theta>>1))<<1;
+				alpha= sqr(sin(delta_theta/2))*2;
 				beta =sin(delta_theta);
 				unsigned trig_steps=0;
 				
@@ -108,8 +109,8 @@ namespace random
 					trig_steps++;
 					
 					// Lose the extra precision for the actual calculations
-					mpfr_set(twiddle_r_wPrec.mpfr_ptr(), twiddle_r.mpfr_ptr(), MPFR_RNDN);
-					mpfr_set(twiddle_i_wPrec.mpfr_ptr(), twiddle_i.mpfr_ptr(), MPFR_RNDN);
+					mpfr_set(get_mpfr_ptr(twiddle_r_wPrec), get_mpfr_ptr(twiddle_r), MPFR_RNDN);
+					mpfr_set(get_mpfr_ptr(twiddle_i_wPrec), get_mpfr_ptr(twiddle_i), MPFR_RNDN);
 					
 					for(i=m;i<n;i+=istep){
 						j=i+mmax;
@@ -117,17 +118,17 @@ namespace random
 						assert(i+1 < 2*nn);
 						
 						if(extraWorking){
-							mpfr_mul(temp_r.mpfr_ptr(), twiddle_i_wPrec.mpfr_ptr(), data[j+1].mpfr_ptr(), MPFR_RNDN);
-							mpfr_fms(temp_r.mpfr_ptr(), twiddle_r_wPrec.mpfr_ptr(), data[j].mpfr_ptr(), temp_r.mpfr_ptr(), MPFR_RNDN);
+							mpfr_mul(get_mpfr_ptr(temp_r), get_mpfr_ptr(twiddle_i_wPrec), get_mpfr_ptr(data[j+1]), MPFR_RNDN);
+							mpfr_fms(get_mpfr_ptr(temp_r), get_mpfr_ptr(twiddle_r_wPrec), get_mpfr_ptr(data[j]), get_mpfr_ptr(temp_r), MPFR_RNDN);
 							
-							mpfr_mul(temp_i.mpfr_ptr(), twiddle_r_wPrec.mpfr_ptr(), data[j+1].mpfr_ptr(), MPFR_RNDN);
-							mpfr_fma(temp_i.mpfr_ptr(), twiddle_i_wPrec.mpfr_ptr(), data[j].mpfr_ptr(), temp_i.mpfr_ptr(), MPFR_RNDN);
+							mpfr_mul(get_mpfr_ptr(temp_i), get_mpfr_ptr(twiddle_r_wPrec), get_mpfr_ptr(data[j+1]), MPFR_RNDN);
+							mpfr_fma(get_mpfr_ptr(temp_i), get_mpfr_ptr(twiddle_i_wPrec), get_mpfr_ptr(data[j]), get_mpfr_ptr(temp_i), MPFR_RNDN);
 							
-							mpfr_sub(data[j].mpfr_ptr(), data[i].mpfr_ptr(), temp_r.mpfr_ptr(), MPFR_RNDN);
-							mpfr_sub(data[j+1].mpfr_ptr(), data[i+1].mpfr_ptr(), temp_i.mpfr_ptr(), MPFR_RNDN);
+							mpfr_sub(get_mpfr_ptr(data[j]), get_mpfr_ptr(data[i]), get_mpfr_ptr(temp_r), MPFR_RNDN);
+							mpfr_sub(get_mpfr_ptr(data[j+1]), get_mpfr_ptr(data[i+1]), get_mpfr_ptr(temp_i), MPFR_RNDN);
 							
-							mpfr_add(data[i].mpfr_ptr(), data[i].mpfr_ptr(), temp_r.mpfr_ptr(), MPFR_RNDN);
-							mpfr_add(data[i+1].mpfr_ptr(), data[i+1].mpfr_ptr(), temp_i.mpfr_ptr(), MPFR_RNDN);
+							mpfr_add(get_mpfr_ptr(data[i]), get_mpfr_ptr(data[i]), get_mpfr_ptr(temp_r), MPFR_RNDN);
+							mpfr_add(get_mpfr_ptr(data[i+1]), get_mpfr_ptr(data[i+1]), get_mpfr_ptr(temp_i), MPFR_RNDN);
 						}else{
 							temp_r=twiddle_r_wPrec*data[j]    	- 	twiddle_i_wPrec*data[j+1];
 							temp_i=twiddle_r_wPrec*data[j+1]	+	twiddle_i_wPrec*data[j];
@@ -148,7 +149,7 @@ namespace random
 				// Divide everything by nn. Given nn is a binary power, this is just shifting
 				int places=(int)round(log2(nn));
 				for(unsigned i=0;i<2*nn;i++){
-					data[i] >>=places;
+					mpfr_mul_2si(get_mpfr_ptr(data[i]), get_mpfr_ptr(data[i]), -places, MPFR_RNDN);
 				}
 			}
 		}

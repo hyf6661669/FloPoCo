@@ -167,7 +167,7 @@ public:
 			// First distribution in Q(16,15)
 			HistogramDistribution<mpfr::mpreal>::TypePtr curr=boost::make_shared<HistogramDistribution<mpfr::mpreal> >(-one, ldexp(one, -(fb-1)), ones);
 			
-			assert(curr->Pmf(0).get_prec()>=(int)prec);
+			assert(get_mpfr_prec(curr->Pmf(0))>=(int)prec);
 			
 			// First adder and truncation to Q(16,14) for CLT-2
 			REPORT(INFO,"Building CLT-2");
@@ -205,13 +205,13 @@ public:
 			curr->RangeByIndex(support.first, support.second, &tmp[0]);
 			std::vector<double> x_clt(points);	// The points of the untransformed CLT
 			for(int i=0;i<points;i++){
-				x_clt[i]=tmp[i].toDouble();
+				x_clt[i]=(double)tmp[i];
 			}
 			
 			curr->CdfByIndex(support.first, support.second, &tmp[0]);
 			std::vector<double> p_clt(points);	// The CDF of the untransformed CLT
 			for(int i=0;i<points;i++){
-				p_clt[i]=tmp[i].toDouble();
+				p_clt[i]=(double)tmp[i];
 			}
 			
 			boost::math::normal_distribution<double> n(0.0,1.0);

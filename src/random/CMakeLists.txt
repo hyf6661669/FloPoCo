@@ -72,7 +72,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	float_approx/FloatApprox.cpp
 )
 #target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES})
-target_link_libraries(flopoco_random_lib ${GMP_LIB} ${GSL_LIBRARIES} ${MPFR_LIB})
+target_link_libraries(flopoco_random_lib ${GMP_LIB} ${GSL_LIBRARIES} ${MPFR_LIB} /usr/lib/libgslcblas.so)
 
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})

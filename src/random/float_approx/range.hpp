@@ -70,15 +70,25 @@ public:
 	mpfr_t rangeStart, rangeFinish;
 
 	mpfr_t domainStartFrac, domainFinishFrac;
+        mpfr_t rangeStartFrac, rangeFinishFrac;
 	
 	// Return true if the range/domain are all within one exponent value (i.e. one binade)
 	bool isRangeFlat, isDomainFlat;
+
+	// True if the function can be rounded to a constant
+	bool isRangeConstant;
 
 	typedef std::map<std::string,boost::any> property_map_t;
 	property_map_t properties;
 	
 	void set_domain(mpfr_t _domainStart, mpfr_t _domainFinish);
 	
+	// Approximate the function by a linear polynomial
+	sollya_node_t make_linear_poly(sollya_node_t func, unsigned degree);
+
+	// Check if a given function has error good enough to use directly
+	bool check_poly(sollya_node_t func, sollya_node_t poly);
+
 	Segment(const Segment &o);
 	Segment(Range *_parent, mpfr_t _domainStart, mpfr_t _domainFinish);
 	
@@ -109,6 +119,7 @@ struct Range
 {
 	const Function &m_function;
 	int m_domainWF;
+	int m_domainWE;
 	int m_rangeWF;
 	bool m_offsetPolyInputs;
 	
@@ -125,7 +136,7 @@ struct Range
 	typedef std::map<std::string,boost::any> property_map_t;
 	property_map_t properties;
 	
-	Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish);
+	Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish, int domainWE);
 	
 	// Return a (wE,wF) pair that can represent all values in the domain
 	std::pair<int,int> GetFloatTypeEnclosingDomain() const;
@@ -176,6 +187,12 @@ struct Range
 	sollya_node_t get_scaled_flat_function(int eD, int eR);
 	
 	segment_it_t find_segment(mpfr_t x);
+
+	// Maximum normal value in the domain
+	void createDomainMax(mpfr_t val);
+
+	// Minimum normal value in the domain
+	void createDomainMin(mpfr_t val);
 };
 
 }; // float_approx

@@ -61,15 +61,36 @@ private:
 		
 		sollya_node_ptr_t poly=make_shared_sollya(curr->minimax(m_degree));
 		sollya_node_t func=curr->get_scaled_flat_function(); // doesn't need to be freed
-		
+
 		MPFRVec error(1, getToolPrecision());
-		if(!m_range->m_offsetPolyInputs){
-			infNorm(error[0], func, poly.get(), curr->domainStartFrac, curr->domainFinishFrac, 71);
+		
+		// TODO : THis should only be applied if the domain is not degenerate, to avoid warnings
+
+		if(mpfr_cmp(curr->domainStart,curr->domainFinish)==0){
+		  mpfr_t correct, got;
+		  mpfr_init2(correct, getToolPrecision());
+		  mpfr_init2(got, getToolPrecision());
+		  evaluateFaithful(correct, func, curr->domainStartFrac, getToolPrecision());
+		  evaluateFaithful(got, poly.get(), curr->domainStartFrac, getToolPrecision());
+		  mpfr_sub(error[0], correct, got, MPFR_RNDN);
+		  mpfr_abs(error[0],error[0], MPFR_RNDN);
+
+		  mpfr_fprintf(stderr, "  minimax_error dom=[%Re,%Re], got=%Re, correct=%Re, err=%Re\n", curr->domainStart, curr->domainFinish, got, correct, error[0]);
+		  if(mpfr_cmp_d(error[0],0.1)>0){
+		    exit(1);
+		  }
+		  mpfr_clear(correct);
+		  mpfr_clear(got);
 		}else{
-			mpfr::mpreal length(curr->domainFinishFrac);
-			length=length-curr->domainStartFrac;
-			mpfr::mpreal zero;
-			infNorm(error[0], func, poly.get(), zero.mpfr_ptr(), length.mpfr_ptr(), 71);
+
+		  if(!m_range->m_offsetPolyInputs){
+		    infNorm(error[0], func, poly.get(), curr->domainStartFrac, curr->domainFinishFrac, 71);
+		  }else{
+		    mpfr::mpreal length(curr->domainFinishFrac);
+		    length=length-curr->domainStartFrac;
+		    mpfr::mpreal zero;
+		    infNorm(error[0], func, poly.get(), get_mpfr_ptr(zero), get_mpfr_ptr(length), 71);
+		  }
 		}
 		
 		curr->properties["minimax"]=poly;
@@ -89,6 +110,11 @@ public:
 			update_segment_minimax(it);
 			++it;
 		}
+	}
+
+	void dump(FILE *dst)
+	{
+		m_range->dump(dst);
 	}
 		
 	void split_to_error(double error)
@@ -124,7 +150,7 @@ public:
 	// Find fixed-point polynomial coefficients such that the result is faithful (?) on rangeWF+guard bits
 	void calc_faithful_fixed_point(segment_it_t curr, int guard=0)
 	{
-		std::string pnCoeffs=boost::str(boost::format("minimax_fixed%1%_coeffs")%guard);
+	        std::string pnCoeffs=boost::str(boost::format("minimax_fixed%1%_coeffs")%guard);
 		
 		if(curr->has_property(pnCoeffs))
 			return;
@@ -154,17 +180,27 @@ public:
 			lsbs[j]= -(m_range->m_rangeWF+guard+1) + j -1;	// TODO : I seem to need one more LSB than the paper says, otherwise PolynomialEvaluator doesn't converge
 			fmts[j]=-lsbs[j]; // format is negative of lsb
 		}
-		sollya_node_t fp=curr->fpminimax(fmts, boost::any_cast<sollya_node_ptr_t>(curr->properties["minimax"]).get() );
+		if(::flopoco::verbose>3)
+		  fprintf(stderr, " doing fpminimax...");
+		auto currMinimax= boost::any_cast<sollya_node_ptr_t>(curr->properties["minimax"]);
+		if(::flopoco::verbose>3){
+		  if(currMinimax)
+		    fprintf(stderr, " (with init minimax)");
+		}
+		sollya_node_t fp=curr->fpminimax(fmts, currMinimax.get() );
 		
 		MPFRVec error(1, getToolPrecision());
 		if(!m_range->m_offsetPolyInputs){
+		  fprintf(stderr, "infNorm...");
 			infNorm(error[0], curr->get_scaled_flat_function(), fp, curr->domainStartFrac, curr->domainFinishFrac, 71);
 		}else{
 			mpfr::mpreal length(curr->domainFinishFrac);
 			length=length-curr->domainStartFrac;
 			mpfr::mpreal zero;
-			infNorm(error[0], curr->get_scaled_flat_function(), fp, zero.mpfr_ptr(), length.mpfr_ptr(), 71);
+			infNorm(error[0], curr->get_scaled_flat_function(), fp, get_mpfr_ptr(zero), get_mpfr_ptr(length), 71);
 		}
+		fprintf(stderr, "\n");
+
 		mpfr_abs(error[0],error[0],MPFR_RNDN);
 		MPFRVec coeffs=getPolyCoeffs(fp, m_degree);
 		assert((int)coeffs.size()==(int)m_degree+1);
@@ -193,10 +229,16 @@ public:
 		// many segments, and should be optimised. Yes, I suck at maths.
 		split_to_error(pow(2.0, -m_range->m_rangeWF-2));
 		
+		unsigned i=0;
 		segment_it_t curr=m_range->m_segments.begin();
 		while(curr!=m_range->m_segments.end()){
-			calc_faithful_fixed_point(curr, guard);
-			++curr;
+		  if(::flopoco::verbose>3)
+		    mpfr_fprintf(stderr, "  calc_faithful_fixed_point([%Re,%Re]) %d of %d\n", curr->domainStart, curr->domainFinish, i, m_range->m_segments.size());
+
+
+		  calc_faithful_fixed_point(curr, guard);
+		  ++curr;
+		  ++i;
 		}
 	}
 	
@@ -301,7 +343,7 @@ public:
 		std::vector<mpfr::mpreal> res;
 		for(int i=0;i<coeffs.size();i++){
 			res.push_back(mpfr::mpreal(0, getToolPrecision()));
-			mpfr_set(res.back().mpfr_ptr(), coeffs[i], MPFR_RNDN);
+			mpfr_set(get_mpfr_ptr(res.back()), coeffs[i], MPFR_RNDN);
 		}
 		return res;
 	}
@@ -342,16 +384,23 @@ public:
 				acc=(acc<<(2+m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i])) + ToTwosComplement(local, m_concreteCoeffMsbs[i], m_concreteCoeffLsbs[i]);
 			}
 			
-			// Now we tack the exponent on. For the moment we only support positive numbers,
+			// Now we tack the exponent on. Now have support for positive, zero, and negative numbers,
 			// so it will be "010|(e-2^wE/2)|...
-			assert(mpfr_sgn(curr->domainStart)>00);
+			// or            "000|0000000000|...
+			// or            "011|(e-2^wE/2)|...
 			
-			mpz_class prefix=mpfr_get_exp(curr->rangeStart)-2+(1<<(wRangeE-1));
-			if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix)){
-				std::cerr<<"  exponent="<<mpfr_get_exp(curr->rangeStart)<<", wRangeE="<<wRangeE<<"\n";
-				throw std::string("Exponent out of range (increase wRangeE?).");
+			bool isNeg=mpfr_sgn(curr->rangeStart)<0;
+			if(mpfr_zero_p(curr->rangeStart)){
+				acc=(mpz_class(isNeg ? 3 : 2)<<(wRangeE+totalCoeffBits)) + /*exponent*/ 0 + acc;
+			}else{
+				mpz_class prefix=mpfr_get_exp(curr->rangeStart)-2+(1<<(wRangeE-1));
+				if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix)){
+					mpfr_fprintf(stderr, "  range=[%Rf,%Rf]\n", curr->rangeStart, curr->rangeFinish);
+					std::cerr<<"  exponent="<<mpfr_get_exp(curr->rangeStart)<<", wRangeE="<<wRangeE<<"\n";
+					throw std::string("Exponent out of range (increase wRangeE?).");
+				}
+				acc=(mpz_class(isNeg?3:2)<<(wRangeE+totalCoeffBits)) + (prefix<<totalCoeffBits) + acc;
 			}
-			acc=(mpz_class(2)<<(wRangeE+totalCoeffBits)) + (prefix<<totalCoeffBits) + acc;
 			
 			contents.push_back(acc);
 			
@@ -410,7 +459,7 @@ public:
 		inputFormat.lsb=-m_range->m_domainWF;
 		
 		mpfr::mpreal budget(pow(2.0, -m_range->m_rangeWF-2), getToolPrecision());
-		mpfr_sub(budget.mpfr_ptr(), budget.mpfr_ptr(), m_concreteApproxError[0], MPFR_RNDN);
+		mpfr_sub(get_mpfr_ptr(budget), get_mpfr_ptr(budget), m_concreteApproxError[0], MPFR_RNDN);
 	
 		return CreateFixedPointPolynomialEvaluator(
 			inputFormat,

@@ -40,11 +40,11 @@ void compare_two(unsigned n, unsigned wPrec)
 	std::vector<mpfr::mpreal> low(2*n, mpfr::mpreal(0, wPrec)), high(2*n, mpfr::mpreal(0, 2*wPrec));
 	
 	for(unsigned i=0;i<n;i++){
-		//mpfr_grandom (low[2*i].mpfr_ptr(), high[2*i+1].mpfr_ptr(), state, MPFR_RNDN);
-		mpfr_urandomb(low[2*i].mpfr_ptr(), state);
-		mpfr_urandomb(low[2*i+1].mpfr_ptr(), state);
-		mpfr_set(high[2*i].mpfr_ptr(), low[2*i].mpfr_ptr(), MPFR_RNDN);
-		mpfr_set(high[2*i+1].mpfr_ptr(), low[2*i+1].mpfr_ptr(), MPFR_RNDN);
+		//mpfr_grandom (get_mpfr_ptr(low[2*i]), get_mpfr_ptr(high[2*i+1]), state, MPFR_RNDN);
+		mpfr_urandomb(get_mpfr_ptr(low[2*i]), state);
+		mpfr_urandomb(get_mpfr_ptr(low[2*i+1]), state);
+		mpfr_set(get_mpfr_ptr(high[2*i]), get_mpfr_ptr(low[2*i]), MPFR_RNDN);
+		mpfr_set(get_mpfr_ptr(high[2*i+1]), get_mpfr_ptr(low[2*i+1]), MPFR_RNDN);
 	}
 	
 	flopoco::random::fft_radix2_complex(&low[0], n, wPrec);
@@ -75,11 +75,11 @@ void compare_three(unsigned n, unsigned wPrec)
 	std::vector<double> high(2*n);
 	
 	for(unsigned i=0;i<n;i++){
-		//mpfr_grandom (low[2*i].mpfr_ptr(), high[2*i+1].mpfr_ptr(), state, MPFR_RNDN);
-		mpfr_urandomb(low[2*i].mpfr_ptr(), state);
-		mpfr_urandomb(low[2*i+1].mpfr_ptr(), state);
-		mpfr_log(low[2*i].mpfr_ptr(), low[2*i].mpfr_ptr(), MPFR_RNDN);
-		mpfr_log(low[2*i+1].mpfr_ptr(), low[2*i+1].mpfr_ptr(), MPFR_RNDN);
+		//mpfr_grandom (get_mpfr_ptr(low[2*i]), get_mpfr_ptr(high[2*i+1]), state, MPFR_RNDN);
+		mpfr_urandomb(get_mpfr_ptr(low[2*i]), state);
+		mpfr_urandomb(get_mpfr_ptr(low[2*i+1]), state);
+		mpfr_log(get_mpfr_ptr(low[2*i]), get_mpfr_ptr(low[2*i]), MPFR_RNDN);
+		mpfr_log(get_mpfr_ptr(low[2*i+1]), get_mpfr_ptr(low[2*i+1]), MPFR_RNDN);
 		high[2*i]=low[2*i].toDouble();
 		high[2*i+1]=low[2*i+1].toDouble();
 		//high[2*i]=drand48();

@@ -221,7 +221,7 @@ std::vector<std::vector<std::string> > MWCTransform::NegateCSA(std::string prefi
   // Work out the maximum height of bits
   unsigned count=0;
   for(unsigned i=0;i<curr.size();i++){
-    count=std::max(count, curr[i].size());
+    count=std::max(count, (unsigned)curr[i].size());
   }
   
   // Invert everything
@@ -356,7 +356,7 @@ std::vector<std::vector<std::string> > MWCTransform::MakeMWCFromCSA(
 	while(1){
 		unsigned maxHeight=0;
 		for(unsigned i=0;i<curr.size();i++){
-			maxHeight=std::max(maxHeight, curr[i].size());
+			maxHeight=std::max(maxHeight, (unsigned)curr[i].size());
 		}
 		REPORT(DEBUG, "    Stage="<<stage<<", CurrentHeight="<<maxHeight);
 

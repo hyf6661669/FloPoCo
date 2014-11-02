@@ -161,6 +161,9 @@ public:
 		CompleteInit(sorted, m_one);
 	}
 	
+	virtual ~TableDistribution()
+	{}
+
 	//! If the table has a specific resolution this will be returned, otherwise INT_MAX is returned
 	int FixedPointResolution() const
 	{

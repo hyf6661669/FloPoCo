@@ -24,7 +24,7 @@ inline Operator *MakeSinglePortTable(Target *target, std::string name, int wElts
 			, m_elements(elements)
 		{
 			setName(name);
-			assert((1<<wIn) >=elements.size());
+			assert((1u<<wIn) >=elements.size());
 		}
 		
 		virtual mpz_class function(int x)

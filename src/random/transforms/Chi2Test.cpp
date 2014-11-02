@@ -96,7 +96,7 @@ DiscreteDistribution<mpfr::mpreal>::TypePtr ParseDistribution(std::string spec, 
 		if(parts.size()<3)
 			throw std::string("ParseDistribution('")+spec+"') - Need exactly three parts for this distribution.";
 		mpfr::mpreal stddev(0, prec);
-		parseSollyaConstant(stddev.mpfr_ptr(), parts[1], MPFR_RNDN);
+		parseSollyaConstant(get_mpfr_ptr(stddev), parts[1], MPFR_RNDN);
 		int fracbits=boost::lexical_cast<int>(parts[2]);
 		
 		if(parts[0]=="QuantisedGaussian"){

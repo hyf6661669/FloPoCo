@@ -104,7 +104,7 @@ static Operator *PolynomialEvaluatorFactoryParser(Target *target ,const std::vec
 		coeffFormats,	//! Format for each of the coefficients, with coeffFormats[0]=a0, etc.
 		inputFormat,	//! The polynomial input format
 		targetPrec,				//! The LSB to which the evaluator should be accurate
-		approxError.mpfr_ptr()	//! The maximum approximation error which already occurred. Must have approxError < 2^(outputLsb-1)
+		get_mpfr_ptr(approxError)	//! The maximum approximation error which already occurred. Must have approxError < 2^(outputLsb-1)
 	);
 }
 

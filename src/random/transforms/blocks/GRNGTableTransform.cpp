@@ -260,7 +260,7 @@ TableTransform *MakeGRNGTable(Target *target, int k, int wF, mpfr::mpreal stddev
 	if(wF>32)
 		throw std::string("TableFactory - w must be less than 32 (currently table is built in double-precision).");
 	
-	std::vector<mpz_class> contents=BuildTable<double>(k, stddev.toDouble(), wF, correction, quantisation);
+	std::vector<mpz_class> contents=BuildTable<double>(k, (double)stddev, wF, correction, quantisation);
 	unsigned wO=0;
 	for(unsigned i=0;i<contents.size();i++){
 		unsigned ww=mpz_sizeinbase(contents[i].get_mpz_t(), 2);

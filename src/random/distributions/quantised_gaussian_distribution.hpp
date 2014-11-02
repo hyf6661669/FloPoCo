@@ -173,8 +173,8 @@ private:
 
 	mpfr::mpreal ERFC(mpfr::mpreal x) const
 	{
-		mpfr::mpreal res(0, x.get_prec());
-		mpfr_erfc(res.mpfr_ptr(), x.mpfr_ptr(), MPFR_RNDN);
+		mpfr::mpreal res(0, get_mpfr_prec(x));
+		mpfr_erfc(get_mpfr_ptr(res), get_mpfr_ptr(x), MPFR_RNDN);
 		return res;
 	}
 

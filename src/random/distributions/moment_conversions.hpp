@@ -21,7 +21,7 @@ T RawMomentsToCentralMoment(
 	for(int i=k-1;i>=0;i--){
 		mu1pow*=mu1;
 		dir=-dir;
-		T coeff=boost::math::binomial_coefficient<T>(k,i);
+		double coeff=boost::math::binomial_coefficient<double>(k,i);
 		acc += dir * raw[i] *coeff * mu1pow;
 		//fprintf(stderr, " %s raw[i] 
 	}
@@ -48,7 +48,7 @@ T CentralMomentsToRawMoment(
 	T mu1pow=1;	
 	for(int i=k-1;i>1;i--){
 		mu1pow*=mean;
-		T coeff=boost::math::binomial_coefficient<T>(k,i);
+		double coeff=boost::math::binomial_coefficient<double>(k,i);
 		acc += central[i] *coeff * mu1pow;
 		//fprintf(stderr, " %s raw[i] 
 	}

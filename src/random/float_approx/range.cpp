@@ -5,6 +5,8 @@
 #include <signal.h>
 #include <boost/utility.hpp>
 
+#include "dirty_fixed_minimax.hpp"
+
 #include "Operator.hpp"
 
 #include "mpreal.h"
@@ -616,7 +618,11 @@ namespace flopoco
 	    mpfr_set(a, domainStartFrac, MPFR_RNDN);
 	    mpfr_set(b, domainFinishFrac, MPFR_RNDN);
 
-	    res=FPminimax(func, monom, formats, /*points*/NULL, a, b, FIXED, ABSOLUTESYM, constantPart, minimax);
+	    if(0){
+		res=FPminimax(func, monom, formats, /*points*/NULL, a, b, FIXED, ABSOLUTESYM, constantPart, minimax);
+	    }else{
+		res=dirtierFPminimax(func, monom, formats, /*points*/NULL, a, b, FIXED, ABSOLUTESYM, constantPart, minimax);
+	    }
 	    setToolPrecision(prec);
 
 	    mpfr_clears(a,b, NULL);

@@ -393,9 +393,9 @@ public:
 			if(mpfr_zero_p(curr->rangeStart)){
 				acc=(mpz_class(isNeg ? 3 : 2)<<(wRangeE+totalCoeffBits)) + /*exponent*/ 0 + acc;
 			}else{
-				mpz_class prefix=mpfr_get_exp(curr->rangeStart)-2+(1<<(wRangeE-1));
+				mpz_class prefix=mpfr_get_exp(curr->rangeStart)-1+(1<<(wRangeE-1));
 				if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix)){
-					mpfr_fprintf(stderr, "  range=[%Rf,%Rf]\n", curr->rangeStart, curr->rangeFinish);
+					mpfr_fprintf(stderr, "  range=[%Re,%Re]\n", curr->rangeStart, curr->rangeFinish);
 					std::cerr<<"  exponent="<<mpfr_get_exp(curr->rangeStart)<<", wRangeE="<<wRangeE<<"\n";
 					throw std::string("Exponent out of range (increase wRangeE?).");
 				}

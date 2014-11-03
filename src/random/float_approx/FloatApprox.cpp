@@ -74,7 +74,7 @@ public:
     setName(name);
 
     unsigned origPrec=getToolPrecision();
-    setToolPrecision(2048);
+    setToolPrecision(std::max(512,int(origPrec)));
 
     if(::flopoco::verbose>=DEBUG){
 		std::cerr<<"Initial polynomial segments:\n";
@@ -173,6 +173,7 @@ public:
     
     REPORT(INFO, "Constructing polynomial evaluator.");
     m_poly=m_polys.make_polynomial_evaluator(target);
+
     //m_poly=m_polys.make_fixed_point_polynomial_evaluator(target);
     oplist.push_back(m_poly);
     REPORT(INFO, "  input is "<<(m_poly->getInputFormat().isSigned?"S":"U")<<";"<<m_poly->getInputFormat().msb<<";"<<m_poly->getInputFormat().lsb);
@@ -249,7 +250,7 @@ public:
     }else{
       // Making this somebody elses problem
       //throw std::string("Output of FixedPointPolynomialEvaluator is not rounded.");
-      //vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1+drop_bits-1,drop_bits-1)<<";\n";
+      vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1+drop_bits-1,drop_bits-1)<<";\n";
     }
     
     vhdl<<declare("result_fraction_clamped", wRangeF)<<" <= ";

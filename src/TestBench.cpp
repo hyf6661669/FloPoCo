@@ -30,9 +30,13 @@ using namespace std;
 namespace flopoco{
 
 
-	TestBench::TestBench(Target* target, Operator* op, int n, bool fromFile):
+	TestBench::TestBench(Target* target, Operator* op, int n, bool fromFile, bool recordOutputToFile):
 		Operator(target), op_(op), n_(n)
 	{
+		if(recordOutputToFile && !fromFile){
+			throw std::invalid_argument("TestBench - If you want to record TestBench outputs, make sure input is from a file.");
+		}
+		
 		// This allows the op under test to know how long it is beeing tested.
 		// useful only for testing the long acc, but who knows. 
 		op->numberOfTests = n;
@@ -90,7 +94,7 @@ namespace flopoco{
 		vhdl << tab << "end process;" <<endl;
 		vhdl << endl;
 
-		if (fromFile) generateTestFromFile();
+		if (fromFile) generateTestFromFile(recordOutputToFile);
 		else generateTestInVhdl();
 	}
 
@@ -104,7 +108,7 @@ namespace flopoco{
 	/* Generating the tests using a file to store the IO, allow to have a lot of IOs without
 	 * increasing the VHDL compilation time
 	 */ 
-	void TestBench::generateTestFromFile() {
+	void TestBench::generateTestFromFile(bool recordOutput) {		
 		// we reordonate the Signal in order to put all the output 
 		// TODO :could be clean by using two list, directly retrieved from the operator
 		vector<Signal*> inputSignalVector;
@@ -188,10 +192,16 @@ namespace flopoco{
 		 * TODO : entrelaced the inputs / outputs in order to avoid this wait
 		 */
 		vhdl << tab << tab << tab << " -- verifying the corresponding output" << endl;
+		if(recordOutput){
+			vhdl << tab << tab << tab << " -- and saving the output to a file" << endl;
+		}
 		vhdl << tab << tab << tab << "process" << endl;
 		/* Variable declaration */
 		vhdl << tab << tab << "variable inline : line; " << endl;                    // variable to read a line
 		vhdl << tab << tab << "variable inline0 : line; " << endl;                    // variable to read a line
+		if(recordOutput){
+			vhdl << tab << tab << "variable outline : line; " << endl;                    // variable to read a line
+		}
 		vhdl << tab << tab << "variable counter : integer := 1;" << endl;
 		vhdl << tab << tab << "variable errorCounter : integer := 0;" << endl;
 		vhdl << tab << tab << "variable possibilityNumber : integer := 0;" << endl;
@@ -199,6 +209,9 @@ namespace flopoco{
 		vhdl << tab << tab << "variable tmpChar : character;" << endl;                        // variable to store a character (escape between inputs)
 		//vhdl << tab << tab << "variable tmpString : string;" << endl;
 		vhdl << tab << tab << "file inputsFile : text is \"test.input\"; " << endl; // declaration of the input file
+		if(recordOutput){
+			vhdl << tab << tab << "file outputsFile : text is out \"test.output\"; " << endl;
+		}
 		
 		
 		/* Variable to store value for inputs and expected outputs*/
@@ -306,7 +319,20 @@ namespace flopoco{
 			// TODO add test to increment global error counter
 			/* adding the IO to the IOorder list */
 			IOorderOutput.push_back(s->getName());
+			
+			if(recordOutput){
+				vhdl << tab << tab << tab <<"write(outline, str("<<s->getName()<<"));"<<endl;
+				vhdl << tab << tab << tab <<"write(outline, string'(\" \"));"<<endl;
+				vhdl << tab << tab << tab <<endl;
+			}
 		};
+		
+		if(recordOutput){
+			vhdl << tab << tab << tab<<"writeline(outputsFile, outline);"<<endl;
+			vhdl << tab << tab << tab <<endl;
+		}
+		
+		
 		vhdl << tab << tab << tab << " wait for 10 ns; -- wait for pipeline to flush" << endl;
 		currentOutputTime += 10 * (tcl_.getNumberOfTestCases()+n_); // time for simulation
 		vhdl << tab << tab << tab << "counter := counter + 2;" << endl; // incrementing by 2 because a testcase takes two lines (one for input, one for output)

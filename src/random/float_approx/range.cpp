@@ -39,6 +39,28 @@ namespace flopoco
 #endif
       }
 
+	// 2^binade(x) <= x < 2^(binade(x+1))
+	std::pair<NumberClass,int> binade(mpfr_t x)
+	{
+	    if(mpfr_inf_p(x)){
+		return std::make_pair(mpfr_sgn(x)<0 ? NegInf : PosInf,0);
+	    }else if(mpfr_zero_p(x)){
+		return std::make_pair(mpfr_sgn(x)<0 ? NegZero : PosZero,0);
+	    }else if(mpfr_nan_p(x)){
+		return std::make_pair(NaN,0);
+	    }
+
+	    int e=mpfr_get_exp(x)-1;
+	    if(mpfr_sgn(x)>0){
+		assert(mpfr_cmp_si_2exp(x,1,e)>=0);
+		assert(mpfr_cmp_si_2exp(x,1,e+1)<0);
+	    }else{
+		assert(mpfr_cmp_si_2exp(x,-1,e+1)>0);
+		assert(mpfr_cmp_si_2exp(x,-1,e)<=0);
+	    }
+	    return std::make_pair(mpfr_sgn(x)>0 ? PosNormal : NegNormal, e);
+	}
+
       /*! This returns the positive fractional part of the
 	number, not including the implicit bit. */
       static void real_to_frac(mpfr_t frac, mpfr_t real)
@@ -47,6 +69,7 @@ namespace flopoco
 	
         if(mpfr_zero_p(real)){
 	  mpfr_set_d(frac, 0.0, MPFR_RNDN);
+	  return;
         }
 
         mpfr_t res, tmp;
@@ -56,16 +79,19 @@ namespace flopoco
 	// Go forwards
 	mpfr_set(tmp, real, MPFR_RNDN);
 	mpfr_abs(tmp, tmp, MPFR_RNDN);
-	mpfr_mul_2si(tmp, tmp, -mpfr_get_exp(real), MPFR_RNDN);
-	mpfr_sub_d(res, tmp, 0.5, MPFR_RNDN);
+	mpfr_mul_2si(tmp, tmp, -mpfr_get_exp(real)+1, MPFR_RNDN);
+	mpfr_sub_d(res, tmp, 1.0, MPFR_RNDN);
 	
 	// Go backwards
-	mpfr_add_d(tmp, res, 0.5, MPFR_RNDN);
-	mpfr_mul_2si(tmp, tmp, mpfr_get_exp(real), MPFR_RNDN);
+	mpfr_add_d(tmp, res, 1.0, MPFR_RNDN);
+	mpfr_mul_2si(tmp, tmp, mpfr_get_exp(real)-1, MPFR_RNDN);
 	if(mpfr_sgn(real)<0)
 	  mpfr_neg(tmp,tmp,MPFR_RNDN);
-	if(!mpfr_equal_p(tmp, real))
-	  throw std::string("real_to_frac - Number does not round-trip.");
+	if(!mpfr_equal_p(tmp, real)){
+	    std::vector<char> tmp(8192,0);
+	    mpfr_snprintf(&tmp[0], tmp.size()-1, "real_to_frac(%Re)=%Re - number does not round-trip.", real, frac);
+	  throw std::string(&tmp[0]);
+	}
 	
 	if(0!=mpfr_set(frac, res, MPFR_RNDN)){
 	  mpfr_fprintf(stderr, " Assiging %Re (prec=%d) to (prec=%d)\n",
@@ -76,7 +102,7 @@ namespace flopoco
 	mpfr_clear(res);
       }
 
-      static void frac_to_real(mpfr_t real, mpfr_t frac, int e)
+	/*      static void frac_to_real(mpfr_t real, mpfr_t frac, int e)
       {
 	// This paranoia is because I seemed to be getting non lossless transforms at some point
 	
@@ -85,22 +111,22 @@ namespace flopoco
 	
 	// Go forwards
 	mpfr_set(tmp, frac, MPFR_RNDN);
-	mpfr_add_d(tmp, tmp, 0.5, MPFR_RNDN);
-	mpfr_mul_2si(tmp, tmp, e, MPFR_RNDN);
+	mpfr_add_d(tmp, tmp, 1.0, MPFR_RNDN);
+	mpfr_mul_2si(tmp, tmp, e-1, MPFR_RNDN);
 	
 	// Go backwards
-	mpfr_mul_2si(tmp, tmp, -e, MPFR_RNDN);
-	mpfr_sub_d(tmp, tmp, 0.5, MPFR_RNDN);
+	mpfr_mul_2si(tmp, tmp, -e+1, MPFR_RNDN);
+	mpfr_sub_d(tmp, tmp, 1.0, MPFR_RNDN);
 	if(!mpfr_equal_p(tmp, frac))
 	  throw std::string("frac_to_real - Number does not round-trip.");
 	
 	// Go forwards again
-	mpfr_add_d(tmp, tmp, 0.5, MPFR_RNDN);
-	mpfr_mul_2si(tmp, tmp, e, MPFR_RNDN);
+	mpfr_add_d(tmp, tmp, 1.0, MPFR_RNDN);
+	mpfr_mul_2si(tmp, tmp, e-1, MPFR_RNDN);
 	
 	mpfr_set(real, tmp, MPFR_RNDN);
 	mpfr_clear(tmp);
-      }
+	}*/
 
 
       // initialise and copy same value (with same precision)
@@ -131,7 +157,7 @@ namespace flopoco
        */
       bool isFlat(mpfr_t start, mpfr_t finish)
       {
-	if(mpfr_nan_p(start))
+	  /*if(mpfr_nan_p(start))
 	  return mpfr_nan_p(finish);
 	if(mpfr_inf_p(start))
 	  return mpfr_inf_p(finish) && mpfr_sgn(start)==mpfr_sgn(finish);
@@ -140,8 +166,34 @@ namespace flopoco
 	// If we get here it is normal
 	if(mpfr_sgn(start)!=mpfr_sgn(finish))
 	  return false;
-	return mpfr_get_exp(start) == mpfr_get_exp(finish);
+	  return mpfr_get_exp(start) == mpfr_get_exp(finish);*/
+	  return binade(start)==binade(finish);
       }
+
+
+	std::ostream &operator<<(std::ostream &dst, const binade_t &b)
+	{
+	    switch(b.first){
+	    case NaN:
+		dst<<"NaN";break;
+	    case NegInf:
+		dst<<"NegInf"; break;
+	    case NegNormal:
+		dst<<"NegNormal<e="<<b.second<<">"; break;
+	    case NegZero:
+		dst<<"NegZero"; break;
+	    case PosZero:
+		dst<<"PosZero"; break;
+	    case PosNormal:
+		dst<<"PosNormal<u="<<b.second<<">"; break;
+	    case PosInf:
+		dst<<"PosInf"; break;
+	    default:
+		throw std::invalid_argument("Invalid binade.");
+	    }
+	    return dst;
+	}
+
 
       void Segment::set_domain(mpfr_t _domainStart, mpfr_t _domainFinish)
       {
@@ -152,8 +204,19 @@ namespace flopoco
 	mpfr_set(domainStart, _domainStart, MPFR_RNDN);
 	mpfr_set(domainFinish, _domainFinish, MPFR_RNDN);
 	
-	real_to_frac(domainStartFrac, domainStart);
-	real_to_frac(domainFinishFrac, domainFinish);
+	if(mpfr_regular_p(domainStart)){
+	    if(mpfr_sgn(domainStart)>0){
+		real_to_frac(domainStartFrac, domainStart);
+		real_to_frac(domainFinishFrac, domainFinish);
+	    }else{
+		real_to_frac(domainStartFrac, domainFinish);
+		real_to_frac(domainFinishFrac, domainStart);
+	    
+	    }
+	}else{
+	    mpfr_set_d(domainStartFrac, 0.0, MPFR_RNDN);
+	    mpfr_set_d(domainFinishFrac, 0.0, MPFR_RNDN);
+	}
 
 	//	mpfr_mul_2si(domainStartFrac, domainStart, -mpfr_get_exp(domainStart), MPFR_RNDN);
 	//	mpfr_sub_d(domainStartFrac, domainStartFrac, 0.5, MPFR_RNDN);
@@ -166,8 +229,16 @@ namespace flopoco
 	parent->eval(rangeStart, _domainStart);
 	parent->eval(rangeFinish, _domainFinish);
 
-	real_to_frac(rangeStartFrac, rangeStart);
-	real_to_frac(rangeFinishFrac, rangeFinish);
+	if(mpfr_regular_p(rangeStart)){
+	    real_to_frac(rangeStartFrac, rangeStart);
+	}else{
+	    mpfr_set_d(rangeStartFrac, 0.0, MPFR_RNDN);
+	}
+	if(mpfr_regular_p(rangeFinish)){
+	    real_to_frac(rangeFinishFrac, rangeFinish);
+	}else{
+	    mpfr_set_d(rangeFinishFrac, 0.0, MPFR_RNDN);
+	}
 	
 	isRangeFlat = isFlat(rangeStart,rangeFinish);
 	isDomainFlat = isFlat(domainStart, domainFinish);
@@ -276,7 +347,7 @@ namespace flopoco
 
       void Segment::dump(FILE *dst) const
       {
-	mpfr_fprintf(dst, "%s[%Rg,%Rg] -> %s[%Rg,%Rg]",
+	mpfr_fprintf(dst, "%s[%Re,%Re] -> %s[%Re,%Re]",
 		     isDomainFlat?"flat":"split", domainStart, domainFinish,
 		     isRangeFlat?"flat":"split", rangeStart, rangeFinish
 		     );
@@ -292,39 +363,98 @@ namespace flopoco
       /* This function is flat, with eD=binade(domainStart), eR=binade(f(domainStart))
 	 That means that 	2^(eD-1) <= domainStart <= domainFinish < 2^eD
 	 and 2^(eR-1) <= f(domainStart) <= f(domainFinish) < 2^eR
-	 we want to convert to fixed-point, so we have inputs in [0,0.5) with domainWF
-	 fractional bits, and outputs in [0,0.5) with rangeWF fractional bits.
+	 we want to convert to fixed-point, so we have inputs in [0,1) with domainWF
+	 fractional bits, and outputs in [0,1) with rangeWF fractional bits.
 	
 	 To move a real x to fixed-point we have:
-	 0.5*2^eD <= x < 1.0*2^eD
-	 0.5 <= x * 2^-eD < 1.0
-	 0 <= x * 2^-eD - 0.5 < 0.5
-	 0 <= 2*(x * 2^-eD - 0.5) < 1.0
-	 0 <= x*2^(-eD+1) -1.0 < 1.0
-	 0 <= x*2^(-eD) -0.5 < 0.5
+	 1.0*2^eD <= x < 2.0*2^eD
+	 1.0 <= x * 2^-eD < 2.0
+	 0 <= x * 2^-eD - 1.0 < 1.0
+	 0 <= 2*(x * 2^-eD - 1.0) < 2.0
+	 0 <= x*2^(-eD+1) -2.0 < 2.0
+	 0 <= x*2^(-eD) - 1.0 < 1.0
       */
-      sollya_node_t Range::get_scaled_flat_function(int eD, int eR)
+      sollya_node_t Range::get_scaled_flat_function(binade_t bDom, binade_t bRan)
       {	
-	if(m_flatFunctions.find(std::make_pair(eD,eR))==m_flatFunctions.end()){
+	if(m_flatFunctions.find(std::make_pair(bDom,bRan))==m_flatFunctions.end()){
 	  // I'm sure this must be leaking sollya objects. The caching is a hedge against
 	  // that, rather than about efficiency
+
+	    sollya_node_t f=m_function.getSollyaNode();
+	    sollya_node_t tx=NULL;
+
+	    // I have no brain!!!!
+
+	    if(bDom.first==NegNormal){
+		if(bRan.first==PosNormal){
+		    tx=makeAdd(makeVariable(), makeConstantDouble(1.0));
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, bDom.second)));
 		
-	  sollya_node_t f=m_function.getSollyaNode();
+		    tx=makeNeg(tx);
+		    tx=substitute(f, tx);
 		
-	  sollya_node_t tx=makeAdd(makeVariable(), makeConstantDouble(0.5));
-	  tx=makeMul(tx, makeConstantDouble(pow(2.0, eD)));
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, -bRan.second)));
+		    tx=makeSub(tx, makeConstantDouble(1.0));
+		}else if(bRan.first==PosZero || bRan.first==NegZero){
+		    tx=makeConstantDouble(bRan.first==PosZero ? 0.0 : -0.0);
+		}else if(bRan.first==NegNormal){
+		    tx=makeAdd(makeVariable(), makeConstantDouble(1.0));
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, bDom.second)));
+
+		    tx=makeNeg(tx);
+		    tx=substitute(f, tx);
+		    tx=makeNeg(tx);
+
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, -bRan.second)));
+		    tx=makeSub(tx, makeConstantDouble(1.0));
+		}
+	    }else if((bDom.first==PosZero) || (bDom.first==NegZero)){
+		if((bRan.first==PosNormal)){
+		    tx=makeMul(makeConstantDouble(0.0),makeVariable());
+		    tx=substitute(f, tx);
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, -bRan.second)));
+		    tx=makeSub(tx, makeConstantDouble(1.0));
+		}else if(bRan.first==PosZero){
+		    tx=makeConstantDouble(0.0);
+		}else if(bRan.first==NegZero){
+		    tx=makeConstantDouble(-0.0);
+		}else if(bRan.first==NaN){
+		    tx=makeConstantDouble(nan(""));
+		}
+	    }else if(bDom.first==PosNormal){
+		if(bRan.first==PosNormal){
+		    tx=makeAdd(makeVariable(), makeConstantDouble(1.0));
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, bDom.second)));
 		
-	  tx=substitute(f, tx);
+		    tx=substitute(f, tx);
 		
-	  tx=makeMul(tx, makeConstantDouble(pow(2.0, -eR)));
-	  tx=makeSub(tx, makeConstantDouble(0.5));
-		
-	  //fprintTree(stderr, tx);
-		
-	  m_flatFunctions[std::make_pair(eD,eR)]=tx;
-	  return tx;
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, -bRan.second)));
+		    tx=makeSub(tx, makeConstantDouble(1.0));
+		}else if(bRan.first==PosZero || bRan.first==NegZero){
+		    tx=makeConstantDouble(bRan.first==PosZero ? 0.0 : -0.0);
+		}else if(bRan.first==NegNormal){
+		    tx=makeAdd(makeVariable(), makeConstantDouble(1.0));
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, bDom.second)));
+
+		    tx=substitute(f, tx);
+		    tx=makeNeg(tx);
+
+		    tx=makeMul(tx, makeConstantDouble(pow(2.0, -bRan.second)));
+		    tx=makeSub(tx, makeConstantDouble(1.0));
+		}
+	    }
+
+	    if(tx==NULL){
+		std::stringstream acc;
+		acc<<"get_scaled_flat_function("<<bDom<<","<<bRan<<") - Not implemented.";
+		throw std::invalid_argument(acc.str());
+	    }
+
+	
+	    m_flatFunctions[std::make_pair(bDom,bRan)]=tx;
+	    return tx;
 	}else{
-	  return m_flatFunctions[std::make_pair(eD,eR)];
+	  return m_flatFunctions[std::make_pair(bDom,bRan)];
 	}
       }
 
@@ -332,17 +462,11 @@ namespace flopoco
       {
 	assert(isRangeFlat && isDomainFlat);
 	if(parent->m_offsetPolyInputs){
-	  if(!flatFunction){
-	    // We want a function where the input starts at 0, so we add on domainFracStart beforehand
-	    sollya_node_t offset=makeConstant(domainStartFrac);
-	    offset=makeAdd(makeVariable(), offset);
-			
-	    sollya_node_t tree=substitute(parent->get_scaled_flat_function(mpfr_get_exp(domainStart), mpfr_get_exp(rangeStart)), offset);
-	    flatFunction.reset(tree, free_memory);
-	  }
-	  return flatFunction.get();
+	    throw std::invalid_argument("Not tested.");
 	}else{
-	  return parent->get_scaled_flat_function(mpfr_get_exp(domainStart), mpfr_get_exp(rangeStart));
+	    auto bDom=binade(domainStart);
+	    auto bRan=binade(rangeStart);
+	    return parent->get_scaled_flat_function(bDom, bRan);
 	}
       }
 
@@ -367,29 +491,6 @@ namespace flopoco
       }
       */
 
-      void Range::eval_scaled_flat_function(mpfr_t res, mpfr_t x, int eD, int eR)
-      {
-	throw std::string("Here");	// Is this function used?
-	
-	mpfr_t tx;
-	mpfr_init_copy(tx, x);
-	
-	assert(mpfr_sgn(tx) >= 0);
-	assert(mpfr_less_p(tx,m_domainFractionEnd));
-	
-	frac_to_real(tx, tx, eD);
-	
-	assert(mpfr_get_exp(tx)==eD);
-	eval(res, tx);
-	assert(mpfr_get_exp(res)==eR);
-	
-	real_to_frac(res, res);
-	
-	assert(mpfr_sgn(res) >= 0);
-	assert(mpfr_less_p(res, m_rangeFractionEnd));
-	
-	mpfr_clear(tx);
-      }
 
       // Provided by sollya
       extern "C" int getVerbosity();
@@ -409,7 +510,7 @@ namespace flopoco
 
 	mpfr::mpreal error=mpfr::create_zero(getToolPrecision());
 	infNorm(get_mpfr_ptr(error), func, poly, domainStartFrac, domainFinishFrac, 71);
-	if(mpfr_cmp_d(get_mpfr_ptr(error), ldexp(1.0, -(int)parent->m_rangeWF+10 ))<0){
+	if(mpfr_cmp_d(get_mpfr_ptr(error), ldexp(1.0, -(int)parent->m_rangeWF-10 ))<0){
 	  return true;
 	}else{
 	  return false;
@@ -471,9 +572,11 @@ namespace flopoco
 	assert(mpfr_equal_p(fracFinish, domainFinishFrac));
 
 	
-	mpfr_fprintf(stderr, " minimax, dRange=[%Re,%Re], fRange=[%Re,%Re] -> [%Re,%Re], fFlat=%s, rFlat=%s, rConst=%s\n", domainStart, domainFinish, fracStart, fracFinish, rangeStart, rangeFinish, isDomainFlat?"Y":"N", isRangeFlat?"Y":"N", isRangeConstant?"Y":"N");
+	mpfr_fprintf(stderr, " minimax, dom=[%Re,%Re], fDom=[%Re,%Re] -> ran=[%Re,%Re], fRan=[%Re,%Re], domFlat=%s, ranFlat=%s, ranConst=%s\n", domainStart, domainFinish, fracStart, fracFinish, rangeStart, rangeFinish, rangeStartFrac, rangeFinishFrac, isDomainFlat?"Y":"N", isRangeFlat?"Y":"N", isRangeConstant?"Y":"N");
 	
 	sollya_node_t func=get_scaled_flat_function();
+	fprintTree(stderr, func);
+	fprintf(stderr, "\n");
 	sollya_node_t weight=makeConstantDouble(1.0);
 	
 	mp_prec_t prec=getToolPrecision();
@@ -494,6 +597,8 @@ namespace flopoco
 	  }else{
 	    evaluateFaithful(coeffs[0], func, get_mpfr_ptr(zero), prec);
 	  }
+	  mpfr_fprintf(stderr, "fracStart=%Re, coeff[0]=%Re\n", fracStart, coeffs[0]);
+
 	  //mpfr_fix(coeffs[0], parent->m_rangeWF);
 	  res=makePolynomial(&coeffs[0], degree);
 	  for(unsigned i=0;i<=degree;i++){
@@ -517,6 +622,9 @@ namespace flopoco
 	      jmp_buf env;
 	      if(setjmp (env)){
 		failedRemez=true;
+		fprintf(stderr, "Failed");
+		exit(1);
+
 	      }else{
 		setRecoverEnvironment(&env);
 
@@ -530,7 +638,7 @@ namespace flopoco
 	      }else{
 		free_memory(poly);
 	      }
-	    }
+	      }
 	  }else{
 	    mpfr::mpreal length(fracFinish);
 	    length=length-fracStart;
@@ -607,7 +715,7 @@ namespace flopoco
 	  if(!parent->m_offsetPolyInputs){
 	    // The precision has to be wacked _way_ up here, as otherwise this just
 	    // hangs on some polynomials. This is not a great way of doing things...
-	    setToolPrecision(4096);
+	    setToolPrecision(max((int)getToolPrecision(),1024));
 
 	    sollya_chain_t monom=makeIntPtrChainFromTo(0, degree);
 	    sollya_chain_t formats=makeIntPtrChain(coeffWidths);
@@ -618,7 +726,7 @@ namespace flopoco
 	    mpfr_set(a, domainStartFrac, MPFR_RNDN);
 	    mpfr_set(b, domainFinishFrac, MPFR_RNDN);
 
-	    if(0){
+	    if(1){
 		res=FPminimax(func, monom, formats, /*points*/NULL, a, b, FIXED, ABSOLUTESYM, constantPart, minimax);
 	    }else{
 		res=dirtierFPminimax(func, monom, formats, /*points*/NULL, a, b, FIXED, ABSOLUTESYM, constantPart, minimax);
@@ -647,16 +755,7 @@ namespace flopoco
 	return fpminimax(coeffWidthsVec, minimax);
       }
 
-      enum NumberClass{
-	NegInf,
-	NegNormal,
-	NegZero,
-	PosZero,
-	PosNormal,
-	PosInf
-      };
-
-      static NumberClass mpfr_class(mpfr_t x)
+      NumberClass mpfr_class(mpfr_t x)
       {
 	assert(!mpfr_nan_p(x));
 	if(mpfr_inf_p(x))
@@ -684,11 +783,12 @@ namespace flopoco
       }
 
 
-      Range::Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish, int domainWE)
+	Range::Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish, int domainWE, int rangeWE)
 	: m_function(f)
 	, m_domainWF(domainWF)
 	, m_rangeWF(rangeWF)
 	, m_domainWE(domainWE)
+	, m_rangeWE(rangeWE)
 	, m_offsetPolyInputs(false)
       {
 	//if(mpfr_sgn(domainStart)<0)
@@ -699,6 +799,7 @@ namespace flopoco
 	mpfr_init2(m_domainFractionEnd, domainWF+1);
 	mpfr_init2(m_rangeFractionEnd, rangeWF+1);
 	
+	// TODO: What are these for?
 	mpfr_set_d(m_domainFractionEnd, 0.5, MPFR_RNDN);
 	mpfr_set_d(m_rangeFractionEnd, 0.5, MPFR_RNDN);
 	
@@ -805,7 +906,7 @@ namespace flopoco
 	assert(mpfr_less_p(src->domainStart,src->domainFinish));
 	
 	mpfr_t mid;
-	mpfr_init2(mid, m_domainWF);
+	mpfr_init2(mid, m_domainWF+1);
 	mpfr_add(mid, src->domainStart, src->domainFinish, MPFR_RNDD); // note that we round down here
 	mpfr_mul_2si(mid, mid, -1, MPFR_RNDN);
 	
@@ -820,9 +921,11 @@ namespace flopoco
       {
 	sollya_node_ptr_t deriv=make_shared_sollya(differentiate(m_function.getSollyaNode()));
 	
-	fprintf(stderr, "Deriv = ");
-	fprintTree(stderr, deriv.get());
-	fprintf(stderr, "\n");
+	if(::flopoco::verbose>=DEBUG){
+	    fprintf(stderr, "Deriv = ");
+	    fprintTree(stderr, deriv.get());
+	    fprintf(stderr, "\n");
+	}
 	
 	sollya_range_t rr={ &(m_segments.begin()->domainStart), &(boost::prior(m_segments.end())->domainFinish) };
 	sollya_chain_t zeros=fpFindZerosFunction(deriv.get(), rr, getToolPrecision());
@@ -865,7 +968,7 @@ namespace flopoco
 	    mpfr_nextabove(extremaHigh);
 	    eval(extremaLowRange, extremaLow);
 	    eval(extremaHighRange, extremaHigh);
-	    mpfr_fprintf(stderr, "    extremaLow=%Rg, extremaHigh=%Rg\n", extremaLow, extremaHigh);
+	    mpfr_fprintf(stderr, "    extremaLow=%Re, extremaHigh=%Re\n", extremaLow, extremaHigh);
 	    fprintf(stderr,"    lowInDomain=%d, highInDomain=%d\n", is_in_domain(extremaLow)?1:0, is_in_domain(extremaHigh)?1:0);
 			
 	    // The function has an extrema at extremaLow < extrema < extremaHigh
@@ -876,7 +979,7 @@ namespace flopoco
 	      fprintf(stderr, "    one side of extrema not in domain.\n");
 	    }else{
 	      segment_it_t seg=Range::find_segment(extremaLow);
-	      mpfr_fprintf(stderr, "    [%Rg,%Rg]\n", seg->domainStart, seg->domainFinish);
+	      mpfr_fprintf(stderr, "    [%Re,%Re]\n", seg->domainStart, seg->domainFinish);
 				
 	      if(mpfr_equal_p(seg->domainFinish, extremaLow)){
 		// The lower bound is at the end of a segment, we don't need to
@@ -990,7 +1093,7 @@ namespace flopoco
 	assert((lowE!=highE) || (lowS!=highS));
 	
 	while(true){
-	  mpfr_fprintf(stderr, "  low=%Rf, high=%Rf, lowE=%d lowSgn=%d, highE=%d highS=%d\n", low, high, lowE, lowS, highE, highS);
+	  mpfr_fprintf(stderr, "  low=%Re, high=%Re, lowE=%d lowSgn=%d, highE=%d highS=%d\n", low, high, lowE, lowS, highE, highS);
 		
 	  int finish=false;
 	  mpfr_nextabove(low);
@@ -1045,6 +1148,22 @@ namespace flopoco
 	  if(curr->isRangeFlat)
 	    ++curr;
 	}
+
+	// Prune any out of range segments
+	curr=m_segments.begin();
+	while(curr!=m_segments.end()){
+	    auto next=curr;
+	    ++next;
+
+	    assert(curr->isRangeFlat);
+	    auto bRan=binade(curr->rangeStart);
+	    if((bRan.first==PosNormal || bRan.first==NegNormal) &&  (bRan.second<((-1<<(m_rangeWE-1))+1))){
+		fprintf(stderr, "Removing segment due to out of range exponent.\n");
+		m_segments.erase(curr);
+	    }
+
+	    curr=next;
+	}
 	
 	mpfr_clear(newFinish);
       }
@@ -1085,8 +1204,11 @@ namespace flopoco
 	      res=true;
 	      break;
 	    }				
+	    //mpfr_fprintf(stderr, "  not %Re in [%Re,%Re]\n", tmp, curr->domainStart, curr->domainFinish);
 	    ++curr;
 	  }
+	}else{
+	    mpfr_fprintf(stderr, "is_in_domain(%Re) - rounding results in %Re\n", x, tmp);
 	}
 	mpfr_clear(tmp);
 	return res;
@@ -1104,6 +1226,20 @@ namespace flopoco
 	
 	throw std::invalid_argument("find_segment - value out of range.");
       }
+
+	Range::segment_it_t Range::get_segment(unsigned index)
+    {
+	if(index>=m_segments.size())
+	    throw std::invalid_argument("get_segment - index out of range.");
+
+	segment_it_t curr=m_segments.begin();
+	while(index>0){
+	    --index;
+	    ++curr;
+	}
+
+	return curr;
+    }
 
     }; // float_approx
   }; // random

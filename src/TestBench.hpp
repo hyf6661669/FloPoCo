@@ -17,7 +17,7 @@ namespace flopoco{
 		 * @param op The operator which is the UUT
 		 * @param n Number of tests
 		 */
-		TestBench(Target *target, Operator *op, int n, bool fromFile = false);
+		TestBench(Target *target, Operator *op, int n, bool fromFile = false, bool recordOutputToFile=false);
 	
 		/** Destructor */
 		~TestBench();
@@ -31,7 +31,7 @@ namespace flopoco{
                 /* Generating the tests using a file to store the IO, allow to have a lot of IOs without
                  * increasing the VHDL compilation time
                  */
-                void generateTestFromFile();
+                void generateTestFromFile(bool recordOutputFile);
 
 
                 /* Generating the tests using a the vhdl code to store the IO, 

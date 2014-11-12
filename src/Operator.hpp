@@ -384,6 +384,16 @@ public:
 	 * @return name
 	 */
 	string declare(string name, const int width, bool isbus=true, Signal::SignalType regType = Signal::wire );
+	
+	/** Declares a FP signal implicitely by having it appearing on the Left Hand Side of a VHDL assignment
+	 * @param name is the name of the signal
+	 * @param wE exponent width
+	 * @param wF fraction width
+	 * @param ieeeFormat If true, then IEEE, else flopoco format
+	 * @param regType: the registring type of this signal. See also the Signal Class for more info
+	 * @return name
+	 */
+	string declareFP(string name, const int wE, const int wF, const bool ieeeFormat=false, Signal::SignalType regType = Signal::wire );
 
 	/** Declares a signal of length 1 as in the previous declare() function, but as std_logic by default
 	 * @param name is the name of the signal

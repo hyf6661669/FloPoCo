@@ -756,6 +756,37 @@ namespace flopoco{
 		return name;
 	}
 	
+	string Operator::declareFP(string name, const int wE, const int wF, const bool ieeeFormat, Signal::SignalType regType)
+	{
+		Signal* s;
+		ostringstream e;
+		// check the signals doesn't already exist
+		if(signalMap_.find(name) !=  signalMap_.end()) {
+			e << srcFileName << " (" << uniqueName_ << "): ERROR in declareFP(), signal " << name<< " already exists";
+			throw e.str();
+		}
+		// construct the signal (lifeSpan and cycle are reset to 0 by the constructor)
+		s = new Signal(name, regType, wE, wF, ieeeFormat);
+		if((regType==Signal::registeredWithoutReset) || (regType==Signal::registeredWithZeroInitialiser))
+			hasRegistersWithoutReset_ = true;
+		if(regType==Signal::registeredWithSyncReset)
+			hasRegistersWithSyncReset_ = true;
+		if(regType==Signal::registeredWithAsyncReset)
+			hasRegistersWithAsyncReset_ = true;
+		
+		// define its cycle 
+		if(isSequential())
+			s->setCycle(this->currentCycle_);
+		
+		// add this signal to the declare table
+		declareTable[name] = s->getCycle();
+		
+		// add the signal to signalMap and signalList
+		signalList_.push_back(s);    
+		signalMap_[name] = s ;
+		return name;		
+	}
+	
 	
 	#if 1
 	string Operator::use(string name) {

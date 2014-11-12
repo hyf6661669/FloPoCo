@@ -32,6 +32,24 @@ typedef boost::shared_ptr<sollya_node> sollya_node_ptr_t;
 inline sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
 { return sollya_node_ptr_t(n, free_memory); }
 
+    enum NumberClass{
+        NegInf,
+        NegNormal,
+        NegZero,
+        PosZero,
+        PosNormal,
+        PosInf,
+	NaN
+    };
+
+    NumberClass mpfr_class(mpfr_t x);
+
+    typedef std::pair<NumberClass,int> binade_t;
+
+    binade_t binade(mpfr_t x);
+
+    std::ostream &operator<<(std::ostream &dst, const binade_t &b);
+
 	
 /*typedef struct{
 	sollya_node_t _x;
@@ -121,6 +139,7 @@ struct Range
 	int m_domainWF;
 	int m_domainWE;
 	int m_rangeWF;
+    int m_rangeWE;
 	bool m_offsetPolyInputs;
 	
 	// upper (exclusive) bound for integer value of the domain and range, not including the implicit bit
@@ -130,13 +149,13 @@ struct Range
 	typedef segment_list_t::iterator segment_it_t;
 	segment_list_t m_segments;
 	
-	typedef std::map<std::pair<int,int>,sollya_node_t> flat_function_cache_t;
+	typedef std::map<std::pair<binade_t,binade_t>,sollya_node_t> flat_function_cache_t;
 	flat_function_cache_t m_flatFunctions;
 	
 	typedef std::map<std::string,boost::any> property_map_t;
 	property_map_t properties;
 	
-	Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish, int domainWE);
+    Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish, int domainWE, int rangeWE);
 	
 	// Return a (wE,wF) pair that can represent all values in the domain
 	std::pair<int,int> GetFloatTypeEnclosingDomain() const;
@@ -184,9 +203,11 @@ struct Range
 	
 	// Get the function scaled to fixed point for input binade eD and output eR
 	// The returned node should not be freed (it is cached)
-	sollya_node_t get_scaled_flat_function(int eD, int eR);
+	sollya_node_t get_scaled_flat_function(binade_t eD, binade_t eR);
 	
 	segment_it_t find_segment(mpfr_t x);
+    
+    segment_it_t get_segment(unsigned index);
 
 	// Maximum normal value in the domain
 	void createDomainMax(mpfr_t val);

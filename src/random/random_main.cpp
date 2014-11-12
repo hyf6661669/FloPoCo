@@ -80,6 +80,15 @@ namespace flopoco{ namespace random{
 	void FixedPointPolynomialEvaluator_registerFactory();
 	void MWCRng_registerFactory();
 	void MWCTransform_registerFactory();
+
+	namespace float_approx{
+	    void CompositeExpm1_registerFactory();
+	    void CompositeLog1p_registerFactory();
+	    void CompositeSigmoid_registerFactory();
+	    void CompositeErf_registerFactory();
+	    void CompositeSin_registerFactory();
+	    void CompositeCos_registerFactory();
+	};
 }; }; 
 
 void random_register_factories()
@@ -94,6 +103,14 @@ void random_register_factories()
 	
 	flopoco::random::StaticQuantiser_registerFactory();	
 	flopoco::random::FloatApprox_registerFactory();
+	flopoco::random::float_approx::CompositeExpm1_registerFactory();
+	flopoco::random::float_approx::CompositeLog1p_registerFactory();
+	flopoco::random::float_approx::CompositeSigmoid_registerFactory();
+	flopoco::random::float_approx::CompositeErf_registerFactory();
+	flopoco::random::float_approx::CompositeSin_registerFactory();
+	flopoco::random::float_approx::CompositeCos_registerFactory();
+
+
 	flopoco::random::OutputCombiner_registerFactory();
 	flopoco::random::PolynomialEvaluator_registerFactory();
 	flopoco::random::FixedPointPolynomialEvaluator_registerFactory();

@@ -112,6 +112,7 @@ fixed_format_t FixedPointPolynomialEvaluator::MultiplyStatement(std::string resN
 		return MultiplyStatement(resName, bName, bType, aName, aType);
 	
 	fixed_format_t res=MultiplyType(aType,bType);
+	vhdl << "--- "<<res<<" <- "<<aType<<" * "<<bType<<"\n";
 	vhdl << declare(resName, res.width()) << " <= std_logic_vector(\n";
 	if((!aType.isSigned) && (!bType.isSigned)){
 		vhdl << "  unsigned("<<aName<<") * unsigned("<<bName<<")";
@@ -153,6 +154,7 @@ fixed_format_t FixedPointPolynomialEvaluator::AddStatement(std::string resName, 
 {
 	fixed_format_t res=AddType(aType,bType);
 	
+	vhdl << "--- "<<res<<" <- "<<aType<<" + "<<bType<<"\n";
 	vhdl<<declare(resName, res.width())<< " <= ";
 	if(res.isSigned){
 		vhdl<<"std_logic_vector(signed("<<ExtendExpr(res,aName,aType)<<") + signed("<<ExtendExpr(res,bName,bType)<<"))";

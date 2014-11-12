@@ -645,11 +645,12 @@ void usage(char *name, string opName = ""){
 		OP ("TestBench","n");
 		cerr << "       Behavorial test bench for the preceding operator\n";
 		cerr << "       This test bench will include standard tests, plus n random tests.\n";
-		OP( "TestBenchFile","n");
+		OP( "TestBenchFile","['record-output'] n");
 		cerr << "       Behavorial test bench for the preceding operator\n";
 		cerr << "       This test bench will include standard tests, plus n random tests.\n";
 		cerr << "       Inputs and outputs are stored in a file to reduce VHDL compilation time.\n";
 		cerr << "       if n=-2, an exhaustive test is generated (use only for small operators).\n";
+		cerr << "       if the 'record-output' flag appears, all outputs will be sent to test.out\n";
 	}
 	
 	if ( full || opName=="Wrapper"){
@@ -2648,9 +2649,16 @@ bool parseCommandLine(int argc, char* argv[]){
 				cerr<<"ERROR: TestBench has no operator to wrap (it should come after the operator it wraps)"<<endl;
 				usage(argv[0],opname); // and exit
 			}
+			bool recordOutput=false;
+			if(!strcmp(argv[i],"record-output")){
+				recordOutput=true;
+				i=i+1;
+				if (i+nargs > argc)										   usage(argv[0],opname); // and exit   
+			}
+
 			int n = atoi(argv[i++]);//checkPositiveOrNull(argv[i++], argv[0]);
 			Operator* toWrap = target->getGlobalOpListRef()->back();
-			Operator* op = new TestBench(target, toWrap, n, true);
+			Operator* op = new TestBench(target, toWrap, n, true, recordOutput);
 			cerr << "> TestBench for " << toWrap->getName()<<endl;
 			addOperator(op);
 			cerr << "To run the simulation using ModelSim, type the following in 'vsim -c':" <<endl;

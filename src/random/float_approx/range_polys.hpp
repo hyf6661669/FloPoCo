@@ -23,6 +23,18 @@ namespace flopoco
 {
 namespace random
 {
+
+    FixedPointPolynomialEvaluator *CreateRoundingPolynomialEvaluator(
+								     const fixed_format_t &inputFormat,
+								     const std::vector<fixed_format_t> &coefficientFormats,
+								     int outputLsb,
+								     int guardBits,
+								     const mpfr::mpreal &errorBudget,
+								     Target *target
+								     );
+	
+
+
 namespace float_approx
 {
 
@@ -56,8 +68,8 @@ private:
 
 	void update_segment_minimax(segment_it_t curr)
 	{
-		if(curr->has_property("minimax") && curr->has_property("minimax_error"))
-			return;
+	    	if(curr->has_property("minimax") && curr->has_property("minimax_error"))
+		    return;
 		
 		sollya_node_ptr_t poly=make_shared_sollya(curr->minimax(m_degree));
 		sollya_node_t func=curr->get_scaled_flat_function(); // doesn't need to be freed
@@ -70,15 +82,19 @@ private:
 		  mpfr_t correct, got;
 		  mpfr_init2(correct, getToolPrecision());
 		  mpfr_init2(got, getToolPrecision());
+		  
 		  evaluateFaithful(correct, func, curr->domainStartFrac, getToolPrecision());
 		  evaluateFaithful(got, poly.get(), curr->domainStartFrac, getToolPrecision());
 		  mpfr_sub(error[0], correct, got, MPFR_RNDN);
 		  mpfr_abs(error[0],error[0], MPFR_RNDN);
 
 		  mpfr_fprintf(stderr, "  minimax_error dom=[%Re,%Re], got=%Re, correct=%Re, err=%Re\n", curr->domainStart, curr->domainFinish, got, correct, error[0]);
-		  if(mpfr_cmp_d(error[0],0.1)>0){
-		    exit(1);
+		  if(mpfr_nan_p(curr->rangeStart)){
+		      // THe output will be NaN
+		  }else if(mpfr_cmp_d(error[0],0.1)>0 || mpfr_nan_p(error[0])){
+		      exit(1);
 		  }
+		
 		  mpfr_clear(correct);
 		  mpfr_clear(got);
 		}else{
@@ -91,6 +107,17 @@ private:
 		    mpfr::mpreal zero;
 		    infNorm(error[0], func, poly.get(), get_mpfr_ptr(zero), get_mpfr_ptr(length), 71);
 		  }
+		}
+
+		if(!mpfr_nan_p(curr->rangeStart)){
+		    if(mpfr_nan_p(error[0])){
+			fprintf(stderr, "\nfunc = ");
+			fprintTree(stderr, func);
+			fprintf(stderr, "\n\npoly = ");
+			fprintTree(stderr, poly.get());
+			mpfr_fprintf(stderr, "\n\n fDom=[%Re,%Re]\n", curr->domainStartFrac, curr->domainFinishFrac);
+		    }
+		    assert(!mpfr_nan_p(error[0]));
 		}
 		
 		curr->properties["minimax"]=poly;
@@ -123,37 +150,55 @@ public:
 		mpfr_init2(tol, getToolPrecision());
 		mpfr_set_d(tol, error, MPFR_RNDN);
 		
+		unsigned i=0;
 		segment_it_t it=m_range->m_segments.begin();
 		while(it!=m_range->m_segments.end()){
+		    if(::flopoco::verbose>=INFO){
+			std::cerr<<"Checking poly "<<i<<" of "<<m_range->m_segments.size()<<"\n";
+		    }
 			update_segment_minimax(it);
-			
+
 			MPFRVec serror=boost::any_cast<MPFRVec>(it->properties["minimax_error"]);
-			if( mpfr_greaterequal_p(serror[0],tol)){
+
+			if(::flopoco::verbose>=INFO){
+			    mpfr_fprintf(stderr, "  error = %Re, tol = %Re\n", serror[0], tol);
+			}
+			if(mpfr_nan_p(it->rangeStart)){
+			    ++it;
+			    ++i;
+			}else{
+			    assert(!mpfr_nan_p(serror[0]));
+
+
+			    if( mpfr_greaterequal_p(serror[0],tol)){
 				if(::flopoco::verbose>=DEBUG){
-					mpfr_fprintf(stderr, "Splitting [%Rf,%Rf]",
-						it->domainStart, it->domainFinish
-					);
-					mpfr_fprintf(stderr, " error=%Rg\n", serror[0]);
+				    mpfr_fprintf(stderr, "Splitting [%Rf,%Rf]",
+						 it->domainStart, it->domainFinish
+						 );
+				    mpfr_fprintf(stderr, " error=%Rg\n", serror[0]);
 				}
 				m_range->split_segment(it);
 				update_segment_minimax(it);
-			}			
-			assert(it->has_property("minimax_error"));
+			    }			
+			    assert(it->has_property("minimax_error"));
 			
-			serror=boost::any_cast<MPFRVec>(it->properties["minimax_error"]);
-			if(mpfr_less_p(serror[0],tol))
+			    serror=boost::any_cast<MPFRVec>(it->properties["minimax_error"]);
+			    if(mpfr_less_p(serror[0],tol)){
 				++it;
+				++i;
+			    }
+			}
 		}
 		mpfr_clear(tol);
 	}
 	
 	// Find fixed-point polynomial coefficients such that the result is faithful (?) on rangeWF+guard bits
-	void calc_faithful_fixed_point(segment_it_t curr, int guard=0)
+    segment_it_t calc_faithful_fixed_point(segment_it_t curr, int guard=0)
 	{
 	        std::string pnCoeffs=boost::str(boost::format("minimax_fixed%1%_coeffs")%guard);
 		
 		if(curr->has_property(pnCoeffs))
-			return;
+			return curr;
 		
 		update_segment_minimax(curr);
 		
@@ -163,8 +208,16 @@ public:
 		
 		MPFRVec serror=boost::any_cast<MPFRVec>(curr->properties["minimax_error"]);
 		if(mpfr_greater_p(serror[0],tol)){
+		    mpfr_fprintf(stderr, " error=%Rg\n", serror[0]);
 			mpfr_clear(tol);
-			throw std::runtime_error("calc_faithful_fixed_point - poly is not accurate enough to be faithful (?).");
+
+			// Ok, let's split here
+			m_range->split_segment(curr);
+			curr=calc_faithful_fixed_point(curr, guard);
+			++curr;
+			calc_faithful_fixed_point(curr, guard);
+			return curr;
+			//			throw std::runtime_error("calc_faithful_fixed_point - poly is not accurate enough to be faithful (?).");
 		}
 		
 		// Ok, let's try to do this properly. Heuristic from ASAP 2010 is that where:
@@ -210,17 +263,26 @@ public:
 		if(mpfr_greater_p(error[0],tol)){
 			mpfr_fprintf(stderr, " didn't meet error: wanted=%Rg, got=%Rg\n", tol, error[0]);
 			mpfr_clear(tol);
-			throw std::runtime_error("calc_faithful_fixed_point - fixed-point poly was not faithful.");
+
+			// Ok, let's split here
+			m_range->split_segment(curr);
+			curr=calc_faithful_fixed_point(curr, guard);
+			++curr;
+			calc_faithful_fixed_point(curr, guard);
+			return curr;
+		}else{
+		
+		    std::string pnLsbs=boost::str(boost::format("minimax_fixed%1%_lsbs")%guard);
+		    std::string pnError=boost::str(boost::format("minimax_fixed%1%_error")%guard);
+		
+		    curr->properties[pnCoeffs]=coeffs;
+		    curr->properties[pnLsbs]=lsbs;
+		    curr->properties[pnError]=error;
+		
+		    mpfr_clear(tol);
+
+		    return curr;
 		}
-		
-		std::string pnLsbs=boost::str(boost::format("minimax_fixed%1%_lsbs")%guard);
-		std::string pnError=boost::str(boost::format("minimax_fixed%1%_error")%guard);
-		
-		curr->properties[pnCoeffs]=coeffs;
-		curr->properties[pnLsbs]=lsbs;
-		curr->properties[pnError]=error;
-		
-		mpfr_clear(tol);
 	}
 	
 	void calc_faithful_fixed_point(int guard=0)
@@ -236,7 +298,7 @@ public:
 		    mpfr_fprintf(stderr, "  calc_faithful_fixed_point([%Re,%Re]) %d of %d\n", curr->domainStart, curr->domainFinish, i, m_range->m_segments.size());
 
 
-		  calc_faithful_fixed_point(curr, guard);
+		  curr=calc_faithful_fixed_point(curr, guard);
 		  ++curr;
 		  ++i;
 		}
@@ -282,7 +344,7 @@ public:
 		std::string pnLsbs=boost::str(boost::format("minimax_fixed%1%_lsbs")%guard);
 		std::string pnError=boost::str(boost::format("minimax_fixed%1%_error")%guard);
 		
-		m_concretePartition.resize(m_range->m_segments.size(), m_range->m_domainWF);
+		m_concretePartition.resize(m_range->m_segments.size(), m_range->m_domainWF+1);
 		m_concreteExp.resize(0);
 		
 		// These are chosen to coincide with setting for zero coefficients from PolynomialEvaluator.cpp
@@ -300,8 +362,29 @@ public:
 			MPFRVec error=boost::any_cast<MPFRVec>(curr->properties[pnError]);
 			
 			if(::flopoco::verbose>=DEBUG){
-				mpfr_fprintf(stderr, "segment[%d] : [%Rg,%Rg] -> [%Rg,%Rg]\n", i, curr->domainStart, curr->domainFinish, curr->rangeStart, curr->rangeFinish);
+				mpfr_fprintf(stderr, "segment[%d] : [%Re,%Re] -> [%Re,%Re]\n", i, curr->domainStart, curr->domainFinish, curr->rangeStart, curr->rangeFinish);
 			}
+
+			if(i>0){
+			    mpfr_t xx;
+			    mpfr_init2(xx, m_range->m_domainWF+1);
+			    mpfr_set(xx, curr->domainStart, MPFR_RNDN);
+			    mpfr_nextbelow(xx);
+
+			    auto prev=curr;
+			    --prev;
+
+			    if(!(mpfr_zero_p(prev->domainFinish) || mpfr_zero_p(curr->domainStart))){
+
+				if(!mpfr_equal_p(prev->domainFinish,xx)){
+				    mpfr_fprintf(stderr, "Non contiguous: prev(start[%d])=%Re, finish[%d]=%Re\n", i, xx, i-1, prev->domainFinish);
+				    exit(1);
+				}
+			    }
+
+			    mpfr_clear(xx);
+			}
+
 			for(unsigned j=0;j<=m_degree;j++){
 				coeffLsbs[j]=std::min(coeffLsbs[j], lsbs[j]);
 				int msb=std::max(lsbs[j], (int)mpfr_get_exp(coeffs[j])-1);// 0.5*2^0=0.5 -> mpfr_get_exp(0.5)==0,  0.5*2^1=1 -> mpfr_get_exp(1)==1
@@ -386,14 +469,17 @@ public:
 			
 			// Now we tack the exponent on. Now have support for positive, zero, and negative numbers,
 			// so it will be "010|(e-2^wE/2)|...
+			// or            "001|0000000000|...
 			// or            "000|0000000000|...
 			// or            "011|(e-2^wE/2)|...
 			
 			bool isNeg=mpfr_sgn(curr->rangeStart)<0;
-			if(mpfr_zero_p(curr->rangeStart)){
-				acc=(mpz_class(isNeg ? 3 : 2)<<(wRangeE+totalCoeffBits)) + /*exponent*/ 0 + acc;
+			if(mpfr_nan_p(curr->rangeStart)){
+			    acc=(mpz_class(6)<<(wRangeE+totalCoeffBits)) + /*exponent*/ 0 + acc;	    
+			}else if(mpfr_zero_p(curr->rangeStart)){
+				acc=(mpz_class(isNeg ? 1 : 0)<<(wRangeE+totalCoeffBits)) + /*exponent*/ 0 + acc;
 			}else{
-				mpz_class prefix=mpfr_get_exp(curr->rangeStart)-1+(1<<(wRangeE-1));
+				mpz_class prefix=mpfr_get_exp(curr->rangeStart)-2+(1<<(wRangeE-1));
 				if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix)){
 					mpfr_fprintf(stderr, "  range=[%Re,%Re]\n", curr->rangeStart, curr->rangeFinish);
 					std::cerr<<"  exponent="<<mpfr_get_exp(curr->rangeStart)<<", wRangeE="<<wRangeE<<"\n";
@@ -438,12 +524,12 @@ public:
 		inputFormat.isSigned=false;
 		inputFormat.msb=-1;
 		inputFormat.lsb=-m_range->m_domainWF;
-	
+
 		return PolynomialEvaluator::Create(target, coeffs, inputFormat,
 			-m_range->m_rangeWF, //outputLsb
 			m_concreteApproxError[0], inputDelays);
 	} 
-	
+
 	FixedPointPolynomialEvaluator *make_fixed_point_polynomial_evaluator(Target *target, map<string, double> inputDelays = map<string, double>())
 	{
 		std::vector<fixed_format_t> coeffs(m_degree+1);
@@ -458,16 +544,27 @@ public:
 		inputFormat.msb=-1;
 		inputFormat.lsb=-m_range->m_domainWF;
 		
-		mpfr::mpreal budget(pow(2.0, -m_range->m_rangeWF-2), getToolPrecision());
+		mpfr::mpreal budget(pow(2.0, -m_range->m_rangeWF-1), getToolPrecision());
 		mpfr_sub(get_mpfr_ptr(budget), get_mpfr_ptr(budget), m_concreteApproxError[0], MPFR_RNDN);
-	
-		return CreateFixedPointPolynomialEvaluator(
-			inputFormat,
-			coeffs,
-			-m_range->m_rangeWF, //outputLsb
-			budget,
-			target
-		);
+
+		if(1){
+		    return CreateRoundingPolynomialEvaluator(
+							       inputFormat,
+							       coeffs,
+							       -m_range->m_rangeWF, //outputLsb
+							       3,
+							       budget,
+							       target
+							       );
+		}else{
+		    return CreateFixedPointPolynomialEvaluator(
+							       inputFormat,
+							       coeffs,
+							       -m_range->m_rangeWF, //outputLsb
+							       budget,
+							       target
+							       );
+		}
 	} 
 	
 	mpz_class ToPositiveConstant(std::pair<int,int> format, mpfr_t x)
@@ -505,14 +602,17 @@ public:
 	
 	unsigned find_segment(mpfr_t x)
 	{
-		int i;
-		for(i=0;i<m_concretePartition.size();i++){
-			if(mpfr_lessequal_p(x, m_concretePartition[i]))
-				break;
-		}
-		if(i==m_concretePartition.size())
-			throw std::invalid_argument("eval_concrete - out of range.");
-		return i;
+	    if(!m_range->is_in_domain(x))
+		throw std::invalid_argument("find_segment - x not in domain.");
+
+	    int i;
+	    for(i=0;i<m_concretePartition.size();i++){
+		if(mpfr_lessequal_p(x, m_concretePartition[i]))
+		    break;
+	    }
+	    if(i==m_concretePartition.size())
+		throw std::invalid_argument("eval_concrete - out of range.");
+	    return i;
 	}
 
 	

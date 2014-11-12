@@ -29,6 +29,7 @@ private:
   Function m_f;
   unsigned m_degree;
   mpfr::mpreal m_maxError;
+    bool m_debugOutputs;
 
   // The information we've built up about the function
   Range m_range;
@@ -44,15 +45,16 @@ private:
   Operator *m_codec;
   Operator *m_quantiser;
   Operator *m_table;
-  //FixedPointPolynomialEvaluator *m_poly;
-  PolynomialEvaluator *m_poly;
+  FixedPointPolynomialEvaluator *m_poly;
+    //PolynomialEvaluator *m_poly;
 public:
   FloatApproxOperator(Target* target,
     int wDomainE, int wDomainF, mpfr::mpreal domainMin, mpfr::mpreal domainMax,
     int wRangeE, int wRangeF,
     const Function &f,
     unsigned degree,
-    mpfr::mpreal maxError
+    mpfr::mpreal maxError,
+    bool debugOutputs=false		      
   )
     : Operator(target)
     // Capture properties
@@ -65,9 +67,11 @@ public:
     , m_f(f)
     , m_degree(degree)
     , m_maxError(maxError)
+    , m_debugOutputs(debugOutputs)
     // Start building stuff (though not much happens yet)
-    , m_range(f, wDomainF, wRangeF, get_mpfr_ptr(domainMin), get_mpfr_ptr(domainMax), wDomainE)
+    , m_range(f, wDomainF, wRangeF, get_mpfr_ptr(domainMin), get_mpfr_ptr(domainMax), wDomainE, wRangeE)
   {       
+
     std::stringstream acc;
     acc<<"FloatApprox_uid"<<getNewUId();
     std::string name=acc.str();
@@ -81,6 +85,7 @@ public:
 		m_range.dump(stderr);
 		std::cerr<<":\n";
 	}
+
 
     REPORT(INFO, "Making range monotonic.");
     m_range.make_monotonic_or_range_flat();
@@ -172,9 +177,9 @@ public:
     oplist.push_back(m_table);
     
     REPORT(INFO, "Constructing polynomial evaluator.");
-    m_poly=m_polys.make_polynomial_evaluator(target);
+    //m_poly=m_polys.make_polynomial_evaluator(target);
 
-    //m_poly=m_polys.make_fixed_point_polynomial_evaluator(target);
+    m_poly=m_polys.make_fixed_point_polynomial_evaluator(target);
     oplist.push_back(m_poly);
     REPORT(INFO, "  input is "<<(m_poly->getInputFormat().isSigned?"S":"U")<<";"<<m_poly->getInputFormat().msb<<";"<<m_poly->getInputFormat().lsb);
     for(unsigned i=0;i<=m_degree;i++){
@@ -217,6 +222,10 @@ public:
     }
     vhdl<<declare("coeff_prefix",3+wRangeE)<<" <= table_contents"<<range(tableWidth-1,offset)<<";\n";
     vhdl<<declare("fraction_iX", wDomainF)<<" <= iX"<<range(wDomainF-1,0)<<";\n";
+
+    if(hardRam){
+	nextCycle();
+    }
     
     ////////////////////////////////
     // Now connect to polynomial evaluator
@@ -248,9 +257,9 @@ public:
     if(drop_bits==0){
       vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1,0)<<";\n";
     }else{
-      // Making this somebody elses problem
-      //throw std::string("Output of FixedPointPolynomialEvaluator is not rounded.");
-      vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1+drop_bits-1,drop_bits-1)<<";\n";
+	// Making this somebody elses problem
+      throw std::string("Output of FixedPointPolynomialEvaluator is not rounded.");
+      //vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1+drop_bits-1,drop_bits-1)<<";\n";
     }
     
     vhdl<<declare("result_fraction_clamped", wRangeF)<<" <= ";
@@ -261,27 +270,29 @@ public:
     vhdl<<"    result_fraction_rounded"<<range(wRangeF-1,0)<<";\n"; // No overflow
     
     vhdl<<"oY <= coeff_prefix & result_fraction_clamped;\n";
+
+    if(m_debugOutputs){
+	addOutput("debug_poly_out", result_fraction_width);
+	vhdl<<"debug_poly_out<=result_fraction;\n";
     
-    addOutput("debug_poly_out", result_fraction_width);
-    vhdl<<"debug_poly_out<=result_fraction;\n";
+	addOutput("debug_result_fraction", wRangeF);
+	vhdl<<"debug_result_fraction<=result_fraction_clamped;\n";
     
-    addOutput("debug_result_fraction", wRangeF);
-    vhdl<<"debug_result_fraction<=result_fraction_clamped;\n";
+	addOutput("debug_result_prefix", 3+wRangeE);
+	vhdl<<"debug_result_prefix<=coeff_prefix;\n";
     
-    addOutput("debug_result_prefix", 3+wRangeE);
-    vhdl<<"debug_result_prefix<=coeff_prefix;\n";
+	addOutput("debug_segment", wSegmentIndex);
+	vhdl<<"debug_segment<=table_index;\n";
+	
+	addOutput("debug_table_contents", tableWidth);
+	vhdl<<"debug_table_contents<=table_contents;\n";
     
-    addOutput("debug_segment", wSegmentIndex);
-    vhdl<<"debug_segment<=table_index;\n";
-    
-    addOutput("debug_table_contents", tableWidth);
-    vhdl<<"debug_table_contents<=table_contents;\n";
-    
-    for(unsigned i=0;i<=m_degree;i++){
-      addOutput(join("debug_coeff_",i), (m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1);
-      vhdl<<join("debug_coeff_",i)<<"<="<<join("coeff_",i)<<";\n";
+	for(unsigned i=0;i<=m_degree;i++){
+	    addOutput(join("debug_coeff_",i), (m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1);
+	    vhdl<<join("debug_coeff_",i)<<"<="<<join("coeff_",i)<<";\n";
+	}
     }
-    
+ 
     vhdl<<"--nSeg_Monotonic = "<<nMonoSegments<<"\n";
     vhdl<<"--nSeg_FlatDomain = "<<nDomFlatSegments<<"\n";
     vhdl<<"--nSeg_FlatDomainAndRange = "<<nRanFlatSegments<<"\n";
@@ -302,9 +313,17 @@ public:
     mpfr_t x, exact, rounded;
     mpfr_init2(x, m_wDomainF+1);
     mpfr_init2(exact, prec);
+
+    mpfr_fprintf(stderr, "  x=%Re (bits(x)=%d,m_domainWF=%d)\n", x,  mpfr_get_prec(x), m_wDomainF);
     
     vx.getMPFR(x);
+    if(mpfr_prec_round(x,m_wDomainF+1,MPFR_RNDN)){
+	fprintf(stderr, " Couldn't round value to target representation\n");
+	exit(1);
+    }
+
     m_f.eval(exact, x);
+    mpfr_fprintf(stderr, "  x=%Re, f(x)=%Re (bits(x)=%d,m_domainWF=%d)\n", x, exact, mpfr_get_prec(x), m_wDomainF);
     
     mpfr_init2(rounded, m_wRangeF+1);
     mpfr_set(rounded, exact, MPFR_RNDD);
@@ -316,21 +335,35 @@ public:
     mpz_class vd=rd.getSignalValue();
     tc->addExpectedOutput("oY", vd);
     assert(vd>=0);
-    tc->addExpectedOutput("debug_result_prefix", vd>>m_wRangeF);
+    if(m_debugOutputs){
+	tc->addExpectedOutput("debug_result_prefix", vd>>m_wRangeF);
+    }
     mpz_fdiv_r_2exp(vd.get_mpz_t(), vd.get_mpz_t(), m_wRangeF);
-    tc->addExpectedOutput("debug_result_fraction", vd);
+    if(m_debugOutputs){
+	tc->addExpectedOutput("debug_result_fraction", vd);
+    }
     assert(vd>=0);
     
     mpz_class vu=ru.getSignalValue();
     tc->addExpectedOutput("oY", vu);
     assert(vu>=0);
-    tc->addExpectedOutput("debug_result_prefix", vu>>m_wRangeF);
+    if(m_debugOutputs){
+	tc->addExpectedOutput("debug_result_prefix", vu>>m_wRangeF);
+    }
     mpz_fdiv_r_2exp(vu.get_mpz_t(), vu.get_mpz_t(), m_wRangeF);
-    tc->addExpectedOutput("debug_result_fraction", vu);
+    if(m_debugOutputs){
+	tc->addExpectedOutput("debug_result_fraction", vu);
+    }
     assert(vu>=0);
     
     //// Now we'll do a sanity check against the polynomial implementation
     unsigned index=m_polys.find_segment(x);
+    auto fIt=m_range.get_segment(index);
+    mpfr_fprintf(stderr, " fItDom=[%Re,%Re], x=%Re\n", fIt->domainStart, fIt->domainFinish, get_mpfr_srcptr(x));
+    assert(mpfr_lessequal_p(fIt->domainStart,get_mpfr_srcptr(x)));
+    assert(mpfr_lessequal_p(get_mpfr_srcptr(x), fIt->domainFinish));
+
+
     mpz_class fracX;    // This is the raw fraction for the input
     mpz_fdiv_r_2exp(fracX.get_mpz_t(), iX.get_mpz_t(), m_wDomainF);
     mpz_class coeffs=m_tableContents[index];
@@ -340,12 +373,15 @@ public:
     
     mpfr::mpreal xx=mpfr::create_zero(prec);
     mpfr_set_z(get_mpfr_ptr(xx), fracX.get_mpz_t(), MPFR_RNDN);
-    xx=ldexp(xx, -m_wDomainF-1);
+    xx=ldexp(xx, -m_wDomainF);
+    REPORT(INFO, " xx = "<<xx);
     
     // Double-check that we agree with the underlying range
     Range::segment_it_t it=m_range.find_segment(x);
+    mpfr_fprintf(stderr, " itDomFrac=[%Re,%Re], xx=%Re\n", it->domainStartFrac, it->domainFinishFrac, get_mpfr_ptr(xx));
     assert( mpfr_lessequal_p(it->domainStartFrac, get_mpfr_ptr(xx)));
     assert( mpfr_lessequal_p(get_mpfr_ptr(xx), it->domainFinishFrac));
+    assert(fIt==it);
     
     std::vector<mpfr::mpreal> truePoly=m_polys.get_polynomial(it, m_guard);
     
@@ -364,6 +400,7 @@ public:
       
       REPORT(INFO, " coeff "<<i<<" : true="<<truePoly[i]<<", got="<<a);
     }
+    REPORT(INFO, " acc="<<acc);
     
     m_poly->emulate(ptc);
     
@@ -371,15 +408,18 @@ public:
     const std::vector<mpz_class> &polyOutputs=ptc->getExpectedOutputValues("R");
     for(int i=0;i<(int)polyOutputs.size();i++){
       mpz_class tmp=polyOutputs[i];
-      //mp=std::max(minFrac, std::min(maxFrac, tmp));
+      tmp=std::max(minFrac, std::min(maxFrac, tmp));
       if((tmp!=vu) && (tmp!=vd)){
         std::cerr<<"xx="<<xx<<", vu="<<vu<<", vd="<<vd<<", got="<<tmp<<", acc="<<ldexp(acc,m_wRangeF+1)<<"\n";
         //throw std::string("FloatApprox::emulate - emulator of FixedPointPolynomialEvaluator is returning an illegal value.");
       }
-      
-      tc->addExpectedOutput("debug_poly_out", polyOutputs[i]);
+     
+      if(m_debugOutputs){
+	  tc->addExpectedOutput("debug_poly_out", polyOutputs[i]);
+      }
     }
-    
+
+    REPORT(INFO, "\n");
     
     mpfr_clears(x, exact, rounded, (mpfr_ptr)0);
   }
@@ -440,16 +480,20 @@ public:
       TestCase *tc=new TestCase(this);
       tc->addFPInput("iX", &dom);
       emulate(tc);
-      tc->addExpectedOutput("debug_segment", index);
-      tc->addExpectedOutput("debug_table_contents", m_tableContents[index.get_ui()]);
+      if(m_debugOutputs){
+	  tc->addExpectedOutput("debug_segment", index);
+	  tc->addExpectedOutput("debug_table_contents", m_tableContents[index.get_ui()]);
+      }
       tcl->add(tc);
       
       dom=curr->domainFinish;
       tc=new TestCase(this);
       tc->addFPInput("iX", &dom);
       emulate(tc);
-      tc->addExpectedOutput("debug_segment", index);
-      tc->addExpectedOutput("debug_table_contents", m_tableContents[index.get_ui()]);
+      if(m_debugOutputs){
+	  tc->addExpectedOutput("debug_segment", index);
+	  tc->addExpectedOutput("debug_table_contents", m_tableContents[index.get_ui()]);
+      }
       tcl->add(tc);
       
       ++curr;

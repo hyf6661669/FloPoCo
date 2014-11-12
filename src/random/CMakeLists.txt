@@ -51,6 +51,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	
 	poly/fixed_point_polynomial_evaluator.cpp
 	poly/full_precision_polynomial_evaluator.cpp
+	poly/rounding_polynomial_evaluator.cpp
 	poly/fixed_format_t.cpp
 	
 	urng/lut_sr_rng.cpp
@@ -70,6 +71,14 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	float_approx/range.cpp
 	float_approx/range_polys.cpp
 	float_approx/FloatApprox.cpp
+	float_approx/composite/composite_base.cpp
+
+	float_approx/composite/composite_expm1.cpp	
+	float_approx/composite/composite_log1p.cpp
+	float_approx/composite/composite_sigmoid.cpp
+	float_approx/composite/composite_erf.cpp
+	float_approx/composite/composite_sin.cpp
+	float_approx/composite/composite_cos.cpp
 )
 #target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES})
 target_link_libraries(flopoco_random_lib ${GMP_LIB} ${GSL_LIBRARIES} ${MPFR_LIB} /usr/lib/libgslcblas.so)

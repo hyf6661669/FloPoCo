@@ -49,6 +49,12 @@ mpz_class EncodeRaw(const fixed_format_t &fmt, mpfr::mpreal x)
 	return res;
 }
 
+    std::ostream &operator<<(std::ostream &dst, const fixed_format_t &fmt)
+    {
+	dst<<(fmt.isSigned?"S":"U")<<";"<<fmt.msb<<";"<<fmt.lsb;
+	return dst;
+    }
+
 fixed_format_t ParseFixedFormat(const std::string &x)
 {
 	std::string left=x;

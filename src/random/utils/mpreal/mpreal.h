@@ -18,8 +18,8 @@ namespace mpfr{
 		assert(digits>0);
 
 		mpreal res;
-		res=0;
 		mpfr_set_prec(get_mpfr_ptr(res), digits);
+		res=0;
 		return res;
 	}
 

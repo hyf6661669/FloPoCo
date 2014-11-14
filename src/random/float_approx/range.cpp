@@ -218,16 +218,8 @@ namespace flopoco
 	    mpfr_set_d(domainFinishFrac, 0.0, MPFR_RNDN);
 	}
 
-	//	mpfr_mul_2si(domainStartFrac, domainStart, -mpfr_get_exp(domainStart), MPFR_RNDN);
-	//	mpfr_sub_d(domainStartFrac, domainStartFrac, 0.5, MPFR_RNDN);
-	//	mpfr_fix(domainStartFrac, parent->m_domainWF);
-	
-	//	mpfr_mul_2si(domainFinishFrac, domainFinish, -mpfr_get_exp(domainFinish), MPFR_RNDN);
-	//	mpfr_sub_d(domainFinishFrac, domainFinishFrac, 0.5, MPFR_RNDN);
-	//	mpfr_fix(domainFinishFrac, parent->m_domainWF);
-	
-	parent->eval(rangeStart, _domainStart);
-	parent->eval(rangeFinish, _domainFinish);
+	parent->eval_clamp(rangeStart, _domainStart);
+	parent->eval_clamp(rangeFinish, _domainFinish);
 
 	if(mpfr_regular_p(rangeStart)){
 	    real_to_frac(rangeStartFrac, rangeStart);
@@ -260,7 +252,7 @@ namespace flopoco
 	    mpfr_init2(domainMid,parent->m_domainWF+1);
 	    mpfr_init2(rangeMid,parent->m_rangeWF+1);
 
-	    parent->eval(rangeMid, domainMid);
+	    parent->eval_clamp(rangeMid, domainMid);
 
 	    if(mpfr_cmp(rangeMid,rangeStart)==0){
 	      // Ok, we definitely have a line, just double-check that
@@ -386,7 +378,9 @@ namespace flopoco
 	    // I have no brain!!!!
 
 	    if(bDom.first==NegNormal){
-		if(bRan.first==PosNormal){
+		if(bRan.first==PosInf){
+		    tx=makeConstantDouble(INFINITY);
+		}else if(bRan.first==PosNormal){
 		    tx=makeAdd(makeVariable(), makeConstantDouble(1.0));
 		    tx=makeMul(tx, makeConstantDouble(pow(2.0, bDom.second)));
 		
@@ -407,9 +401,15 @@ namespace flopoco
 
 		    tx=makeMul(tx, makeConstantDouble(pow(2.0, -bRan.second)));
 		    tx=makeSub(tx, makeConstantDouble(1.0));
+		}else if(bRan.first==NegInf){
+		    tx=makeConstantDouble(-INFINITY);
+		}else if(bRan.first==NaN){
+		    tx=makeConstantDouble(nan(""));
 		}
 	    }else if((bDom.first==PosZero) || (bDom.first==NegZero)){
-		if((bRan.first==PosNormal)){
+		if(bRan.first==PosInf){
+		    tx=makeConstantDouble(INFINITY);
+		}else if((bRan.first==PosNormal)){
 		    tx=makeMul(makeConstantDouble(0.0),makeVariable());
 		    tx=substitute(f, tx);
 		    tx=makeMul(tx, makeConstantDouble(pow(2.0, -bRan.second)));
@@ -418,11 +418,15 @@ namespace flopoco
 		    tx=makeConstantDouble(0.0);
 		}else if(bRan.first==NegZero){
 		    tx=makeConstantDouble(-0.0);
+		}else if(bRan.first==NegInf){
+		    tx=makeConstantDouble(-INFINITY);
 		}else if(bRan.first==NaN){
 		    tx=makeConstantDouble(nan(""));
 		}
 	    }else if(bDom.first==PosNormal){
-		if(bRan.first==PosNormal){
+		if(bRan.first==PosInf){
+		    tx=makeConstantDouble(INFINITY);
+		}else if(bRan.first==PosNormal){
 		    tx=makeAdd(makeVariable(), makeConstantDouble(1.0));
 		    tx=makeMul(tx, makeConstantDouble(pow(2.0, bDom.second)));
 		
@@ -441,6 +445,10 @@ namespace flopoco
 
 		    tx=makeMul(tx, makeConstantDouble(pow(2.0, -bRan.second)));
 		    tx=makeSub(tx, makeConstantDouble(1.0));
+		}else if(bRan.first==PosInf){
+		    tx=makeConstantDouble(INFINITY);
+		}else if(bRan.first==NaN){
+		    tx=makeConstantDouble(nan(""));
 		}
 	    }
 
@@ -592,10 +600,10 @@ namespace flopoco
 	    mpfr_init2(coeffs[i], getToolPrecision());
 	    mpfr_set_d(coeffs[i], 0.0, MPFR_RNDN);
 	  }
-	  if(!parent->m_offsetPolyInputs){
-	    evaluateFaithful(coeffs[0], func, fracStart, prec);
+	  if(mpfr_regular_p(rangeStart)){
+	      evaluateFaithful(coeffs[0], func, fracStart, prec);
 	  }else{
-	    evaluateFaithful(coeffs[0], func, get_mpfr_ptr(zero), prec);
+	      mpfr_set(coeffs[0], rangeStartFrac, MPFR_RNDN);
 	  }
 	  mpfr_fprintf(stderr, "fracStart=%Re, coeff[0]=%Re\n", fracStart, coeffs[0]);
 
@@ -610,14 +618,11 @@ namespace flopoco
 
 	  sollya_chain_t monom=makeIntPtrChainFromTo(0, degreeCurr);
 
-	  if(!parent->m_offsetPolyInputs){
-	    mpfr_fprintf(stderr, "non constant, non offset, segFracRange=[%Re,%Re]\n", fracStart, fracFinish);
+	  sollya_node_t poly=make_linear_poly(func, degree);
 
-	    sollya_node_t poly=make_linear_poly(func, degree);
-
-	    if(check_poly(func,poly)){
+	  if(check_poly(func,poly)){
 	      res=poly;
-	    }else{
+	  }else{
 	      bool failedRemez=false;
 	      jmp_buf env;
 	      if(setjmp (env)){
@@ -638,12 +643,8 @@ namespace flopoco
 	      }else{
 		free_memory(poly);
 	      }
-	      }
-	  }else{
-	    mpfr::mpreal length(fracFinish);
-	    length=length-fracStart;
-	    res=remez(func, weight, monom, get_mpfr_ptr(zero), get_mpfr_ptr(length), &requestedQuality, prec);
 	  }
+
 
 	  freeChain(monom,freeIntPtr);
 	}
@@ -693,14 +694,17 @@ namespace flopoco
 	    mpfr_init2(coeffs[i], getToolPrecision());
 	    mpfr_set_d(coeffs[i], 0.0, MPFR_RNDN);
 	  }
+
 	  if(!parent->m_offsetPolyInputs){
-	    evaluateFaithful(coeffs[0], func, domainStartFrac, prec);
+	      evaluateFaithful(coeffs[0], func, domainStartFrac, prec);
 	  }else{
-	    evaluateFaithful(coeffs[0], func, get_mpfr_ptr(zero), prec);
+	      evaluateFaithful(coeffs[0], func, get_mpfr_ptr(zero), prec);
 	  }
-		
+	  
 	  // We need to round to whatever the format of coeff zero should be
 	  mpfr_fix(coeffs[0], coeffWidths[0]);
+
+	  //	  mpfr_set(coeffs[0], rangeStartFrac, MPFR_RNDN);
 		
 	  res=makePolynomial(&coeffs[0], degree);
 	  for(unsigned i=0;i<=degree;i++){
@@ -712,7 +716,7 @@ namespace flopoco
 
 	  sollya_node_t constantPart=makeConstantDouble(0.0);
 		
-	  if(!parent->m_offsetPolyInputs){
+
 	    // The precision has to be wacked _way_ up here, as otherwise this just
 	    // hangs on some polynomials. This is not a great way of doing things...
 	    setToolPrecision(max((int)getToolPrecision(),1024));
@@ -738,9 +742,6 @@ namespace flopoco
 	    freeChain(monom,freeIntPtr);
 	    freeChain(formats,freeIntPtr);
 
-	  }else{
-	    throw std::string("Not implemented.");
-	  }
 		
 	  free_memory(constantPart);
 	}
@@ -791,6 +792,8 @@ namespace flopoco
 	, m_rangeWE(rangeWE)
 	, m_offsetPolyInputs(false)
       {
+	  assert(!m_offsetPolyInputs);
+
 	//if(mpfr_sgn(domainStart)<0)
 	//	throw std::invalid_argument("Domain must be strictly positive.");
 	if(mpfr_greater_p(domainStart, domainFinish))
@@ -966,8 +969,8 @@ namespace flopoco
 	  }else{
 	    mpfr_set(extremaHigh, extremaLow, MPFR_RNDN);
 	    mpfr_nextabove(extremaHigh);
-	    eval(extremaLowRange, extremaLow);
-	    eval(extremaHighRange, extremaHigh);
+	    eval_clamp(extremaLowRange, extremaLow);
+	    eval_clamp(extremaHighRange, extremaHigh);
 	    mpfr_fprintf(stderr, "    extremaLow=%Re, extremaHigh=%Re\n", extremaLow, extremaHigh);
 	    fprintf(stderr,"    lowInDomain=%d, highInDomain=%d\n", is_in_domain(extremaLow)?1:0, is_in_domain(extremaHigh)?1:0);
 			
@@ -1083,17 +1086,17 @@ namespace flopoco
 	mpfr_init2(mid, m_domainWF+1);
 	mpfr_init2(val, m_rangeWF+1);
 	
-	eval(val, low);
+	eval_clamp(val, low);
 	lowE=mpfr_get_exp(val);
 	lowS=mpfr_sgn(val);
-	eval(val, high);
+	eval_clamp(val, high);
 	highE=mpfr_get_exp(val);
 	highS=mpfr_sgn(val);
 	
 	assert((lowE!=highE) || (lowS!=highS));
 	
 	while(true){
-	  mpfr_fprintf(stderr, "  low=%Re, high=%Re, lowE=%d lowSgn=%d, highE=%d highS=%d\n", low, high, lowE, lowS, highE, highS);
+	    // mpfr_fprintf(stderr, "  low=%Re, high=%Re, lowE=%d lowSgn=%d, highE=%d highS=%d\n", low, high, lowE, lowS, highE, highS);
 		
 	  int finish=false;
 	  mpfr_nextabove(low);
@@ -1106,7 +1109,7 @@ namespace flopoco
 	  mpfr_add(mid, low, high, MPFR_RNDN);
 	  mpfr_div_2ui (mid, mid, 1, MPFR_RNDN);
 		
-	  eval(val, mid);
+	  eval_clamp(val, mid);
 	  midE=mpfr_get_exp(val);
 	  midS=mpfr_sgn(val);
 		
@@ -1158,8 +1161,8 @@ namespace flopoco
 	    assert(curr->isRangeFlat);
 	    auto bRan=binade(curr->rangeStart);
 	    if((bRan.first==PosNormal || bRan.first==NegNormal) &&  (bRan.second<((-1<<(m_rangeWE-1))+1))){
-		fprintf(stderr, "Removing segment due to out of range exponent.\n");
-		m_segments.erase(curr);
+		throw std::string("Underflowing segment to -infinity - TODO, what should happen here?.\n");
+		//m_segments.erase(curr);
 	    }
 
 	    curr=next;
@@ -1171,6 +1174,19 @@ namespace flopoco
       void Range::eval(mpfr_t res, mpfr_t x)
       {
 	m_function.eval(res, x);
+      }
+
+      void Range::eval_clamp(mpfr_t res, mpfr_t x)
+      {
+	  m_function.eval(res, x);
+	  auto b=binade(res);
+	  if((b.first==PosNormal) || (b.first==NegNormal)){
+	      if(b.second<((-1<<(m_rangeWE-1))+1)){
+		  mpfr_set_zero(res, b.first==PosNormal?+1:-1);
+	      }else if(b.second>=(1<<(m_rangeWE-1))){
+		  mpfr_set_inf(res, b.first==PosNormal?+1:-1);
+	      }
+	  }
       }
 
       void Range::init_eval(mpfr_t res, mpfr_t x)

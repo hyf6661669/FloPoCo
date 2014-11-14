@@ -79,6 +79,7 @@ ADD_LIBRARY(flopoco_random_lib STATIC
 	float_approx/composite/composite_erf.cpp
 	float_approx/composite/composite_sin.cpp
 	float_approx/composite/composite_cos.cpp
+	float_approx/composite/composite_normpdf.cpp
 )
 #target_link_libraries(flopoco_random_lib ${GMP_LIB} ${FLOPOCO_LIB}  ${GSL_LIBRARIES})
 target_link_libraries(flopoco_random_lib ${GMP_LIB} ${GSL_LIBRARIES} ${MPFR_LIB} /usr/lib/libgslcblas.so)

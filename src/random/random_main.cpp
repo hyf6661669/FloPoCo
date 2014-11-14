@@ -88,6 +88,7 @@ namespace flopoco{ namespace random{
 	    void CompositeErf_registerFactory();
 	    void CompositeSin_registerFactory();
 	    void CompositeCos_registerFactory();
+	    void CompositeNormPdf_registerFactory();
 	};
 }; }; 
 
@@ -109,6 +110,7 @@ void random_register_factories()
 	flopoco::random::float_approx::CompositeErf_registerFactory();
 	flopoco::random::float_approx::CompositeSin_registerFactory();
 	flopoco::random::float_approx::CompositeCos_registerFactory();
+	flopoco::random::float_approx::CompositeNormPdf_registerFactory();
 
 
 	flopoco::random::OutputCombiner_registerFactory();

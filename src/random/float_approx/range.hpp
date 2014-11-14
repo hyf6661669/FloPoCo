@@ -189,6 +189,10 @@ struct Range
 	
 	// Evaluate function into previously initialised variable
 	void eval(mpfr_t res, mpfr_t x);
+
+	// Evaluate function into previously initialised variable, and clamp out of range
+       // to zero and infinity
+	void eval_clamp(mpfr_t res, mpfr_t x);
 	
 	// Evaluate for fixed-point fraction in [0,0.5) (i.e. excluding implicit bit) over given input and output binade
 	void eval_scaled_flat_function(mpfr_t res, mpfr_t x, int eD, int eR);

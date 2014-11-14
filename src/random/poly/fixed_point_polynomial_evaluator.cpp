@@ -4,6 +4,8 @@
 #include <sollya.h>
 #include <UtilSollya.hh>
 
+#include "IntMultiplier.hpp"
+
 #include <boost/lexical_cast.hpp>
 
 #include "random/utils/operator_factory.hpp"
@@ -75,7 +77,7 @@ std::string FixedPointPolynomialEvaluator::ExtendExpr(const fixed_format_t &outT
 	return acc.str();
 }
 
-std::string FixedPointPolynomialEvaluator::RoundExpr(const fixed_format_t &outType, const std::string srcExpr, const fixed_format_t &srcType) const
+std::string FixedPointPolynomialEvaluator::RoundExpr(const fixed_format_t &outType, const std::string srcExpr, const fixed_format_t &srcType)
 {
 	if(outType.msb!=srcType.msb || outType.isSigned !=srcType.isSigned)
 		throw std::string("RoundExpr - msbs do not match.");
@@ -87,11 +89,14 @@ std::string FixedPointPolynomialEvaluator::RoundExpr(const fixed_format_t &outTy
 		return srcExpr;
 	
 	int toGo=srcType.width()-outType.width();
+
+	manageCriticalPath(getTarget()->adderDelay(outType.width()));
 	
 	std::stringstream acc;
 	acc<<"std_logic_vector((unsigned("<<srcExpr<<range(srcType.width()-1,toGo)<<")";
 		acc<<" + ";
 	acc<<"unsigned("<<srcExpr<<range(toGo-1,toGo-1)<<")))";
+
 	return acc.str();
 }
 
@@ -112,17 +117,59 @@ fixed_format_t FixedPointPolynomialEvaluator::MultiplyStatement(std::string resN
 		return MultiplyStatement(resName, bName, bType, aName, aType);
 	
 	fixed_format_t res=MultiplyType(aType,bType);
+
 	vhdl << "--- "<<res<<" <- "<<aType<<" * "<<bType<<"\n";
-	vhdl << declare(resName, res.width()) << " <= std_logic_vector(\n";
-	if((!aType.isSigned) && (!bType.isSigned)){
+	if(0){  
+	    nextCycle();
+
+	    vhdl << declare(resName, res.width()) << " <= std_logic_vector(\n";
+	    if((!aType.isSigned) && (!bType.isSigned)){
 		vhdl << "  unsigned("<<aName<<") * unsigned("<<bName<<")";
-	}else if(aType.isSigned && bType.isSigned){
+	    }else if(aType.isSigned && bType.isSigned){
 		vhdl << "  signed("<<aName<<") * signed("<<bName<<")";
-	}else{
+	    }else{
 		assert(!bType.isSigned);
 		vhdl << "  resize(signed("<<aName<<") * signed('0' & "<<bName<<"), "<<res.width()<<")";
+	    }
+	    vhdl<<");\n";
+
+	    nextCycle();
+	    nextCycle();
+	}else{
+	    std::map<std::string,double> inputDelays;
+	    inputDelays["X"]=getCriticalPath();
+	    inputDelays["Y"]=getCriticalPath();
+
+	    IntMultiplier *mult=NULL;
+
+	    if((!aType.isSigned) && (!bType.isSigned)){
+		mult=new IntMultiplier(getTarget(),aType.width(),bType.width(),0,false, 0.7, inputDelays);
+		oplist.push_back(mult);
+
+		inPortMap(mult, "X", aName);
+		inPortMap(mult, "Y", bName);
+	    }else if(aType.isSigned && bType.isSigned){
+		mult=new IntMultiplier(getTarget(),aType.width(),bType.width(),0,true, 0.7, inputDelays);
+		oplist.push_back(mult);
+
+		inPortMap(mult, "X", aName);
+		inPortMap(mult, "Y", bName);
+
+	    }else{
+		assert(!bType.isSigned);
+		mult=new IntMultiplier(getTarget(),aType.width(),bType.width()+1,0,true, 0.7, inputDelays);
+		oplist.push_back(mult);
+
+		vhdl<<"  "<<declare(resName+"_conv_B",  bType.width()+1)<<" <= "<< std::string("(\"0\"&")+bName+");";
+
+		inPortMap(mult, "X", aName);
+		inPortMap(mult, "Y", resName+"_conv_B");
+	    }
+
+	    outPortMap(mult, "R", resName);
+	    vhdl<<instance(mult, resName+"_theMul");
+	    syncCycleFromSignal(resName, mult->getSignalDelay("R"));
 	}
-	vhdl<<");\n";
 	return res;
 }
 
@@ -154,6 +201,8 @@ fixed_format_t FixedPointPolynomialEvaluator::AddStatement(std::string resName, 
 {
 	fixed_format_t res=AddType(aType,bType);
 	
+	manageCriticalPath(getTarget()->adderDelay(res.width()));
+
 	vhdl << "--- "<<res<<" <- "<<aType<<" + "<<bType<<"\n";
 	vhdl<<declare(resName, res.width())<< " <= ";
 	if(res.isSigned){
@@ -162,6 +211,7 @@ fixed_format_t FixedPointPolynomialEvaluator::AddStatement(std::string resName, 
 		vhdl<<"std_logic_vector(unsigned("<<ExtendExpr(res,aName,aType)<<") + unsigned("<<ExtendExpr(res,bName,bType)<<"))";
 	}
 	vhdl<<";\n";
+
 	return res;
 }
 

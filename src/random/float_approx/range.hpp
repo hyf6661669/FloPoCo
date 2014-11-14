@@ -15,213 +15,226 @@
 
 namespace flopoco
 {
-namespace random
-{
-namespace float_approx
-{
+    namespace random
+    {
+	namespace float_approx
+	{
 	
-inline void freeMpfrPtr(void *p)
-{
-	mpfr_clear(*(mpfr_t*)p);
-	free(p);
-}
+	    inline void freeMpfrPtr(void *p)
+	    {
+		mpfr_clear(*(mpfr_t*)p);
+		free(p);
+	    }
 
 	
-typedef boost::shared_ptr<sollya_node> sollya_node_ptr_t;
+	    typedef boost::shared_ptr<sollya_node> sollya_node_ptr_t;
 
-inline sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
-{ return sollya_node_ptr_t(n, free_memory); }
+	    inline sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
+	    { return sollya_node_ptr_t(n, free_memory); }
 
-    enum NumberClass{
-        NegInf,
-        NegNormal,
-        NegZero,
-        PosZero,
-        PosNormal,
-        PosInf,
-	NaN
-    };
+	    enum NumberClass{
+		NegInf,
+		NegNormal,
+		NegZero,
+		PosZero,
+		PosNormal,
+		PosInf,
+		NaN
+	    };
 
-    NumberClass mpfr_class(mpfr_t x);
+	    NumberClass mpfr_class(mpfr_t x);
 
-    typedef std::pair<NumberClass,int> binade_t;
+	    typedef std::pair<NumberClass,int> binade_t;
 
-    binade_t binade(mpfr_t x);
+	    binade_t binade(mpfr_t x);
 
-    std::ostream &operator<<(std::ostream &dst, const binade_t &b);
-
-	
-/*typedef struct{
-	sollya_node_t _x;
-	
-	sollya_node_t get()
-	{ return _x; }
-}sollya_node_ptr_t;
-	
-sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
-{ sollya_node_ptr_t x; x._x=n; return x; }
-*/
+	    std::ostream &operator<<(std::ostream &dst, const binade_t &b);
 
 	
-void unblockSignals();
+	    /*typedef struct{
+	      sollya_node_t _x;
+	
+	      sollya_node_t get()
+	      { return _x; }
+	      }sollya_node_ptr_t;
+	
+	      sollya_node_ptr_t make_shared_sollya(sollya_node_t n)
+	      { sollya_node_ptr_t x; x._x=n; return x; }
+	    */
 
-// initialise and copy same value (with same precision)
-void mpfr_init_copy(mpfr_t dst, mpfr_t src);
 	
-// Fix to this many fractional bits
-void mpfr_fix(mpfr_t x, int bits, mpfr_rnd_t rnd=MPFR_RNDN);
-	
-struct Range;
+	    void unblockSignals();
 
-struct Segment
-{
-private:
-	Segment();
+	    // initialise and copy same value (with same precision)
+	    void mpfr_init_copy(mpfr_t dst, mpfr_t src);
+	
+	    // Fix to this many fractional bits
+	    void mpfr_fix(mpfr_t x, int bits, mpfr_rnd_t rnd=MPFR_RNDN);
+	
+	    struct Range;
 
-	boost::shared_ptr<sollya_node> flatFunction;
-public:
-	
-	Range *parent;
-	
-	// Start and finish points are inclusive
-	mpfr_t domainStart, domainFinish;
-	mpfr_t rangeStart, rangeFinish;
+	    struct Segment
+	    {
+	    private:
+		Segment();
 
-	mpfr_t domainStartFrac, domainFinishFrac;
-        mpfr_t rangeStartFrac, rangeFinishFrac;
+		//	boost::shared_ptr<sollya_node> flatFunction;
+	    public:
 	
-	// Return true if the range/domain are all within one exponent value (i.e. one binade)
-	bool isRangeFlat, isDomainFlat;
+		Range *parent;
+	
+		// Start and finish points are inclusive
+		mpfr_t domainStart, domainFinish;
+		mpfr_t rangeStart, rangeFinish;
 
-	// True if the function can be rounded to a constant
-	bool isRangeConstant;
+		// Raw fraction output range
+		mpfr_t domainStartFrac, domainFinishFrac;
+		// Raw fraction input range
+		mpfr_t rangeStartFrac, rangeFinishFrac;
 
-	typedef std::map<std::string,boost::any> property_map_t;
-	property_map_t properties;
-	
-	void set_domain(mpfr_t _domainStart, mpfr_t _domainFinish);
-	
-	// Approximate the function by a linear polynomial
-	sollya_node_t make_linear_poly(sollya_node_t func, unsigned degree);
+		// For scaled polynomial inputs we remap [domainStartFrac..domainFinishFrac] -> [0..domainFinishScaled]
+		mpfr_t domainOffset; // Offset to apply to raw fraction (usually = domainStartFrac)
+		int domainScale; // Number of places to shift raw domain input after subtracting domainOffset
 
-	// Check if a given function has error good enough to use directly
-	bool check_poly(sollya_node_t func, sollya_node_t poly);
+		// We now always used these as the scaled polynomial/function inputs,
+		// and they will be correct for scaled or unscaled polynomials
+		mpfr_t domainStartScaled;  // = domainStartFrac or 0
+		mpfr_t domainFinishScaled; // = domainFinishFrac or (rangeFinishFrac-domainOffset+1)*2^rangeScaled
+	
+		// Return true if the range/domain are all within one exponent value (i.e. one binade)
+		bool isRangeFlat, isDomainFlat;
 
-	Segment(const Segment &o);
-	Segment(Range *_parent, mpfr_t _domainStart, mpfr_t _domainFinish);
-	
-	Segment &operator=(const Segment &o);
-	
-	~Segment();
-	
-	void dump(FILE *dst) const;
+		// True if the function can be rounded to a constant
+		bool isRangeConstant;
 
-	// Compute minimax with "real" coefficients
-	sollya_node_t minimax(unsigned degree);
+		typedef std::map<std::string,boost::any> property_map_t;
+		property_map_t properties;
 	
-	// Compute minimax with fixed-point coefficients
-	/* coeffFormats is a list of integers, such that coefficient i will be representable as x/2^coeffFormats[i],
-		i.e. it has that many fractional bits :) */
-	sollya_node_t fpminimax(const std::vector<int> &coeffFormats, sollya_node_t minimax=NULL);
+		void set_domain(mpfr_t _domainStart, mpfr_t _domainFinish);
 	
-	// Compute minimax with fixed-point coefficients all with the given precision
-	sollya_node_t fpminimax(unsigned degree, int coeffFormat, sollya_node_t minimax=NULL);
-	
-	// The returned node should not be freed (it is cached)
-	sollya_node_t get_scaled_flat_function();
-	
-	bool has_property(std::string name) const;
-};
+		// Approximate the function by a linear polynomial
+		sollya_node_t make_linear_poly(sollya_node_t func, unsigned degree);
 
-struct Range
-{
-	const Function &m_function;
-	int m_domainWF;
-	int m_domainWE;
-	int m_rangeWF;
-    int m_rangeWE;
-	bool m_offsetPolyInputs;
-	
-	// upper (exclusive) bound for integer value of the domain and range, not including the implicit bit
-	mpfr_t m_domainFractionEnd, m_rangeFractionEnd;
-	
-	typedef std::list<Segment> segment_list_t;
-	typedef segment_list_t::iterator segment_it_t;
-	segment_list_t m_segments;
-	
-	typedef std::map<std::pair<binade_t,binade_t>,sollya_node_t> flat_function_cache_t;
-	flat_function_cache_t m_flatFunctions;
-	
-	typedef std::map<std::string,boost::any> property_map_t;
-	property_map_t properties;
-	
-    Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish, int domainWE, int rangeWE);
-	
-	// Return a (wE,wF) pair that can represent all values in the domain
-	std::pair<int,int> GetFloatTypeEnclosingDomain() const;
-	
-	// Return a (wE,wF) pair that can represent all values in the range
-	std::pair<int,int> GetFloatTypeEnclosingRange() const;
-	
-	~Range();
-	
-	/* Split the segment, reducing the range of the original and creating a new one.
-		If the original range was  [start,finish], then its range will change to [start,newFinish],
-		and the next segment will have [next(newFinish),finish]
-	*/
-	void split_segment(segment_it_t src, mpfr_t newFinish);
-	
-	// Splits the segment into two equal parts
-	void split_segment(segment_it_t src);
-	
-	// Split up ranges to ensure that each segment is either monotonically increasing, decreasing, or flat in the range (not nesc. in domain though)
-	void make_monotonic_or_range_flat();
-	
-	// Keep splitting in domain until all segments are flat
-	void flatten_domain();
-	
-	/* Requires: binade(f(start)) != binade(f(finish))
-		Ensures: start<=newFinish < finish  and  binade(f(start))==binade(f(newFinish))  and  binade(f(newFinish))!=binade(f(next(newFinish)))*/
-	void find_range_jump(mpfr_t newFinish, mpfr_t start, mpfr_t finish);
-	
-	// Keep splitting in range until all segments are flat
-	void flatten_range(bool domainAlreadyFlat=false);
-	
-	// Evaluate function into previously initialised variable
-	void eval(mpfr_t res, mpfr_t x);
+		// Check if a given function has error good enough to use directly
+		bool check_poly(sollya_node_t func, sollya_node_t poly);
 
-	// Evaluate function into previously initialised variable, and clamp out of range
-       // to zero and infinity
-	void eval_clamp(mpfr_t res, mpfr_t x);
+		Segment(const Segment &o);
+		Segment(Range *_parent, mpfr_t _domainStart, mpfr_t _domainFinish);
 	
-	// Evaluate for fixed-point fraction in [0,0.5) (i.e. excluding implicit bit) over given input and output binade
-	void eval_scaled_flat_function(mpfr_t res, mpfr_t x, int eD, int eR);
+		Segment &operator=(const Segment &o);
 	
-	// Initialise to the range precision, and evaluate
-	void init_eval(mpfr_t res, mpfr_t x);
+		~Segment();
 	
-	void dump(FILE *dst);
+		void dump(FILE *dst) const;
+
+		// Compute minimax with "real" coefficients
+		sollya_node_t minimax(unsigned degree);
 	
-	// Return true if this point is included in the function domain (is in a segment and is representable)
-	bool is_in_domain(mpfr_t x);
+		// Compute minimax with fixed-point coefficients
+		/* coeffFormats is a list of integers, such that coefficient i will be representable as x/2^coeffFormats[i],
+		   i.e. it has that many fractional bits :) */
+		sollya_node_t fpminimax(const std::vector<int> &coeffFormats, sollya_node_t minimax=NULL);
 	
-	// Get the function scaled to fixed point for input binade eD and output eR
-	// The returned node should not be freed (it is cached)
-	sollya_node_t get_scaled_flat_function(binade_t eD, binade_t eR);
+		// Compute minimax with fixed-point coefficients all with the given precision
+		sollya_node_t fpminimax(unsigned degree, int coeffFormat, sollya_node_t minimax=NULL);
 	
-	segment_it_t find_segment(mpfr_t x);
+		// The returned node should not be freed (it is cached)
+		sollya_node_t get_scaled_flat_function();
+	
+		bool has_property(std::string name) const;
+	    };
+
+	    struct Range
+	    {
+		const Function &m_function;
+		int m_domainWF;
+		int m_domainWE;
+		int m_rangeWF;
+		int m_rangeWE;
+
+		// Are we pre-scaling the polynomial input?
+		bool m_isDomainScaled;
+
+		// upper (exclusive) bound for integer value of the domain and range, not including the implicit bit
+		mpfr_t m_domainFractionEnd, m_rangeFractionEnd;
+	
+		typedef std::list<Segment> segment_list_t;
+		typedef segment_list_t::iterator segment_it_t;
+		segment_list_t m_segments;
+	
+		//typedef std::map<std::pair<binade_t,binade_t>,sollya_node_t> flat_function_cache_t;
+		//flat_function_cache_t m_flatFunctions;
+	
+		typedef std::map<std::string,boost::any> property_map_t;
+		property_map_t properties;
+	
+		Range(const Function &f, int domainWF, int rangeWF, mpfr_t domainStart, mpfr_t domainFinish, int domainWE, int rangeWE, bool isDomainScaled);
+	
+		// Return a (wE,wF) pair that can represent all values in the domain
+		std::pair<int,int> GetFloatTypeEnclosingDomain() const;
+	
+		// Return a (wE,wF) pair that can represent all values in the range
+		std::pair<int,int> GetFloatTypeEnclosingRange() const;
+	
+		~Range();
+	
+		/* Split the segment, reducing the range of the original and creating a new one.
+		   If the original range was  [start,finish], then its range will change to [start,newFinish],
+		   and the next segment will have [next(newFinish),finish]
+		*/
+		void split_segment(segment_it_t src, mpfr_t newFinish);
+	
+		// Splits the segment into two equal parts
+		void split_segment(segment_it_t src);
+	
+		// Split up ranges to ensure that each segment is either monotonically increasing, decreasing, or flat in the range (not nesc. in domain though)
+		void make_monotonic_or_range_flat();
+	
+		// Keep splitting in domain until all segments are flat
+		void flatten_domain();
+	
+		/* Requires: binade(f(start)) != binade(f(finish))
+		   Ensures: start<=newFinish < finish  and  binade(f(start))==binade(f(newFinish))  and  binade(f(newFinish))!=binade(f(next(newFinish)))*/
+		void find_range_jump(mpfr_t newFinish, mpfr_t start, mpfr_t finish);
+	
+		// Keep splitting in range until all segments are flat
+		void flatten_range(bool domainAlreadyFlat=false);
+	
+		// Evaluate function into previously initialised variable
+		void eval(mpfr_t res, mpfr_t x);
+
+		// Evaluate function into previously initialised variable, and clamp out of range
+		// to zero and infinity
+		void eval_clamp(mpfr_t res, mpfr_t x);
+	
+		// Evaluate for fixed-point fraction in [0,0.5) (i.e. excluding implicit bit) over given input and output binade
+		void eval_scaled_flat_function(mpfr_t res, mpfr_t x, int eD, int eR);
+	
+		// Initialise to the range precision, and evaluate
+		void init_eval(mpfr_t res, mpfr_t x);
+	
+		void dump(FILE *dst);
+	
+		// Return true if this point is included in the function domain (is in a segment and is representable)
+		bool is_in_domain(mpfr_t x);
+	
+		// Get the function scaled to fixed point for input binade eD and output eR
+		// The returned node should not be freed (it is cached)
+		sollya_node_t get_scaled_flat_function(binade_t eD, binade_t eR);
+	
+		segment_it_t find_segment(mpfr_t x);
     
-    segment_it_t get_segment(unsigned index);
+		segment_it_t get_segment(unsigned index);
 
-	// Maximum normal value in the domain
-	void createDomainMax(mpfr_t val);
+		// Maximum normal value in the domain
+		void createDomainMax(mpfr_t val);
 
-	// Minimum normal value in the domain
-	void createDomainMin(mpfr_t val);
-};
+		// Minimum normal value in the domain
+		void createDomainMin(mpfr_t val);
+	    };
 
-}; // float_approx
-}; // random
+	}; // float_approx
+    }; // random
 }; // flopoco
 
 #endif

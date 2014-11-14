@@ -54,7 +54,8 @@ public:
     const Function &f,
     unsigned degree,
     mpfr::mpreal maxError,
-    bool debugOutputs=false		      
+    bool debugOutputs=false,
+    bool isDomainScaled=false
   )
     : Operator(target)
     // Capture properties
@@ -69,8 +70,14 @@ public:
     , m_maxError(maxError)
     , m_debugOutputs(debugOutputs)
     // Start building stuff (though not much happens yet)
-    , m_range(f, wDomainF, wRangeF, get_mpfr_ptr(domainMin), get_mpfr_ptr(domainMax), wDomainE, wRangeE)
+    , m_range(f, wDomainF, wRangeF, get_mpfr_ptr(domainMin), get_mpfr_ptr(domainMax), wDomainE, wRangeE, isDomainScaled)
   {       
+
+      // To get domain scaling fully working:
+      // TODO: Insert into table in table_polys
+      // TODO: Add shifter and subtractor
+      // TODO: update emulate
+      assert(!isDomainScaled);
 
     std::stringstream acc;
     acc<<"FloatApprox_uid"<<getNewUId();
@@ -172,7 +179,7 @@ public:
     int tableWidth=3+wRangeE+coeffWidths;
     m_tableWidth=tableWidth;
     m_tableContents=m_polys.build_ram_contents(m_guard, wRangeE);
-    bool hardRam= nFinalSegments>=256;
+    bool hardRam= nFinalSegments>=64;
     m_table=MakeSinglePortTable(target, name+"_table", tableWidth, m_tableContents, hardRam);  
     oplist.push_back(m_table);
     
@@ -223,6 +230,7 @@ public:
     vhdl<<declare("coeff_prefix",3+wRangeE)<<" <= table_contents"<<range(tableWidth-1,offset)<<";\n";
     vhdl<<declare("fraction_iX", wDomainF)<<" <= iX"<<range(wDomainF-1,0)<<";\n";
 
+    nextCycle();
     if(hardRam){
 	nextCycle();
     }

@@ -72,7 +72,7 @@ namespace flopoco
 			return;
 		
 		    sollya_node_ptr_t poly=make_shared_sollya(curr->minimax(m_degree));
-		    sollya_node_t func=curr->get_scaled_flat_function(); // doesn't need to be freed
+		    sollya_node_t func=curr->get_scaled_flat_function();
 
 		    MPFRVec error(1, getToolPrecision());
 		
@@ -91,8 +91,8 @@ namespace flopoco
 			    mpfr_init2(correct, getToolPrecision());
 			    mpfr_init2(got, getToolPrecision());
 		  
-			    evaluateFaithful(correct, func, curr->domainStartFrac, getToolPrecision());
-			    evaluateFaithful(got, poly.get(), curr->domainStartFrac, getToolPrecision());
+			    evaluateFaithful(correct, func, curr->domainStartScaled, getToolPrecision());
+			    evaluateFaithful(got, poly.get(), curr->domainStartScaled, getToolPrecision());
 			    mpfr_sub(error[0], correct, got, MPFR_RNDN);
 			    mpfr_abs(error[0],error[0], MPFR_RNDN);
 
@@ -107,7 +107,7 @@ namespace flopoco
 			}
 		    }else{
 
-			infNorm(error[0], func, poly.get(), curr->domainStartFrac, curr->domainFinishFrac, 71);
+			infNorm(error[0], func, poly.get(), curr->domainStartScaled, curr->domainFinishScaled, 71);
 		    }
 
 		    if(mpfr_regular_p(curr->rangeStart)){
@@ -116,7 +116,7 @@ namespace flopoco
 			    fprintTree(stderr, func);
 			    fprintf(stderr, "\n\npoly = ");
 			    fprintTree(stderr, poly.get());
-			    mpfr_fprintf(stderr, "\n\n fDom=[%Re,%Re]\n", curr->domainStartFrac, curr->domainFinishFrac);
+			    mpfr_fprintf(stderr, "\n\n sDom=[%Re,%Re]\n", curr->domainStartScaled, curr->domainFinishScaled);
 			}
 		    }
 
@@ -124,6 +124,8 @@ namespace flopoco
 		
 		    curr->properties["minimax"]=poly;
 		    curr->properties["minimax_error"]=error;
+
+		    free_memory(func);
 		}
 	    public:
 		RangePolys()
@@ -263,7 +265,9 @@ namespace flopoco
 		    }else{
 
 			fprintf(stderr, "infNorm...");
-			infNorm(error[0], curr->get_scaled_flat_function(), fp, curr->domainStartFrac, curr->domainFinishFrac, 71);
+			sollya_node_t func=curr->get_scaled_flat_function();
+			infNorm(error[0], func, fp, curr->domainStartScaled, curr->domainFinishScaled, 71);
+			free_memory(func);
 
 			fprintf(stderr, "\n");
 
@@ -454,13 +458,13 @@ namespace flopoco
 		    mpfr_t x, step, tmp, acc;
 		    mpfr_inits2(getToolPrecision(), x,acc, tmp, step, NULL);
 		    
-		    mpfr_sub(step, it->rangeFinishFrac, it->rangeStartFrac, MPFR_RNDN);
+		    mpfr_sub(step, it->domainFinishScaled, it->domainStartScaled, MPFR_RNDN);
 		    mpfr_div_si(step, step, trials-1, MPFR_RNDN);
 
 		    std::string pnCoeffs=boost::str(boost::format("minimax_fixed%1%_coeffs")%guard);
 		    MPFRVec coeffs=boost::any_cast<MPFRVec>(it->properties[pnCoeffs]);
 
-		    mpfr_set(x, it->rangeStartFrac, MPFR_RNDN);
+		    mpfr_set(x, it->domainStartScaled, MPFR_RNDN);
 		    for(unsigned i=0;i<trials;i++){
 			mpfr_set(acc, coeffs[m_degree], MPFR_RNDN);
 			for(int j=m_degree-1;j>=0;j--){
@@ -479,16 +483,17 @@ namespace flopoco
 
 		    mpfr_clears(x,acc,step,tmp,NULL);
 
-		    mpfr_fprintf(stderr, "  [%Re,%Re]->[%Re,%Re], [%Re,%Re]->[%Re,%Re], rC=%s ", it->domainStart, it->domainFinish, it->rangeStart, it->rangeFinish, it->domainStartFrac, it->domainFinishFrac, it->rangeStartFrac, it->rangeFinishFrac,  it->isRangeConstant?"Y":"N");
+		    mpfr_fprintf(stderr, "  [%Re,%Re]->[%Re,%Re], [%Re,%Re]->[%Re,%Re], off=%Re, scale=%d, [%Re,%Re], rC=%s ", it->domainStart, it->domainFinish, it->rangeStart, it->rangeFinish, it->domainStartFrac, it->domainFinishFrac, it->rangeStartFrac, it->rangeFinishFrac, it->domainOffset, it->domainScale, it->domainStartScaled, it->domainFinishScaled,  it->isRangeConstant?"Y":"N");
+		    fprintf(stderr, "\n");
 		    for(int j=0;j<=m_degree;j++){
-			mpfr_fprintf(stderr, " a%d:%Re", j, coeffs[j]);
+			mpfr_fprintf(stderr, " a%d:%Re;", j, coeffs[j]);
 		    }
 
 		    for(int j=0;j<=m_degree;j++){
 			mpfr_abs(boundsHi[j],boundsHi[j],MPFR_RNDN);
 			mpfr_abs(boundsLo[j],boundsLo[j],MPFR_RNDN);
 			mpfr_max(boundsHi[j],boundsHi[j],boundsLo[j],MPFR_RNDN);
-			fprintf(stderr, " %3d", mpfr_get_exp(acc));
+			fprintf(stderr, " %3d", mpfr_get_exp(boundsHi[j]));
 			
 		    }
 		    fprintf(stderr, "\n");
@@ -498,6 +503,9 @@ namespace flopoco
 		MPFRVec calculate_polynomial_bounds(int guard, unsigned trials=1000)
 		{
 		    MPFRVec res(m_degree+1, getToolPrecision());
+		    for(int i=0;i<=m_degree;i++){
+			mpfr_set_inf(res[i],-1);
+		    }
 
 		    segment_it_t it=m_range->m_segments.begin();
 		    while(it!=m_range->m_segments.end()){
@@ -533,6 +541,14 @@ namespace flopoco
 		    for(unsigned i=0;i<=m_degree;i++){
 			totalCoeffBits+=(m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i]+1)+1;
 		    }
+
+		    int totalScaleBits=0;
+		    if(m_range->m_isDomainScaled){
+			// The maximum shift is of m_domainWF-1
+			// The maximum offset is m_domainWF
+			totalScaleBits+=ceil(log(m_range->m_domainWF-1)/log(2.0));
+			totalScaleBits+=m_range->m_domainWF;
+		    }
 		
 		    if(::flopoco::verbose>=INFO){
 			fprintf(stderr, "  Building table.\n");
@@ -544,6 +560,9 @@ namespace flopoco
 		    // bits in the range coeffMsbs..coeffLsbs. Let's build the table...
 		    segment_it_t curr=m_range->m_segments.begin();
 		    while(curr!=m_range->m_segments.end()){
+			assert(curr->domainScale==0);
+			assert(mpfr_zero_p(curr->domainOffset));
+
 			MPFRVec coeffs=boost::any_cast<MPFRVec>(curr->properties[pnCoeffs]);
 			
 			mpz_class acc, local;
@@ -563,11 +582,11 @@ namespace flopoco
 			
 			bool isNeg=mpfr_sgn(curr->rangeStart)<0;
 			if(mpfr_inf_p(curr->rangeStart)){
-			    acc=(mpz_class(isNeg?(4+1):(4+0))<<(wRangeE+totalCoeffBits)) + /*exponent*/ 0 + acc;
+			    acc=(mpz_class(isNeg?(4+1):(4+0))<<(wRangeE+totalScaleBits+totalCoeffBits)) + /*exponent*/ 0 + acc;
 			}else if(mpfr_nan_p(curr->rangeStart)){
-			    acc=(mpz_class(6)<<(wRangeE+totalCoeffBits)) + /*exponent*/ 0 + acc;	    
+			    acc=(mpz_class(6)<<(wRangeE+totalScaleBits+totalCoeffBits)) + /*exponent*/ 0 + acc;	    
 			}else if(mpfr_zero_p(curr->rangeStart)){
-			    acc=(mpz_class(isNeg ? 1 : 0)<<(wRangeE+totalCoeffBits)) + /*exponent*/ 0 + acc;
+			    acc=(mpz_class(isNeg ? 1 : 0)<<(wRangeE+totalScaleBits+totalCoeffBits)) + /*exponent*/ 0 + acc;
 			}else{
 			    mpz_class prefix=mpfr_get_exp(curr->rangeStart)-2+(1<<(wRangeE-1));
 			    if((prefix<0) || ((mpz_class(1)<<wRangeE)<=prefix)){
@@ -575,7 +594,7 @@ namespace flopoco
 				std::cerr<<"  exponent="<<mpfr_get_exp(curr->rangeStart)<<", wRangeE="<<wRangeE<<"\n";
 				throw std::string("Exponent out of range (increase wRangeE?).");
 			    }
-			    acc=(mpz_class(isNeg?3:2)<<(wRangeE+totalCoeffBits)) + (prefix<<totalCoeffBits) + acc;
+			    acc=(mpz_class(isNeg?3:2)<<(wRangeE+totalScaleBits+totalCoeffBits)) + (prefix<<(totalScaleBits+totalCoeffBits)) + acc;
 			}
 			
 			contents.push_back(acc);

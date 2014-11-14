@@ -27,7 +27,7 @@ protected:
 	std::string ExtendExpr(const fixed_format_t &outType, const std::string srcExpr, const fixed_format_t &srcType) const;
 	
 	// If the src type has more lsbs than the output type, then round them off. The msbs should be the same
-	std::string RoundExpr(const fixed_format_t &outType, const std::string srcExpr, const fixed_format_t &srcType) const;
+	std::string RoundExpr(const fixed_format_t &outType, const std::string srcExpr, const fixed_format_t &srcType);
 
 	// Not const, as they modify vhdl
 	fixed_format_t MultiplyStatement(std::string resName, std::string aName, const fixed_format_t &aType, std::string bName, const fixed_format_t &bType);

@@ -42,6 +42,10 @@ ENDIF(MPREAL_H)
 #	COMPILE_DEFINITIONS "INT_ALLOC=FALSE"
 #)
 
+SET_PROPERTY( SOURCE float_approx/range.cpp PROPERTY COMPILE_FLAGS -g APPEND )
+SET_PROPERTY( SOURCE float_approx/rang_polyse.cpp PROPERTY COMPILE_FLAGS -g APPEND )
+SET_PROPERTY( SOURCE float_approx/FloatApprox.cpp PROPERTY COMPILE_FLAGS -g APPEND )
+
 ADD_LIBRARY(flopoco_random_lib STATIC
 	random_main.cpp
 	utils/operator_factory.cpp	

@@ -61,7 +61,7 @@ public:
 		MakeFPNegate("neg_x2", "x2");
 		MakeFPConstMult("half_neg_x2", "neg_x2", "1/2");
 		MakeFPExp("exp_half_neg_x2", "half_neg_x2");
-		MakeFPConstMult("res", "exp_half_neg_x2", "sqrt(2*pi");
+		MakeFPConstMult("res", "exp_half_neg_x2", "sqrt(2*pi)");
 
 		vhdl<<"oY <= res;\n";
 	}

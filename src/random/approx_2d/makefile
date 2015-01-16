@@ -1,2 +1,2 @@
-CPPFLAGS += -g -O3 -DNDEBUG
+CPPFLAGS += -g -std=c++11
 LDLIBS += -lgsl

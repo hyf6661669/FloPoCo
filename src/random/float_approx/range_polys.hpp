@@ -493,7 +493,7 @@ namespace flopoco
 			mpfr_abs(boundsHi[j],boundsHi[j],MPFR_RNDN);
 			mpfr_abs(boundsLo[j],boundsLo[j],MPFR_RNDN);
 			mpfr_max(boundsHi[j],boundsHi[j],boundsLo[j],MPFR_RNDN);
-			fprintf(stderr, " %3d", mpfr_get_exp(boundsHi[j]));
+			fprintf(stderr, " %3ld", mpfr_get_exp(boundsHi[j]));
 			
 		    }
 		    fprintf(stderr, "\n");
@@ -522,7 +522,9 @@ namespace flopoco
 		}
 		
 		// Convert the polynomial coefficients into the actual data-values
-		/* The format is  |prefix|an|...|a0|, where prefix is the floating point exponent+sign that goes on the front
+		/* The format is  |prefix|scaling|an|...|a0|, where prefix is the floating point
+		   exponent+sign that goes on the front, and scaling is a pair (shift,offset) if
+		   domain scaling is enabled.
 		 */
 		std::vector<mpz_class> build_ram_contents(int guard, int wRangeE)
 		{
@@ -543,11 +545,15 @@ namespace flopoco
 		    }
 
 		    int totalScaleBits=0;
+		    int domainShiftBits=0;
+		    int domainOffsetBits=0;
 		    if(m_range->m_isDomainScaled){
 			// The maximum shift is of m_domainWF-1
 			// The maximum offset is m_domainWF
-			totalScaleBits+=ceil(log(m_range->m_domainWF-1)/log(2.0));
-			totalScaleBits+=m_range->m_domainWF;
+		      domainShiftBits=ceil(log(m_range->m_domainWF-1)/log(2.0));
+		      domainOffsetBits=m_range->m_domainWF;
+
+			totalScaleBits=domainShiftBits+domainOffsetBits;
 		    }
 		
 		    if(::flopoco::verbose>=INFO){
@@ -560,8 +566,6 @@ namespace flopoco
 		    // bits in the range coeffMsbs..coeffLsbs. Let's build the table...
 		    segment_it_t curr=m_range->m_segments.begin();
 		    while(curr!=m_range->m_segments.end()){
-			assert(curr->domainScale==0);
-			assert(mpfr_zero_p(curr->domainOffset));
 
 			MPFRVec coeffs=boost::any_cast<MPFRVec>(curr->properties[pnCoeffs]);
 			
@@ -572,6 +576,23 @@ namespace flopoco
 			    mpfr_get_z(local.get_mpz_t(), tmp, MPFR_RNDN);
 				
 			    acc=(acc<<(2+m_concreteCoeffMsbs[i]-m_concreteCoeffLsbs[i])) + ToTwosComplement(local, m_concreteCoeffMsbs[i], m_concreteCoeffLsbs[i]);
+			}
+
+			if(m_range->m_isDomainScaled){
+			  assert(mpfr_sgn(curr->domainOffset)>=0);
+			  assert(mpfr_cmp_d(curr->domainOffset,1.0)<1);
+
+			  acc=(curr->domainScale<<(domainOffsetBits+totalCoeffBits)) + acc;
+
+			  mpfr_set(tmp, curr->domainOffset, MPFR_RNDN);
+			  mpfr_mul_2si(tmp, tmp, m_range->m_domainWF, MPFR_RNDN);
+			  assert(mpfr_cmp_d(tmp, ldexp(2.0, domainOffsetBits))<0);
+
+			  mpfr_get_z(local.get_mpz_t(), tmp, MPFR_RNDN);
+			  acc=(local<<totalCoeffBits) + acc;
+			}else{
+			  assert(curr->domainScale==0);
+			  assert(mpfr_zero_p(curr->domainOffset));
 			}
 			
 			// Now we tack the exponent on. Now have support for positive, zero, and negative numbers,

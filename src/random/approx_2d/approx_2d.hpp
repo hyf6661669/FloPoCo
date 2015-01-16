@@ -3,12 +3,14 @@
 
 #include "gsl/gsl_matrix.h"
 #include "gsl/gsl_multifit.h"
+#include "gsl/gsl_blas.h"
 #include <vector>
 #include <cmath>
 #include <set>
-#include <boost/function.hpp>
-#include <boost/smart_ptr.hpp>
+#include <functional>
 #include <iostream>
+#include <cassert>
+#include <memory>
 
 namespace flopoco
 {
@@ -21,10 +23,18 @@ namespace approx_2d
 	typedef std::vector<monomial_t> monomial_basis_t;
 	typedef std::vector<monomial_basis_t> monomial_basis_set_t;
 	
-	typedef boost::function<double(double,double)> func_t;
+	typedef std::function<double(double,double)> func_t;
 		
-	double EvalMonomial(const monomial_t &m, double x, double y)
-	{ return pow(x,m.first) * pow(y,m.second); }
+	double EvalMonomial(const monomial_t &m, double x, double y, double rotation)
+	{
+		if(rotation){
+			double tx=cos(rotation)*x-sin(rotation)*y;
+			double ty=sin(rotation)*x+cos(rotation)*y;
+			x=tx;
+			y=ty;
+		}
+		return pow(x,m.first) * pow(y,m.second);
+	}
 	
 	/* Create a basis that consists of all combinations of x^0..x^degree and y^0..y^degree */
 	monomial_basis_t MakeFullBasis(int degree)
@@ -91,28 +101,122 @@ namespace approx_2d
 		return res;
 	}
 	
+	std::vector<double> MakeLinearSpacingExcl(int npoints, double xmin, double xmax)
+	{
+		std::vector<double> res(npoints);
+		for(int i=0;i<npoints;i++){
+			res[i]=xmin + ((xmax-xmin) * double(i+1)) / (npoints+1);
+		}
+		return res;
+	}
+	
+	enum error_metric_t
+	{
+		error_metric_worst_absolute=0,
+		error_metric_worst_relative=1
+	};
+	
+	struct error_target_t
+	{
+		error_metric_t metric;
+		double target;
+	};
+	
+	struct error_t
+	{
+		error_t(double weight)
+			: worstRelError(0)
+			, worstAbsError(0)
+			, rawSumSquaredAbsError(0)
+			, rawSumSquaredRelError(0)
+			, weightedSumSquaredAbsError(0)
+			, weightedSumSquaredRelError(0)
+			, totalPoints(0)
+			, totalWeight(weight)
+		{}
+			
+		void add(double ref, double got)
+		{
+			double absErr=std::abs(ref-got);
+			double relErr=std::abs(absErr/ref);
+			
+			worstAbsError=std::max(absErr, worstAbsError);
+			worstRelError=std::max(relErr, worstRelError);
+			rawSumSquaredAbsError+=absErr*absErr;
+			rawSumSquaredRelError+=relErr*relErr;
+			weightedSumSquaredAbsError+=absErr*absErr;
+			weightedSumSquaredRelError+=relErr*relErr;
+			totalPoints=totalPoints+1;
+		}
+		
+		double worstRelError;
+		double worstAbsError;
+		double rawSumSquaredAbsError;
+		double rawSumSquaredRelError;
+		double weightedSumSquaredAbsError;
+		double weightedSumSquaredRelError;
+		double totalPoints;		// Number of points considered
+		double totalWeight;		// weight (area) of the input area
+	};
+	
+	error_t combine(const error_t &a, const error_t &b)
+	{
+		error_t res(a.totalWeight+b.totalWeight);
+		res.worstRelError=std::max(a.worstRelError, b.worstRelError);
+		res.worstAbsError=std::max(a.worstAbsError, b.worstAbsError);
+		res.rawSumSquaredAbsError=a.rawSumSquaredAbsError+b.rawSumSquaredAbsError;
+		res.rawSumSquaredRelError=a.rawSumSquaredRelError+b.rawSumSquaredRelError;
+		res.weightedSumSquaredAbsError=(a.totalWeight*a.weightedSumSquaredAbsError+b.totalWeight*b.weightedSumSquaredAbsError)/(a.totalWeight+b.totalWeight);
+		res.weightedSumSquaredRelError=(a.totalWeight*a.weightedSumSquaredRelError+b.totalWeight*b.weightedSumSquaredRelError)/(a.totalWeight+b.totalWeight);
+		res.totalPoints=a.totalPoints+b.totalPoints;
+		res.totalWeight=a.totalWeight+b.totalWeight;
+		return res;
+	}
+	
+	bool better_than(error_target_t target, const error_t &a, const error_t &b)
+	{
+		if(target.metric==error_metric_worst_absolute){
+			return a.worstAbsError < b.worstAbsError;
+		}else if(target.metric==error_metric_worst_relative){
+			return a.worstRelError < b.worstRelError;
+		}else{
+			throw std::invalid_argument("Unknown error target.");
+		}
+	}
+	
+	bool good_enough(error_target_t target, const error_t &e)
+	{
+		if(target.metric==error_metric_worst_absolute){
+			return e.worstAbsError < target.target;
+		}else if(target.metric==error_metric_worst_relative){
+			return e.worstRelError < target.target;
+		}else{
+			throw std::invalid_argument("Unknown error target.");
+		}
+	}
+	
 	struct segment_t
 	{
 		std::vector<monomial_t> monomials;
 		std::vector<double> coeffs;
 		double xmin, xmax, ymin, ymax;
-		double worstAbsError;
-		double meanSquaredError;
+		error_t error;
 		func_t f;
 	};
 		
-	boost::shared_ptr<gsl_matrix> BuildMeshX(
+	std::shared_ptr<gsl_matrix> BuildMeshX(
 		const std::vector<double> &xpoints,
 		const std::vector<double> &ypoints,
-		const std::vector<monomial_t> &monomials
+		const std::vector<monomial_t> &monomials,
+		double rotation
 	){
 		int n=xpoints.size()*ypoints.size();
-		boost::shared_ptr<gsl_matrix> res(gsl_matrix_alloc(n, monomials.size()), gsl_matrix_free);
+		std::shared_ptr<gsl_matrix> res(gsl_matrix_alloc(n, monomials.size()), gsl_matrix_free);
 		
 		for(int xx=0;xx<xpoints.size();xx++){
 			for(int yy=0;yy<ypoints.size();yy++){
 				for(int mm=0;mm<monomials.size();mm++){
-					gsl_matrix_set(res.get(), xx*ypoints.size()+yy, mm, EvalMonomial(monomials[mm], xpoints[xx], ypoints[yy]));
+					gsl_matrix_set(res.get(), xx*ypoints.size()+yy, mm, EvalMonomial(monomials[mm], xpoints[xx], ypoints[yy], rotation));
 				}
 			}
 		}
@@ -120,13 +224,13 @@ namespace approx_2d
 		return res;
 	}
 	
-	boost::shared_ptr<gsl_vector> BuildMeshY(
+	std::shared_ptr<gsl_vector> BuildMeshY(
 		func_t f,
 		const std::vector<double> &xpoints,
 		const std::vector<double> &ypoints
 	){
 		int n=xpoints.size()*ypoints.size();
-		boost::shared_ptr<gsl_vector> res(gsl_vector_alloc(n), gsl_vector_free);
+		std::shared_ptr<gsl_vector> res(gsl_vector_alloc(n), gsl_vector_free);
 		
 		for(int xx=0;xx<xpoints.size();xx++){
 			for(int yy=0;yy<ypoints.size();yy++){
@@ -137,67 +241,106 @@ namespace approx_2d
 		return res;
 	}
 		
-	segment_t SolveMesh(
+	std::shared_ptr<segment_t> SolveMesh(
 		func_t f,
 		const std::vector<double> &xpoints,
 		const std::vector<double> &ypoints,
-		const std::vector<monomial_t> &monomials
+		double rotation,
+		const std::vector<monomial_t> &monomials,
+		error_metric_t metric
 	){
-		boost::shared_ptr<gsl_matrix> X(BuildMeshX(xpoints, ypoints, monomials));
-		boost::shared_ptr<gsl_vector> y(BuildMeshY(f, xpoints,ypoints));
+		//fprintf(stderr, "Solve\n");
+		
+		std::shared_ptr<gsl_matrix> X(BuildMeshX(xpoints, ypoints, monomials, rotation));
+		std::shared_ptr<gsl_vector> y(BuildMeshY(f, xpoints,ypoints));
 		
 		int n=xpoints.size()*ypoints.size();
-		boost::shared_ptr<gsl_multifit_linear_workspace> workspace(gsl_multifit_linear_alloc(n, monomials.size()), gsl_multifit_linear_free);
+		std::shared_ptr<gsl_multifit_linear_workspace> workspace(gsl_multifit_linear_alloc(n, monomials.size()), gsl_multifit_linear_free);
 		
-		boost::shared_ptr<gsl_matrix> cov(gsl_matrix_alloc(monomials.size(), monomials.size()), gsl_matrix_free);
+		std::shared_ptr<gsl_matrix> cov(gsl_matrix_alloc(monomials.size(), monomials.size()), gsl_matrix_free);
 		double chi2;
 		
-		boost::shared_ptr<gsl_vector> coeffs(gsl_vector_alloc(monomials.size()), gsl_vector_free);
-		if(gsl_multifit_linear (X.get(), y.get(), coeffs.get(), cov.get(), &chi2, workspace.get()))
-			throw std::string("Error code from gsl_multifit_linear.");
+		std::shared_ptr<gsl_vector> coeffs(gsl_vector_alloc(monomials.size()), gsl_vector_free);
 		
-		boost::shared_ptr<gsl_vector> residuals(gsl_vector_alloc(n), gsl_vector_free);
-		if(gsl_multifit_linear_residuals (X.get(),y.get(), coeffs.get(), residuals.get()))
-			throw std::string("Error code from gsl_multifit_linear_residuals.");
+		if(metric==error_metric_worst_relative){
+			std::shared_ptr<gsl_vector> w(gsl_vector_alloc(n), gsl_vector_free);
+			for(unsigned i=0;i<n;i++){
+				double r=gsl_vector_get(y.get(),i);
+				if(r==0)
+					throw std::string("Cannot fit relative error to zero.");
+				gsl_vector_set(w.get(), i, 1.0/gsl_vector_get(y.get(), i));
+			}
+			
+			if(gsl_multifit_wlinear (X.get(), w.get(), y.get(), coeffs.get(), cov.get(), &chi2, workspace.get()))
+				throw std::string("Error code from gsl_multifit_wlinear.");
+		}else if(metric==error_metric_worst_absolute){
+			if(gsl_multifit_linear (X.get(), y.get(), coeffs.get(), cov.get(), &chi2, workspace.get()))
+				throw std::string("Error code from gsl_multifit_linear.");
+		}else{
+			throw std::string("Unknown error metric.");
+		}
 		
-		segment_t res;
-		res.monomials=monomials;
-		res.coeffs.resize(monomials.size());
+		for(unsigned i=0;i<monomials.size();i++){
+			for(unsigned j=0;j<monomials.size();j++){
+				//fprintf(stderr, " % 8lg", gsl_matrix_get(cov.get(), i, j));
+			}
+			//fprintf(stderr, "\n");
+		}
+		
+		std::shared_ptr<gsl_vector> est(gsl_vector_alloc(n), gsl_vector_free);
+		gsl_blas_dgemv(CblasNoTrans, 1.0, X.get(), coeffs.get(), 0.0, est.get());
+		
+		
+		std::vector<double> coeffsD(monomials.size());
 		for(int i=0;i<monomials.size();i++){
-			res.coeffs[i]=gsl_vector_get(coeffs.get(), i);
+			coeffsD[i]=gsl_vector_get(coeffs.get(), i);
+			//fprintf(stderr, "c%d = %lg\n", i, coeffsD[i]);
 		}
-		res.xmin=xpoints.front();
-		res.xmax=xpoints.back();
-		res.ymin=ypoints.front();
-		res.ymax=ypoints.back();
-		res.worstAbsError=0;
-		res.meanSquaredError=0;
-		for(int i=0;i<n;i++){
-			double err=gsl_vector_get(residuals.get(), i);
-			res.worstAbsError=std::max(res.worstAbsError, std::abs(err));
-			res.meanSquaredError += err*err;
-		}
-		res.meanSquaredError=res.meanSquaredError/n;
 		
-		return res;
+		error_t err((xpoints.back()-xpoints.front())*(ypoints.back()-ypoints.front()));
+		for(int i=0;i<n;i++){
+			double ref=gsl_vector_get(y.get(), i);
+			double got=gsl_vector_get(est.get(), i);
+			err.add(ref,got);
+		}
+		//fprintf(stderr, "  points=%d, n=%d\n", err.totalPoints, n);
+		
+		segment_t res={
+			monomials,
+			coeffsD,
+			xpoints.front(),
+			xpoints.back(),
+			ypoints.front(),
+			ypoints.back(),
+			err,
+			f
+		};
+		
+		return std::make_shared<segment_t>(res);
 	}
 	
-	segment_t SolveMesh(
+	std::shared_ptr<segment_t> SolveMesh(
 		func_t f,
 		const std::vector<double> &xpoints,
 		const std::vector<double> &ypoints,
+		std::set<double> rotations,
 		const monomial_basis_set_t &basisSet,
-		double acceptableError=0.0
+		error_target_t target
 	){
-		segment_t best;
-		best.worstAbsError=DBL_MAX;
+		std::shared_ptr<segment_t> best;
 		
-		for(int i=0;i<basisSet.size();i++){
-			segment_t curr=SolveMesh(f, xpoints, ypoints, basisSet[i]);
-			if(curr.worstAbsError<best.worstAbsError)
-				best=curr;
-			if(curr.worstAbsError<acceptableError)
-				return curr;
+		for(double rotation : rotations){
+			for(int i=0;i<basisSet.size();i++){
+				auto curr=SolveMesh(f, xpoints, ypoints, rotation, basisSet[i], target.metric);
+				if(!best){
+					best=curr;
+				}else if(better_than(target, curr->error, best->error)){
+					best=curr;
+				}
+				
+				if(good_enough(target, best->error))
+					return best;
+			}
 		}
 		
 		return best;
@@ -206,44 +349,54 @@ namespace approx_2d
 	
 	struct quad_node_t
 	{
+		quad_node_t(double _xmin, double _xmax, double _ymin, double _ymax)
+			: xmin(_xmin), xmax(_xmax), ymin(_ymin), ymax(_ymax)
+			, error((_xmax-_xmin)*(_ymax-_ymin))
+		{}
+		
 		double xmin, xmax, ymin, ymax;
 		
-		boost::shared_ptr<segment_t> leaf;	// If leaf is non-null, then no more splitting happens
+		std::shared_ptr<segment_t> leaf;	// If leaf is non-null, then no more splitting happens
 		
 		double splitX, splitY;
-		boost::shared_ptr<quad_node_t> q00, q01, q10, q11;
+		std::shared_ptr<quad_node_t> q00, q01, q10, q11;
+		
+		error_t error;
 		
 		int totalLeaves;
+		int maxDepth, minDepth;
 	};
 	
-	boost::shared_ptr<quad_node_t> BuildQuadTree(
-		func_t f, const monomial_basis_set_t &basisSet, int pointsPerAxis, double maxAbsError,
-		double xmin, double xmax, double ymin, double ymax
+	std::shared_ptr<quad_node_t> BuildQuadTree(
+		func_t f, const monomial_basis_set_t &basisSet, int pointsPerAxis,
+		double xmin, double xmax, double ymin, double ymax, std::set<double> rotation,
+		error_target_t target
 	){
-		boost::shared_ptr<quad_node_t> res(new quad_node_t());
-		res->xmin=xmin;
-		res->xmax=xmax;
-		res->ymin=ymin;
-		res->ymax=ymax;
+		std::shared_ptr<quad_node_t> res(new quad_node_t(xmin,xmax,ymin,ymax));
 		
-		std::vector<double> xpoints=MakeLinearSpacing(pointsPerAxis, xmin, xmax);
-		std::vector<double> ypoints=MakeLinearSpacing(pointsPerAxis, ymin, ymax);
+		std::vector<double> xpoints=MakeLinearSpacingExcl(pointsPerAxis, xmin, xmax);
+		std::vector<double> ypoints=MakeLinearSpacingExcl(pointsPerAxis, ymin, ymax);
 		
-		segment_t sol=SolveMesh(f, xpoints, ypoints, basisSet, maxAbsError);
-		
-		if(sol.worstAbsError<maxAbsError){
-			//fprintf(stderr, "[%lf,%lf] - [%lf,%lf], area=%lg\n", xmin, ymin, xmax, ymax, (ymax-ymin)*(xmax-xmin));
-			res->leaf.reset(new segment_t(sol));
+		auto sol=SolveMesh(f, xpoints, ypoints, rotation, basisSet, target);
+			
+		if(good_enough(target, sol->error)){
+			//fprintf(stderr, "[%lf,%lf] - [%lf,%lf], area=%lg, wRel=%lg, wAbs=%lg (points=%lg)\n", xmin, ymin, xmax, ymax, (ymax-ymin)*(xmax-xmin), sol->error.worstRelError, sol->error.worstAbsError, sol->error.totalPoints);
+			res->leaf=sol;
 			res->totalLeaves=1;
+			res->maxDepth=0;
+			res->minDepth=0;
 		}else{
 			res->splitX=(xmin+xmax)/2;
 			res->splitY=(ymin+ymax)/2;
 			
-			res->q00=BuildQuadTree(f, basisSet, pointsPerAxis, maxAbsError, xmin, res->splitX, ymin, res->splitY);
-			res->q01=BuildQuadTree(f, basisSet, pointsPerAxis, maxAbsError, xmin, res->splitX, res->splitY, ymax);
-			res->q10=BuildQuadTree(f, basisSet, pointsPerAxis, maxAbsError, res->splitX, xmax, ymin, res->splitY);
-			res->q11=BuildQuadTree(f, basisSet, pointsPerAxis, maxAbsError, res->splitX, xmax, res->splitY, ymax);
+			res->q00=BuildQuadTree(f, basisSet, pointsPerAxis, xmin, res->splitX, ymin, res->splitY, rotation, target);
+			res->q01=BuildQuadTree(f, basisSet, pointsPerAxis, xmin, res->splitX, res->splitY, ymax, rotation, target);
+			res->q10=BuildQuadTree(f, basisSet, pointsPerAxis, res->splitX, xmax, ymin, res->splitY, rotation, target);
+			res->q11=BuildQuadTree(f, basisSet, pointsPerAxis, res->splitX, xmax, res->splitY, ymax, rotation, target);
 			res->totalLeaves=res->q00->totalLeaves+res->q01->totalLeaves+res->q10->totalLeaves+res->q11->totalLeaves;
+			res->maxDepth=1+std::max(std::max(res->q00->maxDepth,res->q01->maxDepth),std::max(res->q10->maxDepth,res->q11->maxDepth));
+			res->minDepth=1+std::min(std::min(res->q00->maxDepth,res->q01->minDepth),std::max(res->q10->minDepth,res->q11->minDepth));
+			res->error=combine(combine(res->q00->error,res->q01->error),combine(res->q10->error,res->q11->error));
 		}
 		return res;
 	}

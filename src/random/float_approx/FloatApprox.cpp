@@ -74,10 +74,8 @@ public:
   {       
 
       // To get domain scaling fully working:
-      // TODO: Insert into table in table_polys
       // TODO: Add shifter and subtractor
       // TODO: update emulate
-      assert(!isDomainScaled);
 
     std::stringstream acc;
     acc<<"FloatApprox_uid"<<getNewUId();
@@ -176,7 +174,13 @@ public:
     for(unsigned i=0;i<=m_degree;i++){
       coeffWidths+=(m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1;
     }
-    int tableWidth=3+wRangeE+coeffWidths;
+    int domainScaleWidths=0;
+    if(m_range.m_isDomainScaled){
+      domainScaleWidths+=ceil(log(m_range.m_domainWF-1)/log(2.0));
+      domainScaleWidths+=m_range.m_domainWF;
+
+    }
+    int tableWidth=3+wRangeE+domainScaleWidths+coeffWidths;
     m_tableWidth=tableWidth;
     m_tableContents=m_polys.build_ram_contents(m_guard, wRangeE);
     bool hardRam= nFinalSegments>=64;
@@ -529,8 +533,10 @@ public:
 
 static void FloatApproxFactoryUsage(std::ostream &dst)
 {
-	OperatorFactory::classic_OP(dst, "FloatApprox", "wDomE wDomF domMin domMax wRanE wRanF f degree", false);
+	OperatorFactory::classic_OP(dst, "FloatApprox", "[-debug] [-scaleDomain] wDomE wDomF domMin domMax wRanE wRanF f degree", false);
 	dst << "    Generates a float->float function approximation for y=f(x) where domMin<=x<=domMax.\n";
+	dst << "              -debug - Add debug outputs for simulation purposes.\n";
+	dst << "              -scaleDomain - Use domain scaling on polynomial inputs (not working).\n";
 	dst << "	      (wDomE,wDomF) - Floating-point format of input.\n";
 	dst << "	      [domMin,domMax] - Inclusive domain of approximation\n";
 	dst << "	      (wRanE,wRanF) - Floating point format for output.\n";
@@ -542,35 +548,52 @@ static void FloatApproxFactoryUsage(std::ostream &dst)
 
 static Operator *FloatApproxFactoryParser(Target *target ,const std::vector<std::string> &args,int &consumed)
 {
+  int argc=args.size();
+  int ia=0;
+
+  bool debugOutputs=false;
+  bool scaleDomain=false;
+
+  if(ia<argc ? args[ia]=="-debug" : false){
+    ++ia;
+    debugOutputs=true;
+  }
+
+  if(ia<argc ? args[ia]=="-scaleDomain" : false){
+    ++ia;
+    scaleDomain=true;
+  }
+
 	unsigned nargs = 8;
-	if (args.size()<nargs)
+	if (ia + nargs < argc)
 		throw std::string("FloatApproxFactoryParser - Not enough arguments, check usage.");
-	consumed += nargs;
 	
-	int wDomE = atoi(args[0].c_str());
-	int wDomF = atoi(args[1].c_str());
+	int wDomE = atoi(args[ia++].c_str());
+	int wDomF = atoi(args[ia++].c_str());
     if((wDomE<1) || (wDomF<1))
       throw std::string("FloatApproxFactoryParser - wDomE and wDomF must be positive.");
     
     mpfr::mpreal domMin=mpfr::create_zero(wDomF+1);
     mpfr::mpreal domMax=mpfr::create_zero(wDomF+1);
-    parseSollyaConstant(get_mpfr_ptr(domMin), args[2], MPFR_RNDU);
-    parseSollyaConstant(get_mpfr_ptr(domMax), args[3], MPFR_RNDD);
+    parseSollyaConstant(get_mpfr_ptr(domMin), args[ia++], MPFR_RNDU);
+    parseSollyaConstant(get_mpfr_ptr(domMax), args[ia++], MPFR_RNDD);
     //if(domMin<0)
      // throw std::string("FloatApproxFactoryParser - domMin must be non-negative.");
     if(domMax <= domMin)
       throw std::string("FloatApproxFactoryParser - Must have domMin < domMax.");
     
-    int wRanE=atoi(args[4].c_str());
-    int wRanF=atoi(args[5].c_str());
+    int wRanE=atoi(args[ia++].c_str());
+    int wRanF=atoi(args[ia++].c_str());
     if((wRanE<1) || (wRanF<1))
       throw std::string("FloatApproxFactoryParser - wRanE and wRanF must be positive.");
     
-	Function f(args[6]);
+	Function f(args[ia++]);
     
-    int degree=atoi(args[7].c_str());
+    int degree=atoi(args[ia++].c_str());
     if(degree<0)
       throw std::string("FloatApproxFactoryParser - degree must be at least 0.");
+
+    consumed+=ia;
     
     mpfr::mpreal maxError(pow(2.0,-wRanF-1), getToolPrecision());
 
@@ -579,7 +602,8 @@ static Operator *FloatApproxFactoryParser(Target *target ,const std::vector<std:
       wRanE, wRanF,
       f,
       degree,
-      maxError
+      maxError,
+				       debugOutputs, scaleDomain				       
     );
 }
 

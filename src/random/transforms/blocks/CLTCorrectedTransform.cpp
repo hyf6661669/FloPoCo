@@ -205,13 +205,13 @@ public:
 			curr->RangeByIndex(support.first, support.second, &tmp[0]);
 			std::vector<double> x_clt(points);	// The points of the untransformed CLT
 			for(int i=0;i<points;i++){
-				x_clt[i]=(double)tmp[i];
+			  x_clt[i]=convert<double>(tmp[i]);
 			}
 			
 			curr->CdfByIndex(support.first, support.second, &tmp[0]);
 			std::vector<double> p_clt(points);	// The CDF of the untransformed CLT
 			for(int i=0;i<points;i++){
-				p_clt[i]=(double)tmp[i];
+			  p_clt[i]=convert<double>(tmp[i]);
 			}
 			
 			boost::math::normal_distribution<double> n(0.0,1.0);

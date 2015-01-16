@@ -41,7 +41,7 @@ namespace random
 	
 	template<>
 	inline double convert<double>(const mpfr::mpreal &x)
-	{ return (double)x; }
+	{ return x.template convert_to<double>(); }
 	
 	template<>
 	inline mpfr::mpreal convert<mpfr::mpreal>(const mpfr::mpreal &x)

@@ -23,8 +23,9 @@ SET(CPACK_PACKAGE_VERSION_PATCH "0")
 INCLUDE(CPack)
 
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-std=gnu++11 -Og -Wall")
-SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG=1 -std=gnu++11")
+SET(CMAKE_CXX_FLAGS "-std=gnu++11")
+SET(CMAKE_CXX_FLAGS_DEBUG "-Og -Wall")
+SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG=1")
 
 
 FIND_PATH(MPFR_H
@@ -50,7 +51,6 @@ FIND_LIBRARY(MPFI_LIB
 	DOC "Directory of the MPFI library")
 
 
-
 # Detect Sollya's presence
 FIND_LIBRARY( SOLLYA_LIB sollya )
 
@@ -58,6 +58,8 @@ IF (SOLLYA_LIB)
 	ADD_DEFINITIONS(-DHAVE_SOLLYA)
 	MESSAGE(STATUS "Found Sollya: ${SOLLYA_LIB}")
   ADD_DEFINITIONS(-DHAVE_LNS)
+
+  FIND_LIBRARY(FPLLL_LIB fplll)
 ELSE (SOLLYA_LIB)
 	MESSAGE(STATUS "Sollya not found, many very nice operators won't be available")
 ENDIF (SOLLYA_LIB)
@@ -407,7 +409,7 @@ src/Complex/FixedComplexMultiplier
 IF (SOLLYA_LIB)
 TARGET_LINK_LIBRARIES(
   FloPoCoLib
-  gmp gmpxx ${SOLLYA_LIB} /usr/local/lib/libfplll.a ${MPFI_LIB} ${MPFR_LIB} xml2
+  gmp gmpxx ${SOLLYA_LIB} ${FPLLL_LIB} ${MPFI_LIB} ${MPFR_LIB} xml2
   )
 ELSE (SOLLYA_LIB)
 TARGET_LINK_LIBRARIES(

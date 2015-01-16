@@ -1,6 +1,6 @@
 PROJECT(FloPoCo C CXX)
 
-MESSAGE("Trying to build FloPoCo on " ${CMAKE_SYSTEM_NAME} ", compiler is "${CMAKE_C_COMPILER})
+MESSAGE("Trying to build FloPoCo on " ${CMAKE_SYSTEM_NAME} ", compiler is " ${CMAKE_C_COMPILER})
 
 # CMake's way of handling various versions
 cmake_minimum_required(VERSION 2.4)
@@ -30,7 +30,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -O3 -DNDEBUG=1 -Wall")
 # Do you want an executable of 30MB ?
 #SET(CMAKE_BUILD_TYPE DEBUG)
 
-SET(CMAKE_BUILD_TYPE release)
+#SET(CMAKE_BUILD_TYPE release)
 
 
 FIND_PATH(MPFR_H

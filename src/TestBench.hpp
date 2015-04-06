@@ -17,7 +17,7 @@ namespace flopoco{
 		 * @param op The operator which is the UUT
 		 * @param n Number of tests
 		 */
-		TestBench(Target *target, Operator *op, int n, bool fromFile = false, bool recordOutputToFile=false);
+		TestBench(Target *target, Operator *op, int n, bool fromFile = false, bool recordOutputToFile=false, bool useStreams=false);
 	
 		/** Destructor */
 		~TestBench();
@@ -28,16 +28,23 @@ namespace flopoco{
 		 **/
 		void outputVHDL(ostream& o, string name);
 
-                /* Generating the tests using a file to store the IO, allow to have a lot of IOs without
-                 * increasing the VHDL compilation time
-                 */
-                void generateTestFromFile(bool recordOutputFile);
+		/* Generating the tests using a file to store the IO, allow to have a lot of IOs without
+		 * increasing the VHDL compilation time
+		 */
+		void generateTestFromFile(bool recordOutputFile);
+		
+		/* Generate a test-bench which will read test-cases from an input stream, then
+			send the outputs to an output stream. */
+		void generateTestForStreams();
+		
+		/* Creates a pair of input and output streams, one with input data, other with expected output.*/
+		void generateTestDataForStreams(std::ostream &dstInput, std::ostream &dstOutput) ;
 
 
-                /* Generating the tests using a the vhdl code to store the IO, 
-                 * Strongly increasing the VHDL compilation time with the numbers of IO
-                 */
-                void generateTestInVhdl();
+		/* Generating the tests using a the vhdl code to store the IO, 
+		 * Strongly increasing the VHDL compilation time with the numbers of IO
+		 */
+		void generateTestInVhdl();
 
 		/** Return the total simulation time*/
 		int getSimulationTime(){

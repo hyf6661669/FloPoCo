@@ -7,6 +7,9 @@
 #include <math.h>
 
 #include "Operator.hpp"
+#include "hls/HLSOperator.hpp"
+#include "hls/HLSOperatorBase.hpp"
+#include "hls/HLSScope.hpp"
 
 namespace flopoco
 {
@@ -241,6 +244,7 @@ public:
 
 class ComparableFloatEncoder
 	: public Operator
+	, public HLSOperatorBase
 {
 private:
 	friend class ComparableFloatType;
@@ -258,6 +262,8 @@ public:
 	void emulate(TestCase * tc);
 	void buildStandardTestCases(TestCaseList* tcl);
 	TestCase* buildRandomTestCase(int i);
+
+	void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const;
 };
 
 }; // random

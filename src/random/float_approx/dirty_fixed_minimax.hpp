@@ -70,7 +70,7 @@ namespace float_approx
 			mt=tail(mt);
 			ft=tail(ft);
 
-			fprintf(stderr, "  lsbs[%d]=%d\n", lsbs.size()-1, ff);
+			fprintf(stderr, "  lsbs[%lu]=%d\n", lsbs.size()-1, ff);
 		}		
 		
 		// We'll slowly build them up in here

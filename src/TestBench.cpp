@@ -30,11 +30,14 @@ using namespace std;
 namespace flopoco{
 
 
-	TestBench::TestBench(Target* target, Operator* op, int n, bool fromFile, bool recordOutputToFile):
+	TestBench::TestBench(Target* target, Operator* op, int n, bool fromFile, bool recordOutputToFile, bool useStreams):
 		Operator(target), op_(op), n_(n)
 	{
 		if(recordOutputToFile && !fromFile){
 			throw std::invalid_argument("TestBench - If you want to record TestBench outputs, make sure input is from a file.");
+		}
+		if(useStreams && !(fromFile && useStreams)){
+			throw std::invalid_argument("TestBench - If you want to use streams, must have fromFile=true and recordOutputToFile=true");	
 		}
 		
 		// This allows the op under test to know how long it is beeing tested.
@@ -94,8 +97,13 @@ namespace flopoco{
 		vhdl << tab << "end process;" <<endl;
 		vhdl << endl;
 
-		if (fromFile) generateTestFromFile(recordOutputToFile);
-		else generateTestInVhdl();
+		if(fromFile&&recordOutputToFile&&useStreams){
+			generateTestForStreams();
+		}else if (fromFile){
+			generateTestFromFile(recordOutputToFile);
+		}else{
+			generateTestInVhdl();
+		}
 	}
 
 
@@ -495,6 +503,236 @@ namespace flopoco{
 		vhdl << tab << "end process;" <<endl;
 	
 		simulationTime=currentOutputTime;
+	}
+	
+	/* Generates the tests in the same format as file based test-bench,
+		but all test generation is handled elsewhere.
+	 */ 
+	void TestBench::generateTestForStreams() {		
+		// we reordonate the Signal in order to put all the output 
+		// TODO :could be clean by using two list, directly retrieved from the operator
+		vector<Signal*> inputSignalVector;
+		vector<Signal*> outputSignalVector;
+
+		for(int i=0; i < op_->getIOListSize(); i++){
+			Signal* s = op_->getIOListSignal(i);
+			if (s->type() == Signal::out) outputSignalVector.push_back(s);
+			else if (s->type() == Signal::in) inputSignalVector.push_back(s);
+		};
+		
+
+		// decleration of test time
+		int currentOutputTime = 0;
+
+		// In order to generate the file containing inputs and expected output in a correct order
+		// we will store the use order for file decompression
+		list<string> IOorderInput;
+		list<string> IOorderOutput;
+
+
+		vhdl << tab << "-- Reading the input from a file " << endl;
+		vhdl << tab << "process" <<endl;
+
+
+		/* Variable declaration */
+		vhdl << tab << tab << "variable inline : line; " << endl;                    // variable to read a line
+		vhdl << tab << tab << "variable counter : integer := 1;" << endl;
+		vhdl << tab << tab << "variable tmpChar : character;" << endl;                        // variable to store a character (escape between inputs)
+		vhdl << tab << tab << "file inputsFile : text is \"test.input\"; " << endl; // declaration of the input file
+
+		/* Variable to store value for inputs */
+		for(int i=0; i < op_->getIOListSize(); i++){
+			Signal* s = op_->getIOListSignal(i);
+			if(s->type()==Signal::in){
+				vhdl << tab << tab << "variable V_" << s->getName() << " : bit_vector("<< s->width() - 1 << " downto 0);" << endl;
+			}
+		}
+
+		/* Process Beginning */
+		vhdl << tab << "begin" << endl;
+
+		/* Reset Sending */
+		vhdl << tab << tab << "-- Send reset" <<endl;
+		vhdl << tab << tab << "rst <= '1';" << endl;
+		vhdl << tab << tab << "wait for 10 ns;" << endl;
+		vhdl << tab << tab << "rst <= '0';" << endl;
+
+		/* File Reading */
+		vhdl << tab << tab << "while not endfile(inputsFile) loop" << endl;
+		vhdl << tab << tab << tab << " -- positionning inputs" << endl;
+
+		/* All inputs will be on the same line so we begin by reading this line, once by test*/
+		vhdl << tab << tab << tab << "readline(inputsFile,inline);" << endl;
+
+		// input reading and forwarding to the operator
+		for(unsigned int i=0; i < inputSignalVector.size(); i++){
+			Signal* s = inputSignalVector[i];
+			vhdl << tab << tab << tab << "read(inline ,V_"<< s->getName() << ");" << endl;
+			vhdl << tab << tab << tab << "read(inline,tmpChar);" << endl; // we consume the character between each inputs
+			if ((s->width() == 1) && (!s->isBus())) vhdl << tab << tab << tab << s->getName() << " <= to_stdlogicvector(V_" << s->getName() << ")(0);" << endl;
+			else vhdl << tab << tab << tab << s->getName() << " <= to_stdlogicvector(V_" << s->getName() << ");" << endl;
+			// adding the IO to IOorder
+			IOorderInput.push_back(s->getName());
+		}
+		vhdl << tab << tab << tab << "wait for 10 ns;" << endl; // let 10 ns between each input
+		vhdl << tab << tab << "end loop;" << endl;
+		vhdl << tab << tab << declare("finished_0",1,false)<<" <= '1';"<<endl;
+		vhdl << tab << tab << "report (\"Reached end of input file.\");"<<endl;
+		//vhdl << tab << tab << "wait for 10000 ns; -- wait for simulation to finish" << endl; // TODO : tune correctly with pipeline dept/h
+		vhdl << tab << tab << "while true loop wait for 10 ns; end loop;"<<endl;
+		vhdl << tab << "end process;" << endl;
+
+		/**
+		 * Declaration of a waiting time between sending the input and comparing
+		 * the result with the output
+		 * in case of a pipelined operator we have to wait the complete latency of all the operator
+		 * that means all the pipeline stages each step
+		 * TODO : entrelaced the inputs / outputs in order to avoid this wait
+		 */
+		vhdl << tab << tab << tab << " -- Saving the output to a file" << endl;
+		
+		vhdl << tab << "process" << endl;
+		vhdl << tab << "begin" << endl;
+		
+		vhdl << tab << tab << "while true loop" << endl;
+		vhdl << tab << tab << tab << "wait for 10 ns;" <<endl;
+		for(int i=0; i<= op_->getPipelineDepth(); i++){
+			vhdl<<tab<<tab<<tab<<declare(join("finished_",i+1))<<" <= "<<join("finished_",i)<<";\n";
+		}
+		vhdl<<tab<<tab<<tab<<"if "<<join("finished_",op_->getPipelineDepth()+1)<<" = '1' then exit; end if;"<<endl;
+		vhdl<<tab<<tab<<"end loop;"<<endl;
+		vhdl<<tab<<"end process;"<<endl;
+		
+		vhdl << tab << tab << tab << "process" << endl;
+		/* Variable declaration */
+		vhdl << tab << tab << "variable outline : line; " << endl;                    // variable to read a line
+		vhdl << tab << tab << "variable counter : integer := 1;" << endl;
+		vhdl << tab << tab << "variable tmpChar : character;" << endl;                        // variable to store a character (escape between inputs)
+		
+		vhdl << tab << tab << "file outputsFile : text is out \"test.output\"; " << endl;
+		
+		/* Process Beginning */
+		vhdl << tab << "begin" << endl;
+
+		vhdl << tab << tab << tab << " wait for 10 ns;" << endl; // wait for reset signal to finish
+		currentOutputTime += 10;
+		if (op_->getPipelineDepth() > 0){
+			vhdl << tab << tab << "wait for "<< op_->getPipelineDepth()*10 <<" ns; -- wait for pipeline to flush" <<endl;
+			currentOutputTime += op_->getPipelineDepth()*10;
+		} else {
+			vhdl << tab << tab << "wait for "<< 2 <<" ns; -- wait for pipeline to flush" <<endl;
+			currentOutputTime += 2;
+		};
+
+
+		/* File Reading */
+		vhdl << tab << tab << "while true loop" << endl;
+		
+		for(unsigned int i=0; i < outputSignalVector.size(); i++){
+			Signal* s = outputSignalVector[i];
+			
+			vhdl << tab << tab << tab <<"write(outline, str("<<s->getName()<<"));"<<endl;
+			vhdl << tab << tab << tab <<"write(outline, string'(\" \"));"<<endl;
+			vhdl << tab << tab << tab <<endl;
+		};
+		
+		vhdl << tab << tab << tab<<"writeline(outputsFile, outline);"<<endl;
+		vhdl << tab << tab << tab <<endl;
+		
+		vhdl << tab << tab << tab << " wait for 10 ns; -- wait for pipeline to flush" << endl;
+		vhdl << tab << tab << tab << "counter := counter + 1;" << endl; 
+		vhdl << tab << tab << tab << "if "<<join("finished_",op_->getPipelineDepth()+1)<<"='1' then exit; end if;" << endl;
+		vhdl << tab << tab << "end loop;" << endl;
+		vhdl << tab << tab << "report (integer'image(counter) & \" line(s) written.\");" << endl;
+		vhdl << tab << tab << "assert false report \"End of simulation\" severity failure;" <<endl;
+		vhdl << tab << "end process;" <<endl;
+
+		/* Setting the computed simulation Time */	
+		simulationTime = currentOutputTime;
+	}
+	
+	void TestBench::generateTestDataForStreams(std::ostream &dstInput, std::ostream &dstOutput) {		
+		vector<Signal*> inputSignalVector;
+		vector<Signal*> outputSignalVector;
+
+		for(int i=0; i < op_->getIOListSize(); i++){
+			Signal* s = op_->getIOListSignal(i);
+			if (s->type() == Signal::out) outputSignalVector.push_back(s);
+			else if (s->type() == Signal::in) inputSignalVector.push_back(s);
+		};
+
+		// In order to generate the file containing inputs and expected output in a correct order
+		// we will store the use order for file decompression
+		list<string> IOorderInput;
+		list<string> IOorderOutput;
+
+		// input reading and forwarding to the operator
+		for(unsigned int i=0; i < inputSignalVector.size(); i++){
+			Signal* s = inputSignalVector[i];
+			IOorderInput.push_back(s->getName());
+		}
+		
+		for(unsigned int i=0; i < outputSignalVector.size(); i++){
+			Signal* s = outputSignalVector[i];
+			IOorderOutput.push_back(s->getName());
+		}
+
+		/* Generating a file of inputs */ 
+		for (int i = 0; i < tcl_.getNumberOfTestCases(); i++)	{
+			TestCase* tc = tcl_.getTestCase(i);
+			tc->generateInputOnlyString(IOorderInput, dstInput);
+			tc->generateOutputOnlyString(IOorderOutput, dstOutput);
+		} 
+		// generation on the fly of random test case
+		for (int i = 0; i < n_; i++) {
+			TestCase* tc = op_->buildRandomTestCase(i);
+			tc->generateInputOnlyString(IOorderInput, dstInput);
+			tc->generateOutputOnlyString(IOorderOutput, dstOutput);
+			delete tc; 
+		}; 
+
+		if(n_ == -2) {
+			REPORT(LIST,"Generating the exhaustive test bench, this may take some time");
+			// exhaustive test
+			int length = inputSignalVector.size();
+			int* IOwidth = new int[length]; 
+			// getting signal width
+			for (int i = 0; i < length; i++) IOwidth[i] = inputSignalVector[i]->width(); 
+			mpz_class* bound = new mpz_class[length];
+            mpz_class* counters = new mpz_class[length];
+			int number = 1; 
+			for (int i = 0; i < length; i++) {
+				bound[i] = (mpz_class(1) << IOwidth[i]);// * tmp;
+				counters[i] = 0;
+				number *= pow(2,IOwidth[i]);
+			}
+			// getting signal name
+            string* IOname = new string[length];
+			for (int i = 0; i < length; i++) IOname[i] = inputSignalVector[i]->getName();
+			TestCase* tc;
+			
+			while (true) {
+				for (int i = 0; i < length-1; i++) {
+            		if (counters[i] >= bound[i]) { 
+						counters[i] = 0;
+						counters[i+1] += 1;
+					} 
+				}
+				// if the max counter overflows, break
+				if (counters[length-1] >= bound[length-1]) break;
+				// Test Case inputs
+				tc = new TestCase(op_);
+				for (int i = 0; i < length; i++) {
+					tc->addInput(IOname[i],counters[i]);
+				}
+				op_->emulate(tc); 
+				tc->generateInputOnlyString(IOorderInput, dstInput);
+				tc->generateOutputOnlyString(IOorderOutput, dstOutput);
+				// incrementation
+				counters[0]++;
+				delete tc;
+			}
+		}
 	}
 
 	TestBench::~TestBench() { 

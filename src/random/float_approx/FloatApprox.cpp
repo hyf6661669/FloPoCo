@@ -14,6 +14,10 @@
 
 #include "FixFunctions/PolynomialEvaluator.hpp"
 
+#include "hls/HLSContext.hpp"
+#include "hls/HLSOperatorBase.hpp"
+#include "hls/HLSScope.hpp"
+
 using namespace std;
 
 namespace flopoco{
@@ -21,7 +25,10 @@ namespace random{
   
 using namespace float_approx;
 
-class FloatApproxOperator : public Operator {
+class FloatApproxOperator
+  : public Operator
+  , public HLSOperatorBase
+{
 private:
   // Basic operator parameters describing the problem
   int m_wDomainE, m_wDomainF, m_wRangeE, m_wRangeF;
@@ -314,6 +321,11 @@ public:
     setToolPrecision(origPrec);
   }
   
+  void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const
+  {
+    throw std::runtime_error("Not implemented.");
+  }
+  
 
   void emulate(TestCase * tc)
   {
@@ -565,8 +577,10 @@ static Operator *FloatApproxFactoryParser(Target *target ,const std::vector<std:
   }
 
 	unsigned nargs = 8;
-	if (ia + nargs < argc)
+	if (ia + nargs > argc){
+        fprintf(stderr, "is=%d, nargs=%d, argc=%d\n", ia, nargs, argc);
 		throw std::string("FloatApproxFactoryParser - Not enough arguments, check usage.");
+    }
 	
 	int wDomE = atoi(args[ia++].c_str());
 	int wDomF = atoi(args[ia++].c_str());

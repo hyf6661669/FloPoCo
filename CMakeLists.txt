@@ -9,6 +9,19 @@ if(COMMAND cmake_policy)
 endif(COMMAND cmake_policy)
 
 
+# https://github.com/WebKit/webkit/blob/master/Source/cmake/OptionsCommon.cmake
+# Use ld.gold if it is available and isn't disabled explicitly
+option(USE_LD_GOLD "Use GNU gold linker" ON)
+if (USE_LD_GOLD)
+    execute_process(COMMAND ${CMAKE_C_COMPILER} -fuse-ld=gold -Wl,--version ERROR_QUIET OUTPUT_VARIABLE LD_VERSION)
+    if ("${LD_VERSION}" MATCHES "GNU gold")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold -Wl,--disable-new-dtags")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold -Wl,--disable-new-dtags")
+    else ()
+        message(WARNING "GNU gold linker isn't available, using the default system linker.")
+    endif ()
+endif ()
+
 #####################For packaging (source file distrib so far)#######
 # Use  make package_source to build a release
 # Currently it doesn't work at all
@@ -157,6 +170,12 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/utils
  src/FlopocoStream
  VHDLLexer
+ 
+ src/hls/HLSContext
+ src/hls/HLSOperator
+ src/hls/HLSScope
+ src/hls/proxies/HLSTableProxy
+ src/hls/proxies/HLSIntAdderProxy
  
  # Resource Estimation related ---------------------------------------
  #--------------------------------------------------------------------

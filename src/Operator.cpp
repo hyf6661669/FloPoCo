@@ -256,8 +256,16 @@ namespace flopoco{
 	vector<Signal*> * Operator::getIOList(){
 		return &ioList_; 
 	}
+
+	const vector<Signal*> * Operator::getIOList() const {
+		return &ioList_; 
+	}
 	
 	Signal * Operator::getIOListSignal(int i){
+		return ioList_[i];
+	}
+
+	const Signal * Operator::getIOListSignal(int i) const{
 		return ioList_[i];
 	}
 	
@@ -410,11 +418,11 @@ namespace flopoco{
 		this->outputVHDL(o, this->uniqueName_); 
 	}
 	
-	bool Operator::isSequential() {
+	bool Operator::isSequential() const {
 		return isSequential_; 
 	}
 	
-	bool Operator::isRecirculatory() {
+	bool Operator::isRecirculatory() const {
 		return needRecirculationSignal_; 
 	}
 	
@@ -433,7 +441,7 @@ namespace flopoco{
 	}
 	
 	
-	int Operator::getPipelineDepth() {
+	int Operator::getPipelineDepth() const {
 		return pipelineDepth_; 
 	}
 	
@@ -489,7 +497,7 @@ namespace flopoco{
 		}
 	}
 	
-	int Operator::getCurrentCycle(){
+	int Operator::getCurrentCycle() const {
 		return currentCycle_;
 	} 
 	
@@ -683,7 +691,7 @@ namespace flopoco{
 		return s->getDelay();		
 	}
 
-	double Operator::getCriticalPath() {return criticalPath_;}
+	double Operator::getCriticalPath() const {return criticalPath_;}
 	
 	void Operator::setCriticalPath(double delay) {criticalPath_=delay;}
 	
@@ -724,7 +732,12 @@ namespace flopoco{
 	}
 
 	
-	double Operator::getOutputDelay(string s) {return outDelayMap[s];}  // TODO add checks
+  double Operator::getOutputDelay(string s) const { // TODO add checks
+    auto it=outDelayMap.find(s);
+    if(it==outDelayMap.end())
+      return 0.0;
+    return it->second;
+  }
 	
 	string Operator::declare(string name, const int width, bool isbus, Signal::SignalType regType) {
 		Signal* s;
@@ -986,6 +999,8 @@ namespace flopoco{
 		}
 		
 		for (it=op->portMap_.begin()  ; it != op->portMap_.end(); it++ ) {
+			subComponentBindings_[std::make_pair(instanceName, it->first)]=it->second;
+			
 			bool outputSignal = false;
 			for ( int k = 0; k < int(op->ioList_.size()); k++){
 				if ((op->ioList_[k]->type() == Signal::out) && ( op->ioList_[k]->getName() == (*it).first )){ 
@@ -1028,6 +1043,17 @@ namespace flopoco{
 		return o.str();
 	}
 
+	string Operator::getSubComponentBinding(string instanceName, string portName) const
+	{
+		if(subComponents_.find(instanceName)==subComponents_.end())
+			throw std::runtime_error("getSubComponentBinding - No instance called "+instanceName+" in operator "+getName());
+		
+		auto it=subComponentBindings_.find(std::make_pair(instanceName,portName));
+		if(it==subComponentBindings_.end())
+			throw std::runtime_error("getSubComponentBinding - No binding of port "+portName+" for instance "+instanceName+" in operator "+getName());
+		
+		return it->second;
+	}
 
 	
 	string Operator::buildVHDLSignalDeclarations() {
@@ -1330,11 +1356,11 @@ namespace flopoco{
 		return tc;
 	}
 	
-	map<string, double> Operator::getOutDelayMap(){
+	map<string, double> Operator::getOutDelayMap() const{
 		return outDelayMap;
 	}
 	
-	map<string, int> Operator::getDeclareTable(){
+	map<string, int> Operator::getDeclareTable() const{
 		return declareTable;
 	}
 	
@@ -1549,8 +1575,8 @@ namespace flopoco{
 		throw std::string("emulate() not implemented for ") + uniqueName_;
 	}
 	
-	bool Operator::hasComponent(string s){
-		map<string, Operator*>::iterator theIterator;
+	bool Operator::hasComponent(string s) const{
+		map<string, Operator*>::const_iterator theIterator;
 		
 		theIterator = subComponents_.find(s);
 		if (theIterator != subComponents_.end() )
@@ -1872,6 +1898,7 @@ namespace flopoco{
 	void  Operator::cloneOperator(Operator *op){
 		stdLibType_ = op->stdLibType_;
 		subComponents_ = op->getSubComponents();
+		subComponentBindings_ = op->subComponentBindings_;
 		signalList_ = op->getSignalList();	
 		ioList_     = op->getIOListV();
 		target_           = op->getTarget();

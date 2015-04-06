@@ -54,6 +54,12 @@ namespace flopoco {
 		 * @param[in] tc               a list of test-cases
 		 */
 		void emulate ( TestCase* tc );
+		
+		/** 
+		  * Returns the width of the adder inputs and results
+		*/
+		int getWIn() const
+		{ return wIn_; }
 				
 	protected:
 		/**

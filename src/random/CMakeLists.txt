@@ -104,8 +104,8 @@ LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} ${GSL_LIBRARY_DIRS})
 #add_executable(test_optimisation utils/test_optimisation.cpp)
 #target_link_libraries(test_optimisation ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 
-add_executable(test_moment_correction moment_correction/test_moment_correction.cpp)
-target_link_libraries(test_moment_correction ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB} ${MPFR_LIB})
+#add_executable(test_moment_correction moment_correction/test_moment_correction.cpp)
+#target_link_libraries(test_moment_correction ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB} ${MPFR_LIB})
 
 #add_executable(test_moment_correction_weighted moment_correction/test_moment_correction_weighted.cpp)
 #target_link_libraries(test_moment_correction_weighted ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${NTL_LIB} ${GMP_LIB}  ${MPFR_LIB})

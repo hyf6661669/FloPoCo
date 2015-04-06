@@ -241,7 +241,7 @@ public:
 		stdLibType_ = 3;
 	};
 
-	int getStdLibType() {
+	int getStdLibType() const {
 		return stdLibType_; 
 	};
 
@@ -293,7 +293,7 @@ public:
 
 	/** Return the current cycle 
 	 * @return the current cycle */
-	int getCurrentCycle(); 
+	int getCurrentCycle() const; 
 
 	/** advance the current cycle by 1, and resets the critical path 
 	 * @param the new value of the current cycle */
@@ -304,7 +304,7 @@ public:
 	void previousCycle(bool report=true) ;
 
 	/** get the critical path of the current cycle so far */
-	double getCriticalPath() ;
+	double getCriticalPath() const;
 
 	/** Set or reset the critical path of the current cycle  */
 	void setCriticalPath(double delay) ;
@@ -318,7 +318,7 @@ public:
 
 	/** get the critical path delay associated to a given output of the operator
 	 * @param the name of the output */
-	double getOutputDelay(string s); 
+	double getOutputDelay(string s) const; 
 
 	/** Set the current cycle to that of a signal and reset the critical path. It may increase or decrease current cycle. 
 	 * @param name is the signal name. It must have been defined before 
@@ -605,13 +605,13 @@ public:
 	/** True if the operator needs a clock signal; 
 	 * It will also get a rst but doesn't need to use it.
 	 */	
-	bool isSequential();  
+	bool isSequential() const;  
 
 
         /** True if the operator need a recirculation signal 
          *  TODO : change name
          */
-        bool isRecirculatory();
+        bool isRecirculatory() const;
 	
 	/** Set the operator to sequential.
 		 You shouldn't need to use this method for standard operators 
@@ -690,10 +690,16 @@ public:
 	 */
 	vector<Signal*> * getIOList();
 
+	const vector<Signal*> * getIOList() const;
+
 	/** passes the IOList by value.
 	 * @return the ioList 
 	 */
 	vector<Signal*> getIOListV(){
+		return ioList_;
+	}
+
+	const vector<Signal*> &getIOListV() const{
 		return ioList_;
 	}
 
@@ -703,6 +709,8 @@ public:
 	 * @return pointer to the i'th signal of ioList 
 	 */
 	Signal * getIOListSignal(int i);
+
+        const Signal * getIOListSignal(int i) const;
 	
 	/** DEPRECATED, better use setCopyrightString
 		 Output the licence
@@ -773,27 +781,31 @@ public:
 	/** Gets the pipeline depth of this operator 
 	 * @return the pipeline depth of the operator
 	*/
-	int getPipelineDepth();
+	int getPipelineDepth() const;
 
 	/**
 	* @return the output map containing the signal -> delay associations 
 	*/	
-	map<string, double> getOutDelayMap();
+	map<string, double> getOutDelayMap() const;
 	
 	/**
 	* @return the output map containing the signal -> declaration cycle 
 	*/	
-	map<string, int> getDeclareTable();
+	map<string, int> getDeclareTable() const;
 
 	Target* getTarget(){
 		return target_;
 	}
+	
+	const Target* getTarget() const{
+		return target_;
+	}
 
-	string getUniqueName(){
+	string getUniqueName() const{
 		return uniqueName_;
 	}
 
-	string getArchitectureName(){
+	string getArchitectureName() const{
 		return architectureName_;
 	}
 	
@@ -801,7 +813,11 @@ public:
 		return testCaseSignals_;
 	}
 	
-	map<string, string> getPortMap(){
+	const vector<Signal*> &getTestCaseSignals() const{
+		return testCaseSignals_;
+	}
+	
+	map<string, string> getPortMap() const{
 		return portMap_;
 	}
 	
@@ -810,69 +826,88 @@ public:
 		return inputDelayMap;
 	}
 	
+	const map<string, double> &getInputDelayMap() const{
+		return inputDelayMap;
+	}
+	
 	map<string, Operator*> getSubComponents(){
 		return subComponents_;
 	}
 	
-	string getSrcFileName(){
+	const map<string, Operator*> &getSubComponents() const {
+		return subComponents_;
+	}
+	
+	//! Return the signal name associated with given port on instance
+	string getSubComponentBinding(string instanceName, string portName) const;
+	
+	string getSrcFileName() const{
 		return srcFileName;
 	}
 	
-	int getOperatorCost(){
+	int getOperatorCost() const{
 		return cost;
 	}
 
-	int getNumberOfInputs(){
+	int getNumberOfInputs() const{
 		return numberOfInputs_;
 	}
 	
 	/** Get the i'th input, where 0<=i<getNumberOfInputs() **/
 	Signal *getInputSignal(int i);
 	
-	int getNumberOfOutputs(){
+	const Signal *getInputSignal(int i) const;
+	
+	int getNumberOfOutputs() const{
 		return numberOfOutputs_;
 	}
 	
 	/** Get the i'th output, where 0<=i<getNumberOfOutputs() **/
 	Signal *getOutputSignal(int i);
 	
+	const Signal *getOutputSignal(int i) const;
+	
 	map<string, Signal*> getSignalMap(){
 		return signalMap_;
 	}
+	
+	const map<string, Signal*> &getSignalMap() const {
+		return signalMap_;
+	}
 
-	map<string, pair<string, string> > getConstants(){
+	map<string, pair<string, string> > getConstants() const{
 		return constants_;
 	}
 	
-	map<string, string> getAttributes(){
+	map<string, string> getAttributes() const{
 		return attributes_;
 	}
 	
-	map<string, string> getTypes(){
+	map<string, string> getTypes() const{
 		return types_;
 	}
 	
-	map<pair<string,string>, string> getAttributesValues(){
+	map<pair<string,string>, string> getAttributesValues() const{
 		return attributesValues_;
 	}
 
-	bool getHasRegistersWithoutReset(){
+	bool getHasRegistersWithoutReset() const{
 		return hasRegistersWithoutReset_;
 	}
 
-	bool getHasRegistersWithAsyncReset(){
+	bool getHasRegistersWithAsyncReset() const{
 		return hasRegistersWithAsyncReset_;
 	}
 
-	bool getHasRegistersWithSyncReset(){
+	bool getHasRegistersWithSyncReset() const{
 		return hasRegistersWithSyncReset_;
 	}
 
-	bool hasReset() {
+	bool hasReset() const {
 		return hasRegistersWithSyncReset_ || hasRegistersWithAsyncReset_;
 	}
 
-	bool hasClockEnable(){
+	bool hasClockEnable() const {
 		return hasClockEnable_;
 	}
 
@@ -880,11 +915,11 @@ public:
 		hasClockEnable_=val;
 	}
 
-	string getCopyrightString(){
+	string getCopyrightString() const {
 		return copyrightString_;
 	}
 
-	bool getNeedRecirculationSignal(){
+	bool getNeedRecirculationSignal() const {
 		return needRecirculationSignal_;
 	}
 	
@@ -897,6 +932,10 @@ public:
 	vector<Operator*> getOpList(){
 		return oplist;
 	}
+	
+	const vector<Operator*> &getOpList() const {
+		return oplist;
+	}
 
 
 	vector<Operator*>& getOpListR(){
@@ -904,7 +943,7 @@ public:
 	}
 
 	
-	bool hasComponent(string s);
+	bool hasComponent(string s) const;
 	
 	void cleanup(vector<Operator*> *ol, Operator* op);
 	
@@ -1348,6 +1387,7 @@ public:
 	////////////BEWARE: don't add anything below without adding it to cloneOperator, too
 
 	map<string, Operator*> subComponents_;					/**< The list of sub-components */
+	map<pair<string,string>,string> subComponentBindings_;	/**< Map of (instances,internal)->external */
 	vector<Signal*>     signalList_;      					/**< The list of internal signals of the operator */
 	vector<Signal*>     ioList_;          					/**< The list of I/O signals of the operator */
 

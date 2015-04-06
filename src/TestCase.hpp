@@ -151,6 +151,19 @@ namespace flopoco{
                  * and the order for outputing these IO is given by IOorder
                  */
                 std::string generateInputString(list<string> IOorderInput, list<string> IOorderOutput);
+				
+				/**
+                 * generate a string with each inputs, one per line
+                 * and the order for outputing these IO is given by IOorderInput
+                 */
+                void generateInputOnlyString(const list<string> &IOorderInput, std::ostream &dst);
+				
+				/**
+                 * generate a string with each output, one per line
+                 * and the order for outputing these IO is given by IOorderOutput
+                 */
+                void generateOutputOnlyString(const list<string> &IOorderOutput, std::ostream &dst);
+
 
                 /**
                  *    Define the test case integer identifiant

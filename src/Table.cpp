@@ -249,7 +249,6 @@ namespace flopoco{
 		endArchitecture(o);
 	}
 
-
 	int Table::size_in_LUTs() {
 		return wOut*int(intpow2(wIn-target_->lutInputs()));
 	}

@@ -26,6 +26,9 @@
 
 #include "FloPoCo.hpp"
 
+#include "hls/HLSContext.hpp"
+#include "hls/HLSOperator.hpp"
+
 
 #define BRIGHT 1
 #define RED 31
@@ -651,6 +654,10 @@ void usage(char *name, string opName = ""){
 		cerr << "       Inputs and outputs are stored in a file to reduce VHDL compilation time.\n";
 		cerr << "       if n=-2, an exhaustive test is generated (use only for small operators).\n";
 		cerr << "       if the 'record-output' flag appears, all outputs will be sent to test.out\n";
+		OP( "TestBenchStreams","");
+		cerr << "       Behavorial test bench for the preceding operator\n";
+		cerr << "       This does not do any test-case generation, it simply creates a test-bench\n";
+		cerr << "       which will read inputs from a file and write outputs to a file.\n";
 	}
 	
 	if ( full || opName=="Wrapper"){
@@ -2609,7 +2616,17 @@ bool parseCommandLine(int argc, char* argv[]){
 		else if(random_parseCommandLine(argc, argv, target, opname, i)){
 			// we actually do nothing, the work is already done if it returned true
 		}
-		else if (opname == "TestBench") {
+
+		else if(opname=="HLSDefinitions"){
+			vector<Operator*> oplist=*target->getGlobalOpListRef();
+			
+			HLSContext ctxt(stdout);
+			for(int i=0; i<oplist.size(); i++){
+			  HLSOperator *hls=getHLSOperator(oplist[i]);
+			  ctxt.emitDefinition(*hls);
+			  hls->releaseHLS();
+			}
+		}else if (opname == "TestBench") {
 			int nargs = 1;
 			if (i+nargs > argc)
 				usage(argv[0],opname); // and exit
@@ -2678,6 +2695,39 @@ bool parseCommandLine(int argc, char* argv[]){
 			cerr <<  "ghdl -e " << simlibs << "-fexplicit " << op->getName() <<endl;
 			cerr <<  "ghdl -r " << simlibs << op->getName() << " --vcd=" << op->getName() << ".vcd" <<endl;
 			cerr <<  "gtkwave " << op->getName() << ".vcd" << endl;
+		}
+		else if (opname == "TestBenchStreams") {
+			/* Using streams for input and output of test-bench */
+			int nargs = 3;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			if(target->getGlobalOpListRef()->empty()){
+				cerr<<"ERROR: TestBench has no operator to wrap (it should come after the operator it wraps)"<<endl;
+				usage(argv[0],opname); // and exit
+			}
+			
+			int n=atoi(argv[i++]);
+			std::string inputName=argv[i++];
+			std::string outputName=argv[i++];
+			
+			Operator* toWrap = target->getGlobalOpListRef()->back();
+			TestBench* op = new TestBench(target, toWrap, n, true, true, true);
+			cerr << "> TestBench for " << toWrap->getName()<<endl;
+			addOperator(op);
+			cerr << "To run the simulation using gHDL, type the following in a shell prompt:" <<endl;
+			string simlibs;
+			if(op->getStdLibType()==0 || op->getStdLibType()==-1)
+				simlibs="--ieee=synopsys ";
+			if(op->getStdLibType()==1)
+				simlibs="--ieee=standard ";
+			cerr <<  "ghdl -a " << simlibs << "-fexplicit "<< filename <<endl;
+			cerr <<  "ghdl -e " << simlibs << "-fexplicit " << op->getName() <<endl;
+			cerr <<  "ghdl -r " << simlibs << op->getName()<<endl;
+			
+			std::ofstream dstIn(inputName);
+			std::ofstream dstOut(outputName);
+			
+			op->generateTestDataForStreams(dstIn, dstOut) ;
 		}
 		else  {
 			cerr << "ERROR: Problem parsing input line with opname='"<<opname<<"', and "<< argc-i <<" arguments remaining:\n";

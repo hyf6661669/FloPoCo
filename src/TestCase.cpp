@@ -304,6 +304,39 @@ namespace flopoco{
 
 
         }
+		
+	void TestCase::generateOutputOnlyString(const list<string> &IOorderOutput, std::ostream &o) {
+		for (list<string>::const_iterator it = IOorderOutput.begin(); it != IOorderOutput.end(); it++) {
+			Signal* s = op_->getSignalByName(*it);
+			vector<mpz_class> &vs = outputs[*it];
+			
+			if(getSetupCycle()){
+				// During setup cycles we are pushing data into the architecture, and the expected outputs are only relevant to emulate(.), not to testbench.
+				o << 0 << " ";
+			}else{
+				o << vs.size() << " ";
+				/* Iterate through possible output values */
+				for (vector<mpz_class>::iterator it = vs.begin(); it != vs.end(); it++)
+				{
+					mpz_class &v = *it;
+					o << s->valueToVHDL(v,false) << " ";
+				}
+			}
+			o << endl;
+		}
+	}
+		
+	void TestCase::generateInputOnlyString(const list<string> &IOorderInput, std::ostream &o) {
+		/* iterate trough input signals */
+        for (list<string>::const_iterator it = IOorderInput.begin(); it != IOorderInput.end(); it++) {
+			  Signal* s = op_->getSignalByName(*it);
+			  mpz_class &v = inputs[*it];
+			  o << s->valueToVHDL(v,false) << " ";
+        }
+		o << "\n";
+
+
+    }
 
 
 

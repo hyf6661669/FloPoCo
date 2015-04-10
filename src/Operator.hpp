@@ -5,8 +5,13 @@
 #include "config.h"
 #endif
 
+#include <pthread.h>
+
 #include <vector>
 #include <map>
+#include <unordered_map>
+#include <regex>
+#include <string>
 #include <gmpxx.h>
 #include "Target.hpp"
 #include "Signal.hpp"
@@ -145,9 +150,13 @@ public:
 	 * Adds a signal of type Signal::out to the the I/O signal list.
 	 * @param name  the name of the signal
 	 */	
-	void addOutput(const std::string name);
+	void addOutput(const std::string name) {
+		addOutput (name, 1, 1, false);
+	}
 
-	void addOutput(const char* name);
+	void addOutput(const char* name) {
+		addOutput (name, 1, 1, false);
+	}
 
 #if 1
 	// Test:
@@ -221,28 +230,42 @@ public:
 
 	/** use the Synopsys de-facto standard ieee.std_logic_unsigned for this entity
 	 */
-	void useStdLogicUnsigned();
+	void useStdLogicUnsigned() {
+		stdLibType_ = 0;
+	};
 
 	/** use the Synopsys de-facto standard ieee.std_logic_unsigned for this entity
 	 */
-	void useStdLogicSigned();
+	void useStdLogicSigned() {
+		stdLibType_ = -1;
+	};
+
 
 	/** use the real IEEE standard ieee.numeric_std for this entity
 	 */
-	void useNumericStd();
+	void useNumericStd() {
+		stdLibType_ = 1;
+	};
+	
 	/** 
 	 * use the real IEEE standard ieee.numeric_std for this entity, also 
 	 * with support for signed operations on bit vectors
 	 */
-	void useNumericStd_Signed();
+	void useNumericStd_Signed() {
+		stdLibType_ = 2;
+	};
 	
 	/** 
 	 * use the real IEEE standard ieee.numeric_std for this entity, also 
 	 * with support for unsigned operations on bit vectors
 	 */
-	void useNumericStd_Unsigned();
+	void useNumericStd_Unsigned() {
+		stdLibType_ = 3;
+	};
 
-	int getStdLibType();
+	int getStdLibType() {
+		return stdLibType_; 
+	};
 
 	/** Sets Operator name to given name, with either the frequency appended, or "comb" for combinatorial.
 	 * @param operatorName new name of the operator
@@ -281,7 +304,10 @@ public:
 	string getName() const;
 
 	/** produces a new unique identifier */
-	static int getNewUId();
+	static int getNewUId(){
+		Operator::uid++;
+		return Operator::uid;
+	}
 
 
 
@@ -398,8 +424,9 @@ public:
 	 * @param regType: the registring type of this signal. See also the Signal Class for mor info
 	 * @return name
 	 */
-	string declare(string name, Signal::SignalType regType = Signal::wire );
-
+	string declare(string name, Signal::SignalType regType = Signal::wire ) {
+		return declare(name, 1, false, regType);
+	}
 
 	/** Declares a fixed-point signal on the Left Hand Side of a VHDL assignment
 	 * @param name is the name of the signal
@@ -415,6 +442,14 @@ public:
 	 * @return name
 	 */
 	void resizeFixPoint(string lhsName, string rhsName, const int MSB, const int LSB, const int indentLevel=1);
+
+
+	/**
+	 * Delay a signal for a given amount of of cycles
+	 * @param signalName the signal to delay
+	 * @param nbDelayCycles the number of cycles the signal will be delayed
+	 */
+	string delay(string signalName, int nbDelayCycles = 1);
 
 
 	// TODO: add methods that allow for signals with reset (when rewriting FPLargeAcc for the new framework)
@@ -472,26 +507,35 @@ public:
 	/** define architecture name for this operator (by default : arch)
 	 *	@param[in] 	architectureName		- new name for the operator architecture
 	 **/
-	void setArchitectureName(string architectureName);
+	void setArchitectureName(string architectureName) {
+		architectureName_ = architectureName;
+	};	
+
 
 	/**
 	 * A new architecture inline function
 	 * @param[in,out] o 	- the stream to which the new architecture line will be added
 	 * @param[in]     name	- the name of the entity corresponding to this architecture
 	 **/
-	void newArchitecture(std::ostream& o, std::string name);
+	inline void newArchitecture(std::ostream& o, std::string name){
+		o << "architecture " << architectureName_ << " of " << name  << " is" << endl;
+	}
 	
 	/**
 	 * A begin architecture inline function 
 	 * @param[in,out] o 	- the stream to which the begin line will be added
 	 **/
-	void beginArchitecture(std::ostream& o);
+	inline void beginArchitecture(std::ostream& o){
+		o << "begin" << endl;
+	}
 
 	/**
 	 * A end architecture inline function 
 	 * @param[in,out] o 	- the stream to which the begin line will be added
 	 **/
-	void endArchitecture(std::ostream& o);
+	inline void endArchitecture(std::ostream& o){
+		o << "end architecture;" << endl << endl;
+	}
 
 
 
@@ -516,6 +560,14 @@ public:
 	 */
 	virtual void buildStandardTestCases(TestCaseList* tcl);
 
+	struct thread_data{
+	   int  threadId;
+	   int  numTests;
+	   Operator* op;
+	};
+
+	static void *buildRandomTestCaseWorker(void *threadArg);
+
 
 	/**
 	 * Generate Random Test case identified by an integer . There is a default
@@ -529,7 +581,9 @@ public:
 	 * @param i the identifier of the test case to be generated
 	 * @return TestCase*
 	 */
-	virtual TestCase* buildRandomTestCase(int i);
+	static TestCase* buildRandomTestCase(int i, Operator *op);
+
+	TestCase* buildRandomTestCase(int i);
 
 
 
@@ -630,21 +684,23 @@ public:
 
 
 
-	/** Set the operator to need a recirculation signal in order to 
-			trigger the pipeline work
-	*/
-	void setRecirculationSignal();
+        /** Set the operator to need a recirculation signal in order to 
+                  trigger the pipeline work
+         */
+        void setRecirculationSignal();
 	
 	/** Indicates that it is not a warning if there is feedback of one cycle, but it
 		is an error if a feedback of more than one cycle happens.
 		*/
-	void setHasDelay1Feedbacks();
+	void setHasDelay1Feedbacks()
+	{
+		hasDelay1Feedbacks_=true;
+	}
 
 
-	/** Indicates that it is not a warning if there is feedback of one cycle, but it
-		is an error if a feedback of more than one cycle happens.
-		*/
-	bool hasDelay1Feedbacks();
+	bool hasDelay1Feedbacks(){
+		return hasDelay1Feedbacks_;
+	}
 	
 
 
@@ -786,7 +842,9 @@ public:
 	*/
 	int getPipelineDepth();
 
-	/** Should not be used for operators without memory */
+	/**
+	 * Should not be used for operators without memory
+	 */
 	void setPipelineDepth(int d);
 
 	/**
@@ -797,7 +855,7 @@ public:
 	/**
 	* @return the output map containing the signal -> declaration cycle 
 	*/	
-	map<string, int> getDeclareTable();
+	unordered_map<string, int> getDeclareTable();
 
 	Target* getTarget(){
 		return target_;
@@ -815,7 +873,7 @@ public:
 		return testCaseSignals_;
 	}
 	
-	map<string, string> getPortMap(){
+	unordered_map<string, string> getPortMap(){
 		return portMap_;
 	}
 	
@@ -844,19 +902,19 @@ public:
 		return numberOfOutputs_;
 	}
 	
-	map<string, Signal*> getSignalMap(){
+	unordered_map<string, Signal*> getSignalMap(){
 		return signalMap_;
 	}
 
-	map<string, pair<string, string> > getConstants(){
+	unordered_map<string, pair<string, string> > getConstants(){
 		return constants_;
 	}
 	
-	map<string, string> getAttributes(){
+	unordered_map<string, string> getAttributes(){
 		return attributes_;
 	}
 	
-	map<string, string> getTypes(){
+	unordered_map<string, string> getTypes(){
 		return types_;
 	}
 	
@@ -1385,32 +1443,33 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	static multimap < string, TestState > testMemory;			/**< multimap which will be used to test if the selected operator already had been tested */
+
 protected:    
+	Target*             target_;          					/**< The target on which the operator will be deployed */
 	string              uniqueName_;      					/**< By default, a name derived from the operator class and the parameters */
 	string 				architectureName_;					/**< Name of the operator architecture */
 	vector<Signal*>     testCaseSignals_; 					/**< The list of pointers to the signals in a test case entry. Its size also gives the dimension of a test case */
 
-	map<string, string> portMap_;         					/**< Port map for an instance of this operator */
+	unordered_map<string, string> portMap_;         					/**< Port map for an instance of this operator */
 	map<string, double> outDelayMap;      					/**< Slack delays on the outputs */
 	map<string, double> inputDelayMap;      				/**< Slack delays on the inputs */
 	string              srcFileName;      					/**< Used to debug and report.  */
-	map<string, int>    declareTable;     					/**< Table containing the name and declaration cycle of the signal */
+	unordered_map<string, int>    declareTable;     					/**< Table containing the name and declaration cycle of the signal */
 	int                 myuid;              				/**<unique id>*/
 	int                 cost;             					/**< the cost of the operator depending on different metrics */
 	vector<Operator*>   oplist;                     /**< A list of all the sub-operators */
 	
 
-private:    
-	Target*             target_;          					/**< The target on which the operator will be deployed */
+private:
 	int                    stdLibType_;                 	/**< 0 will use the Synopsys ieee.std_logic_unsigned, -1 uses std_logic_signed, 1 uses ieee numeric_std  (preferred) */
 	int                    numberOfInputs_;             	/**< The number of inputs of the operator */
 	int                    numberOfOutputs_;            	/**< The number of outputs of the operator */
 	bool                   isSequential_;               	/**< True if the operator needs a clock signal*/
 	int                    pipelineDepth_;              	/**< The pipeline depth of the operator. 0 for combinatorial circuits */
-	map<string, Signal*>   signalMap_;                  	/**< A container of tuples for recovering the signal based on it's name */ 
-	map<string, pair<string, string> > constants_;      	/**< The list of constants of the operator: name, <type, value> */
-	map<string, string>    attributes_;                  	/**< The list of attribute declarations (name, type) */
-	map<string, string>    types_;                      	/**< The list of type declarations (name, type) */
+	unordered_map<string, Signal*>   signalMap_;                  	/**< A container of tuples for recovering the signal based on it's name */
+	unordered_map<string, pair<string, string> > constants_;      	/**< The list of constants of the operator: name, <type, value> */
+	unordered_map<string, string>    attributes_;                  	/**< The list of attribute declarations (name, type) */
+	unordered_map<string, string>    types_;                      	/**< The list of type declarations (name, type) */
 	map<pair<string,string>, string >  attributesValues_;	/**< attribute values <attribute name, object (component, signal, etc)> ,  value> */
 	bool                   hasRegistersWithoutReset_;   	/**< True if the operator has registers without a reset */
 	bool                   hasRegistersWithAsyncReset_; 	/**< True if the operator has registers having an asynch reset */
@@ -1422,9 +1481,10 @@ private:
 	double                 criticalPath_;               	/**< The current delay of the current pipeline stage */
 	bool                   needRecirculationSignal_;    	/**< True if the operator has registers having a recirculation signal  */
 	bool                   hasClockEnable_;    	          /**< True if the operator has a clock enable signal  */
-	int					    hasDelay1Feedbacks_;		/**< True if this operator has feedbacks of one cyle, and no more than one cycle (i.e. an error if the distance is more). False gives warnings */
+	int					    hasDelay1Feedbacks_;		/**< True if this operator has feedbacks of one cycle, and no more than one cycle (i.e. an error if the distance is more). False gives warnings */
 	Operator*              indirectOperator_;              /**< NULL if this operator is just an interface operator to several possible implementations, otherwise points to the instance*/
 
+	vector<TestCaseList*>	testCases;
 };
 
 	// global variables used through most of FloPoCo,

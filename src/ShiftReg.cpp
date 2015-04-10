@@ -19,25 +19,30 @@ namespace flopoco {
 
 		ostringstream name;
 		name << "ShiftReg_"<< w_ << "_uid" << getNewUId();
-		setNameWithFreq( name.str() );
+		setNameWithFreq(name.str());
 
 		addInput("X", w, true);
 
-		for(int i=0; i<n; i++) {
+		for(int i=0; i<n; i++)
+		{
 			addOutput(join("Xd", i), w, true);
 		}
 
 		setCriticalPath(getMaxInputDelays(inputDelays));
 
-		vhdl << tab << declare("XX", w, false, Signal::registeredWithAsyncReset) << " <= X;" << endl;
+		vhdl << tab << declare("XX", w) << " <= X;" << endl;
 
-		
-		for(int i=0; i<n; i++) {
-			vhdl << tab << join("Xd", i) << " <= XX;" << endl;
-			if (i<n-1)
-				nextCycle(false);
+		for(int i=0; i<n; i++)
+		{
+
+//			vhdl << tab << join("Xd", i) << " <= XX;" << endl;
+//			if (i<n-1)
+//				nextCycle();
+
+			vhdl << tab << join("Xd", i) << " <= " << delay("XX", i) << ";" << endl;
 		}
-		setPipelineDepth(0);
+
+		//setPipelineDepth(0);
 	};
 
 	ShiftReg::~ShiftReg(){

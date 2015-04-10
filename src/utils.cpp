@@ -650,9 +650,9 @@ namespace flopoco{
 		return o.str();
 	}
 
-	string printMapContent( map <string, int> inputDelays){
+	string printMapContent( unordered_map <string, int> inputDelays){
 		ostringstream o;
-		map<string, int>::iterator iter;
+		unordered_map<string, int>::iterator iter;
 		for (iter = inputDelays.begin(); iter!=inputDelays.end();++iter)
 			o  << endl << "   " << iter->first << " cycle " << iter->second;			
 		return o.str();

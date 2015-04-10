@@ -8,6 +8,7 @@
 #include <mpfr.h>
 #include <gmpxx.h>
 #include <map>
+#include <unordered_map>
 #include <math.h>
 
 #include <inttypes.h>
@@ -365,7 +366,7 @@ namespace flopoco{
 	 */ 
 	string printInputDelays( map <string, double> inputDelays);
 
-	string printMapContent( map <string, int> inputDelays);
+	string printMapContent( unordered_map<string, int> inputDelays);
 	
 	string printVectorContent( vector< pair<string, int> > table);
 	

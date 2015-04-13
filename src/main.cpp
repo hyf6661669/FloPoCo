@@ -940,6 +940,19 @@ bool parseCommandLine(int argc, char* argv[]){
 			}
 		}
 
+		else if(opname=="FixSIF")
+		{
+			if (i+1 > argc)
+				usage(argv[0],opname);
+			else {
+				string file = argv[i++];
+				op = new FixSIF(target, -8, file);
+				cout<<"adding FixSIF"<<endl;
+				addOperator(op);
+				cout<<"FixSIF succesfully added"<<endl;
+			}
+		}
+
 		else if(opname=="FixHalfSine")
 		{
 			if (i+2 > argc)

@@ -11,7 +11,7 @@
 #include "FixSOPC.hpp"
 
 #define BUF_SIZE 256 //default buffer size
-#define DEFAULT_PREC -8 //default precision for sopcs
+#define DEFAULT_PREC -64 //default precision for sopcs
 
 using namespace std;
 
@@ -106,21 +106,13 @@ namespace flopoco {
 			queue <int> coefIndsx;
 			queue <int> coefIndsu;
 
-			cout<<"copy first line of coeffs"<<endl;
 			//copy first line of coeffs
+				REPORT(0,"non zeros coefficients number="<<nonZeros.size());
 			for (int i = 0; i<coeffs[0].size(); i++){
 				nonZeros[i] = coeffs[0][i];
-				cout<<"coeffs[0]["<<i<<"]="<<coeffs[0][i]<<endl;
-				cout<<"	nonZeros["<<i<<"]="<<nonZeros[i]<<", nonZeros.size()="<<nonZeros.size()<<endl;
+				REPORT(0,"coeffs["<<i<<"]="<<coeffs[0][i]);
 			}
 			//output matrix vector
-			cout<<"nonZeros feed"<<endl;
-			for (int i = 0; i<nonZeros.size(); i++)
-				cout<<"	nonZeros["<<i<<"]="<<nonZeros[i]<<endl;
-
-
-			cout<<"cleaning t from implicit ones and zeros"<<endl;
-
 			//three steps (t, x and u) because all are not treated the same way
 			//drop zeros and (implicit) ones in the diagonal but keep indices for consistency
 			int ib = 0; //bias in vector indices induced by erase operations
@@ -129,138 +121,124 @@ namespace flopoco {
 			{
 				if ( ( stof(nonZeros[i+ib].c_str()) == 0.0 ) || ( (stof(nonZeros[i+ib].c_str()) == 1.0)&&(n-coeffs.size()==i)) ){
 					nonZeros.erase(nonZeros.begin()+i+ib);
-					cout<<"deleting nonZeros["<<i<<"]"<<endl;
+					REPORT(0,"no coef found at "<<i+ib);
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
 					ib--;
 				}
 				else {
-					cout<<"pushing "<<i<<" in coefIndst"<<endl;
 					coefIndst.push(i);
+					REPORT(0,"coef found at "<<i+ib);
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0,"pushing "<<i<<" in list of indices for T");
 				}
 			}
 
-			cout<<"cleaning x from implicit zeros, nonZeros of size:"<<nonZeros.size()<<endl;
-					cout<<"ib="<<ib<<", i="<<i<<endl;
+					REPORT(0,"number of non zeros coefficients:"<<nonZeros.size()<<", bias="<<ib<<", iteration="<<i<<", n=nu+nx+nt="<<nu+nx+nt);
 			
-			//output matrix vector
-			for (int i = 0; i<nonZeros.size(); i++)
-				cout<<"	nonZeros["<<i<<"]="<<nonZeros[i]<<endl;
-
 			//only drop zeros for x
 			for ( ; i<nt+nx; i++ )
 			{
 				if ( stof(nonZeros[i+ib].c_str()) == 0.0 ){
-			cout<<"no coef found at "<<i+ib<<endl;
-			cout<<"numerical value of nonZeros["<<i+ib<<"]="<<stof(nonZeros[i+ib].c_str())<<endl;
+					REPORT(0,"no coef found at "<<i+ib);
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
 				else{
 					coefIndsx.push(i-nt);
-			cout<<"coef found at "<<i+ib<<endl;
-			cout<<"numerical value of nonZeros["<<i+ib<<"]="<<stof(nonZeros[i+ib].c_str())<<endl;
-					cout<<"pushing "<<i-nt<<" in coefIndsx"<<endl;
+					REPORT(0,"coef found at "<<i+ib);
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0, "pushing "<<i-nt<<" in list of indices for x");
 				}
 			}
 
-			cout<<"cleaning u from implicit zeros, ib="<<ib<<", i="<<i<<", nu+nx+nt="<<nu+nx+nt<<endl;
-
-			//output matrix vector
-			for (int i = 0; i<nonZeros.size(); i++)
-				cout<<"	nonZeros["<<i<<"]="<<nonZeros[i]<<endl;
+			REPORT(0, "cleaning u from implicit zeros, bias="<<ib<<", iteration="<<i<<", n=nu+nx+nt="<<nu+nx+nt);
 
 			//and for u
 			for ( ; i<nu+nx+nt; i++ )
 			{
 				if ( stof(nonZeros[i+ib].c_str()) == 0.0 ){
-			cout<<"no coef found at "<<i+ib<<endl;
-			cout<<"numerical value of nonZeros["<<i+ib<<"]="<<stof(nonZeros[i+ib].c_str())<<endl;
+					REPORT(0,"no coef found at "<<i+ib);
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
 				else{
 					coefIndsu.push(i-nt-nx);
-					cout<<"pushing "<<i-nt-nx<<" in coefIndsu"<<endl;
+					REPORT(0,"coef found at "<<i+ib);
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0, "pushing "<<i-nt<<" in list of indices for x");
 				}
 			}
 
 			//if only one coeff, just write a multiplier, if only ones, just write an adder
 			//if ( nonZeros.size() > 1 ) {
 					
-				cout<<"trying to push SOPC with following parameters:"<<endl;
-				cout<<"	lsbOut="<<*lsbOut.begin()<<endl;
-				cout<<"	nonZeros.size()="<<nonZeros.size()<<endl;
+				REPORT(0, "trying to push SOPC with following parameters:");
+				REPORT(0, "lsbOut="<<*lsbOut.begin()<<", nonZeros.size()="<<nonZeros.size());
 				for ( int i = 0; i<nonZeros.size(); i++)
 				{
-					cout<<"	nonZeros["<<i<<"]=";
-					cout<<nonZeros[i]<<endl;
+					REPORT(0, "numerical value of non zero coeff at "<<i<<":"<<nonZeros[i]);
 				}
-				cout<<"starting push"<<endl;
 
 					sopcs.push_back(new FixSOPC( target_, *lsbIn.begin(), *lsbOut.begin(), nonZeros));
-				cout<<"SOPC pushed back"<<endl;
 
 					addSubComponent(*sopcs.rbegin());
 					lsbIn.erase(lsbIn.begin());
 					lsbOut.erase(lsbOut.begin());
 
-					cout<<"coefIndst.size()="<<coefIndst.size()<<endl;
-					cout<<"coefIndsx.size()="<<coefIndsx.size()<<endl;
-					cout<<"coefIndsu.size()="<<coefIndsu.size()<<endl;
-
 					//wiring
 					i=0;
 					for ( ; i<coefIndst.size(); i++) {
-					cout<<"inporting T, with parameters X"<<i<<" and T"<<coefIndst.front()<< endl;
+					REPORT(0, "inporting T, with parameters X"<<i<<" and T"<<coefIndst.front());
 						inPortMap(*sopcs.rbegin(), join("X", i), join("T", coefIndst.front()));
 						coefIndst.pop();
 					}
 
 					for ( ; i-coefIndst.size()<coefIndsx.size(); i++) {
-					cout<<"inporting X, with parameters X"<<i<<" and X"<<coefIndsx.front()<< endl;
+					REPORT(0, "inporting X, with parameters X"<<i<<" and X"<<coefIndsx.front());
 						inPortMap(*sopcs.rbegin(), join("X", i), join("X", coefIndsx.front()));
 						coefIndsx.pop();
 					}
 					for ( ; i-( coefIndst.size() + coefIndsx.size() )<coefIndsu.size(); i++) {
-					cout<<"inporting U, with parameters X"<<i<<" and U"<<coefIndsu.front()<< endl;
+					REPORT(0, "inporting U, with parameters X"<<i<<" and U"<<coefIndsu.front());
 						inPortMap(*sopcs.rbegin(), join("X", i), join("U", coefIndsu.front()));
 						coefIndsu.pop();
 					}
-					cout<<"inport map done"<<endl;
+					REPORT(0, "inport map done");
 
 					if (sopcs.size() <= nt) {
-					cout<<"outporting T, with parameters R"<<" and T"<<sopcs.size()<< endl;
+					REPORT(0, "outporting T, with parameters R"<<" and T"<<sopcs.size());
 						outPortMap(*sopcs.rbegin(), "R", join("T", sopcs.size()));
 						vhdl << instance(*sopcs.rbegin(), join("fixSOPC_t",sopcs.size()));
 					}
 					else if (sopcs.size()<=nt+nx){
-					cout<<"outporting Xplus, with parameters R"<<" and Xplus"<<sopcs.size()<< endl;
+					REPORT(0, "outporting Xplus, with parameters R"<<" and Xplus"<<sopcs.size());
 						outPortMap(*sopcs.rbegin(), "R", join("Xplus", sopcs.size()-nt));
 						vhdl << instance(*sopcs.rbegin(), join("fixSOPC_y",sopcs.size()));
 					}
 					else if (sopcs.size()<=nt+nx+ny){
-					cout<<"outporting Y, with parameters R"<<" and Y"<<sopcs.size()<< endl;
+					REPORT(0, "outporting Y, with parameters R"<<" and Y"<<sopcs.size());
 						outPortMap(*sopcs.rbegin(), "R", join("Y", sopcs.size()-(nt+nx)));
 						vhdl << instance(*sopcs.rbegin(), join("fixSOPC_y",sopcs.size()));
 					}
 					else {
 						THROWERROR("Unexpected error happened during internal building");
 						}
-					cout<<"outport map done"<<endl;
+					REPORT(0, "outport map done");
 					
 					for (int i = 0; i < nx; i++){
 						stringstream sig;
 						sig<<"Xplus"<<i;
 						vhdl<<"X"<<i<<" <= "<<delay(sig.str(),1);
 					}
-					cout<<"time shifting done"<<endl;
+					REPORT(0, "time shifting done");
 
 
 					coeffs.erase(coeffs.begin());
 					
-					cout<<"finished. beginning step "<<coeffs.size();
-						cout<<", coeffs.empty()="<<coeffs.empty()<<endl;
+					REPORT(0, "finished line. Beginning step "<<coeffs.size()<<", coeffs.empty()="<<coeffs.empty());
 		}
-		cout<<"exited while loop"<<endl;
 	//TODO: end of new code
 		
 };

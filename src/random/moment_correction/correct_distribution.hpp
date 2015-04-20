@@ -10,10 +10,15 @@
 
 #include "random/moment_correction/systems/cubic_system.hpp"
 #include "random/moment_correction/systems/symmetric_cubic_system.hpp"
-#include "random/moment_correction/systems/quintic_system.hpp"
+
 #include "random/moment_correction/systems/symmetric_quintic_system.hpp"
 #include "random/moment_correction/systems/symmetric_heptic_system.hpp"
+
+#ifdef DT10_ENABLE_HIGH_ORDER_CORRECTIONS
+// Taken out to save compilation space, though it works fine
+#include "random/moment_correction/systems/quintic_system.hpp"
 #include "random/moment_correction/systems/symmetric_nonic_system.hpp"
+#endif
 
 #ifdef HAVE_NTL
 #include "NTL/quad_float.h"
@@ -155,6 +160,7 @@ std::vector<T> FindSymmetricNonicPolynomialCorrection(
 	if(!target->IsSymmetric())
 		throw std::logic_error("FindSymmetricNonicPolynomialCorrection - Target is not symmetric");
 	
+#ifdef DT10_ENABLE_HIGH_ORDER_CORRECTIONS
 	std::vector<T> ssCurrent(91), ssTarget(11);
 	for(int i=0;i<=90;i++)
 		ssCurrent[i]=current->RawMoment(i);
@@ -182,6 +188,9 @@ std::vector<T> FindSymmetricNonicPolynomialCorrection(
 	res.push_back(0);
 	res.push_back(rr.first[4]);
 	return res;
+ #else
+	throw std::runtime_error("FindSymmetricNonicPolynomialCorrection - Not currently implemented to save compilation space/time - #define DT10_ENABLE_HIGH_ORDER_CORRECTIONS to get nonic correction.");
+#endif
 }
 
 template<class T>
@@ -209,6 +218,8 @@ std::vector<T> FindQuinticPolynomialCorrection(
 	typename Distribution<T>::TypePtr current,
 	typename Distribution<T>::TypePtr target
 ){
+#ifdef DT10_ENABLE_HIGH_ORDER_CORRECTIONS
+
 	std::vector<T> ssCurrent(31), ssTarget(7);
 	for(int i=0;i<=30;i++)
 		ssCurrent[i]=current->RawMoment(i);
@@ -238,6 +249,9 @@ std::vector<T> FindQuinticPolynomialCorrection(
 	mpfr_set_default_prec(cp);
 	
 	return rr.first;
+#else
+	throw std::runtime_error("FindQuinticPolynomialCorrection - Disabled to save compilation time/space. Used #define DT10_ENABLE_HIGH_ORDER_CORRECTIONS to get it back.");
+#endif
 }
 
 template<class T>

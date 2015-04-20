@@ -34,8 +34,8 @@ namespace flopoco
             if(ctxt.isTargetTool("c++11")){
                 ctxt.writeLine("static const %s romData[%u] = {", ctxt.strRep(eltType).c_str(), maxIn-minIn);
                 ctxt.indent();
-                for(unsigned i=0; i<=maxIn; i++){
-                	ctxt.write("%u", ctxt.strRep(hls_cg(wOut, const_cast<Table*>(m_op)->function(i))).c_str());
+                for(int i=0; i<=maxIn; i++){
+                	ctxt.write("%s", ctxt.strRep(hls_cg(wOut, const_cast<Table*>(m_op)->function(i))).c_str());
                     if(i!=maxIn)
                         ctxt.write(",");
                     ctxt.writeLine();
@@ -43,7 +43,7 @@ namespace flopoco
                 ctxt.unindent();
                 ctxt.writeLine("};");
 
-                ctxt.writeLine("X = romData[Y];");
+                hls_get("Y") = HLSExpr(HLSNodeOpaque::create(eltType, "romData[Y]", "c++11"));
             }else{
                 throw std::runtime_error("Can't generate code for this HLS target.");
             }

@@ -4,6 +4,8 @@
 
 #include "HLSExpr.hpp"
 
+#include <cassert>
+
 namespace flopoco
 {
     
@@ -76,16 +78,63 @@ namespace flopoco
     HLSTypePtr HLSContext::makeType(
         const Signal &sig
     ){
-        if(sig.isFP()){
-            return HLSTypeFloat::create(sig.wE(), sig.wF());
-        }else if( sig.isBus()){
-            return HLSTypeInt::create(false, sig.width());
-        }else if(sig.width()==1 && !sig.isBus()){
-            return HLSTypeBool::create();
-        }else{
-            throw std::runtime_error("Unknown signal type for signal "+sig.getName());
-        }
+      return makeHLSType(sig);
     };
+
+  void HLSContext::emitCall(const HLSNodeCall &x)
+  {
+	    writeLine("// instance %s\n", x.getName().c_str());
+	    const HLSOperator *hOp=x.getOperator();
+	    const Operator &op=hOp->getOperator();
+	    writeLine("// Declaration of outputs");
+	    indent();
+	    for(int i=0; i<op.getNumberOfOutputs(); i++){
+	      std::string name=op.getOutputSignal(i)->getName();
+	      HLSNodePtr node=x.getOutput(name);
+	      writeLine("%s %s;", strRep(node->getType()).c_str(), name.c_str());
+	    }
+	    unindent();
+	    writeLine("// Actual call");
+	    writeLine("%s(", op.getName().c_str());
+	    indent();
+	    writeLine("// Input bindings:");
+	    indent();
+	    for(int i=0; i<op.getNumberOfInputs(); i++){
+	      std::string name=op.getInputSignal(i)->getName();
+	      HLSNodePtr val=x.getInput(name);
+	      writeLine("// Input %u, argName=%s", i, name.c_str());
+	      write("%s,", strRep(val).c_str());
+	    }
+	    unindent();
+	    writeLine("// Output bindings:");
+	    indent();
+	    for(int i=0; i<op.getNumberOfOutputs(); i++){
+	      std::string name=op.getOutputSignal(i)->getName();
+	      std::string decl=x.getOutput(name)->getName();
+	      writeLine("// Output %u, argName=%s", i, name.c_str());
+	      write("& %s", decl.c_str());
+	      if(i+1<op.getNumberOfOutputs()){
+		writeLine(",");
+	      }else{
+		writeLine();
+	      }
+	    }
+	    unindent();
+	    unindent();
+	    writeLine(");");
+  }
+
+    void HLSContext::emitDeclareAndAssign(const HLSNodeVar &v)
+    {
+    	dst<<strRep(v.getType())<<" "<<v.getName()<<" = "<<strRep(v.getSrc());
+    	writeLine();
+    }
+
+    void HLSContext::emitAssignOutput(const HLSNodeOutput &o)
+    {
+    	dst<<o.getName()<<" = "<<strRep(o.getSrc());
+    	writeLine();
+    }
 
     std::string HLSContext::strRep(const HLSTypePtr &t)
     {
@@ -111,9 +160,170 @@ namespace flopoco
     	throw std::runtime_error("HLSContext::strRep - Unsupported type.");
     }
 
+    class OutputExpr
+		: public HLSNodeVisitor
+	{
+	private:
+    	HLSContext &m_ctxt;
+		std::stringstream dst;
+	public:
+		OutputExpr(HLSContext &ctxt)
+			: m_ctxt(ctxt)
+		{}
+
+		std::string str()
+		{ return dst.str(); }
+
+		bool visitGeneric(const HLSNode &c)
+		{
+			throw std::runtime_error(std::string("HLSContext/OutputExpr - Haven't handled node type")+typeid(&c).name());
+		}
+
+		void visit(const HLSNodeConstantInt &x)
+		 {
+			if(x.getValue()<0)
+				throw std::runtime_error("OutputExpr/HLSNodeConstantInt - Haven't thought about negative consts for HLS yet.");
+
+			dst<<m_ctxt.strRep(x.getType());
+			if(x.getValue()>0x7FFFFFFFul){
+			  dst<<"(\"";
+			  dst<<x.getValue().get_str(16);
+			  dst<<"\",16)";
+			}else{
+			  dst<<"(0x"<<x.getValue().get_str(16)<<")";
+			}
+		 }
+
+		 void visit(const HLSNodeOutput &x)
+		 {
+			 // Is this ok?
+			throw std::runtime_error("Shouldn't be possible to use an expr in an output (?).");
+		 }
+
+		 void visit(const HLSNodeVar &x)
+		 {
+			 dst<<x.getName();
+		 }
+
+		 void visit(const HLSNodeInput &x)
+		 {
+			 dst<<x.getName();
+		 }
+
+		 void visit(const HLSNodeAdd &x)
+		 {
+			 dst<<"(";
+			 x.getLeft()->accept(*this);
+			 dst<<"+";
+			 x.getRight()->accept(*this);
+			 dst<<")";
+		 }
+
+		 void visit(const HLSNodeEquals &x)
+		 {
+			 dst<<"(";
+			 x.getLeft()->accept(*this);
+			 dst<<"==";
+			 x.getRight()->accept(*this);
+			 dst<<")";
+		 }
+
+		 void visit(const HLSNodeLogicalOr &x)
+		 {
+			 dst<<"(";
+			 x.getLeft()->accept(*this);
+			 dst<<"||";
+			 x.getRight()->accept(*this);
+			 dst<<")";
+		 }
+
+		 void visit(const HLSNodeSub &x)
+		 {
+			 dst<<"(";
+			 x.getLeft()->accept(*this);
+			 dst<<"-";
+			 x.getRight()->accept(*this);
+			 dst<<")";
+		 }
+
+		 void visit(const HLSNodeReinterpretBits &x)
+		 {
+			 const HLSTypePtr srcT=x.getSrc()->getType();
+			 const HLSTypePtr dstT=x.getType();
+
+			 if(
+					 (srcT->isInt()|| srcT->isBool() || srcT->isFloat())
+					 &&
+					 (dstT->isInt()|| dstT->isBool() || dstT->isFloat())
+			 ){
+				 x.getSrc()->accept(*this);
+			 }else{
+				 // Hrmm. Need to think more about this.
+				 assert(0); // Not tested
+				 dst<<"(reinterpret_cast<";
+				 dst<<m_ctxt.strRep(dstT);
+				 dst<<">(";
+				 x.getSrc()->accept(*this);
+				 dst<<"))";
+			 }
+		 }
+
+		 void visit(const HLSNodeSelectBits &x)
+		 {
+			 dst<<"(apint_get_range(";
+			 x.getSrc()->accept(*this);
+			 dst<<",";
+			 dst<<x.getHi();
+			 dst<<",";
+			 dst<<x.getLo();
+			 dst<<"))";
+		 }
+
+		 void visit(const HLSNodeSelect &x)
+		 {
+			 dst<<"(";
+			 x.getCond()->accept(*this);
+			 dst<<" ? ";
+			 x.getTrueValue()->accept(*this);
+			 dst<<" : ";
+			 x.getFalseValue()->accept(*this);
+			 dst<<")";
+		 }
+
+			void visit(const HLSNodeCat &x)
+			 {
+				dst<<"apint_concatenate(";
+				x.getLeft()->accept(*this);
+				dst<<",";
+				x.getRight()->accept(*this);
+				dst<<")";
+			 }
+
+	  void visit(const HLSNodeCallOutput &x)
+	  {
+	    dst<<x.getName();
+	  }
+
+	  void visit(const HLSNodeCall &x)
+	  {
+	    throw std::runtime_error("VisitExpr - Should be visiting HLSNodeCall here.");
+	  }
+
+		void visit(const HLSNodeOpaque &x)
+	  {
+			if(!m_ctxt.isTargetTool(x.getTool()))
+				throw std::runtime_error("Received HLSNodeOpaque for wrong tool.");
+			dst<<x.getValue();
+		}
+
+	};
+
+
     std::string HLSContext::strRep(const HLSExpr &w)
 	{
-		throw std::runtime_error("HLSContext::strRep - Unsupported expression.");
+    	OutputExpr oe(*this);
+    	w.getNode()->accept(oe);
+		return oe.str();
 	}
 
     
@@ -188,8 +398,13 @@ namespace flopoco
             return;
         
         writeLine(" // Sub-components count = %u", bop.getSubComponents().size());
+	std::set<Operator*> suppress=op.suppressedHLSDefinitions();
         for(auto sc : bop.getSubComponents()){
             writeLine(" // decl %s", sc.second->getName().c_str());
+	    if(suppress.find(sc.second)!=suppress.end()){
+	      writeLine(" // ^^^ Supressed for HLS output");
+	      continue;
+	    }
             HLSOperator *hlsDecl=getHLSOperator(sc.second);
             emitDefinition(*hlsDecl);
             hlsDecl->releaseHLS();
@@ -203,9 +418,13 @@ namespace flopoco
         writeLine("{");
         indent();
   
-        HLSScope scope(&bop, *this);
-        op.emitHLSBody(*this, scope);
-        unindent();
+        {
+			HLSScope scope(&bop, *this);
+			op.emitHLSBody(*this, scope);
+			unindent();
+			scope.flush();
+        }
+
         writeLine("}");
         writeLine();
     }   

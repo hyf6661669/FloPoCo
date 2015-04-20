@@ -696,7 +696,7 @@ namespace flopoco
 		
 
 		    bool success=false;
-		    for(int currDegree=1;currDegree<=degree;currDegree++){
+		    for(unsigned currDegree=1;currDegree<=degree;currDegree++){
 
 			// The precision has to be wacked _way_ up here, as otherwise this just
 			// hangs on some polynomials. This is not a great way of doing things...

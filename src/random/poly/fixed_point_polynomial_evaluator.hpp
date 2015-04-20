@@ -8,6 +8,9 @@
 
 #include "fixed_format_t.hpp"
 
+#include "hls/HLSExpr.hpp"
+#include "hls/HLSOperatorBase.hpp"
+
 namespace flopoco
 {
 namespace random
@@ -15,10 +18,16 @@ namespace random
 
 class FixedPointPolynomialEvaluator
 	: public Operator
+        , public HLSOperatorBase
 {
 public:
 
 protected:
+        std::set<Operator*> m_suppressed;
+
+        virtual std::set<Operator*> suppressedHLSDefinitions() const
+        { return m_suppressed; }
+
 	FixedPointPolynomialEvaluator(Target *target);
 
 	fixed_format_t MultiplyType(const fixed_format_t &aType, const fixed_format_t &bType) const;
@@ -32,6 +41,11 @@ protected:
 	// Not const, as they modify vhdl
 	fixed_format_t MultiplyStatement(std::string resName, std::string aName, const fixed_format_t &aType, std::string bName, const fixed_format_t &bType);
 	fixed_format_t AddStatement(std::string resName, std::string aName, const fixed_format_t &aType, std::string bName, const fixed_format_t &bType);
+
+	HLSExpr ExtendExpr(const HLSTypePtr &outType, HLSExpr src);
+	HLSExpr RoundExpr(const HLSTypePtr &outType, HLSExpr src);
+	HLSExpr MultiplyStatement(std::string resName, HLSExpr a, HLSExpr b);
+	HLSExpr AddStatement(std::string resName, HLSExpr a, HLSExpr b);
 public:
 	virtual int getPolynomialDegree() const=0;
 	virtual fixed_format_t getInputFormat() const=0;

@@ -66,7 +66,7 @@ void ComparableFloatEncoder::emitHLSBody(HLSContext &ctxt, HLSScope &scope) cons
 {
 	assert(type.Width()==2+wE+wF);	// Needs to be modified if non-regular numbers come in
 	
-	auto iX=hls_get("ix");
+	auto iX=hls_get("iX");
 	
 	auto prefix_in = 	hls_declare("prefix_in",3) 		= iX[range(2+wE+wF,wE+wF)];
 	auto exponent_in = 	hls_declare("exponent_in",wE) 	= iX[range(wE+wF-1,wF)];

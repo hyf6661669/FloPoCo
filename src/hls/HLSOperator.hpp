@@ -6,6 +6,8 @@
 #include "hls/HLSTypes.hpp"
 #include "hls/HLSExpr.hpp"
 
+#include <set>
+
 namespace flopoco
 {
     class HLSContext;
@@ -25,7 +27,7 @@ namespace flopoco
         HLSOperator()
         {}  
     public:       
-        ~HLSOperator()
+        virtual ~HLSOperator()
         {}
 
         //! Gets a pointer to the associated operator
@@ -37,6 +39,12 @@ namespace flopoco
             be functionally equivalent (i.e. they must be the object, or be immutable)
         */
         virtual const Operator &getOperator() const =0;
+
+      //! Stop the automatic walking of Operators that are used by this one
+      /*! Sometimes things like IntMultiplier are used in the VHDL route,
+	but it doesn't make sense to output them for HLS */
+      virtual std::set<Operator*> suppressedHLSDefinitions() const
+      { return std::set<Operator*>(); }
     
         //! Responsible for the operator-specific part of the HLS output. Must be overriden
         virtual void emitHLSBody

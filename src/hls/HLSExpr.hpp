@@ -1,15 +1,67 @@
 #ifndef flopoco_hls_expr_hpp
 #define flopoco_hls_expr_hpp
 
-#include "HLSContext.hpp"
-#include "HLSOperator.hpp"
+#include "hls/HLSTypes.hpp"
 
 namespace flopoco
 {
     class HLSNode;
     typedef std::shared_ptr<HLSNode> HLSNodePtr;
 
+    class HLSOperator; // Declared elsewhere, needed for HLSNodeCall
+
+    class HLSNodeCall;
+    class HLSNodeCallOutput;
+    class HLSNodeOpaque;
+    class HLSNodeConstantInt;
+    class HLSNodeAdd;
+    class HLSNodeSub;
+    class HLSNodeLessThan;
+    class HLSNodeLessThanEquals;
+    class HLSNodeEquals;
+    class HLSNodeLogicalOr;
+    class HLSNodeSelect;
+    class HLSNodeCat;
+    class HLSNodeSelectBits;
+    class HLSNodeReinterpretBits;
+    class HLSNodeInput;
+    class HLSNodeOutput;
+    class HLSNodeVar;
+
+    class HLSNodeVisitor
+    {
+    public:
+    	virtual ~HLSNodeVisitor()
+    	{}
+
+    	/*! Used if you want to provide some special case dynamic
+    		stuff, like throwing on unhandled node types.
+    		Return false to stop the default handler executing, true
+    		to do whatever it would normally do for that node.
+    		*/
+    	virtual bool visitGeneric(const HLSNode &);
+
+        virtual void visit(const HLSNodeCall &);
+        virtual void visit(const HLSNodeCallOutput &);
+    	virtual void visit(const HLSNodeOpaque &);
+    	virtual void visit(const HLSNodeConstantInt &);
+    	virtual void visit(const HLSNodeAdd &);
+    	virtual void visit(const HLSNodeSub &);
+    	virtual void visit(const HLSNodeLessThan &);
+    	virtual void visit(const HLSNodeLessThanEquals &);
+    	virtual void visit(const HLSNodeEquals &);
+    	virtual void visit(const HLSNodeLogicalOr &);
+    	virtual void visit(const HLSNodeSelect &);
+    	virtual void visit(const HLSNodeCat &);
+    	virtual void visit(const HLSNodeSelectBits &);
+    	virtual void visit(const HLSNodeReinterpretBits &);
+    	virtual void visit(const HLSNodeInput &);
+    	virtual void visit(const HLSNodeOutput &);
+    	virtual void visit(const HLSNodeVar &);
+    };
+
     class HLSNode
+      : public std::enable_shared_from_this<HLSNode>
     {
     private:
         HLSTypePtr m_type;
@@ -28,6 +80,47 @@ namespace flopoco
         {
             throw std::runtime_error("HLSNode - Cannot assign this node type.");
         }
+
+        virtual void accept(HLSNodeVisitor &visitor) const =0;
+    };
+
+  //! Represents outputs of invoked sub-operators
+    class HLSNodeCallOutput;
+  typedef std::shared_ptr<HLSNodeCallOutput> HLSNodeCallOutputPtr;
+
+  class HLSNodeCall;
+  typedef std::shared_ptr<HLSNodeCall> HLSNodeCallPtr;
+
+
+    /*! This represents some opaque expression specific to a particular
+     * output tool. This will only be used by operators that are some kind
+     * of primitive that has to be specialised for the tool (e.g. ROMs)
+     */
+    class HLSNodeOpaque
+        : public HLSNode
+    {
+    private:
+        std::string m_value;
+        std::string m_tool;
+    public:
+        HLSNodeOpaque(const HLSTypePtr &type, std::string value, std::string tool)
+			: HLSNode(type)
+			, m_value(value)
+    		, m_tool(tool)
+		{
+		}
+
+        const std::string &getValue() const
+        { return m_value; }
+
+        const std::string &getTool() const
+        { return m_tool; }
+
+        virtual void accept(HLSNodeVisitor &visitor) const
+        { visitor.visit(*this); }
+
+        static std::shared_ptr<HLSNodeOpaque> create(const HLSTypePtr &type, std::string value, std::string tool)
+		{ return std::make_shared<HLSNodeOpaque>(type, value, tool); }
     };
 
     class HLSNodeConstantInt
@@ -50,6 +143,9 @@ namespace flopoco
 
         const mpz_class &getValue() const
         { return m_value; }
+
+        virtual void accept(HLSNodeVisitor &visitor) const
+        { visitor.visit(*this); }
 
         static std::shared_ptr<HLSNodeConstantInt> create(unsigned w, const mpz_class &value)
         { return create(HLSTypeInt::create(false,w), value); }
@@ -99,6 +195,9 @@ namespace flopoco
             : HLSNodeBinOp(left, right)
         {}
 
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
+
         static std::shared_ptr<HLSNodeAdd> create(const HLSNodePtr &left, const HLSNodePtr &right)
         { return std::make_shared<HLSNodeAdd>(left, right); }
     };
@@ -110,6 +209,9 @@ namespace flopoco
         HLSNodeSub(const HLSNodePtr &left, const HLSNodePtr &right)
             : HLSNodeBinOp(left, right)
         {}
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
 
         static std::shared_ptr<HLSNodeSub> create(const HLSNodePtr &left, const HLSNodePtr &right)
         { return std::make_shared<HLSNodeSub>(left, right); }
@@ -131,6 +233,9 @@ namespace flopoco
 		HLSNodeLessThan(const HLSNodePtr &left, const HLSNodePtr &right)
 			: HLSNodeCmp(left, right)
 		{}
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
 	};
 
 
@@ -141,6 +246,9 @@ namespace flopoco
 		HLSNodeLessThanEquals(const HLSNodePtr &left, const HLSNodePtr &right)
 			: HLSNodeCmp(left, right)
 		{}
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
 	};
 
     class HLSNodeEquals
@@ -150,6 +258,9 @@ namespace flopoco
 		HLSNodeEquals(const HLSNodePtr &left, const HLSNodePtr &right)
 			: HLSNodeCmp(left, right)
 		{}
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
     };
 
     class HLSNodeLogicalOr
@@ -159,6 +270,9 @@ namespace flopoco
 		HLSNodeLogicalOr(const HLSNodePtr &left, const HLSNodePtr &right)
 			: HLSNodeCmp(left, right)
 		{}
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
 	};
 
     class HLSNodeSelect
@@ -187,6 +301,9 @@ namespace flopoco
         const HLSNodePtr &getFalseValue() const
         { return m_falseValue; }
 
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
+
         static std::shared_ptr<HLSNodeSelect> create(const HLSNodePtr &cond, const HLSNodePtr &trueValue, const HLSNodePtr &falseValue)
         { return std::make_shared<HLSNodeSelect>(cond,trueValue,falseValue); }
     };
@@ -210,6 +327,9 @@ namespace flopoco
 			: HLSNodeBinOp(left, right, cat_type(left->getType(), right->getType()))
 		{}
 
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
+
 		static std::shared_ptr<HLSNodeCat> create(const HLSNodePtr &left, const HLSNodePtr &right)
 		{ return std::make_shared<HLSNodeCat>(left, right); }
 	};
@@ -218,11 +338,15 @@ namespace flopoco
 			: public HLSNode
 	{
     private:
+    	HLSNodePtr m_src;
+    	int m_hi, m_lo;
+
     	HLSTypePtr select_type(const HLSTypePtr &a, int hi, int lo)
     	{
     		auto pa=std::dynamic_pointer_cast<HLSTypeInt>(a);
     		if(!pa) // TODO This should/must be relaxed
-    			throw std::runtime_error("HLSNodeSelectBits - Argument must have integer type.");
+    			throw std::runtime_error(std::string("HLSNodeSelectBits - Argument must have integer type, it has type.")+a->getName());
+
     		if(hi>=a->getWidth())
     			throw std::runtime_error("HLSNodeSelectBits - hi index is out of range.");
     		if(lo<0)
@@ -230,27 +354,58 @@ namespace flopoco
     		if(hi<lo)
     			throw std::runtime_error("HLSNodeSelectBits - Have hi<lo. Range must be at least one bit.");
 
+    		// The return type is always unsigned... just because
     		return HLSTypeInt::create(false, hi-lo+1);
     	}
 	public:
 		HLSNodeSelectBits(const HLSNodePtr &a, int hi, int lo)
 			: HLSNode(select_type(a->getType(), hi, lo))
+			, m_src(a)
+			, m_hi(hi)
+			, m_lo(lo)
 		{}
 
-		static std::shared_ptr<HLSNodeSelectBits> create(const HLSNodePtr &a, int hi, int lo)
-		{ return std::make_shared<HLSNodeSelectBits>(a, hi, lo); }
+		HLSNodePtr getSrc() const
+		{ return m_src; }
 
-		static std::shared_ptr<HLSNodeSelectBits> create(const HLSNodePtr &a, const std::string &x)
+		int getHi() const
+		{ return m_hi; }
+
+		int getLo() const
+		{ return m_lo; }
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
+
+		static std::shared_ptr<HLSNodeSelectBits> create(const HLSNodePtr &a, int hi, int lo);
+
+		static std::shared_ptr<HLSNodeSelectBits> create(const HLSNodePtr &a, const std::string &x);
+	};
+
+    class HLSNodeReinterpretBits
+			: public HLSNode
+	{
+	private:
+		HLSNodePtr m_src;
+
+	public:
+		HLSNodeReinterpretBits(const HLSNodePtr &a, const HLSTypePtr &target)
+			: HLSNode(target)
+			, m_src(a)
 		{
-			std::stringstream src(x);
-			int hi, lo;
-			std::string mid;
-			src>>hi>>mid>>lo;
-			if(mid!="downto")
-				throw std::runtime_error("HLSNodeSelectBits - String range must be of form '<num> downto <num>'");
-
-			return create(a, hi, lo);
+			if(a->getType()->getWidth() != target->getWidth())
+				throw std::runtime_error("Cannot reinterpret to different bit widths");
 		}
+
+		HLSNodePtr getSrc() const
+		{ return m_src; }
+
+		virtual void accept(HLSNodeVisitor &visitor)  const
+		{ visitor.visit(*this); }
+
+		static std::shared_ptr<HLSNodeReinterpretBits> create(const HLSNodePtr &a, const HLSTypePtr &target)
+		{ return std::make_shared<HLSNodeReinterpretBits>(a, target); }
+
 	};
 
     class HLSNodeDecl
@@ -267,6 +422,8 @@ namespace flopoco
         const std::string &getName() const
         { return m_name; }
 
+        virtual HLSNodePtr getSrc() const =0;
+
         virtual bool isDefined() const =0;
     };
     typedef std::shared_ptr<HLSNodeDecl> HLSNodeDeclPtr;
@@ -281,6 +438,12 @@ namespace flopoco
 
         virtual bool isDefined() const
         { return true; }
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
+
+        HLSNodePtr getSrc() const
+        { return HLSNodePtr(); }
     };
 
     class HLSNodeOutput
@@ -296,12 +459,47 @@ namespace flopoco
         virtual bool isDefined() const
         { return !!m_src; }
 
+        HLSNodePtr getSrc() const
+        { return m_src; }
+
         void assign(const HLSNodePtr &o)
         {
             if(m_src)
                 throw std::runtime_error("Output "+getName()+" has already been assigned.");
             m_src=o;
         }
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
+    };
+
+    class HLSNodeCallOutput
+        : public HLSNodeDecl
+    {
+    protected:
+      HLSNodeCallPtr m_call;
+      std::string m_innerName;
+    public:
+      HLSNodeCallOutput(const std::string &name, const HLSTypePtr &type, HLSNodeCallPtr call, std::string innerName)
+			: HLSNodeDecl(name, type)
+			, m_call(call)
+			, m_innerName(innerName)
+		{}
+
+        virtual bool isDefined() const
+        { return true; }
+
+      virtual HLSNodePtr getSrc() const
+      { return HLSNodePtr(); }
+
+        HLSNodeCallPtr getCall() const
+        { return m_call; }
+
+      std::string getInnerName() const
+      { return m_innerName; }
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
     };
 
     class HLSNodeVar
@@ -318,6 +516,9 @@ namespace flopoco
         virtual bool isDefined() const
         { return !!m_src; }
 
+        HLSNodePtr getSrc() const
+        { return m_src; }
+
         void assign(const HLSNodePtr &o)
         {
             if(m_src)
@@ -325,21 +526,84 @@ namespace flopoco
             m_src=o;
         }
 
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
+
         static std::shared_ptr<HLSNodeVar> create(const std::string &name, const HLSTypePtr &type)
 		{ return std::make_shared<HLSNodeVar>(name, type); }
     };
+
+    //! Represents a call to a sub-operator
+    /*! This is kind of wierd, as it exposes zero or more sub-nodes representing the outputs */
+    class HLSNodeCall
+      : public HLSNodeDecl
+    {
+    private:
+      const HLSOperator *m_op;
+      std::map<std::string,HLSNodePtr> m_inputs;
+      std::map<std::string,HLSNodeCallOutputPtr> m_outputs;
+    public:
+      HLSNodeCall(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs);
+
+      const HLSOperator *getOperator() const
+      { return m_op; }
+
+      HLSNodePtr getInput(std::string name) const
+      { return m_inputs.at(name); }
+
+      HLSNodeCallOutputPtr getOutput(std::string name) const
+      { return m_outputs.at(name); }
+
+        virtual bool isDefined() const
+        { return true; }
+
+        HLSNodePtr getSrc() const
+        { return HLSNodePtr(); }
+
+      virtual void accept(HLSNodeVisitor &visitor) const
+      {
+	for(auto x : m_inputs){
+	  HLSNodePtr i=m_inputs.at(x.first);
+	  i->accept(visitor);
+	}
+	for(auto x : m_outputs){
+	  HLSNodePtr o=m_outputs.at(x.first);
+	  o->accept(visitor);
+	}
+	visitor.visit(*this);
+      }
+
+      static std::shared_ptr<HLSNodeCall> create(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs)
+      { return std::make_shared<HLSNodeCall>(op, name, inputs, outputs); }
+    };
+
 
     class HLSExpr
     {
     protected:
         HLSNodePtr m_base;
     public:
+      //! "Empty" expression. Any use will throw an error
+      /*! Mainly here to make things like STL containers easier */
+      HLSExpr()
+      {}
+
         HLSExpr(const HLSNodePtr &b)
     		: m_base(b)
     	{}
 
         const HLSNodePtr getNode() const
         { return m_base; }
+
+        const HLSTypePtr getType() const
+        {
+	  if(!m_base)
+	    throw std::runtime_error("HLSExpr::getType - expression is null.");
+	  return m_base->getType();
+        }
+
+        int getWidth() const
+        { return getType()->getWidth(); }
 
         HLSExpr operator +(const HLSExpr &o) const
         { return HLSExpr(std::make_shared<HLSNodeAdd>(this->m_base, o.m_base)); }
@@ -374,7 +638,7 @@ namespace flopoco
 
         HLSExpr operator[](const std::string &idx) const
         {
-
+        	return HLSExpr(HLSNodeSelectBits::create(this->m_base, idx));
         }
 
 
@@ -391,6 +655,11 @@ namespace flopoco
     	return HLSExpr(HLSNodeSelect::create(cond.getNode(), trueExpr.getNode(), falseExpr.getNode()));
     }
 
+    inline HLSExpr reinterpret_bits(const HLSExpr &x, const HLSTypePtr &t)
+	{
+		return HLSExpr(HLSNodeReinterpretBits::create(x.getNode(), t));
+	}
+
     inline HLSExpr cat(const HLSExpr &a, const HLSExpr &b)
     {
     	return HLSExpr(HLSNodeCat::create(a.getNode(),b.getNode()));
@@ -406,7 +675,7 @@ namespace flopoco
     	return HLSExpr(HLSNodeConstantInt::create(width, value));
     }
 
-    inline HLSExpr hls_og(unsigned width)
+        inline HLSExpr hls_og(unsigned width)
 	{
 		mpz_class tmp(1);
 		tmp<<width;
@@ -423,6 +692,11 @@ namespace flopoco
 		return hls_og(width);
 	}
 
+  HLSExpr hls_call(const HLSOperator *op, HLSExpr arg0, const std::string &resName);
+
+  HLSExpr hls_call(const HLSOperator *op, const std::map<std::string,HLSExpr> &args, const std::string &resName);
+
+  void hls_call(const HLSOperator *op, const std::map<std::string,HLSExpr> &inputs, const std::map<std::string,std::string> &outputs);
 
 }; // flopoco
 

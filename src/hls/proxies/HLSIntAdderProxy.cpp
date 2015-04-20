@@ -19,8 +19,6 @@ namespace flopoco
     
         void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const
         {
-            int wIn=m_op->getWIn();
-            
             hls_get("R") = hls_get("X") + hls_get("Y");
 	    }
     };

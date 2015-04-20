@@ -857,6 +857,9 @@ public:
 	Signal *getInputSignal(int i);
 	
 	const Signal *getInputSignal(int i) const;
+
+        //! Returns either the named signal or null
+        const Signal *getInputSignal(const std::string &name) const;
 	
 	int getNumberOfOutputs() const{
 		return numberOfOutputs_;
@@ -866,6 +869,9 @@ public:
 	Signal *getOutputSignal(int i);
 	
 	const Signal *getOutputSignal(int i) const;
+
+        //! Returns either the named signal or NULL
+        const Signal *getOutputSignal(const std::string &name) const;
 	
 	map<string, Signal*> getSignalMap(){
 		return signalMap_;

@@ -31,13 +31,21 @@ SET(CPACK_PACKAGE_VERSION_MAJOR "0")
 SET(CPACK_PACKAGE_VERSION_MINOR "9")
 SET(CPACK_PACKAGE_VERSION_PATCH "0")
 
-# DT10: I used gnu11 instead of c++11 due to fileno buried in a lex generated file.
-
 INCLUDE(CPack)
 
 
-SET(CMAKE_CXX_FLAGS "-std=gnu++11")
-SET(CMAKE_CXX_FLAGS_DEBUG "-Og -Wall")
+IF(${CMAKE_VERSION} VERSION_LESS 3.1)
+	MESSAGE("Manually enabling c++11 support")
+	ADD_COMPILE_OPTIONS(-std=c++11)
+	SET(CMAKE_CXX_COMPILER_ARG1 "-std=c++11")
+ELSE()
+	MESSAGE("Automatically enabling c++11 support")
+	# DT10 : cmake "standard" way of doing -std=c++11
+	set(CMAKE_CXX_STANDARD 11)
+	set(CMAKE_CXX_STANDARD_REQUIRED on)
+ENDIF()
+
+SET(CMAKE_CXX_FLAGS_DEBUG "-Og -g -Wall")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG=1")
 
 
@@ -174,6 +182,8 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/hls/HLSContext
  src/hls/HLSOperator
  src/hls/HLSScope
+ src/hls/HLSExpr
+ src/hls/HLSTypes
  src/hls/proxies/HLSTableProxy
  src/hls/proxies/HLSIntAdderProxy
  
@@ -425,6 +435,11 @@ src/Complex/FixedComplexMultiplier
 
  src/UtilSollya
 )
+
+set_source_files_properties(hls/HLSExpr.cpp hls/HLSScope.cpp hls/HLSOperator.cpp hls/HLSContext.cpp
+ PROPERTIES COMPILE_FLAGS -g
+)
+
 IF (SOLLYA_LIB)
 TARGET_LINK_LIBRARIES(
   FloPoCoLib

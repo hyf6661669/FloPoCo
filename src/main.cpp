@@ -2621,7 +2621,7 @@ bool parseCommandLine(int argc, char* argv[]){
 			vector<Operator*> oplist=*target->getGlobalOpListRef();
 			
 			HLSContext ctxt(stdout);
-			for(int i=0; i<oplist.size(); i++){
+			for(int i=0; i<(int)oplist.size(); i++){
 			  HLSOperator *hls=getHLSOperator(oplist[i]);
 			  ctxt.emitDefinition(*hls);
 			  hls->releaseHLS();

@@ -87,6 +87,11 @@ public:
 	virtual fixed_format_t getOutputFormat() const
 	{ return m_outputFormat; }
 
+	    virtual void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const override
+  {
+    throw std::runtime_error("HLS is not supported.");
+  }
+
 };
 
 FixedPointPolynomialEvaluator *CreateFullPrecisionPolynomialEvaluator(

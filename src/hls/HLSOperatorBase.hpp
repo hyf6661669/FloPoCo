@@ -9,7 +9,7 @@ namespace flopoco
         : public HLSOperator
     {
     public:       
-        virtual const Operator &getOperator() const
+        virtual const Operator &getOperator() const override
         {
             const Operator *op=dynamic_cast<const Operator*>(this);
             if(op==NULL)

@@ -143,6 +143,17 @@ mpz_class StaticQuantiser::GetBoundary(int level, int index)
 	return boundaries.at(address);
 }
 
+  void StaticQuantiser::emitHLSBody
+  (
+   HLSContext &ctxt,
+   HLSScope &scope
+   )const
+  {
+    auto iX=hls_get("iX");
+    auto oY=hls_get("oY");
+    oY=hls_og(oY.getNode()->getType()->getWidth());
+  }
+
 // Apply a quantisation of the form y=floor( f(x)*n )
 
 mpfr::mpreal eval(const Function *f, mpfr::mpreal x)

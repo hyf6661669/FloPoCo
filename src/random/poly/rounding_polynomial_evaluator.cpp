@@ -1,6 +1,8 @@
 
 #include "fixed_point_polynomial_evaluator.hpp"
 
+#include "hls/HLSOperatorBase.hpp"
+
 namespace flopoco
 {
     namespace random
@@ -10,6 +12,7 @@ namespace flopoco
 	    : public FixedPointPolynomialEvaluator
 	{
 	private:
+		int m_degree;
 	    fixed_format_t m_inputFormat;
 	    std::vector<fixed_format_t> m_coefficientFormats;
 	
@@ -39,10 +42,10 @@ namespace flopoco
 			throw std::string("Coefficient formats must have width greater than 1 (sanity check, might be situations where this isn't true).");
 		}
 		
-		int degree=coefficientFormats.size()-1;
+		m_degree=coefficientFormats.size()-1;
 		
 		std::stringstream name;
-		name<<"RoundingPolynomialEvaluator_d"<<degree<<"_uid"<<getNewUId();
+		name<<"RoundingPolynomialEvaluator_d"<<m_degree<<"_uid"<<getNewUId();
 		setName(name.str());
 		
 		useNumericStd();
@@ -51,13 +54,13 @@ namespace flopoco
 		fixed_format_t inputType=inputFormat;
 		addInput(inputName, inputType.width());
 		
-		fixed_format_t accType=coefficientFormats[degree];
-		addInput(join("a",degree),accType.width());
-		std::string accName=join("a",degree);
+		fixed_format_t accType=coefficientFormats[m_degree];
+		addInput(join("a",m_degree),accType.width());
+		std::string accName=join("a",m_degree);
 
 		nextCycle();// TODO: Sort this out.
 		
-		for(int i=degree-1;i>=0;i--){
+		for(int i=m_degree-1;i>=0;i--){
 		    nextCycle();
 
 		    std::string mulName = join("mul_",i);
@@ -74,13 +77,13 @@ namespace flopoco
 		    int roundLsb=outputLsb-guardBits-i;
 			
 		    if(i==0 || (stageType.lsb>=roundLsb)){
-			accName=stageName;
-			accType=stageType;
+				accName=stageName;
+				accType=stageType;
 		    }else if(stageType.lsb < roundLsb){
-			accName=join("round_",i);
-			accType=stageType;
-			accType.lsb=roundLsb;
-			vhdl<<declare(accName,accType.width())<<"<="<<RoundExpr(accType,stageName,stageType)<<";\n";
+				accName=join("round_",i);
+				accType=stageType;
+				accType.lsb=roundLsb;
+				vhdl<<declare(accName,accType.width())<<"<="<<RoundExpr(accType,stageName,stageType)<<";\n";
 		    }
 		      
 		    nextCycle();
@@ -96,6 +99,64 @@ namespace flopoco
 		vhdl<<outputName <<"<= "<<RoundExpr(outputType, accName, accType)<<";\n";
 		
 		m_outputFormat=outputType;
+	    }
+
+
+
+	    virtual void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const override
+	    {
+	      hls_get("R")=hls_og(hls_get("R").getNode()->getType()->getWidth());
+
+	    	/*
+	    	fixed_format_t inputType=inputFormat;
+			HLSExpr y= hls_get("Y");
+
+
+
+			fixed_format_t accType=coefficientFormats[m_degree];
+			addInput(join("a",m_degree),accType.width());
+			std::string accName=join("a",m_degree);
+
+			nextCycle();// TODO: Sort this out.
+
+			for(int i=m_degree-1;i>=0;i--){
+			    nextCycle();
+
+			    std::string mulName = join("mul_",i);
+			    fixed_format_t mulType=MultiplyStatement(mulName, accName, accType, inputName, inputType);
+
+			    nextCycle();
+
+			    std::string stageName=join("add_", i);
+			    addInput(join("a",i), coefficientFormats[i].width());
+			    fixed_format_t stageType=AddStatement(stageName, join("a",i), coefficientFormats[i], mulName, mulType);
+
+			    nextCycle();
+
+			    int roundLsb=outputLsb-guardBits-i;
+
+			    if(i==0 || (stageType.lsb>=roundLsb)){
+					accName=stageName;
+					accType=stageType;
+			    }else if(stageType.lsb < roundLsb){
+					accName=join("round_",i);
+					accType=stageType;
+					accType.lsb=roundLsb;
+					vhdl<<declare(accName,accType.width())<<"<="<<RoundExpr(accType,stageName,stageType)<<";\n";
+			    }
+
+			    nextCycle();
+			}
+
+			fixed_format_t outputType=accType;
+
+			if(outputType.msb <= outputLsb)
+			    throw std::string("RoundingPolynomialEvaluator - outputType.msb <= outputLsb.");
+			outputType.lsb = outputLsb;
+			std::string outputName="R";
+			addOutput(outputName, outputType.width());
+			vhdl<<outputName <<"<= "<<RoundExpr(outputType, accName, accType)<<";\n";
+*/
 	    }
 	
 	    virtual int getPolynomialDegree() const

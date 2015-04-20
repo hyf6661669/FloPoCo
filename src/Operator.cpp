@@ -1157,6 +1157,48 @@ namespace flopoco{
 		}
 		throw std::string("getOutputSignal - Invalid signal index.");
 	}
+
+  const Signal *Operator::getOutputSignal(const std::string &name) const
+  {
+    for(unsigned i=0;i<getNumberOfOutputs();i++){
+      const Signal *s=getOutputSignal(i);
+      if(s->getName()==name)
+	return s;
+    }
+    return NULL;
+  }
+
+	const Signal *Operator::getInputSignal(int i) const{
+		for(unsigned j=0;j<ioList_.size();j++){
+			if(ioList_[j]->type()==Signal::in){
+				if(i==0)
+					return ioList_[j];
+				--i;
+			}
+		}
+		throw std::string("getInputSignal - Invalid signal index.");
+	}
+
+	const Signal *Operator::getOutputSignal(int i) const{
+		for(unsigned j=0;j<ioList_.size();j++){
+			if(ioList_[j]->type()==Signal::out){
+				if(i==0)
+					return ioList_[j];
+				--i;
+			}
+		}
+		throw std::string("getOutputSignal - Invalid signal index.");
+	}
+
+  const Signal *Operator::getInputSignal(const std::string &name) const
+  {
+    for(unsigned i=0;i<getNumberOfInputs();i++){
+      const Signal *s=getInputSignal(i);
+      if(s->getName()==name)
+	return s;
+    }
+    return NULL;
+  }
 	
 	
 	string Operator::buildVHDLTypeDeclarations() {

@@ -54,6 +54,8 @@ private:
   Operator *m_table;
   FixedPointPolynomialEvaluator *m_poly;
     //PolynomialEvaluator *m_poly;
+
+  int m_drop_bits, m_result_fraction_rounded_width;
 public:
   FloatApproxOperator(Target* target,
     int wDomainE, int wDomainF, mpfr::mpreal domainMin, mpfr::mpreal domainMax,
@@ -122,8 +124,7 @@ public:
 
     m_polys=RangePolys(&m_range, m_degree);
     
-    // TODO / HACK : This is twice the accuracy it should need. This is to try to fixed very occasional
-    // errors of 2 ulps.
+
     REPORT(INFO, "Splitting into polynomials with error < "<<maxError/2);
     m_polys.split_to_error(maxError.convert_to<double>()/2);
     REPORT(INFO, "  -> no. of segments="<<m_range.m_segments.size());
@@ -270,11 +271,11 @@ public:
     if(result_format.msb < -1)
       throw std::string("Currently FloatApprox needs PolynomialEvaluator to return at least the interval [-0.5,0.5). This is my fault not yours, try increasing approximation range to cover entire binade.");
     
-    int drop_bits=(- wRangeF) - result_format.lsb;
+    m_drop_bits=(- wRangeF) - result_format.lsb;
     
-    int result_fraction_rounded_width=result_fraction_width-drop_bits;
-    if(drop_bits==0){
-      vhdl<<declare("result_fraction_rounded", result_fraction_rounded_width)<< "<= result_fraction"<<range(result_fraction_rounded_width-1,0)<<";\n";
+    m_result_fraction_rounded_width=result_fraction_width-m_drop_bits;
+    if(m_drop_bits==0){
+      vhdl<<declare("result_fraction_rounded", m_result_fraction_rounded_width)<< "<= result_fraction"<<range(m_result_fraction_rounded_width-1,0)<<";\n";
     }else{
 	// Making this somebody elses problem
       throw std::string("Output of FixedPointPolynomialEvaluator is not rounded.");
@@ -282,9 +283,9 @@ public:
     }
     
     vhdl<<declare("result_fraction_clamped", wRangeF)<<" <= ";
-    vhdl<<"       "<<zg(wRangeF)<<" when result_fraction_rounded("<<result_fraction_rounded_width-1<<")='1' else\n";    // Negative overflow
-    if(result_fraction_rounded_width > (wRangeF+1)){
-      vhdl<<"      "<<og(wRangeF)<<" when result_fraction_rounded"<<range(result_fraction_rounded_width-2, wRangeF)<<"/="<<zg((result_fraction_rounded_width-2)-wRangeF+1)<<" else\n";  // positive overflow
+    vhdl<<"       "<<zg(wRangeF)<<" when result_fraction_rounded("<<m_result_fraction_rounded_width-1<<")='1' else\n";    // Negative overflow
+    if(m_result_fraction_rounded_width > (wRangeF+1)){
+      vhdl<<"      "<<og(wRangeF)<<" when result_fraction_rounded"<<range(m_result_fraction_rounded_width-2, wRangeF)<<"/="<<zg((m_result_fraction_rounded_width-2)-wRangeF+1)<<" else\n";  // positive overflow
     }
     vhdl<<"    result_fraction_rounded"<<range(wRangeF-1,0)<<";\n"; // No overflow
     
@@ -323,7 +324,53 @@ public:
   
   void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const
   {
-    throw std::runtime_error("Not implemented.");
+    /*
+    auto iX=hls_get("ix");
+    auto oY=hls_get("oY");
+
+    auto comparable_iX=hls_call(m_codec, iX, "comparable_iX");
+
+    auto table_index=hls_call(m_quantiser, comparable_iX, "table_index");
+
+    auto table_contents=hls_call(m_table, table_index, "table_contents");
+
+    int offset=0;
+    for(unsigned i=0;i<=m_degree;i++){
+      int w=(m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1; // extra is for sign
+      
+      hls_var(join("coeff_",i))=table_contents[range(w+offset-1,offset)];
+      offset+=w;
+    }
+
+    auto coeff_prefix= hls_declare("coeff_prefix") = table_contents[range(tableWidth-1,offset)];
+
+    auto fraction_iX= hls_declare("fraction_iX") = iX[range(wDomainF-1,0)];
+
+    std::map<std::string,HLSExpr> polyArgs;
+    for(unsigned i=0;i<=m_degree;i++){
+      polyArgs[join("a",i)]=hls_get(join("coeff_",i));
+    }
+    polyArgs["Y"]=hls_get("fraction_iX");
+    
+    auto result_fraction=hls_call(m_poly,
+				  polyArgs,
+				  "result_fraction")
+    if(drop_bits==0){
+      auto result_fraction_rounded=hls_declare("result_fraction_rounded", result_fraction_rounded_width); 
+      result_fraction_rounded = result_fraction[range(result_fraction_rounded_width-1,0)];
+    }else{
+      throw std::runtime_error("Unrounded polynomial evaluator is not supported.");
+    }
+
+
+    auto result_fraction_clamped=hls_declare("result_fraction_clamped", wRangeF) = 
+      result_fraction_rounded[result_fraction_rounded_width-1] ? hls_zg(wRangeF) :
+      result_fraction_rounded[range(result_fraction_rounded_width-2,wRangeF)] != hlz_zg(result_fraction_rounded_width-2-wRangeF+1) ? hlz_og(wRangeF) :
+			      result_fraction_rounded;
+
+    oY = hls_cat(coeff_prefix, result_fraction_clamped);
+
+    */
   }
   
 
@@ -576,7 +623,7 @@ static Operator *FloatApproxFactoryParser(Target *target ,const std::vector<std:
     scaleDomain=true;
   }
 
-	unsigned nargs = 8;
+	int nargs = 8;
 	if (ia + nargs > argc){
         fprintf(stderr, "is=%d, nargs=%d, argc=%d\n", ia, nargs, argc);
 		throw std::string("FloatApproxFactoryParser - Not enough arguments, check usage.");

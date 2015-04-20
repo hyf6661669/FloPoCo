@@ -29,6 +29,8 @@ namespace flopoco
             return makeIntAdderHLSOperator(dynamic_cast<const IntAdder*>(op));
         }
         
-        throw std::runtime_error("getHLSOperator - Operator does not support HLS.");
+        std::stringstream acc;
+        acc<<"getHLSOperator - Operator '"<<op->getName()<<"' does not support HLS.";
+        throw std::runtime_error(acc.str());
     }
 };

@@ -485,11 +485,11 @@ namespace flopoco
 
 		    mpfr_fprintf(stderr, "  [%Re,%Re]->[%Re,%Re], [%Re,%Re]->[%Re,%Re], off=%Re, scale=%d, [%Re,%Re], rC=%s ", it->domainStart, it->domainFinish, it->rangeStart, it->rangeFinish, it->domainStartFrac, it->domainFinishFrac, it->rangeStartFrac, it->rangeFinishFrac, it->domainOffset, it->domainScale, it->domainStartScaled, it->domainFinishScaled,  it->isRangeConstant?"Y":"N");
 		    fprintf(stderr, "\n");
-		    for(int j=0;j<=m_degree;j++){
+		    for(unsigned j=0;j<=m_degree;j++){
 			mpfr_fprintf(stderr, " a%d:%Re;", j, coeffs[j]);
 		    }
 
-		    for(int j=0;j<=m_degree;j++){
+		    for(unsigned j=0;j<=m_degree;j++){
 			mpfr_abs(boundsHi[j],boundsHi[j],MPFR_RNDN);
 			mpfr_abs(boundsLo[j],boundsLo[j],MPFR_RNDN);
 			mpfr_max(boundsHi[j],boundsHi[j],boundsLo[j],MPFR_RNDN);
@@ -503,7 +503,7 @@ namespace flopoco
 		MPFRVec calculate_polynomial_bounds(int guard, unsigned trials=1000)
 		{
 		    MPFRVec res(m_degree+1, getToolPrecision());
-		    for(int i=0;i<=m_degree;i++){
+		    for(unsigned i=0;i<=m_degree;i++){
 			mpfr_set_inf(res[i],-1);
 		    }
 
@@ -511,7 +511,7 @@ namespace flopoco
 		    while(it!=m_range->m_segments.end()){
 			if(mpfr_regular_p(it->rangeStart)){
 			    auto b=calculate_polynomial_bounds(it, guard, trials);
-			    for(int j=0;j<=m_degree;j++){
+			    for(unsigned j=0;j<=m_degree;j++){
 				mpfr_max(res[j],res[j],b[j],MPFR_RNDN);
 			    }
 			}

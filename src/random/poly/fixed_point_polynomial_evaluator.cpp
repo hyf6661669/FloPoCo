@@ -165,6 +165,7 @@ fixed_format_t FixedPointPolynomialEvaluator::MultiplyStatement(std::string resN
 		inPortMap(mult, "X", aName);
 		inPortMap(mult, "Y", resName+"_conv_B");
 	    }
+	    m_suppressed.insert(mult);
 
 	    outPortMap(mult, "R", resName);
 	    vhdl<<instance(mult, resName+"_theMul");
@@ -234,12 +235,12 @@ static mpz_class MakeStandardPattern(unsigned type, const fixed_format_t &fmt)
 
 void FixedPointPolynomialEvaluator::buildStandardTestCases(TestCaseList* tcl)
 {		
-	int degree=getPolynomialDegree();
+	unsigned degree=getPolynomialDegree();
 	
-	for(unsigned mask=0;mask<(1<<(2*degree+2));mask++){
+	for(unsigned mask=0;mask<(1u<<(2*degree+2));mask++){
 		TestCase *tc=new TestCase(this);
 		
-		for(int i=0;i<=degree;i++){
+		for(unsigned i=0;i<=degree;i++){
 			tc->setInputValue( join("a",i), MakeStandardPattern(mask>>(2*i), getCoefficientFormat(i)));
 		}
 		tc->setInputValue("Y", MakeStandardPattern(mask>>(2*degree), getInputFormat()));			

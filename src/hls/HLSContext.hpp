@@ -10,6 +10,7 @@
 
 #include <stdarg.h>
 
+#include "hls/HLSExpr.hpp"
 #include "hls/HLSTypes.hpp"
 
 namespace flopoco
@@ -76,6 +77,11 @@ namespace flopoco
             const HLSOperator &op
         );
         
+      void emitCall(const HLSNodeCall &x);
+
+        void emitDeclareAndAssign(const HLSNodeVar &v);
+
+        void emitAssignOutput(const HLSNodeOutput &o);
 
         void indent();
         void unindent();

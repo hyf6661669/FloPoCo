@@ -6,12 +6,16 @@
 
 #include "random/utils/mpfr_vec.hpp"
 
+#include "hls/HLSOperatorBase.hpp"
+
 namespace flopoco
 {
 namespace random
 {
 
-class StaticQuantiser	: public Operator
+class StaticQuantiser	
+  : public Operator
+  , public HLSOperatorBase
 {
 private:	
 	int m_wValue;
@@ -32,6 +36,12 @@ public:
 	void emulate(TestCase * tc);
 
 	static Operator *BuildFloatQuantiser(Target *target, int wE, int WF, int n, const Function *f, map<string, double> inputDelays = emptyDelayMap);
+
+        virtual void emitHLSBody
+        (
+            HLSContext &ctxt,
+            HLSScope &scope
+        )const;
 };
 
 void StaticQuantiser_registerFactory();

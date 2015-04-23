@@ -60,6 +60,14 @@ namespace flopoco{
 		x.getRight()->accept(*this);
 	 }
 
+	 void HLSNodeVisitor::visit(const HLSNodeNotEquals &x)
+	 {
+		 if(!visitGeneric(x))
+		 			 return ;
+		x.getLeft()->accept(*this);
+		x.getRight()->accept(*this);
+	 }
+
 	 void HLSNodeVisitor::visit(const HLSNodeLogicalOr &x)
 	 {
 		 if(!visitGeneric(x))
@@ -122,9 +130,26 @@ namespace flopoco{
 			x.getSrc()->accept(*this);
 	 }
 
+  void HLSNodeVisitor::visit(const HLSNodeCall &x)
+  {
+    if(!visitGeneric(x))
+      return;
+    for(unsigned i=0;i<x.getOutputCount();i++){
+      x.getInput(i)->accept(*this);
+    }
+  }
+
+  void HLSNodeVisitor::visit(const HLSNodeCallOutput &x)
+  {
+    /* Outputs only visit their call, the call won't visit the outputs */
+    if(!visitGeneric(x))
+      return;
+    x.getCall()->accept(*this);
+  }
+
   HLSNodeCall::HLSNodeCall(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs)
 	: HLSNodeDecl(name, HLSTypeVoid::create())
-	, m_op(op)
+	, m_op(op->clone())
 	, m_inputs(inputs)
       {
 	std::shared_ptr<HLSNodeCall> pMe=std::dynamic_pointer_cast<HLSNodeCall>(shared_from_this());
@@ -146,6 +171,19 @@ namespace flopoco{
 	
       }
 
+  HLSNodeCall::~HLSNodeCall()
+  {
+    m_op->releaseHLS();
+  }
+			    
+
+  HLSNodePtr HLSNodeCall::getInput(unsigned i) const
+  {
+    const Operator &op=getOperator()->getOperator(); // Yes, LOL. I suck at API design
+    const Signal *sig=op.getInputSignal(i);
+    return getInput(sig->getName());
+  }
+
 	 //////////////////////////////////////////////////
 	 // HLSNodeSelectBits
 
@@ -163,6 +201,20 @@ namespace flopoco{
 			);
 		}
 
+		std::shared_ptr<HLSNodeSelectBits> HLSNodeSelectBits::create(const HLSNodePtr &a, int index)
+		{
+			// Unlike the constructor, this will insert a cast to
+			// an integer type if necessary
+			auto pa=std::dynamic_pointer_cast<HLSTypeInt>(a);
+			if(pa)
+			  return std::make_shared<HLSNodeSelectBits>(a, index, index);
+
+			auto rt=HLSTypeInt::create(false, a->getType()->getWidth());
+			return std::make_shared<HLSNodeSelectBits>(
+								   HLSNodeReinterpretBits::create(a,rt), index, index
+			);
+		}
+
 
 		std::shared_ptr<HLSNodeSelectBits> HLSNodeSelectBits::create(const HLSNodePtr &a, const std::string &x)
 		{
@@ -177,7 +229,25 @@ namespace flopoco{
 			return create(a, hi, lo);
 		}
 
+    HLSExpr select_if(const HLSExpr &cond, const HLSExpr &trueExpr, const HLSExpr &falseExpr)
+    {
+    	return HLSExpr(HLSNodeSelect::create(cond.getNode(), trueExpr.getNode(), falseExpr.getNode()));
+    }
 
+  HLSExpr select_if(const HLSExpr &cond0, const HLSExpr &expr0,
+		    const HLSExpr &cond1, const HLSExpr &expr1,
+		    const HLSExpr &exprFalse)
+    {
+      return select_if(cond0, expr1, select_if(cond1, expr1, exprFalse));
+    }
+
+  HLSExpr select_if(const HLSExpr &cond0, const HLSExpr &expr0,
+		    const HLSExpr &cond1, const HLSExpr &expr1,
+		    const HLSExpr &cond2, const HLSExpr &expr2,
+		    const HLSExpr &exprFalse)
+    {
+      return select_if(cond0, expr1, select_if(cond1, expr1, select_if(cond2, expr2, exprFalse)));
+    }
 
 };
 

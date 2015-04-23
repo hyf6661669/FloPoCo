@@ -52,14 +52,29 @@ namespace flopoco
             HLSContext &ctxt,
             HLSScope &scope
         )const =0;
+
+      //! This returns a new copy of this, which should be released with releaseHLS
+      /*! This is the result of terrible design on the part of DT10. For
+	things which are true Operators, this does nothing, as does releaseHLS.
+	For stupid proxy objects, this will create a new object which is an
+	exact clone, but gives another seperate object lifetime.
+	
+	Let the records show: DT10 cannot design APIs. FFS...
+      */
+      virtual const HLSOperator *clone() const =0;
         
         //! This should be called once for each call of getHLSOperator
         /*! This due to the general object lifetime problem of FloPoCo,
             where ownership is difficult to deal with. For a proxy object
             this will delete the proxy, but for inherited support the
             lifetime needs to be managed on the main Operator
+
+	    The insantity of this! If you own the thing, you can
+	    release it, but nothing else. My head assplodes.
+	    Somebody please re-organise this (for values of somebody
+	    being David).
         */
-        virtual void releaseHLS() =0;
+        virtual void releaseHLS() const =0;
     };
     
     //! Try to get a HLSOperator associated with the given operator

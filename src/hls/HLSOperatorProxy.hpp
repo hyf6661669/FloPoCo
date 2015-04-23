@@ -22,7 +22,7 @@ namespace flopoco
             return *m_op;
         }
         
-        virtual void releaseHLS()
+        virtual void releaseHLS() const
         {
             // We are the point of lifetime management
             delete this;

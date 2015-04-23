@@ -228,6 +228,15 @@ namespace flopoco
 			 dst<<")";
 		 }
 
+		 void visit(const HLSNodeNotEquals &x)
+		 {
+			 dst<<"(";
+			 x.getLeft()->accept(*this);
+			 dst<<"!=";
+			 x.getRight()->accept(*this);
+			 dst<<")";
+		 }
+
 		 void visit(const HLSNodeLogicalOr &x)
 		 {
 			 dst<<"(";

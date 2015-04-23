@@ -17,6 +17,7 @@
 #include "hls/HLSContext.hpp"
 #include "hls/HLSOperatorBase.hpp"
 #include "hls/HLSScope.hpp"
+#include "hls/HLSExpr.hpp"
 
 using namespace std;
 
@@ -324,27 +325,27 @@ public:
   
   void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const
   {
-    /*
-    auto iX=hls_get("ix");
+    
+    auto iX=hls_get("iX");
     auto oY=hls_get("oY");
 
-    auto comparable_iX=hls_call(m_codec, iX, "comparable_iX");
+    auto comparable_iX=hls_call(m_codec, "codec",  iX, "comparable_iX");
 
-    auto table_index=hls_call(m_quantiser, comparable_iX, "table_index");
+    auto table_index=hls_call(m_quantiser, "quantiser", comparable_iX, "table_index");
 
-    auto table_contents=hls_call(m_table, table_index, "table_contents");
+    auto table_contents=hls_call(m_table, "table", table_index, "table_contents");
 
     int offset=0;
     for(unsigned i=0;i<=m_degree;i++){
       int w=(m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1; // extra is for sign
       
-      hls_var(join("coeff_",i))=table_contents[range(w+offset-1,offset)];
+      hls_declare(join("coeff_",i), w)=table_contents[range(w+offset-1,offset)];
       offset+=w;
     }
 
-    auto coeff_prefix= hls_declare("coeff_prefix") = table_contents[range(tableWidth-1,offset)];
+    auto coeff_prefix= hls_declare("coeff_prefix", 3) = table_contents[range(m_tableWidth-1,offset)];
 
-    auto fraction_iX= hls_declare("fraction_iX") = iX[range(wDomainF-1,0)];
+    auto fraction_iX= hls_declare("fraction_iX", m_wDomainF) = iX[range(m_wDomainF-1,0)];
 
     std::map<std::string,HLSExpr> polyArgs;
     for(unsigned i=0;i<=m_degree;i++){
@@ -352,25 +353,27 @@ public:
     }
     polyArgs["Y"]=hls_get("fraction_iX");
     
-    auto result_fraction=hls_call(m_poly,
+    auto result_fraction=hls_call(m_poly, "poly",
 				  polyArgs,
-				  "result_fraction")
-    if(drop_bits==0){
-      auto result_fraction_rounded=hls_declare("result_fraction_rounded", result_fraction_rounded_width); 
-      result_fraction_rounded = result_fraction[range(result_fraction_rounded_width-1,0)];
+				  "result_fraction");
+
+    auto result_fraction_rounded=hls_declare("result_fraction_rounded", m_result_fraction_rounded_width);
+    if(m_drop_bits==0){
+      result_fraction_rounded= result_fraction[range(m_result_fraction_rounded_width-1,0)];
     }else{
       throw std::runtime_error("Unrounded polynomial evaluator is not supported.");
     }
 
 
-    auto result_fraction_clamped=hls_declare("result_fraction_clamped", wRangeF) = 
-      result_fraction_rounded[result_fraction_rounded_width-1] ? hls_zg(wRangeF) :
-      result_fraction_rounded[range(result_fraction_rounded_width-2,wRangeF)] != hlz_zg(result_fraction_rounded_width-2-wRangeF+1) ? hlz_og(wRangeF) :
-			      result_fraction_rounded;
+    auto result_fraction_clamped=hls_declare("result_fraction_clamped", m_wRangeF) = select_if( 
+       result_fraction_rounded[m_result_fraction_rounded_width-1],    hls_zg(m_wRangeF),
+       result_fraction_rounded[range(m_result_fraction_rounded_width-2,m_wRangeF)] != hls_zg(m_result_fraction_rounded_width-2-m_wRangeF+1), hls_og(m_wRangeF) ,
+       result_fraction_rounded
+       );
 
-    oY = hls_cat(coeff_prefix, result_fraction_clamped);
+    oY = cat(coeff_prefix, result_fraction_clamped);
 
-    */
+    
   }
   
 

@@ -16,6 +16,11 @@ namespace flopoco
         )
             : HLSOperatorProxy<IntAdder>(adder)
         {}
+
+      virtual HLSOperator *clone() const override
+      {
+	return new IntAdderHLSProxy(m_op);
+      }
     
         void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const
         {

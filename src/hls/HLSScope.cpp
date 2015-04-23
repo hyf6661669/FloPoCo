@@ -219,7 +219,15 @@ namespace flopoco
     	return HLSExpr(HLSScope::getAmbientScope().get(name));
 	}
 
-  HLSExpr hls_call(const HLSOperator *hop, HLSExpr arg0, const std::string &resName)
+  HLSExpr hls_call(const Operator *op, std::string name, HLSExpr arg0, const std::string &resName){
+    HLSOperator *hop=getHLSOperator(op);
+    auto res= hls_call(hop, name, arg0, resName);
+    hop->releaseHLS();
+    return res;
+    
+  }
+
+  HLSExpr hls_call(const HLSOperator *hop, std::string name, HLSExpr arg0, const std::string &resName)
   {
     const Operator &op=hop->getOperator();
 
@@ -228,11 +236,19 @@ namespace flopoco
     std::string innerArgName=op.getInputSignal(0)->getName();
 
     std::map<std::string,HLSExpr> inputs;
-    inputs[innerArgName]=arg0;
-    return hls_call(hop, inputs, resName);
+    inputs.insert(std::make_pair(innerArgName,arg0));
+    return hls_call(hop, name, inputs, resName);
   }
 
-  HLSExpr hls_call(const HLSOperator *hop, const std::map<std::string,HLSExpr> &args, const std::string &resName)
+  HLSExpr hls_call(const Operator *op, std::string name, const std::map<std::string,HLSExpr> &args, const std::string &resName){
+
+    HLSOperator *hop=getHLSOperator(op);
+    auto res=hls_call(hop, name, args, resName);
+    hop->releaseHLS();
+    return res;
+  }
+
+  HLSExpr hls_call(const HLSOperator *hop, std::string name, const std::map<std::string,HLSExpr> &args, const std::string &resName)
   {
     const Operator &op=hop->getOperator();
 
@@ -242,13 +258,20 @@ namespace flopoco
     
     std::map<std::string,std::string> outputs;
     outputs[innerResName]=resName;
-    hls_call(hop, args, outputs);
+    hls_call(hop, name, args, outputs);
     return hls_get(resName);
   }
 
-  void hls_call(const HLSOperator *op, const std::map<std::string,HLSExpr> &inputs, const std::map<std::string,std::string> &outputs)
+  void hls_call(const Operator *op, std::string name,  const std::map<std::string,HLSExpr> &inputs, const std::map<std::string,std::string> &outputs)
+  {
+    HLSOperator *hop=getHLSOperator(op);
+    hls_call(hop, name, inputs,outputs);
+    hop->releaseHLS();
+  }
+
+  void hls_call(const HLSOperator *op, std::string name, const std::map<std::string,HLSExpr> &inputs, const std::map<std::string,std::string> &outputs)
   {    
-    throw std::runtime_error("hls_call - Not implemented.");
+    HLSScope::getAmbientScope().call(op, name, inputs, outputs);
   }
 
 

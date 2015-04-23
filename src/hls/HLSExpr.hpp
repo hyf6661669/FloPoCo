@@ -19,6 +19,7 @@ namespace flopoco
     class HLSNodeLessThan;
     class HLSNodeLessThanEquals;
     class HLSNodeEquals;
+  class HLSNodeNotEquals; 
     class HLSNodeLogicalOr;
     class HLSNodeSelect;
     class HLSNodeCat;
@@ -50,6 +51,7 @@ namespace flopoco
     	virtual void visit(const HLSNodeLessThan &);
     	virtual void visit(const HLSNodeLessThanEquals &);
     	virtual void visit(const HLSNodeEquals &);
+    	virtual void visit(const HLSNodeNotEquals &);
     	virtual void visit(const HLSNodeLogicalOr &);
     	virtual void visit(const HLSNodeSelect &);
     	virtual void visit(const HLSNodeCat &);
@@ -263,6 +265,18 @@ namespace flopoco
         { visitor.visit(*this); }
     };
 
+    class HLSNodeNotEquals
+    		: public HLSNodeCmp
+    {
+	public:
+		HLSNodeNotEquals(const HLSNodePtr &left, const HLSNodePtr &right)
+			: HLSNodeCmp(left, right)
+		{}
+
+        virtual void accept(HLSNodeVisitor &visitor)  const
+        { visitor.visit(*this); }
+    };
+
     class HLSNodeLogicalOr
 			: public HLSNodeCmp
 	{
@@ -378,6 +392,8 @@ namespace flopoco
         { visitor.visit(*this); }
 
 		static std::shared_ptr<HLSNodeSelectBits> create(const HLSNodePtr &a, int hi, int lo);
+
+		static std::shared_ptr<HLSNodeSelectBits> create(const HLSNodePtr &a, int index);
 
 		static std::shared_ptr<HLSNodeSelectBits> create(const HLSNodePtr &a, const std::string &x);
 	};
@@ -545,11 +561,22 @@ namespace flopoco
     public:
       HLSNodeCall(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs);
 
+      ~HLSNodeCall();
+
       const HLSOperator *getOperator() const
       { return m_op; }
 
+      unsigned getInputCount() const
+      { return m_inputs.size(); }
+
       HLSNodePtr getInput(std::string name) const
       { return m_inputs.at(name); }
+
+      //! Get input as defined by the underlying Operator's view
+      HLSNodePtr getInput(unsigned index) const;
+
+      unsigned getOutputCount() const
+      { return m_outputs.size(); }
 
       HLSNodeCallOutputPtr getOutput(std::string name) const
       { return m_outputs.at(name); }
@@ -633,6 +660,9 @@ namespace flopoco
         HLSExpr operator ==(const HLSExpr &o) const
         { return HLSExpr(std::make_shared<HLSNodeEquals>(this->m_base, o.m_base)); }
 
+        HLSExpr operator !=(const HLSExpr &o) const
+        { return HLSExpr(std::make_shared<HLSNodeNotEquals>(this->m_base, o.m_base)); }
+
         HLSExpr operator ||(const HLSExpr &o) const
         { return HLSExpr(std::make_shared<HLSNodeLogicalOr>(this->m_base, o.m_base)); }
 
@@ -641,19 +671,33 @@ namespace flopoco
         	return HLSExpr(HLSNodeSelectBits::create(this->m_base, idx));
         }
 
+        HLSExpr operator[](int idx) const
+        {
+        	return HLSExpr(HLSNodeSelectBits::create(this->m_base, idx));
+        }
+
 
         //! Performs an assignment to a previously declared variable.
         HLSExpr operator=(const HLSExpr &o)
         {
+	  if(!m_base)
+	    throw std::runtime_error("Attempt to assign to uninitialised (empty) HLSExpr.");
             m_base->assign(o.m_base);
             return *this;
         }
     };
 
-    inline HLSExpr select_if(const HLSExpr &cond, const HLSExpr &trueExpr, const HLSExpr &falseExpr)
-    {
-    	return HLSExpr(HLSNodeSelect::create(cond.getNode(), trueExpr.getNode(), falseExpr.getNode()));
-    }
+  HLSExpr select_if(const HLSExpr &cond0, const HLSExpr &expr0,
+		    const HLSExpr &exprFalse);
+
+  HLSExpr select_if(const HLSExpr &cond0, const HLSExpr &expr0,
+		    const HLSExpr &cond1, const HLSExpr &expr1,
+		    const HLSExpr &exprFalse);
+
+  HLSExpr select_if(const HLSExpr &cond0, const HLSExpr &expr0,
+		    const HLSExpr &cond1, const HLSExpr &expr1,
+		    const HLSExpr &cond2, const HLSExpr &expr2,
+		    const HLSExpr &exprFalse);
 
     inline HLSExpr reinterpret_bits(const HLSExpr &x, const HLSTypePtr &t)
 	{
@@ -692,11 +736,17 @@ namespace flopoco
 		return hls_og(width);
 	}
 
-  HLSExpr hls_call(const HLSOperator *op, HLSExpr arg0, const std::string &resName);
+  HLSExpr hls_call(const Operator *op, std::string name, HLSExpr arg0, const std::string &resName);
 
-  HLSExpr hls_call(const HLSOperator *op, const std::map<std::string,HLSExpr> &args, const std::string &resName);
+  HLSExpr hls_call(const HLSOperator *op, std::string name, HLSExpr arg0, const std::string &resName);
 
-  void hls_call(const HLSOperator *op, const std::map<std::string,HLSExpr> &inputs, const std::map<std::string,std::string> &outputs);
+  HLSExpr hls_call(const HLSOperator *op, std::string name, const std::map<std::string,HLSExpr> &args, const std::string &resName);
+
+  HLSExpr hls_call(const HLSOperator *op, std::string name, const std::map<std::string,HLSExpr> &args, const std::string &resName);
+
+  void hls_call(const HLSOperator *op, std::string name, const std::map<std::string,HLSExpr> &inputs, const std::map<std::string,std::string> &outputs);
+
+  void hls_call(const HLSOperator *op, std::string name, const std::map<std::string,HLSExpr> &inputs, const std::map<std::string,std::string> &outputs);
 
 }; // flopoco
 

@@ -16,8 +16,14 @@ namespace flopoco
                 throw std::logic_error("HLSOperatorBase::getOperator - This object does not seem to be an Operator.");
             return *op;
         }
+
+      virtual const HLSOperator * clone() const  override
+      {
+	// NOP : Lifetime is managed on the Operator
+	return this;
+      }
         
-        virtual void releaseHLS()
+        virtual void releaseHLS() const
         {
             // NOP : Lifetime is managed on the Operator, not this object
         }

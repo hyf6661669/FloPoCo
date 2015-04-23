@@ -16,8 +16,13 @@ namespace flopoco
         TableHLSProxy(
             const Table *table
         )
-            : HLSOperatorProxy<Table>(table)
+             : HLSOperatorProxy<Table>(table)
         {}
+
+      virtual HLSOperator *clone() const override
+      {
+	return new TableHLSProxy(m_op);
+      }
     
         void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const
         {

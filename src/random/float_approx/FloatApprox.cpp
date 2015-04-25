@@ -339,13 +339,13 @@ public:
     for(unsigned i=0;i<=m_degree;i++){
       int w=(m_polys.m_concreteCoeffMsbs[i]-m_polys.m_concreteCoeffLsbs[i]+1)+1; // extra is for sign
       
-      hls_declare(join("coeff_",i), w)=table_contents[range(w+offset-1,offset)];
+      hls_declare(join("coeff_",i), w).assign(table_contents[range(w+offset-1,offset)]);
       offset+=w;
     }
 
-    auto coeff_prefix= hls_declare("coeff_prefix", 3) = table_contents[range(m_tableWidth-1,offset)];
+    auto coeff_prefix= hls_declare("coeff_prefix", 3).assign( table_contents[range(m_tableWidth-1,offset)] );
 
-    auto fraction_iX= hls_declare("fraction_iX", m_wDomainF) = iX[range(m_wDomainF-1,0)];
+    auto fraction_iX= hls_declare("fraction_iX", m_wDomainF).assign( iX[range(m_wDomainF-1,0)] );
 
     std::map<std::string,HLSExpr> polyArgs;
     for(unsigned i=0;i<=m_degree;i++){
@@ -359,19 +359,22 @@ public:
 
     auto result_fraction_rounded=hls_declare("result_fraction_rounded", m_result_fraction_rounded_width);
     if(m_drop_bits==0){
-      result_fraction_rounded= result_fraction[range(m_result_fraction_rounded_width-1,0)];
+      result_fraction_rounded.assign(result_fraction[range(m_result_fraction_rounded_width-1,0)]);
     }else{
       throw std::runtime_error("Unrounded polynomial evaluator is not supported.");
     }
 
 
-    auto result_fraction_clamped=hls_declare("result_fraction_clamped", m_wRangeF) = select_if( 
-       result_fraction_rounded[m_result_fraction_rounded_width-1],    hls_zg(m_wRangeF),
-       result_fraction_rounded[range(m_result_fraction_rounded_width-2,m_wRangeF)] != hls_zg(m_result_fraction_rounded_width-2-m_wRangeF+1), hls_og(m_wRangeF) ,
-       result_fraction_rounded
-       );
+    auto result_fraction_clamped=hls_declare("result_fraction_clamped", m_wRangeF);
+    result_fraction_clamped.assign( select_if( 
+				       result_fraction_rounded[m_result_fraction_rounded_width-1],    
+				       hls_zg(m_wRangeF),
+				       result_fraction_rounded[range(m_result_fraction_rounded_width-2,m_wRangeF)] != hls_zg(m_result_fraction_rounded_width-2-m_wRangeF+1), 
+				       hls_og(m_wRangeF) ,
+				       result_fraction_rounded[range(m_wRangeF-1,0)]
+				       ) );
 
-    oY = cat(coeff_prefix, result_fraction_clamped);
+    oY.assign( cat(coeff_prefix, result_fraction_clamped));
 
     
   }

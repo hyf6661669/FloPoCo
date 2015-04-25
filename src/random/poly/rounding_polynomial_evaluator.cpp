@@ -105,7 +105,7 @@ namespace flopoco
 
 	    virtual void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const override
 	    {
-	      hls_get("R")=hls_og(hls_get("R").getNode()->getType()->getWidth());
+	      hls_get("R").assign( hls_og(hls_get("R").getNode()->getType()->getWidth()) );
 
 	    	/*
 	    	fixed_format_t inputType=inputFormat;

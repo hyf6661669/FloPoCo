@@ -24,7 +24,7 @@ namespace flopoco
     
         void emitHLSBody(HLSContext &ctxt, HLSScope &scope) const
         {
-            hls_get("R") = hls_get("X") + hls_get("Y");
+	  hls_get("R").assign( hls_get("X") + hls_get("Y") );
 	    }
     };
 

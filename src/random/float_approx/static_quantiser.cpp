@@ -151,7 +151,7 @@ mpz_class StaticQuantiser::GetBoundary(int level, int index)
   {
     auto iX=hls_get("iX");
     auto oY=hls_get("oY");
-    oY=hls_og(oY.getNode()->getType()->getWidth());
+    oY.assign( hls_og(oY.getNode()->getType()->getWidth()) );
   }
 
 // Apply a quantisation of the form y=floor( f(x)*n )

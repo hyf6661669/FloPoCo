@@ -147,13 +147,33 @@ namespace flopoco{
     x.getCall()->accept(*this);
   }
 
+   HLSNodeSelect::HLSNodeSelect(const HLSNodePtr &cond, const HLSNodePtr &trueValue, const HLSNodePtr &falseValue)
+            : HLSNode(trueValue->getType())
+    		, m_cond(cond)
+    		, m_trueValue(trueValue)
+    		, m_falseValue(falseValue)
+        {
+	   HLSTypePtr tType=trueValue->getType(), fType=falseValue->getType();
+        	if(!tType->equals(fType))
+		   throw std::runtime_error("HLSNodeSelect - true and false have different types, true="+tType->getName()+", false="+fType->getName());
+
+        }
+
+   HLSNodeCallOutput::HLSNodeCallOutput(const std::string &name, const HLSTypePtr &type, HLSNodeCallPtr call, std::string innerName)
+			: HLSNodeDecl(name, type)
+			, m_call(call)
+			, m_innerName(innerName)
+		{}
+
+   HLSNodePtr HLSNodeCallOutput::getSrc() const
+   { return m_call; }
+
   HLSNodeCall::HLSNodeCall(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs)
 	: HLSNodeDecl(name, HLSTypeVoid::create())
 	, m_op(op->clone())
 	, m_inputs(inputs)
+	, m_outputNames(outputs)
       {
-	std::shared_ptr<HLSNodeCall> pMe=std::dynamic_pointer_cast<HLSNodeCall>(shared_from_this());
-
 	const Operator &pop=op->getOperator();
 
 	for(auto x : inputs){
@@ -161,12 +181,13 @@ namespace flopoco{
 	  if(!s)
 	    throw std::runtime_error("HLSNodeCall::HLSNodeCall - No input called "+x.first+" on operator "+pop.getName());
 	}
-	for(auto x : outputs){
+	for(auto x : m_outputNames){
 	  const Signal *s=pop.getOutputSignal(x.first);
 	  if(!s)
 	    throw std::runtime_error("HLSNodeCall::HLSNodeCall - No output called "+x.first+" on operator "+pop.getName());
-	  HLSTypePtr type=makeHLSType(*s);
-	  m_outputs[x.first]=std::make_shared<HLSNodeCallOutput>(x.second, type, pMe, x.first);
+
+	  // Create an empty weak ptr as a place-holder for later construction
+	  m_outputs.insert(std::make_pair(x.first,HLSNodeCallOutputWeakPtr()));
 	}
 	
       }
@@ -175,7 +196,47 @@ namespace flopoco{
   {
     m_op->releaseHLS();
   }
-			    
+
+   /* This either returns any existing output with that name, or creates
+      it from scratch and keeps a weak ptr.
+   */
+   HLSNodeCallOutputPtr HLSNodeCall::getOutput(std::string name) const
+   {
+      auto it=m_outputs.find(name);
+      if(it==m_outputs.end())
+	 throw std::runtime_error("No output called "+name);
+
+      auto strong=it->second.lock();
+      if(!strong){
+	 HLSNodeCall *pThis=const_cast<HLSNodeCall*>(this);
+      	std::shared_ptr<HLSNodeCall> pMe=std::dynamic_pointer_cast<HLSNodeCall>(pThis->shared_from_this());
+	const Operator &pop=m_op->getOperator();
+
+	const Signal *s=pop.getOutputSignal(name);
+
+	HLSTypePtr type=makeHLSType(*s);
+	strong=std::make_shared<HLSNodeCallOutput>(name, type, pMe, m_outputNames.at(name));
+
+	// This is a lazy way of ensuring there is a unique object.
+	// I think it could be done via atomics on the weak_ptr (?), but
+	// would have to think more about the possible interactions.
+	// Not worth it.
+	std::lock_guard<std::mutex> lock(m_mutex);
+	auto got=it->second.lock();
+	if(got){
+	   strong=got;
+	}else{
+	   it->second=strong;
+	}
+      }
+
+      return strong;
+   }
+
+  std::shared_ptr<HLSNodeCall> HLSNodeCall::create(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs)
+  {
+     return std::make_shared<HLSNodeCall>(op, name, inputs, outputs);
+  }			    
 
   HLSNodePtr HLSNodeCall::getInput(unsigned i) const
   {

@@ -61,21 +61,23 @@ namespace flopoco
 				throw std::runtime_error("Declaration "+n.getName()+" has not been given a definition.");
 
 			auto pSrc=n.getSrc();
-			assert(pSrc);
-			pSrc->accept(*this);
+			if(pSrc)
+			  pSrc->accept(*this);
 
 			auto pC=dynamic_cast<const HLSNodeCall*>(&n);
+			auto pCO=dynamic_cast<const HLSNodeCallOutput*>(&n);
 			auto pV=dynamic_cast<const HLSNodeVar*>(&n);
 			auto pO=dynamic_cast<const HLSNodeOutput*>(&n);
 
-			if(pC){
+			if(pCO){
+			  // Do nothing
+			}else if(pC){
 			  HLSScope::getAmbientContext().emitCall(*pC);
 			}else if(pV){
 				HLSScope::getAmbientContext().emitDeclareAndAssign(*pV);
 
 			}else if(pO){
 				HLSScope::getAmbientContext().emitAssignOutput(*pO);
-
 			}else{
 				throw std::runtime_error("Unknown decl type.");
 			}
@@ -181,7 +183,7 @@ namespace flopoco
 		// Walk through the operator ouputs, make sure they all have a declaration to go to
 		for(int i=0;i<op.getNumberOfOutputs();i++){
 		  const Signal *s=op.getOutputSignal(i);
-		  if(inputs.find(s->getName())==inputs.end())
+		  if(outputs.find(s->getName())==outputs.end())
 		    throw std::runtime_error("HLSScope::call - No binding for output "+s->getName());
 		}
 

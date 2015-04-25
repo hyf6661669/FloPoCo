@@ -3,6 +3,8 @@
 
 #include "hls/HLSTypes.hpp"
 
+#include <mutex>
+
 namespace flopoco
 {
     class HLSNode;
@@ -295,16 +297,7 @@ namespace flopoco
     private:
     	HLSNodePtr m_cond, m_trueValue, m_falseValue;
     public:
-        HLSNodeSelect(const HLSNodePtr &cond, const HLSNodePtr &trueValue, const HLSNodePtr &falseValue)
-            : HLSNode(trueValue->getType())
-    		, m_cond(cond)
-    		, m_trueValue(trueValue)
-    		, m_falseValue(falseValue)
-        {
-        	if(!trueValue->getType()->equals(falseValue->getType()))
-        		throw std::runtime_error("HLSNodeSelect - true and false have different types.");
-
-        }
+      HLSNodeSelect(const HLSNodePtr &cond, const HLSNodePtr &trueValue, const HLSNodePtr &falseValue);
 
         const HLSNodePtr &getCond() const
         { return m_cond; }
@@ -323,7 +316,7 @@ namespace flopoco
     };
 
     class HLSNodeCat
-			: public HLSNodeBinOp
+      : public HLSNodeBinOp
 	{
     private:
     	HLSTypePtr cat_type(const HLSTypePtr &a, const HLSTypePtr &b)
@@ -496,17 +489,12 @@ namespace flopoco
       HLSNodeCallPtr m_call;
       std::string m_innerName;
     public:
-      HLSNodeCallOutput(const std::string &name, const HLSTypePtr &type, HLSNodeCallPtr call, std::string innerName)
-			: HLSNodeDecl(name, type)
-			, m_call(call)
-			, m_innerName(innerName)
-		{}
+      HLSNodeCallOutput(const std::string &name, const HLSTypePtr &type, HLSNodeCallPtr call, std::string innerName);
 
         virtual bool isDefined() const
         { return true; }
 
-      virtual HLSNodePtr getSrc() const
-      { return HLSNodePtr(); }
+      virtual HLSNodePtr getSrc() const;
 
         HLSNodeCallPtr getCall() const
         { return m_call; }
@@ -515,7 +503,10 @@ namespace flopoco
       { return m_innerName; }
 
         virtual void accept(HLSNodeVisitor &visitor)  const
-        { visitor.visit(*this); }
+        {
+	  visitor.visit(*m_call);
+	  visitor.visit(*this);
+	}
     };
 
     class HLSNodeVar
@@ -550,14 +541,30 @@ namespace flopoco
     };
 
     //! Represents a call to a sub-operator
-    /*! This is kind of wierd, as it exposes zero or more sub-nodes representing the outputs */
+    /*! This is kind of wierd, as it exposes zero or more sub-nodes representing the outputs.
+        The lifetimes are also very strange - the call outputs have a strong reference on
+	the call, and the call has a weak reference on the call outputs. So any reference to
+	a call output will keep the call alive, but a reference to the call will not keep
+	outputs alive. 
+
+	A consequence is that call outputs are actually created on demand. If there exists
+	any strong reference to a call output, they will all be to the same object. But
+	sometimes there exist no strong references to a call output and it may disappear.
+	In particular, on construction there are no call outputs, as it would require
+	the call to take a strong reference on a call, creating a loop.
+     */
     class HLSNodeCall
       : public HLSNodeDecl
     {
     private:
+      typedef std::weak_ptr<HLSNodeCallOutput> HLSNodeCallOutputWeakPtr;
+
       const HLSOperator *m_op;
       std::map<std::string,HLSNodePtr> m_inputs;
-      std::map<std::string,HLSNodeCallOutputPtr> m_outputs;
+      std::map<std::string,std::string> m_outputNames;
+
+      mutable std::mutex m_mutex;// Used to ensure call output is unique, if it exists
+      mutable std::map<std::string,HLSNodeCallOutputWeakPtr> m_outputs;
     public:
       HLSNodeCall(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs);
 
@@ -578,8 +585,7 @@ namespace flopoco
       unsigned getOutputCount() const
       { return m_outputs.size(); }
 
-      HLSNodeCallOutputPtr getOutput(std::string name) const
-      { return m_outputs.at(name); }
+      HLSNodeCallOutputPtr getOutput(std::string name) const;
 
         virtual bool isDefined() const
         { return true; }
@@ -587,21 +593,17 @@ namespace flopoco
         HLSNodePtr getSrc() const
         { return HLSNodePtr(); }
 
+      // A call node only visit itself and its inputs
       virtual void accept(HLSNodeVisitor &visitor) const
       {
 	for(auto x : m_inputs){
 	  HLSNodePtr i=m_inputs.at(x.first);
 	  i->accept(visitor);
 	}
-	for(auto x : m_outputs){
-	  HLSNodePtr o=m_outputs.at(x.first);
-	  o->accept(visitor);
-	}
 	visitor.visit(*this);
       }
 
-      static std::shared_ptr<HLSNodeCall> create(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs)
-      { return std::make_shared<HLSNodeCall>(op, name, inputs, outputs); }
+      static std::shared_ptr<HLSNodeCall> create(const HLSOperator *op, std::string name, std::map<std::string,HLSNodePtr> inputs, std::map<std::string,std::string> outputs);
     };
 
 
@@ -678,7 +680,7 @@ namespace flopoco
 
 
         //! Performs an assignment to a previously declared variable.
-        HLSExpr operator=(const HLSExpr &o)
+        HLSExpr assign(const HLSExpr &o)
         {
 	  if(!m_base)
 	    throw std::runtime_error("Attempt to assign to uninitialised (empty) HLSExpr.");

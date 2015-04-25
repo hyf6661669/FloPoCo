@@ -315,7 +315,7 @@ namespace flopoco
 
 	  void visit(const HLSNodeCall &x)
 	  {
-	    throw std::runtime_error("VisitExpr - Should be visiting HLSNodeCall here.");
+	    // Do nothing, natural consequence of the call output
 	  }
 
 		void visit(const HLSNodeOpaque &x)

@@ -68,18 +68,19 @@ void ComparableFloatEncoder::emitHLSBody(HLSContext &ctxt, HLSScope &scope) cons
 	
 	auto iX=hls_get("iX");
 	
-	auto prefix_in = 	hls_declare("prefix_in",3) 		= iX[range(2+wE+wF,wE+wF)];
-	auto exponent_in = 	hls_declare("exponent_in",wE) 	= iX[range(wE+wF-1,wF)];
-	auto fraction_in = 	hls_declare("fraction_in",wF) 	= iX[range(wF-1,0)];
+	auto prefix_in = 	hls_declare("prefix_in",3).assign( iX[range(2+wE+wF,wE+wF)] );
+	auto exponent_in = 	hls_declare("exponent_in",wE).assign(  iX[range(wE+wF-1,wF)] );
+	auto fraction_in = 	hls_declare("fraction_in",wF).assign( iX[range(wF-1,0)] );
 	
-	auto prefix_out = 	hls_declare("prefix_out",2) =
+	auto prefix_out = 	hls_declare("prefix_out",2).assign(
 		select_if(prefix_in==hls_cg(3,2), hls_cg(2, 3), // positive regular
 		select_if(prefix_in==hls_cg(3,0), hls_cg(2, 2), // positive zero
 		select_if(prefix_in==hls_cg(3,1), hls_cg(2, 1), // negative zero
 		select_if(prefix_in==hls_cg(3,3), hls_cg(2, 0), // negative regular
-		hls_xg(2))))); // Umm, should handle this
+			  hls_xg(2))))) // Umm, should handle this
+								   );
 
-	auto exponent_out = hls_declare("exponent_out",wE) =
+	auto exponent_out = hls_declare("exponent_out",wE).assign(
 		//"(exponent_in + \"1\") when prefix_in=\"010\" else\n" <<	// positive regular
 		select_if(prefix_in==hls_cg(3,2), exponent_in+1,
 		//"("<<zg(wE)<<") when (prefix_in=\"000\" or prefix_in=\"001\") else\n" <<	// both zeros
@@ -87,9 +88,9 @@ void ComparableFloatEncoder::emitHLSBody(HLSContext &ctxt, HLSScope &scope) cons
 		// "("<<og(wE)<<" - exponent_in - \"1\") when prefix_in=\"011\" else\n" <<	// negative regular
 		select_if(prefix_in==hls_cg(3,3), hls_og(wE)-exponent_in-1,
 		//xg(wE)<<";\n";
-		hls_xg(wE))));
+			  hls_xg(wE)))));
 	
-	auto fraction_out = hls_declare("fraction_out",wF) =
+	auto fraction_out = hls_declare("fraction_out",wF).assign(
 		//"fraction_in when prefix_in=\"010\" else\n" <<	// positive regular
 		select_if(prefix_in == hls_cg(3,2), fraction_in,
 		//"("<<zg(wF)<<") when (prefix_in=\"000\" or prefix_in=\"001\") else\n" <<	// both zeros
@@ -97,9 +98,9 @@ void ComparableFloatEncoder::emitHLSBody(HLSContext &ctxt, HLSScope &scope) cons
 		//"("<<og(wF)<<" - fraction_in) when prefix_in=\"011\" else\n" <<	// negative regular
 		select_if(prefix_in==hls_cg(3,3), hls_og(wF) - fraction_in,
 		//xg(wF)<<";\n";
-		hls_xg(wF))));
+			  hls_xg(wF)))));
 
-	hls_get("oY") = cat(prefix_out, exponent_out, fraction_out);
+	hls_get("oY").assign( cat(prefix_out, exponent_out, fraction_out) );
 }
 
 void ComparableFloatEncoder::emulate(TestCase * tc)

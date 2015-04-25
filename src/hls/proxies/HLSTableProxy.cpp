@@ -48,7 +48,7 @@ namespace flopoco
                 ctxt.unindent();
                 ctxt.writeLine("};");
 
-                hls_get("Y") = HLSExpr(HLSNodeOpaque::create(eltType, "romData[Y]", "c++11"));
+                hls_get("Y").assign( HLSExpr(HLSNodeOpaque::create(eltType, "romData[Y]", "c++11")) );
             }else{
                 throw std::runtime_error("Can't generate code for this HLS target.");
             }

@@ -149,6 +149,16 @@ namespace flopoco{
 			bitHeap = new BitHeap(this, sumSize);
 			
 			for (int i=0; i<n; i++)	{
+		cout<<"calling Fix RealKCM constructor with parameters:"<<endl;
+		cout<<"	"<<this<<endl;
+		cout<<"	"<<getTarget()<<endl;
+		cout<<"	X"<<i<<endl;
+		cout<<"	true"<<endl;
+		cout<<"	"<<msbIn[i]-1<<endl;
+		cout<<"	"<<lsbIn[i]<<endl;
+		cout<<"	"<<lsbOutKCM<<endl;
+		cout<<"	"<<coeff[i]<<endl;
+		cout<<"	"<<bitHeap<<endl;
 				// Multiplication: instantiating a KCM object. It will add bits also to the right of lsbOutKCM
 				FixRealKCM* mult = new FixRealKCM(this,				// the envelopping operator
 																					getTarget(), 	// the target FPGA
@@ -160,6 +170,7 @@ namespace flopoco{
 																					coeff[i], 	// pass the string unmodified
 																					bitHeap		// pass the reference to the bitheap that will accumulate the intermediary products
 																					);
+		cout<<"just after the new KCM"<<endl;
 			}
 			
 			//rounding - add 1/2 ulps

@@ -34,17 +34,24 @@ namespace flopoco{
 		string file;
 		mpfr_t mpcoeff[10000];			/**< the absolute values of the coefficients as MPFR numbers */
 		bool coeffsign[10000];			/**< the signs of the coefficients */
-		mpz_class xHistory[10000]; // history of x used by emulate
-		int currentIndex;
+
+		vector<mpz_class*> xHistories; //history of xs used by emulate
+		vector<mpfr_t*> yHistories; //history of ys used by emulate
+		//mpz_class xHistory[10000]; // history of x used by emulate
+		//int currentIndexA;
+		//int currentIndexB;
+		//mpfr_t yHistory[10000]; // history of y (result) used by emulate
 
 		vector < vector<string> > coeffs;			/**< the coefficients as strings */
 		int nt; /**< number of intermediate computations */
 		int nx; /**< size of the state-space */
 		int ny; /**< number of outputs */
 		int nu; /**< numnber of inputs */
+		int ne=20; //number of taps TODO: calculate this
 
 		int parseFile(); //fills nt, nx, nu, ny and coeffs out of the input file. Returns 0 if succeed, error else.
-		int readMatrix(string JKLMNPQRS, vector < vector <string> > * &toFill, ifstream &openedFile, int lc = 0 );
+		int readMatrices( vector< vector <vector<string> >**> &Z, ifstream &openedFile, int &lc);
+		int readMatrix(string &header, string JKLMNPQRS, vector < vector <string> > * &toFill, ifstream &openedFile, int lc = 0 );
 		int readPrecision( vector <int> &msbs, vector<int> &lsbs, bool inFile=1 );
 	};
 

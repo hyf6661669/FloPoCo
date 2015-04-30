@@ -478,6 +478,7 @@ namespace flopoco{
 		Operator(target, inputDelays), lsbIn(lsbIn_), msbIn(msbIn_), signedInput(signedInput_),
 		wIn(msbIn_-lsbIn_+1), lsbOut(lsbOut_), constant(constant_), targetUlpError(targetUlpError_), bitHeap(bitHeap_)
 	{
+		cout<<"pink fluffy unicorns"<<endl;
 		srcFileName="FixRealKCM";
 
 		if(lsbIn>msbIn) 
@@ -875,6 +876,7 @@ namespace flopoco{
 		srcFileName="FixRealKCM";
 		name << mother->getName() << "_Table_"<<index;
 		setName(name.str());
+//		REPORT(DEBUG, "wIn="<<wIn<<", wOut="<<wOut);
 	}
   
 	FixRealKCMTable::~FixRealKCMTable() {}

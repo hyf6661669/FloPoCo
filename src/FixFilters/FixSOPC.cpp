@@ -170,7 +170,6 @@ namespace flopoco{
 																					coeff[i], 	// pass the string unmodified
 																					bitHeap		// pass the reference to the bitheap that will accumulate the intermediary products
 																					);
-		cout<<"just after the new KCM"<<endl;
 			}
 			
 			//rounding - add 1/2 ulps
@@ -230,12 +229,34 @@ namespace flopoco{
 
 	
 
+	pair<mpz_class,mpz_class> FixSOPC::computeSOPCForEmulate(vector<mpz_class> inputs) {
+
+		mpfr_t s, rd, ru;
+
+		computeSOPCForEmulate(inputs,s);
+
+		mpfr_init2 (rd, 1+msbOut-lsbOut);
+		mpfr_init2 (ru, 1+msbOut-lsbOut);		
+
+		mpz_class rdz, ruz;
+
+		mpfr_get_z (rdz.get_mpz_t(), s, GMP_RNDD); 					// there can be a real rounding here
+		rdz=signedToBitVector(rdz, 1+msbOut-lsbOut);
+
+		mpfr_get_z (ruz.get_mpz_t(), s, GMP_RNDU); 					// there can be a real rounding here	
+		ruz=signedToBitVector(ruz, 1+msbOut-lsbOut);
+		
+		mpfr_clears ( s, rd, ru, NULL);
+
+		return make_pair(rdz, ruz);
+	}
+
 
 
 	// Function that factors the work done by emulate() of FixFIR and the emulate() of FixSOPC 
-	pair<mpz_class,mpz_class> FixSOPC::computeSOPCForEmulate(vector<mpz_class> inputs) {
+	int FixSOPC::computeSOPCForEmulate(vector<mpz_class> inputs, mpfr_t &s) {
 		// Not completely safe: we compute everything on veryLargePrec, and hope that rounding this result is equivalent to rounding the exact result
-		mpfr_t t, s, rd, ru;
+		mpfr_t t, rd, ru;
 		mpfr_init2 (t, veryLargePrec);
 		mpfr_init2 (s, veryLargePrec);
 		mpfr_set_d(s, 0.0, GMP_RNDN); // initialize s to 0
@@ -257,20 +278,9 @@ namespace flopoco{
 		// make s an integer -- no rounding here
 		mpfr_mul_2si (s, s, -lsbOut, GMP_RNDN);
 
-		mpfr_init2 (rd, 1+msbOut-lsbOut);
-		mpfr_init2 (ru, 1+msbOut-lsbOut);		
+		mpfr_clears ( t, NULL );
+		return 0;
 
-		mpz_class rdz, ruz;
-
-		mpfr_get_z (rdz.get_mpz_t(), s, GMP_RNDD); 					// there can be a real rounding here
-		rdz=signedToBitVector(rdz, 1+msbOut-lsbOut);
-
-		mpfr_get_z (ruz.get_mpz_t(), s, GMP_RNDU); 					// there can be a real rounding here	
-		ruz=signedToBitVector(ruz, 1+msbOut-lsbOut);
-		
-		mpfr_clears (t, s, rd, ru, NULL);
-
-		return make_pair(rdz, ruz);
 	}
 
 

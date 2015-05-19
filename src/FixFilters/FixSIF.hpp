@@ -3,10 +3,13 @@
 
 #include "Operator.hpp"
 #include "utils.hpp"
+#include "FixSOPC.hpp"
 
 namespace flopoco{ 
 
 	
+	/** SIF building 
+	  */
 	class FixSIF : public Operator {
 	  
 	public:
@@ -24,7 +27,7 @@ namespace flopoco{
 			 in order to compare this result with those outputed by the vhdl opertator */
 		void emulate(TestCase * tc);
 
-		int p;							/**< The precision (opposite of LSB weight) of inputs and outputs */ 
+		//int p;							/**< The precision (opposite of LSB weight) of inputs and outputs */ 
 		//TODO: update definitions to msb+lsb
 		int n;							/**< number of taps */
 
@@ -35,23 +38,41 @@ namespace flopoco{
 		mpfr_t mpcoeff[10000];			/**< the absolute values of the coefficients as MPFR numbers */
 		bool coeffsign[10000];			/**< the signs of the coefficients */
 
-		vector<mpz_class*> xHistories; //history of xs used by emulate
-		vector<mpfr_t*> yHistories; //history of ys used by emulate
+		mpfr_t *xHistories[2]; //history of xs used by emulate (only 2 )
 		//mpz_class xHistory[10000]; // history of x used by emulate
-		//int currentIndexA;
 		//int currentIndexB;
 		//mpfr_t yHistory[10000]; // history of y (result) used by emulate
 
 		vector < vector<string> > coeffs;			/**< the coefficients as strings */
-		int nt; /**< number of intermediate computations */
-		int nx; /**< size of the state-space */
-		int ny; /**< number of outputs */
-		int nu; /**< numnber of inputs */
-		int ne=20; //number of taps TODO: calculate this
+		vector <FixSOPC*> sopcs; //list of sopcs (corresponding to matrix lines)
 
+		vector <int> lsbIn, lsbOut;
+
+		uint32_t nt; /**< number of intermediate computations */
+		uint32_t nx; /**< size of the state-space */
+		uint32_t ny; /**< number of outputs */
+		uint32_t nu; /**< numnber of inputs */
+		uint32_t ne=20; //number of taps TODO: calculate this
+
+		/** parseFile parses files corresponding to the following format:
+			" header
+			  matrix
+			"
+				with header="matrixname lines columns"
+					example: "J 0 0"
+					with matrixname="{J,K,L,M,N,P,Q,R,S}"
+						 lines=* (integer)
+						 columns=* (integer)
+					 matrix=lines and columns corresponding to the coefficients of the matrix (integers or floating point format)
+					 see examples in /SIFexamples
+			Precisions for inputs and outputs have to be specified in an other file.
+		 */
 		int parseFile(); //fills nt, nx, nu, ny and coeffs out of the input file. Returns 0 if succeed, error else.
+
 		int readMatrices( vector< vector <vector<string> >**> &Z, ifstream &openedFile, int &lc);
+
 		int readMatrix(string &header, string JKLMNPQRS, vector < vector <string> > * &toFill, ifstream &openedFile, int lc = 0 );
+
 		int readPrecision( vector <int> &msbs, vector<int> &lsbs, bool inFile=1 );
 	};
 

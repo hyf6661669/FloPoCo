@@ -42,7 +42,15 @@ namespace flopoco{
 		/** Overloading the method of Operator */
 		void buildStandardTestCases(TestCaseList* tcl);
 
-		/** This method does most of the work for emulate(), because we want to call it also from the emulate() of FixFIR */
+
+		/** Returns an interval in which to find the result, given a vector (x) of inputs.
+		  returns a result in very large precision ("6400 bits should be enough for anybody")
+		  */
+		int computeSOPCForEmulate(vector<mpz_class> inputs, mpfr_t &s);
+
+		/** This method does most of the work for emulate(), because we want to call it also from the emulate() of FixFIR
+			Returns an interval in which to find the result, given a vector (x) of inputs.
+		  */
 		pair<mpz_class,mpz_class> computeSOPCForEmulate(vector<mpz_class> x);
 
 	protected:

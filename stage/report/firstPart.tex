@@ -35,6 +35,11 @@
 	The linearity condition of $\mathcal{H}$ implies: $\mathcal{H}(u) = \sum_{l\geq0}u(l)\mathcal{H}(\delta_l)$.
 	Timeinvariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$
 	$$y(k)=\sum_{l\geq0}u(l)h(k-l)=\sum_{l=0}^ku(k)h(k-l)$$
+	This corresponds with the convolution product definition of $u$ by $h$, denoted $y = h * u$.
+	Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
+	ith output to the Dirac implusion on the j-th input.
+	The precedent equation becomes:
+	$$u_i(k)=\sum_{j=1}^{n_u}$$
 	
 	\end{thdef} 
 

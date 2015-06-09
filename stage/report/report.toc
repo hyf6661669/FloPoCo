@@ -9,25 +9,26 @@
 \contentsline {subsection}{\numberline {2.2}Realizations}{4}{subsection.2.2}
 \contentsline {subsubsection}{\numberline {2.2.1}Direct and transposed forms}{4}{subsubsection.2.2.1}
 \contentsline {subsubsection}{\numberline {2.2.2}State-space representation}{5}{subsubsection.2.2.2}
-\contentsline {subsection}{\numberline {2.3}Adjustments in arbitrary precision}{6}{subsection.2.3}
-\contentsline {section}{\numberline {3}Dimensionment}{7}{section.3}
-\contentsline {subsection}{\numberline {3.1}}{7}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}Algorithm}{7}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}Particular Forms}{7}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}ABCD Form}{7}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}$nx=0$}{7}{subsection.3.5}
-\contentsline {subsection}{\numberline {3.6}Algorithm}{7}{subsection.3.6}
-\contentsline {subsection}{\numberline {3.7}Optimizations}{7}{subsection.3.7}
-\contentsline {subsubsection}{\numberline {3.7.1}Sparse matrices}{7}{subsubsection.3.7.1}
-\contentsline {subsubsection}{\numberline {3.7.2}One entries}{8}{subsubsection.3.7.2}
-\contentsline {section}{\numberline {4}Implementation}{9}{section.4}
-\contentsline {subsection}{\numberline {4.1}First Sub-part}{9}{subsection.4.1}
-\contentsline {subsection}{\numberline {4.2}Second Sub-part}{9}{subsection.4.2}
-\contentsline {subsubsection}{\numberline {4.2.1}First Subsub-part}{9}{subsubsection.4.2.1}
-\contentsline {subsection}{\numberline {4.3}Third Sub-part}{9}{subsection.4.3}
-\contentsline {subsection}{\numberline {4.4}Fourth Sub-part}{9}{subsection.4.4}
-\contentsline {section}{Conclusion}{9}{section*.3}
-\contentsline {section}{Appendix: Remainders about signal processing}{9}{section*.5}
-\contentsline {subsection}{\numberline {4.5}Notations}{10}{subsection.4.5}
-\contentsline {subsection}{\numberline {4.6}Remainders about signal processing}{10}{subsection.4.6}
-\contentsline {subsubsection}{\numberline {4.6.1}Impulse response}{10}{subsubsection.4.6.1}
+\contentsline {subsection}{\numberline {2.3}Specialized Implicit Form (SIF)}{5}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.4}Adjustments in arbitrary precision}{7}{subsection.2.4}
+\contentsline {section}{\numberline {3}Dimensionment}{8}{section.3}
+\contentsline {subsection}{\numberline {3.1}}{8}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Algorithm}{8}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Particular Forms}{8}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}ABCD Form}{8}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}$nx=0$}{8}{subsection.3.5}
+\contentsline {subsection}{\numberline {3.6}Algorithm}{8}{subsection.3.6}
+\contentsline {subsection}{\numberline {3.7}Optimizations}{8}{subsection.3.7}
+\contentsline {subsubsection}{\numberline {3.7.1}Sparse matrices}{8}{subsubsection.3.7.1}
+\contentsline {subsubsection}{\numberline {3.7.2}One entries}{9}{subsubsection.3.7.2}
+\contentsline {section}{\numberline {4}Implementation}{10}{section.4}
+\contentsline {subsection}{\numberline {4.1}First Sub-part}{10}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Second Sub-part}{10}{subsection.4.2}
+\contentsline {subsubsection}{\numberline {4.2.1}First Subsub-part}{10}{subsubsection.4.2.1}
+\contentsline {subsection}{\numberline {4.3}Third Sub-part}{10}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}Fourth Sub-part}{10}{subsection.4.4}
+\contentsline {section}{Conclusion}{10}{section*.3}
+\contentsline {section}{Appendix: Remainders about signal processing}{10}{section*.5}
+\contentsline {subsection}{\numberline {4.5}Notations}{11}{subsection.4.5}
+\contentsline {subsection}{\numberline {4.6}Remainders about signal processing}{11}{subsection.4.6}
+\contentsline {subsubsection}{\numberline {4.6.1}Impulse response}{11}{subsubsection.4.6.1}

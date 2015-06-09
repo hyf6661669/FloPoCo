@@ -176,6 +176,92 @@
 	$\boldsymbol{C} \in \mathbb{R}^{n_y \times n_x}$, and $\boldsymbol{D} \in \mathbb{R}^{n_y \times n_u}$,
 	with $\boldsymbol{x}(0)$ are sufficient to describe an LTI filter, with convention $\boldsymbol{k}(k)=\boldsymbol{u}(k)=0 \hspace{5pt} | \hspace{5pt} \forall k<0$.
 
+	\subsection{Specialized Implicit Form (SIF)}
+	he specialized implicit form (SIF) was introduced in \cite{} and is well detailed in \cite{}. It was built to permit the
+	expression of any realization of LTI filters. The idea is to have a unique representation that allows to compute
+	every degradation measures, instead of redevelopping them for each new realization.
+	This form distinguishes computations done at one time from computations done the other times. As well as
+	in a state-space, we have $\boldsymbol{x}_i$ as state variables, but in addition to that, $\boldsymbol{t}_i$ are intermediate variables.
+	The SIF is described as following:
+	\begin{equation} \label{sifdef}
+		\begin{pmatrix}
+			\boldsymbol{J} & \boldsymbol{0} & \boldsymbol{0} \\
+			\boldsymbol{-K} & \boldsymbol{I}_{n_x} & \boldsymbol{0} \\
+			\boldsymbol{-L} & \boldsymbol{0} & \boldsymbol{I}_{n_y} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k+1)  \\
+			\boldsymbol{x} (k+1)  \\
+			\boldsymbol{y} (k) 
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			\boldsymbol{0} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{0} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{0} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k)  \\
+			\boldsymbol{x} (k)  \\
+			\boldsymbol{u} (k) 
+		\end{pmatrix}
+	\end{equation}
+	With $n_t$, $n_x$, $n_y$ and $n_u$ the sizes of $\boldsymbol{t}$,$\boldsymbol{x}$,$\boldsymbol{y}$ and $\boldsymbol{u}$, respectively.
+	$\boldsymbol{J}$, is a lower triangular matrix, with
+	diagonal entries equal to 1. Then we have the following dimensions for the previous matrices:
+
+	\begin{eqnarray}
+		\boldsymbol{J} \in \mathbb{R}^{n_t \times n_t},\boldsymbol{M} \in \mathbb{R}^{n_t \times n_x},\boldsymbol{N} \in \mathbb{R}^{n_t \times n_u}, \nonumber \\
+		\boldsymbol{K} \in \mathbb{R}^{n_x \times n_t},\boldsymbol{P} \in \mathbb{R}^{n_x \times n_x},\boldsymbol{Q} \in \mathbb{R}^{n_x \times n_u}, \\
+		\boldsymbol{L} \in \mathbb{R}^{n_y \times n_t},\boldsymbol{R} \in \mathbb{R}^{n_y \times n_x},\boldsymbol{S} \in \mathbb{R}^{n_y \times n_u}, \nonumber \\
+	\end{eqnarray}
+
+	Values of the vector $\boldsymbol{t}(k+1)$ are computed and used at the same iterations, so they are not kept in memory.
+	As the equation is mostly full of zeros, it is more convenient to use it’s compressed formulation, wich is denoted
+	as the $\boldsymbol{Z}$:
+	
+	\begin{equation} \label{zmatrix}
+		\boldsymbol{Z}=
+		\begin{pmatrix}
+			\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+	\end{equation}
+	The community usually takes $-\boldsymbol{J}$ for simplicity within further computations.
+
+	The SIF can also be seen as an algorithm, each line of the equation \ref{sifdef} corresponding to a sequential step of the computation.
+	The algorithm results as follows:
+	\begin{algorithm}
+		\For{int i = 0 ; $i \leq n_t$; i++}{
+			$\boldsymbol{t}_i(k+1) \leftarrow - \sum_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\For{int i = 0 ; $i \leq n_x$; i++}{
+			$\boldsymbol{x}_i(k+1) \leftarrow - \sum_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\For{int i = 0 ; $i \leq ny$; i++}{
+			$\boldsymbol{y}_i(k+1) \leftarrow - \sum_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\caption{Computation of SIF outputs from inputs}
+	\end{algorithm}
+
+	Here, it is important to see that the form of $\boldsymbol{J}$ allows to compute the $\boldsymbol{t}_i$ sequentially. The algorithm can
+	then be described as follows:
+	\begin{algorithm}
+		\For{int i = 0 ; $i \leq n_t$; i++}{
+			$\boldsymbol{t}_i(k+1) \leftarrow - \boldsymbol{J'}_{i}\boldsymbol{t}(k+1) + \boldsymbol{M}_{i}\boldsymbol{x}(k) +\boldsymbol{N}_{i}\boldsymbol{u}(k)$
+		}
+		\For{int i = 0 ; $i \leq n_x$; i++}{
+			$\boldsymbol{x}_i(k+1) \leftarrow - \boldsymbol{K}_{i}\boldsymbol{t}(k+1) + \boldsymbol{P}_{i}\boldsymbol{x}(k) +\boldsymbol{Q}_{i}\boldsymbol{u}(k)$
+		}
+		\For{int i = 0 ; $i \leq ny$; i++}{
+			$\boldsymbol{y}_i(k+1) \leftarrow - \boldsymbol{L}_{i}\boldsymbol{t}(k+1) + \boldsymbol{R}_{i}\boldsymbol{x}(k) + \boldsymbol{S}_{i}\boldsymbol{u}(k)$
+		}
+		\caption{Simplified matricial algorithm}
+	\end{algorithm}
+
+	With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
+
 
 
 			\begin{eqnarray} \label{sifalgoerr}

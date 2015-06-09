@@ -1,0 +1,133 @@
+\documentclass[twoside]{article}
+\usepackage[a4paper,includeall,bindingoffset=0cm,margin=2cm,
+	            marginparsep=0cm,marginparwidth=0cm]{geometry}
+\usepackage[english]{babel}
+\usepackage[babel=true]{csquotes}
+\usepackage[utf8]{inputenc}
+\usepackage{pdfpages}
+\usepackage[]{fancyhdr}
+\pagestyle{fancy}
+\setlength{\headheight}{50pt}
+\setlength{\headsep}{40pt}
+\fancyhead{}
+%\lhead[\thesection]{\hspace{10pt}}
+\fancyhead[RO]{\rightmark}
+\fancyhead[LE]{\leftmark}
+%\usepackage{amssymb}
+%\renewcommand{\oddsidemargin}{}
+%\renewcommand{\evensidemargin}{62pt}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[]{algorithm2e}
+
+
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	breaklinks=true,
+	linkcolor=blue,
+	urlcolor=blue}
+\newtheorem{thdef}{Definition}
+\theoremstyle{remark}
+\newtheorem{rk}{Remark}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newcommand{\thref}[2]{\hyperref[#2]{#1 \ref*{#2}}}
+\numberwithin{equation}{subsection}
+
+\usepackage{url}
+\usepackage[]{xcolor}
+\definecolor{light-gray}{gray}{0.6}
+\definecolor{blue}{RGB}{0,0,153}
+\definecolor{blue1}{RGB}{0,102,204}
+\definecolor{blue2}{RGB}{51,153,255}
+\definecolor{blue3}{RGB}{0,153,153}
+\definecolor{blue4}{RGB}{102,102,255}
+\definecolor{red1}{RGB}{255,0,0}
+\definecolor{orange1}{RGB}{255,153,51}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{boxedminipage}
+\usepackage{tikz}
+\usetikzlibrary{calc} 
+
+\setcounter{MaxMatrixCols}{20}
+
+\tikzset{
+  x=1ex,y=1ex,
+  hwblock/.style={draw, rectangle, rounded corners=.3, very thick, fill=black!5, font=\sf, minimum height=5ex},
+  hwbus/.style={very thick,>=stealth},
+  hwwire/.style={thin, >=stealth, },
+  hwword/.style={draw, rectangle, minimum height=3ex},
+  bitwidth/.style={font=\scriptsize,midway,right}
+}
+
+\newcommand{\msbout}{m_{\text{out}}}
+\newcommand{\appr}[1]{\widetilde{#1}}
+\newcommand{\yout}{\widetilde{y}_{\text{out}}}
+\newcommand{\abserr}{\varepsilon}
+\newcommand{\epssopc}{\abserr_{\text{r}}}
+\newcommand{\epsfinalround}{\abserr_{\text{f}}}
+\newcommand{\TODO}{\textbf{TODO}}
+
+%\title{PPH - Comment créer une musique apparetenant à plusieurs genres?}
+\title{Internship report}
+\author{Antoine Martinet}
+
+\begin{document}
+
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section*{ Introduction }
+	\addcontentsline{toc}{section}{Introduction}
+
+	Filters are nowadays essential tools for designing responsive systems.
+	As they appear in both signal processing and command communities,
+	we can see that the use of filters is now spreading in many domains, related to them,
+	such as radio signal coding and decoding, image and sound processing, and so on.
+
+
+	Although most of all the potential filters can be done in software,
+	some interesting applications in hardware could help to accelerate such computations, 
+	that might be very long in software in particular cases.
+	Moreover, it allows to design and reconfigure specific parts of the hardware when working with FPGAs.
+
+	
+	My work at the CITI lab in the SOCRATE team was to design a parametric architecture for LTI filters, 
+	which will be very useful to design a software-defined radio.
+	This work has been integrated to INRIA's flopoco tool,
+	which main goal is to generate architecture cores for computing just right.
+
+
+	In this report, I will firs present remainders about signal processing.
+	Then I will tell a little more about LTI filters and their software implementation in finite precision.
+	Finally, I will present the main aspects of the hardware implementation of such filters.
+
+\section{Motivations}
+
+\section{Remainders about filters and signal processing}
+\input{firstPart}
+
+\newpage
+\section{Dimensionment}
+\input{secondPart}
+
+\newpage
+\section{Implementation}
+\input{thirdPart}
+
+\section*{Conclusion}
+	\addcontentsline{toc}{section}{Conclusion}
+
+\bibliographystyle{plain}
+\bibliography{report}  % main.bib is the name of the Bibliography in this case
+\section*{Appendix: Remainders about signal processing}
+	\addcontentsline{toc}{section}{Appendix: Remainders about signal processing}
+\input{annexes}
+\end{document}
+

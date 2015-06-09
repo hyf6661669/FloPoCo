@@ -1,0 +1,228 @@
+  %\begin{center}
+\resizebox{!}{80pt}{
+  \begin{tikzpicture}
+
+    \footnotesize 
+    \node[draw, blue!100,   ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel1)  at (49.8em, 52.7em) {} ;
+    \node[draw, blue!100,   ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel2)  at (49.8em, 50.5em) {} ;
+    \node[draw, blue!100,   ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel3)  at (49.8em, 48.2em) {} ;
+    \node[draw, blue!100,   ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel4)  at (49.8em, 45.9em) {} ;
+    \node[draw, blue!100,   ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel5)  at (49.8em, 43.7em) {} ;
+    \node[draw, green!100,  ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel6)  at (49.8em, 41.4em) {} ;
+    \node[draw, green!100,  ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel7)  at (49.8em, 39.1em) {} ;
+    \node[draw, green!100,  ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel8)  at (49.8em, 36.8em) {} ;
+    \node[draw, green!100,  ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel9)  at (49.8em, 34.6em) {} ;
+    \node[draw, green!100,  ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel10) at (49.8em, 32.4em) {} ;
+    \node[draw, red!100,    ultra thick, rectangle, minimum width = 3.4*34.5ex, minimum height=4.5ex] (sel11) at (49.8em, 30.5em) {} ;
+
+	\normalsize
+  \node at (98, 35em) {
+	  \resizebox{!}{120pt}{
+		$\begin{pmatrix}
+			1       & 0       & 0       & 0       & 0       & m_{1,1} & 0       & 0       & 0       & 0       & 0       \\
+			j_{2,1} & 1       & 0       & 0       & 0       & 0       & m_{2,2} & 0       & 0       & 0       & 0       \\
+			j_{3,1} & j_{3,2} & 1       & 0       & 0       & 0       & 0       & m_{3,3} & 0       & 0       & 0       \\
+			j_{4,1} & j_{4,2} & j_{4,3} & 1       & 0       & 0       & 0       & 0       & m_{4,4} & 0       & 0       \\
+			j_{5,1} & j_{5,2} & j_{5,3} & j_{5,4} & 1       & 0       & 0       & 0       & 0       & m_{5,5} & 0       \\
+
+			k_{1,1} & 1       & 0       & 0       & 0       & p_{1,1} & 0       & 0       & 0       & 0       & q_{1,1} \\
+			k_{2,1} & 0       & 1       & 0       & 0       & 0       & p_{2,2} & 0       & 0       & 0       & q_{2,1} \\
+			k_{3,1} & 0       & 0       & 1       & 0       & 0       & 0       & p_{3,3} & 0       & 0       & q_{3,1} \\
+			k_{4,1} & 0       & 0       & 0       & 1       & 0       & 0       & 0       & p_{4,4} & 0       & q_{4,1} \\
+			k_{5,1} & 0       & 0       & 0       & 0       & 0       & 0       & 0       & 0       & p_{5,5} & q_{5,1} \\
+
+			1	    & 0       & 0       & 0       & 0       & 0       & 0       & 0       & 0       & 0       & 0       \\
+		\end{pmatrix}$
+	  }
+  };
+
+%	$\begin{pmatrix}
+%		1       & 0       & 0       & 0       & 0       & m_{1,1} & m_{1,2} & m_{1,3} & m_{1,4} & m_{1,5} & n_{1,1} \\
+%		j_{2,1} & 1       & 0       & 0       & 0       & m_{2,1} & m_{2,2} & m_{2,3} & m_{2,4} & m_{2,5} & n_{2,1} \\
+%		j_{3,1} & j_{3,2} & 1       & 0       & 0       & m_{3,1} & m_{3,2} & m_{3,3} & m_{3,4} & m_{3,5} & n_{3,1} \\
+%		j_{4,1} & j_{4,2} & j_{4,3} & 1       & 0       & m_{4,1} & m_{4,2} & m_{4,3} & m_{4,4} & m_{4,5} & n_{4,1} \\
+%		j_{5,1} & j_{5,2} & j_{5,3} & j_{5,4} & 1       & m_{5,1} & m_{5,2} & m_{5,3} & m_{5,4} & m_{5,5} & n_{5,1} \\
+%
+%		k_{1,1} & k_{1,1} & k_{1,1} & k_{1,1} & k_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & q_{1,1} \\
+%		k_{2,1} & k_{2,1} & k_{2,1} & k_{2,1} & k_{2,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & q_{2,1} \\
+%		k_{3,1} & k_{3,1} & k_{3,1} & k_{3,1} & k_{3,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & q_{3,1} \\
+%		k_{4,1} & k_{4,1} & k_{4,1} & k_{4,1} & k_{4,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & q_{4,1} \\
+%		k_{5,1} & k_{5,1} & k_{5,1} & k_{5,1} & k_{5,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & p_{1,1} & q_{5,1} \\
+%                                                       
+%		l_{5,1} & l_{5,1} & l_{5,1} & l_{5,1} & l_{5,1} & r_{1,1} & r_{1,2} & r_{1,3} & r_{1,4} & r_{1,5} & s_{1,1} \\
+%	\end{pmatrix}$
+
+		\node[draw, blue!100, thick, rectangle, minimum width = 3.4*5ex, minimum height=4ex] (d1) at (5em, 13em) {} ;
+		  \node (n1) at (5em, 13em)  {\Large $m_{1,1}$} ;
+		  \draw[black!25, very thin] ($(n1)-(3.7ex,-1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n1)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, blue!100, thick, rectangle, minimum width = 3.4*4.4ex, minimum height=4ex] (d2) at (9.6em,9em) {} ;
+		  \node (n2) at (8em, 9em)  {\large $-j_{2,1}$} ;
+		  \node (n3) at (11.2em, 9em)  {\Large $m_{2,2}$} ;
+		  \draw[black!25, very thin] ($(n2)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, blue!100, thick, rectangle, minimum width = 3.4*6.5ex, minimum height=4ex] (d3) at (15.2em,5em) {} ;
+		  \node (n4) at (12em, 5em)    {\large $-j_{3,1}$} ;
+		  \node (n5) at (15.2em, 5em)  {\large $-j_{3,2}$} ;
+		  \node (n6) at (18.2em, 5em)  {\Large $m_{3,3}$} ;
+		  \draw[black!25, very thin] ($(n4)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n5)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, blue!100, thick, rectangle, minimum width = 3.4*8.5ex, minimum height=4ex] (d4) at (24.6em,-1em) {} ;
+		  \node (n7) at (20em, -1em)     {\large $-j_{4,1}$} ;
+		  \node (n8) at (23.2em, -1em)   {\large $-j_{4,2}$} ;
+		  \node (n9) at (26.2em, -1em)   {\large $-j_{4,3}$} ;
+		  \node (n10) at (29.2em, -1em)  {\Large $m_{4,4}$} ;
+		  \draw[black!25, very thin] ($(n7)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n8)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n9)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, blue!100, thick, rectangle, minimum width = 3.4*10.6ex, minimum height=4ex] (d5) at (34.2em, -8em) {} ;
+		  \node (n11) at (28em, -8em)    {\large $-j_{5,1}$} ;
+		  \node (n12) at (31.2em, -8em)  {\large $-j_{5,2}$} ;
+		  \node (n13) at (34.2em, -8em)  {\large $-j_{5,3}$} ;
+		  \node (n14) at (37.2em, -8em)  {\large $-j_{5,4}$} ;
+		  \node (n15) at (40.2em, -8em)  {\Large $m_{5,5}$} ;
+		  \draw[black!25, very thin] ($(n11)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n12)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n13)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n14)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, green!100, thick, rectangle, minimum width = 3.4*8.5ex, minimum height=4ex] (d6) at (41.7em, -16em) {} ;
+		  \node (n16) at (37em, -16em)    {\Large $k_{1,1}$} ;
+		  \node (n17) at (40.2em, -16em)  {\Large $1$} ;
+		  \node (n18) at (43.2em, -16em)  {\Large $p_{1,1}$} ;
+		  \node (n19) at (46.2em, -16em)  {\Large $q_{1,1}$} ;
+		  \draw[black!25, very thin] ($(n16)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n17)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n18)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, green!100, thick, rectangle, minimum width = 3.4*8.5ex, minimum height=4ex] (d7) at (46.7em, -23em) {} ;
+		  \node (n20) at (42em, -23em)    {\Large $k_{2,1}$} ;
+		  \node (n21) at (45.2em, -23em)  {\Large $1$} ;
+		  \node (n22) at (48.2em, -23em)  {\Large $p_{2,2}$} ;
+		  \node (n23) at (51.2em, -23em)  {\Large $q_{2,1}$} ;
+		  \draw[black!25, very thin] ($(n20)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n21)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n22)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, green!100, thick, rectangle, minimum width = 3.4*8.5ex, minimum height=4ex] (d8) at (51.8em, -29em) {} ;
+		  \node (n24) at (47em, -29em)    {\Large $k_{3,1}$} ;
+		  \node (n25) at (50.2em, -29em)  {\Large $1$} ;
+		  \node (n26) at (53.2em, -29em)  {\Large $p_{3,3}$} ;
+		  \node (n27) at (56.2em, -29em)  {\Large $q_{3,1}$} ;
+		  \draw[black!25, very thin] ($(n24)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n25)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n26)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, green!100, thick, rectangle, minimum width = 3.4*8.5ex, minimum height=4ex] (d9) at (57.8em, -35em) {} ;
+		  \node (n28) at (53em, -35em)    {\Large $k_{4,1}$} ;
+		  \node (n29) at (56.2em, -35em)  {\Large $1$} ;
+		  \node (n30) at (59.2em, -35em)  {\Large $p_{4,4}$} ;
+		  \node (n31) at (62.2em, -35em)  {\Large $q_{4,1}$} ;
+		  \draw[black!25, very thin] ($(n28)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n29)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n30)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, green!100, thick, rectangle, minimum width = 3.4*6.5ex, minimum height=4ex] (d10) at (65.2em, -40em) {} ;
+		  \node (n32) at (62em, -40em)    {\Large $k_{5,1}$} ;
+		  \node (n33) at (65.2em, -40em)  {\Large $p_{5,5}$} ;
+		  \node (n34) at (68.2em, -40em)  {\Large $q_{5,1}$} ;
+		  \draw[black!25, very thin] ($(n32)+(3.7ex, 1.5ex)$) -- ++(0, -3ex);
+		  \draw[black!25, very thin] ($(n33)+(3.7ex,1.5ex)$) -- ++(0, -3ex);
+
+		\node[draw, green!100, fill=black!10, thick, rectangle, minimum width = 6.5ex, minimum height=25em] (d11) at (76em,-32em) {} ;
+		  \node (n35) at (76em, -22em)    {\Large $x_{1}$} ;
+		  \node (n36) at (76em, -27em)    {\Large $x_{2}$} ;
+		  \node (n37) at (76em, -32em)    {\Large $x_{3}$} ;
+		  \node (n38) at (76em, -37em)  {\Large $x_{4}$} ;
+		  \node (n39) at (76em, -42em)  {\Large $x_{5}$} ;
+		  \draw[black!25, very thin] ($(n35)-(3.0ex, 5.0ex)$) -- ++(6ex, 0);
+		  \draw[black!25, very thin] ($(n36)-(3.0ex, 5.0ex)$) -- ++(6ex, 0);
+		  \draw[black!25, very thin] ($(n37)-(3.0ex, 5.0ex)$) -- ++(6ex, 0);
+		  \draw[black!25, very thin] ($(n38)-(3.0ex, 5.0ex)$) -- ++(6ex, 0);
+
+		\node[draw, red!100, thick, rectangle, minimum width = 3.4*6.5ex, minimum height=4ex] (d12) at (5em, -40em) {} ;
+		  \node (n40) at (5em, -40em)    {\Large $1$} ;
+
+
+	%edges starting from d1
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 4.9ex)$) -- ($(n2)+(0,4.5ex)$) -- ($(n2)+(0,2ex)$) node[xshift=-0.5cm, yshift=0.4cm] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 14.9ex)$) -- ($(n4)+(0,4ex)$) -- ($(n4.50)!(n4)!(n4.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 28.9ex)$) -- ($(n7)+(0,4ex)$) -- ($(n7.50)!(n7)!(n7.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 44.8ex)$) -- ($(n11)+(0,4ex)$) -- ($(n11.50)!(n11)!(n11.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+	
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 64.0ex)$) -- ($(n16)+(0,4ex)$) -- ($(n16.50)!(n16)!(n16.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 80.0ex)$) -- ($(n20)+(0,4ex)$) -- ($(n20.50)!(n20)!(n20.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 94.0ex)$) -- ($(n24)+(0,4ex)$) -- ($(n24.50)!(n24)!(n24.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+	
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 108.0ex)$) -- ($(n28)+(0,4ex)$) -- ($(n28.50)!(n28)!(n28.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 119.0ex)$) -- ($(n32)+(0,4ex)$) -- ($(n32.50)!(n32)!(n32.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue!100, ->]  (n1.south) -- ($(n1)-(0, 120.7ex)$) -- ($(n40)+(0,4ex)$) -- ($(n40.50)!(n40)!(n40.north)$) node[yshift=5cm,left] {$t_1(k+1)$} node[near start,above] {$/$}  node[near end,right] {};
+
+	%edges starting from d2
+    \draw[hwbus, blue1!100, ->]  (d2.south) -- ($(d2)-(0,1.2em)$) -- ($(n5)+(0,6.6ex)$) -- ($(n5.50)!(n5)!(n5.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue1!100, ->]  (d2.south) -- ($(d2)-(0,2em)$) -- ($(n8)-(31.7, -6.5ex)$) -- ($(n8)+(0,6.5ex)$) -- ($(n8.50)!(n8)!(n8.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue1!100, ->]  (d2.south) -- ($(d2)-(0,2em)$) -- ($(n12)-(50.0, -7ex)$) -- ($(n12)+(0,7ex)$) -- ($(n12.50)!(n12)!(n12.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue1!100, ->]  (d2.south) -- ($(d2)-(0,2em)$) -- ($(n17)-(70.5, -7ex)$) -- ($(n17)+(0,7ex)$) -- ($(n17.50)!(n17)!(n17.north)$) node[near start] {$/$} node[xshift=-12.6cm, yshift=2cm] {$t_2(k+1)$}  node[near end,right] {};
+
+	%edges starting from d3
+    \draw[hwbus, blue2!100, ->]  (d3.south) -- ($(d3)-(0,2.0em)$) -- ($(n9)+(0,9.5ex)$) -- ($(n9.50)!(n9)!(n9.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue2!100, ->]  (d3.south) -- ($(d3)-(0,9.0em)$) -- ($(n13)+(0,9.5ex)$) -- ($(n13.50)!(n13)!(n13.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue2!100, ->]  (d3.south) -- ($(d3)-(0,24.8em)$) -- ($(n21)+(0,7.5ex)$) -- ($(n21.50)!(n21)!(n21.north)$) node[near start] {$/$} node[xshift=-12.6cm, yshift=2cm] {$t_1(k+1)$}  node[near end,right] {};
+
+	%edges starting from d4
+    \draw[hwbus, blue3!100, ->]  (d4.south) -- ($(d4)-(0,1.5em)$) -- ($(n14)+(0,13.0ex)$) -- ($(n14.50)!(n14)!(n14.north)$) node[near start] {$/$} node[near start,above] {}  node[near end,right] {};
+
+    \draw[hwbus, blue3!100, ->]  (d4.south) -- ($(d4)-(0,24.9em)$) -- ($(n25)+(0,7.5ex)$) -- ($(n25.50)!(n25)!(n25.north)$) node[near start] {$/$} node[xshift=-10.8cm, yshift=1.8cm] {$t_1(k+1)$}  node[near end,right] {};
+
+	%edges starting from d5
+    \draw[hwbus, blue4!100, ->]  (d5.south) -- ($(d5)-(0,24.0em)$) -- ($(n29)+(0,6.7ex)$) -- ($(n29.50)!(n29)!(n29.north)$) node[near start] {$/$} node[xshift=-9.4cm, yshift=1.8cm] {$t_1(k+1)$}  node[near end,right] {};
+
+	%input of x register
+    \draw[hwbus, blue!100, ->]  (d6.south) -- ($(d6)-(0,2em)$) -- ($(n35)-(10,0ex)$) -- ($(n35)-(3,0)$) node[near start] {$/$} node[xshift=-0.9cm, yshift=0.5cm] {$x_1(k+1)$}  node[near end, right] {};
+    \draw[hwbus, blue!100, ->]  (d7.south) -- ($(d7)-(0,1.5em)$) -- ($(n36)-(9,0ex)$) -- ($(n36)-(3,0)$) node[near start] {$/$} node[xshift=-0.9cm, yshift=0.5cm] {$x_2(k+1)$}  node[near end, left] {};
+    \draw[hwbus, blue!100, ->]  (d8.south) -- ($(d8)-(0,1.5em)$) -- ($(n37)-(8,0ex)$) -- ($(n37)-(3,0)$) node[near start] {$/$} node[xshift=-0.9cm, yshift=0.5cm] {$x_3(k+1)$}  node[near end, left] {};
+    \draw[hwbus, blue!100, ->]  (d9.south) -- ($(d9)-(0,2em)$) -- ($(n38)-(7,0ex)$) -- ($(n38)-(3,0)$) node[near start] {$/$} node[xshift=-0.9cm, yshift=0.5cm] {$x_4(k+1)$}  node[near end, left] {};
+    \draw[hwbus, blue!100, ->]  (d10.south) -- ($(d10)-(0,2em)$) -- ($(n39)-(6,0ex)$) -- ($(n39)-(3,0)$) node[near start] {$/$} node[xshift=-0.9cm, yshift=0.5cm] {$x_5(k+1)$}  node[near end, left] {};
+
+	%output of register to t
+    \draw[hwbus, red1!100, ->]  (n35.east) -- ($(n35)+(10,0em)$) -- ($(n35)+(10,89ex)$) -- ($(n1)+(0,8ex)$) -- (n1.north) node[near start] {$/$} node[xshift=0.8cm, yshift=0.6cm] {$x_1(k)$}  node[near end,right] {};
+    \draw[hwbus, red1!100, ->]  (n36.east) -- ($(n36)+(11,0em)$) -- ($(n36)+(11,98.5ex)$) -- ($(n3)+(0,15ex)$) -- (n3.north) node[near start] {$/$} node[xshift=0.8cm, yshift=1.8cm] {$x_2(k)$}  node[near end,right] {};
+    \draw[hwbus, red1!100, ->]  (n37.east) -- ($(n37)+(12,0em)$) -- ($(n37)+(12,108ex)$) -- ($(n6)+(0,22ex)$) -- (n6.north) node[near start] {$/$} node[xshift=0.8cm, yshift=2.9cm] {$x_3(k)$}  node[near end,right] {};
+    \draw[hwbus, red1!100, ->]  (n38.east) -- ($(n38)+(13,0em)$) -- ($(n38)+(13,117.5ex)$) -- ($(n10)+(0,33.5ex)$) -- (n10.north) node[near start] {$/$} node[xshift=0.8cm, yshift=4.8cm] {$x_4(k)$}  node[near end,right] {};
+    \draw[hwbus, red1!100, ->]  (n39.east) -- ($(n39)+(14,0em)$) -- ($(n39)+(14,127ex)$) -- ($(n15)+(0,48ex)$) -- (n15.north) node[near start] {$/$} node[xshift=0.8cm, yshift=7.2cm] {$x_5(k)$}  node[near end,right] {};
+
+
+	%output of register to x 
+    \draw[hwbus, red1!100, ->]  (n35.east) -- ($(n35)+(10,0em)$) -- ($(n35)+(10,29ex)$) -- ($(n18)+(0,15ex)$) -- (n18.north) node[near start] {$/$} node[xshift=0.8cm, yshift=1.8cm] {$x_1(k)$}  node[near end,right] {};
+    \draw[hwbus, red1!100, ->]  (n36.east) -- ($(n36)+(11,0em)$) -- ($(n36)+(11,39ex)$) -- ($(n22)+(0,29.5ex)$) -- (n22.north) node[near start] {$/$} node[xshift=0.8cm, yshift=4.0cm] {$x_2(k)$}  node[near end,right] {};
+    \draw[hwbus, red1!100, ->]  (n37.east) -- ($(n37)+(12,0em)$) -- ($(n37)+(12,49ex)$) -- ($(n26)+(0,42.0ex)$) -- (n26.north) node[near start] {$/$} node[xshift=0.8cm, yshift=6.0cm] {$x_3(k)$}  node[near end,right] {};
+    \draw[hwbus, red1!100, ->]  (n38.east) -- ($(n38)+(13,0em)$) -- ($(n38)+(13,59ex)$) -- ($(n30)+(0,54.5ex)$) -- (n30.north) node[near start] {$/$} node[xshift=0.8cm, yshift=8.0cm] {$x_4(k)$}  node[near end,right] {};
+    \draw[hwbus, red1!100, ->]  (n39.east) -- ($(n39)+(14,0em)$) -- ($(n39)+(14,69ex)$) -- ($(n33)+(0,64.5ex)$) -- (n33.north) node[near start] {$/$} node[xshift=0.8cm, yshift=9.6cm] {$x_5(k)$}  node[near end,right] {};
+
+	%inputs
+    \draw[hwbus, orange1!100, ->]  ($(n19)+(0,35em)$) -- (n19.north) node[near start] {$/$} node[xshift=0.8cm, yshift=12.8cm] {$u_1(k)$}  node[near end,right] {};
+    \draw[hwbus, orange1!100, ->]  ($(n23)+(0,42em)$) -- (n23.north) node[near start] {$/$} node[xshift=0.8cm, yshift=15.5cm] {$u_2(k)$}  node[near end,right] {};
+    \draw[hwbus, orange1!100, ->]  ($(n27)+(0,48em)$) -- (n27.north) node[near start] {$/$} node[xshift=0.8cm, yshift=17.8cm] {$u_3(k)$}  node[near end,right] {};
+    \draw[hwbus, orange1!100, ->]  ($(n31)+(0,54em)$) -- (n31.north) node[near start] {$/$} node[xshift=0.8cm, yshift=20.1cm] {$u_4(k)$}  node[near end,right] {};
+    \draw[hwbus, orange1!100, ->]  ($(n34)+(0,59em)$) -- (n34.north) node[near start] {$/$} node[xshift=0.8cm, yshift=22.0cm] {$u_5(k)$}  node[near end,right] {};
+
+	%outputs
+    \draw[hwbus, red!100, ->]  (n40.south) -- ($(n40)-(0,3em)$) node[near start] {$/$} node[xshift=0.8cm, yshift=0.4cm] {$x_5(k)$}  node[near end,right] {};
+ \end{tikzpicture}
+}
+%\end{center}

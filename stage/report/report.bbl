@@ -1,0 +1,78 @@
+\begin{thebibliography}{10}
+
+\bibitem{paper10}
+A.Morvan.
+\newblock Utilisation du modèle polyhédrique pour la synthèse
+  d'architectures pipelinées.
+\newblock In {\em Utilisation du modèle polyhédrique pour la synthèse
+  d'architectures pipelinées (Thesis)}, 2013.
+
+\bibitem{paper1}
+B.E.Nelson.
+\newblock The mythical ccm: In search of usable (and reusable) fpga-based
+  general computing machines.
+\newblock In {\em IEEE 17th International Conference on Application-specific
+  System, Architectures and Processors}, 2006.
+
+\bibitem{paper12}
+C.Click and K.D.Cooper.
+\newblock Combining analyses, combining optimizations.
+\newblock In {\em ACM Transactions on Programming Languages and Systems,
+  17(2)}, 1995.
+
+\bibitem{paper6}
+P.~Coussy and eds. A.~Morawiec.
+\newblock High-level synthesis: From algorithm to digital circuit.
+\newblock In {\em Springer}, 2008.
+
+\bibitem{paper7}
+J.P. Elliot.
+\newblock Understanding behavioral synthesis: A practical guide to high-level
+  design.
+\newblock In {\em Kluwer Academic Publishers}, 1999.
+
+\bibitem{paper5}
+D.MacMillen et~al.
+\newblock An industrial view of electronic design automation.
+\newblock In {\em IEEE Trans. Computer-Aided Design of Integrated Circuits and
+  Systems}, 2000.
+
+\bibitem{paper13}
+A.Darte F.Brandner, B.Boissinot, B.D.de Dinechin, and F.Rastello.
+\newblock Computing liveness sets for ssa form programs.
+\newblock In {\em Research report 7503, INRIA}, 2011.
+
+\bibitem{paper9}
+T.Leng J.C.Huang.
+\newblock Generalized loop-unrolling: a method for program speed-up.
+\newblock In {\em IEEE Symposium on Application-Specific System and Software
+  Engineering Technology (ASSET99)}, 1999.
+
+\bibitem{paper3}
+J.Mermet.
+\newblock Fundamentals and standards in hardware description languages.
+\newblock In {\em Springer Verlag}, 1993.
+
+\bibitem{paper8}
+L.Thorczon K.D.Cooper.
+\newblock Engineering a compiler.
+\newblock In {\em MK-editions}, 2012.
+
+\bibitem{paper11}
+L.T.Simpson.
+\newblock Value-driven redundancy elimination.
+\newblock In {\em Value-Driven Redundancy Elimination (Technical Report), Rice
+  University}, 1996.
+
+\bibitem{paper4}
+M.Meredith P.Coussy, D.DGajski and A.Takach.
+\newblock An introduction to high-level synthesis.
+\newblock In {\em IEEE Design and Test of Computers}, 2009.
+
+\bibitem{paper2}
+S.P.Jones P.Hudak, J.Hughes and P.Wadler.
+\newblock A history of haskell: being lazy with class.
+\newblock In {\em The Third ACM SIGPLAN History of Programming Languages
+  Conference, San Diego, California}, 2007.
+
+\end{thebibliography}

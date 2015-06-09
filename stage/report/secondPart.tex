@@ -1,0 +1,64 @@
+\subsection{}
+
+In SOPCs architectures, the accuracy is deducible from the inputs/outputs specifications and the size of the constants.
+
+This is described in %\paper{SOPCs}.
+
+Dealing with feedback inputs, the question of precision is more compliated.
+Indeed, when results loop back to inputs, as soon as we are in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
+
+The main idea to deimension such filters is to consider the total error as a single filter.
+The result of this filter is then added to the perfect filter to get the final output.
+
+In finite precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PHD.
+The idea now is to see what we can do in arbitrary precision.
+
+Here we have to compute each size at each step of the computation. Indeed, the WCPG is not useful for the first part of a FIR, as it has no loop.
+So we just need the WCPG for the second part, because it is just in this part of the circuit that there is a potential error amplification.
+
+Direct and transposed forms are not directly transposable into SIF, but this problem is secondary.
+
+\subsection{Algorithm}
+\begin{figure}[!h]
+\begin{center}
+\scalebox{6}{\input{pictures/example.tex}}
+\end{center}
+\caption{The FixRealKCM method when $x_i$ is split in 3 chunks   \label{fig:FixRealKCM}}
+\end{figure}
+
+	\begin{algorithm}[H]
+	\For{i=1; i=Z.size(); i++} {
+	 	row[ ]= Z[i][ ] //pick first row of Z \\
+	 	\For {j=1; j=1; j=Z.size() j++} {
+	 		assign(SOPC[i], row[j], TXU) //where TXU, is the indicator of the signal (this is just determined by the position of the coefficient)
+	 	}
+		Second pass for wiring.
+	}
+	\end{algorithm}
+	
+
+\subsection{Particular Forms}
+	\subsection{ABCD Form}
+	The ABCD Form can be considered as a degenerated form of the SIF, with nt=0.
+	The algorithm will work in this case too.
+	\subsection{$nx=0$}
+	When $nx=0$, the interest of using implicit form is of course very limited.
+	Still, the algorithm will work, allocating only SOPCs operators.
+	
+\subsection{Algorithm}
+
+\subsection{Optimizations}
+	\subsubsection{Sparse matrices}
+		The Z matrix of a SIF might be sparse in some degenerated cases.
+		So it is useful to remove zeros coefficients before allocating SOPCs.
+		Indeed, it prevents useless inputs to be declared and can save a lot of hardware,
+		although the HDL compiler might be able to optimize the hardware and remove "dead code".
+		Anyway, it is healthy to keep a low compile time (either in flopoco or in the HDL compiler).
+		Keeping the VHDL clean is more important, first for debugging issues, but also for comprehensiveness.
+	\subsubsection{One entries}
+		One entries in the Z matrix can be interpreted as simple wires instead of multiplications in the SOPC.
+		So, we could eventually replace entries in SOPCs by simple additions with the result of the SOPC.
+		Here, we should investigate to see what solution is the best in terms of hardware consumption
+		(speed is not concerned here because the speed is determined by the length of the loop).
+
+

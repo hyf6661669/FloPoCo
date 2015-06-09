@@ -247,7 +247,7 @@
 
 	Here, it is important to see that the form of $\boldsymbol{J}$ allows to compute the $\boldsymbol{t}_i$ sequentially. The algorithm can
 	then be described as follows:
-	\begin{algorithm}
+	\begin{algorithm} \label{algomat}
 		\For{int i = 0 ; $i \leq n_t$; i++}{
 			$\boldsymbol{t}_i(k+1) \leftarrow - \boldsymbol{J'}_{i}\boldsymbol{t}(k+1) + \boldsymbol{M}_{i}\boldsymbol{x}(k) +\boldsymbol{N}_{i}\boldsymbol{u}(k)$
 		}
@@ -262,6 +262,79 @@
 
 	With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
 
+	\subsection{Implementation}
+	In this work, we propose to implements SIFs using the SOPCs arithmetical core from flopoco.
+	SOPC stands for Sum of Producs by Constants, and is a KCM-multiplier based architecture.
+	To be quick, a KCM multiplier is designed to fully use the power of look-up tables (LUTs) in an FPGA.
+	To do so, it partitions the constant into chunks which match the size of a LUT.
+	Then, tabulating the multiplications, we end up with a final sum to compute the product.
+	The detail is visible on figure \ref{kcm}
+
+\begin{figure}[b] \label{kcm}
+  \begin{center}
+  \begin{tikzpicture}
+    \footnotesize 
+    \node at (-1em,0)  {$x_i=$} ;
+    \foreach \x in {1,...,18} {
+%    \draw[] ($(-5*\x ex, -7ex)$) -- ($(-5*\x ex, -5ex)$) node[above] {$2^\x$} ;
+      \node (n) at ($(3.4*\x ex, 0ex)$)  {$b_{\x}$} ;
+      \draw[black!25, very thin] ($(n)+(1.7ex,1.5ex)$) -- ++(0, -3ex);
+    }
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d1) at (3.4*3ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=20ex,minimum height=6ex] (T1) at ($(d1)+(0,-10ex)$) { $T_{i1}: \circ_p(c_i\times d_{i1})$};
+    \draw[hwbus,->] (d1.south) --  (T1.north) node[midway,right] {$d_{i1}$};
+
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d2) at (3.4*9ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=15ex] (T2) at ($(d2)+(0,-10ex)$) { $T_{i2}$};
+    \draw[hwbus,->] (d2.south) --  (T2.north) node[midway,right] {$d_{i2}$};
+
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d3) at (3.4*15ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=10ex,minimum height=3.5ex] (T3) at ($(d3)+(0,-10ex)$) { $T_{i3}$};
+    \draw[hwbus,->] (d3.south) --  (T3.north) node[midway,right] {$d_{i3}$};
+
+    
+    \node[hwblock, minimum width=50ex] (sum) at ($(T2)+(0,-11.3ex)$) {\Large $+$};
+    \draw[hwbus,->]  (T1.south) --  ($(sum.80)!(T1)!(sum.north)$) % This means: point that is the projection of T1 on the line  (sum.80) -- (sum.north)
+       node[near start] {$/$} node[near start,left] {$q_i+g$}          node[near end,right] {$\widetilde{t}_{i1}$};
+    \draw[hwbus,->]  (T2.south) --  ($(sum.80)!(T2)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-\alpha+g$}   node[near end,right] {$\widetilde{t}_{i2}$};
+    \draw[hwbus,->]  (T3.south) -- ($(sum.80)!(T3)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-2\alpha+g$}  node[near end,right] {$\widetilde{t}_{i3}$};
+
+    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$q_i+g$} node[near end,right] {$\widetilde{p}_i\approx c_ix_i$};
+ \end{tikzpicture}
+\end{center}
+\caption{The FixRealKCM method when $x_i$ is split in 3 chunks   \label{fig:FixRealKCM}}
+\end{figure}
+
+	The SOPC architecture keeps the same idea.
+	The difference is, the summation architecture is mutualized through the $n_c$ products in a bit-heap based architecture implemented by flopoco.
+	The detail is visible onf figure \ref{sopc}.
+
+\begin{figure}
+  \begin{center}
+  \begin{tikzpicture}
+    \footnotesize 
+    
+    \node[hwblock, align=center,minimum width=60ex] (sum) at ($(32ex,-5ex)$) {Bit-heap based \\ summation architecture};
+
+    \foreach \i in {0,...,3} {
+      \node (x) at  ($(15*\i ex+10ex, 17ex)$) {$x_\i$};
+      \coordinate (xb) at  ($(x)+(0, -3ex)$);
+      \draw[hwbus,very thick] (x) --  (xb);
+      
+      \foreach \k in {1,...,3} {
+        \node[hwblock, minimum width=5ex] (T) at ($(15*\i ex+4.5*\k ex,7ex-1*\k ex)$) { $T_{\i\k}$};
+        \draw[hwbus,thick,<-]  (T.north) -- ++(0,+4ex) node [midway] {/}node [midway,right] {$\alpha$} -- (xb);
+        \draw[hwbus,->] (T.south) --  ($(sum.north)!(T)!(sum.80)$);
+      }
+    }
+
+    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$p$} node[near end,right] {$y$};
+ \end{tikzpicture}
+\end{center}
+\caption{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks  \label{fig:Overall architecture}}
+\end{figure}
+	
+
 	\subsection{Size computation in finite precision}
 	When there is many potential realizations for a single LTI filter, we can see that the choice of one realization
 	among the others is very related to the error analysis in output.
@@ -275,15 +348,39 @@
 
 	Then, we can derive every errors, functions of the most significant and last significant bits (respectively msb and lsb)
 
-	We have:
+	We can define the following vectors:
 	\begin{equation}
+		\boldsymbol{\varepsilon}(k) =
 		\begin{pmatrix}
+			\boldsymbol{\varepsilon}_t(k) \\
+			\boldsymbol{\varepsilon}_x(k) \\
+			\boldsymbol{\varepsilon}_y(k) \\
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			{\varepsilon}_{t_1}(k) \\
+			{\varepsilon}_{t_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{t_{n_t}}(k) \\
+			\hspace{5pt} \\
+			{\varepsilon}_{x_1}(k) \\
+			{\varepsilon}_{x_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{x_{n_x}}(k) \\
+			\hspace{5pt} \\
+			{\varepsilon}_{y_1}(k) \\
+			{\varepsilon}_{y_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{y_{n_y}}(k) \\
+		\end{pmatrix}
 	\end{equation}
 
 
 		
+	\subsubsection{Error analysis}
 
-
+	Considering a filter $\mathcal{H}$ and it’s SIF, following
+	the algorithm \ref{algomat}, in finite precision, we get the following equations:
 
 			\begin{eqnarray} \label{sifalgoerr}
 				\boldsymbol{t}^*(k+1) = - \boldsymbol{J'}\boldsymbol{t}^*(k+1) + \boldsymbol{M} \boldsymbol{x}^*(k) + \boldsymbol{N} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_t}(k)\\

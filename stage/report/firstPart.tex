@@ -498,10 +498,29 @@
 
 		To formalize with a matricial formulation, we get:
 		\begin{equation}
-			|\boldsymbol{\delta y}| \leq | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle| \cdot \boldsymbol{2^{l_{v'}}}
+			|\boldsymbol{\delta y}| \leq | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle| \cdot \boldsymbol{2^{lsb_{v'}}}
 		\end{equation}
 
 		\TODO: define or replace v
+
+		To satisfy the condition \ref{condition}, we can simply define $\xi$ as the minimal error the user wants.
+		We can say then:
+		\begin{equation}
+			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle| \cdot \boldsymbol{2^{lsb_{v'}}} < \xi
+		\end{equation}
+
+		That is, 
+		\begin{equation}
+			\boldsymbol{A} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+			\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+
+		Where:
+		\begin{eqnarray}
+			\boldsymbol{A}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} \\
+			\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}
+		\end{eqnarray}
+
 
 
 

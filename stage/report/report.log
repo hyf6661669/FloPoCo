@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  9 JUN 2015 22:27
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  9 JUN 2015 22:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1048,9 +1048,6 @@ LaTeX Warning: Reference `sopc' on page 6 undefined on input line 310.
 Underfull \vbox (badness 3989) has occurred while \output is active []
 
  [6]
-
-LaTeX Warning: Reference `algomat' on page 7 undefined on input line 383.
-
 [7]
 LaTeX Font Info:    Try loading font information for OMS+cmr on input line 404.
 
@@ -1094,9 +1091,9 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 20844 strings out of 493109
- 364074 string characters out of 6140856
- 584385 words of memory out of 5000000
+ 20847 strings out of 493109
+ 364119 string characters out of 6140856
+ 584442 words of memory out of 5000000
  23788 multiletter control sequences out of 15000+600000
  18531 words of font info for 68 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -1131,10 +1128,10 @@ ype1/public/amsfonts/cm/cmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/ams
 fonts/cm/cmti10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/symbols/
 msbm10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb
 >
-Output written on report.pdf (14 pages, 404553 bytes).
+Output written on report.pdf (14 pages, 406930 bytes).
 PDF statistics:
- 495 PDF objects out of 1000 (max. 8388607)
- 439 compressed objects within 5 object streams
- 118 named destinations out of 1000 (max. 500000)
+ 501 PDF objects out of 1000 (max. 8388607)
+ 445 compressed objects within 5 object streams
+ 121 named destinations out of 1000 (max. 500000)
  301 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -39,9 +39,19 @@
 	Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
 	ith output to the Dirac implusion on the j-th input.
 	The precedent equation becomes:
-	$$u_i(k)=\sum_{j=1}^{n_u}$$
+	$$u_i(k)=\sum_{j=1}^{n_u}\sum_{l\geq}^lu_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
 	
 	\end{thdef} 
+
+	\subsubsection{Worst-Case Peak Gain (WCPG) of a Filter}
+	\begin{thdef} (Worst-Case Peak Gain)
+		The worst case peak gain is defined as the maximum amplification
+		possible over all potential inputs through the filter.
+		$$\|\mathcal{H}\|_{wcpg}=\sup_{u\neq0}\frac{\|h*u\|_{l^{\infty}}}{\|u\|_{l^{\infty}}}$$
+		with $h$ the impulse response of $\mathcal{H}$, $u$ the input signal, and $h * u$ the convolution product of $h$ by $u$ (output of the
+				filter).
+	
+	\end{thdef}
 
 
 			\begin{eqnarray} \label{sifalgoerr}

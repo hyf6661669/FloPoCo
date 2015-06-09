@@ -4,6 +4,7 @@
 \contentsline {section}{\numberline {2}Remainders about filters and signal processing}{3}{section.2}
 \contentsline {subsubsection}{\numberline {2.0.1}Linear Time Invariant Filters (LTI filters)}{3}{subsubsection.2.0.1}
 \contentsline {subsubsection}{\numberline {2.0.2}Impulse response}{3}{subsubsection.2.0.2}
+\contentsline {subsubsection}{\numberline {2.0.3}Worst-Case Peak Gain (WCPG) of a Filter}{4}{subsubsection.2.0.3}
 \contentsline {subsection}{\numberline {2.1}Adjustments in arbitrary precision}{5}{subsection.2.1}
 \contentsline {section}{\numberline {3}Dimensionment}{6}{section.3}
 \contentsline {subsection}{\numberline {3.1}}{6}{subsection.3.1}

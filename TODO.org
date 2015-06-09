@@ -33,6 +33,7 @@ TODO file for FloPoCo
 ** systematic remove of code from the .hpp
 ** systematic check of the doc
 
+** remove all oplist->push_back (in newPipeline branch only) 
 
 * Bit heap and multipliers
 ** rewrite BitHeap with fixed-point support and better compression (see Kumm papers and uni_kassel branch)
@@ -138,7 +139,7 @@ Version ???   Interval operators
 (insert your wishlist here)
 
 
-* If we could start from scratch
+* If we could redo pipeline from scratch
 If we were to redo the pipeline framework from scratch, here is the proper way to do it.
 
 The current situation has a history: we first added cycle management, then, as a refinement, critical-path based subcycle timing.
@@ -172,3 +173,29 @@ The difference is that the semantic is now much clearer. No more notion of a blo
 The question is: don't we loose some control on the circuit with this approach, compared to what we currently do?
 
 Note that all this is so much closer to textbook literature, with simple DAGs labelled by delay...
+
+* If we could redo the CLI from scratch
+Big problem with current implementation:
+ The CLI arguments and online help are not defined within the class of the operator, but in main.cpp
+ The HTML user documentation is yet another document, which is not auto-generated
+
+Proposal (WIP):
+CLI is changed so that 
+flopoco FPExp 8 23  FPAdd 8 23 FPAdd 11 52 
+becomes 
+flopoco --io=float:8:23 FPExp FPAdd --io=float:11:52 FPAdd
+All options affect the following operators (just like current -pipeline )
+
+The constructor of any operator takes only a Target, and a parameter map (key, value) where both key and value are strings 
+There is a default map (including the default target etc)
+All main.cpp does is parse the command line to build the parameter map (possibly overriding default) before calling each constructor in turn.
+
+An Operator, e.g. FPExp defines another static possibleParametersMap (key, (type, default value, help string)).
+It may inherit the default Operator map, and add any key it needs for FPExp-specific parameters, for example the k currnently passed to FPExpert.
+ 
+The FPExp constructor does the match between its specification map (built by main) and its possibleParametersMap, and sets all the required attribute from there (including defaults)
+
+Hopefully a static method, or a # trick,  that is used to parse the generate the help for this operator.
+
+All main does is register all the Operators in some list, autogenerate the html manual, and prepares the parser loop. This is the part that is tricky in C++.
+Maybe it should be done in Python. 

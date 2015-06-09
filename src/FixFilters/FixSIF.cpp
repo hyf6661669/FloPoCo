@@ -11,7 +11,8 @@
 #include "ShiftReg.hpp"
 
 #define BUF_SIZE 256 //default buffer size
-#define DEFAULT_LSB -128 //default precision for sopcs
+#define DEFAULT_LSB -64 //default precision for sopcs
+#define DEFAULT_MSB 0 //default precision for sopcs
 
 using namespace std;
 	int getFullLine( ifstream &f, string &s, int &lc ){
@@ -46,7 +47,7 @@ namespace flopoco {
 	int displayMatrix( vector< vector<string> > &m, string name = "matrix"){
 		string srcFileName="FixSIF";
 		//srcFileName<<"TOTO.cpp";
-		REPORT(5, "Displaying Matrix "<<name<<" "<<m.size()<<" "<<m[0].size());
+		REPORT(0, "Displaying Matrix "<<name<<" "<<m.size()<<" "<<m[0].size());
 		for (uint32_t i=0; i<m.size(); i++){
 			stringstream line;
 			for (uint32_t  j=0; j<m[i].size(); j++){
@@ -111,8 +112,9 @@ namespace flopoco {
 	// The method that does the work once coeffs[][] is known
 	void FixSIF::buildVHDL(){
 //	//TODO: beginning of new code
+		displayMatrix(coeffs, "coeffs");
 		n = nt + nx + nu; //TODO: update this definition with a clever number
-		readPrecision(lsbIn, lsbOut, 0);
+		readPrecision(msbIn, lsbIn, msbOut, lsbOut, 0);
 
 		for ( uint32_t i = 0; i<lsbOut.size(); i++)
 		{
@@ -125,8 +127,21 @@ namespace flopoco {
 		//}
 
 		// initialize stuff for emulate
-		xHistories[0]=new mpfr_t[nx];
-		xHistories[1]=new mpfr_t[nx];
+		cout<<"reserve 0"<<endl;
+		xHistories[0]= (mpfr_t *) malloc ( nx * sizeof(mpfr_t*));
+		cout<<"reserve 1"<<endl;
+		xHistories[1]= (mpfr_t *) malloc ( nx * sizeof(mpfr_t*));
+		for (uint32_t i=0; i<nx; i++){
+			cout << "init 0"<< endl;
+			mpfr_init2( xHistories[0][i], veryLargePrec );
+			cout << "init 1"<< endl;
+			mpfr_init2( xHistories[1][i], veryLargePrec );
+			cout << "set 0"<< endl;
+			mpfr_set_ui( xHistories[0][i], 0, GMP_RNDN );
+			cout << "set 1"<< endl;
+			mpfr_set_ui( xHistories[1][i], 0, GMP_RNDN );
+			cout << "init set finished"<< endl;
+		}
 
 		//declare intermediate T(k+1)
 		for (uint32_t i=0; i<nt; i++) {
@@ -137,23 +152,31 @@ namespace flopoco {
 		for (uint32_t i=0; i<nu; i++) {
 			ostringstream input;
 			input << "U" <<i;
-			addInput(input.str(), 1+lsbIn[i], true);
+			addFixInput(input.str(), 1, 1+msbIn[i], lsbIn[i]);
 		}
 
 		//ny outputs numbering from 0 to ny-1 FIXME: check the relevance of this convention dealing with SIFs
 		for (uint32_t i=0; i<ny; i++) {
 			ostringstream output;
 			output << "Y" << i;
-			addOutput(output.str(), 1+lsbOut[i], true);
+			addFixOutput(output.str(), 1, 1+msbOut[i], lsbOut[i]);
 		}
 	
 		//declare intermediate X and X(k+1)
 		for (uint32_t i=0; i<nx; i++) {
 			//declare(join("Xplus",i));
-			declare(join("X",i));
+			declare(join("X",i), 1-lsbOut[i]);
 		}
 
-		while ( !coeffs.empty() ) {
+		vector < vector <string> > coefDel(nt+nx+ny); //copy of coeffs which will be deleted.
+		//FIXME: refactor algorithm with iterators not to use copies.
+		for ( uint32_t i=0; i<coeffs.size(); i++ ) {
+			for ( uint32_t j=0; j<coeffs.size(); j++ ){
+				coefDel[i].push_back(coeffs[i][j]);
+			}
+		}
+
+		while ( !coefDel.empty() ) {
 
 			vector <string> nonZeros(n);
 			queue <int> coefIndst;
@@ -162,9 +185,9 @@ namespace flopoco {
 
 			//copy first line of coeffs
 				REPORT(0,"non zeros coefficients number="<<nonZeros.size());
-			for (uint32_t i = 0; i<coeffs[0].size(); i++){
-				nonZeros[i] = coeffs[0][i];
-				REPORT(0,"coeffs["<<i<<"]="<<coeffs[0][i]);
+			for (uint32_t i = 0; i<coefDel[0].size(); i++){
+				nonZeros[i] = coefDel[0][i];
+				REPORT(0,"coeffs["<<i<<"]="<<coefDel[0][i]);
 			}
 			//output matrix vector
 			//three steps (t, x and u) because all are not treated the same way
@@ -172,7 +195,7 @@ namespace flopoco {
 			int ib = 0; //bias in vector indices induced by erase operations
 			uint32_t i = 0;
 			for ( ; i<nt; i++ ){
-				if ( ( stof(nonZeros[i+ib].c_str()) == 0.0 ) || ( (stof(nonZeros[i+ib].c_str()) == 1.0)&&(n-coeffs.size()==i)) ){
+				if ( ( stof(nonZeros[i+ib].c_str()) == 0.0 ) || ( (stof(nonZeros[i+ib].c_str()) == 1.0)&&(n-coefDel.size()==i)) ){
 					REPORT(0,"no coef found at "<<i+ib);
 					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
@@ -279,9 +302,9 @@ namespace flopoco {
 					
 
 
-					coeffs.erase(coeffs.begin());
+					coefDel.erase(coefDel.begin());
 					
-					REPORT(0, "finished line. Beginning step "<<coeffs.size()<<", coeffs.empty()="<<coeffs.empty());
+					REPORT(0, "finished line. Beginning step "<<coefDel.size()<<", coeffs.empty()="<<coefDel.empty());
 		}
 		for (uint32_t i = 0; i < nx; i++){
 			stringstream sig;
@@ -300,28 +323,36 @@ namespace flopoco {
 
 	void FixSIF::emulate(TestCase * tc){
 
-		cout<<"	toto is ok -5"<<endl;
+		cout<<"	toto is ok -6"<<endl;
 		vector<mpz_class> uValues(nu);
-		cout<<"	toto is ok -4"<<endl;
+		cout<<"	toto is ok -5"<<endl;
 		vector<mpfr_t> uVals(nu);
-		cout<<"	toto is ok -3"<<endl;
+		cout<<"	toto is ok -4"<<endl;
 		vector<mpfr_t> t(nt);
-		cout<<"	toto is ok -2"<<endl;
+		cout<<"	toto is ok -3"<<endl;
 		mpfr_t coeff, resMul, result;
-		cout<<"	toto is ok -1"<<endl;
+		cout<<"	toto is ok -2"<<endl;
 		mpfr_init2(resMul, veryLargePrec);
-		cout<<"	toto is ok 0"<<endl;
+		cout<<"	toto is ok -1"<<endl;
 		mpfr_init2(result, veryLargePrec);
-		cout<<"	toto is ok 1"<<endl;
+		cout<<"	toto is ok 0"<<endl;
 		for (uint32_t i=0; i<nt; i++) {
 			mpfr_init2(t[i], veryLargePrec);
 			mpfr_init2(uVals[i], veryLargePrec);
 		}
 
-		cout<<"	toto is ok 2"<<endl;
-		for (uint32_t i = 0; i<nx; i++){
+		cout<<"	toto is ok 1"<<endl;
+		for (uint32_t i = 0; i<nu; i++){
+		cout<<"	toto is ok 1.0"<<endl;
 				uValues[i]=tc->getInputValue(join("U",i));
-				mpfr_set_z(uVals[i],uValues[i].get_mpz_t(),GMP_RNDD);
+		cout<<"	toto is ok 1.1"<<endl;
+		cout<<"uValues["<<i<<"]="<<uValues[i]<<endl;
+		cout<<"lsbIn["<<i<<"]="<<lsbIn[i]<<endl;
+			mpfr_set_z( uVals[i],uValues[i].get_mpz_t(),GMP_RNDD );
+			mpfr_mul_2si( uVals[i], uVals[i], lsbIn[i], GMP_RNDD );
+		cout<<"uVals["<<i<<"]=";
+			mpfr_printf( "%.65RNf\n", uVals[i]);
+		cout<<"	toto is ok 1.2"<<endl;
 				
 		}
 		cout<<"	toto is ok 2"<<endl;
@@ -329,11 +360,11 @@ namespace flopoco {
 		for (uint32_t l=0; l<nt+nx+ny; l++){
 			for (uint32_t c=0; c<nt+nx+nu; c++){
 
+		cout<<"	toto is ok 3"<<endl;
 				sollya_obj_t stringCoeff;
 				//get coeff as sollya object
 				stringCoeff = sollya_lib_parse_string(coeffs[l][c].c_str());
 				// If conversion did not succeed (i.e. parse error)
-		cout<<"	toto is ok 3"<<endl;
 				if(stringCoeff == 0)	{
 						ostringstream error;
 						error << srcFileName << ":"<<"emulate(): Unable to parse string " << coeffs[l][c] << " as a numeric constant" << endl;
@@ -348,18 +379,25 @@ namespace flopoco {
 				if (coeff != 0){
 					if ( !(l==c && l<nt) ) { //ones on the J diagonal are implicit
 						if (c<nt){
+		cout<<"	toto is ok 5.1"<<endl;
+
 							mpfr_mul(resMul, t[c], coeff, GMP_RNDN);
+		cout<<"	toto is ok 5.2"<<endl;
 							mpfr_add(result, result, resMul, GMP_RNDN);
-		cout<<"	toto is ok 6"<<endl;
 						}
 						else if (c<nt+nx){
+		cout<<"	toto is ok 6"<<endl;
 							mpfr_mul(resMul, xHistories[0][c], coeff, GMP_RNDN);
+		cout<<"	toto is ok 6.1"<<endl;
 							mpfr_add(result, result, resMul, GMP_RNDN);
 		cout<<"	toto is ok 7"<<endl;
 
 						}
 						else {
-							mpfr_mul(resMul, uVals[c], coeff, GMP_RNDN);
+		cout<<"	toto is ok 7.1"<<endl;
+
+							mpfr_mul(resMul, uVals[c-nt-nx], coeff, GMP_RNDN);
+		cout<<"	toto is ok 7.2"<<endl;
 							mpfr_add(result, result, resMul, GMP_RNDN);
 		cout<<"	toto is ok 8"<<endl;
 						}
@@ -374,10 +412,11 @@ namespace flopoco {
 				mpfr_set(xHistories[1][l], result, GMP_RNDN);
 		cout<<"	toto is ok 10"<<endl;
 			}
-			if (l>=ny){
+			if (l>=nx+nt){
+		cout<<"	toto is ok 11.0"<<endl;
 				mpfr_t rd, ru;
-				mpfr_init2 (rd, 1+lsbIn[l]-lsbOut[l]);
-				mpfr_init2 (ru, 1+lsbIn[l]-lsbOut[l]);		
+				mpfr_init2 (rd, 1+msbIn[l]-lsbOut[l]);
+				mpfr_init2 (ru, 1+msbIn[l]-lsbOut[l]);		
 				mpz_class rdz, ruz;
 		cout<<"	toto is ok 11"<<endl;
 
@@ -393,13 +432,14 @@ namespace flopoco {
 				mpfr_clears ( result, rd, ru, NULL);
 
 		cout<<"	toto is ok 13"<<endl;
-				tc->addExpectedOutput(join("Y",l), rdz);
-				tc->addExpectedOutput(join("Y",l), ruz);
+				tc->addExpectedOutput(join("Y",l-nt-nx), rdz);
+				tc->addExpectedOutput(join("Y",l-nt-nx), ruz);
 		cout<<"	toto is ok 14"<<endl;
 			}
 
 		}
 		for ( uint32_t i=0; i<nx; i++ ) {
+		cout<<"	toto is ok 15"<<endl;
 			mpfr_set( xHistories[0][i], xHistories[1][i], GMP_RNDN );
 		}
 
@@ -724,7 +764,7 @@ namespace flopoco {
 			THROWERROR(error.str());
 		}
 
-		coeffs = vector< vector<string> > (nt+nx+ny);
+		coeffs = vector< vector<string> > (nt+nx+ny); //FIXME: check if nt+nx+ny is effectiveley relevant, regarding nt+nx+nu.
 
 		uint32_t i=0, j;
 		for (; i<nt; i++){
@@ -774,28 +814,35 @@ namespace flopoco {
 		return 0;
 	}
 
-	int FixSIF::readPrecision( vector<int> &msbs, vector<int> &lsbs, bool inFile ){
+	int FixSIF::readPrecision( vector<int> &msbsIn, vector<int> &lsbsIn, vector<int> &msbsOut, vector<int> &lsbsOut, bool inFile ){
 		//TODO:return wcpg*error min
 
 		if ( inFile ){
-			vector < vector<string> > *msbslsbs;
+			vector < vector<string> > *msbslsbsIn, *msbslsbsOut;
 			ifstream precisions;
 			precisions.open( "precisions.txt", ifstream::in );
 			stringstream head;
 			head<<"P "<<nt+nx+ny<<" "<<2;
 			string header=head.str();
-			readMatrix( header, "P", msbslsbs, precisions );
-			for ( uint32_t i=0; i<msbslsbs->size(); i++ ){
-				msbs.push_back(stoi((*msbslsbs)[i][0]));
-				lsbs.push_back(stoi((*msbslsbs)[i][1]));
+			readMatrix( header, "IN", msbslsbsIn, precisions );
+			for ( uint32_t i=0; i<msbslsbsIn->size(); i++ ){
+				msbsIn.push_back(stoi((*msbslsbsIn)[i][0]));
+				lsbsIn.push_back(stoi((*msbslsbsIn)[i][1]));
+			}
+			readMatrix( header, "OUT", msbslsbsOut, precisions );
+			for ( uint32_t i=0; i<msbslsbsOut->size(); i++ ){
+				msbsOut.push_back(stoi((*msbslsbsOut)[i][0]));
+				lsbsOut.push_back(stoi((*msbslsbsOut)[i][1]));
 			}
 			return 0;
 			precisions.close();
 		}
 		else {
 			for ( uint32_t i=0; i<nt+nx+ny; i++ ) {
-				msbs.push_back(DEFAULT_LSB);
-				lsbs.push_back(DEFAULT_LSB);
+				msbsIn.push_back(DEFAULT_MSB);
+				lsbsIn.push_back(DEFAULT_LSB);
+				msbsOut.push_back(DEFAULT_MSB);
+				lsbsOut.push_back(DEFAULT_LSB);
 			}
 			return 0;
 		}

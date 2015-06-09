@@ -46,7 +46,7 @@ namespace flopoco{
 		vector < vector<string> > coeffs;			/**< the coefficients as strings */
 		vector <FixSOPC*> sopcs; //list of sopcs (corresponding to matrix lines)
 
-		vector <int> lsbIn, lsbOut;
+		vector <int> msbIn, lsbIn, msbOut, lsbOut;
 
 		uint32_t nt; /**< number of intermediate computations */
 		uint32_t nx; /**< size of the state-space */
@@ -73,7 +73,7 @@ namespace flopoco{
 
 		int readMatrix(string &header, string JKLMNPQRS, vector < vector <string> > * &toFill, ifstream &openedFile, int lc = 0 );
 
-		int readPrecision( vector <int> &msbs, vector<int> &lsbs, bool inFile=1 );
+		int readPrecision( vector <int> &msbsIn, vector<int> &lsbsIn, vector<int> &msbsOut, vector<int> &lsbsOut, bool inFile=1 );
 	};
 
 }

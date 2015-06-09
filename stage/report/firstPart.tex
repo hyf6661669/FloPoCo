@@ -53,6 +53,38 @@
 	
 	\end{thdef}
 
+	\subsection{FIR and IIR}
+	There is two types of LTI filters: \textit{Finite impulse response} (FIR) and \textit{Infinite impulse response} (IIR) filters.
+	Formally, we define the impulse response as finite when:
+	\begin{equation} \label{finimp}
+		\exists n \in \mathbb{N} | \forall k \geq n, h(k)=0
+	\end{equation}
+	The smallest $n$ verifying \ref{finimp} is reffered as the order of the filter. So a n-order FIR can be described by the
+	following equation:
+	\begin{equation} \label{firdef}
+		y(k)=\sum_{i=0}^n b_i u(k-i)
+	\end{equation}
+
+	An IIR will be described as following:
+	\begin{equation} \label{iirdef}
+		y(k)=\sum_{i=0}^n b_i u(k-i) - \sum_{i=0}^n a_i y(k-i)
+	\end{equation}
+
+	Here one can observe that the output at time $k$ depends also on all previous $n$ outputs (loopback). One can
+	also see that a FIR can be seen as an IIR with $\forall i \in [0,n],a_i=0$
+	The impulse response can then be deduced from \ref{iirdef} by resolving the recurrence relation:
+
+	\begin{equation}
+		h(k) =
+		\begin{cases}
+			0 & \hspace{5pt} when k<l\\
+			b_k - \sum_{l=1}^n a_l h(k-l) & \hspace{5pt} when 0\leq k \leq n\\
+			\sum_{l=1}^n a_l h(k-l) & \hspace{5pt} when n< k\\
+		\end{cases}
+	\end{equation}
+
+
+
 
 			\begin{eqnarray} \label{sifalgoerr}
 				\boldsymbol{t}^*(k+1) = - \boldsymbol{J'}\boldsymbol{t}^*(k+1) + \boldsymbol{M} \boldsymbol{x}^*(k) + \boldsymbol{N} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_t}(k)\\

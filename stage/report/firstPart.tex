@@ -262,6 +262,27 @@
 
 	With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
 
+	\subsection{Size computation in finite precision}
+	When there is many potential realizations for a single LTI filter, we can see that the choice of one realization
+	among the others is very related to the error analysis in output.
+	The precision of our computations can then be defined so that the following condition is satisfied:
+
+	\begin{equation} \label{condition}
+		\varepsilon_{y_i} < 2^{-lsb_{y_i}} \hspace{5pt} \forall i \in [1,n_y]
+	\end{equation}
+
+	With $lsb_{y_i}$ the last significant bit of the output $y_i$, and $\varepsilon_{y_i}$ the error on the computation of the output $y_i$
+
+	Then, we can derive every errors, functions of the most significant and last significant bits (respectively msb and lsb)
+
+	We have:
+	\begin{equation}
+		\begin{pmatrix}
+	\end{equation}
+
+
+		
+
 
 
 			\begin{eqnarray} \label{sifalgoerr}

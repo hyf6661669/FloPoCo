@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  9 JUN 2015 20:56
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  9 JUN 2015 21:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -905,7 +905,20 @@ Package csquotes Warning: Load 'inputenc' before 'csquotes' on input line 79.
 
 Package csquotes Info: Checking for multilingual support...
 Package csquotes Info: ... found 'babel' package.
-(./report.aux)
+(./report.aux
+
+LaTeX Warning: Label `deltaerr' multiply defined.
+
+
+LaTeX Warning: Label `eqprec' multiply defined.
+
+
+LaTeX Warning: Label `eqprec' multiply defined.
+
+
+LaTeX Warning: Label `l_1' multiply defined.
+
+)
 \openout1 = `report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 79.
@@ -1024,29 +1037,24 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 Package hyperref Warning: Difference (2) between bookmark levels is greater 
 (hyperref)                than one, level fixed on input line 1.
 
-[3]
+[3] [4]
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 200.
 
-LaTeX Warning: Reference `finimp' on page 4 undefined on input line 62.
-
-
-LaTeX Warning: Reference `iirdef' on page 4 undefined on input line 75.
-
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 108.
-
-(/usr/share/texmf-dist/tex/latex/base/omscmr.fd
+ (/usr/share/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 108.
- [4]
-
-LaTeX Warning: Reference `zmatrix' on page 5 undefined on input line 137.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 200.
 
 
-LaTeX Warning: Reference `abcdtranspose' on page 5 undefined on input line 161.
+LaTeX Warning: Reference `zmatrix' on page 5 undefined on input line 229.
+
+[5]
+
+LaTeX Warning: Reference `abcdtranspose' on page 6 undefined on input line 253.
 
 
-[5]) [6] (./secondPart.tex (./pictures/example.tex)
+) [6] (./secondPart.tex (./pictures/example.tex)
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
@@ -1058,41 +1066,29 @@ Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
 (hyperref)                removing `math shift' on input line 44.
 
-[7]) [8] (./thirdPart.tex) (./report.bbl) (./annexes.tex [9]
-
-LaTeX Warning: Reference `l1' on page 10 undefined on input line 30.
-
-
-LaTeX Warning: Reference `l2' on page 10 undefined on input line 38.
-
-[10]) [11]
+[7]) [8] (./thirdPart.tex) (./report.bbl) (./annexes.tex [9] [10]) [11]
 Package atveryend Info: Empty hook `BeforeClearDocument' on input line 132.
 Package atveryend Info: Empty hook `AfterLastShipout' on input line 132.
- (./report.aux)
+
+(./report.aux)
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 132.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 132.
+Package rerunfilecheck Info: File `report.out' has not changed.
+(rerunfilecheck)             Checksum: C627D7512E4EF03ECBC7679D5DB5C614;2175.
 
-
-Package rerunfilecheck Warning: File `report.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `report.out':
-(rerunfilecheck)             Before: DCF79A5365ABCA82293C0BB3CCB6011C;354
-(rerunfilecheck)             After:  A1BEAB98316D927973B9DE254F853BC4;1940.
 
 LaTeX Warning: There were undefined references.
 
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 20616 strings out of 493109
- 360430 string characters out of 6140856
- 582766 words of memory out of 5000000
- 23588 multiletter control sequences out of 15000+600000
- 17320 words of font info for 64 fonts, out of 8000000 for 9000
+ 20748 strings out of 493109
+ 362792 string characters out of 6140856
+ 585758 words of memory out of 5000000
+ 23712 multiletter control sequences out of 15000+600000
+ 17924 words of font info for 66 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,16n,54p,822b,823s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmbsy10.pfb></usr/share
@@ -1102,27 +1098,31 @@ type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/a
 msfonts/cm/cmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmb
 x7.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmbxti10.pfb></usr
 /share/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-dist/fonts/type
-1/public/amsfonts/cm/cmmi12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfo
-nts/cm/cmmi5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pf
-b></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/t
-exmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texmf-dist/fon
-ts/type1/public/amsfonts/cmextra/cmmib5.pfb></usr/share/texmf-dist/fonts/type1/
-public/amsfonts/cmextra/cmmib7.pfb></usr/share/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmr10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12
-.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/shar
-e/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/share/texmf-dist/fon
-ts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texmf-dist/fonts/type1/public/
-amsfonts/cm/cmr8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
-10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></usr/sh
-are/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texmf-dist/fonts/type1/pu
-blic/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/type1/public/amsf
-onts/symbols/msbm7.pfb>
-Output written on report.pdf (11 pages, 312059 bytes).
+ist/fonts/type1/public/amsfonts/cmextra/cmex8.pfb></usr/share/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-dist/fonts/type1/public/a
+msfonts/cm/cmmi12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmm
+i5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/sh
+are/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texmf-dist/fonts/type1/p
+ublic/amsfonts/cmextra/cmmib5.pfb></usr/share/texmf-dist/fonts/type1/public/ams
+fonts/cmextra/cmmib7.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmr10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr
+/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/share/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmr6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmr7.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr
+/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/share/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmsy5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
+</usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texmf-dist/fonts/
+type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/type1/pub
+lic/amsfonts/symbols/msbm7.pfb>
+Output written on report.pdf (11 pages, 365323 bytes).
 PDF statistics:
- 289 PDF objects out of 1000 (max. 8388607)
- 245 compressed objects within 3 object streams
- 94 named destinations out of 1000 (max. 500000)
- 53 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 435 PDF objects out of 1000 (max. 8388607)
+ 385 compressed objects within 4 object streams
+ 100 named destinations out of 1000 (max. 500000)
+ 269 words of extra memory for PDF output out of 10000 (max. 10000000)
 

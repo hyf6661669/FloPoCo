@@ -5,25 +5,28 @@
 \BOOKMARK [3][-]{subsubsection.2.0.2}{Impulse response}{subsubsection.2.0.1}% 5
 \BOOKMARK [3][-]{subsubsection.2.0.3}{Worst-Case Peak Gain \(WCPG\) of a Filter}{subsubsection.2.0.1}% 6
 \BOOKMARK [2][-]{subsection.2.1}{FIR and IIR}{section.2}% 7
-\BOOKMARK [2][-]{subsection.2.2}{Adjustments in arbitrary precision}{section.2}% 8
-\BOOKMARK [1][-]{section.3}{Dimensionment}{}% 9
-\BOOKMARK [2][-]{subsection.3.1}{}{section.3}% 10
-\BOOKMARK [2][-]{subsection.3.2}{Algorithm}{section.3}% 11
-\BOOKMARK [2][-]{subsection.3.3}{Particular Forms}{section.3}% 12
-\BOOKMARK [2][-]{subsection.3.4}{ABCD Form}{section.3}% 13
-\BOOKMARK [2][-]{subsection.3.5}{nx=0}{section.3}% 14
-\BOOKMARK [2][-]{subsection.3.6}{Algorithm}{section.3}% 15
-\BOOKMARK [2][-]{subsection.3.7}{Optimizations}{section.3}% 16
-\BOOKMARK [3][-]{subsubsection.3.7.1}{Sparse matrices}{subsection.3.7}% 17
-\BOOKMARK [3][-]{subsubsection.3.7.2}{One entries}{subsection.3.7}% 18
-\BOOKMARK [1][-]{section.4}{Implementation}{}% 19
-\BOOKMARK [2][-]{subsection.4.1}{First Sub-part}{section.4}% 20
-\BOOKMARK [2][-]{subsection.4.2}{Second Sub-part}{section.4}% 21
-\BOOKMARK [3][-]{subsubsection.4.2.1}{First Subsub-part}{subsection.4.2}% 22
-\BOOKMARK [2][-]{subsection.4.3}{Third Sub-part}{section.4}% 23
-\BOOKMARK [2][-]{subsection.4.4}{Fourth Sub-part}{section.4}% 24
-\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 25
-\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 26
-\BOOKMARK [2][-]{subsection.4.5}{Notations}{section*.5}% 27
-\BOOKMARK [2][-]{subsection.4.6}{Remainders about signal processing}{section*.5}% 28
-\BOOKMARK [3][-]{subsubsection.4.6.1}{Impulse response}{subsection.4.6}% 29
+\BOOKMARK [2][-]{subsection.2.2}{Realizations}{section.2}% 8
+\BOOKMARK [3][-]{subsubsection.2.2.1}{Direct and transposed forms}{subsection.2.2}% 9
+\BOOKMARK [3][-]{subsubsection.2.2.2}{State-space representation}{subsection.2.2}% 10
+\BOOKMARK [2][-]{subsection.2.3}{Adjustments in arbitrary precision}{section.2}% 11
+\BOOKMARK [1][-]{section.3}{Dimensionment}{}% 12
+\BOOKMARK [2][-]{subsection.3.1}{}{section.3}% 13
+\BOOKMARK [2][-]{subsection.3.2}{Algorithm}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.3}{Particular Forms}{section.3}% 15
+\BOOKMARK [2][-]{subsection.3.4}{ABCD Form}{section.3}% 16
+\BOOKMARK [2][-]{subsection.3.5}{nx=0}{section.3}% 17
+\BOOKMARK [2][-]{subsection.3.6}{Algorithm}{section.3}% 18
+\BOOKMARK [2][-]{subsection.3.7}{Optimizations}{section.3}% 19
+\BOOKMARK [3][-]{subsubsection.3.7.1}{Sparse matrices}{subsection.3.7}% 20
+\BOOKMARK [3][-]{subsubsection.3.7.2}{One entries}{subsection.3.7}% 21
+\BOOKMARK [1][-]{section.4}{Implementation}{}% 22
+\BOOKMARK [2][-]{subsection.4.1}{First Sub-part}{section.4}% 23
+\BOOKMARK [2][-]{subsection.4.2}{Second Sub-part}{section.4}% 24
+\BOOKMARK [3][-]{subsubsection.4.2.1}{First Subsub-part}{subsection.4.2}% 25
+\BOOKMARK [2][-]{subsection.4.3}{Third Sub-part}{section.4}% 26
+\BOOKMARK [2][-]{subsection.4.4}{Fourth Sub-part}{section.4}% 27
+\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 28
+\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 29
+\BOOKMARK [2][-]{subsection.4.5}{Notations}{section*.5}% 30
+\BOOKMARK [2][-]{subsection.4.6}{Remainders about signal processing}{section*.5}% 31
+\BOOKMARK [3][-]{subsubsection.4.6.1}{Impulse response}{subsection.4.6}% 32

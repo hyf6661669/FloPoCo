@@ -83,6 +83,98 @@
 		\end{cases}
 	\end{equation}
 
+	\subsection{Realizations}
+	\begin{thdef} (realization)
+	A realization can be defined as an algorithm describing how to compute outputs
+	from inputs. However, a realization does not describes the details of basic operations (format, size, order,
+	rounding, etc...)
+	\end{thdef}
+	It is important to know that every realizations of a filter are mathematically equivalent to each other (infinite
+	precision). But in finite precision, rounding aspects have a huge impact on the correctness of results.
+	Most of the time in this report, we will describe realizations as forms.
+
+	\subsubsection{Direct and transposed forms}
+	Direct and transposed forms are classic realizations described in Lopez’ and Hilaire’s phds. As they have already
+	been implemented and published in the fopoco project, I will not detail them here.
+	You can see a hardware implementation of the direct form for an IIR done in flopoco on figure \ref{iirpic}
+
+\begin{figure*} \label{iirpic}
+  \centering
+  \begin{tikzpicture}
+     \draw[dotted,black, fill=yellow!20] (-5ex,-3.5ex) rectangle +(69ex,-15ex);   
+     \node[black]  at (-2ex,-17.5ex) {{\small SOPC}};   
+    \draw[hwbus] (-8, 0) node[left] {$u(k)$} --  ++(8, 0)  ;
+    \draw[hwbus,->] (-8, 0) --  ++(3, 0); % just for the arrow
+    \foreach \i in {0,...,3} {
+      \draw[hwbus, ->] ($(8*\i, 0)$) --  ++(0, -5);
+      \draw[hwblock] ($(8*\i, -5)$) -- ++(3, 0) -- ++(-3, -4) -- ++(-3, 4) -- cycle; 
+      \node (n) at ($(8*\i , -6.5)$)  {$b_{\i}$} ;
+%      \draw ($(8*\i  + 0.5, -11)$) node[left,tt=black!50] {\footnotesize $p_b(k,\i)$} ;
+%      \draw ($(8*\i  - 0.2, -11)$) node[right,text=black!50] {\footnotesize $p_b(k,\i)$} ;
+
+%      \draw[hwbus, ->] ($(8*\i ex, 0ex)$) --  ++(0, -5ex);
+    }
+
+    
+    \draw[hwbus] (0, -9) -- ++(0,-6);
+      \coordinate (n) at  (0,-15);
+    \foreach \i in {1,...,3} {
+      \draw[line width=3pt] ($(8*\i  - 4, -3)$) --  +(0, 6);
+      \draw[hwbus] ($(8*\i  - 8, 0)$) --  +(8,0) node [above,text=blue] {\footnotesize $u(k-\i)$};
+      \draw[hwbus,->] ($(8*\i  - 8, 0)$) --  ++(3, 0); % just for the arrow
+      % The adders 
+      \coordinate (nm1) at  (n.east);
+      \draw ($(8*\i , -15)$) node[hwblock,circle,minimum height=3] (n) {$+$};
+      \draw[hwbus, ->]  ($(8*\i , -9)$) -- (n.north);
+      \draw[hwbus, ->]  (nm1) -- (n.west);
+      \draw[hwbus]  (n.east) -- ++ (3,0);
+    }
+
+    \draw (74, -15) node[hwblock,align=center] (fr) {final\\round} ;
+    \draw[hwbus, <-] (fr.west) -- ++(-15,0) node [near end] {/} node [near end,below] {\footnotesize$(\msbout, p-g$)} node[near start,above] {$\appr{y}(k)$} -- ++(-1,0) ;
+    \draw[hwbus, ->] (fr.east) -- ++(8,0) node [midway] {/} node [midway,below] {\footnotesize$(\msbout,p)$} node[right] {$\yout(k)$} ;
+
+    \foreach \i in {1,...,3} {
+      \draw[hwbus, ->] ($(-8*\i  + 60 , 0)$) --  ++(0, -5);
+      \draw[hwblock] ($(-8*\i  + 60 , -5)$) -- ++(3, 0) -- ++(-3, -4) -- ++(-3, 4) -- cycle; 
+      \node (ai) at ($(-8*\i  + 60 , -6.5)$)  {$a_{\i}$} ;
+      %\draw ($(-8*\i  +60 + 0.5, -11)$) node[left,text=black!50] {\footnotesize $p_a(k,\i)$} ;
+      %\draw ($(-8*\i  +60 - 0.2, -11)$) node[right,text=black!50] {\footnotesize $p_a(k,\i)$} ;
+      \draw ($(-8*\i  + 60 , -15)$) node[hwblock,circle,minimum height=3] (n) {$+$};
+      \draw (n.north) node[left]{\bf -};
+      \draw[hwbus, ->] ($(-8*\i  + 60, -9)$) --  (n.north);
+      \draw[hwbus, <-] (n.west) -- ++(-5,0);
+      % The registers
+      \draw[hwbus] ($(-8*\i  + 60  +8, 0)$) --  ++(-8, 0) node [above,text=blue] {\footnotesize $\appr{y}(k-\i)$};
+      \draw[hwbus,->] ($(-8*\i  + 60  +8, 0)$) --  ++(-3, 0); % just for the arrow
+      \draw[line width=3pt] ($(-8*\i  +60 + 4, -3)$) --  +(0, 6);
+    }
+    \draw[hwbus] ($(60 , 0)$) --  ++(0,-15);
+    \draw[hwbus,<-] ($(60 , -5)$) --  ++(0,-5);
+
+
+  \end{tikzpicture}
+
+\caption{Abstract architecture for the direct form realization of an LTI filter \label{fig:ltiarch}}
+\end{figure*}
+
+	\subsubsection{State-space representation}
+	This type of realization consists in expressing the evolution of a system considering it’s state at a time k. In
+	continuous time, it is described by differentilal equations at first order. In the discret time case (in which we
+	are interested in), it is described by a simple recurrence:
+	\begin{equation} \label{abcddef}
+		\begin{cases}
+			\boldsymbol{x}(k+1)= \boldsymbol{Ax}(k) + \boldsymbol{Bu}(k) \\
+			\boldsymbol{y}(k+1)= \boldsymbol{Cx}(k) + \boldsymbol{Du}(k)
+		\end{cases}
+	\end{equation}
+
+	Where $\boldsymbol{x}(k) \in \mathbb{R}^{n_x}$ is the state vector,
+	$\boldsymbol{u}(k) \in \mathbb{R}^{n_u}$ is the input vector and
+	$\boldsymbol{y}(k) \in \mathbb{R}^{n_y}$ is the output vector, at time k.
+	The matrices $\boldsymbol{A} \in \mathbb{R}^{n_x \times n_x}$ , $\boldsymbol{B} \in \mathbb{R}^{n_x \times n_u}$,
+	$\boldsymbol{C} \in \mathbb{R}^{n_y \times n_x}$, and $\boldsymbol{D} \in \mathbb{R}^{n_y \times n_u}$,
+	with $\boldsymbol{x}(0)$ are sufficient to describe an LTI filter, with convention $\boldsymbol{k}(k)=\boldsymbol{u}(k)=0 \hspace{5pt} | \hspace{5pt} \forall k<0$.
 
 
 

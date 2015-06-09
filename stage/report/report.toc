@@ -6,7 +6,10 @@
 \contentsline {subsubsection}{\numberline {2.0.2}Impulse response}{3}{subsubsection.2.0.2}
 \contentsline {subsubsection}{\numberline {2.0.3}Worst-Case Peak Gain (WCPG) of a Filter}{4}{subsubsection.2.0.3}
 \contentsline {subsection}{\numberline {2.1}FIR and IIR}{4}{subsection.2.1}
-\contentsline {subsection}{\numberline {2.2}Adjustments in arbitrary precision}{6}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.2}Realizations}{4}{subsection.2.2}
+\contentsline {subsubsection}{\numberline {2.2.1}Direct and transposed forms}{4}{subsubsection.2.2.1}
+\contentsline {subsubsection}{\numberline {2.2.2}State-space representation}{5}{subsubsection.2.2.2}
+\contentsline {subsection}{\numberline {2.3}Adjustments in arbitrary precision}{6}{subsection.2.3}
 \contentsline {section}{\numberline {3}Dimensionment}{7}{section.3}
 \contentsline {subsection}{\numberline {3.1}}{7}{subsection.3.1}
 \contentsline {subsection}{\numberline {3.2}Algorithm}{7}{subsection.3.2}

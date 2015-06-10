@@ -10,10 +10,11 @@
 \contentsline {subsection}{\numberline {2.2}Realizations}{5}{subsection.2.2}
 \contentsline {subsubsection}{\numberline {2.2.1}Direct and transposed forms}{5}{subsubsection.2.2.1}
 \contentsline {subsubsection}{\numberline {2.2.2}State-space representation}{5}{subsubsection.2.2.2}
+\contentsline {subsubsection}{\numberline {2.2.3}FloPoCo}{5}{subsubsection.2.2.3}
 \contentsline {subsection}{\numberline {2.3}Specialized Implicit Form (SIF)}{5}{subsection.2.3}
-\contentsline {subsection}{\numberline {2.4}Implementation}{6}{subsection.2.4}
+\contentsline {subsection}{\numberline {2.4}Implementation}{7}{subsection.2.4}
 \contentsline {subsection}{\numberline {2.5}Size computation in finite precision}{7}{subsection.2.5}
-\contentsline {subsubsection}{\numberline {2.5.1}Error analysis}{7}{subsubsection.2.5.1}
+\contentsline {subsubsection}{\numberline {2.5.1}Error analysis}{8}{subsubsection.2.5.1}
 \contentsline {subsubsection}{\numberline {2.5.2}A working solution to this problem}{10}{subsubsection.2.5.2}
 \contentsline {section}{\numberline {3}Dimensionment}{11}{section.3}
 \contentsline {subsection}{\numberline {3.1}}{11}{subsection.3.1}
@@ -25,7 +26,7 @@
 \contentsline {subsubsection}{\numberline {3.6.1}Sparse matrices}{13}{subsubsection.3.6.1}
 \contentsline {subsubsection}{\numberline {3.6.2}One entries}{13}{subsubsection.3.6.2}
 \contentsline {section}{Conclusion}{13}{section*.3}
-\contentsline {section}{Appendix: Remainders about signal processing}{15}{section*.5}
-\contentsline {subsection}{\numberline {3.7}Notations}{15}{subsection.3.7}
-\contentsline {subsection}{\numberline {3.8}Remainders about signal processing}{15}{subsection.3.8}
-\contentsline {subsubsection}{\numberline {3.8.1}Impulse response}{16}{subsubsection.3.8.1}
+\contentsline {section}{Appendix: Remainders about signal processing}{14}{section*.5}
+\contentsline {subsection}{\numberline {3.7}Notations}{14}{subsection.3.7}
+\contentsline {subsection}{\numberline {3.8}Remainders about signal processing}{14}{subsection.3.8}
+\contentsline {subsubsection}{\numberline {3.8.1}Impulse response}{15}{subsubsection.3.8.1}

@@ -1,11 +1,13 @@
 	\subsubsection{Definition of a signal}
+	The state of the art comes mainly from Lopez's PhD \cite{lopez} and Hilaire's PhD \cite{hilaire}.
+
 	\begin{thdef}\label{sig} (Signal)
 		Generally, a signal is a temporal variable, which takes a value from $\mathbb{R}$ at each time t.
-		We denote x(t) the value of the signal x at the instant t.
-		When dealing with discrete time events, the time will be represented by k.
-		Then we talk about x(k), which is said to be a sample.
+		We denote $x(t)$ the value of the signal $x$ at the instant $t$.
+		When dealing with discrete time events, the time will be represented by $k$.
+		Then we denote about $x(k)$, which is said to be a sample.
 		$\{x(k)\}_{k \geq 0}$ denotes all the values possible for the signal x.
-		In the rest of this report, we will talk about vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
+		In the rest of this report, we will discuss about vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
 	\end{thdef}
 
 	\subsubsection{Linear Time Invariant Filters (LTI filters)}
@@ -18,12 +20,12 @@
 		$$ \mathcal{H}(\alpha \cdot \boldsymbol{u}_1+ \beta \cdot \boldsymbol{u}_2)= \alpha\cdot\mathcal{H}(\boldsymbol{u}_1) +  \beta\cdot\mathcal{H}(\boldsymbol{u}_2)$$
 
 		Time invariance:
-		$$ \{\mathcal{H}(\boldsymbol[u])(k-k_0)\}_{k\geq0} = \mathcal{H}(\{\boldsymbol{u})(k-k_0)_{k \geq 0} ) $$
+		$$ \{\mathcal{H}(\boldsymbol{u})(k-k_0)\}_{k\geq0} = \mathcal{H}(\{\boldsymbol{u}(k-k_0)\}_{k \geq 0} ) $$
 	\end{thdef}
 
 	\subsubsection{Impulse response}
 	\begin{thdef} (Impulse Response)
-	A SISO filter may be defined by it’s impulse response, denoted $h$. $h$ is the
+	A SISO filter may be defined by its impulse response, denoted $h$. $h$ is the
 	impulse response of H to the impulsion of Dirac.
 	Indeed each input can be described as a sum of Dirac impulsions:
 	$$u=\sum_{i\geq0}u(l)\delta_l$$
@@ -36,13 +38,15 @@
 		\end{cases}
 	\end{equation}
 	The linearity condition of $\mathcal{H}$ implies: $\mathcal{H}(u) = \sum_{l\geq0}u(l)\mathcal{H}(\delta_l)$.
-	Time invariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$
+	Time invariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$.
+	Then the computation from inputs to outputs takes this form:
 	$$y(k)=\sum_{l\geq0}u(l)h(k-l)=\sum_{l=0}^ku(k)h(k-l)$$
 	This corresponds with the convolution product definition of $u$ by $h$, denoted $y = h * u$.
+	%Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
 	Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
 	ith output to the Dirac implusion on the j-th input.
 	The precedent equation becomes:
-	$$u_i(k)=\sum_{j=1}^{n_u}\sum_{l\geq}^lu_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
+	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l\geq}^lu_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
 	
 	\end{thdef} 
 
@@ -62,7 +66,7 @@
 	\begin{equation} \label{finimp}
 		\exists n \in \mathbb{N} | \forall k \geq n, h(k)=0
 	\end{equation}
-	The smallest $n$ verifying \ref{finimp} is reffered as the order of the filter. So a n-order FIR can be described by the
+	The smallest $n$ verifying \ref{finimp} is referred as the order of the filter. So a n-order FIR can be described by the
 	following equation:
 	\begin{equation} \label{firdef}
 		y(k)=\sum_{i=0}^n b_i u(k-i)
@@ -92,14 +96,14 @@
 	from inputs. However, a realization does not describes the details of basic operations (format, size, order,
 	rounding, etc...)
 	\end{thdef}
-	It is important to know that every realizations of a filter are mathematically equivalent to each other (infinite
+	It is important to know that all realizations of a filter are mathematically equivalent to each other (infinite
 	precision). But in finite precision, rounding aspects have a huge impact on the correctness of results.
 	Most of the time in this report, we will describe realizations as forms.
 
 	\subsubsection{Direct and transposed forms}
-	Direct and transposed forms are classic realizations described in Lopez’ and Hilaire’s phds. As they have already
-	been implemented and published in the fopoco project, I will not detail them here.
-	You can see a hardware implementation of the direct form for an IIR done in flopoco on figure \ref{iirpic}
+	Direct and transposed forms are classic realizations. A good description of these forms can be found in Lopez’ and Hilaire’s PhDs \cite{lopez} \cite{hilaire}. 
+	The direct form has been implemented and in the FoPoCo project,
+	you can see the hardware implementation an IIR on figure \ref{iirpic}
 
 \begin{figure*} \label{iirpic}
   \centering
@@ -162,8 +166,8 @@
 \end{figure*}
 
 	\subsubsection{State-space representation}
-	This type of realization consists in expressing the evolution of a system considering it’s state at a time k. In
-	continuous time, it is described by differentilal equations at first order. In the discret time case (in which we
+	This type of realization consists in expressing the evolution of a system considering it’s state at time k. In
+	continuous time, it is described by differential equations at first order. In discret time (in which we
 	are interested in), it is described by a simple recurrence:
 	\begin{equation} \label{abcddef}
 		\begin{cases}
@@ -177,12 +181,22 @@
 	$\boldsymbol{y}(k) \in \mathbb{R}^{n_y}$ is the output vector, at time k.
 	The matrices $\boldsymbol{A} \in \mathbb{R}^{n_x \times n_x}$ , $\boldsymbol{B} \in \mathbb{R}^{n_x \times n_u}$,
 	$\boldsymbol{C} \in \mathbb{R}^{n_y \times n_x}$, and $\boldsymbol{D} \in \mathbb{R}^{n_y \times n_u}$,
-	with $\boldsymbol{x}(0)$ are sufficient to describe an LTI filter, with convention $\boldsymbol{k}(k)=\boldsymbol{u}(k)=0 \hspace{5pt} | \hspace{5pt} \forall k<0$.
+	with $\boldsymbol{x}(0)$ are sufficient to describe an LTI filter, with convention $\boldsymbol{x}(k)=\boldsymbol{u}(k)=0 \hspace{5pt} | \hspace{5pt} \forall k<0$.
+
+	\subsubsection{FloPoCo}
+		FloPoCo is a C++ framework which first purpose is to generate floating point cores in VHDL.
+		Although it may have some pertinence in the ASIC design market, it main target is the configuration of FPGAs as computing units.
+		Indeed, FPGAs are a rising market for embedded computing, because they offer full reconfigurability and a relatively good balance between computation power and price.
+
+		More information is available at \url{http://flopoco.gforge.inria.fr/}
 
 	\subsection{Specialized Implicit Form (SIF)}
-	he specialized implicit form (SIF) was introduced in \cite{} and is well detailed in \cite{}. It was built to permit the
-	expression of any realization of LTI filters. The idea is to have a unique representation that allows to compute
-	every degradation measures, instead of redevelopping them for each new realization.
+	he specialized implicit form (SIF) was introduced in \cite{sifd} and is well detailed in \cite{hilaire,sif}. 
+	The classical state-space representation is intuitive,
+	but it doesn't takes into account the reality of implementation.
+	Indeed, dealing with finite precision and error amplification, the order in which operations are done becomes crucial.
+	Another idea is to have a unique representation for any realization of LTI filters,
+	that allows to compute every degradation measures instead of redevelopping them for each new realization.
 	This form distinguishes computations done at one time from computations done the other times. As well as
 	in a state-space, we have $\boldsymbol{x}_i$ as state variables, but in addition to that, $\boldsymbol{t}_i$ are intermediate variables.
 	The SIF is described as following:
@@ -219,21 +233,7 @@
 		\boldsymbol{L} \in \mathbb{R}^{n_y \times n_t},\boldsymbol{R} \in \mathbb{R}^{n_y \times n_x},\boldsymbol{S} \in \mathbb{R}^{n_y \times n_u}, \nonumber \\
 	\end{eqnarray}
 
-	Values of the vector $\boldsymbol{t}(k+1)$ are computed and used at the same iterations, so they are not kept in memory.
-	As the equation is mostly full of zeros, it is more convenient to use it’s compressed formulation, wich is denoted
-	as the $\boldsymbol{Z}$:
-	
-	\begin{equation} \label{zmatrix}
-		\boldsymbol{Z}=
-		\begin{pmatrix}
-			\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{N} \\
-			\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{Q} \\
-			\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{S} 
-		\end{pmatrix}
-	\end{equation}
-	The community usually takes $-\boldsymbol{J}$ for simplicity within further computations.
-
-	The SIF can also be seen as an algorithm, each line of the equation \ref{sifdef} corresponding to a sequential step of the computation.
+	The best way to understand the SIF may be to see it as an algorithm, each line of the equation \ref{sifdef} corresponding to a sequential step of the computation.
 	The algorithm results as follows:
 	\begin{algorithm}
 		\For{int i = 0 ; $i \leq n_t$; i++}{
@@ -265,15 +265,32 @@
 
 	With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
 
+	Values of the vector $\boldsymbol{t}(k+1)$ are computed and used at the same iterations, so they are not kept in memory.
+	As the equation is mostly full of zeros, it is more convenient to use it’s compressed formulation, wich is denoted
+	as the $\boldsymbol{Z}$:
+	
+	\begin{equation} \label{zmatrix}
+		\boldsymbol{Z}=
+		\begin{pmatrix}
+			\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+	\end{equation}
+	The community usually takes $-\boldsymbol{J}$ for simplicity within further computations.
+
+
 	\subsection{Implementation}
 	In this work, we propose to implements SIFs using the SOPCs arithmetical core from flopoco.
 	SOPC stands for Sum of Producs by Constants, and is a KCM-multiplier based architecture.
+	The details of the SOPC architecture has been described in \cite{sums}.
 	To be quick, a KCM multiplier is designed to fully use the power of look-up tables (LUTs) in an FPGA.
 	To do so, it partitions the constant into chunks which match the size of a LUT.
 	Then, tabulating the multiplications, we end up with a final sum to compute the product.
-	The detail is visible on figure \ref{kcm}
+	This has been first described by K.Chapman in \cite{Chapman93:edn}.
+	The detail of implementation is visible on figure \ref{fig:FixRealKCM}
 
-\begin{figure}[b] \label{kcm}
+\begin{figure}[b]
   \begin{center}
   \begin{tikzpicture}
     \footnotesize 
@@ -310,7 +327,7 @@
 
 	The SOPC architecture keeps the same idea.
 	The difference is, the summation architecture is mutualized through the $n_c$ products in a bit-heap based architecture implemented by flopoco.
-	The detail is visible onf figure \ref{sopc}.
+	The detail is visible on figure \ref{fig:Overall architecture}.
 
 \begin{figure}
   \begin{center}
@@ -336,7 +353,6 @@
 \end{center}
 \caption{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks  \label{fig:Overall architecture}}
 \end{figure}
-	
 
 	\subsection{Size computation in finite precision}
 	When there is many potential realizations for a single LTI filter, we can see that the choice of one realization
@@ -349,9 +365,10 @@
 
 	With $lsb_{y_i}$ the last significant bit of the output $y_i$, and $\varepsilon_{y_i}$ the error on the computation of the output $y_i$
 
-	Then, we can derive every errors, functions of the most significant and last significant bits (respectively msb and lsb)
+	Following the same model, we define an error quantum for each SOPC involved in the computation.
+	All these error quantas will be functions of the most significant and last significant bits (respectively msb and lsb) of every input, output and intermediate signal.
 
-	We can define the following vectors:
+	We define the following vectors:
 	\begin{equation}
 		\boldsymbol{\varepsilon}(k) =
 		\begin{pmatrix}
@@ -390,14 +407,23 @@
 				\boldsymbol{x}^*(k+1) = \boldsymbol{K}\boldsymbol{t}^*(k+1) + \boldsymbol{P} \boldsymbol{x}^*(k) + \boldsymbol{Q_i} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_x}(k) \\
 				\boldsymbol{y}^*(k+1) = \boldsymbol{L}\boldsymbol{t}^*(k+1) + \boldsymbol{R} \boldsymbol{x}^*(k) + \boldsymbol{S_i} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_y}(k) 
 			\end{eqnarray}
+			Here $\boldsymbol{t}^*$, $\boldsymbol{x}^*$ and $\boldsymbol{y}^*$ are the computed vectors, so with computations errors.
 
-			We denote $\boldsymbol{\delta t}(k+1)=\boldsymbol{z}_i^*(k)-\boldsymbol{z}_i(k)$ the error at instant k,
-			considering computations errors and loopback, for $\boldsymbol{z} \in \{\boldsymbol{t},\boldsymbol{x},\boldsymbol{y}\}$.
+	As $\boldsymbol{\varepsilon}$-errors come only from the SOPCs cores, we have another error quantum that will symbolize the total error.
+			We denote 
+			\begin{eqnarray}
+			\boldsymbol{\delta t}(k+1)=\boldsymbol{t}_i^*(k)-\boldsymbol{t}_i(k) \\
+			\boldsymbol{\delta x}(k+1)=\boldsymbol{x}_i^*(k)-\boldsymbol{x}_i(k) \\
+			\boldsymbol{\delta y}(k+1)=\boldsymbol{y}_i^*(k)-\boldsymbol{y}_i(k) 
+			\end{eqnarray}
+			the total error at instant k,
+			considering computations errors and loopback, for 
+			$\boldsymbol{t}$ , $\boldsymbol{x}$ and $\boldsymbol{y}$.
 			We get then:
 			\begin{eqnarray} \label{deltaerr}
-				\boldsymbol{\delta t}^*(k+1) = - \boldsymbol{J'}\boldsymbol{\delta t}^*(k+1) + \boldsymbol{M} \boldsymbol{\delta x}^*(k) + \boldsymbol{\varepsilon_t}(k)\\
-				\boldsymbol{\delta x}^*(k+1) = \boldsymbol{K}\boldsymbol{\delta t}^*(k+1) + \boldsymbol{P} \boldsymbol{\delta x}^*(k) + \boldsymbol{\varepsilon_x}(k) \\
-				\boldsymbol{\delta y}^*(k+1) = \boldsymbol{L}\boldsymbol{\delta t}^*(k+1) + \boldsymbol{R} \boldsymbol{\delta x}^*(k) + \boldsymbol{\varepsilon_y}(k) 
+				\boldsymbol{\delta t}(k+1) = - \boldsymbol{J'}\boldsymbol{\delta t}(k+1) + \boldsymbol{M} \boldsymbol{\delta x}(k) + \boldsymbol{\varepsilon_t}(k)\\
+				\boldsymbol{\delta x}(k+1) = \boldsymbol{K}\boldsymbol{\delta t}(k+1) + \boldsymbol{P} \boldsymbol{\delta x}(k) + \boldsymbol{\varepsilon_x}(k) \\
+				\boldsymbol{\delta y}(k+1) = \boldsymbol{L}\boldsymbol{\delta t}(k+1) + \boldsymbol{R} \boldsymbol{\delta x}(k) + \boldsymbol{\varepsilon_y}(k) 
 			\end{eqnarray}
 
 			This new algorithm corresponds here to the algorithm of the SIF of a filter $\mathcal{H}_{\boldsymbol{\varepsilon}}$,
@@ -521,7 +547,7 @@
 
 
 		To satisfy the condition \ref{condition}, we can simply define $\xi$ as the minimal error the user wants.
-		We can say then:
+		We can then state:
 		\begin{equation}
 			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle| \cdot \boldsymbol{2^{lsb_{v'}}} < \xi
 		\end{equation}

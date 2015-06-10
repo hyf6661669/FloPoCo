@@ -20,6 +20,8 @@
 \@writefile{toc}{\select@language{english}}
 \@writefile{lof}{\select@language{english}}
 \@writefile{lot}{\select@language{english}}
+\citation{lopez}
+\citation{hilaire}
 \@writefile{toc}{\contentsline {section}{Introduction}{3}{section*.2}}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Motivations}{3}{section.1}}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Tools for expressing filters and signal processing}{3}{section.2}}
@@ -32,6 +34,11 @@
 \newlabel{finimp}{{2.1.1}{4}{FIR and IIR}{equation.2.1.1}{}}
 \newlabel{firdef}{{2.1.2}{4}{FIR and IIR}{equation.2.1.2}{}}
 \newlabel{iirdef}{{2.1.3}{4}{FIR and IIR}{equation.2.1.3}{}}
+\citation{lopez}
+\citation{hilaire}
+\citation{sifd}
+\citation{hilaire}
+\citation{sif}
 \newlabel{iirpic}{{2.2.1}{5}{Direct and transposed forms}{subsubsection.2.2.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Abstract architecture for the direct form realization of an LTI filter }}{5}{figure.1}}
 \newlabel{fig:ltiarch}{{1}{5}{Abstract architecture for the direct form realization of an LTI filter}{figure.1}{}}
@@ -39,32 +46,34 @@
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Direct and transposed forms}{5}{subsubsection.2.2.1}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}State-space representation}{5}{subsubsection.2.2.2}}
 \newlabel{abcddef}{{2.2.1}{5}{State-space representation}{equation.2.2.1}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.3}FloPoCo}{5}{subsubsection.2.2.3}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Specialized Implicit Form (SIF)}{5}{subsection.2.3}}
-\newlabel{sifdef}{{2.3.1}{5}{Specialized Implicit Form (SIF)}{equation.2.3.1}{}}
-\newlabel{zmatrix}{{2.3.4}{6}{Specialized Implicit Form (SIF)}{equation.2.3.4}{}}
+\citation{sums}
+\citation{Chapman93:edn}
+\newlabel{sifdef}{{2.3.1}{6}{Specialized Implicit Form (SIF)}{equation.2.3.1}{}}
 \@writefile{loa}{\contentsline {algocf}{\numberline {1}{\ignorespaces Computation of SIF outputs from inputs}}{6}{algocf.1}}
 \newlabel{algomat}{{2}{6}{Specialized Implicit Form (SIF)}{algocfline.2}{}}
 \@writefile{loa}{\contentsline {algocf}{\numberline {2}{\ignorespaces Simplified matricial algorithm}}{6}{algocf.2}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Implementation}{6}{subsection.2.4}}
+\newlabel{zmatrix}{{2.3.4}{6}{Specialized Implicit Form (SIF)}{equation.2.3.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Implementation}{7}{subsection.2.4}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Size computation in finite precision}{7}{subsection.2.5}}
 \newlabel{condition}{{2.5.1}{7}{Size computation in finite precision}{equation.2.5.1}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.1}Error analysis}{7}{subsubsection.2.5.1}}
-\newlabel{kcm}{{2.4}{7}{Implementation}{subsection.2.4}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The FixRealKCM method when $x_i$ is split in 3 chunks }}{7}{figure.2}}
 \newlabel{fig:FixRealKCM}{{2}{7}{The FixRealKCM method when $x_i$ is split in 3 chunks}{figure.2}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks }}{8}{figure.3}}
 \newlabel{fig:Overall architecture}{{3}{8}{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.1}Error analysis}{8}{subsubsection.2.5.1}}
 \newlabel{sifalgoerr}{{2.5.3}{8}{Error analysis}{equation.2.5.3}{}}
-\newlabel{deltaerr}{{2.5.6}{8}{Error analysis}{equation.2.5.6}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces A signal view of the error propagation with respect to the ideal filter }}{8}{figure.4}}
-\newlabel{fig:ltierror}{{4}{8}{A signal view of the error propagation with respect to the ideal filter}{figure.4}{}}
-\newlabel{zepsmatrix}{{2.5.9}{8}{Error analysis}{equation.2.5.9}{}}
-\newlabel{deltaerr}{{2.5.10}{8}{Error analysis}{equation.2.5.10}{}}
+\newlabel{deltaerr}{{2.5.9}{8}{Error analysis}{equation.2.5.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces A signal view of the error propagation with respect to the ideal filter }}{9}{figure.4}}
+\newlabel{fig:ltierror}{{4}{9}{A signal view of the error propagation with respect to the ideal filter}{figure.4}{}}
+\newlabel{zepsmatrix}{{2.5.12}{9}{Error analysis}{equation.2.5.12}{}}
+\newlabel{deltaerr}{{2.5.13}{9}{Error analysis}{equation.2.5.13}{}}
 \newlabel{corimp}{{1}{9}{}{corollary.1}{}}
-\newlabel{eqprec}{{2.5.15}{9}{Error analysis}{equation.2.5.15}{}}
-\newlabel{eqprec}{{2.5.17}{9}{Error analysis}{equation.2.5.17}{}}
-\newlabel{eqprec}{{2.5.19}{9}{Error analysis}{equation.2.5.19}{}}
-\newlabel{constraint}{{2.5.26}{10}{Error analysis}{equation.2.5.26}{}}
+\newlabel{eqprec}{{2.5.18}{9}{Error analysis}{equation.2.5.18}{}}
+\newlabel{eqprec}{{2.5.20}{9}{Error analysis}{equation.2.5.20}{}}
+\newlabel{eqprec}{{2.5.22}{10}{Error analysis}{equation.2.5.22}{}}
+\newlabel{constraint}{{2.5.29}{10}{Error analysis}{equation.2.5.29}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.2}A working solution to this problem}{10}{subsubsection.2.5.2}}
 \@writefile{toc}{\contentsline {section}{\numberline {3}Dimensionment}{11}{section.3}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.1}}{11}{subsection.3.1}}
@@ -75,38 +84,31 @@
 \newlabel{fig:SIFimpl}{{5}{12}{Architecture generation for implementing a SIF (example from a rho-DFII filter), with $n_t=5$, $n_x=5$ and $n_y=1$}{figure.5}{}}
 \bibstyle{plain}
 \bibdata{report}
-\bibcite{paper10}{1}
-\bibcite{paper1}{2}
-\bibcite{paper12}{3}
-\bibcite{paper6}{4}
-\bibcite{paper7}{5}
-\bibcite{paper5}{6}
-\bibcite{paper13}{7}
-\bibcite{paper9}{8}
-\bibcite{paper3}{9}
-\bibcite{paper8}{10}
-\bibcite{paper11}{11}
-\bibcite{paper4}{12}
-\bibcite{paper2}{13}
+\bibcite{Chapman93:edn}{1}
+\bibcite{sums}{2}
+\bibcite{hilaire}{3}
+\bibcite{lopez}{4}
+\bibcite{sif}{5}
+\bibcite{sifd}{6}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.5}When $n_x=0$}{13}{subsection.3.5}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Optimizations}{13}{subsection.3.6}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.1}Sparse matrices}{13}{subsubsection.3.6.1}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.2}One entries}{13}{subsubsection.3.6.2}}
 \@writefile{toc}{\contentsline {section}{Conclusion}{13}{section*.3}}
-\@writefile{toc}{\contentsline {section}{Appendix: Remainders about signal processing}{15}{section*.5}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Notations}{15}{subsection.3.7}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.8}Remainders about signal processing}{15}{subsection.3.8}}
-\newlabel{sig}{{6}{15}{}{thdef.6}{}}
-\newlabel{l_1}{{7}{15}{}{thdef.7}{}}
-\newlabel{l1}{{3.8.1}{15}{}{equation.3.8.1}{}}
-\newlabel{l_1}{{8}{15}{}{thdef.8}{}}
-\newlabel{l2}{{3.8.2}{15}{}{equation.3.8.2}{}}
-\newlabel{l_inf}{{9}{15}{}{thdef.9}{}}
-\newlabel{l3}{{3.8.3}{15}{}{equation.3.8.3}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.8.1}Impulse response}{16}{subsubsection.3.8.1}}
-\newlabel{impresp}{{10}{16}{}{thdef.10}{}}
-\newlabel{ir}{{3.8.4}{16}{}{equation.3.8.4}{}}
-\newlabel{dri}{{3.8.5}{16}{}{equation.3.8.5}{}}
-\newlabel{dirc}{{3.8.6}{16}{}{equation.3.8.6}{}}
-\newlabel{convo}{{3.8.7}{16}{}{equation.3.8.7}{}}
-\newlabel{convomimo}{{3.8.8}{16}{}{equation.3.8.8}{}}
+\@writefile{toc}{\contentsline {section}{Appendix: Remainders about signal processing}{14}{section*.5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Notations}{14}{subsection.3.7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8}Remainders about signal processing}{14}{subsection.3.8}}
+\newlabel{sig}{{6}{14}{}{thdef.6}{}}
+\newlabel{l_1}{{7}{14}{}{thdef.7}{}}
+\newlabel{l1}{{3.8.1}{14}{}{equation.3.8.1}{}}
+\newlabel{l_1}{{8}{14}{}{thdef.8}{}}
+\newlabel{l2}{{3.8.2}{14}{}{equation.3.8.2}{}}
+\newlabel{l_inf}{{9}{14}{}{thdef.9}{}}
+\newlabel{l3}{{3.8.3}{14}{}{equation.3.8.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.8.1}Impulse response}{15}{subsubsection.3.8.1}}
+\newlabel{impresp}{{10}{15}{}{thdef.10}{}}
+\newlabel{ir}{{3.8.4}{15}{}{equation.3.8.4}{}}
+\newlabel{dri}{{3.8.5}{15}{}{equation.3.8.5}{}}
+\newlabel{dirc}{{3.8.6}{15}{}{equation.3.8.6}{}}
+\newlabel{convo}{{3.8.7}{15}{}{equation.3.8.7}{}}
+\newlabel{convomimo}{{3.8.8}{15}{}{equation.3.8.8}{}}

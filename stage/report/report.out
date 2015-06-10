@@ -15,17 +15,19 @@
 \BOOKMARK [2][-]{subsection.2.5}{Size computation in finite precision}{section.2}% 15
 \BOOKMARK [3][-]{subsubsection.2.5.1}{Error analysis}{subsection.2.5}% 16
 \BOOKMARK [3][-]{subsubsection.2.5.2}{A working solution to this problem}{subsection.2.5}% 17
-\BOOKMARK [1][-]{section.3}{Dimensionment}{}% 18
-\BOOKMARK [2][-]{subsection.3.1}{Implementation}{section.3}% 19
-\BOOKMARK [2][-]{subsection.3.2}{Algorithm}{section.3}% 20
-\BOOKMARK [2][-]{subsection.3.3}{Particular Forms}{section.3}% 21
-\BOOKMARK [2][-]{subsection.3.4}{ABCD Form}{section.3}% 22
-\BOOKMARK [2][-]{subsection.3.5}{When nx=0}{section.3}% 23
-\BOOKMARK [2][-]{subsection.3.6}{Optimizations}{section.3}% 24
-\BOOKMARK [3][-]{subsubsection.3.6.1}{Sparse matrices}{subsection.3.6}% 25
-\BOOKMARK [3][-]{subsubsection.3.6.2}{One entries}{subsection.3.6}% 26
-\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 27
-\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 28
-\BOOKMARK [2][-]{subsection.3.7}{Notations}{section*.5}% 29
-\BOOKMARK [2][-]{subsection.3.8}{Remainders about signal processing}{section*.5}% 30
-\BOOKMARK [3][-]{subsubsection.3.8.1}{Impulse response}{subsection.3.8}% 31
+\BOOKMARK [2][-]{subsection.2.6}{Worst-case peak gain computation}{section.2}% 18
+\BOOKMARK [2][-]{subsection.2.7}{Communication}{section.2}% 19
+\BOOKMARK [1][-]{section.3}{Dimensionment}{}% 20
+\BOOKMARK [2][-]{subsection.3.1}{Implementation}{section.3}% 21
+\BOOKMARK [2][-]{subsection.3.2}{Algorithm}{section.3}% 22
+\BOOKMARK [2][-]{subsection.3.3}{Particular Forms}{section.3}% 23
+\BOOKMARK [2][-]{subsection.3.4}{ABCD Form}{section.3}% 24
+\BOOKMARK [2][-]{subsection.3.5}{When nx=0}{section.3}% 25
+\BOOKMARK [2][-]{subsection.3.6}{Optimizations}{section.3}% 26
+\BOOKMARK [3][-]{subsubsection.3.6.1}{Sparse matrices}{subsection.3.6}% 27
+\BOOKMARK [3][-]{subsubsection.3.6.2}{One entries}{subsection.3.6}% 28
+\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 29
+\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 30
+\BOOKMARK [2][-]{subsection.3.7}{Notations}{section*.5}% 31
+\BOOKMARK [2][-]{subsection.3.8}{Remainders about signal processing}{section*.5}% 32
+\BOOKMARK [3][-]{subsubsection.3.8.1}{Impulse response}{subsection.3.8}% 33

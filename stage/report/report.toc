@@ -16,17 +16,19 @@
 \contentsline {subsection}{\numberline {2.5}Size computation in finite precision}{7}{subsection.2.5}
 \contentsline {subsubsection}{\numberline {2.5.1}Error analysis}{8}{subsubsection.2.5.1}
 \contentsline {subsubsection}{\numberline {2.5.2}A working solution to this problem}{10}{subsubsection.2.5.2}
-\contentsline {section}{\numberline {3}Dimensionment}{11}{section.3}
-\contentsline {subsection}{\numberline {3.1}Implementation}{11}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}Algorithm}{11}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}Particular Forms}{11}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}ABCD Form}{11}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}When $n_x=0$}{13}{subsection.3.5}
-\contentsline {subsection}{\numberline {3.6}Optimizations}{13}{subsection.3.6}
-\contentsline {subsubsection}{\numberline {3.6.1}Sparse matrices}{13}{subsubsection.3.6.1}
-\contentsline {subsubsection}{\numberline {3.6.2}One entries}{13}{subsubsection.3.6.2}
-\contentsline {section}{Conclusion}{13}{section*.3}
-\contentsline {section}{Appendix: Remainders about signal processing}{14}{section*.5}
-\contentsline {subsection}{\numberline {3.7}Notations}{14}{subsection.3.7}
-\contentsline {subsection}{\numberline {3.8}Remainders about signal processing}{14}{subsection.3.8}
-\contentsline {subsubsection}{\numberline {3.8.1}Impulse response}{15}{subsubsection.3.8.1}
+\contentsline {subsection}{\numberline {2.6}Worst-case peak gain computation}{10}{subsection.2.6}
+\contentsline {subsection}{\numberline {2.7}Communication}{10}{subsection.2.7}
+\contentsline {section}{\numberline {3}Dimensionment}{12}{section.3}
+\contentsline {subsection}{\numberline {3.1}Implementation}{12}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Algorithm}{12}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Particular Forms}{12}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}ABCD Form}{12}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}When $n_x=0$}{14}{subsection.3.5}
+\contentsline {subsection}{\numberline {3.6}Optimizations}{14}{subsection.3.6}
+\contentsline {subsubsection}{\numberline {3.6.1}Sparse matrices}{14}{subsubsection.3.6.1}
+\contentsline {subsubsection}{\numberline {3.6.2}One entries}{14}{subsubsection.3.6.2}
+\contentsline {section}{Conclusion}{14}{section*.3}
+\contentsline {section}{Appendix: Remainders about signal processing}{15}{section*.5}
+\contentsline {subsection}{\numberline {3.7}Notations}{15}{subsection.3.7}
+\contentsline {subsection}{\numberline {3.8}Remainders about signal processing}{15}{subsection.3.8}
+\contentsline {subsubsection}{\numberline {3.8.1}Impulse response}{16}{subsubsection.3.8.1}

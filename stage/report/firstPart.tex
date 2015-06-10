@@ -580,6 +580,32 @@
 			\frac{\mathfrak{A}_{i1}}{\boldsymbol{2}^{msb_{v'_1}-lsb_{v'_1}+1}} + \frac{\mathfrak{A}_{i2}}{\boldsymbol{2}^{msb_{v'_2}-lsb_{v'_2}+1}} + \dots + \frac{\mathfrak{A}_{in'}}{\boldsymbol{2}^{msb_{v'_{n'}}-lsb_{v'_{n'}}+1}} < 1, \hspace{5pt} \forall 1 \leq i \leq n_y 
 		\end{equation}
 		
+		\subsection{Worst-case peak gain computation}
+			Computing the worst-case peak gain accurately in finite precision is a very complex problem.
+			As we can't afford doing such a work, we are about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 that will be published soon.
+
+		\subsection{Communication}
+		To communicate with our SIF operator in FloPoCo, we can't simply pass the coefficients in command line as it is done for the first order of direct form.
+		So we defined a simple file format to store all the coefficients.
+		The format is defined as follows:
+
+		\begin{verbatim}
+			X l c
+			x_1_1 x_1_2 ... x_1_c
+			x_2_1 x_2_2 ... x_2_c
+			.
+			.
+			.
+			x_l_1 x_l_2 ... x_l_c
+		\end{verbatim}
+
+		Where X is the name of the matrix (X $\in$ \{ J, K, L, M, N, P, Q, R, S, T\}), x\_i\_j is the coefficient (with $i \in [1, l]$ and $j \in [1, c]$), l is the number of lines and c the numer of columns.
+
+		All the matrices are specified after each other in the file.
+
+		For now another file is used to specify sizes because we do not have not the integration of the "wcpg-code" done.
+
+
 
 
 

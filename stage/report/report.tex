@@ -77,7 +77,7 @@
 \newcommand{\TODO}{\textbf{TODO}}
 
 %\title{PPH - Comment créer une musique apparetenant à plusieurs genres?}
-\title{Internship report}
+\title{Architecture synthesis for linear time-invariant filters}
 \author{Antoine Martinet}
 
 \begin{document}
@@ -113,6 +113,15 @@
 	Finally, I will present the main aspects of the hardware implementation of such filters.
 
 \section{Motivations}
+	The main motivation of this work is to be able to compute efficiently LTI Filters in hardware.
+	A more precise problem is the loopback problem, that is, when a filter uses its own outputs as inputs.
+	Indeed, as the output is infinite, the problems of precision induce infinitely amplified errors,
+	which cause the result to be unusable.
+	In this case, the solution retained in the industry is for now to unroll such loops,
+	building a very heavy hardware and wasting logic.
+	The purpose of this work is to be able to build a hardware computing just right,
+	avoiding logic waste.
+
 
 \section{Tools for expressing filters and signal processing}
 \input{firstPart}
@@ -121,15 +130,16 @@
 \section{Dimensionment}
 \input{secondPart}
 
-\newpage
-\section{Implementation}
-\input{thirdPart}
+%\newpage
+%\section{Implementation}
+%\input{thirdPart}
 
 \section*{Conclusion}
 	\addcontentsline{toc}{section}{Conclusion}
 
 \bibliographystyle{plain}
 \bibliography{report}  % main.bib is the name of the Bibliography in this case
+\newpage
 \section*{Appendix: Reminders about signal processing}
 	\addcontentsline{toc}{section}{Appendix: Remainders about signal processing}
 \input{annexes}

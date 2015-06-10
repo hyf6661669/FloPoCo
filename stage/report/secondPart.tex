@@ -19,12 +19,6 @@ So we just need the WCPG for the second part, because it is just in this part of
 Direct and transposed forms are not directly transposable into SIF, but this problem is secondary.
 
 \subsection{Algorithm}
-\begin{figure}[!h]
-\begin{center}
-\scalebox{6}{\input{pictures/example.tex}}
-\end{center}
-\caption{The FixRealKCM method when $x_i$ is split in 3 chunks   \label{fig:FixRealKCM}}
-\end{figure}
 
 	\begin{algorithm}[H]
 	\For{i=1; i=Z.size(); i++} {
@@ -35,6 +29,29 @@ Direct and transposed forms are not directly transposable into SIF, but this pro
 		Second pass for wiring.
 	}
 	\end{algorithm}
+
+	An example of implementation for a real-life case is given on figure \ref{fig:SIFimpl}.
+
+	\begin{figure}[!h]
+	\begin{center}
+	\scalebox{6}{\input{pictures/example.tex}}
+	\end{center}
+	\caption{ Architecture generation for implementing a SIF (example from a rho-DFII filter) \label{fig:SIFimpl}}
+	\end{figure}
+
+	On the figure \ref{fig:SIFimpl}, the colors in the matrix represent the different steps of computaions:
+	\begin{itemize}
+		\item blue for t computations
+		\item green for x computations
+		\item green for y computations
+	\end{itemize}
+
+	On the architecture scheme, we have:
+	\begin{itemize}
+		\item the grey background for indicating x registers
+		\item purple for loopback form the x registers
+		\item orange for inputs
+	\end{itemize}
 	
 
 \subsection{Particular Forms}

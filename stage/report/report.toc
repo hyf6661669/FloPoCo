@@ -22,18 +22,18 @@
 \contentsline {subsection}{\numberline {3.3}Particular Forms}{11}{subsection.3.3}
 \contentsline {subsection}{\numberline {3.4}ABCD Form}{11}{subsection.3.4}
 \contentsline {subsection}{\numberline {3.5}$nx=0$}{11}{subsection.3.5}
-\contentsline {subsection}{\numberline {3.6}Algorithm}{11}{subsection.3.6}
-\contentsline {subsection}{\numberline {3.7}Optimizations}{11}{subsection.3.7}
-\contentsline {subsubsection}{\numberline {3.7.1}Sparse matrices}{11}{subsubsection.3.7.1}
-\contentsline {subsubsection}{\numberline {3.7.2}One entries}{12}{subsubsection.3.7.2}
-\contentsline {section}{\numberline {4}Implementation}{13}{section.4}
-\contentsline {subsection}{\numberline {4.1}First Sub-part}{13}{subsection.4.1}
-\contentsline {subsection}{\numberline {4.2}Second Sub-part}{13}{subsection.4.2}
-\contentsline {subsubsection}{\numberline {4.2.1}First Subsub-part}{13}{subsubsection.4.2.1}
-\contentsline {subsection}{\numberline {4.3}Third Sub-part}{13}{subsection.4.3}
-\contentsline {subsection}{\numberline {4.4}Fourth Sub-part}{13}{subsection.4.4}
-\contentsline {section}{Conclusion}{13}{section*.3}
-\contentsline {section}{Appendix: Remainders about signal processing}{13}{section*.5}
-\contentsline {subsection}{\numberline {4.5}Notations}{14}{subsection.4.5}
-\contentsline {subsection}{\numberline {4.6}Remainders about signal processing}{14}{subsection.4.6}
-\contentsline {subsubsection}{\numberline {4.6.1}Impulse response}{14}{subsubsection.4.6.1}
+\contentsline {subsection}{\numberline {3.6}Algorithm}{12}{subsection.3.6}
+\contentsline {subsection}{\numberline {3.7}Optimizations}{12}{subsection.3.7}
+\contentsline {subsubsection}{\numberline {3.7.1}Sparse matrices}{12}{subsubsection.3.7.1}
+\contentsline {subsubsection}{\numberline {3.7.2}One entries}{13}{subsubsection.3.7.2}
+\contentsline {section}{\numberline {4}Implementation}{14}{section.4}
+\contentsline {subsection}{\numberline {4.1}First Sub-part}{14}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Second Sub-part}{14}{subsection.4.2}
+\contentsline {subsubsection}{\numberline {4.2.1}First Subsub-part}{14}{subsubsection.4.2.1}
+\contentsline {subsection}{\numberline {4.3}Third Sub-part}{14}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}Fourth Sub-part}{14}{subsection.4.4}
+\contentsline {section}{Conclusion}{14}{section*.3}
+\contentsline {section}{Appendix: Remainders about signal processing}{14}{section*.5}
+\contentsline {subsection}{\numberline {4.5}Notations}{15}{subsection.4.5}
+\contentsline {subsection}{\numberline {4.6}Remainders about signal processing}{15}{subsection.4.6}
+\contentsline {subsubsection}{\numberline {4.6.1}Impulse response}{15}{subsubsection.4.6.1}

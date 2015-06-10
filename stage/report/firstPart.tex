@@ -502,39 +502,29 @@
 			\end{equation}
 			with $\boldsymbol{A_Z}$ and $\boldsymbol{C_Z}$ the matrices defined by \ref{abcdtranspose} and
 			\begin{equation}
-				\boldsymbol{M_1}=(\boldsymbol{KJ}^{-1}   \hspace{10pt}\boldsymbol{I}_{n_x} \hspace{10pt} \boldsymbol{0}), 
+				\boldsymbol{M_1}=(\boldsymbol{KJ}^{-1}   \hspace{10pt}\boldsymbol{I}_{n_x} \hspace{10pt} \boldsymbol{0}), \hspace{5pt}
 				\boldsymbol{M_2}=(\boldsymbol{LJ}^{-1}  \hspace{10pt}\boldsymbol{0} \hspace{10pt}\boldsymbol{I}_{n_y}), 
 			\end{equation}
 		\end{proposition}
-		The demonstration is well detailed in Lopez' phd.
+		The demonstration is well detailed in Lopez' PhD \cite{lopez}.
 
 		\begin{corollary} \label{corimp}
-			Considering a filter $\mathcal{H}$, $\boldsymbol{\varepsilon}(k)$ the vector of computation errors at time k in the finite precision of $\mathbb{H}$,
+			Considering a filter $\mathcal{H}$, $\boldsymbol{\varepsilon}(k)$ the vector of computation errors at time k in the finite precision of $\mathcal{H}$,
 			and $\mathcal{H}\boldsymbol{\varepsilon}$ the error filter associated to $\mathcal{H}$.
 			The behaviour of error can be described from $\boldsymbol{\varepsilon}(k)$ and $\mathcal{H}\boldsymbol{\varepsilon}$.
-			Considering the error as an interval vector, denoted $\langle \boldsymbol{\varepsilon}_m, \boldsymbol{\varepsilon}_r \rangle$,
-			the interval vector of global error $\boldsymbol{\delta y}$, denoted $\langle \boldsymbol{\delta y}_m, \boldsymbol{\delta y}_r \rangle$, is given by:
+			We consider the error as an interval vector, denoted by its center and radius $\langle \boldsymbol{\varepsilon}_m, \boldsymbol{\varepsilon}_r \rangle$ and 
+			the interval vector of global error $\boldsymbol{\delta y}$, denoted $\langle \boldsymbol{\delta y}_m, \boldsymbol{\delta y}_r \rangle$.
+			In practise, all inputs are centered around zero, which is not the case in the command community, where this notation makes sense.
+			So we consider that $\boldsymbol{\varepsilon}_m=0$.
+			The results are the following:
+
+			\begin{eqnarray} \label{eqprec}
+				\boldsymbol{\delta y}_m = 0 \\
+				\boldsymbol{\delta y}_r = \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{wcpg} \cdot \boldsymbol{\varepsilon}_r
+			\end{eqnarray}
 		\end{corollary}
 
-		\begin{eqnarray} \label{eqprec}
-			\boldsymbol{\delta y}_m = \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{DC} \cdot \boldsymbol{\varepsilon}_m \\
-			\boldsymbol{\delta y}_r = \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{wcpg} \cdot \boldsymbol{\varepsilon}_r
-		\end{eqnarray}
-
-		In practise, the interval arithmetic comes from the command community.
-		In signal community, and moreover in computer arithmetics, we are used to compute on intervals centered around zero.
-		Then, we can reasonably deduce that DC-gains are null, so the previous solution gives:
-
-		\begin{eqnarray} \label{eqprec}
-			\boldsymbol{\delta y}_m = 0 \\
-			\boldsymbol{\delta y}_r = \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{wcpg} \cdot \boldsymbol{\varepsilon}_r
-		\end{eqnarray}
-
-		For the same reason (centered around zero), the interval becomes:
-		\begin{eqnarray} \label{eqprec}
-			\boldsymbol{\delta y}_m = -\langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{wcpg} \cdot \boldsymbol{\varepsilon}_r \\
-			\boldsymbol{\delta y}_r = \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{wcpg} \cdot \boldsymbol{\varepsilon}_r
-		\end{eqnarray}
+		In the future we will then get rid of $boldsymbol{\delta y}_m$.
 
 		Let's define:
 			$$n'=n_t+n_x+n_y$$
@@ -551,7 +541,7 @@
 			\end{equation}
 
 
-		Then, following Lopez's computations, we can derivate precisions for every intermediate step:
+		Then, following Lopez's computations, we can derive precisions for every intermediate step:
 		
 		\begin{equation}
 			|\boldsymbol{\delta y}_i| \leq \sum_{j=1}^{n'} | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \boldsymbol{2^{l_{v'_j}}}
@@ -584,7 +574,7 @@
 		\TODO: check if this step is sufficient.
 
 		\subsubsection{A working solution to this problem}
-		A solution poposed in Lopez's phd \cite{}, is to consider the following reformulation of constraint \ref{constraint}.
+		A solution poposed in Lopez's PhD \cite{lopez}, is to consider the following reformulation of constraint \ref{constraint}.
 		We can give a stronger majoration, as follows:
 		\begin{equation}
 			\frac{\mathfrak{A}_{i1}}{\boldsymbol{2}^{msb_{v'_1}-lsb_{v'_1}+1}} + \frac{\mathfrak{A}_{i2}}{\boldsymbol{2}^{msb_{v'_2}-lsb_{v'_2}+1}} + \dots + \frac{\mathfrak{A}_{in'}}{\boldsymbol{2}^{msb_{v'_{n'}}-lsb_{v'_{n'}}+1}} < 1, \hspace{5pt} \forall 1 \leq i \leq n_y 

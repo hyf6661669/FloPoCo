@@ -1,17 +1,17 @@
-\subsection{}
+\subsection{Implementation}
 
 In SOPCs architectures, the accuracy is deducible from the inputs/outputs specifications and the size of the constants.
 
 This is described in %\paper{SOPCs}.
 
-Dealing with feedback inputs, the question of precision is more compliated.
+Dealing with feedback inputs, the question of precision is more complicated.
 Indeed, when results loop back to inputs, as soon as we are in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
 
-The main idea to deimension such filters is to consider the total error as a single filter.
+The main idea to dimension such filters is to consider the total error as a single filter.
 The result of this filter is then added to the perfect filter to get the final output.
 
-In finite precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PHD.
-The idea now is to see what we can do in arbitrary precision.
+In finite precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PhD \cite{lopez}.
+The idea now is to see what we can do in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
 
 Here we have to compute each size at each step of the computation. Indeed, the WCPG is not useful for the first part of a FIR, as it has no loop.
 So we just need the WCPG for the second part, because it is just in this part of the circuit that there is a potential error amplification.

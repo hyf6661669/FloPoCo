@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  10 JUN 2015 17:46
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  10 JUN 2015 18:31
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -914,12 +914,6 @@ Package csquotes Info: ... found 'babel' package.
 LaTeX Warning: Label `deltaerr' multiply defined.
 
 
-LaTeX Warning: Label `eqprec' multiply defined.
-
-
-LaTeX Warning: Label `eqprec' multiply defined.
-
-
 LaTeX Warning: Label `sig' multiply defined.
 
 
@@ -1059,7 +1053,7 @@ LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 450.
 
 [9]
-LaTeX Font Info:    Try loading font information for U+euf on input line 574.
+LaTeX Font Info:    Try loading font information for U+euf on input line 564.
  (/usr/share/texmf-dist/tex/latex/amsfonts/ueuf.fd
 File: ueuf.fd 2013/01/14 v3.01 Euler Fraktur
 )) [10] (./secondPart.tex
@@ -1094,16 +1088,16 @@ Package atveryend Info: Empty hook `AfterLastShipout' on input line 146.
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 146.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 146.
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: E33A218B2D87B3FC84DA45B13BE95361;2211.
+(rerunfilecheck)             Checksum: D4232B9C210DE681DB94994A2204E410;2225.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 20880 strings out of 493109
- 364806 string characters out of 6140856
- 586314 words of memory out of 5000000
+ 20878 strings out of 493109
+ 364776 string characters out of 6140856
+ 586502 words of memory out of 5000000
  23810 multiletter control sequences out of 15000+600000
  22204 words of font info for 86 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -1140,10 +1134,10 @@ fonts/cm/cmti10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt1
 /share/texmf-dist/fonts/type1/public/amsfonts/euler/eufm10.pfb></usr/share/texm
 f-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fo
 nts/type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on report.pdf (15 pages, 425715 bytes).
+Output written on report.pdf (15 pages, 424871 bytes).
 PDF statistics:
  504 PDF objects out of 1000 (max. 8388607)
  444 compressed objects within 5 object streams
- 115 named destinations out of 1000 (max. 500000)
+ 113 named destinations out of 1000 (max. 500000)
  261 words of extra memory for PDF output out of 10000 (max. 10000000)
 

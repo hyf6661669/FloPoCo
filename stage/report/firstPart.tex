@@ -279,6 +279,23 @@
 	\end{equation}
 	The community usually takes $-\boldsymbol{J}$ for simplicity within further computations.
 
+	We can of course bind the SIF with the ABCD (classic state-space) form, which gives:
+
+	\begin{eqnarray} \label{abcdtranspose}
+		\boldsymbol{A_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{M} +\boldsymbol{P}, \hspace{5pt}
+		\boldsymbol{B_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{N} +\boldsymbol{Q}, \nonumber \\
+		\boldsymbol{C_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{M} +\boldsymbol{R}, \hspace{5pt}
+		\boldsymbol{D_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{N} +\boldsymbol{S}, \nonumber \\
+	\end{eqnarray}
+
+	With:
+	\begin{eqnarray}
+		\boldsymbol{A_Z} \in \mathbb{R}^{n_x \times n_x},
+		\boldsymbol{B_Z} \in \mathbb{R}^{n_x \times n_u}, \nonumber \\
+		\boldsymbol{C_Z} \in \mathbb{R}^{n_y \times n_x},
+		\boldsymbol{D_Z} \in \mathbb{R}^{n_x \times n_u},
+	\end{eqnarray}
+
 
 	\subsection{Implementation}
 	In this work, we propose to implements SIFs using the SOPCs arithmetical core from flopoco.

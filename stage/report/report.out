@@ -20,19 +20,18 @@
 \BOOKMARK [2][-]{subsection.3.2}{Algorithm}{section.3}% 20
 \BOOKMARK [2][-]{subsection.3.3}{Particular Forms}{section.3}% 21
 \BOOKMARK [2][-]{subsection.3.4}{ABCD Form}{section.3}% 22
-\BOOKMARK [2][-]{subsection.3.5}{nx=0}{section.3}% 23
-\BOOKMARK [2][-]{subsection.3.6}{Algorithm}{section.3}% 24
-\BOOKMARK [2][-]{subsection.3.7}{Optimizations}{section.3}% 25
-\BOOKMARK [3][-]{subsubsection.3.7.1}{Sparse matrices}{subsection.3.7}% 26
-\BOOKMARK [3][-]{subsubsection.3.7.2}{One entries}{subsection.3.7}% 27
-\BOOKMARK [1][-]{section.4}{Implementation}{}% 28
-\BOOKMARK [2][-]{subsection.4.1}{First Sub-part}{section.4}% 29
-\BOOKMARK [2][-]{subsection.4.2}{Second Sub-part}{section.4}% 30
-\BOOKMARK [3][-]{subsubsection.4.2.1}{First Subsub-part}{subsection.4.2}% 31
-\BOOKMARK [2][-]{subsection.4.3}{Third Sub-part}{section.4}% 32
-\BOOKMARK [2][-]{subsection.4.4}{Fourth Sub-part}{section.4}% 33
-\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 34
-\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 35
-\BOOKMARK [2][-]{subsection.4.5}{Notations}{section*.5}% 36
-\BOOKMARK [2][-]{subsection.4.6}{Remainders about signal processing}{section*.5}% 37
-\BOOKMARK [3][-]{subsubsection.4.6.1}{Impulse response}{subsection.4.6}% 38
+\BOOKMARK [2][-]{subsection.3.5}{When nx=0}{section.3}% 23
+\BOOKMARK [2][-]{subsection.3.6}{Optimizations}{section.3}% 24
+\BOOKMARK [3][-]{subsubsection.3.6.1}{Sparse matrices}{subsection.3.6}% 25
+\BOOKMARK [3][-]{subsubsection.3.6.2}{One entries}{subsection.3.6}% 26
+\BOOKMARK [1][-]{section.4}{Implementation}{}% 27
+\BOOKMARK [2][-]{subsection.4.1}{First Sub-part}{section.4}% 28
+\BOOKMARK [2][-]{subsection.4.2}{Second Sub-part}{section.4}% 29
+\BOOKMARK [3][-]{subsubsection.4.2.1}{First Subsub-part}{subsection.4.2}% 30
+\BOOKMARK [2][-]{subsection.4.3}{Third Sub-part}{section.4}% 31
+\BOOKMARK [2][-]{subsection.4.4}{Fourth Sub-part}{section.4}% 32
+\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 33
+\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 34
+\BOOKMARK [2][-]{subsection.4.5}{Notations}{section*.5}% 35
+\BOOKMARK [2][-]{subsection.4.6}{Remainders about signal processing}{section*.5}% 36
+\BOOKMARK [3][-]{subsubsection.4.6.1}{Impulse response}{subsection.4.6}% 37

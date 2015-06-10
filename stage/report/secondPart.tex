@@ -34,9 +34,9 @@ Direct and transposed forms are not directly transposable into SIF, but this pro
 
 	\begin{figure}[!h]
 	\begin{center}
-	\scalebox{6}{\input{pictures/example.tex}}
+	\scalebox{7}{\input{pictures/example.tex}}
 	\end{center}
-	\caption{ Architecture generation for implementing a SIF (example from a rho-DFII filter) \label{fig:SIFimpl}}
+	\caption{ Architecture generation for implementing a SIF (example from a rho-DFII filter), with $n_t=5$, $n_x=5$ and $n_y=1$ \label{fig:SIFimpl}}
 	\end{figure}
 
 	On the figure \ref{fig:SIFimpl}, the colors in the matrix represent the different steps of computaions:
@@ -53,17 +53,21 @@ Direct and transposed forms are not directly transposable into SIF, but this pro
 		\item orange for inputs
 	\end{itemize}
 	
+	A small precision is needed here.
+	Here, most of coefficients of the $\boldsymbol{J}$ coefficient are null.
+	We just kept them under this form to show how the algorithm works and how the architecture is built.
+	
 
 \subsection{Particular Forms}
 	\subsection{ABCD Form}
-	The ABCD Form can be considered as a degenerated form of the SIF, with nt=0.
+	The ABCD Form can be considered as a degenerated form of the SIF, with $n_t=0$.
 	The algorithm will work in this case too.
-	\subsection{$nx=0$}
-	When $nx=0$, the interest of using implicit form is of course very limited.
+	\subsection{When $n_x=0$}
+	When $n_x=0$, the interest of using implicit form is of course very limited.
+	This case is equivalent to building a FIR, and no loopback is needed.
 	Still, the algorithm will work, allocating only SOPCs operators.
+	The computation of precisions are then equivalent to the FIR precision compuation, described in \cite{}.
 	
-\subsection{Algorithm}
-
 \subsection{Optimizations}
 	\subsubsection{Sparse matrices}
 		The Z matrix of a SIF might be sparse in some degenerated cases.

@@ -26,8 +26,14 @@
 \BOOKMARK [2][-]{subsection.3.6}{Optimizations}{section.3}% 26
 \BOOKMARK [3][-]{subsubsection.3.6.1}{Sparse matrices}{subsection.3.6}% 27
 \BOOKMARK [3][-]{subsubsection.3.6.2}{One entries}{subsection.3.6}% 28
-\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 29
-\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 30
-\BOOKMARK [2][-]{subsection.3.7}{Notations}{section*.5}% 31
-\BOOKMARK [2][-]{subsection.3.8}{Remainders about signal processing}{section*.5}% 32
-\BOOKMARK [3][-]{subsubsection.3.8.1}{Impulse response}{subsection.3.8}% 33
+\BOOKMARK [1][-]{section.4}{Further work}{}% 29
+\BOOKMARK [2][-]{subsection.4.1}{Static analysis on coefficients}{section.4}% 30
+\BOOKMARK [2][-]{subsection.4.2}{Sub-filter detection}{section.4}% 31
+\BOOKMARK [2][-]{subsection.4.3}{Precision calculations improvement}{section.4}% 32
+\BOOKMARK [2][-]{subsection.4.4}{File format re-specification}{section.4}% 33
+\BOOKMARK [2][-]{subsection.4.5}{Fourth Sub-part}{section.4}% 34
+\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 35
+\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 36
+\BOOKMARK [2][-]{subsection.4.6}{Notations}{section*.5}% 37
+\BOOKMARK [2][-]{subsection.4.7}{Remainders about signal processing}{section*.5}% 38
+\BOOKMARK [3][-]{subsubsection.4.7.1}{Impulse response}{subsection.4.7}% 39

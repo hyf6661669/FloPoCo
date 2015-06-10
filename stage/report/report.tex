@@ -92,25 +92,25 @@
 	such as radio signal coding and decoding, image and sound processing, and so on.
 
 
-	Although most of all the potential filters can be done in software,
+	Although most of all the potential filters can be computed in software,
 	some interesting applications in hardware could help to accelerate such computations, 
 	that might be very long in software in particular cases.
 	Moreover, it allows to design and reconfigure specific parts of the hardware when working with FPGAs.
 
 	
-	My work at the CITI lab in the SOCRATE team was to design a parametric architecture for LTI filters, 
+	My work at the CITI lab in the SOCRATE team was to design a parametric architecture generator for LTI filters, 
 	which will be very useful to design a software-defined radio.
-	This work has been integrated to INRIA's flopoco tool,
-	which main goal is to generate architecture cores for computing just right.
+	This work has been integrated to FloPoCo tool,
+	whose main goal is to generate architecture cores for computing just right.
 
 
-	In this report, I will firs present remainders about signal processing.
+	In this report, I will first present reminders about signal processing.
 	Then I will tell a little more about LTI filters and their software implementation in finite precision.
 	Finally, I will present the main aspects of the hardware implementation of such filters.
 
 \section{Motivations}
 
-\section{Remainders about filters and signal processing}
+\section{Tools for expressing filters and signal processing}
 \input{firstPart}
 
 \newpage
@@ -126,7 +126,7 @@
 
 \bibliographystyle{plain}
 \bibliography{report}  % main.bib is the name of the Bibliography in this case
-\section*{Appendix: Remainders about signal processing}
+\section*{Appendix: Reminders about signal processing}
 	\addcontentsline{toc}{section}{Appendix: Remainders about signal processing}
 \input{annexes}
 \end{document}

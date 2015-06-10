@@ -1,7 +1,7 @@
 \select@language {english}
 \contentsline {section}{Introduction}{3}{section*.2}
 \contentsline {section}{\numberline {1}Motivations}{3}{section.1}
-\contentsline {section}{\numberline {2}Remainders about filters and signal processing}{3}{section.2}
+\contentsline {section}{\numberline {2}Tools for expressing filters and signal processing}{3}{section.2}
 \contentsline {subsubsection}{\numberline {2.0.1}Linear Time Invariant Filters (LTI filters)}{3}{subsubsection.2.0.1}
 \contentsline {subsubsection}{\numberline {2.0.2}Impulse response}{3}{subsubsection.2.0.2}
 \contentsline {subsubsection}{\numberline {2.0.3}Worst-Case Peak Gain (WCPG) of a Filter}{4}{subsubsection.2.0.3}
@@ -33,5 +33,5 @@
 \contentsline {section}{Conclusion}{12}{section*.3}
 \contentsline {section}{Appendix: Remainders about signal processing}{12}{section*.5}
 \contentsline {subsection}{\numberline {4.5}Notations}{13}{subsection.4.5}
-\contentsline {subsection}{\numberline {4.6}Remainders about signal processing}{13}{subsection.4.6}
+\contentsline {subsection}{\numberline {4.6}Reminders about signal processing}{13}{subsection.4.6}
 \contentsline {subsubsection}{\numberline {4.6.1}Impulse response}{13}{subsubsection.4.6.1}

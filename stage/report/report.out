@@ -1,6 +1,6 @@
 \BOOKMARK [1][-]{section*.2}{Introduction}{}% 1
 \BOOKMARK [1][-]{section.1}{Motivations}{}% 2
-\BOOKMARK [1][-]{section.2}{Remainders about filters and signal processing}{}% 3
+\BOOKMARK [1][-]{section.2}{Tools for expressing filters and signal processing}{}% 3
 \BOOKMARK [2][-]{subsubsection.2.0.1}{Linear Time Invariant Filters \(LTI filters\)}{section.2}% 4
 \BOOKMARK [3][-]{subsubsection.2.0.2}{Impulse response}{subsubsection.2.0.1}% 5
 \BOOKMARK [3][-]{subsubsection.2.0.3}{Worst-Case Peak Gain \(WCPG\) of a Filter}{subsubsection.2.0.1}% 6
@@ -32,5 +32,5 @@
 \BOOKMARK [1][-]{section*.3}{Conclusion}{}% 32
 \BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 33
 \BOOKMARK [2][-]{subsection.4.5}{Notations}{section*.5}% 34
-\BOOKMARK [2][-]{subsection.4.6}{Remainders about signal processing}{section*.5}% 35
+\BOOKMARK [2][-]{subsection.4.6}{Reminders about signal processing}{section*.5}% 35
 \BOOKMARK [3][-]{subsubsection.4.6.1}{Impulse response}{subsection.4.6}% 36

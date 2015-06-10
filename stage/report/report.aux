@@ -23,43 +23,45 @@
 \@writefile{toc}{\contentsline {section}{Introduction}{3}{section*.2}}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Motivations}{3}{section.1}}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Tools for expressing filters and signal processing}{3}{section.2}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.0.1}Linear Time Invariant Filters (LTI filters)}{3}{subsubsection.2.0.1}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.0.2}Impulse response}{3}{subsubsection.2.0.2}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.0.3}Worst-Case Peak Gain (WCPG) of a Filter}{4}{subsubsection.2.0.3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.0.1}Definition of a signal}{3}{subsubsection.2.0.1}}
+\newlabel{sig}{{1}{3}{}{thdef.1}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.0.2}Linear Time Invariant Filters (LTI filters)}{3}{subsubsection.2.0.2}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.0.3}Impulse response}{3}{subsubsection.2.0.3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.0.4}Worst-Case Peak Gain (WCPG) of a Filter}{4}{subsubsection.2.0.4}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}FIR and IIR}{4}{subsection.2.1}}
 \newlabel{finimp}{{2.1.1}{4}{FIR and IIR}{equation.2.1.1}{}}
 \newlabel{firdef}{{2.1.2}{4}{FIR and IIR}{equation.2.1.2}{}}
 \newlabel{iirdef}{{2.1.3}{4}{FIR and IIR}{equation.2.1.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Realizations}{4}{subsection.2.2}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Direct and transposed forms}{4}{subsubsection.2.2.1}}
 \newlabel{iirpic}{{2.2.1}{5}{Direct and transposed forms}{subsubsection.2.2.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Abstract architecture for the direct form realization of an LTI filter }}{5}{figure.1}}
 \newlabel{fig:ltiarch}{{1}{5}{Abstract architecture for the direct form realization of an LTI filter}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Direct and transposed forms}{5}{subsubsection.2.2.1}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}State-space representation}{5}{subsubsection.2.2.2}}
 \newlabel{abcddef}{{2.2.1}{5}{State-space representation}{equation.2.2.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Specialized Implicit Form (SIF)}{5}{subsection.2.3}}
 \newlabel{sifdef}{{2.3.1}{5}{Specialized Implicit Form (SIF)}{equation.2.3.1}{}}
-\newlabel{zmatrix}{{2.3.4}{5}{Specialized Implicit Form (SIF)}{equation.2.3.4}{}}
+\newlabel{zmatrix}{{2.3.4}{6}{Specialized Implicit Form (SIF)}{equation.2.3.4}{}}
 \@writefile{loa}{\contentsline {algocf}{\numberline {1}{\ignorespaces Computation of SIF outputs from inputs}}{6}{algocf.1}}
 \newlabel{algomat}{{2}{6}{Specialized Implicit Form (SIF)}{algocfline.2}{}}
 \@writefile{loa}{\contentsline {algocf}{\numberline {2}{\ignorespaces Simplified matricial algorithm}}{6}{algocf.2}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Implementation}{6}{subsection.2.4}}
-\newlabel{kcm}{{2.4}{6}{Implementation}{subsection.2.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The FixRealKCM method when $x_i$ is split in 3 chunks }}{6}{figure.2}}
-\newlabel{fig:FixRealKCM}{{2}{6}{The FixRealKCM method when $x_i$ is split in 3 chunks}{figure.2}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks }}{7}{figure.3}}
-\newlabel{fig:Overall architecture}{{3}{7}{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks}{figure.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Size computation in finite precision}{7}{subsection.2.5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Size computation in finite precision}{6}{subsection.2.5}}
 \newlabel{condition}{{2.5.1}{7}{Size computation in finite precision}{equation.2.5.1}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.1}Error analysis}{7}{subsubsection.2.5.1}}
 \newlabel{sifalgoerr}{{2.5.3}{7}{Error analysis}{equation.2.5.3}{}}
-\newlabel{deltaerr}{{2.5.6}{8}{Error analysis}{equation.2.5.6}{}}
+\newlabel{deltaerr}{{2.5.6}{7}{Error analysis}{equation.2.5.6}{}}
+\newlabel{kcm}{{2.4}{7}{Implementation}{subsection.2.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The FixRealKCM method when $x_i$ is split in 3 chunks }}{7}{figure.2}}
+\newlabel{fig:FixRealKCM}{{2}{7}{The FixRealKCM method when $x_i$ is split in 3 chunks}{figure.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks }}{8}{figure.3}}
+\newlabel{fig:Overall architecture}{{3}{8}{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks}{figure.3}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces A signal view of the error propagation with respect to the ideal filter }}{8}{figure.4}}
 \newlabel{fig:ltierror}{{4}{8}{A signal view of the error propagation with respect to the ideal filter}{figure.4}{}}
 \newlabel{zepsmatrix}{{2.5.9}{8}{Error analysis}{equation.2.5.9}{}}
 \newlabel{deltaerr}{{2.5.10}{8}{Error analysis}{equation.2.5.10}{}}
-\newlabel{corimp}{{1}{8}{}{corollary.1}{}}
-\newlabel{eqprec}{{2.5.15}{8}{Error analysis}{equation.2.5.15}{}}
+\newlabel{corimp}{{1}{9}{}{corollary.1}{}}
+\newlabel{eqprec}{{2.5.15}{9}{Error analysis}{equation.2.5.15}{}}
 \newlabel{eqprec}{{2.5.17}{9}{Error analysis}{equation.2.5.17}{}}
 \newlabel{eqprec}{{2.5.19}{9}{Error analysis}{equation.2.5.19}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Adjustments in arbitrary precision}{9}{subsection.2.6}}
@@ -99,17 +101,18 @@
 \@writefile{toc}{\contentsline {section}{Conclusion}{12}{section*.3}}
 \@writefile{toc}{\contentsline {section}{Appendix: Remainders about signal processing}{12}{section*.5}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Notations}{13}{subsection.4.5}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Reminders about signal processing}{13}{subsection.4.6}}
-\newlabel{l_1}{{5}{13}{}{thdef.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Remainders about signal processing}{13}{subsection.4.6}}
+\newlabel{sig}{{6}{13}{}{thdef.6}{}}
+\newlabel{l_1}{{7}{13}{}{thdef.7}{}}
 \newlabel{l1}{{4.6.1}{13}{}{equation.4.6.1}{}}
-\newlabel{l_1}{{6}{13}{}{thdef.6}{}}
+\newlabel{l_1}{{8}{13}{}{thdef.8}{}}
 \newlabel{l2}{{4.6.2}{13}{}{equation.4.6.2}{}}
-\newlabel{l_inf}{{7}{13}{}{thdef.7}{}}
+\newlabel{l_inf}{{9}{13}{}{thdef.9}{}}
 \newlabel{l3}{{4.6.3}{13}{}{equation.4.6.3}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.6.1}Impulse response}{13}{subsubsection.4.6.1}}
-\newlabel{impresp}{{8}{13}{}{thdef.8}{}}
+\newlabel{impresp}{{10}{13}{}{thdef.10}{}}
 \newlabel{ir}{{4.6.4}{13}{}{equation.4.6.4}{}}
 \newlabel{dri}{{4.6.5}{13}{}{equation.4.6.5}{}}
-\newlabel{dirc}{{4.6.6}{13}{}{equation.4.6.6}{}}
+\newlabel{dirc}{{4.6.6}{14}{}{equation.4.6.6}{}}
 \newlabel{convo}{{4.6.7}{14}{}{equation.4.6.7}{}}
 \newlabel{convomimo}{{4.6.8}{14}{}{equation.4.6.8}{}}

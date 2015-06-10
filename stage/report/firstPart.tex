@@ -1,6 +1,16 @@
+	\subsubsection{Definition of a signal}
+	\begin{thdef}\label{sig} (Signal)
+		Generally, a signal is a temporal variable, which takes a value from $\mathbb{R}$ at each time t.
+		We denote x(t) the value of the signal x at the instant t.
+		When dealing with discrete time events, the time will be represented by k.
+		Then we talk about x(k), which is said to be a sample.
+		$\{x(k)\}_{k \geq 0}$ denotes all the values possible for the signal x.
+		In the rest of this report, we will talk about vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
+	\end{thdef}
+
 	\subsubsection{Linear Time Invariant Filters (LTI filters)}
-	A filter, denoted by it’s transfer function $\mathcal{H}$, is an application which transforms a signal $u$ (with $dim(u) = n_u$ )
-	in a signal $y = \mathcal{H}(u)$, of size $dim(y) = n_y$ . When $n_u = n_y = 1$, we speak about Single Input Single Output
+	A filter, denoted by its transfer function $\mathcal{H}$, is an application which transforms a signal vector $\boldsymbol{u}$ (with $dim(\boldsymbol{u}) = n_u$ )
+	into a signal $\boldsymbol{y} = \mathcal{H}(\boldsymbol{u})$, of size $dim(\boldsymbol{y}) = n_y$ . When $n_u = n_y = 1$, we speak about Single Input Single Output
 	(SISO) filters. In other cases, we speak about Multiple Input Multiple Output (MIMO) filters.
 
 	\begin{thdef} (Linear Time Invariant Filter)
@@ -13,27 +23,20 @@
 
 	\subsubsection{Impulse response}
 	\begin{thdef} (Impulse Response)
-	A SISO filter may be defined by it’s impulse response, denoted h. h is the
-	impulse response of H to the impulsion of Dirac:
-	\begin{equation}
-		\delta(k) =
-		\begin{cases}
-			1 & \hspace{5pt} when k=0\\
-			0 & \hspace{5pt} else\\
-		\end{cases}
-	\end{equation}
+	A SISO filter may be defined by it’s impulse response, denoted $h$. $h$ is the
+	impulse response of H to the impulsion of Dirac.
 	Indeed each input can be described as a sum of Dirac impulsions:
 	$$u=\sum_{i\geq0}u(l)\delta_l$$
 	where $\delta_l$ is a Dirac impulsion centered in $l$, that is:
 	\begin{equation}
 		\delta(k) =
 		\begin{cases}
-			1 & \hspace{5pt} when k=l\\
+			1 & \hspace{5pt} when \hspace{5pt} k=l\\
 			0 & \hspace{5pt} else\\
 		\end{cases}
 	\end{equation}
 	The linearity condition of $\mathcal{H}$ implies: $\mathcal{H}(u) = \sum_{l\geq0}u(l)\mathcal{H}(\delta_l)$.
-	Timeinvariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$
+	Time invariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$
 	$$y(k)=\sum_{l\geq0}u(l)h(k-l)=\sum_{l=0}^ku(k)h(k-l)$$
 	This corresponds with the convolution product definition of $u$ by $h$, denoted $y = h * u$.
 	Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the

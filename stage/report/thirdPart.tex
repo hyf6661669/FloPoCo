@@ -1,8 +1,7 @@
 \subsection{Static analysis on coefficients}
 	For now, we are performing detection on null coefficients.
 	Detecting ones entries in the coefficients is an improvement very simple to implement.
-	This will open the discussion of the efficiency of integrating or not these one entries in the SOPCs.
-	Indeed, we don't know for now what choice is the best between:
+	This will open the discussion of the efficiency of integrating or not these one entries in the SOPCs, because we don't know for now what choice is the best between:
 	\begin{itemize}
 		\item integrating the one entry in the SOPC
 		\item keeping the one entry out of the SOPC and adding it to the result of the SOPC
@@ -13,25 +12,17 @@
 
 \subsection{Sub-filter detection}
 	Detecting independent loops can be very interesting in the context of saving hardware.
-	Indeed, considering a sub-filter with its own loop can permit to use its WCPG to compute the precisions for this sub-filter.
+	Considering a sub-filter with its own loop can permit to use its WCPG to compute the precisions for this sub-filter.
 	We get then another problem with a precision specification that depends on the rest of the filter (logic after the sub-filter in the pipeline).
 
 \subsection{Precision calculations improvement}
-	In this work, we kept original calculations trying to adapt it to our context.
+	In this work, we kept original calculations trying to adapt them to our context.
 	However, lots of approximations are done through this calculations.
 	Working on this part, going back over all these calculations could really improve the efficiency and the size of all implementations.
 
 
 \subsection{File format re-specification}
 	Specifying new formats could help to improve the visibility and the usability of this new operator.
-	Working on standard specification techniques for this type of problems and adapting them in our context could greatly help the development of the SIF operator.
-	New specifications could take some programming languages basic output functions, that is, allow the user not to waste hours formatting the matrices.
-	Examples of compatibility with languages could look on:
-	\begin{itemize}
-		\item python interface/specification
-		\item bash
-		\item matlab, however the current syntax was derived from matlab outputs
-	\end{itemize}
-
-\subsection{Fourth Sub-part}
+	The idea is to avoid specification output formatting operations for the user.
+	So we could stick to the basic output of Python and Matlab matrices.
 

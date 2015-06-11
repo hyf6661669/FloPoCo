@@ -1,24 +1,4 @@
-\subsection{Implementation}
-
-In SOPCs architectures, the accuracy is deducible from the inputs/outputs specifications and the size of the constants.
-
-This is described in %\paper{SOPCs}.
-
-Dealing with feedback inputs, the question of precision is more complicated.
-Indeed, when results loop back to inputs, as soon as we are in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
-
-The main idea to dimension such filters is to consider the total error as a single filter.
-The result of this filter is then added to the perfect filter to get the final output.
-
-In finite precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PhD \cite{lopez}.
-The idea now is to see what we can do in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
-
-Here we have to compute each size at each step of the computation. Indeed, the WCPG is not useful for the first part of a FIR, as it has no loop.
-So we just need the WCPG for the second part, because it is just in this part of the circuit that there is a potential error amplification.
-
-Direct and transposed forms are not directly transposable into SIF, but this problem is secondary.
-
-\subsection{Algorithm}
+\subsection{Architecture generation algorithm}
 
 	\begin{algorithm}[H]
 	\For{i=1; i=Z.size(); i++} {
@@ -58,28 +38,65 @@ Direct and transposed forms are not directly transposable into SIF, but this pro
 	We just kept them under this form to show how the algorithm works and how the architecture is built.
 	
 
-\subsection{Particular Forms}
-	\subsection{ABCD Form}
+\subsection{Particular Forms, degenerated cases}
+	\subsection{ABCD Form: still achievable}
 	The ABCD Form can be considered as a degenerated form of the SIF, with $n_t=0$.
 	The algorithm will work in this case too.
 	\subsection{When $n_x=0$}
 	When $n_x=0$, the interest of using implicit form is of course very limited.
 	This case is equivalent to building a FIR, and no loopback is needed.
 	Still, the algorithm will work, allocating only SOPCs operators.
-	The computation of precisions are then equivalent to the FIR precision compuation, described in \cite{}.
+	The computation of precisions are then equivalent to the FIR precision computaion, described in an article that is about to be published.
 	
-\subsection{Optimizations}
+\subsection{Optimizations to do on this technology}
 	\subsubsection{Sparse matrices}
-		The Z matrix of a SIF might be sparse in some degenerated cases.
+		The Z matrix of a SIF is most of the time sparse.
 		So it is useful to remove zeros coefficients before allocating SOPCs.
 		Indeed, it prevents useless inputs to be declared and can save a lot of hardware,
-		although the HDL compiler might be able to optimize the hardware and remove "dead code".
+		although the HDL compiler might be able to optimize the hardware and remove ``dead code".
 		Anyway, it is healthy to keep a low compile time (either in flopoco or in the HDL compiler).
-		Keeping the VHDL clean is more important, first for debugging issues, but also for comprehensiveness.
-	\subsubsection{One entries}
-		One entries in the Z matrix can be interpreted as simple wires instead of multiplications in the SOPC.
+		Keeping the VHDL clean is always important, first for debugging issues, but also for comprehensiveness.
+
+	\subsubsection{Power of two coefficients}
+		Coefficients equal to one or a power of two in the Z matrix can be interpreted as simple wires instead of multiplications in the SOPC.
 		So, we could eventually replace entries in SOPCs by simple additions with the result of the SOPC.
 		Here, we should investigate to see what solution is the best in terms of hardware consumption
 		(speed is not concerned here because the speed is determined by the length of the loop).
+
+	\subsection{Concrete work}
+	This implementation work has been done in the FixFilter section of the FloPoCo project.
+	It is for now about 850 lines and contains:
+	\begin{itemize}
+		\item the implentation of the SIF algorithm
+		\item the specification parser
+		\item the testing framework (emulate method)
+	\end{itemize}
+
+	The testing framework consists on pre-computing expected results using the sollya lib \cite{ChevillardJoldesLauter2010}.
+	Then the FloPoCo framework generates a VHDL testbench that embed the hardware architecture and the test of expected results.
+	As an exhaustive testbench is impossible to generate(${2^{msb_{In} - lsb_{In}}}^{2^msb{In} - lsb{In}}$ values to test for each input),
+	FloPoCo generates a user-defined number of random tests that should be enough, if the number is large enough, to validate the implementation.
+
+		\subsection{Filter specification interface}
+		To communicate with our SIF operator in FloPoCo, we can't simply pass the coefficients in command line as it is done for the first order of direct form.
+		So we defined a simple file format to store all the coefficients.
+		The format is defined as follows:
+
+		\begin{verbatim}
+			X l c
+			x_1_1 x_1_2 ... x_1_c
+			x_2_1 x_2_2 ... x_2_c
+			.
+			.
+			.
+			x_l_1 x_l_2 ... x_l_c
+		\end{verbatim}
+
+		Where X is the name of the matrix (X $\in$ \{ J, K, L, M, N, P, Q, R, S, T\}), x\_i\_j is the coefficient (with $i \in [1, l]$ and $j \in [1, c]$), l is the number of lines and c the numer of columns.
+
+		All the matrices are specified after each other in the file.
+
+		For now another file is used to specify sizes because we do not have not the integration of the "wcpg-code" done.
+
 
 

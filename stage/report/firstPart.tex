@@ -1,5 +1,7 @@
+	\subsection{Fundamentals about signal processsing}
 	\subsubsection{Definition of a signal}
-	The state of the art comes mainly from Lopez's PhD \cite{lopez} and Hilaire's PhD \cite{hilaire}.
+	Lopez's PhD \cite{lopez} gives a good presentation of the state of the art.
+	Many notations and definitions are kept from this PhD.
 
 	\begin{thdef}\label{sig} (Signal)
 		Generally, a signal is a temporal variable, which takes a value from $\mathbb{R}$ at each time t.
@@ -50,7 +52,7 @@
 	
 	\end{thdef} 
 
-	\subsubsection{Worst-Case Peak Gain (WCPG) of a Filter}
+	\subsubsection{Worst-Case Peak Gain (WCPG) of a Filter: the maximum amplification expectable}
 	\begin{thdef} (Worst-Case Peak Gain)
 		The worst case peak gain is defined as the maximum amplification
 		possible over all potential inputs through the filter.
@@ -60,7 +62,7 @@
 	
 	\end{thdef}
 
-	\subsection{FIR and IIR}
+	\subsection{FIR and IIR: two filters families}
 	There is two types of LTI filters: \textit{Finite impulse response} (FIR) and \textit{Infinite impulse response} (IIR) filters.
 	Formally, we define the impulse response as finite when:
 	\begin{equation} \label{finimp}
@@ -90,7 +92,7 @@
 		\end{cases}
 	\end{equation}
 
-	\subsection{Realizations}
+	\subsection{Different realizations: how to compute the output of a filter?}
 	\begin{thdef} (realization)
 	A realization can be defined as an algorithm describing how to compute outputs
 	from inputs. However, a realization does not describes the details of basic operations (format, size, order,
@@ -165,7 +167,7 @@
 \caption{Abstract architecture for the direct form realization of an LTI filter \label{fig:ltiarch}}
 \end{figure*}
 
-	\subsubsection{State-space representation}
+	\subsubsection{State-space representation: a recurrence to define an infinite response}
 	This type of realization consists in expressing the evolution of a system considering it’s state at time k. In
 	continuous time, it is described by differential equations at first order. In discret time (in which we
 	are interested in), it is described by a simple recurrence:
@@ -183,15 +185,9 @@
 	$\boldsymbol{C} \in \mathbb{R}^{n_y \times n_x}$, and $\boldsymbol{D} \in \mathbb{R}^{n_y \times n_u}$,
 	with $\boldsymbol{x}(0)$ are sufficient to describe an LTI filter, with convention $\boldsymbol{x}(k)=\boldsymbol{u}(k)=0 \hspace{5pt} | \hspace{5pt} \forall k<0$.
 
-	\subsubsection{FloPoCo}
-		FloPoCo is a C++ framework which first purpose is to generate floating point cores in VHDL.
-		Although it may have some pertinence in the ASIC design market, it main target is the configuration of FPGAs as computing units.
-		Indeed, FPGAs are a rising market for embedded computing, because they offer full reconfigurability and a relatively good balance between computation power and price.
-
-		More information is available at \url{http://flopoco.gforge.inria.fr/}
-
-	\subsection{Specialized Implicit Form (SIF)}
-	he specialized implicit form (SIF) was introduced in \cite{sifd} and is well detailed in \cite{hilaire,sif}. 
+	\subsection{The Specialized Implicit Form (SIF): a unified representation}
+	\subsubsection{Definition}
+	The specialized implicit form (SIF) was introduced in \cite{sifd} and is well detailed in Hilaire's PhD and associated papers \cite{hilaire,sif}. 
 	The classical state-space representation is intuitive,
 	but it doesn't takes into account the reality of implementation.
 	Indeed, dealing with finite precision and error amplification, the order in which operations are done becomes crucial.
@@ -296,11 +292,45 @@
 		\boldsymbol{D_Z} \in \mathbb{R}^{n_x \times n_u},
 	\end{eqnarray}
 
+	\subsubsection{Optimal SIF realization}
+		Here, we won't discuss the optimality of the SIF description.
+		This optimality is up to the user, who may have a lot of good reasons not to design a realization that seem optimal for us.
+		The optimization of the realization is a job done at LIP6 in the PEQUAN team, under the metalibm ANR project.
+		The present work is just a hardware backend for the optimization part.
+		The expected use of this work is shown on figure \ref{fig:workflow}.
 
-	\subsection{Implementation}
-	In this work, we propose to implements SIFs using the SOPCs arithmetical core from flopoco.
+
+		\begin{figure}[h] 
+		  \centering
+		  \begin{tikzpicture}[x=1cm,y=1cm]
+			\draw (-9.5, 1.0) -- (-8,1.0) [->, thick] node[above,near start, text width = 3cm, align=center]{User filter specification};
+			\draw (-3.5, 1.0) -- (0.0,1.0) [->, thick] node[below,xshift=-1.8cm]{$\begin{pmatrix}\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\ \boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\ \boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y \end{pmatrix}$};
+			\draw (-8,0.0) rectangle ++(4.5,2)[thick] node [midway, text width = 4cm, align=center]{Relization Optimization \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6}; 
+			\draw (0.0,0.0) rectangle ++(3.0,2)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work)}; 
+
+			\draw (4,0) rectangle ++(2.5,2)[thick] node [midway]{VHDL}; 
+			\draw (3.0, 1) -- (4,1) [->, thick] node[above,near start]{};
+
+		  \end{tikzpicture}
+
+		\caption{Workflow overview of tools usage \label{fig:workflow}}
+		\end{figure}
+
+
+	\subsection{Implementation: what can be done in practise?}
+
+	\subsubsection{The FloPoCo Framework: computing just right}
+		FloPoCo is a C++ framework \cite{DinechinPasca2011-DaT} which first purpose is to generate floating point cores in VHDL.
+		Although it may have some pertinence in the ASIC design market, it main target is the configuration of FPGAs as computing units.
+		Indeed, FPGAs are a rising market for embedded computing, because they offer full reconfigurability and a relatively good balance between computation power and price.
+
+		More information is available at \url{http://flopoco.gforge.inria.fr/}
+
+	In this work, we propose to implements SIFs using the SOPCs arithmetical core from FloPoCo.
 	SOPC stands for Sum of Producs by Constants, and is a KCM-multiplier based architecture.
 	The details of the SOPC architecture has been described in \cite{sums}.
+
+	\subsubsection{KCM multipliers: an architecture to efficiently compute products on FPGAs}
 	To be quick, a KCM multiplier is designed to fully use the power of look-up tables (LUTs) in an FPGA.
 	To do so, it partitions the constant into chunks which match the size of a LUT.
 	Then, tabulating the multiplications, we end up with a final sum to compute the product.
@@ -342,6 +372,8 @@
 \caption{The FixRealKCM method when $x_i$ is split in 3 chunks   \label{fig:FixRealKCM}}
 \end{figure}
 
+	\subsubsection{SOPCs: exploiting full parallel architecures}
+
 	The SOPC architecture keeps the same idea.
 	The difference is, the summation architecture is mutualized through the $n_c$ products in a bit-heap based architecture implemented by flopoco.
 	The detail is visible on figure \ref{fig:Overall architecture}.
@@ -371,7 +403,32 @@
 \caption{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks  \label{fig:Overall architecture}}
 \end{figure}
 
-	\subsection{Size computation in finite precision}
+	\subsubsection{Precision concerns}
+
+	In SOPCs architectures, the accuracy is deducible from the inputs/outputs specifications and the size of the constants.
+
+	This is described in \cite{sums}.
+
+	Dealing with feedback inputs, the question of precision is more complicated.
+	Indeed, when results loop back to inputs, as soon as we are in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
+
+	In this case the solution in the industry is to build an equivalent FIR filter by resolving the recurrence.
+	This leads to build an accurate hardware, but at the price of a huge waste of logic.
+	The present work is an answer to this problem, trying to compute just right, keeping the recurrence and saving hardware.
+
+	The main idea to dimension such filters is to consider the total error as a single filter.
+	The result of this filter is then added to the perfect filter to get the final output.
+
+	In finite precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PhD \cite{lopez}.
+	The idea now is to see what we can do in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
+
+	Here we have to compute each size at each step of the computation. Indeed, the WCPG is not useful for the first part of a FIR, as it has no loop.
+	So we just need the WCPG for the second part, because it is just in this part of the circuit that there is a potential error amplification.
+
+	%Direct and transposed forms are not directly transposable into SIF, but this problem is secondary.
+
+
+	\subsubsection{Size computation in finite precision}
 	When there is many potential realizations for a single LTI filter, we can see that the choice of one realization
 	among the others is very related to the error analysis in output.
 	The precision of our computations can then be defined so that the following condition is satisfied:
@@ -560,52 +617,31 @@
 		\end{equation}
 
 		That is, 
-		\begin{equation}
+		\begin{equation} \label{constraint}
 			\boldsymbol{\mathfrak{A}} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
 			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
 		\end{equation}
 
 		Where:
-		\begin{eqnarray} \label{constraint}
-			\boldsymbol{\mathfrak{A}}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} \\
+		\begin{eqnarray}
+			\boldsymbol{\mathfrak{A}}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} %\\
 			%\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}
 		\end{eqnarray}
 
-		\TODO: check if this step is sufficient.
+		So, for computations in arbitrary precision, we have here a sufficient condition (\ref{constraint}) to implement the filters.
 
-		\subsubsection{A working solution to this problem}
-		A solution poposed in Lopez's PhD \cite{lopez}, is to consider the following reformulation of constraint \ref{constraint}.
-		We can give a stronger majoration, as follows:
-		\begin{equation}
-			\frac{\mathfrak{A}_{i1}}{\boldsymbol{2}^{msb_{v'_1}-lsb_{v'_1}+1}} + \frac{\mathfrak{A}_{i2}}{\boldsymbol{2}^{msb_{v'_2}-lsb_{v'_2}+1}} + \dots + \frac{\mathfrak{A}_{in'}}{\boldsymbol{2}^{msb_{v'_{n'}}-lsb_{v'_{n'}}+1}} < 1, \hspace{5pt} \forall 1 \leq i \leq n_y 
-		\end{equation}
+		%\TODO: check if this step is sufficient.
+
+%		\subsubsection{A working solution to this problem}
+%		A solution poposed in Lopez's PhD \cite{lopez}, is to consider the following reformulation of constraint \ref{constraint}.
+%		We can give a stronger majoration, as follows:
+%		\begin{equation}
+%			\frac{\mathfrak{A}_{i1}}{\boldsymbol{2}^{msb_{v'_1}-lsb_{v'_1}+1}} + \frac{\mathfrak{A}_{i2}}{\boldsymbol{2}^{msb_{v'_2}-lsb_{v'_2}+1}} + \dots + \frac{\mathfrak{A}_{in'}}{\boldsymbol{2}^{msb_{v'_{n'}}-lsb_{v'_{n'}}+1}} < 1, \hspace{5pt} \forall 1 \leq i \leq n_y 
+%		\end{equation}
 		
-		\subsection{Worst-case peak gain computation}
+		\subsubsection{Worst-case peak gain computation}
 			Computing the worst-case peak gain accurately in finite precision is a very complex problem.
-			As we can't afford doing such a work, we are about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 that will be published soon.
-
-		\subsection{Communication}
-		To communicate with our SIF operator in FloPoCo, we can't simply pass the coefficients in command line as it is done for the first order of direct form.
-		So we defined a simple file format to store all the coefficients.
-		The format is defined as follows:
-
-		\begin{verbatim}
-			X l c
-			x_1_1 x_1_2 ... x_1_c
-			x_2_1 x_2_2 ... x_2_c
-			.
-			.
-			.
-			x_l_1 x_l_2 ... x_l_c
-		\end{verbatim}
-
-		Where X is the name of the matrix (X $\in$ \{ J, K, L, M, N, P, Q, R, S, T\}), x\_i\_j is the coefficient (with $i \in [1, l]$ and $j \in [1, c]$), l is the number of lines and c the numer of columns.
-
-		All the matrices are specified after each other in the file.
-
-		For now another file is used to specify sizes because we do not have not the integration of the "wcpg-code" done.
-
-
+			As we can't afford doing such a work, we are about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 \cite{Volk15a}, under the metalibm project.
 
 
 

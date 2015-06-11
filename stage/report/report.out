@@ -1,39 +1,41 @@
 \BOOKMARK [1][-]{section*.2}{Introduction}{}% 1
-\BOOKMARK [1][-]{section.1}{Motivations}{}% 2
-\BOOKMARK [1][-]{section.2}{Tools for expressing filters and signal processing}{}% 3
-\BOOKMARK [2][-]{subsubsection.2.0.1}{Definition of a signal}{section.2}% 4
-\BOOKMARK [3][-]{subsubsection.2.0.2}{Linear Time Invariant Filters \(LTI filters\)}{subsubsection.2.0.1}% 5
-\BOOKMARK [3][-]{subsubsection.2.0.3}{Impulse response}{subsubsection.2.0.1}% 6
-\BOOKMARK [3][-]{subsubsection.2.0.4}{Worst-Case Peak Gain \(WCPG\) of a Filter}{subsubsection.2.0.1}% 7
-\BOOKMARK [2][-]{subsection.2.1}{FIR and IIR}{section.2}% 8
-\BOOKMARK [2][-]{subsection.2.2}{Realizations}{section.2}% 9
-\BOOKMARK [3][-]{subsubsection.2.2.1}{Direct and transposed forms}{subsection.2.2}% 10
-\BOOKMARK [3][-]{subsubsection.2.2.2}{State-space representation}{subsection.2.2}% 11
-\BOOKMARK [3][-]{subsubsection.2.2.3}{FloPoCo}{subsection.2.2}% 12
-\BOOKMARK [2][-]{subsection.2.3}{Specialized Implicit Form \(SIF\)}{section.2}% 13
-\BOOKMARK [2][-]{subsection.2.4}{Implementation}{section.2}% 14
-\BOOKMARK [2][-]{subsection.2.5}{Size computation in finite precision}{section.2}% 15
-\BOOKMARK [3][-]{subsubsection.2.5.1}{Error analysis}{subsection.2.5}% 16
-\BOOKMARK [3][-]{subsubsection.2.5.2}{A working solution to this problem}{subsection.2.5}% 17
-\BOOKMARK [2][-]{subsection.2.6}{Worst-case peak gain computation}{section.2}% 18
-\BOOKMARK [2][-]{subsection.2.7}{Communication}{section.2}% 19
-\BOOKMARK [1][-]{section.3}{Dimensionment}{}% 20
-\BOOKMARK [2][-]{subsection.3.1}{Implementation}{section.3}% 21
-\BOOKMARK [2][-]{subsection.3.2}{Algorithm}{section.3}% 22
-\BOOKMARK [2][-]{subsection.3.3}{Particular Forms}{section.3}% 23
-\BOOKMARK [2][-]{subsection.3.4}{ABCD Form}{section.3}% 24
-\BOOKMARK [2][-]{subsection.3.5}{When nx=0}{section.3}% 25
-\BOOKMARK [2][-]{subsection.3.6}{Optimizations}{section.3}% 26
-\BOOKMARK [3][-]{subsubsection.3.6.1}{Sparse matrices}{subsection.3.6}% 27
-\BOOKMARK [3][-]{subsubsection.3.6.2}{One entries}{subsection.3.6}% 28
-\BOOKMARK [1][-]{section.4}{Further work}{}% 29
-\BOOKMARK [2][-]{subsection.4.1}{Static analysis on coefficients}{section.4}% 30
-\BOOKMARK [2][-]{subsection.4.2}{Sub-filter detection}{section.4}% 31
-\BOOKMARK [2][-]{subsection.4.3}{Precision calculations improvement}{section.4}% 32
-\BOOKMARK [2][-]{subsection.4.4}{File format re-specification}{section.4}% 33
-\BOOKMARK [2][-]{subsection.4.5}{Fourth Sub-part}{section.4}% 34
-\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 35
-\BOOKMARK [1][-]{section*.5}{Appendix: Remainders about signal processing}{}% 36
-\BOOKMARK [2][-]{subsection.4.6}{Notations}{section*.5}% 37
-\BOOKMARK [2][-]{subsection.4.7}{Remainders about signal processing}{section*.5}% 38
-\BOOKMARK [3][-]{subsubsection.4.7.1}{Impulse response}{subsection.4.7}% 39
+\BOOKMARK [1][-]{section.1}{Tools for expressing filters and signal processing}{}% 2
+\BOOKMARK [2][-]{subsection.1.1}{Fundamentals about signal processsing}{section.1}% 3
+\BOOKMARK [3][-]{subsubsection.1.1.1}{Definition of a signal}{subsection.1.1}% 4
+\BOOKMARK [3][-]{subsubsection.1.1.2}{Linear Time Invariant Filters \(LTI filters\)}{subsection.1.1}% 5
+\BOOKMARK [3][-]{subsubsection.1.1.3}{Impulse response}{subsection.1.1}% 6
+\BOOKMARK [3][-]{subsubsection.1.1.4}{Worst-Case Peak Gain \(WCPG\) of a Filter: the maximum amplification expectable}{subsection.1.1}% 7
+\BOOKMARK [2][-]{subsection.1.2}{FIR and IIR: two filters families}{section.1}% 8
+\BOOKMARK [2][-]{subsection.1.3}{Different realizations: how to compute the output of a filter?}{section.1}% 9
+\BOOKMARK [3][-]{subsubsection.1.3.1}{Direct and transposed forms}{subsection.1.3}% 10
+\BOOKMARK [3][-]{subsubsection.1.3.2}{State-space representation: a recurrence to define an infinite response}{subsection.1.3}% 11
+\BOOKMARK [2][-]{subsection.1.4}{The Specialized Implicit Form \(SIF\): a unified representation}{section.1}% 12
+\BOOKMARK [3][-]{subsubsection.1.4.1}{Definition}{subsection.1.4}% 13
+\BOOKMARK [3][-]{subsubsection.1.4.2}{Optimal SIF realization}{subsection.1.4}% 14
+\BOOKMARK [2][-]{subsection.1.5}{Implementation: what can be done in practise?}{section.1}% 15
+\BOOKMARK [3][-]{subsubsection.1.5.1}{The FloPoCo Framework: computing just right}{subsection.1.5}% 16
+\BOOKMARK [3][-]{subsubsection.1.5.2}{KCM multipliers: an architecture to efficiently compute products on FPGAs}{subsection.1.5}% 17
+\BOOKMARK [3][-]{subsubsection.1.5.3}{SOPCs: exploiting full parallel architecures}{subsection.1.5}% 18
+\BOOKMARK [3][-]{subsubsection.1.5.4}{Precision concerns}{subsection.1.5}% 19
+\BOOKMARK [3][-]{subsubsection.1.5.5}{Size computation in finite precision}{subsection.1.5}% 20
+\BOOKMARK [3][-]{subsubsection.1.5.6}{Error analysis}{subsection.1.5}% 21
+\BOOKMARK [3][-]{subsubsection.1.5.7}{Worst-case peak gain computation}{subsection.1.5}% 22
+\BOOKMARK [1][-]{section.2}{Implementation}{}% 23
+\BOOKMARK [2][-]{subsection.2.1}{Architecture generation algorithm}{section.2}% 24
+\BOOKMARK [2][-]{subsection.2.2}{Particular Forms, degenerated cases}{section.2}% 25
+\BOOKMARK [2][-]{subsection.2.3}{ABCD Form: still achievable}{section.2}% 26
+\BOOKMARK [2][-]{subsection.2.4}{When nx=0}{section.2}% 27
+\BOOKMARK [2][-]{subsection.2.5}{Optimizations to do on this technology}{section.2}% 28
+\BOOKMARK [3][-]{subsubsection.2.5.1}{Sparse matrices}{subsection.2.5}% 29
+\BOOKMARK [3][-]{subsubsection.2.5.2}{Power of two coefficients}{subsection.2.5}% 30
+\BOOKMARK [2][-]{subsection.2.6}{Concrete work}{section.2}% 31
+\BOOKMARK [2][-]{subsection.2.7}{Filter specification interface}{section.2}% 32
+\BOOKMARK [1][-]{section.3}{Further work}{}% 33
+\BOOKMARK [2][-]{subsection.3.1}{Static analysis on coefficients}{section.3}% 34
+\BOOKMARK [2][-]{subsection.3.2}{Sub-filter detection}{section.3}% 35
+\BOOKMARK [2][-]{subsection.3.3}{Precision calculations improvement}{section.3}% 36
+\BOOKMARK [2][-]{subsection.3.4}{File format re-specification}{section.3}% 37
+\BOOKMARK [1][-]{section*.3}{Conclusion}{}% 38
+\BOOKMARK [1][-]{section*.5}{Appendix: Notations and reminders about signal processing}{}% 39
+\BOOKMARK [2][-]{subsection.3.5}{Notations}{section*.5}% 40
+\BOOKMARK [2][-]{subsection.3.6}{Reminders about signal processing}{section*.5}% 41

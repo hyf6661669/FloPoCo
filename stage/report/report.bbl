@@ -6,6 +6,19 @@ K.D. Chapman.
   winner).
 \newblock {\em EDN magazine}, 39(10):80, May 1993.
 
+\bibitem{ChevillardJoldesLauter2010}
+S.~Chevillard, M.~Jolde\c{s}, and C.~Lauter.
+\newblock Sollya: An environment for the development of numerical codes.
+\newblock In K.~Fukuda, J.~van~der Hoeven, M.~Joswig, and N.~Takayama, editors,
+  {\em Mathematical Software - ICMS 2010}, volume 6327 of {\em Lecture Notes in
+  Computer Science}, pages 28--31, Heidelberg, Germany, September 2010.
+  Springer.
+
+\bibitem{DinechinPasca2011-DaT}
+Florent de~Dinechin and Bogdan Pasca.
+\newblock Designing custom arithmetic data paths with {FloPoCo}.
+\newblock {\em {IEEE} Design \& Test of Computers}, 28(4):18--27, July 2011.
+
 \bibitem{sums}
 Abdelbassat~Massouri Florent~de Dinechin, Matei~Istoan.
 \newblock Sum-of-product architectures computing just right.
@@ -33,5 +46,11 @@ P.Chevel T.Hilaire and Y.Trinquet.
 \newblock Implicit state-space representation: a unifying framework for fwl
   implementation of lti systems.
 \newblock In {\em Proc. of the 16th IFAC World Congress.}, 2005.
+
+\bibitem{Volk15a}
+A.~Volkova, T.~Hilaire, and C.~Lauter.
+\newblock {Reliable evaluation of the Worst-Case Peak Gain matrix in multiple
+  precision}.
+\newblock In {\em IEEE Symposium on Computer Arithmetic}, 2015.
 
 \end{thebibliography}

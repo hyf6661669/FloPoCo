@@ -76,7 +76,6 @@
 \newcommand{\epsfinalround}{\abserr_{\text{f}}}
 \newcommand{\TODO}{\textbf{TODO}}
 
-%\title{PPH - Comment créer une musique apparetenant à plusieurs genres?}
 \title{Architecture synthesis for linear time-invariant filters}
 \author{Antoine Martinet}
 
@@ -91,47 +90,44 @@
 	\addcontentsline{toc}{section}{Introduction}
 
 	Filters are nowadays essential tools for designing responsive systems.
-	As they appear in both signal processing and command communities,
-	we can see that the use of filters is now spreading in many domains, related to them,
-	such as radio signal coding and decoding, image and sound processing, and so on.
+	%As they appear in both signal processing and command communities,
+	In signal processing, filters are used in
+	radio signal coding and decoding, image and sound processing, and so on.
+	In addition, they are also used in many control applications.
 
 
-	Although most of all the potential filters can be computed in software,
-	some interesting applications in hardware could help to accelerate such computations, 
-	that might be very long in software in particular cases.
-	Moreover, it allows to design and reconfigure specific parts of the hardware when working with FPGAs.
+%	Although most of all the potential filters can be computed in software,
+%	some interesting applications in hardware could help to accelerate such computations, 
+
+	For most applications, filters can be computed in software.
+	However, for performance reasons hardware implementations are needed in many applications.
+	There is an interest in FPGAs implementations be cause they can help for prototyping a software defined radio (SDR).
+	%interest on applications FPGAs implementations because help for prototyping software defined radio. SDR is the main researche subjevt of the SOCRATE team 
+	%\TODO: make a sentence with comment above
 
 	
-	My work at the CITI lab in the SOCRATE team was to design a parametric architecture generator for LTI filters, 
-	which will be very useful to design a software-defined radio.
+	SDR is the main research subject of the SOCRATE team, at the CITI lab, where this work has been conducted.
+	The goal of this internship was to design a parametric architecture generator for Linear Time Invariant (LTI) filters.
 	This work has been integrated to FloPoCo tool,
-	whose main goal is to generate architecture cores for computing just right.
+	whose purpose is to generate architecture cores for computing just right.
 
 
-	In this report, I will first present reminders about signal processing.
-	Then I will tell a little more about LTI filters and their software implementation in finite precision.
-	Finally, I will present the main aspects of the hardware implementation of such filters.
-
-\section{Motivations}
-	The main motivation of this work is to be able to compute efficiently LTI Filters in hardware.
-	A more precise problem is the loopback problem, that is, when a filter uses its own outputs as inputs.
-	Indeed, as the output is infinite, the problems of precision induce infinitely amplified errors,
-	which cause the result to be unusable.
-	In this case, the solution retained in the industry is for now to unroll such loops,
-	building a very heavy hardware and wasting logic.
-	The purpose of this work is to be able to build a hardware computing just right,
-	avoiding logic waste.
-
+	This report first presents the context of LTI filters, SIF and their implementation in part \ref{Part1}.
+	Then we will describe the details of our implementation in arbitrary precision in part \ref{Part2}.
+	Finally, an overview of the future work will be presented in part \ref{Part3}.
 
 \section{Tools for expressing filters and signal processing}
+\label{Part1}
 \input{firstPart}
 
 \newpage
-\section{Dimensionment}
+\section{Implementation}
+\label{Part2}
 \input{secondPart}
 
 \newpage
 \section{Further work}
+\label{Part3}
 \input{thirdPart}
 
 \section*{Conclusion}
@@ -152,8 +148,11 @@
 \bibliographystyle{plain}
 \bibliography{report}  % main.bib is the name of the Bibliography in this case
 \newpage
-\section*{Appendix: Reminders about signal processing}
-	\addcontentsline{toc}{section}{Appendix: Remainders about signal processing}
+\section*{Appendix: Notations and reminders about signal processing}
+	\addcontentsline{toc}{section}{Appendix: Notations and reminders about signal processing}
 \input{annexes}
+%\TODO: talk about code: part title: "Implementation" (not in appendix)
+%\TODO: One entries-> powers of two
+%\TODO: Optimality of realization not discussed by me but by LIP6 + figure
 \end{document}
 

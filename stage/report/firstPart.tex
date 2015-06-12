@@ -14,10 +14,11 @@
 
 	\subsubsection{Linear Time Invariant Filters (LTI filters)}
 	A filter, denoted by its transfer function $\mathcal{H}$, is an application which transforms a signal vector $\boldsymbol{u}$ (with $dim(\boldsymbol{u}) = n_u$ )
-	into a signal $\boldsymbol{y} = \mathcal{H}(\boldsymbol{u})$, of size $dim(\boldsymbol{y}) = n_y$ . The case where $n_u = n_y = 1$ is referred as Single Input Single Output
+	into a signal vector $\boldsymbol{y} = \mathcal{H}(\boldsymbol{u})$, of size $dim(\boldsymbol{y}) = n_y$ . The case where $n_u = n_y = 1$ is referred as Single Input Single Output
 	(SISO) filters. Other casesare referred as Multiple Input Multiple Output (MIMO) filters.
 
 	\begin{thdef} (Linear Time Invariant Filter)
+
 		Linearity:
 		$$ \mathcal{H}(\alpha \cdot \boldsymbol{u}_1+ \beta \cdot \boldsymbol{u}_2)= \alpha\cdot\mathcal{H}(\boldsymbol{u}_1) +  \beta\cdot\mathcal{H}(\boldsymbol{u}_2)$$
 
@@ -29,11 +30,11 @@
 	\begin{thdef} (Impulse Response)
 	A SISO filter may be defined by its impulse response, denoted $h$. $h$ is the
 	impulse response of H to the impulsion of Dirac.
-	Indeed each input can be described as a sum of Dirac impulsions:
+	Indeed each input signal can be described as a sum of Dirac impulsions:
 	$$u=\sum_{i\geq0}u(l)\delta_l$$
 	where $\delta_l$ is a Dirac impulsion centered in $l$, that is:
 	\begin{equation}
-		\delta(k) =
+		\delta_l(k) =
 		\begin{cases}
 			1 & \hspace{5pt} when \hspace{5pt} k=l\\
 			0 & \hspace{5pt} else\\
@@ -52,7 +53,7 @@
 	
 	\end{thdef} 
 
-	\subsubsection{Worst-Case Peak Gain (WCPG) of a Filter: the maximum amplification expectable}
+	\subsubsection{Worst-Case Peak Gain (WCPG) of a Filter: the maximum possible amplification}
 	\begin{thdef} (Worst-Case Peak Gain)
 		The worst case peak gain is defined as the maximum amplification
 		possible over all potential inputs through the filter.
@@ -63,12 +64,12 @@
 	\end{thdef}
 
 	\subsection{FIR and IIR: two filters families}
-	There is two types of LTI filters: \textit{Finite impulse response} (FIR) and \textit{Infinite impulse response} (IIR) filters.
+	There are two types of LTI filters: \textit{Finite impulse response} (FIR) and \textit{Infinite impulse response} (IIR) filters.
 	Formally, the impulse response is finite when:
 	\begin{equation} \label{finimp}
 		\exists n \in \mathbb{N} | \forall k \geq n, h(k)=0
 	\end{equation}
-	The smallest $n$ verifying \ref{finimp} is referred as the order of the filter. So a n-order FIR can be described by the
+	The smallest $n$ verifying \ref{finimp} is referred as the order of the filter. So a $n$-order FIR can be described by the
 	following equation:
 	\begin{equation} \label{firdef}
 		y(k)=\sum_{i=0}^n b_i u(k-i)
@@ -79,23 +80,23 @@
 		y(k)=\sum_{i=0}^n b_i u(k-i) - \sum_{i=0}^n a_i y(k-i)
 	\end{equation}
 
-	Here one can observe that the output at time $k$ depends also on all previous $n$ outputs (loopback). One can
-	also see that a FIR can be seen as an IIR with $\forall i \in [0,n],a_i=0$
+	Here one can observe that the output at time $k$ depends also on all previous $n$ outputs (loopback). 
+	Also remark that a FIR can be seen as an IIR with $\forall i \in [0,n],a_i=0$
 	The impulse response can then be deduced from \ref{iirdef} by resolving the recurrence relation:
 
 	\begin{equation}
 		h(k) =
 		\begin{cases}
-			0 & \hspace{5pt} when k<l\\
-			b_k - \sum_{l=1}^n a_l h(k-l) & \hspace{5pt} when 0\leq k \leq n\\
-			\sum_{l=1}^n a_l h(k-l) & \hspace{5pt} when n< k\\
+			0 & when \hspace{5pt} k<l\\
+			b_k - \sum_{l=1}^n a_l h(k-l) & when \hspace{5pt} 0\leq k \leq n\\
+			\sum_{l=1}^n a_l h(k-l) & when \hspace{5pt} n< k\\
 		\end{cases}
 	\end{equation}
 
 	\subsection{Different realizations: how to compute the output of a filter?}
 	\begin{thdef} (realization)
 	A realization can be defined as an algorithm describing how to compute outputs
-	from inputs. However, a realization does not describes the details of basic operations (format, size, order,
+	from inputs. However, a realization does not describes the details of basic operations (format, size,
 	rounding, etc...)
 	\end{thdef}
 	It is important to know that all realizations of a filter are mathematically equivalent to each other (infinite
@@ -104,10 +105,10 @@
 
 	\subsubsection{Direct and transposed forms}
 	Direct and transposed forms are classic realizations. A good description of these forms can be found in Lopez’ and Hilaire’s PhDs \cite{lopez} \cite{hilaire}. 
-	The direct form has been implemented and in the FoPoCo project,
-	you can see the hardware implementation an IIR on figure \ref{iirpic}
+	The direct form has been implemented in the FoPoCo project,
+	The hardware implementation of anIIR can be seen on figure \ref{iirpic}
 
-\begin{figure*} \label{iirpic}
+\begin{figure*}[h] \label{iirpic}
   \centering
   \begin{tikzpicture}
      \draw[dotted,black, fill=yellow!20] (-5ex,-3.5ex) rectangle +(69ex,-15ex);   
@@ -168,7 +169,7 @@
 \end{figure*}
 
 	\subsubsection{State-space representation: a recurrence to define an infinite response}
-	This type of realization consists in expressing the evolution of a system considering it’s state at time k. In
+	This type of realization consists in expressing the evolution of a system considering its state at time $k$. In
 	continuous time, it is described by differential equations at first order. In discret time (in which we
 	are interested in), it is described by a simple recurrence:
 	\begin{equation} \label{abcddef}
@@ -183,13 +184,13 @@
 	$\boldsymbol{y}(k) \in \mathbb{R}^{n_y}$ is the output vector, at time k.
 	The matrices $\boldsymbol{A} \in \mathbb{R}^{n_x \times n_x}$ , $\boldsymbol{B} \in \mathbb{R}^{n_x \times n_u}$,
 	$\boldsymbol{C} \in \mathbb{R}^{n_y \times n_x}$, and $\boldsymbol{D} \in \mathbb{R}^{n_y \times n_u}$,
-	with $\boldsymbol{x}(0)$ are sufficient to describe an LTI filter, with convention $\boldsymbol{x}(k)=\boldsymbol{u}(k)=0 \hspace{5pt} | \hspace{5pt} \forall k<0$.
+	with $\boldsymbol{x}(0)$ are sufficient to describe an LTI filter, with convention $\boldsymbol{x}(k)=\boldsymbol{u}(k)=0 \hspace{5pt}, \hspace{5pt} \forall k<0$.
 
 	\subsection{The Specialized Implicit Form (SIF): a unified representation}
 	\subsubsection{Definition}
-	The specialized implicit form (SIF) was introduced in \cite{sifd} and is well detailed in Hilaire's PhD and associated papers \cite{hilaire,sif}. 
-	The classical state-space representation is intuitive,
-	but it doesn't takes into account the reality of implementation.
+	The classical state-space representation is intuitive, but it doesn't takes into account the reality of implementation.
+	The specialized implicit form (SIF) was introduced in \cite{sifd} and is well detailed in Hilaire's PhD and associated papers \cite{hilaire,sif},
+	and is a good answer to this problem.
 	Indeed, dealing with finite precision and error amplification, the order in which operations are done becomes crucial.
 	Another motivation is to have a unique representation for any realization of LTI filters,
 	that allows to compute every degradation measures instead of redevelopping them for each new realization.
@@ -277,7 +278,7 @@
 	\end{equation}
 	The community usually takes $-\boldsymbol{J}$ for simplicity within further computations.
 
-	The SIF can of course be bound with the ABCD (classic state-space) form, which gives:
+	The SIF can of course be transformed into an equivalent ABCD (classic state-space) form, which gives:
 
 	\begin{eqnarray} \label{abcdtranspose}
 		\boldsymbol{A_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{M} +\boldsymbol{P}, \hspace{5pt}
@@ -286,7 +287,7 @@
 		\boldsymbol{D_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{N} +\boldsymbol{S}, \nonumber \\
 	\end{eqnarray}
 
-	With:
+	with:
 	\begin{eqnarray}
 		\boldsymbol{A_Z} \in \mathbb{R}^{n_x \times n_x},
 		\boldsymbol{B_Z} \in \mathbb{R}^{n_x \times n_u}, \nonumber \\
@@ -294,12 +295,13 @@
 		\boldsymbol{D_Z} \in \mathbb{R}^{n_y \times n_u},
 	\end{eqnarray}
 
-	\subsubsection{Optimal SIF realization}
+	\subsubsection{Workflow for filter implementation}
 		%Here, we won't discuss the optimality of the SIF description.
-		The optimality of the SIF description is not concerned by this work.
-		This optimality is up to the user, who may have a lot of good reasons not to design a realization that seem optimal for us.
-		The optimization of the realization is a job done at LIP6 in the PEQUAN team, under the metalibm ANR project.
+		The choice of the SIF realization is not concerned by this work.
+		This choice is up to the user, who may have a lot of good reasons not to design a realization that seem intuitive for us.
+		The choice of the realization is a job done at LIP6 in the PEQUAN team, under the metalibm ANR project.
 		The present work is just a hardware backend for the optimization part.
+		Of course, optimizations are available at every level.
 		The expected use of this work is shown on figure \ref{fig:workflow}.
 
 
@@ -308,7 +310,7 @@
 		  \begin{tikzpicture}[x=1cm,y=1cm]
 			\draw (-9.5, 1.0) -- (-8,1.0) [->, thick] node[above,near start, text width = 3cm, align=center]{User filter specification};
 			\draw (-3.5, 1.0) -- (0.0,1.0) [->, thick] node[below,xshift=-1.8cm]{$\begin{pmatrix}\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\ \boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\ \boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y \end{pmatrix}$};
-			\draw (-8,0.0) rectangle ++(4.5,2)[thick] node [midway, text width = 4cm, align=center]{Relization Optimization \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6}; 
+			\draw (-8,0.0) rectangle ++(4.5,2)[thick] node [midway, text width = 4cm, align=center]{Realization Choice \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6}; 
 			\draw (0.0,0.0) rectangle ++(3.0,2)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work)}; 
 
 			\draw (4,0) rectangle ++(2.5,2)[thick] node [midway]{VHDL}; 
@@ -411,7 +413,6 @@
 	\subsubsection{Precision concerns}
 
 	In SOPCs architectures, the accuracy is deducible from the inputs/outputs specifications and the size of the constants.
-
 	This is described in \cite{sums}.
 
 	Dealing with feedback inputs to build an SOPC-based filter, the question of precision is more complicated.
@@ -424,20 +425,23 @@
 	The main idea to dimension filters is to consider the total error as a single filter.
 	The result of this filter is then added to the ``perfect" filter to get the final output.
 
-	In finite precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PhD \cite{lopez}.
-	The idea now is to see what and be done in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
+%	In fixed precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PhD \cite{lopez}.
+%	The idea now is to see what and be done in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
+	The two incoming parts are calculations from Lopez's PhD \cite{lopez}, with adaptations in the architecture context.
+	Indeed, the original calculations are done for fixed precision, because they are expected to be done in software, with fixed word sizes.
+	The challenge here is to produce architecture with arbitrary precision, that is, choosing the best size for each basic operation.
 
-	Dealing with potential infinitly amplified errors, the question here seem very hard.
-	Fortunately filters considered in this work have an error amplification bounded, which allows us to use filters WCPGs.
+%	Dealing with potential infinitly amplified errors, the question here seem very hard.
+%	Fortunately filters considered in this work have an error amplification bounded, which allows us to use filters WCPGs.
 
-	Here the requirement is to compute each size at each step of the computation. Of course, the WCPG is not useful for the first part of a FIR, as it includes no loop.
-	So the WCPG is just important for the recursive part, which is the only one to introduce an infinite error amplification.
+%	Here the requirement is to compute each size at each step of the computation. Of course, the WCPG is not useful for the first part of a FIR, as it includes no loop.
+%	So the WCPG is just important for the recursive part, which is the only one to introduce an infinite error amplification.
 
 	%Direct and transposed forms are not directly transposable into SIF, but this problem is secondary.
 
 
 	\subsubsection{Size computation in finite precision}
-	When there is many potential realizations for a single LTI filter, the choice of one realization
+	When there are many potential realizations for a single LTI filter, the choice of one realization
 	among the others is very related to the error analysis in output.
 	The precision of our computations can then be defined so that the following condition is satisfied:
 
@@ -447,8 +451,30 @@
 
 	With $lsb_{y_i}$ the last significant bit of the output $y_i$, and $\varepsilon_{y_i}$ the error on the computation of the output $y_i$
 
-	Following the same model, an error quantum for each SOPC is involved in the computation.
-	All these error quantas will be functions of the most significant and last significant bits (respectively msb and lsb) of every input, output and intermediate signal.
+	Following the same model, an error term for each SOPC is involved in the computation.
+	All these error terms will be functions of the most significant and last significant bits (respectively msb and lsb) of every input, output and intermediate signal.
+
+	This leads to the definition of errors introduced by the SOPCs architectures, based on the SIF computation algorithm:
+		\begin{eqnarray}
+				\boldsymbol{\varepsilon}_t(k) =
+				- ( \boldsymbol{J'} \cdot \boldsymbol{t}(k+1) - \boldsymbol{J'} \times \boldsymbol{t}(k+1) ) 
+				+ ( \boldsymbol{M } \cdot \boldsymbol{x}(k  ) - \boldsymbol{M } \times \boldsymbol{x}(k  ) )
+				+ ( \boldsymbol{N } \cdot \boldsymbol{u}(k  ) - \boldsymbol{N } \times \boldsymbol{u}(k  ) ),\\ 
+				\boldsymbol{\varepsilon}_x(k) =
+				  ( \boldsymbol{K } \cdot \boldsymbol{t}(k+1) - \boldsymbol{K } \times \boldsymbol{t}(k+1) ) 
+				+ ( \boldsymbol{P } \cdot \boldsymbol{x}(k  ) - \boldsymbol{P } \times \boldsymbol{x}(k  ) )
+				+ ( \boldsymbol{Q } \cdot \boldsymbol{u}(k  ) - \boldsymbol{Q } \times \boldsymbol{u}(k  ) ),\\ 
+				\boldsymbol{\varepsilon}_y(k) =
+				  ( \boldsymbol{L } \cdot \boldsymbol{t}(k+1) - \boldsymbol{L } \times \boldsymbol{t}(k+1) ) 
+				+ ( \boldsymbol{R } \cdot \boldsymbol{x}(k  ) - \boldsymbol{R } \times \boldsymbol{x}(k  ) )
+				+ ( \boldsymbol{S } \cdot \boldsymbol{u}(k  ) - \boldsymbol{S } \times \boldsymbol{u}(k  ) ),
+		\end{eqnarray}
+
+		where $\cdot$ is the absolute product (the result in infinite precision) and $\times$ is the computed product (with rounding errors)
+
+%		\begin{eqnarray}
+%				\boldsymbol{t}^*(k+1) = - \boldsymbol{J'}\boldsymbol{t}^*(k+1) + \boldsymbol{M} \boldsymbol{x}^*(k) + \boldsymbol{N} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_t}(k)\\
+%		\end{eqnarray}
 
 	Let's define the following vectors:
 	\begin{equation}
@@ -486,17 +512,17 @@
 
 			\begin{eqnarray} \label{sifalgoerr}
 				\boldsymbol{t}^*(k+1) = - \boldsymbol{J'}\boldsymbol{t}^*(k+1) + \boldsymbol{M} \boldsymbol{x}^*(k) + \boldsymbol{N} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_t}(k)\\
-				\boldsymbol{x}^*(k+1) = \boldsymbol{K}\boldsymbol{t}^*(k+1) + \boldsymbol{P} \boldsymbol{x}^*(k) + \boldsymbol{Q_i} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_x}(k) \\
-				\boldsymbol{y}^*(k+1) = \boldsymbol{L}\boldsymbol{t}^*(k+1) + \boldsymbol{R} \boldsymbol{x}^*(k) + \boldsymbol{S_i} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_y}(k) 
+				\boldsymbol{x}^*(k+1) = \boldsymbol{K}\boldsymbol{t}^*(k+1) + \boldsymbol{P} \boldsymbol{x}^*(k) + \boldsymbol{Q} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_x}(k) \\
+				\boldsymbol{y}^*(k+1) = \boldsymbol{L}\boldsymbol{t}^*(k+1) + \boldsymbol{R} \boldsymbol{x}^*(k) + \boldsymbol{S} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_y}(k) 
 			\end{eqnarray}
 			Here $\boldsymbol{t}^*$, $\boldsymbol{x}^*$ and $\boldsymbol{y}^*$ are the computed vectors, so with computations errors.
 
-	As $\boldsymbol{\varepsilon}$-errors come only from the SOPCs cores, another error quantum will symbolize the total error.
+	As $\boldsymbol{\varepsilon}$-errors come only from the SOPCs cores, another error term will symbolize the total error.
 			Let's denote:
 			\begin{eqnarray}
-			\boldsymbol{\delta t}(k+1)=\boldsymbol{t}_i^*(k)-\boldsymbol{t}_i(k) \\
-			\boldsymbol{\delta x}(k+1)=\boldsymbol{x}_i^*(k)-\boldsymbol{x}_i(k) \\
-			\boldsymbol{\delta y}(k+1)=\boldsymbol{y}_i^*(k)-\boldsymbol{y}_i(k) 
+			\boldsymbol{\delta t}_i(k+1)=\boldsymbol{t}_i^*(k)-\boldsymbol{t}_i(k) \\
+			\boldsymbol{\delta x}_i(k+1)=\boldsymbol{x}_i^*(k)-\boldsymbol{x}_i(k) \\
+			\boldsymbol{\delta y}_i(k+1)=\boldsymbol{y}_i^*(k)-\boldsymbol{y}_i(k) 
 			\end{eqnarray}
 			the total error at instant k,
 			considering computations errors and loopback, for 
@@ -590,7 +616,7 @@
 			\end{eqnarray}
 		\end{corollary}
 
-		In the future $\boldsymbol{\delta y}_m$ won't be taken into account.
+		In the following $\boldsymbol{\delta y}_m$ won't be taken into account.
 
 		Let's define:
 			$$n'=n_t+n_x+n_y$$
@@ -610,7 +636,7 @@
 		Then, following Lopez's computations, precisions are derived for every intermediate step:
 		
 		\begin{equation}
-			|\boldsymbol{\delta y}_i| \leq \sum_{j=1}^{n'} | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \boldsymbol{2^{l_{v'_j}}}
+			|\boldsymbol{\delta y}_i| \leq \sum_{j=1}^{n'} | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \boldsymbol{2^{lsb_{v'_j}}}
 		\end{equation}
 
 		To formalize with a matricial formulation:
@@ -648,8 +674,10 @@
 %		\end{equation}
 		
 		\subsubsection{Worst-case peak gain computation}
-			Computing the worst-case peak gain accurately in finite precision is a very complex problem.
-			As doing such a work is a PhD subject, the present work is about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 \cite{Volk15a}, under the metalibm project.
+			Computing the worst-case peak gain accurately in finite precision is a non-trivial problem.
+			%As doing such a work is a PhD subject, the present work is about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 \cite{Volk15a}, under the metalibm project.
+			A state of the art implementation is being developped at LIP6 by Anastatsi Lozanova Volkova from Hilaire's team (PEQUAN) \cite{Volk15a}.
+			This work will use it as soon as it is available.
 
 
 

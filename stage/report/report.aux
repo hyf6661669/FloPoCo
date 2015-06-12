@@ -31,7 +31,7 @@
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.3}Impulse response}{3}{subsubsection.1.1.3}}
 \citation{lopez}
 \citation{hilaire}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.4}Worst-Case Peak Gain (WCPG) of a Filter: the maximum amplification expectable}{4}{subsubsection.1.1.4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.4}Worst-Case Peak Gain (WCPG) of a Filter: the maximum possible amplification}{4}{subsubsection.1.1.4}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.2}FIR and IIR: two filters families}{4}{subsection.1.2}}
 \newlabel{finimp}{{1.2.1}{4}{FIR and IIR: two filters families}{equation.1.2.1}{}}
 \newlabel{firdef}{{1.2.2}{4}{FIR and IIR: two filters families}{equation.1.2.2}{}}
@@ -40,10 +40,10 @@
 \citation{sifd}
 \citation{hilaire}
 \citation{sif}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.1}Direct and transposed forms}{5}{subsubsection.1.3.1}}
 \newlabel{iirpic}{{1.3.1}{5}{Direct and transposed forms}{subsubsection.1.3.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Abstract architecture for the direct form realization of an LTI filter }}{5}{figure.1}}
 \newlabel{fig:ltiarch}{{1}{5}{Abstract architecture for the direct form realization of an LTI filter}{figure.1}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.1}Direct and transposed forms}{5}{subsubsection.1.3.1}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.2}State-space representation: a recurrence to define an infinite response}{5}{subsubsection.1.3.2}}
 \newlabel{abcddef}{{1.3.1}{5}{State-space representation: a recurrence to define an infinite response}{equation.1.3.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.4}The Specialized Implicit Form (SIF): a unified representation}{5}{subsection.1.4}}
@@ -54,10 +54,11 @@
 \@writefile{loa}{\contentsline {algocf}{\numberline {2}{\ignorespaces Simplified matricial algorithm}}{6}{algocf.2}}
 \newlabel{zmatrix}{{1.4.4}{6}{Definition}{equation.1.4.4}{}}
 \newlabel{abcdtranspose}{{1.4.5}{6}{Definition}{equation.1.4.5}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.4.2}Optimal SIF realization}{6}{subsubsection.1.4.2}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.4.2}Workflow for filter implementation}{6}{subsubsection.1.4.2}}
 \citation{DinechinPasca2011-DaT}
 \citation{sums}
 \citation{Chapman93:edn}
+\citation{sums}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Workflow overview of tools usage }}{7}{figure.2}}
 \newlabel{fig:workflow}{{2}{7}{Workflow overview of tools usage}{figure.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.5}Implementation: what can be done in practise?}{7}{subsection.1.5}}
@@ -66,7 +67,6 @@
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.5.3}SOPCs: exploiting full parallel architecures}{7}{subsubsection.1.5.3}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces The FixRealKCM method when $x_i$ is split in 3 chunks }}{7}{figure.3}}
 \newlabel{fig:FixRealKCM}{{3}{7}{The FixRealKCM method when $x_i$ is split in 3 chunks}{figure.3}{}}
-\citation{sums}
 \citation{lopez}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks }}{8}{figure.4}}
 \newlabel{fig:Overall architecture}{{4}{8}{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks}{figure.4}{}}
@@ -74,17 +74,17 @@
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.5.5}Size computation in finite precision}{8}{subsubsection.1.5.5}}
 \newlabel{condition}{{1.5.1}{8}{Size computation in finite precision}{equation.1.5.1}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.5.6}Error analysis}{9}{subsubsection.1.5.6}}
-\newlabel{sifalgoerr}{{1.5.3}{9}{Error analysis}{equation.1.5.3}{}}
-\newlabel{deltaerr}{{1.5.9}{9}{Error analysis}{equation.1.5.9}{}}
-\newlabel{zepsmatrix}{{1.5.12}{9}{Error analysis}{equation.1.5.12}{}}
+\newlabel{sifalgoerr}{{1.5.6}{9}{Error analysis}{equation.1.5.6}{}}
+\newlabel{deltaerr}{{1.5.12}{9}{Error analysis}{equation.1.5.12}{}}
+\newlabel{zepsmatrix}{{1.5.15}{9}{Error analysis}{equation.1.5.15}{}}
 \citation{lopez}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces A signal view of the error propagation with respect to the ideal filter }}{10}{figure.5}}
 \newlabel{fig:ltierror}{{5}{10}{A signal view of the error propagation with respect to the ideal filter}{figure.5}{}}
-\newlabel{deltaerr}{{1.5.13}{10}{Error analysis}{equation.1.5.13}{}}
+\newlabel{deltaerr}{{1.5.16}{10}{Error analysis}{equation.1.5.16}{}}
 \newlabel{corimp}{{1}{10}{}{corollary.1}{}}
-\newlabel{eqprec}{{1.5.18}{10}{}{equation.1.5.18}{}}
+\newlabel{eqprec}{{1.5.21}{10}{}{equation.1.5.21}{}}
 \citation{Volk15a}
-\newlabel{constraint}{{1.5.24}{11}{Error analysis}{equation.1.5.24}{}}
+\newlabel{constraint}{{1.5.27}{11}{Error analysis}{equation.1.5.27}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.5.7}Worst-case peak gain computation}{11}{subsubsection.1.5.7}}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Implementation}{12}{section.2}}
 \newlabel{Part2}{{2}{12}{Implementation}{section.2}{}}

@@ -29,7 +29,7 @@
 	On the architecture scheme, we have:
 	\begin{itemize}
 		\item the grey background for indicating x registers
-		\item purple for loopback form the x registers
+		\item purple for loopback from the x registers
 		\item orange for inputs
 	\end{itemize}
 	
@@ -43,7 +43,7 @@
 	The ABCD Form can be considered as a degenerated form of the SIF, with $n_t=0$.
 	The algorithm will work in this case too.
 	\subsection{When $n_x=0$}
-	When $n_x=0$, the interest of using implicit form is of course very limited.
+	When $n_x=0$, the interest of using a SIF is of course very limited.
 	This case is equivalent to building a FIR, and no loopback is needed.
 	Still, the algorithm will work, allocating only SOPCs operators.
 	The computation of precisions are then equivalent to the FIR precision computaion, described in an article that is about to be published.
@@ -56,6 +56,7 @@
 		although the HDL compiler might be able to optimize the hardware and remove ``dead code".
 		Anyway, it is healthy to keep a low compile time (either in flopoco or in the HDL compiler).
 		Keeping the VHDL clean is always important, first for debugging issues, but also for comprehensiveness.
+		This is already done in the current implementation.
 
 	\subsubsection{Power of two coefficients}
 		Coefficients equal to one or a power of two in the Z matrix can be interpreted as simple wires instead of multiplications in the SOPC.
@@ -78,8 +79,8 @@
 	FloPoCo generates a user-defined number of random tests that should be enough, if the number is large enough, to validate the implementation.
 
 		\subsection{Filter specification interface}
-		To communicate with our SIF operator in FloPoCo, we can't simply pass the coefficients in command line as it is done for the first order of direct form.
-		So we defined a simple file format to store all the coefficients.
+		To communicate with our SIF operator in FloPoCo, we can't simply pass the coefficients in command line as it is done for the direct form.
+		So we defined, in collaboration with our co-workers at LIP6, a simple file format to store all the coefficients.
 		The format is defined as follows:
 
 		\begin{verbatim}

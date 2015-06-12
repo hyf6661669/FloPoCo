@@ -1,10 +1,372 @@
+	\subsection{Implementation: what can be done in practise?}
+
+	\subsubsection{The FloPoCo Framework: computing just right}
+		FloPoCo is a C++ framework \cite{DinechinPasca2011-DaT} which first purpose is to generate floating point cores in VHDL.
+		It targets the configuration of FPGAs as computing units, and could also be useful dealing with ASIC specification.
+		Indeed, FPGAs are well used for embedded computing, because they offer full reconfigurability and a relatively good balance between computation power and price.
+
+		More information is available at \url{http://flopoco.gforge.inria.fr/}
+
+	This work proposes to implements SIFs using the SOPCs arithmetical core from FloPoCo.
+	SOPC stands for Sum of Producs by Constants, and is a KCM-multiplier based architecture.
+	The details of the SOPC architecture has been described in \cite{sums}.
+
+	\subsubsection{KCM multipliers: an architecture to efficiently compute products on FPGAs}
+	To be quick, a KCM multiplier is designed to fully use the power of look-up tables (LUTs) in an FPGA.
+	To do so, it partitions the constant into chunks which match the size of a LUT.
+	Then, tabulating the multiplications ends up with a final sum to compute the product.
+	This has been first described by K.Chapman in \cite{Chapman93:edn}.
+	The detail of implementation is visible on figure \ref{fig:FixRealKCM}
+
+\begin{figure}[b]
+  \begin{center}
+  \begin{tikzpicture}
+    \footnotesize 
+    \node at (-1em,0)  {$x_i=$} ;
+    \foreach \x in {1,...,18} {
+%    \draw[] ($(-5*\x ex, -7ex)$) -- ($(-5*\x ex, -5ex)$) node[above] {$2^\x$} ;
+      \node (n) at ($(3.4*\x ex, 0ex)$)  {$b_{\x}$} ;
+      \draw[black!25, very thin] ($(n)+(1.7ex,1.5ex)$) -- ++(0, -3ex);
+    }
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d1) at (3.4*3ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=20ex,minimum height=6ex] (T1) at ($(d1)+(0,-10ex)$) { $T_{i1}: \circ_p(c_i\times d_{i1})$};
+    \draw[hwbus,->] (d1.south) --  (T1.north) node[midway,right] {$d_{i1}$};
+
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d2) at (3.4*9ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=15ex] (T2) at ($(d2)+(0,-10ex)$) { $T_{i2}$};
+    \draw[hwbus,->] (d2.south) --  (T2.north) node[midway,right] {$d_{i2}$};
+
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d3) at (3.4*15ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=10ex,minimum height=3.5ex] (T3) at ($(d3)+(0,-10ex)$) { $T_{i3}$};
+    \draw[hwbus,->] (d3.south) --  (T3.north) node[midway,right] {$d_{i3}$};
+
+    
+    \node[hwblock, minimum width=50ex] (sum) at ($(T2)+(0,-11.3ex)$) {\Large $+$};
+    \draw[hwbus,->]  (T1.south) --  ($(sum.80)!(T1)!(sum.north)$) % This means: point that is the projection of T1 on the line  (sum.80) -- (sum.north)
+       node[near start] {$/$} node[near start,left] {$q_i+g$}          node[near end,right] {$\widetilde{t}_{i1}$};
+    \draw[hwbus,->]  (T2.south) --  ($(sum.80)!(T2)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-\alpha+g$}   node[near end,right] {$\widetilde{t}_{i2}$};
+    \draw[hwbus,->]  (T3.south) -- ($(sum.80)!(T3)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-2\alpha+g$}  node[near end,right] {$\widetilde{t}_{i3}$};
+
+    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$q_i+g$} node[near end,right] {$\widetilde{p}_i\approx c_ix_i$};
+ \end{tikzpicture}
+\end{center}
+\caption{The FixRealKCM method when $x_i$ is split in 3 chunks   \label{fig:FixRealKCM}}
+\end{figure}
+
+	\subsubsection{SOPCs: exploiting full parallel architecures}
+
+	The SOPC architecture keeps the same idea.
+	%The difference is, the summation architecture is mutualized through the $n_c$ products in a bit-heap based architecture implemented by flopoco.
+	The difference resides in the mutualization of the summation architecture through the $n_c$ products.
+	This summation is performed within a bit-heap based architecture implemented by flopoco.
+	The detail is visible on figure \ref{fig:Overall architecture}.
+
+	To generate such cores, FloPoCo needs a number format specification, that is, the most significant bit (msb) and last significant bit (lsb) for the inputs and output of each operator to generate.
+
+\begin{figure}
+  \begin{center}
+  \begin{tikzpicture}
+    \footnotesize 
+    
+    \node[hwblock, align=center,minimum width=60ex] (sum) at ($(32ex,-5ex)$) {Bit-heap based \\ summation architecture};
+
+    \foreach \i in {0,...,3} {
+      \node (x) at  ($(15*\i ex+10ex, 17ex)$) {$x_\i$};
+      \coordinate (xb) at  ($(x)+(0, -3ex)$);
+      \draw[hwbus,very thick] (x) --  (xb);
+      
+      \foreach \k in {1,...,3} {
+        \node[hwblock, minimum width=5ex] (T) at ($(15*\i ex+4.5*\k ex,7ex-1*\k ex)$) { $T_{\i\k}$};
+        \draw[hwbus,thick,<-]  (T.north) -- ++(0,+4ex) node [midway] {/}node [midway,right] {$\alpha$} -- (xb);
+        \draw[hwbus,->] (T.south) --  ($(sum.north)!(T)!(sum.80)$);
+      }
+    }
+
+    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$p$} node[near end,right] {$y$};
+ \end{tikzpicture}
+\end{center}
+\caption{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks  \label{fig:Overall architecture}}
+\end{figure}
+
+	\subsubsection{Precision concerns}
+
+	In SOPCs architectures, the accuracy is deducible from the inputs/outputs specifications and the size of the constants.
+	This is described in \cite{sums}.
+
+	Dealing with feedback inputs to build an SOPC-based filter, the question of precision is more complicated.
+	Indeed, when outputs loop back on inputs, as soon as the problem is in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
+
+	In this case the solution in the industry is to build an equivalent FIR filter by resolving the state-space recurrence.
+	This leads to build an accurate hardware, but at the price of a huge waste of logic.
+	The present work tries to answer this problem, trying to compute just right, keeping the recurrence and saving hardware.
+
+	The main idea to dimension filters is to consider the total error as a single filter.
+	The result of this filter is then added to the ``perfect" filter to get the final output.
+
+%	In fixed precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PhD \cite{lopez}.
+%	The idea now is to see what and be done in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
+	The two incoming parts are calculations from Lopez's PhD \cite{lopez}, with adaptations in the architecture context.
+	Indeed, the original calculations are done for fixed precision, because they are expected to be done in software, with fixed word sizes.
+	The challenge here is to produce architecture with arbitrary precision, that is, choosing the best size for each basic operation.
+
+%	Dealing with potential infinitly amplified errors, the question here seem very hard.
+%	Fortunately filters considered in this work have an error amplification bounded, which allows us to use filters WCPGs.
+
+%	Here the requirement is to compute each size at each step of the computation. Of course, the WCPG is not useful for the first part of a FIR, as it includes no loop.
+%	So the WCPG is just important for the recursive part, which is the only one to introduce an infinite error amplification.
+
+	%Direct and transposed forms are not directly transposable into SIF, but this problem is secondary.
+
+
+	\subsubsection{Size computation in finite precision}
+	When there are many potential realizations for a single LTI filter, the choice of one realization
+	among the others is very related to the error analysis in output.
+	The precision of our computations can then be defined so that the following condition is satisfied:
+
+	\begin{equation} \label{condition}
+		\varepsilon_{y_i} < 2^{-lsb_{y_i}} \hspace{5pt} \forall i \in [1,n_y]
+	\end{equation}
+
+	With $lsb_{y_i}$ the last significant bit of the output $y_i$, and $\varepsilon_{y_i}$ the error on the computation of the output $y_i$
+
+	Following the same model, an error term for each SOPC is involved in the computation.
+	All these error terms will be functions of the most significant and last significant bits (respectively msb and lsb) of every input, output and intermediate signal.
+	So there is a need for computing every ${msb_{t_i},lsb_{t_i}}$, ${msb_{x_i},lsb_{x_i}}$ and ${msb_{y_i},lsb_{y_i}}$,
+
+	This leads to the definition of errors introduced by the SOPCs architectures, based on the SIF computation algorithm:
+		\begin{eqnarray}
+				\boldsymbol{\varepsilon}_t(k) =
+				- ( \boldsymbol{J'} \cdot \boldsymbol{t}(k+1) - \boldsymbol{J'} \times \boldsymbol{t}(k+1) ) 
+				+ ( \boldsymbol{M } \cdot \boldsymbol{x}(k  ) - \boldsymbol{M } \times \boldsymbol{x}(k  ) )
+				+ ( \boldsymbol{N } \cdot \boldsymbol{u}(k  ) - \boldsymbol{N } \times \boldsymbol{u}(k  ) ),\\ 
+				\boldsymbol{\varepsilon}_x(k) =
+				  ( \boldsymbol{K } \cdot \boldsymbol{t}(k+1) - \boldsymbol{K } \times \boldsymbol{t}(k+1) ) 
+				+ ( \boldsymbol{P } \cdot \boldsymbol{x}(k  ) - \boldsymbol{P } \times \boldsymbol{x}(k  ) )
+				+ ( \boldsymbol{Q } \cdot \boldsymbol{u}(k  ) - \boldsymbol{Q } \times \boldsymbol{u}(k  ) ),\\ 
+				\boldsymbol{\varepsilon}_y(k) =
+				  ( \boldsymbol{L } \cdot \boldsymbol{t}(k+1) - \boldsymbol{L } \times \boldsymbol{t}(k+1) ) 
+				+ ( \boldsymbol{R } \cdot \boldsymbol{x}(k  ) - \boldsymbol{R } \times \boldsymbol{x}(k  ) )
+				+ ( \boldsymbol{S } \cdot \boldsymbol{u}(k  ) - \boldsymbol{S } \times \boldsymbol{u}(k  ) ),
+		\end{eqnarray}
+
+		where $\cdot$ is the absolute product (the result in infinite precision) and $\times$ is the computed product (with rounding errors)
+
+%		\begin{eqnarray}
+%				\boldsymbol{t}^*(k+1) = - \boldsymbol{J'}\boldsymbol{t}^*(k+1) + \boldsymbol{M} \boldsymbol{x}^*(k) + \boldsymbol{N} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_t}(k)\\
+%		\end{eqnarray}
+
+	Let's define the following vectors:
+	\begin{equation}
+		\boldsymbol{\varepsilon}(k) =
+		\begin{pmatrix}
+			\boldsymbol{\varepsilon}_t(k) \\
+			\boldsymbol{\varepsilon}_x(k) \\
+			\boldsymbol{\varepsilon}_y(k) \\
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			{\varepsilon}_{t_1}(k) \\
+			{\varepsilon}_{t_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{t_{n_t}}(k) \\
+			\hspace{5pt} \\
+			{\varepsilon}_{x_1}(k) \\
+			{\varepsilon}_{x_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{x_{n_x}}(k) \\
+			\hspace{5pt} \\
+			{\varepsilon}_{y_1}(k) \\
+			{\varepsilon}_{y_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{y_{n_y}}(k) \\
+		\end{pmatrix}
+	\end{equation}
+
+
+		
+	\subsubsection{Error analysis}
+
+	Considering a filter $\mathcal{H}$ and it’s SIF, following
+	the algorithm \ref{algomat}, in finite precision, leads to the following equations:
+
+			\begin{eqnarray} \label{sifalgoerr}
+				\boldsymbol{t}^*(k+1) = - \boldsymbol{J'}\boldsymbol{t}^*(k+1) + \boldsymbol{M} \boldsymbol{x}^*(k) + \boldsymbol{N} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_t}(k)\\
+				\boldsymbol{x}^*(k+1) = \boldsymbol{K}\boldsymbol{t}^*(k+1) + \boldsymbol{P} \boldsymbol{x}^*(k) + \boldsymbol{Q} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_x}(k) \\
+				\boldsymbol{y}^*(k+1) = \boldsymbol{L}\boldsymbol{t}^*(k+1) + \boldsymbol{R} \boldsymbol{x}^*(k) + \boldsymbol{S} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_y}(k) 
+			\end{eqnarray}
+			Here $\boldsymbol{t}^*$, $\boldsymbol{x}^*$ and $\boldsymbol{y}^*$ are the computed vectors, so with computations errors.
+
+	As $\boldsymbol{\varepsilon}$-errors come only from the SOPCs cores, another error term will symbolize the total error.
+			Let's denote:
+			\begin{eqnarray}
+			\boldsymbol{\delta t}_i(k+1)=\boldsymbol{t}_i^*(k)-\boldsymbol{t}_i(k) \\
+			\boldsymbol{\delta x}_i(k+1)=\boldsymbol{x}_i^*(k)-\boldsymbol{x}_i(k) \\
+			\boldsymbol{\delta y}_i(k+1)=\boldsymbol{y}_i^*(k)-\boldsymbol{y}_i(k) 
+			\end{eqnarray}
+			the total error at instant k,
+			considering computations errors and loopback, for 
+			$\boldsymbol{t}$ , $\boldsymbol{x}$ and $\boldsymbol{y}$.
+			The equations, corresponding to an algorithm, become:
+			\begin{eqnarray} \label{deltaerr}
+				\boldsymbol{\delta t}(k+1) = - \boldsymbol{J'}\boldsymbol{\delta t}(k+1) + \boldsymbol{M} \boldsymbol{\delta x}(k) + \boldsymbol{\varepsilon_t}(k)\\
+				\boldsymbol{\delta x}(k+1) = \boldsymbol{K}\boldsymbol{\delta t}(k+1) + \boldsymbol{P} \boldsymbol{\delta x}(k) + \boldsymbol{\varepsilon_x}(k) \\
+				\boldsymbol{\delta y}(k+1) = \boldsymbol{L}\boldsymbol{\delta t}(k+1) + \boldsymbol{R} \boldsymbol{\delta x}(k) + \boldsymbol{\varepsilon_y}(k) 
+			\end{eqnarray}
+
+			This new algorithm corresponds here to the algorithm of the SIF of a filter $\mathcal{H}_{\boldsymbol{\varepsilon}}$,
+			which describes the behaviour of computation errors at time k on the output.
+			The linearity condition allows to decompose the real $\mathcal{H}^*$ filter in two distinct filters:
+			\begin{itemize}
+				\item $\mathcal{H}$ the absolute filter in infinite precision
+				\item $\mathcal{H}_{\boldsymbol{\varepsilon}}$ the error filter
+			\end{itemize}
+
+			\begin{figure}[h] 
+			  \centering
+			  \begin{tikzpicture}[x=1cm,y=1cm]
+				\draw (-9, 0.5) -- (-8,0.5) [->, thick] node[above,near start]{$\boldsymbol{u}(k)$};
+				\draw (-7.2, 1.5) -- (-7.2,1.0) [->, thick] node[right,near start]{$\boldsymbol{\varepsilon}(k)$};
+				\draw (-6.5, 0.5) -- (-5.5,0.5) [->, thick] node[above,near end]{$\boldsymbol{y}^*(k)$};
+				\draw (-8,0.0) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}$}; 
+				\draw (-2,0.5) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}$}; 
+				\draw (-3, 1) -- (-2,1) [->, thick] node [above,near start]{$\boldsymbol{u}(k)$}; 
+				\draw (-0.5, 1)  -- (1,1) -- (1,0.5) [->, thick] node[xshift=-0.75cm,yshift=0.8cm]{$\boldsymbol{y}(k)$}; 
+
+				\draw (-2,-1) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}_{\abserr}$}; 
+				\draw (-3, -0.5) -- (-2,-0.5) [->, thick] node[above,near start]{$\boldsymbol{\varepsilon}(k)$};
+				\draw (-0.5, -0.5) -- (1,-0.5) -- (1,0) [->, thick] node [xshift=-0.75cm,yshift=-0.2cm]{$\boldsymbol{\delta y}(k)$}; 
+
+				\draw (1,0.25) circle (0.25) [thick] node {$+$}; 
+				\draw (1.25,0.25) -- (2.25,0.25)[->, thick] node [above,midway] {$\boldsymbol{y}^*(k)$};
+
+				\node (arrow) at (-4.3,0.4) {$\iff$};
+			  \end{tikzpicture}
+
+			\caption{A signal view of the error propagation with respect to the ideal filter \label{fig:ltierror}}
+			\end{figure}
+
+
+		According to \ref{zmatrix}:
+
+		\begin{equation} \label{zepsmatrix}
+		\boldsymbol{Z_\varepsilon}=
+					\begin{pmatrix}
+						\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\
+						\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\
+						\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y 
+					\end{pmatrix}
+		\end{equation}
+
+		with:
+		\begin{eqnarray} \label{deltaerr}
+			\boldsymbol{M}_t=(\boldsymbol{I}_{n_t} \hspace{5pt} \boldsymbol{0}_{n_t \times n_x} \hspace{5pt} \boldsymbol{0}_{n_t \times n_y}), \\
+			\boldsymbol{M}_x=(\boldsymbol{0}_{n_x \times n_t} \hspace{5pt} \boldsymbol{I}_{n_x} \hspace{5pt} \boldsymbol{0}_{n_x \times n_y}), \\
+			\boldsymbol{M}_y=(\boldsymbol{0}_{n_y \times n_t} \hspace{5pt} \boldsymbol{0}_{n_y \times n_x} \hspace{5pt} \boldsymbol{I}_{n_y}),
+		\end{eqnarray}
+
+		$\mathcal{H}_{\boldsymbol{\varepsilon}}$ is a filter with ($n_t+n_x+n_u$) inputs and $n_y$ outputs.
+		\begin{proposition}
+			The transfert function of filter $\mathcal{H_{\boldsymbol{\varepsilon}}}$, denoted $\boldsymbol{H}_\varepsilon$, is defined as follows:
+			\begin{equation}
+				\boldsymbol{H}_{\varepsilon}: \rightarrow \boldsymbol{C_Z}(z\boldsymbol{I}_n-\boldsymbol{A_Z})^{-1}\boldsymbol{M}_1 +\boldsymbol{M}_2 \hspace{5pt} \forall z \in \mathbb{C}
+			\end{equation}
+			with $\boldsymbol{A_Z}$ and $\boldsymbol{C_Z}$ the matrices defined by \ref{abcdtranspose} and
+			\begin{equation}
+				\boldsymbol{M_1}=(\boldsymbol{KJ}^{-1}   \hspace{10pt}\boldsymbol{I}_{n_x} \hspace{10pt} \boldsymbol{0}), \hspace{5pt}
+				\boldsymbol{M_2}=(\boldsymbol{LJ}^{-1}  \hspace{10pt}\boldsymbol{0} \hspace{10pt}\boldsymbol{I}_{n_y}), 
+			\end{equation}
+		\end{proposition}
+		The demonstration is well detailed in Lopez' PhD \cite{lopez}.
+
+		\begin{corollary} \label{corimp}
+			Considering a filter $\mathcal{H}$, $\boldsymbol{\varepsilon}(k)$ the vector of computation errors at time $k$ in the finite precision of $\mathcal{H}$,
+			and $\mathcal{H}\boldsymbol{\varepsilon}$ the error filter associated to $\mathcal{H}$.
+			The behaviour of error can be described from $\boldsymbol{\varepsilon}(k)$ and $\mathcal{H}\boldsymbol{\varepsilon}$.
+			The error is considered as an interval vector, denoted by its center and radius $\langle \boldsymbol{\varepsilon}_m, \boldsymbol{\varepsilon}_r \rangle$ and 
+			the interval vector of global error $\boldsymbol{\delta y}$, denoted $\langle \boldsymbol{\delta y}_m, \boldsymbol{\delta y}_r \rangle$.
+
+			In practise, all inputs in our case are centered around zero, which is not the case in the control community, where this notation makes sense.
+			So, $\boldsymbol{\varepsilon}_m=0$.
+			The results are the following:
+
+			\begin{eqnarray} \label{eqprec}
+				\boldsymbol{\delta y}_m = 0 \\
+				\boldsymbol{\delta y}_r = \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{wcpg} \cdot \boldsymbol{\varepsilon}_r
+			\end{eqnarray}
+		\end{corollary}
+
+		In the following $\boldsymbol{\delta y}_m$ won't be taken into account.
+
+		Let's define:
+			$$n'=n_t+n_x+n_y$$
+
+		and:
+
+			\begin{equation}
+				\boldsymbol{v'}=
+				\begin{pmatrix}
+					\boldsymbol{t}(k+1) \\
+					\boldsymbol{x}(k+1) \\
+					\boldsymbol{y}(k)   \\
+				\end{pmatrix}
+			\end{equation}
+
+
+		Then, following Lopez's computations, precisions are derived for every intermediate step:
+		
+		\begin{equation}
+			|\boldsymbol{\delta y}_i| \leq \sum_{j=1}^{n'} | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \boldsymbol{2^{lsb_{v'_j}}}
+		\end{equation}
+
+		To formalize with a matricial formulation:
+		\begin{equation}
+			|\boldsymbol{\delta y}| \leq | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle| \cdot \boldsymbol{2^{lsb_{v'}}}
+		\end{equation}
+
+
+		To satisfy the condition \ref{condition}, $\xi$ is defined as the minimal error the user wants, which gives:
+		\begin{equation}
+			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle| \cdot \boldsymbol{2^{lsb_{v'}}} < \xi
+		\end{equation}
+
+		That is, 
+		\begin{equation} \label{constraint}
+			\boldsymbol{\mathfrak{A}} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+
+		Where:
+		\begin{eqnarray}
+			\boldsymbol{\mathfrak{A}}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} %\\
+			%\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}
+		\end{eqnarray}
+
+		So, for computations in arbitrary precision, it is a sufficient condition (\ref{constraint}) to implement the filters.
+
+		%\TODO: check if this step is sufficient.
+
+%		\subsubsection{A working solution to this problem}
+%		A solution poposed in Lopez's PhD \cite{lopez}, is to consider the following reformulation of constraint \ref{constraint}.
+%		We can give a stronger majoration, as follows:
+%		\begin{equation}
+%			\frac{\mathfrak{A}_{i1}}{\boldsymbol{2}^{msb_{v'_1}-lsb_{v'_1}+1}} + \frac{\mathfrak{A}_{i2}}{\boldsymbol{2}^{msb_{v'_2}-lsb_{v'_2}+1}} + \dots + \frac{\mathfrak{A}_{in'}}{\boldsymbol{2}^{msb_{v'_{n'}}-lsb_{v'_{n'}}+1}} < 1, \hspace{5pt} \forall 1 \leq i \leq n_y 
+%		\end{equation}
+		
+		\subsubsection{Worst-case peak gain computation}
+			Computing the worst-case peak gain accurately in finite precision is a non-trivial problem.
+			%As doing such a work is a PhD subject, the present work is about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 \cite{Volk15a}, under the metalibm project.
+			A state of the art implementation is being developped at LIP6 by Anastatsi Lozanova Volkova from Hilaire's team (PEQUAN) \cite{Volk15a}.
+			This work will use it as soon as it is available.
+
+
 \subsection{Architecture generation algorithm}
 
 	\begin{algorithm}[H]
 	\For{i=1; i=Z.size(); i++} {
 	 	row[ ]= Z[i][ ] //pick first row of Z \\
+		computePrecisions($[msbs,lsbs][][]$) //get the matrix of msbs lsbs, functions of the wcpg
 	 	\For {j=1; j=1; j=Z.size() j++} {
-	 		assign(SOPC[i], row[j], TXU) //where TXU, is the indicator of the signal (this is just determined by the position of the coefficient)
+	 		assign(SOPC[i], row[j], {"T","X","U"},[msbs,lsbs][i][j])
 	 	}
 		Second pass for wiring.
 	}
@@ -21,9 +383,9 @@
 
 	On the figure \ref{fig:SIFimpl}, the colors in the matrix represent the different steps of computaions:
 	\begin{itemize}
-		\item blue for t computations
-		\item green for x computations
-		\item green for y computations
+		\item blue for $\boldsymbol{t}$ computations
+		\item green for $\boldsymbol{x}$ computations
+		\item green for $\boldsymbol{y}$ computations
 	\end{itemize}
 
 	On the architecture scheme:
@@ -33,20 +395,19 @@
 		\item orange for inputs
 	\end{itemize}
 	
-	A small precision is needed here.
-	Here, most of coefficients of the $\boldsymbol{J}$ coefficient are null.
+	A small remark is needed here:
+	most of coefficients of the $\boldsymbol{J}$ coefficient are null in the original case specification.
 	They are just kept under this form to show how the algorithm works and how the architecture is built.
 	
 
 \subsection{Particular Forms, degenerated cases}
-	\subsection{ABCD Form: still achievable}
+	\subsubsection{ABCD Form: still achievable}
 	The ABCD Form can be considered as a degenerated form of the SIF, with $n_t=0$.
 	The algorithm will work in this case too.
-	\subsection{When $n_x=0$}
+	\subsubsection{When $n_x=0$}
 	When $n_x=0$, the interest of using a SIF is of course very limited.
 	This case is equivalent to building a FIR, and no loopback is needed.
 	Still, the algorithm will work, allocating only SOPCs operators.
-	The computation of precisions are then equivalent to the FIR precision computaion, described in an article that is about to be published.
 	
 \subsection{Optimizations to do on this technology}
 	\subsubsection{Sparse matrices}
@@ -76,7 +437,7 @@
 	The testing framework consists on pre-computing expected results using the sollya lib \cite{ChevillardJoldesLauter2010}.
 	Then the FloPoCo framework generates a VHDL testbench that embed the hardware architecture and the test of expected results.
 	As an exhaustive testbench is impossible to generate(${2^{msb_{In} - lsb_{In}}}^{2^msb{In} - lsb{In}}$ values to test for each input),
-	FloPoCo generates a user-defined number of random tests that should be enough, if the number is large enough, to validate the implementation.
+	FloPoCo then generates a user-defined number of random tests.
 
 		\subsection{Filter specification interface}
 		To communicate with our SIF operator in FloPoCo, simply pass the coefficients in command line as it is done for the direct form is not affordable.
@@ -97,7 +458,7 @@
 
 		All the matrices are specified after each other in the file.
 
-		For now another file is used to specify sizes the integration of the "wcpg-code" is not completed.
+		For now another file is used to specify sizes because we are still waiting for the wcpg-code.
 
 
 

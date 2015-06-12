@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  12 JUN 2015 17:41
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  12 JUN 2015 18:13
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1044,25 +1044,29 @@ Overfull \hbox (7.28934pt too wide) in paragraph at lines 319--320
  [][] 
  []
 
-[7] [8]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 541.
+) [7] (./secondPart.tex [8]
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
- (/usr/share/texmf-dist/tex/latex/base/omscmr.fd
+ [9]
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 220.
+
+
+(/usr/share/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 541.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 220.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[9]
-LaTeX Font Info:    Try loading font information for U+euf on input line 655.
+[10]
+LaTeX Font Info:    Try loading font information for U+euf on input line 334.
  (/usr/share/texmf-dist/tex/latex/amsfonts/ueuf.fd
 File: ueuf.fd 2013/01/14 v3.01 Euler Fraktur
-) [10]) [11]
-(./secondPart.tex (./pictures/example.tex)
-Overfull \hbox (45.14482pt too wide) in paragraph at lines 17--18
+) [11]
+(./pictures/example.tex)
+Overfull \hbox (45.14482pt too wide) in paragraph at lines 379--380
  [] 
  []
 
@@ -1071,15 +1075,15 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 45.
+(hyperref)                removing `math shift' on input line 407.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `subscript' on input line 45.
+(hyperref)                removing `subscript' on input line 407.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 45.
+(hyperref)                removing `math shift' on input line 407.
 
 [12]
 
@@ -1093,18 +1097,18 @@ Package atveryend Info: Empty hook `AfterLastShipout' on input line 158.
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 158.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 158.
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 84D269CE89D3F2A67573C292C43719DE;3469.
+(rerunfilecheck)             Checksum: 7D32E30AED9DBE6A7A3CB9A30AE064A6;3489.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 20904 strings out of 493109
- 365302 string characters out of 6140856
- 584564 words of memory out of 5000000
- 23824 multiletter control sequences out of 15000+600000
- 20552 words of font info for 79 fonts, out of 8000000 for 9000
+ 20926 strings out of 493109
+ 365688 string characters out of 6140856
+ 589684 words of memory out of 5000000
+ 23846 multiletter control sequences out of 15000+600000
+ 25386 words of font info for 99 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,16n,54p,822b,929s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmbsy10.pfb></usr/share
@@ -1138,7 +1142,7 @@ fonts/cm/cmti10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt1
 0.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/euler/eufb10.pfb></usr
 /share/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/te
 xmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on report.pdf (17 pages, 436528 bytes).
+Output written on report.pdf (17 pages, 437801 bytes).
 PDF statistics:
  568 PDF objects out of 1000 (max. 8388607)
  506 compressed objects within 6 object streams

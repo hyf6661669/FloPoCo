@@ -27,7 +27,7 @@
 \contentsline {subsection}{\numberline {2.3}Particular Forms, degenerated cases}{12}{subsection.2.3}
 \contentsline {subsubsection}{\numberline {2.3.1}ABCD Form: still achievable}{12}{subsubsection.2.3.1}
 \contentsline {subsubsection}{\numberline {2.3.2}When $n_x=0$}{14}{subsubsection.2.3.2}
-\contentsline {subsection}{\numberline {2.4}Optimizations to do on this technology}{14}{subsection.2.4}
+\contentsline {subsection}{\numberline {2.4}Optimizations}{14}{subsection.2.4}
 \contentsline {subsubsection}{\numberline {2.4.1}Sparse matrices}{14}{subsubsection.2.4.1}
 \contentsline {subsubsection}{\numberline {2.4.2}Power of two coefficients}{14}{subsubsection.2.4.2}
 \contentsline {subsection}{\numberline {2.5}Implementation details}{14}{subsection.2.5}

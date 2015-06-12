@@ -60,7 +60,7 @@
 	Dealing with MIMO filters, $\boldsymbol{h}(k) \in \mathbb{R}^{n_y \times n_u}$ is the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}(k)$ is the response on the
 	ith output to the Dirac implusion on the j-th input.
 	The precedent equation becomes:
-	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l\geq}^lu_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
+	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l=0}^ku_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
 	
 	\end{thdef} 
 
@@ -112,14 +112,14 @@
 	\end{thdef}
 	It is important to know that all realizations of a filter are mathematically equivalent to each other (infinite
 	precision). But in finite precision, rounding aspects have a huge impact on the correctness of results.
-	Most of the time in this report, realizations will be reffered as forms.
+	Most of the time in this report, realizations will be referred as forms.
 
 	\subsubsection{Direct and transposed forms}
 	Direct and transposed forms are classic realizations. A good description of these forms can be found in Lopez’ and Hilaire’s PhDs \cite{lopez} \cite{hilaire}. 
 	The direct form has been implemented in the FoPoCo project,
-	The hardware implementation of anIIR can be seen on figure \ref{iirpic}
+	The hardware implementation of anIIR can be seen on figure \ref{fig:ltiarch}
 
-\begin{figure*}[h] \label{iirpic}
+\begin{figure*}[h]
   \centering
   \begin{tikzpicture}
      \draw[dotted,black, fill=yellow!20] (-5ex,-3.5ex) rectangle +(69ex,-15ex);   
@@ -199,14 +199,14 @@
 
 	\subsection{The Specialized Implicit Form (SIF): a unified representation}
 	\subsubsection{Definition}
-	The classical state-space representation is intuitive, but it doesn't takes into account the reality of implementation.
-	The specialized implicit form (SIF) was introduced in \cite{sifd} and is well detailed in Hilaire's PhD and associated papers \cite{hilaire,sif},
+	The classical state-space representation is intuitive, but it doesn't take into account the reality of implementation.
+	The specialized implicit form (SIF) was introduced in \cite{sifd}, is well detailed in Hilaire's PhD and associated papers \cite{hilaire,sif},
 	and is a good answer to this problem.
 	Indeed, dealing with finite precision and error amplification, the order in which operations are done becomes crucial.
 	Another motivation is to have a unique representation for any realization of LTI filters,
 	that allows to compute every degradation measures instead of redevelopping them for each new realization.
 	This form distinguishes computations done at one time from computations done the other times. As well as
-	in a state-space, $\boldsymbol{x}_i$ are state variables, but in addition to that, $\boldsymbol{t}_i$ are intermediate variables.
+	in a state-space, $\boldsymbol{x}$-coordinates are state variables, but in addition to that, $\boldsymbol{t}$-coordinates are intermediate variables.
 	The SIF is described as following:
 	\begin{equation} \label{sifdef}
 		\begin{pmatrix}
@@ -247,13 +247,13 @@
 	The algorithm results as follows:
 	\begin{algorithm}
 		\For{int i = 0 ; $i \leq n_t$; i++}{
-			$\boldsymbol{t}_i(k+1) \leftarrow - \sum_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k)$
+			$\boldsymbol{t}_i(k+1) \leftarrow - \sum\limits\limits_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k)$
 		}
 		\For{int i = 0 ; $i \leq n_x$; i++}{
-			$\boldsymbol{x}_i(k+1) \leftarrow - \sum_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k)$
+			$\boldsymbol{x}_i(k+1) \leftarrow - \sum\limits_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k)$
 		}
 		\For{int i = 0 ; $i \leq ny$; i++}{
-			$\boldsymbol{y}_i(k+1) \leftarrow - \sum_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k)$
+			$\boldsymbol{y}_i(k) \leftarrow - \sum\limits_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k)$
 		}
 		\caption{Computation of SIF outputs from inputs}
 	\end{algorithm}
@@ -268,7 +268,7 @@
 			$\boldsymbol{x}_i(k+1) \leftarrow - \boldsymbol{K}_{i}\boldsymbol{t}(k+1) + \boldsymbol{P}_{i}\boldsymbol{x}(k) +\boldsymbol{Q}_{i}\boldsymbol{u}(k)$
 		}
 		\For{int i = 0 ; $i \leq ny$; i++}{
-			$\boldsymbol{y}_i(k+1) \leftarrow - \boldsymbol{L}_{i}\boldsymbol{t}(k+1) + \boldsymbol{R}_{i}\boldsymbol{x}(k) + \boldsymbol{S}_{i}\boldsymbol{u}(k)$
+			$\boldsymbol{y}_i(k) \leftarrow - \boldsymbol{L}_{i}\boldsymbol{t}(k+1) + \boldsymbol{R}_{i}\boldsymbol{x}(k) + \boldsymbol{S}_{i}\boldsymbol{u}(k)$
 		}
 		\caption{Simplified matricial algorithm}
 	\end{algorithm}
@@ -277,7 +277,7 @@
 
 	Values of the vector $\boldsymbol{t}(k+1)$ are computed and used at the same iterations, so they are not kept in memory.
 	As the equation \ref{sifdef} is mostly full of zeros, it is more convenient to use it’s compressed formulation, wich is denoted
-	as the $\boldsymbol{Z}$:
+	$\boldsymbol{Z}$:
 	
 	\begin{equation} \label{zmatrix}
 		\boldsymbol{Z}=
@@ -311,7 +311,7 @@
 		The choice of the SIF realization is not concerned by this work.
 		This choice is up to the user, who may have a lot of good reasons not to design a realization that seem intuitive for us.
 		The choice of the realization is a job done at LIP6 in the PEQUAN team, under the metalibm ANR project.
-		The present work is just a hardware backend for the optimization part.
+		The present work is just a hardware backend for the choice part.
 		Of course, optimizations are available at every level.
 		The expected use of this work is shown on figure \ref{fig:workflow}.
 

@@ -26,7 +26,7 @@
 \BOOKMARK [2][-]{subsection.2.3}{Particular Forms, degenerated cases}{section.2}% 26
 \BOOKMARK [3][-]{subsubsection.2.3.1}{ABCD Form: still achievable}{subsection.2.3}% 27
 \BOOKMARK [3][-]{subsubsection.2.3.2}{When nx=0}{subsection.2.3}% 28
-\BOOKMARK [2][-]{subsection.2.4}{Optimizations to do on this technology}{section.2}% 29
+\BOOKMARK [2][-]{subsection.2.4}{Optimizations}{section.2}% 29
 \BOOKMARK [3][-]{subsubsection.2.4.1}{Sparse matrices}{subsection.2.4}% 30
 \BOOKMARK [3][-]{subsubsection.2.4.2}{Power of two coefficients}{subsection.2.4}% 31
 \BOOKMARK [2][-]{subsection.2.5}{Implementation details}{section.2}% 32

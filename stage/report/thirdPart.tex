@@ -1,13 +1,13 @@
 \subsection{Static analysis on coefficients}
 	For now, we are performing detection on null coefficients.
-	Detecting ones entries in the coefficients is an improvement very simple to implement.
+	Detecting power of two entries in the coefficients seem to be a quite simple improvement to implement.
 	This will open the discussion of the efficiency of integrating or not these one entries in the SOPCs, because we don't know for now what choice is the best between:
 	\begin{itemize}
-		\item integrating the one entry in the SOPC
-		\item keeping the one entry out of the SOPC and adding it to the result of the SOPC
+		\item integrating the power of two entry in the SOPC
+		\item keeping the power of two entry out of the SOPC and adding it to the result of the SOPC
 	\end{itemize}
 
-	Moreover, depending on the number of one entries, the implementations concerns might vary from one option to the other one in terms of logic consumption.
+	Moreover, depending on the number of power of two entries, the implementations concerns might vary from one option to the other one in terms of logic consumption.
 
 
 \subsection{Sub-filter detection}
@@ -17,8 +17,8 @@
 
 \subsection{Precision calculations improvement}
 	In this work, we kept original calculations trying to adapt them to our context.
-	However, lots of approximations are done through this calculations.
-	Working on this part, going back over all these calculations could really improve the efficiency and the size of all implementations.
+	However, lots of approximations are done through those calculations.
+	Working on this part, going back over all the calculations could really improve the efficiency and size of all implementations.
 
 
 \subsection{File format re-specification}

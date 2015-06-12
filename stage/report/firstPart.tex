@@ -5,17 +5,17 @@
 
 	\begin{thdef}\label{sig} (Signal)
 		Generally, a signal is a temporal variable, which takes a value from $\mathbb{R}$ at each time t.
-		We denote $x(t)$ the value of the signal $x$ at the instant $t$.
+		$x(t)$ denotes the value of the signal $x$ at the instant $t$.
 		When dealing with discrete time events, the time will be represented by $k$.
 		The notation will then be $x(k)$, which is said to be a sample.
 		$\{x(k)\}_{k \geq 0}$ denotes all the values possible for the signal x.
-		In the rest of this report, we will discuss about vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
+		The rest of this report adresses vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
 	\end{thdef}
 
 	\subsubsection{Linear Time Invariant Filters (LTI filters)}
 	A filter, denoted by its transfer function $\mathcal{H}$, is an application which transforms a signal vector $\boldsymbol{u}$ (with $dim(\boldsymbol{u}) = n_u$ )
-	into a signal $\boldsymbol{y} = \mathcal{H}(\boldsymbol{u})$, of size $dim(\boldsymbol{y}) = n_y$ . When $n_u = n_y = 1$, we speak about Single Input Single Output
-	(SISO) filters. In other cases, we speak about Multiple Input Multiple Output (MIMO) filters.
+	into a signal $\boldsymbol{y} = \mathcal{H}(\boldsymbol{u})$, of size $dim(\boldsymbol{y}) = n_y$ . The case where $n_u = n_y = 1$ is referred as Single Input Single Output
+	(SISO) filters. Other casesare referred as Multiple Input Multiple Output (MIMO) filters.
 
 	\begin{thdef} (Linear Time Invariant Filter)
 		Linearity:
@@ -45,7 +45,7 @@
 	$$y(k)=\sum_{l\geq0}u(l)h(k-l)=\sum_{l=0}^ku(k)h(k-l)$$
 	This corresponds with the convolution product definition of $u$ by $h$, denoted $y = h * u$.
 	%Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
-	Dealing with MIMO filters, we have $\boldsymbol{h}(k) \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}(k)$ is the response on the
+	Dealing with MIMO filters, $\boldsymbol{h}(k) \in \mathbb{R}^{n_y \times n_u}$ is the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}(k)$ is the response on the
 	ith output to the Dirac implusion on the j-th input.
 	The precedent equation becomes:
 	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l\geq}^lu_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
@@ -64,7 +64,7 @@
 
 	\subsection{FIR and IIR: two filters families}
 	There is two types of LTI filters: \textit{Finite impulse response} (FIR) and \textit{Infinite impulse response} (IIR) filters.
-	Formally, we define the impulse response as finite when:
+	Formally, the impulse response is finite when:
 	\begin{equation} \label{finimp}
 		\exists n \in \mathbb{N} | \forall k \geq n, h(k)=0
 	\end{equation}
@@ -100,7 +100,7 @@
 	\end{thdef}
 	It is important to know that all realizations of a filter are mathematically equivalent to each other (infinite
 	precision). But in finite precision, rounding aspects have a huge impact on the correctness of results.
-	Most of the time in this report, we may refer to realizations as forms.
+	Most of the time in this report, realizations will be reffered as forms.
 
 	\subsubsection{Direct and transposed forms}
 	Direct and transposed forms are classic realizations. A good description of these forms can be found in Lopez’ and Hilaire’s PhDs \cite{lopez} \cite{hilaire}. 
@@ -194,7 +194,7 @@
 	Another motivation is to have a unique representation for any realization of LTI filters,
 	that allows to compute every degradation measures instead of redevelopping them for each new realization.
 	This form distinguishes computations done at one time from computations done the other times. As well as
-	in a state-space, we have $\boldsymbol{x}_i$ as state variables, but in addition to that, $\boldsymbol{t}_i$ are intermediate variables.
+	in a state-space, $\boldsymbol{x}_i$ are state variables, but in addition to that, $\boldsymbol{t}_i$ are intermediate variables.
 	The SIF is described as following:
 	\begin{equation} \label{sifdef}
 		\begin{pmatrix}
@@ -221,7 +221,9 @@
 	\end{equation}
 	With $n_t$, $n_x$, $n_y$ and $n_u$ the sizes of $\boldsymbol{t}$, $\boldsymbol{x}$, $\boldsymbol{y}$ and $\boldsymbol{u}$, respectively.
 	$\boldsymbol{J}$, is a lower triangular matrix, with
-	diagonal entries equal to 1. Then we have the following dimensions for the previous matrices:
+	diagonal entries equal to 1.
+	%Then we have the following dimensions for the previous matrices:
+	The previous matrices have the following dimensions:
 
 	\begin{eqnarray}
 		\boldsymbol{J} \in \mathbb{R}^{n_t \times n_t},\boldsymbol{M} \in \mathbb{R}^{n_t \times n_x},\boldsymbol{N} \in \mathbb{R}^{n_t \times n_u}, \nonumber \\
@@ -275,7 +277,7 @@
 	\end{equation}
 	The community usually takes $-\boldsymbol{J}$ for simplicity within further computations.
 
-	We can of course bind the SIF with the ABCD (classic state-space) form, which gives:
+	The SIF can of course be bound with the ABCD (classic state-space) form, which gives:
 
 	\begin{eqnarray} \label{abcdtranspose}
 		\boldsymbol{A_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{M} +\boldsymbol{P}, \hspace{5pt}
@@ -293,7 +295,8 @@
 	\end{eqnarray}
 
 	\subsubsection{Optimal SIF realization}
-		Here, we won't discuss the optimality of the SIF description.
+		%Here, we won't discuss the optimality of the SIF description.
+		The optimality of the SIF description is not concerned by this work.
 		This optimality is up to the user, who may have a lot of good reasons not to design a realization that seem optimal for us.
 		The optimization of the realization is a job done at LIP6 in the PEQUAN team, under the metalibm ANR project.
 		The present work is just a hardware backend for the optimization part.
@@ -326,14 +329,14 @@
 
 		More information is available at \url{http://flopoco.gforge.inria.fr/}
 
-	In this work, we propose to implements SIFs using the SOPCs arithmetical core from FloPoCo.
+	This work proposes to implements SIFs using the SOPCs arithmetical core from FloPoCo.
 	SOPC stands for Sum of Producs by Constants, and is a KCM-multiplier based architecture.
 	The details of the SOPC architecture has been described in \cite{sums}.
 
 	\subsubsection{KCM multipliers: an architecture to efficiently compute products on FPGAs}
 	To be quick, a KCM multiplier is designed to fully use the power of look-up tables (LUTs) in an FPGA.
 	To do so, it partitions the constant into chunks which match the size of a LUT.
-	Then, tabulating the multiplications, we end up with a final sum to compute the product.
+	Then, tabulating the multiplications ends up with a final sum to compute the product.
 	This has been first described by K.Chapman in \cite{Chapman93:edn}.
 	The detail of implementation is visible on figure \ref{fig:FixRealKCM}
 
@@ -412,7 +415,7 @@
 	This is described in \cite{sums}.
 
 	Dealing with feedback inputs to build an SOPC-based filter, the question of precision is more complicated.
-	Indeed, when outputs loop back on inputs, as soon as we are in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
+	Indeed, when outputs loop back on inputs, as soon as the problem is in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
 
 	In this case the solution in the industry is to build an equivalent FIR filter by resolving the state-space recurrence.
 	This leads to build an accurate hardware, but at the price of a huge waste of logic.
@@ -422,19 +425,19 @@
 	The result of this filter is then added to the ``perfect" filter to get the final output.
 
 	In finite precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PhD \cite{lopez}.
-	The idea now is to see what we can do in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
+	The idea now is to see what and be done in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
 
 	Dealing with potential infinitly amplified errors, the question here seem very hard.
-	Fortunately filters we are considering have an error amplification bounded, which allows us to use filters WCPGs.
+	Fortunately filters considered in this work have an error amplification bounded, which allows us to use filters WCPGs.
 
-	Here we have to compute each size at each step of the computation. Of course, the WCPG is not useful for the first part of a FIR, as it includes no loop.
-	So we just need the WCPG for the second part, because it is just in this part of the circuit that there is a potential error amplification.
+	Here the requirement is to compute each size at each step of the computation. Of course, the WCPG is not useful for the first part of a FIR, as it includes no loop.
+	So the WCPG is just important for the recursive part, which is the only one to introduce an infinite error amplification.
 
 	%Direct and transposed forms are not directly transposable into SIF, but this problem is secondary.
 
 
 	\subsubsection{Size computation in finite precision}
-	When there is many potential realizations for a single LTI filter, we can see that the choice of one realization
+	When there is many potential realizations for a single LTI filter, the choice of one realization
 	among the others is very related to the error analysis in output.
 	The precision of our computations can then be defined so that the following condition is satisfied:
 
@@ -444,10 +447,10 @@
 
 	With $lsb_{y_i}$ the last significant bit of the output $y_i$, and $\varepsilon_{y_i}$ the error on the computation of the output $y_i$
 
-	Following the same model, we define an error quantum for each SOPC involved in the computation.
+	Following the same model, an error quantum for each SOPC is involved in the computation.
 	All these error quantas will be functions of the most significant and last significant bits (respectively msb and lsb) of every input, output and intermediate signal.
 
-	We define the following vectors:
+	Let's define the following vectors:
 	\begin{equation}
 		\boldsymbol{\varepsilon}(k) =
 		\begin{pmatrix}
@@ -479,7 +482,7 @@
 	\subsubsection{Error analysis}
 
 	Considering a filter $\mathcal{H}$ and it’s SIF, following
-	the algorithm \ref{algomat}, in finite precision, we get the following equations:
+	the algorithm \ref{algomat}, in finite precision, leads to the following equations:
 
 			\begin{eqnarray} \label{sifalgoerr}
 				\boldsymbol{t}^*(k+1) = - \boldsymbol{J'}\boldsymbol{t}^*(k+1) + \boldsymbol{M} \boldsymbol{x}^*(k) + \boldsymbol{N} \boldsymbol{u}(k) + \boldsymbol{\varepsilon_t}(k)\\
@@ -488,8 +491,8 @@
 			\end{eqnarray}
 			Here $\boldsymbol{t}^*$, $\boldsymbol{x}^*$ and $\boldsymbol{y}^*$ are the computed vectors, so with computations errors.
 
-	As $\boldsymbol{\varepsilon}$-errors come only from the SOPCs cores, we have another error quantum that will symbolize the total error.
-			We denote 
+	As $\boldsymbol{\varepsilon}$-errors come only from the SOPCs cores, another error quantum will symbolize the total error.
+			Let's denote:
 			\begin{eqnarray}
 			\boldsymbol{\delta t}(k+1)=\boldsymbol{t}_i^*(k)-\boldsymbol{t}_i(k) \\
 			\boldsymbol{\delta x}(k+1)=\boldsymbol{x}_i^*(k)-\boldsymbol{x}_i(k) \\
@@ -498,7 +501,7 @@
 			the total error at instant k,
 			considering computations errors and loopback, for 
 			$\boldsymbol{t}$ , $\boldsymbol{x}$ and $\boldsymbol{y}$.
-			We get then:
+			The equations, corresponding to an algorithm, become:
 			\begin{eqnarray} \label{deltaerr}
 				\boldsymbol{\delta t}(k+1) = - \boldsymbol{J'}\boldsymbol{\delta t}(k+1) + \boldsymbol{M} \boldsymbol{\delta x}(k) + \boldsymbol{\varepsilon_t}(k)\\
 				\boldsymbol{\delta x}(k+1) = \boldsymbol{K}\boldsymbol{\delta t}(k+1) + \boldsymbol{P} \boldsymbol{\delta x}(k) + \boldsymbol{\varepsilon_x}(k) \\
@@ -538,7 +541,7 @@
 			\end{figure}
 
 
-		According to \ref{zmatrix}, we have:
+		According to \ref{zmatrix}:
 
 		\begin{equation} \label{zepsmatrix}
 		\boldsymbol{Z_\varepsilon}=
@@ -574,11 +577,11 @@
 			Considering a filter $\mathcal{H}$, $\boldsymbol{\varepsilon}(k)$ the vector of computation errors at time $k$ in the finite precision of $\mathcal{H}$,
 			and $\mathcal{H}\boldsymbol{\varepsilon}$ the error filter associated to $\mathcal{H}$.
 			The behaviour of error can be described from $\boldsymbol{\varepsilon}(k)$ and $\mathcal{H}\boldsymbol{\varepsilon}$.
-			We consider the error as an interval vector, denoted by its center and radius $\langle \boldsymbol{\varepsilon}_m, \boldsymbol{\varepsilon}_r \rangle$ and 
+			The error is considered as an interval vector, denoted by its center and radius $\langle \boldsymbol{\varepsilon}_m, \boldsymbol{\varepsilon}_r \rangle$ and 
 			the interval vector of global error $\boldsymbol{\delta y}$, denoted $\langle \boldsymbol{\delta y}_m, \boldsymbol{\delta y}_r \rangle$.
 
 			In practise, all inputs in our case are centered around zero, which is not the case in the control community, where this notation makes sense.
-			So we consider that $\boldsymbol{\varepsilon}_m=0$.
+			So, $\boldsymbol{\varepsilon}_m=0$.
 			The results are the following:
 
 			\begin{eqnarray} \label{eqprec}
@@ -587,7 +590,7 @@
 			\end{eqnarray}
 		\end{corollary}
 
-		In the future we will get rid of $\boldsymbol{\delta y}_m$.
+		In the future $\boldsymbol{\delta y}_m$ won't be taken into account.
 
 		Let's define:
 			$$n'=n_t+n_x+n_y$$
@@ -604,20 +607,19 @@
 			\end{equation}
 
 
-		Then, following Lopez's computations, we can derive precisions for every intermediate step:
+		Then, following Lopez's computations, precisions are derived for every intermediate step:
 		
 		\begin{equation}
 			|\boldsymbol{\delta y}_i| \leq \sum_{j=1}^{n'} | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \boldsymbol{2^{l_{v'_j}}}
 		\end{equation}
 
-		To formalize with a matricial formulation, we get:
+		To formalize with a matricial formulation:
 		\begin{equation}
 			|\boldsymbol{\delta y}| \leq | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle| \cdot \boldsymbol{2^{lsb_{v'}}}
 		\end{equation}
 
 
-		To satisfy the condition \ref{condition}, we can simply define $\xi$ as the minimal error the user wants.
-		We can then state:
+		To satisfy the condition \ref{condition}, $\xi$ is defined as the minimal error the user wants, which gives:
 		\begin{equation}
 			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle| \cdot \boldsymbol{2^{lsb_{v'}}} < \xi
 		\end{equation}
@@ -634,7 +636,7 @@
 			%\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}
 		\end{eqnarray}
 
-		So, for computations in arbitrary precision, we have here a sufficient condition (\ref{constraint}) to implement the filters.
+		So, for computations in arbitrary precision, it is a sufficient condition (\ref{constraint}) to implement the filters.
 
 		%\TODO: check if this step is sufficient.
 
@@ -647,7 +649,7 @@
 		
 		\subsubsection{Worst-case peak gain computation}
 			Computing the worst-case peak gain accurately in finite precision is a very complex problem.
-			As we can't afford doing such a work, we are about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 \cite{Volk15a}, under the metalibm project.
+			As doing such a work is a PhD subject, the present work is about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 \cite{Volk15a}, under the metalibm project.
 
 
 

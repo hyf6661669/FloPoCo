@@ -26,7 +26,7 @@
 		\item green for y computations
 	\end{itemize}
 
-	On the architecture scheme, we have:
+	On the architecture scheme:
 	\begin{itemize}
 		\item the grey background for indicating x registers
 		\item purple for loopback from the x registers
@@ -35,7 +35,7 @@
 	
 	A small precision is needed here.
 	Here, most of coefficients of the $\boldsymbol{J}$ coefficient are null.
-	We just kept them under this form to show how the algorithm works and how the architecture is built.
+	They are just kept under this form to show how the algorithm works and how the architecture is built.
 	
 
 \subsection{Particular Forms, degenerated cases}
@@ -60,8 +60,8 @@
 
 	\subsubsection{Power of two coefficients}
 		Coefficients equal to one or a power of two in the Z matrix can be interpreted as simple wires instead of multiplications in the SOPC.
-		So, we could eventually replace entries in SOPCs by simple additions with the result of the SOPC.
-		Here, we should investigate to see what solution is the best in terms of hardware consumption
+		Entries equal to powers of two in SOPCs may be replaced by simple additions with the result of the SOPC.
+		Here, the question of what solution is the best in terms of hardware consumption should be investigated
 		(speed is not concerned here because the speed is determined by the length of the loop).
 
 	\subsection{Concrete work}
@@ -79,8 +79,8 @@
 	FloPoCo generates a user-defined number of random tests that should be enough, if the number is large enough, to validate the implementation.
 
 		\subsection{Filter specification interface}
-		To communicate with our SIF operator in FloPoCo, we can't simply pass the coefficients in command line as it is done for the direct form.
-		So we defined, in collaboration with our co-workers at LIP6, a simple file format to store all the coefficients.
+		To communicate with our SIF operator in FloPoCo, simply pass the coefficients in command line as it is done for the direct form is not affordable.
+		So, a simple file format has been defined, in collaboration with our co-workers at LIP6, to store all the coefficients.
 		The format is defined as follows:
 
 		\begin{verbatim}
@@ -97,7 +97,7 @@
 
 		All the matrices are specified after each other in the file.
 
-		For now another file is used to specify sizes because we do not have not the integration of the "wcpg-code" done.
+		For now another file is used to specify sizes the integration of the "wcpg-code" is not completed.
 
 
 

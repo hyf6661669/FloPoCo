@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  11 JUN 2015 18:20
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  12 JUN 2015 11:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1045,23 +1045,23 @@ Overfull \hbox (7.28934pt too wide) in paragraph at lines 314--315
  []
 
 [6] [7]
-Underfull \vbox (badness 5970) has occurred while \output is active []
+Underfull \vbox (badness 2384) has occurred while \output is active []
 
  [8]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 507.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 512.
 
 
 (/usr/share/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 507.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 512.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
 [9]
-LaTeX Font Info:    Try loading font information for U+euf on input line 621.
+LaTeX Font Info:    Try loading font information for U+euf on input line 627.
  (/usr/share/texmf-dist/tex/latex/amsfonts/ueuf.fd
 File: ueuf.fd 2013/01/14 v3.01 Euler Fraktur
 ) [10]) [11]
@@ -1142,10 +1142,10 @@ fonts/cm/cmti10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt1
 0.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/euler/eufb10.pfb></usr
 /share/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/te
 xmf-dist/fonts/type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on report.pdf (17 pages, 435525 bytes).
+Output written on report.pdf (17 pages, 435657 bytes).
 PDF statistics:
- 566 PDF objects out of 1000 (max. 8388607)
- 504 compressed objects within 6 object streams
+ 567 PDF objects out of 1000 (max. 8388607)
+ 505 compressed objects within 6 object streams
  124 named destinations out of 1000 (max. 500000)
  341 words of extra memory for PDF output out of 10000 (max. 10000000)
 

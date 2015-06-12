@@ -7,7 +7,7 @@
 		Generally, a signal is a temporal variable, which takes a value from $\mathbb{R}$ at each time t.
 		We denote $x(t)$ the value of the signal $x$ at the instant $t$.
 		When dealing with discrete time events, the time will be represented by $k$.
-		Then we denote about $x(k)$, which is said to be a sample.
+		The notation will then be $x(k)$, which is said to be a sample.
 		$\{x(k)\}_{k \geq 0}$ denotes all the values possible for the signal x.
 		In the rest of this report, we will discuss about vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
 	\end{thdef}
@@ -45,7 +45,7 @@
 	$$y(k)=\sum_{l\geq0}u(l)h(k-l)=\sum_{l=0}^ku(k)h(k-l)$$
 	This corresponds with the convolution product definition of $u$ by $h$, denoted $y = h * u$.
 	%Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
-	Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
+	Dealing with MIMO filters, we have $\boldsymbol{h}(k) \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}(k)$ is the response on the
 	ith output to the Dirac implusion on the j-th input.
 	The precedent equation becomes:
 	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l\geq}^lu_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
@@ -100,7 +100,7 @@
 	\end{thdef}
 	It is important to know that all realizations of a filter are mathematically equivalent to each other (infinite
 	precision). But in finite precision, rounding aspects have a huge impact on the correctness of results.
-	Most of the time in this report, we will describe realizations as forms.
+	Most of the time in this report, we may refer to realizations as forms.
 
 	\subsubsection{Direct and transposed forms}
 	Direct and transposed forms are classic realizations. A good description of these forms can be found in Lopez’ and Hilaire’s PhDs \cite{lopez} \cite{hilaire}. 
@@ -191,7 +191,7 @@
 	The classical state-space representation is intuitive,
 	but it doesn't takes into account the reality of implementation.
 	Indeed, dealing with finite precision and error amplification, the order in which operations are done becomes crucial.
-	Another idea is to have a unique representation for any realization of LTI filters,
+	Another motivation is to have a unique representation for any realization of LTI filters,
 	that allows to compute every degradation measures instead of redevelopping them for each new realization.
 	This form distinguishes computations done at one time from computations done the other times. As well as
 	in a state-space, we have $\boldsymbol{x}_i$ as state variables, but in addition to that, $\boldsymbol{t}_i$ are intermediate variables.
@@ -219,7 +219,7 @@
 			\boldsymbol{u} (k) 
 		\end{pmatrix}
 	\end{equation}
-	With $n_t$, $n_x$, $n_y$ and $n_u$ the sizes of $\boldsymbol{t}$,$\boldsymbol{x}$,$\boldsymbol{y}$ and $\boldsymbol{u}$, respectively.
+	With $n_t$, $n_x$, $n_y$ and $n_u$ the sizes of $\boldsymbol{t}$, $\boldsymbol{x}$, $\boldsymbol{y}$ and $\boldsymbol{u}$, respectively.
 	$\boldsymbol{J}$, is a lower triangular matrix, with
 	diagonal entries equal to 1. Then we have the following dimensions for the previous matrices:
 
@@ -262,7 +262,7 @@
 	With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
 
 	Values of the vector $\boldsymbol{t}(k+1)$ are computed and used at the same iterations, so they are not kept in memory.
-	As the equation is mostly full of zeros, it is more convenient to use it’s compressed formulation, wich is denoted
+	As the equation \ref{sifdef} is mostly full of zeros, it is more convenient to use it’s compressed formulation, wich is denoted
 	as the $\boldsymbol{Z}$:
 	
 	\begin{equation} \label{zmatrix}
@@ -289,7 +289,7 @@
 		\boldsymbol{A_Z} \in \mathbb{R}^{n_x \times n_x},
 		\boldsymbol{B_Z} \in \mathbb{R}^{n_x \times n_u}, \nonumber \\
 		\boldsymbol{C_Z} \in \mathbb{R}^{n_y \times n_x},
-		\boldsymbol{D_Z} \in \mathbb{R}^{n_x \times n_u},
+		\boldsymbol{D_Z} \in \mathbb{R}^{n_y \times n_u},
 	\end{eqnarray}
 
 	\subsubsection{Optimal SIF realization}
@@ -321,8 +321,8 @@
 
 	\subsubsection{The FloPoCo Framework: computing just right}
 		FloPoCo is a C++ framework \cite{DinechinPasca2011-DaT} which first purpose is to generate floating point cores in VHDL.
-		Although it may have some pertinence in the ASIC design market, it main target is the configuration of FPGAs as computing units.
-		Indeed, FPGAs are a rising market for embedded computing, because they offer full reconfigurability and a relatively good balance between computation power and price.
+		It targets the configuration of FPGAs as computing units, and could also be useful dealing with ASIC specification.
+		Indeed, FPGAs are well used for embedded computing, because they offer full reconfigurability and a relatively good balance between computation power and price.
 
 		More information is available at \url{http://flopoco.gforge.inria.fr/}
 
@@ -375,7 +375,9 @@
 	\subsubsection{SOPCs: exploiting full parallel architecures}
 
 	The SOPC architecture keeps the same idea.
-	The difference is, the summation architecture is mutualized through the $n_c$ products in a bit-heap based architecture implemented by flopoco.
+	%The difference is, the summation architecture is mutualized through the $n_c$ products in a bit-heap based architecture implemented by flopoco.
+	The difference resides in the mutualization of the summation architecture through the $n_c$ products.
+	This summation is performed within a bit-heap based architecture implemented by flopoco.
 	The detail is visible on figure \ref{fig:Overall architecture}.
 
 \begin{figure}
@@ -409,20 +411,23 @@
 
 	This is described in \cite{sums}.
 
-	Dealing with feedback inputs, the question of precision is more complicated.
-	Indeed, when results loop back to inputs, as soon as we are in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
+	Dealing with feedback inputs to build an SOPC-based filter, the question of precision is more complicated.
+	Indeed, when outputs loop back on inputs, as soon as we are in finite precision, the error is amplified by a certain amount, depending on the coefficients, at each pass through the filter.
 
-	In this case the solution in the industry is to build an equivalent FIR filter by resolving the recurrence.
+	In this case the solution in the industry is to build an equivalent FIR filter by resolving the state-space recurrence.
 	This leads to build an accurate hardware, but at the price of a huge waste of logic.
-	The present work is an answer to this problem, trying to compute just right, keeping the recurrence and saving hardware.
+	The present work tries to answer this problem, trying to compute just right, keeping the recurrence and saving hardware.
 
-	The main idea to dimension such filters is to consider the total error as a single filter.
-	The result of this filter is then added to the perfect filter to get the final output.
+	The main idea to dimension filters is to consider the total error as a single filter.
+	The result of this filter is then added to the ``perfect" filter to get the final output.
 
 	In finite precision, sizes are constrained to be all the same. The demonstration of the size computation has been described in Lopez' PhD \cite{lopez}.
 	The idea now is to see what we can do in arbitrary precision, trying to save a maximum of logic while keeping a right result on the precision required by the user.
 
-	Here we have to compute each size at each step of the computation. Indeed, the WCPG is not useful for the first part of a FIR, as it has no loop.
+	Dealing with potential infinitly amplified errors, the question here seem very hard.
+	Fortunately filters we are considering have an error amplification bounded, which allows us to use filters WCPGs.
+
+	Here we have to compute each size at each step of the computation. Of course, the WCPG is not useful for the first part of a FIR, as it includes no loop.
 	So we just need the WCPG for the second part, because it is just in this part of the circuit that there is a potential error amplification.
 
 	%Direct and transposed forms are not directly transposable into SIF, but this problem is secondary.
@@ -546,9 +551,9 @@
 
 		with:
 		\begin{eqnarray} \label{deltaerr}
-			\boldsymbol{M}_t=(\boldsymbol{I}_{n_t} \boldsymbol{0}_{n_t \times n_x} \boldsymbol{0}_{n_t \times n_y}), \\
-			\boldsymbol{M}_x=(\boldsymbol{0}_{n_x \times n_x} \boldsymbol{I}_{n_x} \boldsymbol{0}_{n_x \times n_y}), \\
-			\boldsymbol{M}_y=(\boldsymbol{0}_{n_y \times n_t} \boldsymbol{0}_{n_y \times n_x} \boldsymbol{I}_{n_y}),
+			\boldsymbol{M}_t=(\boldsymbol{I}_{n_t} \hspace{5pt} \boldsymbol{0}_{n_t \times n_x} \hspace{5pt} \boldsymbol{0}_{n_t \times n_y}), \\
+			\boldsymbol{M}_x=(\boldsymbol{0}_{n_x \times n_t} \hspace{5pt} \boldsymbol{I}_{n_x} \hspace{5pt} \boldsymbol{0}_{n_x \times n_y}), \\
+			\boldsymbol{M}_y=(\boldsymbol{0}_{n_y \times n_t} \hspace{5pt} \boldsymbol{0}_{n_y \times n_x} \hspace{5pt} \boldsymbol{I}_{n_y}),
 		\end{eqnarray}
 
 		$\mathcal{H}_{\boldsymbol{\varepsilon}}$ is a filter with ($n_t+n_x+n_u$) inputs and $n_y$ outputs.
@@ -566,12 +571,13 @@
 		The demonstration is well detailed in Lopez' PhD \cite{lopez}.
 
 		\begin{corollary} \label{corimp}
-			Considering a filter $\mathcal{H}$, $\boldsymbol{\varepsilon}(k)$ the vector of computation errors at time k in the finite precision of $\mathcal{H}$,
+			Considering a filter $\mathcal{H}$, $\boldsymbol{\varepsilon}(k)$ the vector of computation errors at time $k$ in the finite precision of $\mathcal{H}$,
 			and $\mathcal{H}\boldsymbol{\varepsilon}$ the error filter associated to $\mathcal{H}$.
 			The behaviour of error can be described from $\boldsymbol{\varepsilon}(k)$ and $\mathcal{H}\boldsymbol{\varepsilon}$.
 			We consider the error as an interval vector, denoted by its center and radius $\langle \boldsymbol{\varepsilon}_m, \boldsymbol{\varepsilon}_r \rangle$ and 
 			the interval vector of global error $\boldsymbol{\delta y}$, denoted $\langle \boldsymbol{\delta y}_m, \boldsymbol{\delta y}_r \rangle$.
-			In practise, all inputs are centered around zero, which is not the case in the command community, where this notation makes sense.
+
+			In practise, all inputs in our case are centered around zero, which is not the case in the control community, where this notation makes sense.
 			So we consider that $\boldsymbol{\varepsilon}_m=0$.
 			The results are the following:
 
@@ -581,7 +587,7 @@
 			\end{eqnarray}
 		\end{corollary}
 
-		In the future we will then get rid of $boldsymbol{\delta y}_m$.
+		In the future we will get rid of $\boldsymbol{\delta y}_m$.
 
 		Let's define:
 			$$n'=n_t+n_x+n_y$$

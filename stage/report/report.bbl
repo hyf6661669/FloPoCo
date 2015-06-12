@@ -14,27 +14,28 @@ S.~Chevillard, M.~Jolde\c{s}, and C.~Lauter.
   Computer Science}, pages 28--31, Heidelberg, Germany, September 2010.
   Springer.
 
+\bibitem{sums}
+Florent de~Dinechin, Matei Istoan, and Abdelbassat Massouri.
+\newblock Sum-of-product architectures computing just right.
+\newblock In {\em Application-Specific Systems, Architectures and Processors
+  (ASAP)}. IEEE, 2014.
+
 \bibitem{DinechinPasca2011-DaT}
 Florent de~Dinechin and Bogdan Pasca.
 \newblock Designing custom arithmetic data paths with {FloPoCo}.
 \newblock {\em {IEEE} Design \& Test of Computers}, 28(4):18--27, July 2011.
 
-\bibitem{sums}
-Abdelbassat~Massouri Florent~de Dinechin, Matei~Istoan.
-\newblock Sum-of-product architectures computing just right.
-\newblock In {\em IEEE}, 2007.
-
 \bibitem{hilaire}
 Thibaut Hilaire.
-\newblock Analyse et synthèse de l'implémentation de lois de
-  contrôle-commande en précision finie.
-\newblock In {\em PhD}, 2006.
+\newblock {\em Analyse et synthèse de l'implémentation de lois de
+  contrôle-commande en précision finie}.
+\newblock PhD thesis, Université de Nantes, 2006.
 
 \bibitem{lopez}
 Benoit Lopez.
-\newblock Implémentation optimale de filtre linéaire en arithmétique virgule
-  fixe.
-\newblock In {\em PhD}, 2014.
+\newblock {\em Impl\'ementation optimale de filtres lin\'eaires en
+  arithm\'etique virgule fixe}.
+\newblock PhD thesis, Universit\'e Paris VI, 2014.
 
 \bibitem{sif}
 P.Chevel T.Hilaire and J.F.Whidbornz.
@@ -43,8 +44,8 @@ P.Chevel T.Hilaire and J.F.Whidbornz.
 
 \bibitem{sifd}
 P.Chevel T.Hilaire and Y.Trinquet.
-\newblock Implicit state-space representation: a unifying framework for fwl
-  implementation of lti systems.
+\newblock Implicit state-space representation: a unifying framework for {FWL}
+  implementation of {LTI} systems.
 \newblock In {\em Proc. of the 16th IFAC World Congress.}, 2005.
 
 \bibitem{Volk15a}

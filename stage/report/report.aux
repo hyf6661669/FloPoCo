@@ -27,19 +27,22 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Fundamentals about signal processsing}{3}{subsection.1.1}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.1}Definition of a signal}{3}{subsubsection.1.1.1}}
 \newlabel{sig}{{1}{3}{}{thdef.1}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.2}Linear Time Invariant Filters (LTI filters)}{3}{subsubsection.1.1.2}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.3}Impulse response}{3}{subsubsection.1.1.3}}
-\citation{lopez}
-\citation{hilaire}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.4}Worst-Case Peak Gain (WCPG) of a Filter: the maximum possible amplification}{4}{subsubsection.1.1.4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.2}$l^\infty $ norm}{3}{subsubsection.1.1.2}}
+\newlabel{l_inf}{{2}{3}{}{thdef.2}{}}
+\newlabel{l3}{{1.1.1}{3}{}{equation.1.1.1}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.3}Linear Time Invariant Filters (LTI filters)}{3}{subsubsection.1.1.3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.4}Impulse response}{4}{subsubsection.1.1.4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.5}Worst-Case Peak Gain (WCPG) of a Filter: the maximum possible amplification}{4}{subsubsection.1.1.5}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.2}FIR and IIR: two filters families}{4}{subsection.1.2}}
 \newlabel{finimp}{{1.2.1}{4}{FIR and IIR: two filters families}{equation.1.2.1}{}}
 \newlabel{firdef}{{1.2.2}{4}{FIR and IIR: two filters families}{equation.1.2.2}{}}
 \newlabel{iirdef}{{1.2.3}{4}{FIR and IIR: two filters families}{equation.1.2.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Different realizations: how to compute the output of a filter?}{4}{subsection.1.3}}
+\citation{lopez}
+\citation{hilaire}
 \citation{sifd}
 \citation{hilaire}
 \citation{sif}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Different realizations: how to compute the output of a filter?}{5}{subsection.1.3}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.3.1}Direct and transposed forms}{5}{subsubsection.1.3.1}}
 \newlabel{iirpic}{{1.3.1}{5}{Direct and transposed forms}{subsubsection.1.3.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Abstract architecture for the direct form realization of an LTI filter }}{5}{figure.1}}
@@ -48,21 +51,21 @@
 \newlabel{abcddef}{{1.3.1}{5}{State-space representation: a recurrence to define an infinite response}{equation.1.3.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.4}The Specialized Implicit Form (SIF): a unified representation}{5}{subsection.1.4}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {1.4.1}Definition}{5}{subsubsection.1.4.1}}
-\newlabel{sifdef}{{1.4.1}{5}{Definition}{equation.1.4.1}{}}
+\newlabel{sifdef}{{1.4.1}{6}{Definition}{equation.1.4.1}{}}
 \@writefile{loa}{\contentsline {algocf}{\numberline {1}{\ignorespaces Computation of SIF outputs from inputs}}{6}{algocf.1}}
 \newlabel{algomat}{{2}{6}{Definition}{algocfline.2}{}}
 \@writefile{loa}{\contentsline {algocf}{\numberline {2}{\ignorespaces Simplified matricial algorithm}}{6}{algocf.2}}
-\newlabel{zmatrix}{{1.4.4}{6}{Definition}{equation.1.4.4}{}}
-\newlabel{abcdtranspose}{{1.4.5}{6}{Definition}{equation.1.4.5}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.4.2}Workflow for filter implementation}{6}{subsubsection.1.4.2}}
+\newlabel{zmatrix}{{1.4.4}{7}{Definition}{equation.1.4.4}{}}
+\newlabel{abcdtranspose}{{1.4.5}{7}{Definition}{equation.1.4.5}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.4.2}Workflow for filter implementation}{7}{subsubsection.1.4.2}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Workflow overview of tools usage }}{7}{figure.2}}
 \newlabel{fig:workflow}{{2}{7}{Workflow overview of tools usage}{figure.2}{}}
 \citation{DinechinPasca2011-DaT}
 \citation{sums}
 \citation{Chapman93:edn}
 \citation{sums}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Implementation}{8}{section.2}}
-\newlabel{Part2}{{2}{8}{Implementation}{section.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Architecture generation}{8}{section.2}}
+\newlabel{Part2}{{2}{8}{Architecture generation}{section.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Implementation: what can be done in practise?}{8}{subsection.2.1}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}The FloPoCo Framework: computing just right}{8}{subsubsection.2.1.1}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.2}KCM multipliers: an architecture to efficiently compute products on FPGAs}{8}{subsubsection.2.1.2}}
@@ -87,6 +90,7 @@
 \newlabel{eqprec}{{2.1.21}{11}{}{equation.2.1.21}{}}
 \citation{Volk15a}
 \newlabel{constraint}{{2.1.27}{12}{Error analysis}{equation.2.1.27}{}}
+\newlabel{constraint}{{2.1.6}{12}{Error analysis}{equation.2.1.28}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.7}Worst-case peak gain computation}{12}{subsubsection.2.1.7}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Architecture generation algorithm}{12}{subsection.2.2}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Particular Forms, degenerated cases}{12}{subsection.2.3}}
@@ -98,7 +102,7 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Optimizations to do on this technology}{14}{subsection.2.4}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.1}Sparse matrices}{14}{subsubsection.2.4.1}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.2}Power of two coefficients}{14}{subsubsection.2.4.2}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Concrete work}{14}{subsection.2.5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Implementation details}{14}{subsection.2.5}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Filter specification interface}{14}{subsection.2.6}}
 \@writefile{toc}{\contentsline {section}{\numberline {3}Further work}{15}{section.3}}
 \newlabel{Part3}{{3}{15}{Further work}{section.3}{}}
@@ -110,23 +114,11 @@
 \bibdata{report}
 \bibcite{Chapman93:edn}{1}
 \bibcite{ChevillardJoldesLauter2010}{2}
-\bibcite{DinechinPasca2011-DaT}{3}
-\bibcite{sums}{4}
+\bibcite{sums}{3}
+\bibcite{DinechinPasca2011-DaT}{4}
 \bibcite{hilaire}{5}
 \bibcite{lopez}{6}
 \bibcite{sif}{7}
 \bibcite{sifd}{8}
 \bibcite{Volk15a}{9}
 \@writefile{toc}{\contentsline {section}{Conclusion}{16}{section*.3}}
-\@writefile{toc}{\contentsline {section}{Appendix: Notations and reminders about signal processing}{17}{section*.5}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Notations}{17}{subsection.3.5}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Reminders about signal processing}{17}{subsection.3.6}}
-\newlabel{sig}{{6}{17}{}{thdef.6}{}}
-\newlabel{l_1}{{7}{17}{}{thdef.7}{}}
-\newlabel{l1}{{3.6.1}{17}{}{equation.3.6.1}{}}
-\newlabel{l_1}{{8}{17}{}{thdef.8}{}}
-\newlabel{l2}{{3.6.2}{17}{}{equation.3.6.2}{}}
-\newlabel{l_inf}{{9}{17}{}{thdef.9}{}}
-\newlabel{l3}{{3.6.3}{17}{}{equation.3.6.3}{}}
-\newlabel{Dirac}{{10}{17}{}{thdef.10}{}}
-\newlabel{ir}{{3.6.4}{17}{}{equation.3.6.4}{}}

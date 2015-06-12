@@ -3,6 +3,9 @@
 	Lopez's PhD \cite{lopez} gives a good presentation of the state of the art.
 	Many notations and definitions are kept from this PhD.
 
+	Note that a bold symbol (for example $\boldsymbol{h}$) denotes a matrix, that may be a vector.
+	On the contrary, a normal symbol (for example $\varepsilon_{t_1}(k)$) denotes a single value
+
 	\begin{thdef}\label{sig} (Signal)
 		Generally, a signal is a temporal variable, which takes a value from $\mathbb{R}$ at each time t.
 		$x(t)$ denotes the value of the signal $x$ at the instant $t$.
@@ -10,6 +13,14 @@
 		The notation will then be $x(k)$, which is said to be a sample.
 		$\{x(k)\}_{k \geq 0}$ denotes all the values possible for the signal x.
 		The rest of this report adresses vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
+	\end{thdef}
+
+	\subsubsection{$l^\infty$ norm}
+	\begin{thdef}\label{l_inf} ($\ell^\infty$ norm)
+		The $\ell^\infty$ norm of a scalar signal x, denoted $\|x\|_{\ell^\infty}$, is the smallest upper bound among all values (absolute values) possible for the signal x, that is:
+		\begin{equation} \label{l3}
+				\|x\|_{\ell^\infty}=\sup_{k\in \mathbb{N}}|x(k)|
+		\end{equation}
 	\end{thdef}
 
 	\subsubsection{Linear Time Invariant Filters (LTI filters)}
@@ -310,8 +321,8 @@
 		  \begin{tikzpicture}[x=1cm,y=1cm]
 			\draw (-9.5, 1.0) -- (-8,1.0) [->, thick] node[above,near start, text width = 3cm, align=center]{User filter specification};
 			\draw (-3.5, 1.0) -- (0.0,1.0) [->, thick] node[below,xshift=-1.8cm]{$\begin{pmatrix}\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\ \boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\ \boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y \end{pmatrix}$};
-			\draw (-8,0.0) rectangle ++(4.5,2)[thick] node [midway, text width = 4cm, align=center]{Realization Choice \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6}; 
-			\draw (0.0,0.0) rectangle ++(3.0,2)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work)}; 
+			\draw (-8,-0.3) rectangle ++(4.5,2.4)[thick] node [midway, text width = 4cm, align=center]{Realization Choice \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6 \\(Front-End)}; 
+			\draw (0.0,0.0) rectangle ++(3.0,2)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work) \\(Back-End)}; 
 
 			\draw (4,0) rectangle ++(2.5,2)[thick] node [midway]{VHDL}; 
 			\draw (3.0, 1) -- (4,1) [->, thick] node[above,near start]{};

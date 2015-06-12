@@ -1,19 +1,18 @@
 \subsection{Static analysis on coefficients}
-	For now, detection on null coefficients is already achieved.
+	Detection of and removal of null coefficients is already implemented.
 	Detecting power of two entries in the coefficients seem to be a quite simple improvement to implement.
-	This will open the discussion of the efficiency of integrating or not these one entries in the SOPCs, because the best choice is not known between:
-	\begin{itemize}
-		\item integrating the power of two entry in the SOPC
-		\item keeping the power of two entry out of the SOPC and adding it to the result of the SOPC
-	\end{itemize}
+	However, this part should be left to the implementation of SOPCs, and so KCM multipliers.
+	Indeed, pushing this detection at the lowest level is easy and gives the opportunity to the lower operators to give a feedback about their actualaccuracy.
+	Detecting a power of two in a KCM multiplier with feedback on precision will help to build better calculations on msbs and lsbs.
 
-	Moreover, depending on the number of power of two entries, the implementations concerns might vary from one option to the other one in terms of logic consumption.
 
 
 \subsection{Sub-filter detection}
 	Detecting independent loops can be very interesting in the context of saving hardware.
 	Considering a sub-filter with its own loop can permit to use its WCPG to compute the precisions for this sub-filter.
-	Thus leads ot another resolution with a precision specification that depends on the rest of the filter (logic after the sub-filter in the pipeline).
+	This leads to another resolution with a precision specification that depends on the rest of the filter (logic after the sub-filter in the pipeline).
+	However, this optimization can be done at the front-end step, which leads to an open question.
+	Indeed, detecting such loops has issues both in front-end and in backend, and it is a non-trivial problem.
 
 \subsection{Precision calculations improvement}
 	This work kept original calculations trying to adapt them to our context.
@@ -24,5 +23,4 @@
 \subsection{File format re-specification}
 	Specifying new formats could help to improve the visibility and the usability of this new operator.
 	The idea is to avoid specification output formatting operations for the user.
-	So sticking to the basic output of Python and Matlab matrices would be much comfortable for the user.
-
+	The implementation should recognize input matrices formateed in the Python or Matelab formats.

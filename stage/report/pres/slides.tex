@@ -1,0 +1,144 @@
+%© Antoine Martinet, oct 2014. All rights reserved.
+%paper, layout
+\documentclass{beamer}
+\usetheme{Darmstadt}
+%\usetheme{Dresden}
+\usecolortheme[]{default}
+\setbeamercolor*{palette primary}{use=structure, fg=gray!50, bg=red!70!black}
+\setbeamercolor*{palette secondary}{use=structure, fg=blue, bg=red!50!black}
+%\setbeamercolor*{palette tertiary}{use=structure, fg=green, bg=green}
+%\setbeamercolor{titlelike}{parent=structure, fg=lightgray, bg=red!60!black}
+%\setbeamercolor{subsection in head/foot}{bg=gray!30,fg=black}
+\setbeamercolor{section number projected}{bg=red!100!black,fg=black!80}
+\setbeamercolor{subsection number projected}{bg=red!100!black,fg=black!80}
+
+%\usetheme{Marburg}
+\usepackage[utf8]{inputenc}
+
+%images, pdf pages inclusions
+\usepackage{pdfpages}
+\usepackage{pgfpages}
+
+%hypertext links
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	breaklinks=true,
+	linkcolor=black!45,
+	urlcolor=blue}
+
+%graphics and handmade figures
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes}
+
+%slide number on the left of the footer
+ \setbeamertemplate
+  {footline}{\hspace{5pt}\insertframenumber/\inserttotalframenumber\strut\quad\hfill\vspace{3pt}} 
+
+\title{Architecture synthesis for linear time-invariant filters}
+%\author{\\ \Large Antoine Martinet \\ \\\\\\\\\\\\\\ \\ \\ Master 2 Internship Report \\ \\ \\ \LARGE at CITI lab \\ INRIA's SOCRATE Team \\\\\\\\\\\\\\\\ \normalsize under the supervision of\\ \\ \Large Florent de Dinechin \\ \\ \\}
+%\date{2 February - 31 Jully, \\ \vspace{5pt} 2015}
+
+\author{Antoine Martinet}
+\date{2 February - 31 Jully, \vspace{5pt} 2015}
+
+\AtBeginSection[]
+{
+	\begin{frame}
+	\transdissolve
+		\frametitle{Table of Contents}
+		\tableofcontents[currentsection]
+	\end{frame}
+}
+\AtBeginSubsection[]
+{
+	\begin{frame}
+	\transdissolve
+		\frametitle{Table of Contents}
+		\tableofcontents[currentsection,currentsubsection]
+	\end{frame}
+}
+
+\usepackage{xspace}
+\usepackage{array}
+\usepackage{tabularx}
+
+%\usepackage{stmaryrd}
+\usepackage[]{algorithm2e}
+\usepackage{amssymb}
+%\usepackage[?]{amsmath}
+\usepackage{epsfig}
+\usepackage{enumerate}
+\usepackage{comment}
+\setcounter{MaxMatrixCols}{20}
+
+\usepackage[]{xcolor}
+\definecolor{light-gray}{gray}{0.6}
+\definecolor{blue}{RGB}{0,0,153}
+\definecolor{blue1}{RGB}{0,102,204}
+\definecolor{blue2}{RGB}{51,153,255}
+\definecolor{blue3}{RGB}{0,153,153}
+\definecolor{blue4}{RGB}{102,102,255}
+\definecolor{red1}{RGB}{255,0,0}
+\definecolor{orange1}{RGB}{255,153,51}
+\definecolor{green}{RGB}{0,204,0}
+\definecolor{purple}{RGB}{204,0,204}
+
+\begin{document}
+
+	\begin{frame}
+	\maketitle
+	\end{frame}
+
+	\section{Introduction}
+	\begin{frame}
+		\frametitle{Introduction}
+
+	\end{frame}
+
+	
+	\section{Signal processing and filters}
+	\include{firsPart}
+	\include{secondPart}
+
+	\begin{frame}
+	\frametitle{Conclusion}
+	\transdissolve
+		\begin{center}
+			\bfseries
+			To conclude
+		\end{center}
+		\begin{itemize}
+			\item Two algorithms derived from the state of the art
+			\item Improvement using the dual-constrained approach
+			\item Better results for the PPXA than other methods
+			\item Further work to do considering the choice of convex sets according to the type of data
+		\end{itemize}
+
+	\end{frame}
+
+	\begin{frame}
+	\frametitle{References}
+	\transdissolve
+		\begin{center}
+			\bfseries
+			Small bibliography
+		\end{center}
+		\tiny
+		\nocite{paper1}
+		\nocite{paper2}
+		\bibliographystyle{plain}
+		\bibliography{slides}  
+		%\nocite{paper}
+
+	\end{frame}
+
+	\begin{frame}
+	\transboxin
+		\begin{center}
+			\bfseries
+			Any question?
+		\end{center}
+	\end{frame}
+\end{document}

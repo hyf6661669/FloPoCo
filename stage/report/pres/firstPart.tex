@@ -1,8 +1,242 @@
 \subsection{Fundamentals}
+
 \begin{frame}
 	\frametitle{Fundamentals: signal processing and filters}
+	\framesubtitle{LTI Filters}
+	LTI (Linear Time Invariant) filters are particular filters that are:
+	\begin{itemize}
+		\item Linear: outputs are linear combinations of inputs (allows to use linear algebra definitions)
+		\item Time-Invariant: all coefficients are constant
+	\end{itemize}
 
 	
 \end{frame}
 
-\subsection{SIF Presentation}
+\begin{frame}
+	What is the purpose of this work?
+	\begin{itemize}
+		\item Lopez's PhD thesis states how to compute LTI filters in software:
+			\begin{itemize} 
+				\item ordonancing issues
+				\item fixed size
+			\end{itemize} 
+		\item The goal here is to do such a work in hardware, where we have more flexibility:
+			\begin{itemize} 
+				\item full parallelism
+				\item arbitrary size
+			\end{itemize} 
+	\end{itemize}
+	In this context, constraints become degrees of freedom.
+\end{frame}
+
+\subsection{FIR, IIR}
+\begin{frame}
+	\only<1> {FIR definition:}
+	\only<2-> {IIR definition:}
+	\begin{equation} \label{iirdef}
+		\only<1>{y(k)=\sum_{i=0}^n b_i u(k-i)}
+		\only<2->{y(k)=\sum_{i=0}^n b_i u(k-i) - \sum_{i=0}^n a_i y(k-i)}
+	\end{equation}
+
+	\only<1->{
+\begin{figure}[]
+\resizebox{!}{100pt}{
+  \begin{tikzpicture}
+	\only<3->{
+     \draw[dotted,black, fill=yellow!20] (-5ex,-3.5ex) rectangle +(69ex,-15ex);   
+     \node[black]  at (-2ex,-17.5ex) {{\small SOPC}};   
+	}
+    \draw[hwbus] (-8, 0) node[left] {$u(k)$} --  ++(8, 0)  ;
+    \draw[hwbus,->] (-8, 0) --  ++(3, 0); % just for the arrow
+    \foreach \i in {0,...,3} {
+      \draw[hwbus, ->] ($(8*\i, 0)$) --  ++(0, -5);
+      \draw[hwblock] ($(8*\i, -5)$) -- ++(3, 0) -- ++(-3, -4) -- ++(-3, 4) -- cycle; 
+      \node (n) at ($(8*\i , -6.5)$)  {$b_{\i}$} ;
+%      \draw ($(8*\i  + 0.5, -11)$) node[left,tt=black!50] {\footnotesize $p_b(k,\i)$} ;
+%      \draw ($(8*\i  - 0.2, -11)$) node[right,text=black!50] {\footnotesize $p_b(k,\i)$} ;
+
+%      \draw[hwbus, ->] ($(8*\i ex, 0ex)$) --  ++(0, -5ex);
+    }
+
+    
+    \draw[hwbus] (0, -9) -- ++(0,-6);
+      \coordinate (n) at  (0,-15);
+    \foreach \i in {1,...,3} {
+      \draw[line width=3pt] ($(8*\i  - 4, -3)$) --  +(0, 6);
+      \draw[hwbus] ($(8*\i  - 8, 0)$) --  +(8,0) node [above,text=blue] {\footnotesize $u(k-\i)$};
+      \draw[hwbus,->] ($(8*\i  - 8, 0)$) --  ++(3, 0); % just for the arrow
+      % The adders 
+      \coordinate (nm1) at  (n.east);
+      \draw ($(8*\i , -15)$) node[hwblock,circle,minimum height=3] (n) {$+$};
+      \draw[hwbus, ->]  ($(8*\i , -9)$) -- (n.north);
+      \draw[hwbus, ->]  (nm1) -- (n.west);
+      \draw[hwbus]  (n.east) -- ++ (3,0);
+    }
+
+    %\draw (74, -15) node[hwblock,align=center] (fr) {final\\round} ;
+
+	\only<2->{
+    \foreach \i in {1,...,3} {
+      \draw[hwbus, ->] ($(-8*\i  + 60 , 0)$) --  ++(0, -5);
+      \draw[hwblock] ($(-8*\i  + 60 , -5)$) -- ++(3, 0) -- ++(-3, -4) -- ++(-3, 4) -- cycle; 
+      \node (ai) at ($(-8*\i  + 60 , -6.5)$)  {$a_{\i}$} ;
+      %\draw ($(-8*\i  +60 + 0.5, -11)$) node[left,text=black!50] {\footnotesize $p_a(k,\i)$} ;
+      %\draw ($(-8*\i  +60 - 0.2, -11)$) node[right,text=black!50] {\footnotesize $p_a(k,\i)$} ;
+      \draw ($(-8*\i  + 60 , -15)$) node[hwblock,circle,minimum height=3] (n) {$+$};
+      \draw (n.north) node[left]{\bf -};
+      \draw[hwbus, ->] ($(-8*\i  + 60, -9)$) --  (n.north);
+      \draw[hwbus, <-] (n.west) -- ++(-5,0);
+      % The registers
+      \draw[hwbus] ($(-8*\i  + 60  +8, 0)$) --  ++(-8, 0) node [above,text=blue] {\footnotesize $y^*(k-\i)$};
+      \draw[hwbus,->] ($(-8*\i  + 60  +8, 0)$) --  ++(-3, 0); % just for the arrow
+      \draw[line width=3pt] ($(-8*\i  +60 + 4, -3)$) --  +(0, 6);
+    }
+	}
+    \only<1>{\draw[hwbus, <-] (40,-15) -- ++(-10,0) node [near end] {\only<5>{/}} node [near end,below, text width=2cm, xshift=0.5cm] {\only<5>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {$y^*(k)$} -- ++(-1,0) ;
+	}
+    \only<2->{\draw[hwbus, <-] (70,-15) -- ++(-15,0) node [near end] {\only<4>{/}} node [near end,below, text width=2cm, xshift=0.5cm] {\only<4>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {$y^*(k)$} -- ++(-1,0) ;
+	}
+    %\draw[hwbus, ->] (fr.east) -- ++(12,0) node [midway] {/} node [midway,below, text width=2cm] {\footnotesize$(msb_{out},$ $lsb_{out}+g)$} node[right] {$\yout(k)$} ;
+	\only<2->{
+    \draw[hwbus] ($(60 , 0)$) --  ++(0,-15);
+    \draw[hwbus,<-] ($(60 , -5)$) --  ++(0,-5);
+	}
+	\only<1->{
+     \node[black, green!100]  at (-0.5cm,-4cm) {{\small SOPC}};   
+	\node[draw, thick, dotted, rectangle, minimum width = 6cm, minimum height=3.5cm, align=left, green!100] (sop1) at (2cm,-2.5cm) {};}
+
+	\only<2->{
+     \node[black, green!100]  at (6.0cm,-4cm) {{\small SOPC}};   
+	\node[draw, thick, dotted, rectangle, minimum width = 4cm, minimum height=3.5cm, align=left, green!100] (sop2) at (7.5cm,-2.5cm) {};}
+
+
+  \end{tikzpicture}
+  }
+
+%\caption{Abstract architecture for the direct form realization of an LTI filter \label{fig:ltiarch}}
+Abstract architecture for the direct form realization of an LTI filter
+\end{figure}
+	}
+\end{frame}
+
+\begin{frame}
+	Here we have loop-backs, so registers:\\
+		\begin{center}
+	Loop-backs $\iff$ Registers
+		\end{center}
+	We can generalise by introducing state registers.
+\end{frame}
+
+\subsection{State-Space representation}
+\begin{frame}
+	Let's define $\boldsymbol{x}(k)$ a state vector (hardware register)
+	\frametitle{State-Space representation}
+	\framesubtitle{The ``ABCD" form}
+	\begin{equation} \label{abcddef}
+		\begin{cases}
+			\boldsymbol{x}(k+1)= \boldsymbol{Ax}(k) + \boldsymbol{Bu}(k) \\
+			\boldsymbol{y}(k+1)= \boldsymbol{Cx}(k) + \boldsymbol{Du}(k)
+		\end{cases}
+	\end{equation}
+	\\
+	With: \\
+		\begin{center}
+	$\boldsymbol{A} \in \mathbb{R}^{n_x \times n_x}$ ,
+	$\boldsymbol{B} \in \mathbb{R}^{n_x \times n_u}$ , \\
+	$\boldsymbol{C} \in \mathbb{R}^{n_y \times n_x}$ ,
+	$\boldsymbol{D} \in \mathbb{R}^{n_y \times n_u}$
+		\end{center}
+
+	Equivalent matrix formulation:
+	
+	\begin{equation} \label{abcdef}
+		\begin{pmatrix}
+			\boldsymbol{x} (k+1)  \\
+			\boldsymbol{y} (k+1) 
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			\boldsymbol{A} & \boldsymbol{B} \\
+			\boldsymbol{C} & \boldsymbol{D} \\
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{x} (k)  \\
+			\boldsymbol{u} (k) 
+		\end{pmatrix}
+	\end{equation}
+
+\end{frame}
+
+%\begin{frame}
+
+
+%\end{frame}
+
+
+\subsection{The SIF: a unified realization representation }
+
+\begin{frame}
+	Problems with ABCD:
+	\begin{itemize}
+		\item $lsb$ and $msb$ computations have to be rebuilt for each new filter in this form.
+		\item this doesn't gives an explicit order in the operations
+	\end{itemize}
+
+	The SIF generalizes the state-space.\\
+	Addition: $\boldsymbol{t}(k)$ describes the operations order:
+
+	\frametitle{Definition of the SIF}
+	\begin{equation} \label{sifdef}
+		\begin{pmatrix}
+			\boldsymbol{J} & \boldsymbol{0} & \boldsymbol{0} \\
+			\boldsymbol{-K} & \boldsymbol{I}_{n_x} & \boldsymbol{0} \\
+			\boldsymbol{-L} & \boldsymbol{0} & \boldsymbol{I}_{n_y} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k+1)  \\
+			\boldsymbol{x} (k+1)  \\
+			\boldsymbol{y} (k) 
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			\boldsymbol{0} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{0} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{0} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k)  \\
+			\boldsymbol{x} (k)  \\
+			\boldsymbol{u} (k) 
+		\end{pmatrix}
+	\end{equation}
+%	\\
+%	\vspace{10pt}
+%	With: \\
+%	\begin{eqnarray}
+%		\boldsymbol{J} \in \mathbb{R}^{n_t \times n_t},\boldsymbol{M} \in \mathbb{R}^{n_t \times n_x},\boldsymbol{N} \in \mathbb{R}^{n_t \times n_u}, \nonumber \\
+%		\boldsymbol{K} \in \mathbb{R}^{n_x \times n_t},\boldsymbol{P} \in \mathbb{R}^{n_x \times n_x},\boldsymbol{Q} \in \mathbb{R}^{n_x \times n_u}, \\
+%		\boldsymbol{L} \in \mathbb{R}^{n_y \times n_t},\boldsymbol{R} \in \mathbb{R}^{n_y \times n_x},\boldsymbol{S} \in \mathbb{R}^{n_y \times n_u}, \nonumber \\
+%	\end{eqnarray}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{The SIF as an algorithm}
+	\begin{algorithm}[H]
+		\For{int i = 0 ; $i \leq n_t$; i++}{
+			$\boldsymbol{t}_i(k+1) \leftarrow - \sum\limits\limits_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\For{int i = 0 ; $i \leq n_x$; i++}{
+			$\boldsymbol{x}_i(k+1) \leftarrow \sum\limits_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\For{int i = 0 ; $i \leq ny$; i++}{
+			$\boldsymbol{y}_i(k) \leftarrow \sum\limits_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\caption{Computation of SIF outputs from inputs}
+	\end{algorithm}
+\end{frame}
+
+\begin{frame}
+	whatever	
+\end{frame}
+

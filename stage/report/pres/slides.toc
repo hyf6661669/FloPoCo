@@ -1,4 +1,14 @@
 \beamer@endinputifotherversion {3.36pt}
-\beamer@sectionintoc {1}{Introduction}{2}{0}{1}
+\beamer@sectionintoc {1}{Introduction}{3}{0}{1}
+\beamer@subsectionintoc {2}{1}{Fundamentals}{4}{0}{2}
+\beamer@subsectionintoc {2}{2}{FIR, IIR}{6}{0}{2}
+\beamer@subsectionintoc {2}{3}{State-Space representation}{11}{0}{2}
+\beamer@subsectionintoc {2}{4}{The SIF: a unified realization representation }{12}{0}{2}
 \beamer@sectionintoc {2}{Signal processing and filters}{4}{0}{2}
-\beamer@subsectionintoc {2}{1}{Architecture generation}{5}{0}{2}
+\beamer@subsectionintoc {3}{1}{Size computation}{15}{0}{3}
+\beamer@subsectionintoc {3}{2}{WCPG}{18}{0}{3}
+\beamer@subsubsectionintoc {3}{2}{1}{The FloPoCo Framework: computing just right}{19}{0}{3}
+\beamer@subsectionintoc {3}{3}{KCM and SOPCs}{20}{0}{3}
+\beamer@subsectionintoc {3}{4}{Architecture generation}{21}{0}{3}
+\beamer@sectionintoc {3}{Implementation}{15}{0}{3}
+\beamer@sectionintoc {4}{Future Work}{26}{0}{4}

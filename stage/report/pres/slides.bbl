@@ -1,15 +1,8 @@
 \begin{thebibliography}{1}
 
-\bibitem{paper2}
-P.L.Combettes L.Briceño~Arias.
-\newblock A monotone+skew splitting model for composite monotone inclusions in
-  duality.
-\newblock In {\em arXiv:1011.5517}, 2010.
-
-\bibitem{paper1}
-J.C.Pesquet P.L.Combettes.
-\newblock A proximal decomposition method for solving convex variational
-  inverse problems.
-\newblock In {\em Inverse problems 24}, 2008.
+\bibitem{DinechinPasca2011-DaT}
+Florent de~Dinechin and Bogdan Pasca.
+\newblock Designing custom arithmetic data paths with {FloPoCo}.
+\newblock {\em {IEEE} Design \& Test of Computers}, 28(4):18--27, July 2011.
 
 \end{thebibliography}

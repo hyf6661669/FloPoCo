@@ -4,16 +4,22 @@
 \usetheme{Darmstadt}
 %\usetheme{Dresden}
 \usecolortheme[]{default}
-\setbeamercolor*{palette primary}{use=structure, fg=gray!50, bg=red!70!black}
+\setbeamercolor*{palette primary}{use=structure, fg=gray!20, bg=red!70!black}
 \setbeamercolor*{palette secondary}{use=structure, fg=blue, bg=red!50!black}
 %\setbeamercolor*{palette tertiary}{use=structure, fg=green, bg=green}
 %\setbeamercolor{titlelike}{parent=structure, fg=lightgray, bg=red!60!black}
 %\setbeamercolor{subsection in head/foot}{bg=gray!30,fg=black}
 \setbeamercolor{section number projected}{bg=red!100!black,fg=black!80}
 \setbeamercolor{subsection number projected}{bg=red!100!black,fg=black!80}
+\setbeamercolor{subsubsection number projected}{bg=red!100!black,fg=black!80}
 
 %\usetheme{Marburg}
 \usepackage[utf8]{inputenc}
+
+\usepackage{multicol}
+
+\usepackage{bibentry}
+\nobibliography*
 
 %images, pdf pages inclusions
 \usepackage{pdfpages}
@@ -31,34 +37,51 @@
 \usepackage{graphicx}
 \usepackage{tikz}
 \usetikzlibrary{arrows,shapes}
+\usetikzlibrary{calc}
+\newcommand{\msbout}{m_{\text{out}}}
+\newcommand{\appr}[1]{\widetilde{#1}}
+\newcommand{\yout}{y_{\text{out}}}
+\newcommand{\abserr}{\varepsilon}
+\newcommand{\epssopc}{\abserr_{\text{r}}}
+\newcommand{\epsfinalround}{\abserr_{\text{f}}}
+\newcommand{\TODO}{\textbf{TODO}}
+\tikzset{
+  x=1ex,y=1ex,
+  hwblock/.style={draw, rectangle, rounded corners=.3, very thick, fill=black!5, font=\sf, minimum height=5ex},
+  hwbus/.style={very thick,>=stealth},
+  hwwire/.style={thin, >=stealth, },
+  hwword/.style={draw, rectangle, minimum height=3ex},
+  bitwidth/.style={font=\scriptsize,midway,right}
+}
 
 %slide number on the left of the footer
  \setbeamertemplate
   {footline}{\hspace{5pt}\insertframenumber/\inserttotalframenumber\strut\quad\hfill\vspace{3pt}} 
 
-\title{Architecture synthesis for linear time-invariant filters}
+\title{Architecture Synthesis \\ for \\ Linear Time-Invariant Filters}
 %\author{\\ \Large Antoine Martinet \\ \\\\\\\\\\\\\\ \\ \\ Master 2 Internship Report \\ \\ \\ \LARGE at CITI lab \\ INRIA's SOCRATE Team \\\\\\\\\\\\\\\\ \normalsize under the supervision of\\ \\ \Large Florent de Dinechin \\ \\ \\}
 %\date{2 February - 31 Jully, \\ \vspace{5pt} 2015}
 
-\author{Antoine Martinet}
-\date{2 February - 31 Jully, \vspace{5pt} 2015}
+\author[author]{Antoine Martinet}
+\date{2 February - 31 July, \vspace{5pt} 2015}
+\institute{CITI lab, \\ INRIA's SOCRATE Team, \\ \vspace{5pt} Under the supervision of \\Florent de Dinechin}
 
-\AtBeginSection[]
-{
-	\begin{frame}
-	\transdissolve
-		\frametitle{Table of Contents}
-		\tableofcontents[currentsection]
-	\end{frame}
-}
-\AtBeginSubsection[]
-{
-	\begin{frame}
-	\transdissolve
-		\frametitle{Table of Contents}
-		\tableofcontents[currentsection,currentsubsection]
-	\end{frame}
-}
+%\AtBeginSection[]
+%{
+%	\begin{frame}
+%	\transdissolve
+%		\frametitle{Table of Contents}
+%		\tableofcontents[currentsection]
+%	\end{frame}
+%}
+%\AtBeginSubsection[]
+%{
+%	\begin{frame}
+%	\transdissolve
+%		\frametitle{Table of Contents}
+%		\tableofcontents[currentsection,currentsubsection]
+%	\end{frame}
+%}
 
 \usepackage{xspace}
 \usepackage{array}
@@ -91,6 +114,10 @@
 	\maketitle
 	\end{frame}
 
+	\begin{frame}
+	\tableofcontents
+	\end{frame}
+
 	\section{Introduction}
 	\begin{frame}
 		\frametitle{Introduction}
@@ -99,8 +126,13 @@
 
 	
 	\section{Signal processing and filters}
-	\include{firsPart}
+	\include{firstPart}
+
+	\section{Implementation}
 	\include{secondPart}
+
+	\section{Future Work}
+	\include{thirdPart}
 
 	\begin{frame}
 	\frametitle{Conclusion}
@@ -109,12 +141,6 @@
 			\bfseries
 			To conclude
 		\end{center}
-		\begin{itemize}
-			\item Two algorithms derived from the state of the art
-			\item Improvement using the dual-constrained approach
-			\item Better results for the PPXA than other methods
-			\item Further work to do considering the choice of convex sets according to the type of data
-		\end{itemize}
 
 	\end{frame}
 
@@ -126,8 +152,6 @@
 			Small bibliography
 		\end{center}
 		\tiny
-		\nocite{paper1}
-		\nocite{paper2}
 		\bibliographystyle{plain}
 		\bibliography{slides}  
 		%\nocite{paper}

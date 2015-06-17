@@ -8,6 +8,19 @@
 		\item Linear: outputs are linear combinations of inputs (allows to use linear algebra definitions)
 		\item Time-Invariant: all coefficients are constant
 	\end{itemize}
+	\begin{figure}
+	\begin{tikzpicture}[domain=0:7.5, samples=1000]
+		\draw[->] (-0.2,0) -- (10.2,0) node[right] {\tiny$k$};
+		\draw[->] (0,-1.2) -- (0,1.2) node[above] {};
+		\draw[color=blue] plot[id=sin] function{sin(x)} node[right] {\tiny$u(k)$};
+		\draw (3.8cm,-0.3cm) -- (5.8cm,-0.3cm) [->, thick] node[above,near end]{};
+		\draw (0.3cm,-0.3cm) -- (2.3cm,-0.3cm) [->, thick] node[above,near end]{};
+		\draw (2.3cm,-0.8cm) rectangle ++ (1.5cm,1cm)[thick] node [midway]{$\mathcal{H}$}; 
+		\draw[->] (23.8,0) -- (33.8,0) node[right] {\tiny$k$};
+		\draw[->] (24,-1.2) -- (24,7.2) node[above] {};
+		\draw[color=red, xshift=117] plot[id=sin] function{sin(x)+sin(2*x)+sin(3*x)+sin(4*x)+sin(5*x)+sin(6*x)+sin(7*x) * sin(8*x) +sin(9*x) *sin(10*x)} node[right] {\tiny$y(k)$};
+	\end{tikzpicture}
+	\end{figure}
 
 	
 \end{frame}

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 17:17
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 17:29
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1487,16 +1487,18 @@ Overfull \hbox (28.5347pt too wide) in paragraph at lines 147--147
 
 ] [13
 
-]) (./slides.toc) [14
+] [14
 
-] (./secondPart.tex [15
+]) (./slides.toc) [15
 
-] [16
+] (./secondPart.tex [16
 
 ]
 [17
 
-] <pictures/exampleFull.pdf, id=1007, 471.72314pt x 525.27628pt>
+] [18
+
+] <pictures/exampleFull.pdf, id=1105, 471.72314pt x 525.27628pt>
 File: pictures/exampleFull.pdf Graphic file (type pdf)
 
 <use pictures/exampleFull.pdf>
@@ -1506,18 +1508,18 @@ Package pdftex.def Info: pictures/exampleFull.pdf used on input line 105.
 Overfull \vbox (14.69753pt too high) detected at line 105
  []
 
-[18
+[19
 
- <./pictures/exampleFull.pdf>] [19
+ <./pictures/exampleFull.pdf>] [20
 
 ]
-<pictures/exampleScheme.pdf, id=1108, 471.72314pt x 377.5404pt>
+<pictures/exampleScheme.pdf, id=1210, 471.72314pt x 377.5404pt>
 File: pictures/exampleScheme.pdf Graphic file (type pdf)
 
 <use pictures/exampleScheme.pdf>
 Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 161.
 (pdftex.def)             Requested size: 290.37036pt x 164.6925pt.
- [20
+ [21
 
  <./pictures/exampleScheme.pdf>]
 File: pictures/exampleScheme.pdf Graphic file (type pdf)
@@ -1525,80 +1527,80 @@ File: pictures/exampleScheme.pdf Graphic file (type pdf)
 <use pictures/exampleScheme.pdf>
 Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 168.
 (pdftex.def)             Requested size: 263.56784pt x 188.22154pt.
- [21
+ [22
 
-] (./slides.toc) [22
+] (./slides.toc) [23
 
 ]
 \openout3 = `slides.out.gnuplot'.
 
 runsystem(gnuplot slides.out.gnuplot)...executed.
 
- [23
+ [24
 
 ]
 
-LaTeX Font Warning: Command \tiny invalid in math mode on input line 238.
+LaTeX Font Warning: Command \tiny invalid in math mode on input line 240.
 
 
-LaTeX Font Warning: Command \tiny invalid in math mode on input line 238.
-
-[24
-
-]
-Overfull \hbox (22.7209pt too wide) in paragraph at lines 267--267
- [] 
- []
+LaTeX Font Warning: Command \tiny invalid in math mode on input line 240.
 
 [25
 
 ]
-Overfull \hbox (22.7209pt too wide) in paragraph at lines 267--267
+Overfull \hbox (22.7209pt too wide) in paragraph at lines 269--269
  [] 
  []
 
 [26
 
-] [27
+]
+Overfull \hbox (22.7209pt too wide) in paragraph at lines 269--269
+ [] 
+ []
+
+[27
 
 ] [28
+
+] [29
 
 pdfTeX warning (ext4): destination with the same identifier (name{constraint}) 
 has been already used, duplicate ignored
 
 \@EveryShipout@Output ...@Org@Shipout \box \@cclv 
                                                   
-l.309 \end{frame}
-                 ]) (./slides.toc) [29
+l.311 \end{frame}
+                 ]) (./slides.toc) [30
 
-] (./thirdPart.tex [30
+] (./thirdPart.tex [31
 
-]) [31
+]) [32
 
-] [32
+] [33
 
 ]
-[33
+[34
 
 ] (./backup.texpdfTeX warning (ext4): destination with the same identifier (nam
 e{sifdef}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.36 \end{frame}
-                 [34
-
-] [35
+                 [35
 
 ] [36
 
 ] [37
 
-] (./slides.bbl) [38
+] [38
 
- </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [39
+] (./slides.bbl) [39
+
+ </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [40
 
 
-] [40
+] [41
 
 
 ])
@@ -1617,7 +1619,7 @@ Package atveryend Info: Empty hook `AfterLastShipout' on input line 176.
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 176.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 176.
 Package rerunfilecheck Info: File `slides.out' has not changed.
-(rerunfilecheck)             Checksum: 0AFA7A95343158D337DFAA3B41BF37D9;734.
+(rerunfilecheck)             Checksum: 60CE440F074070C7409B2F5AB11E7195;909.
 
 
 LaTeX Font Warning: Size substitutions with differences
@@ -1629,13 +1631,13 @@ LaTeX Warning: There were multiply-defined labels.
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 176.
  ) 
 Here is how much of TeX's memory you used:
- 29580 strings out of 493109
- 596430 string characters out of 6140856
- 779779 words of memory out of 5000000
- 32309 multiletter control sequences out of 15000+600000
+ 29570 strings out of 493109
+ 595668 string characters out of 6140856
+ 780809 words of memory out of 5000000
+ 32296 multiletter control sequences out of 15000+600000
  32897 words of font info for 104 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 56i,20n,77p,406b,916s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 56i,20n,67p,406b,916s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/share/t
 exmf-dist/fonts/type1/public/amsfonts/cm/cmbsy10.pfb></usr/share/texmf-dist/fon
 ts/type1/public/amsfonts/cmextra/cmbsy5.pfb></usr/share/texmf-dist/fonts/type1/
@@ -1667,10 +1669,10 @@ dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texmf-dist/fonts/typ
 e1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/type1/public
 /cm-super/sfso0800.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfso1
 000.pfb>
-Output written on slides.pdf (40 pages, 728147 bytes).
+Output written on slides.pdf (41 pages, 732876 bytes).
 PDF statistics:
- 2284 PDF objects out of 2487 (max. 8388607)
- 2138 compressed objects within 22 object streams
- 111 named destinations out of 1000 (max. 500000)
- 225 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 2428 PDF objects out of 2487 (max. 8388607)
+ 2278 compressed objects within 23 object streams
+ 114 named destinations out of 1000 (max. 500000)
+ 241 words of extra memory for PDF output out of 10000 (max. 10000000)
 

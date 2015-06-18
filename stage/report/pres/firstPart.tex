@@ -2,7 +2,7 @@
 
 \begin{frame}
 	\frametitle{Introduction: LTI Filters}
-	\framesubtitle{LTI Filters}
+%	\framesubtitle{LTI Filters}
 	Signal: temporal variable $x(k)$ with $\{x(k)\}_{k \geq 0} \in \mathbb{R}$
 	\begin{figure}
 	\begin{tikzpicture}[domain=0:7.5, samples=1000]
@@ -156,6 +156,7 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 
 \subsection{State-Space representation}
 \begin{frame}
+	\frametitle{State-Space representation}
 	Let's define $\boldsymbol{x}(k)$ a state vector (hardware register)
 	\frametitle{State-Space representation}
 	\framesubtitle{The ``ABCD" form}
@@ -203,6 +204,7 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 \subsection{The SIF: a unified realization representation }
 
 \begin{frame}
+	\frametitle{The SIF: a unified realization representation}
 	Problems with ABCD:
 	\begin{itemize}
 		\item $lsb$ and $msb$ computations have to be rebuilt for each new filter in this form.
@@ -212,7 +214,7 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 	The SIF generalizes the state-space.\\
 	Addition: $\boldsymbol{t}(k)$ describes the operations order:
 
-	\frametitle{Definition of the SIF}
+	%\frametitle{Definition of the SIF}
 	\begin{equation} \label{sifdef}
 		\begin{pmatrix}
 			\boldsymbol{J} & \boldsymbol{0} & \boldsymbol{0} \\
@@ -261,6 +263,20 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 		}
 		\caption{Computation of SIF outputs from inputs}
 	\end{algorithm}
+\end{frame}
+
+\begin{frame}
+	\frametitle{A more common notation}
+	An easiest way to communicate SIFs:\\
+		The Z matrix:\\
+	\begin{equation}
+		Z = 
+		\begin{pmatrix}
+			\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+	\end{equation}
 \end{frame}
 
 \begin{frame}

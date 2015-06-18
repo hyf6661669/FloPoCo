@@ -1,14 +1,13 @@
 \beamer@endinputifotherversion {3.36pt}
-\beamer@sectionintoc {1}{Introduction}{3}{0}{1}
-\beamer@sectionintoc {2}{Signal processing and filters}{5}{0}{2}
-\beamer@subsectionintoc {2}{1}{Fundamentals}{6}{0}{2}
-\beamer@subsectionintoc {2}{2}{FIR, IIR}{9}{0}{2}
-\beamer@subsectionintoc {2}{3}{State-Space representation}{15}{0}{2}
-\beamer@subsectionintoc {2}{4}{The SIF: a unified realization representation }{17}{0}{2}
-\beamer@sectionintoc {3}{Implementation}{21}{0}{3}
-\beamer@subsubsectionintoc {3}{0}{1}{The FloPoCo Framework: computing just right}{22}{0}{3}
-\beamer@subsectionintoc {3}{1}{KCM and SOPCs}{23}{0}{3}
-\beamer@subsectionintoc {3}{2}{Architecture generation}{25}{0}{3}
-\beamer@subsectionintoc {3}{3}{Size computation}{31}{0}{3}
-\beamer@subsectionintoc {3}{4}{WCPG}{37}{0}{3}
-\beamer@sectionintoc {4}{Future Work}{39}{0}{4}
+\beamer@sectionintoc {1}{Signal processing and filters}{3}{0}{1}
+\beamer@subsectionintoc {1}{1}{Fundamentals, Purpose, Definitions}{4}{0}{1}
+\beamer@subsectionintoc {1}{2}{FIR, IIR}{6}{0}{1}
+\beamer@subsectionintoc {1}{3}{State-Space representation}{10}{0}{1}
+\beamer@subsectionintoc {1}{4}{The SIF: a unified realization representation }{11}{0}{1}
+\beamer@sectionintoc {2}{Implementation}{14}{0}{2}
+\beamer@subsubsectionintoc {2}{0}{1}{The FloPoCo Framework: computing just right}{15}{0}{2}
+\beamer@subsectionintoc {2}{1}{KCM and SOPCs}{16}{0}{2}
+\beamer@subsectionintoc {2}{2}{Architecture generation}{17}{0}{2}
+\beamer@subsectionintoc {2}{3}{Size computation}{22}{0}{2}
+\beamer@subsectionintoc {2}{4}{WCPG}{27}{0}{2}
+\beamer@sectionintoc {3}{Future Work}{28}{0}{3}

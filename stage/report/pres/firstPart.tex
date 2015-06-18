@@ -1,36 +1,39 @@
-\subsection{Fundamentals}
+\subsection{Fundamentals, Purpose, Definitions}
 
 \begin{frame}
-	\frametitle{Fundamentals: signal processing and filters}
+	\frametitle{Introduction: LTI Filters}
 	\framesubtitle{LTI Filters}
-	LTI (Linear Time Invariant) filters are particular filters that are:
-	\begin{itemize}
-		\item Linear: outputs are linear combinations of inputs (allows to use linear algebra definitions)
-		\item Time-Invariant: all coefficients are constant
-	\end{itemize}
+	Signal: temporal variable $x(k)$ with $\{x(k)\}_{k \geq 0} \in \mathbb{R}$
 	\begin{figure}
 	\begin{tikzpicture}[domain=0:7.5, samples=1000]
 		\draw[->] (-0.2,0) -- (10.2,0) node[right] {\tiny$k$};
-		\draw[->] (0,-1.2) -- (0,1.2) node[above] {};
-		\draw[color=blue] plot[id=sin] function{sin(x)} node[right] {\tiny$u(k)$};
+		\draw[->] (0,-1.2) -- (0,7.2) node[above] {};
+		\draw[color=blue] plot[id=sin] function{sin(x)+sin(2*x)+sin(3*x)+sin(4*x)+sin(5*x)+sin(6*x)+sin(7*x) * sin(8*x) +sin(9*x) *sin(10*x)} node[right] {\tiny$u(k)$};
 		\draw (3.8cm,-0.3cm) -- (5.8cm,-0.3cm) [->, thick] node[above,near end]{};
 		\draw (0.3cm,-0.3cm) -- (2.3cm,-0.3cm) [->, thick] node[above,near end]{};
 		\draw (2.3cm,-0.8cm) rectangle ++ (1.5cm,1cm)[thick] node [midway]{$\mathcal{H}$}; 
 		\draw[->] (23.8,0) -- (33.8,0) node[right] {\tiny$k$};
 		\draw[->] (24,-1.2) -- (24,7.2) node[above] {};
-		\draw[color=red, xshift=117] plot[id=sin] function{sin(x)+sin(2*x)+sin(3*x)+sin(4*x)+sin(5*x)+sin(6*x)+sin(7*x) * sin(8*x) +sin(9*x) *sin(10*x)} node[right] {\tiny$y(k)$};
+		\draw[color=red, xshift=117] plot[id=out] function{2*sin(x)} node[right] {\tiny$y(k)$};
 	\end{tikzpicture}
 	\end{figure}
+
+	LTI (Linear Time Invariant) filters are particular filters that are:
+	\begin{itemize}
+		\item Linear: outputs are linear combinations of inputs (allows to use linear algebra definitions)
+		\item Time-Invariant: all coefficients are constant
+	\end{itemize}
 
 	
 \end{frame}
 
 \begin{frame}
+	\frametitle{Purpose of this work}
 	What is the purpose of this work?
 	\begin{itemize}
 		\item Lopez's PhD thesis states how to compute LTI filters in software:
 			\begin{itemize} 
-				\item ordonancing issues
+				\item scheduling issues
 				\item fixed size
 			\end{itemize} 
 		\item The goal here is to do such a work in hardware, where we have more flexibility:
@@ -55,9 +58,17 @@
 \begin{figure}[]
 \resizebox{!}{100pt}{
   \begin{tikzpicture}
+	\only<2->{
+     \draw[dotted,green, fill=green!20] (-5ex,-3.5ex) rectangle +(61ex,-15ex);   
+	}
+	\only<2->{
+     \node[green]  at (-2ex,-17.5ex) {{\small SOPC}};   
+	}
+	\only<1,3->{
+	\node[draw, thick, dotted, rectangle, minimum width = 6cm, minimum height=3.5cm, align=left, green!100, fill=green!30] (sop1) at (2cm,-2.5cm) {};
+	}
 	\only<3->{
-     \draw[dotted,black, fill=yellow!20] (-5ex,-3.5ex) rectangle +(69ex,-15ex);   
-     \node[black]  at (-2ex,-17.5ex) {{\small SOPC}};   
+	\node[draw, thick, dotted, rectangle, minimum width = 4cm, minimum height=3.5cm, align=left, green!100, fill=green!30] (sop2) at (7.5cm,-2.5cm) {};
 	}
     \draw[hwbus] (-8, 0) node[left] {$u(k)$} --  ++(8, 0)  ;
     \draw[hwbus,->] (-8, 0) --  ++(3, 0); % just for the arrow
@@ -105,40 +116,42 @@
       \draw[line width=3pt] ($(-8*\i  +60 + 4, -3)$) --  +(0, 6);
     }
 	}
-    \only<1>{\draw[hwbus, <-] (40,-15) -- ++(-10,0) node [near end] {\only<5>{/}} node [near end,below, text width=2cm, xshift=0.5cm] {\only<5>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {$y^*(k)$} -- ++(-1,0) ;
+    \only<1>{\draw[hwbus, <-] (40,-15) -- ++(-10,0) node [near end] {\only<5>{/}} node [near end,below, text width=4cm, xshift=0.5cm] {\only<5>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {$y^*(k)$} -- ++(-1,0) ;
 	}
-    \only<2->{\draw[hwbus, <-] (70,-15) -- ++(-15,0) node [near end] {\only<4>{/}} node [near end,below, text width=2cm, xshift=0.5cm] {\only<4>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {$y^*(k)$} -- ++(-1,0) ;
+    \only<2->{\draw[hwbus, <-] (70,-15) -- ++(-15,0) node [near end] {\only<4>{/}} node [near end,below, text width=4cm, xshift=1.5cm] {\only<4>{\footnotesize$(msb_{out},$ $ lsb_{out})$}} node[near start,above] {$y^*(k)$} -- ++(-1,0) ;
 	}
     %\draw[hwbus, ->] (fr.east) -- ++(12,0) node [midway] {/} node [midway,below, text width=2cm] {\footnotesize$(msb_{out},$ $lsb_{out}+g)$} node[right] {$\yout(k)$} ;
 	\only<2->{
     \draw[hwbus] ($(60 , 0)$) --  ++(0,-15);
     \draw[hwbus,<-] ($(60 , -5)$) --  ++(0,-5);
+     \node[green!100]  at (-0.5cm,-4cm) {};% node for keeping scale
 	}
-	\only<1->{
-     \node[black, green!100]  at (-0.5cm,-4cm) {{\small SOPC}};   
-	\node[draw, thick, dotted, rectangle, minimum width = 6cm, minimum height=3.5cm, align=left, green!100] (sop1) at (2cm,-2.5cm) {};}
+	\only<1,3->{
+     \node[green!100]  at (-0.5cm,-4cm) {{\small SOPC}};   
+	}
 
-	\only<2->{
-     \node[black, green!100]  at (6.0cm,-4cm) {{\small SOPC}};   
-	\node[draw, thick, dotted, rectangle, minimum width = 4cm, minimum height=3.5cm, align=left, green!100] (sop2) at (7.5cm,-2.5cm) {};}
+	\only<3->{
+     \node[green!100]  at (6.0cm,-4cm) {{\small SOPC}};   
+	}
 
 
   \end{tikzpicture}
   }
 
 %\caption{Abstract architecture for the direct form realization of an LTI filter \label{fig:ltiarch}}
-Abstract architecture for the direct form realization of an LTI filter
+
+Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2->{IIR} filter
 \end{figure}
 	}
 \end{frame}
 
-\begin{frame}
-	Here we have loop-backs, so registers:\\
-		\begin{center}
-	Loop-backs $\iff$ Registers
-		\end{center}
-	We can generalise by introducing state registers.
-\end{frame}
+%\begin{frame}
+%	Here we have loop-backs, so registers:\\
+%		\begin{center}
+%	Loop-backs $\iff$ Registers
+%		\end{center}
+%	We can generalise by introducing state registers.
+%\end{frame}
 
 \subsection{State-Space representation}
 \begin{frame}
@@ -258,25 +271,25 @@ Abstract architecture for the direct form realization of an LTI filter
 		  \tiny
 		  \begin{tikzpicture}[]
 		  
-		   \node[draw, fill = gray!20, shape = rectangle, rounded corners,minimum width = 2cm, minimum height= 2cm] at (-4cm,4cm) {FixSIF} ;
-		   \node[draw, fill = gray!20, shape = rectangle, rounded corners,minimum width = 1cm, minimum height= 1cm] at (0cm,4cm) {VHDL} ;
+		   \node[draw, fill = gray!20, shape = rectangle, minimum width = 2cm, minimum height= 2cm] at (-4cm,4cm) {FixSIF} ;
+		   \node[draw, fill = gray!20, shape = rectangle, minimum width = 1cm, minimum height= 1.2cm] at (-1cm,4cm) {VHDL} ;
 			\draw (-6.5cm, 4.5cm) -- (-5cm,4.5cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{$(a_i)_{1 < \leq i \leq n},(b_i)_{1 < \leq i \leq n}$};
 			\draw (-6.5cm, 4cm) -- (-5cm,4cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{input format ($msbs_u$,$lsbs_u$)};
 			\draw (-6.5cm, 3.5cm) -- (-5cm,3.5cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{output accuracy ($msbs_y$,$lsbs_y$)};
 
-			\draw (-3cm, 4cm) -- (-0.5cm,4cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{};
+			\draw (-3cm, 4cm) -- (-1.5cm,4cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{};
 			%zoom links
-			\draw (-5cm, 3cm) -- (-9.5cm,1.5cm) [-, thick, black!40] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{};
+			\draw (-5cm, 3cm) -- (-8.5cm,1.5cm) [-, thick, black!40] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{};
 			\draw (-3cm, 3cm) -- (0.5cm,1.5cm) [-, thick, black!40] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{};
 
 			%zoom view
-			\draw (-9.5cm, 0.7cm) -- (-8cm,0.7cm) [->, thick] node[above,near start, text width = 3cm, align=center]{User filter specification};
+			%\draw (-9.5cm, 0.7cm) -- (-8cm,0.7cm) [->, thick] node[above,near start, text width = 3cm, align=center]{User filter specification};
 			\draw (-5.5cm, 0.7cm) -- (-3.0cm,0.7cm) [->, thick] node[below,xshift=-1.2cm]{$\begin{pmatrix}\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\ \boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\ \boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y \end{pmatrix}$};
 			\draw (-8cm,0.0cm) rectangle ++(2.5cm,1.4cm)[thick] node [midway, text width = 4cm, align=center]{Realization Choice \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6 \\(Front-End)}; 
 			\draw (-3.0cm,0.0cm) rectangle ++(3.0cm,1.4cm)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work) \\(Back-End)}; 
 
-			\draw (1cm,0cm) rectangle ++(2.5cm,1.4cm)[thick] node [midway]{VHDL}; 
-			\draw (0.0cm, 0.7cm) -- (1cm,0.7cm) [->, thick] node[above,near start]{};
+			%\draw (1cm,0cm) rectangle ++(2.5cm,1.4cm)[thick] node [midway]{VHDL}; 
+			%\draw (0.0cm, 0.7cm) -- (1cm,0.7cm) [->, thick] node[above,near start]{};
 
 		  \end{tikzpicture}
 

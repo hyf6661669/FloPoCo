@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 14:54
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 16:22
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1429,44 +1429,50 @@ LaTeX Font Warning: Font shape `OT1/cmss/m/n' in size <4> not available
 ]
 (./slides.toc) [3
 
-] [4
+] (./firstPart.tex
+LaTeX Font Info:    Try loading font information for U+msa on input line 28.
 
-] (./slides.toc) [5
-
-] (./firstPart.tex (./slides.toc)
-[6
-
-]
-LaTeX Font Info:    Try loading font information for U+msa on input line 26.
- (/usr/share/texmf-dist/tex/latex/amsfonts/umsa.fd
+(/usr/share/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 26.
+LaTeX Font Info:    Try loading font information for U+msb on input line 28.
 
 (/usr/share/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 LaTeX Font Info:    Try loading font information for OT1+mathkerncmss on input 
-line 26.
+line 28.
 
 (/usr/share/texmf-dist/tex/latex/sansmathaccent/ot1mathkerncmss.fd
 File: ot1mathkerncmss.fd 2013/03/27 Fontinst v1.933 font definitions for OT1/ma
 thkerncmss.
-)
-\openout3 = `slides.sin.gnuplot'.
-
-runsystem(gnuplot slides.sin.gnuplot)...executed.
-
-\openout3 = `slides.sin.gnuplot'.
-
-runsystem(gnuplot slides.sin.gnuplot)...executed.
-
- [7
+) [4
 
 ]
+[5
+
+] [6
+
+]
+Overfull \hbox (38.1815pt too wide) in paragraph at lines 146--146
+ [] 
+ []
+
+[7
+
+]
+Overfull \hbox (28.5347pt too wide) in paragraph at lines 146--146
+ [] 
+ []
+
 [8
 
-] (./slides.toc) [9
+]
+Overfull \hbox (28.5347pt too wide) in paragraph at lines 146--146
+ [] 
+ []
+
+[9
 
 ] [10
 
@@ -1476,36 +1482,16 @@ runsystem(gnuplot slides.sin.gnuplot)...executed.
 
 ] [13
 
-] [14
+]) (./slides.toc) [14
 
-] (./slides.toc) [15
+] (./secondPart.tex [15
 
 ] [16
 
 ]
-(./slides.toc) [17
+[17
 
-] [18
-
-] [19
-
-] [20
-
-]) (./slides.toc) [21
-
-] (./secondPart.tex
-[22
-
-] (./slides.toc) [23
-
-] [24
-
-] (./slides.toc) [25
-
-] [26
-
-]
-<pictures/exampleFull.pdf, id=1789, 471.72314pt x 525.27628pt>
+] <pictures/exampleFull.pdf, id=988, 471.72314pt x 525.27628pt>
 File: pictures/exampleFull.pdf Graphic file (type pdf)
 
 <use pictures/exampleFull.pdf>
@@ -1515,18 +1501,18 @@ Package pdftex.def Info: pictures/exampleFull.pdf used on input line 97.
 Overfull \vbox (14.69753pt too high) detected at line 97
  []
 
-[27
+[18
 
- <./pictures/exampleFull.pdf>] [28
+ <./pictures/exampleFull.pdf>] [19
 
 ]
-<pictures/exampleScheme.pdf, id=1907, 471.72314pt x 377.5404pt>
+<pictures/exampleScheme.pdf, id=1087, 471.72314pt x 377.5404pt>
 File: pictures/exampleScheme.pdf Graphic file (type pdf)
 
 <use pictures/exampleScheme.pdf>
 Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 151.
 (pdftex.def)             Requested size: 290.37036pt x 164.6925pt.
- [29
+ [20
 
  <./pictures/exampleScheme.pdf>]
 File: pictures/exampleScheme.pdf Graphic file (type pdf)
@@ -1534,9 +1520,7 @@ File: pictures/exampleScheme.pdf Graphic file (type pdf)
 <use pictures/exampleScheme.pdf>
 Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 158.
 (pdftex.def)             Requested size: 263.56784pt x 188.22154pt.
- [30
-
-] (./slides.toc) [31
+ [21
 
 ]
 
@@ -1547,25 +1531,25 @@ LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 193.
 Overfull \vbox (3.50108pt too high) detected at line 193
  []
 
-[32
+[22
 
 ]
 Overfull \hbox (22.7209pt too wide) in paragraph at lines 222--222
  [] 
  []
 
-[33
+[23
 
 ]
 Overfull \hbox (22.7209pt too wide) in paragraph at lines 222--222
  [] 
  []
 
-[34
+[24
 
-] [35
+] [25
 
-] [36
+] [26
 
 pdfTeX warning (ext4): destination with the same identifier (name{constraint}) 
 has been already used, duplicate ignored
@@ -1573,35 +1557,33 @@ has been already used, duplicate ignored
 \@EveryShipout@Output ...@Org@Shipout \box \@cclv 
                                                   
 l.260 \end{frame}
-                 ] (./slides.toc) [37
+                 ] [27
 
-] [38
+]) (./slides.toc) [28
 
-]) (./slides.toc) [39
+] (./thirdPart.tex [29
+
+]) [30
 
 ]
-(./thirdPart.tex [40
+(./slides.bbl) [31
 
-]) [41
+ </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [32
 
-] (./slides.bbl) [42
-
- </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [43
-
-] [44
+] [33
 
 ] (./backup.texpdfTeX warning (ext4): destination with the same identifier (nam
 e{sifdef}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.36 \end{frame}
-                 [45
+                 [34
 
-] [46
+] [35
 
-] [47
+] [36
 
-] [48
+] [37
 
 ])
 \tf@nav=\write7
@@ -1619,7 +1601,7 @@ Package atveryend Info: Empty hook `AfterLastShipout' on input line 189.
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 189.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 189.
 Package rerunfilecheck Info: File `slides.out' has not changed.
-(rerunfilecheck)             Checksum: 4A1CBFED9B8CD32414B4C57F634E5CB1;755.
+(rerunfilecheck)             Checksum: B981F13BB6386FA3AC0F1C2CD5438742;729.
 
 
 LaTeX Font Warning: Size substitutions with differences
@@ -1631,13 +1613,13 @@ LaTeX Warning: There were multiply-defined labels.
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 189.
  ) 
 Here is how much of TeX's memory you used:
- 28566 strings out of 493109
- 574653 string characters out of 6140856
- 776337 words of memory out of 5000000
- 31276 multiletter control sequences out of 15000+600000
+ 28504 strings out of 493109
+ 574106 string characters out of 6140856
+ 768808 words of memory out of 5000000
+ 31255 multiletter control sequences out of 15000+600000
  31259 words of font info for 100 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 56i,20n,77p,406b,922s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 56i,20n,74p,406b,922s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/share/t
 exmf-dist/fonts/type1/public/amsfonts/cm/cmbsy10.pfb></usr/share/texmf-dist/fon
 ts/type1/public/amsfonts/cmextra/cmbsy6.pfb></usr/share/texmf-dist/fonts/type1/
@@ -1667,10 +1649,10 @@ public/amsfonts/cm/cmsy6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts
 mf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/f
 onts/type1/public/cm-super/sfso0800.pfb></usr/share/texmf-dist/fonts/type1/publ
 ic/cm-super/sfso1000.pfb>
-Output written on slides.pdf (48 pages, 734351 bytes).
+Output written on slides.pdf (37 pages, 678658 bytes).
 PDF statistics:
- 3206 PDF objects out of 3580 (max. 8388607)
- 3036 compressed objects within 31 object streams
- 117 named destinations out of 1000 (max. 500000)
- 233 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 2069 PDF objects out of 2073 (max. 8388607)
+ 1931 compressed objects within 20 object streams
+ 94 named destinations out of 1000 (max. 500000)
+ 225 words of extra memory for PDF output out of 10000 (max. 10000000)
 

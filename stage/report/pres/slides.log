@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 17:29
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 18:07
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1595,12 +1595,28 @@ l.36 \end{frame}
 
 ] [38
 
-] (./slides.bbl) [39
+] [39
 
- </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [40
+] [40
+
+]
+LaTeX Font Info:    Try loading font information for OMS+cmss on input line 179
+.
+LaTeX Font Info:    No file OMScmss.fd. on input line 179.
 
 
-] [41
+LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
+(Font)              using `OMS/cmsy/m/n' instead
+(Font)              for symbol `textbraceleft' on input line 179.
+
+[41
+
+] (./slides.bbl) [42
+
+ </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [43
+
+
+] [44
 
 
 ])
@@ -1626,18 +1642,21 @@ LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
 
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+
 LaTeX Warning: There were multiply-defined labels.
 
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 176.
  ) 
 Here is how much of TeX's memory you used:
- 29570 strings out of 493109
- 595668 string characters out of 6140856
- 780809 words of memory out of 5000000
- 32296 multiletter control sequences out of 15000+600000
+ 29598 strings out of 493109
+ 595968 string characters out of 6140856
+ 781061 words of memory out of 5000000
+ 32312 multiletter control sequences out of 15000+600000
  32897 words of font info for 104 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 56i,20n,67p,406b,916s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 56i,20n,67p,406b,924s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/share/t
 exmf-dist/fonts/type1/public/amsfonts/cm/cmbsy10.pfb></usr/share/texmf-dist/fon
 ts/type1/public/amsfonts/cmextra/cmbsy5.pfb></usr/share/texmf-dist/fonts/type1/
@@ -1669,10 +1688,10 @@ dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texmf-dist/fonts/typ
 e1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/type1/public
 /cm-super/sfso0800.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfso1
 000.pfb>
-Output written on slides.pdf (41 pages, 732876 bytes).
+Output written on slides.pdf (44 pages, 743702 bytes).
 PDF statistics:
- 2428 PDF objects out of 2487 (max. 8388607)
- 2278 compressed objects within 23 object streams
- 114 named destinations out of 1000 (max. 500000)
+ 2584 PDF objects out of 2984 (max. 8388607)
+ 2429 compressed objects within 25 object streams
+ 124 named destinations out of 1000 (max. 500000)
  241 words of extra memory for PDF output out of 10000 (max. 10000000)
 

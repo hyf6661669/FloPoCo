@@ -1,6 +1,6 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 19:06
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 19:08
 entering extended mode
- \write18 enabled.
+ restricted \write18 enabled.
  %&-line parsing enabled.
 **slides.tex
 (./slides.tex
@@ -1449,7 +1449,7 @@ thkerncmss.
 )
 \openout3 = `slides.out.gnuplot'.
 
-runsystem(gnuplot slides.out.gnuplot)...executed.
+runsystem(gnuplot slides.out.gnuplot)...disabled (restricted).
 
  [4
 
@@ -1534,7 +1534,7 @@ Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 169.
 ]
 \openout3 = `slides.out.gnuplot'.
 
-runsystem(gnuplot slides.out.gnuplot)...executed.
+runsystem(gnuplot slides.out.gnuplot)...disabled (restricted).
 
  [24
 
@@ -1608,10 +1608,7 @@ LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
 
 ]
 
-LaTeX Font Warning: Command \tiny invalid in math mode on input line 222.
-
-
-LaTeX Font Warning: Command \tiny invalid in math mode on input line 222.
+LaTeX Font Warning: Command \tiny invalid in math mode on input line 212.
 
 [41
 
@@ -1654,10 +1651,10 @@ LaTeX Warning: There were multiply-defined labels.
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 176.
  ) 
 Here is how much of TeX's memory you used:
- 29575 strings out of 493109
- 595464 string characters out of 6140856
- 782691 words of memory out of 5000000
- 32290 multiletter control sequences out of 15000+600000
+ 28583 strings out of 493109
+ 574632 string characters out of 6140856
+ 782692 words of memory out of 5000000
+ 31298 multiletter control sequences out of 15000+600000
  32897 words of font info for 104 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  56i,20n,67p,406b,932s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1692,7 +1689,7 @@ dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texmf-dist/fonts/typ
 e1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/type1/public
 /cm-super/sfso0800.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfso1
 000.pfb>
-Output written on slides.pdf (44 pages, 742959 bytes).
+Output written on slides.pdf (44 pages, 742833 bytes).
 PDF statistics:
  2537 PDF objects out of 2984 (max. 8388607)
  2384 compressed objects within 24 object streams

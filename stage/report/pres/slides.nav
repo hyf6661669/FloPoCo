@@ -8,10 +8,10 @@
 \headcommand {\beamer@subsectionpages {1}{2}}
 \headcommand {\slideentry {1}{0}{3}{3/3}{}{0}}
 \headcommand {\beamer@framepages {3}{3}}
-\headcommand {\beamer@subsectionentry {0}{1}{1}{4}{Fundamentals, Purpose, Definitions}}\headcommand {\beamer@subsectionpages {3}{3}}
-\headcommand {\slideentry {1}{1}{1}{4/4}{Fundamentals, Purpose, Definitions}{0}}
+\headcommand {\beamer@subsectionentry {0}{1}{1}{4}{Fundamentals, Purpose}}\headcommand {\beamer@subsectionpages {3}{3}}
+\headcommand {\slideentry {1}{1}{1}{4/4}{Fundamentals, Purpose}{0}}
 \headcommand {\beamer@framepages {4}{4}}
-\headcommand {\slideentry {1}{1}{2}{5/5}{Fundamentals, Purpose, Definitions}{0}}
+\headcommand {\slideentry {1}{1}{2}{5/5}{Fundamentals, Purpose}{0}}
 \headcommand {\beamer@framepages {5}{5}}
 \headcommand {\beamer@subsectionentry {0}{1}{2}{6}{FIR, IIR}}\headcommand {\beamer@subsectionpages {4}{5}}
 \headcommand {\slideentry {1}{2}{1}{6/9}{FIR, IIR}{0}}
@@ -26,7 +26,7 @@
 \headcommand {\beamer@framepages {12}{12}}
 \headcommand {\slideentry {1}{4}{3}{13/13}{The SIF: a unified realization representation }{0}}
 \headcommand {\beamer@framepages {13}{13}}
-\headcommand {\sectionentry {2}{Implementation}{14}{Implementation}{0}}
+\headcommand {\sectionentry {2}{Overview of the implementation}{14}{Overview of the implementation}{0}}
 \headcommand {\beamer@sectionpages {3}{13}}
 \headcommand {\beamer@subsectionpages {11}{13}}
 \headcommand {\slideentry {2}{0}{4}{14/14}{}{0}}
@@ -34,8 +34,8 @@
 \headcommand {\beamer@subsubsectionentry {0}{2}{0}{1}{15}{The FloPoCo Framework: computing just right}}
 \headcommand {\slideentry {2}{0}{5}{15/15}{}{0}}
 \headcommand {\beamer@framepages {15}{15}}
-\headcommand {\beamer@subsectionentry {0}{2}{1}{16}{KCM and SOPCs}}\headcommand {\beamer@subsectionpages {14}{15}}
-\headcommand {\slideentry {2}{1}{1}{16/16}{KCM and SOPCs}{0}}
+\headcommand {\beamer@subsectionentry {0}{2}{1}{16}{Basic block: SOPC}}\headcommand {\beamer@subsectionpages {14}{15}}
+\headcommand {\slideentry {2}{1}{1}{16/16}{Basic block: SOPC}{0}}
 \headcommand {\beamer@framepages {16}{16}}
 \headcommand {\beamer@subsectionentry {0}{2}{2}{17}{Architecture generation}}\headcommand {\beamer@subsectionpages {16}{16}}
 \headcommand {\slideentry {2}{2}{1}{17/17}{Architecture generation}{0}}
@@ -48,43 +48,51 @@
 \headcommand {\beamer@framepages {20}{20}}
 \headcommand {\slideentry {2}{2}{5}{21/21}{Architecture generation}{0}}
 \headcommand {\beamer@framepages {21}{21}}
-\headcommand {\beamer@subsectionentry {0}{2}{3}{22}{Size computation}}\headcommand {\beamer@subsectionpages {17}{21}}
-\headcommand {\slideentry {2}{3}{1}{22/22}{Size computation}{0}}
+\headcommand {\sectionentry {3}{Details of the implementation}{22}{Details of the implementation}{0}}
+\headcommand {\beamer@sectionpages {14}{21}}
+\headcommand {\beamer@subsectionpages {17}{21}}
+\headcommand {\slideentry {3}{0}{6}{22/22}{}{0}}
 \headcommand {\beamer@framepages {22}{22}}
-\headcommand {\slideentry {2}{3}{2}{23/24}{Size computation}{0}}
-\headcommand {\beamer@framepages {23}{24}}
-\headcommand {\slideentry {2}{3}{3}{25/25}{Size computation}{0}}
-\headcommand {\beamer@framepages {25}{25}}
-\headcommand {\slideentry {2}{3}{4}{26/26}{Size computation}{0}}
-\headcommand {\beamer@framepages {26}{26}}
-\headcommand {\beamer@subsectionentry {0}{2}{4}{27}{WCPG}}\headcommand {\beamer@subsectionpages {22}{26}}
-\headcommand {\slideentry {2}{4}{1}{27/27}{WCPG}{0}}
+\headcommand {\beamer@subsectionentry {0}{3}{1}{23}{WCPG}}\headcommand {\beamer@subsectionpages {22}{22}}
+\headcommand {\slideentry {3}{1}{1}{23/23}{WCPG}{0}}
+\headcommand {\beamer@framepages {23}{23}}
+\headcommand {\slideentry {3}{1}{2}{24/24}{WCPG}{0}}
+\headcommand {\beamer@framepages {24}{24}}
+\headcommand {\slideentry {3}{1}{3}{25/26}{WCPG}{0}}
+\headcommand {\beamer@framepages {25}{26}}
+\headcommand {\slideentry {3}{1}{4}{27/27}{WCPG}{0}}
 \headcommand {\beamer@framepages {27}{27}}
-\headcommand {\sectionentry {3}{Future Work}{28}{Future Work}{0}}
-\headcommand {\beamer@sectionpages {14}{27}}
-\headcommand {\beamer@subsectionpages {27}{27}}
-\headcommand {\slideentry {3}{0}{2}{28/28}{}{0}}
+\headcommand {\slideentry {3}{1}{5}{28/28}{WCPG}{0}}
 \headcommand {\beamer@framepages {28}{28}}
-\headcommand {\slideentry {3}{0}{3}{29/29}{}{0}}
+\headcommand {\sectionentry {4}{Future Work}{29}{Future Work}{0}}
+\headcommand {\beamer@sectionpages {22}{28}}
+\headcommand {\beamer@subsectionpages {23}{28}}
+\headcommand {\slideentry {4}{0}{6}{29/29}{}{0}}
 \headcommand {\beamer@framepages {29}{29}}
-\headcommand {\slideentry {3}{0}{4}{30/30}{}{0}}
+\headcommand {\slideentry {4}{0}{7}{30/30}{}{0}}
 \headcommand {\beamer@framepages {30}{30}}
-\headcommand {\slideentry {3}{0}{5}{31/31}{}{0}}
+\headcommand {\slideentry {4}{0}{8}{31/31}{}{0}}
 \headcommand {\beamer@framepages {31}{31}}
-\headcommand {\slideentry {3}{0}{6}{32/32}{}{0}}
+\headcommand {\slideentry {4}{0}{9}{32/32}{}{0}}
 \headcommand {\beamer@framepages {32}{32}}
-\headcommand {\slideentry {3}{0}{7}{33/33}{}{0}}
+\headcommand {\slideentry {4}{0}{10}{33/33}{}{0}}
 \headcommand {\beamer@framepages {33}{33}}
-\headcommand {\slideentry {3}{0}{8}{34/34}{}{0}}
+\headcommand {\slideentry {4}{0}{11}{34/34}{}{0}}
 \headcommand {\beamer@framepages {34}{34}}
-\headcommand {\slideentry {3}{0}{9}{35/35}{}{0}}
+\headcommand {\slideentry {4}{0}{12}{35/35}{}{0}}
 \headcommand {\beamer@framepages {35}{35}}
-\headcommand {\slideentry {3}{0}{10}{36/36}{}{0}}
+\headcommand {\slideentry {4}{0}{13}{36/36}{}{0}}
 \headcommand {\beamer@framepages {36}{36}}
-\headcommand {\slideentry {3}{0}{11}{37/37}{}{0}}
+\headcommand {\slideentry {4}{0}{14}{37/37}{}{0}}
 \headcommand {\beamer@framepages {37}{37}}
-\headcommand {\beamer@partpages {1}{37}}
-\headcommand {\beamer@subsectionpages {28}{37}}
-\headcommand {\beamer@sectionpages {28}{37}}
-\headcommand {\beamer@documentpages {37}}
-\headcommand {\def \inserttotalframenumber {29}}
+\headcommand {\slideentry {4}{0}{15}{38/38}{}{0}}
+\headcommand {\beamer@framepages {38}{38}}
+\headcommand {\slideentry {4}{0}{15}{38/39}{}{0}}
+\headcommand {\beamer@framepages {38}{39}}
+\headcommand {\slideentry {4}{0}{15}{38/40}{}{0}}
+\headcommand {\beamer@framepages {38}{40}}
+\headcommand {\beamer@partpages {1}{40}}
+\headcommand {\beamer@subsectionpages {29}{40}}
+\headcommand {\beamer@sectionpages {29}{40}}
+\headcommand {\beamer@documentpages {40}}
+\headcommand {\def \inserttotalframenumber {32}}

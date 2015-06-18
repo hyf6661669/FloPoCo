@@ -3,13 +3,19 @@
 
 \subsubsection{The FloPoCo Framework: computing just right}
 	\begin{frame}
-		Here we use FloPoCo, which is a C++ framework which first purpose is to generate floating point cores in VHDL.
-		It is described in \bibentry{DinechinPasca2011-DaT}
-		\url{http://flopoco.gforge.inria.fr/}
+		\frametitle{The FloPoCo Framework: computing just right}
+		FloPoCo:\\
+			\begin{itemize}
+				\item C++ framework
+				\item Target: FPGAs
+				\item Work: generating arithmetical cores in VHDL computing just right
+				\item Reference: \url{http://flopoco.gforge.inria.fr/}
+			\end{itemize}
 	\end{frame}
 
-\subsection{KCM and SOPCs}
+\subsection{Basic block: SOPC}
 \begin{frame}
+	\frametitle{Basic block: SOPC}
 %\begin{multicols}{2}
 %\begin{figure}[]
 %  \begin{tikzpicture}[scale=0.6,every node/.style={scale=0.6}]
@@ -45,8 +51,10 @@
 %\end{figure}
 
 \begin{figure}
-  \begin{tikzpicture}[scale=0.6, every node/.style={scale=0.6}]
+  \begin{tikzpicture}[scale=1.0, every node/.style={scale=1.0}]
     \footnotesize 
+     \draw[green, fill=green!20] (-0.5cm,-2.2cm) rectangle +(10cm,5cm);   
+	 \node[green] at(0cm, -2cm) {SOPC};
     
     \node[hwblock, align=center,minimum width=60ex] (sum) at ($(32ex,-5ex)$) {Bit-heap based \\ summation architecture};
 
@@ -62,11 +70,11 @@
       }
     }
 
-    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$p$} node[near end,right] {$y$};
+    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start, yshift=-1mm] {$/$} node[near start,left, yshift=-1mm] {\normalsize$msb_{out}-lsb{out}$} node[near end,right] {$y$};
  \end{tikzpicture}
 \end{figure}
 \centering
-KCM-based SOPC architecture for $n_c=3$, each input being split into 3 chunks 
+SOPC architecture: based on the KCM architecture, split in 3 chunks 
 %\end{multicols}
 
 	\end{frame}
@@ -77,7 +85,7 @@ KCM-based SOPC architecture for $n_c=3$, each input being split into 3 chunks
 	\frametitle{Architecture generation algorithm}
 	\begin{algorithm}[H]
 	\caption{Architecture Generation Algorithm}
-	computePrecisions($[msbs,lsbs][][]$) //get the matrix of msbs lsbs, functions of the wcpg. \\
+	computeMSBSLSBS($[msbs,lsbs][][]$) //get the matrix of msbs lsbs. \\
 	\For{i=1; i=Z.size(); i++} {
 	 	row[ ]= Z[i][ ] //pick first row of Z \\
 	 	\For {j=1; j=1; j=Z.size() j++} {
@@ -97,6 +105,8 @@ KCM-based SOPC architecture for $n_c=3$, each input being split into 3 chunks
 \end{frame}
 
 \begin{frame}
+	\centering
+	Each line will be a SOPC
 	\frametitle{Example}
 	\begin{figure}
 	  \begin{tikzpicture}
@@ -157,15 +167,49 @@ KCM-based SOPC architecture for $n_c=3$, each input being split into 3 chunks
 	\end{figure}
 \end{frame}
 
-\subsection{Size computation}
+\section{Details of the implementation}
+
+\subsection{WCPG}
 \begin{frame}
-	\frametitle{Error definition}
-	Let's define: $v'= n_t + n_x + n_y$ \\
-	$\boldsymbol{\xi}$ will be the desired error.
+	\frametitle{Computing the MSB}
+	\begin{figure}
+	\begin{tikzpicture}[domain=0:7.5, samples=1000]
+		\draw[->] (-0.2,0) -- (10.2,0) node[right] {\tiny$k$};
+		\draw[->] (0,-1.2) -- (0,7.2) node[above] {};
+		\draw[color=blue] plot[id=sin] function{sin(x)+sin(2*x)+sin(3*x)+sin(4*x)+sin(5*x)+sin(6*x)+sin(7*x) * sin(8*x) +sin(9*x) *sin(10*x)} node[right] {\tiny$u(k)$};
+		\draw (3.8cm,-0.3cm) -- (5.8cm,-0.3cm) [->, thick] node[above,near end]{};
+		\draw (0.3cm,-0.3cm) -- (2.3cm,-0.3cm) [->, thick] node[above,near end]{};
+		\draw (2.3cm,-0.8cm) rectangle ++ (1.5cm,1cm)[thick] node [midway]{$\mathcal{H}$}; 
+		\draw[->] (23.8,1) -- (33.8,1) node[right] {\tiny$k$};
+		\draw[->] (24,0.2) -- (24,8.2) node[above] {};
+		\draw[<->] (27,-1.0) -- (27,3.0) node[above] {};
+		\draw[-,dotted] (27,-1.0) -- (29,-1.0) node[right, yshift=5mm, xshift=-4mm] {\tiny wcpg};
+		\draw[-,dotted] (27,3.0) -- (26,3.0) node[above] {};
+		\draw[color=red, xshift=117] plot[id=out] function{1+2*sin(x)} node[right] {\tiny$y(k)$};
+	\end{tikzpicture}
+	\end{figure}
+	\begin{equation}
+		\|\mathcal{H}\|_{wcpg}=\sup_{u\neq0}\frac{\|h*u\|_{l^{\infty}}}{\|u\|_{l^{\infty}}}
+	\end{equation}
+	\centering
+	This computation is done by colleagues in LIP6.
+\end{frame}
+\begin{frame}
+	\frametitle{Computing the LSB: Error definition}
+	Let's define:% $v'= n_t + n_x + n_y$ \\
+			\begin{equation}
+				\tiny
+				\boldsymbol{v'}=
+				\begin{pmatrix}
+					\boldsymbol{t}(k+1) \\
+					\boldsymbol{x}(k+1) \\
+					\boldsymbol{y}(k)   \\
+				\end{pmatrix}
+			\end{equation}
 	Errors introduced by SOPCs:
 	\begin{equation}
-		\scriptsize
-		\boldsymbol{\varepsilon}_v'(k) =
+		\tiny
+		\boldsymbol{\varepsilon}_{v'}(k) =
 		\begin{pmatrix}
 			\boldsymbol{\varepsilon}_t(k) \\
 			\boldsymbol{\varepsilon}_x(k) \\
@@ -189,11 +233,12 @@ KCM-based SOPC architecture for $n_c=3$, each input being split into 3 chunks
 			{\varepsilon}_{y_{n_y}}(k) \\
 		\end{pmatrix}
 	\end{equation}
-	Total error: $\boldsymbol{\varepsilon}_{v'}^*(k)$ defined as $\boldsymbol{\varepsilon}_v'(k)$
+	\footnotesize
+	$\boldsymbol{\varepsilon}_{v'}^*(k)$ will represent the total error and is defined similarly to $\boldsymbol{\varepsilon}_{v'}(k)$
 \end{frame}
 
 \begin{frame}
-	\frametitle{Point of view about error}
+	\frametitle{Computing the LSB: Point of view about error}
 			\begin{figure}[h] 
 			  \centering
 			  \begin{tikzpicture}[x=1cm,y=1cm]
@@ -222,16 +267,16 @@ KCM-based SOPC architecture for $n_c=3$, each input being split into 3 chunks
 \end{frame}
 
 \begin{frame}
-	\frametitle{Impact of errors}
+	\frametitle{Computing the LSB: Impact of errors}
 	\begin{algorithm}[H]
 		\For{int i = 0 ; $i \leq n_t$; i++}{
-			$\boldsymbol{t}_i(k+1) \leftarrow - \sum\limits\limits_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{t_i}}$
+			$\boldsymbol{t}_i(k+1) \leftarrow - \sum\limits\limits_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{t_i}(k)}$
 		}
 		\For{int i = 0 ; $i \leq n_x$; i++}{
-			$\boldsymbol{x}_i(k+1) \leftarrow \sum\limits_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{x_i}}$
+			$\boldsymbol{x}_i(k+1) \leftarrow \sum\limits_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{x_i}(k)}$
 		}
 		\For{int i = 0 ; $i \leq ny$; i++}{
-			$\boldsymbol{y}_i(k) \leftarrow \sum\limits_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{y_i}}$
+			$\boldsymbol{y}_i(k) \leftarrow \sum\limits_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{y_i}(k)}$
 		}
 		\caption{Computation of SIF outputs from inputs}
 	\end{algorithm}
@@ -240,32 +285,26 @@ KCM-based SOPC architecture for $n_c=3$, each input being split into 3 chunks
 
 \begin{frame}
 	%3 dernières équations de calcul (avec le WCPG)
+	\frametitle{Computing the LSB: current solution}
 	Main constraint:
 		\begin{equation} \label{constraint}
 			\boldsymbol{\varepsilon}_{v} < \boldsymbol{2}^{-lsb_{v}}
 			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
 		\end{equation}
 
-	Proposed solution:
+	Transformed into the following constraint:
 
 		\begin{equation} \label{constraint}
 			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{} | \cdot \boldsymbol{2}^{lsb_{v'}+1} < \boldsymbol{2}^{-lsb_{y_i}}
 			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
 		\end{equation}
-	Then: constraint on each line of the computation algorithm
+	%Then: constraint on each line of the computation algorithm.
+	Lopez gives a simple solution that matches the fixed size constraint.
+
+	In the present case, a better solution is achievable at the end of this work.
 %		\begin{eqnarray}
 %			\boldsymbol{\mathfrak{A}}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} %\\
 %			%\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}
 %		\end{eqnarray}
-\end{frame}
-
-\subsection{WCPG}
-\begin{frame}
-	\frametitle{Definition of the Worst-Case-Peak-Gain (WCPG)}
-	\begin{equation}
-		\|\mathcal{H}\|_{wcpg}=\sup_{u\neq0}\frac{\|h*u\|_{l^{\infty}}}{\|u\|_{l^{\infty}}}
-	\end{equation}
-	\centering
-	This computation is done by colleagues in LIP6.
 \end{frame}
 

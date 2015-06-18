@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 16:22
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  18 JUN 2015 17:17
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1446,7 +1446,12 @@ line 28.
 (/usr/share/texmf-dist/tex/latex/sansmathaccent/ot1mathkerncmss.fd
 File: ot1mathkerncmss.fd 2013/03/27 Fontinst v1.933 font definitions for OT1/ma
 thkerncmss.
-) [4
+)
+\openout3 = `slides.out.gnuplot'.
+
+runsystem(gnuplot slides.out.gnuplot)...executed.
+
+ [4
 
 ]
 [5
@@ -1454,21 +1459,21 @@ thkerncmss.
 ] [6
 
 ]
-Overfull \hbox (38.1815pt too wide) in paragraph at lines 146--146
+Overfull \hbox (38.1815pt too wide) in paragraph at lines 147--147
  [] 
  []
 
 [7
 
 ]
-Overfull \hbox (28.5347pt too wide) in paragraph at lines 146--146
+Overfull \hbox (28.5347pt too wide) in paragraph at lines 147--147
  [] 
  []
 
 [8
 
 ]
-Overfull \hbox (28.5347pt too wide) in paragraph at lines 146--146
+Overfull \hbox (28.5347pt too wide) in paragraph at lines 147--147
  [] 
  []
 
@@ -1491,14 +1496,14 @@ Overfull \hbox (28.5347pt too wide) in paragraph at lines 146--146
 ]
 [17
 
-] <pictures/exampleFull.pdf, id=988, 471.72314pt x 525.27628pt>
+] <pictures/exampleFull.pdf, id=1007, 471.72314pt x 525.27628pt>
 File: pictures/exampleFull.pdf Graphic file (type pdf)
 
 <use pictures/exampleFull.pdf>
-Package pdftex.def Info: pictures/exampleFull.pdf used on input line 97.
+Package pdftex.def Info: pictures/exampleFull.pdf used on input line 105.
 (pdftex.def)             Requested size: 188.68591pt x 210.10678pt.
 
-Overfull \vbox (14.69753pt too high) detected at line 97
+Overfull \vbox (14.69753pt too high) detected at line 105
  []
 
 [18
@@ -1506,11 +1511,11 @@ Overfull \vbox (14.69753pt too high) detected at line 97
  <./pictures/exampleFull.pdf>] [19
 
 ]
-<pictures/exampleScheme.pdf, id=1087, 471.72314pt x 377.5404pt>
+<pictures/exampleScheme.pdf, id=1108, 471.72314pt x 377.5404pt>
 File: pictures/exampleScheme.pdf Graphic file (type pdf)
 
 <use pictures/exampleScheme.pdf>
-Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 151.
+Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 161.
 (pdftex.def)             Requested size: 290.37036pt x 164.6925pt.
  [20
 
@@ -1518,59 +1523,62 @@ Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 151.
 File: pictures/exampleScheme.pdf Graphic file (type pdf)
 
 <use pictures/exampleScheme.pdf>
-Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 158.
+Package pdftex.def Info: pictures/exampleScheme.pdf used on input line 168.
 (pdftex.def)             Requested size: 263.56784pt x 188.22154pt.
  [21
 
-]
-
-LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 193.
-
-
-
-Overfull \vbox (3.50108pt too high) detected at line 193
- []
-
-[22
+] (./slides.toc) [22
 
 ]
-Overfull \hbox (22.7209pt too wide) in paragraph at lines 222--222
- [] 
- []
+\openout3 = `slides.out.gnuplot'.
 
-[23
+runsystem(gnuplot slides.out.gnuplot)...executed.
+
+ [23
 
 ]
-Overfull \hbox (22.7209pt too wide) in paragraph at lines 222--222
- [] 
- []
+
+LaTeX Font Warning: Command \tiny invalid in math mode on input line 238.
+
+
+LaTeX Font Warning: Command \tiny invalid in math mode on input line 238.
 
 [24
 
-] [25
+]
+Overfull \hbox (22.7209pt too wide) in paragraph at lines 267--267
+ [] 
+ []
 
-] [26
+[25
+
+]
+Overfull \hbox (22.7209pt too wide) in paragraph at lines 267--267
+ [] 
+ []
+
+[26
+
+] [27
+
+] [28
 
 pdfTeX warning (ext4): destination with the same identifier (name{constraint}) 
 has been already used, duplicate ignored
 
 \@EveryShipout@Output ...@Org@Shipout \box \@cclv 
                                                   
-l.260 \end{frame}
-                 ] [27
+l.309 \end{frame}
+                 ]) (./slides.toc) [29
 
-]) (./slides.toc) [28
+] (./thirdPart.tex [30
 
-] (./thirdPart.tex [29
+]) [31
 
-]) [30
+] [32
 
 ]
-(./slides.bbl) [31
-
- </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [32
-
-] [33
+[33
 
 ] (./backup.texpdfTeX warning (ext4): destination with the same identifier (nam
 e{sifdef}) has been already used, duplicate ignored
@@ -1585,6 +1593,14 @@ l.36 \end{frame}
 
 ] [37
 
+] (./slides.bbl) [38
+
+ </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [39
+
+
+] [40
+
+
 ])
 \tf@nav=\write7
 \openout7 = `slides.nav'.
@@ -1595,13 +1611,13 @@ l.36 \end{frame}
 \tf@snm=\write9
 \openout9 = `slides.snm'.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 189.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 189.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 176.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 176.
  (./slides.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 189.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 189.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 176.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 176.
 Package rerunfilecheck Info: File `slides.out' has not changed.
-(rerunfilecheck)             Checksum: B981F13BB6386FA3AC0F1C2CD5438742;729.
+(rerunfilecheck)             Checksum: 0AFA7A95343158D337DFAA3B41BF37D9;734.
 
 
 LaTeX Font Warning: Size substitutions with differences
@@ -1610,49 +1626,51 @@ LaTeX Font Warning: Size substitutions with differences
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 189.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 176.
  ) 
 Here is how much of TeX's memory you used:
- 28504 strings out of 493109
- 574106 string characters out of 6140856
- 768808 words of memory out of 5000000
- 31255 multiletter control sequences out of 15000+600000
- 31259 words of font info for 100 fonts, out of 8000000 for 9000
+ 29580 strings out of 493109
+ 596430 string characters out of 6140856
+ 779779 words of memory out of 5000000
+ 32309 multiletter control sequences out of 15000+600000
+ 32897 words of font info for 104 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 56i,20n,74p,406b,922s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 56i,20n,77p,406b,916s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/share/t
 exmf-dist/fonts/type1/public/amsfonts/cm/cmbsy10.pfb></usr/share/texmf-dist/fon
-ts/type1/public/amsfonts/cmextra/cmbsy6.pfb></usr/share/texmf-dist/fonts/type1/
-public/amsfonts/cmextra/cmbsy8.pfb></usr/share/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmex10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra
-/cmex7.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex8.pfb
-></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/sha
-re/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texmf-dist/fonts/type1/pub
-lic/amsfonts/cm/cmmi6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></us
-r/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texmf
--dist/fonts/type1/public/amsfonts/cmextra/cmmib8.pfb></usr/share/texmf-dist/fon
-ts/type1/public/amsfonts/cm/cmss10.pfb></usr/share/texmf-dist/fonts/type1/publi
-c/amsfonts/cm/cmss12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/
-cmss17.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></us
-r/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/share/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmssbx10.pfb></usr/share/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmssi10.pfb></usr/share/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmssi17.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cms
-si8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></usr/
-share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-di
-st/fonts/type1/public/amsfonts/cm/cmsy5.pfb></usr/share/texmf-dist/fonts/type1/
-public/amsfonts/cm/cmsy6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts
-/cm/cmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb><
-/usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/tex
-mf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/f
-onts/type1/public/cm-super/sfso0800.pfb></usr/share/texmf-dist/fonts/type1/publ
-ic/cm-super/sfso1000.pfb>
-Output written on slides.pdf (37 pages, 678658 bytes).
+ts/type1/public/amsfonts/cmextra/cmbsy5.pfb></usr/share/texmf-dist/fonts/type1/
+public/amsfonts/cmextra/cmbsy6.pfb></usr/share/texmf-dist/fonts/type1/public/am
+sfonts/cmextra/cmbsy8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmex10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex7.pf
+b></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/sh
+are/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmmi6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></u
+sr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texm
+f-dist/fonts/type1/public/amsfonts/cmextra/cmmib6.pfb></usr/share/texmf-dist/fo
+nts/type1/public/amsfonts/cmextra/cmmib8.pfb></usr/share/texmf-dist/fonts/type1
+/public/amsfonts/cmextra/cmmib9.pfb></usr/share/texmf-dist/fonts/type1/public/a
+msfonts/cm/cmss10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cms
+s12.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmss17.pfb></usr/
+share/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/share/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/share/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfon
+ts/cm/cmssi10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi17
+.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></usr/sha
+re/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></usr/share/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmsy5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmsy6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></u
+sr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texmf-dist/fonts/typ
+e1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/type1/public
+/cm-super/sfso0800.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfso1
+000.pfb>
+Output written on slides.pdf (40 pages, 728147 bytes).
 PDF statistics:
- 2069 PDF objects out of 2073 (max. 8388607)
- 1931 compressed objects within 20 object streams
- 94 named destinations out of 1000 (max. 500000)
+ 2284 PDF objects out of 2487 (max. 8388607)
+ 2138 compressed objects within 22 object streams
+ 111 named destinations out of 1000 (max. 500000)
  225 words of extra memory for PDF output out of 10000 (max. 10000000)
 

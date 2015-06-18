@@ -1,12 +1,12 @@
 \BOOKMARK [2][]{Outline0.1}{Introduction}{}% 1
 \BOOKMARK [2][]{Outline0.2}{Signal processing and filters}{}% 2
-\BOOKMARK [3][]{Outline0.2.1.4}{Fundamentals}{Outline0.2}% 3
-\BOOKMARK [3][]{Outline0.2.2.6}{FIR, IIR}{Outline0.2}% 4
-\BOOKMARK [3][]{Outline0.2.3.11}{State-Space representation}{Outline0.2}% 5
-\BOOKMARK [3][]{Outline0.2.4.12}{The SIF: a unified realization representation }{Outline0.2}% 6
+\BOOKMARK [3][]{Outline0.2.1.6}{Fundamentals}{Outline0.2}% 3
+\BOOKMARK [3][]{Outline0.2.2.9}{FIR, IIR}{Outline0.2}% 4
+\BOOKMARK [3][]{Outline0.2.3.15}{State-Space representation}{Outline0.2}% 5
+\BOOKMARK [3][]{Outline0.2.4.17}{The SIF: a unified realization representation }{Outline0.2}% 6
 \BOOKMARK [2][]{Outline0.3}{Implementation}{}% 7
-\BOOKMARK [3][]{Outline0.3.1.15}{Size computation}{Outline0.3}% 8
-\BOOKMARK [3][]{Outline0.3.2.18}{WCPG}{Outline0.3}% 9
-\BOOKMARK [3][]{Outline0.3.3.20}{KCM and SOPCs}{Outline0.3}% 10
-\BOOKMARK [3][]{Outline0.3.4.21}{Architecture generation}{Outline0.3}% 11
+\BOOKMARK [3][]{Outline0.3.1.23}{KCM and SOPCs}{Outline0.3}% 8
+\BOOKMARK [3][]{Outline0.3.2.25}{Architecture generation}{Outline0.3}% 9
+\BOOKMARK [3][]{Outline0.3.3.31}{Size computation}{Outline0.3}% 10
+\BOOKMARK [3][]{Outline0.3.4.37}{WCPG}{Outline0.3}% 11
 \BOOKMARK [2][]{Outline0.4}{Future Work}{}% 12

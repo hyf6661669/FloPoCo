@@ -1,89 +1,5 @@
 %\subsection{Implementation: what can be done in practise?}
 
-\subsection{Size computation}
-\begin{frame}
-	\frametitle{Error definition}
-	Let's define: $v'= n_t + n_x + n_y$ \\
-	$\boldsymbol{\xi}$ will be the desired error.
-	Errors introduced by SOPCs:
-	\begin{equation}
-		\scriptsize
-		\boldsymbol{\varepsilon}_v'(k) =
-		\begin{pmatrix}
-			\boldsymbol{\varepsilon}_t(k) \\
-			\boldsymbol{\varepsilon}_x(k) \\
-			\boldsymbol{\varepsilon}_y(k) \\
-		\end{pmatrix}
-		=
-		\begin{pmatrix}
-			{\varepsilon}_{t_1}(k) \\
-			{\varepsilon}_{t_2}(k) \\
-			\vdots \\
-			{\varepsilon}_{t_{n_t}}(k) \\
-			\hspace{5pt} \\
-			{\varepsilon}_{x_1}(k) \\
-			{\varepsilon}_{x_2}(k) \\
-			\vdots \\
-			{\varepsilon}_{x_{n_x}}(k) \\
-			\hspace{5pt} \\
-			{\varepsilon}_{y_1}(k) \\
-			{\varepsilon}_{y_2}(k) \\
-			\vdots \\
-			{\varepsilon}_{y_{n_y}}(k) \\
-		\end{pmatrix}
-	\end{equation}
-	Total error: $\boldsymbol{\varepsilon}_{v'}^*(k)$ defined as $\boldsymbol{\varepsilon}_v'(k)$
-\end{frame}
-
-\begin{frame}
-	\frametitle{Point of view about error}
-			\begin{figure}[h] 
-			  \centering
-			  \begin{tikzpicture}[x=1cm,y=1cm]
-				\draw (-9, 0.5) -- (-8,0.5) [->, thick] node[above,near start]{$\boldsymbol{u}(k)$};
-				\draw (-7.2, 1.5) -- (-7.2,1.0) [->, thick] node[right,near start]{$\boldsymbol{\varepsilon}(k)$};
-				\draw (-6.5, 0.5) -- (-5.5,0.5) [->, thick] node[above,near end]{$\boldsymbol{y}^*(k)$};
-				\draw (-8,0.0) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}$}; 
-				\draw (-2,0.5) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}$}; 
-				\draw (-3, 1) -- (-2,1) [->, thick] node [above,near start]{$\boldsymbol{u}(k)$}; 
-				\draw (-0.5, 1)  -- (1,1) -- (1,0.5) [->, thick] node[xshift=-0.75cm,yshift=0.8cm]{$\boldsymbol{y}(k)$}; 
-
-				\draw (-2,-1) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}_{\abserr}$}; 
-				\draw (-3, -0.5) -- (-2,-0.5) [->, thick] node[above,near start]{$\boldsymbol{\varepsilon}(k)$};
-				\draw (-0.5, -0.5) -- (1,-0.5) -- (1,0) [->, thick] node [xshift=-0.75cm,yshift=-0.2cm]{$\boldsymbol{\varepsilon^*_y}(k)$}; 
-
-				\draw (1,0.25) circle (0.25) [thick] node {$+$}; 
-				\draw (1.25,0.25) -- (2.25,0.25)[->, thick] node [above,midway] {$\boldsymbol{y}^*(k)$};
-
-				\node (arrow) at (-4.3,0.4) {$\iff$};
-			  \end{tikzpicture}
-
-			%\caption{A signal view of the error propagation with respect to the ideal filter \label{fig:ltierror}}
-			A signal view of the error propagation with respect to the ideal filter
-			\end{figure}
-\end{frame}
-
-\begin{frame}
-	%3 dernières équations de calcul (avec le WCPG)
-		\begin{equation} \label{constraint}
-			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{} | \cdot \boldsymbol{2}^{lsb_{v'}+1} < \boldsymbol{\xi}_{i}
-			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
-		\end{equation}
-%		\begin{eqnarray}
-%			\boldsymbol{\mathfrak{A}}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} %\\
-%			%\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}
-%		\end{eqnarray}
-\end{frame}
-
-\subsection{WCPG}
-\begin{frame}
-	\frametitle{Definition of the Worst-Case-Peak-Gain (WCPG)}
-	\begin{equation}
-		\|\mathcal{H}\|_{wcpg}=\sup_{u\neq0}\frac{\|h*u\|_{l^{\infty}}}{\|u\|_{l^{\infty}}}
-	\end{equation}
-	M'sieu on a rien fait c'est pas nous.
-\end{frame}
-
 
 \subsubsection{The FloPoCo Framework: computing just right}
 	\begin{frame}
@@ -94,39 +10,39 @@
 
 \subsection{KCM and SOPCs}
 \begin{frame}
-\begin{multicols}{2}
-\begin{figure}[]
-  \begin{tikzpicture}[scale=0.6,every node/.style={scale=0.6}]
-    \footnotesize 
-    \node at (-1em,0)  {$x_i=$} ;
-    \foreach \x in {1,...,18} {
-%    \draw[] ($(-5*\x ex, -7ex)$) -- ($(-5*\x ex, -5ex)$) node[above] {$2^\x$} ;
-      \node (n) at ($(3.4*\x ex, 0ex)$)  {$b_{\x}$} ;
-      \draw[black!25, very thin] ($(n)+(1.7ex,1.5ex)$) -- ++(0, -3ex);
-    }
-    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d1) at (3.4*3ex+1.7ex,0) {} ;
-    \node[hwblock, minimum width=20ex,minimum height=6ex] (T1) at ($(d1)+(0,-10ex)$) { $T_{i1}: \circ_p(c_i\times d_{i1})$};
-    \draw[hwbus,->] (d1.south) --  (T1.north) node[midway,right] {$d_{i1}$};
-
-    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d2) at (3.4*9ex+1.7ex,0) {} ;
-    \node[hwblock, minimum width=15ex] (T2) at ($(d2)+(0,-10ex)$) { $T_{i2}$};
-    \draw[hwbus,->] (d2.south) --  (T2.north) node[midway,right] {$d_{i2}$};
-
-    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d3) at (3.4*15ex+1.7ex,0) {} ;
-    \node[hwblock, minimum width=10ex,minimum height=3.5ex] (T3) at ($(d3)+(0,-10ex)$) { $T_{i3}$};
-    \draw[hwbus,->] (d3.south) --  (T3.north) node[midway,right] {$d_{i3}$};
-
-    
-    \node[hwblock, minimum width=50ex] (sum) at ($(T2)+(0,-11.3ex)$) {\Large $+$};
-    \draw[hwbus,->]  (T1.south) --  ($(sum.80)!(T1)!(sum.north)$) % This means: point that is the projection of T1 on the line  (sum.80) -- (sum.north)
-       node[near start] {$/$} node[near start,left] {$q_i+g$}          node[near end,right] {$\widetilde{t}_{i1}$};
-    \draw[hwbus,->]  (T2.south) --  ($(sum.80)!(T2)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-\alpha+g$}   node[near end,right] {$\widetilde{t}_{i2}$};
-    \draw[hwbus,->]  (T3.south) -- ($(sum.80)!(T3)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-2\alpha+g$}  node[near end,right] {$\widetilde{t}_{i3}$};
-
-    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$q_i+g$} node[near end,right] {$\widetilde{p}_i\approx c_ix_i$};
- \end{tikzpicture}
-\caption{The FixRealKCM method when $x_i$ is split in 3 chunks   \label{fig:FixRealKCM}}
-\end{figure}
+%\begin{multicols}{2}
+%\begin{figure}[]
+%  \begin{tikzpicture}[scale=0.6,every node/.style={scale=0.6}]
+%    \footnotesize 
+%    \node at (-1em,0)  {$x_i=$} ;
+%    \foreach \x in {1,...,18} {
+%%    \draw[] ($(-5*\x ex, -7ex)$) -- ($(-5*\x ex, -5ex)$) node[above] {$2^\x$} ;
+%      \node (n) at ($(3.4*\x ex, 0ex)$)  {$b_{\x}$} ;
+%      \draw[black!25, very thin] ($(n)+(1.7ex,1.5ex)$) -- ++(0, -3ex);
+%    }
+%    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d1) at (3.4*3ex+1.7ex,0) {} ;
+%    \node[hwblock, minimum width=20ex,minimum height=6ex] (T1) at ($(d1)+(0,-10ex)$) { $T_{i1}: \circ_p(c_i\times d_{i1})$};
+%    \draw[hwbus,->] (d1.south) --  (T1.north) node[midway,right] {$d_{i1}$};
+%
+%    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d2) at (3.4*9ex+1.7ex,0) {} ;
+%    \node[hwblock, minimum width=15ex] (T2) at ($(d2)+(0,-10ex)$) { $T_{i2}$};
+%    \draw[hwbus,->] (d2.south) --  (T2.north) node[midway,right] {$d_{i2}$};
+%
+%    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d3) at (3.4*15ex+1.7ex,0) {} ;
+%    \node[hwblock, minimum width=10ex,minimum height=3.5ex] (T3) at ($(d3)+(0,-10ex)$) { $T_{i3}$};
+%    \draw[hwbus,->] (d3.south) --  (T3.north) node[midway,right] {$d_{i3}$};
+%
+%    
+%    \node[hwblock, minimum width=50ex] (sum) at ($(T2)+(0,-11.3ex)$) {\Large $+$};
+%    \draw[hwbus,->]  (T1.south) --  ($(sum.80)!(T1)!(sum.north)$) % This means: point that is the projection of T1 on the line  (sum.80) -- (sum.north)
+%       node[near start] {$/$} node[near start,left] {$q_i+g$}          node[near end,right] {$\widetilde{t}_{i1}$};
+%    \draw[hwbus,->]  (T2.south) --  ($(sum.80)!(T2)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-\alpha+g$}   node[near end,right] {$\widetilde{t}_{i2}$};
+%    \draw[hwbus,->]  (T3.south) -- ($(sum.80)!(T3)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-2\alpha+g$}  node[near end,right] {$\widetilde{t}_{i3}$};
+%
+%    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$q_i+g$} node[near end,right] {$\widetilde{p}_i\approx c_ix_i$};
+% \end{tikzpicture}
+%\caption{The FixRealKCM method when $x_i$ is split in 3 chunks   \label{fig:FixRealKCM}}
+%\end{figure}
 
 \begin{figure}
   \begin{tikzpicture}[scale=0.6, every node/.style={scale=0.6}]
@@ -148,9 +64,10 @@
 
     \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$p$} node[near end,right] {$y$};
  \end{tikzpicture}
-\caption{KCM-based SPOC architecture for $n_c=4$, each input being split into 3 chunks  \label{fig:Overall architecture}}
 \end{figure}
-\end{multicols}
+\centering
+KCM-based SOPC architecture for $n_c=3$, each input being split into 3 chunks 
+%\end{multicols}
 
 	\end{frame}
 
@@ -239,3 +156,116 @@
 		\includegraphics[scale=0.8, trim=5cm 0cm 0cm 5cm,clip]{pictures/exampleScheme.pdf}
 	\end{figure}
 \end{frame}
+
+\subsection{Size computation}
+\begin{frame}
+	\frametitle{Error definition}
+	Let's define: $v'= n_t + n_x + n_y$ \\
+	$\boldsymbol{\xi}$ will be the desired error.
+	Errors introduced by SOPCs:
+	\begin{equation}
+		\scriptsize
+		\boldsymbol{\varepsilon}_v'(k) =
+		\begin{pmatrix}
+			\boldsymbol{\varepsilon}_t(k) \\
+			\boldsymbol{\varepsilon}_x(k) \\
+			\boldsymbol{\varepsilon}_y(k) \\
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			{\varepsilon}_{t_1}(k) \\
+			{\varepsilon}_{t_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{t_{n_t}}(k) \\
+			\hspace{5pt} \\
+			{\varepsilon}_{x_1}(k) \\
+			{\varepsilon}_{x_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{x_{n_x}}(k) \\
+			\hspace{5pt} \\
+			{\varepsilon}_{y_1}(k) \\
+			{\varepsilon}_{y_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{y_{n_y}}(k) \\
+		\end{pmatrix}
+	\end{equation}
+	Total error: $\boldsymbol{\varepsilon}_{v'}^*(k)$ defined as $\boldsymbol{\varepsilon}_v'(k)$
+\end{frame}
+
+\begin{frame}
+	\frametitle{Point of view about error}
+			\begin{figure}[h] 
+			  \centering
+			  \begin{tikzpicture}[x=1cm,y=1cm]
+				\draw (-9, 0.5) -- (-8,0.5) [->, thick] node[above,near start]{$\boldsymbol{u}(k)$};
+				\draw (-7.2, 1.5) -- (-7.2,1.0) [->, thick] node[right,near start]{$\boldsymbol{\varepsilon}(k)$};
+				\draw (-6.5, 0.5) -- (-5.5,0.5) [->, thick] node[above,near end]{$\boldsymbol{y}^*(k)$};
+				\draw (-8,0.0) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}$}; 
+				\draw (-2,0.5) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}$}; 
+				\draw (-3, 1) -- (-2,1) [->, thick] node [above,near start]{$\boldsymbol{u}(k)$}; 
+				\draw (-0.5, 1)  -- (1,1) -- (1,0.5) [->, thick] node[xshift=-0.75cm,yshift=0.8cm]{$\boldsymbol{y}(k)$}; 
+
+				\only<1>{\draw (-2,-1) rectangle ++(1.5,1)[thick] node [midway]{$\mathcal{H}_{\abserr}$}; }
+				\only<2>{\draw (-2,-1) rectangle ++(1.5,1)[thick, fill=red!20] node [midway]{$\mathcal{H}_{\abserr}$}; }
+				\draw (-3, -0.5) -- (-2,-0.5) [->, thick] node[above,near start]{$\boldsymbol{\varepsilon}(k)$};
+				\draw (-0.5, -0.5) -- (1,-0.5) -- (1,0) [->, thick] node [xshift=-0.75cm,yshift=-0.2cm]{$\boldsymbol{\varepsilon^*_y}(k)$}; 
+
+				\draw (1,0.25) circle (0.25) [thick] node {$+$}; 
+				\draw (1.25,0.25) -- (2.25,0.25)[->, thick] node [above,midway] {$\boldsymbol{y}^*(k)$};
+
+				\node (arrow) at (-4.3,0.4) {$\iff$};
+			  \end{tikzpicture}
+
+			%\caption{A signal view of the error propagation with respect to the ideal filter \label{fig:ltierror}}
+			A signal view of the error propagation with respect to the ideal filter
+			\end{figure}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Impact of errors}
+	\begin{algorithm}[H]
+		\For{int i = 0 ; $i \leq n_t$; i++}{
+			$\boldsymbol{t}_i(k+1) \leftarrow - \sum\limits\limits_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{t_i}}$
+		}
+		\For{int i = 0 ; $i \leq n_x$; i++}{
+			$\boldsymbol{x}_i(k+1) \leftarrow \sum\limits_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{x_i}}$
+		}
+		\For{int i = 0 ; $i \leq ny$; i++}{
+			$\boldsymbol{y}_i(k) \leftarrow \sum\limits_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k) + \textcolor{red!80!gray}{\boldsymbol{\varepsilon}_{y_i}}$
+		}
+		\caption{Computation of SIF outputs from inputs}
+	\end{algorithm}
+\end{frame}
+
+
+\begin{frame}
+	%3 dernières équations de calcul (avec le WCPG)
+	Main constraint:
+		\begin{equation} \label{constraint}
+			\boldsymbol{\varepsilon}_{v} < \boldsymbol{2}^{-lsb_{v}}
+			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+
+	Proposed solution:
+
+		\begin{equation} \label{constraint}
+			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{} | \cdot \boldsymbol{2}^{lsb_{v'}+1} < \boldsymbol{2}^{-lsb_{y_i}}
+			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+	Then: constraint on each line of the computation algorithm
+%		\begin{eqnarray}
+%			\boldsymbol{\mathfrak{A}}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} %\\
+%			%\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}
+%		\end{eqnarray}
+\end{frame}
+
+\subsection{WCPG}
+\begin{frame}
+	\frametitle{Definition of the Worst-Case-Peak-Gain (WCPG)}
+	\begin{equation}
+		\|\mathcal{H}\|_{wcpg}=\sup_{u\neq0}\frac{\|h*u\|_{l^{\infty}}}{\|u\|_{l^{\infty}}}
+	\end{equation}
+	\centering
+	This computation is done by colleagues in LIP6.
+\end{frame}
+

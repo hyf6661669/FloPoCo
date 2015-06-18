@@ -250,6 +250,38 @@ Abstract architecture for the direct form realization of an LTI filter
 \end{frame}
 
 \begin{frame}
-	whatever	
+	\frametitle{Workflow}
+
+		\begin{figure}[h] 
+
+		\resizebox{300pt}{!}{
+		  \tiny
+		  \begin{tikzpicture}[]
+		  
+		   \node[draw, fill = gray!20, shape = rectangle, rounded corners,minimum width = 2cm, minimum height= 2cm] at (-4cm,4cm) {FixSIF} ;
+		   \node[draw, fill = gray!20, shape = rectangle, rounded corners,minimum width = 1cm, minimum height= 1cm] at (0cm,4cm) {VHDL} ;
+			\draw (-6.5cm, 4.5cm) -- (-5cm,4.5cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{$(a_i)_{1 < \leq i \leq n},(b_i)_{1 < \leq i \leq n}$};
+			\draw (-6.5cm, 4cm) -- (-5cm,4cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{input format ($msbs_u$,$lsbs_u$)};
+			\draw (-6.5cm, 3.5cm) -- (-5cm,3.5cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{output accuracy ($msbs_y$,$lsbs_y$)};
+
+			\draw (-3cm, 4cm) -- (-0.5cm,4cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{};
+			%zoom links
+			\draw (-5cm, 3cm) -- (-9.5cm,1.5cm) [-, thick, black!40] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{};
+			\draw (-3cm, 3cm) -- (0.5cm,1.5cm) [-, thick, black!40] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{};
+
+			%zoom view
+			\draw (-9.5cm, 0.7cm) -- (-8cm,0.7cm) [->, thick] node[above,near start, text width = 3cm, align=center]{User filter specification};
+			\draw (-5.5cm, 0.7cm) -- (-3.0cm,0.7cm) [->, thick] node[below,xshift=-1.2cm]{$\begin{pmatrix}\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\ \boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\ \boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y \end{pmatrix}$};
+			\draw (-8cm,0.0cm) rectangle ++(2.5cm,1.4cm)[thick] node [midway, text width = 4cm, align=center]{Realization Choice \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6 \\(Front-End)}; 
+			\draw (-3.0cm,0.0cm) rectangle ++(3.0cm,1.4cm)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work) \\(Back-End)}; 
+
+			\draw (1cm,0cm) rectangle ++(2.5cm,1.4cm)[thick] node [midway]{VHDL}; 
+			\draw (0.0cm, 0.7cm) -- (1cm,0.7cm) [->, thick] node[above,near start]{};
+
+		  \end{tikzpicture}
+
+		}
+		\caption{Workflow overview of tools usage \label{fig:workflow}}
+		\end{figure}
 \end{frame}
 

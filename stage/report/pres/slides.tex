@@ -66,22 +66,22 @@
 \date{2 February - 31 July, \vspace{5pt} 2015}
 \institute{CITI lab, \\ INRIA's SOCRATE Team, \\ \vspace{5pt} Under the supervision of \\Florent de Dinechin}
 
-%\AtBeginSection[]
-%{
-%	\begin{frame}
+\AtBeginSection[]
+{
+	\begin{frame}
 %	\transdissolve
-%		\frametitle{Table of Contents}
-%		\tableofcontents[currentsection]
-%	\end{frame}
-%}
-%\AtBeginSubsection[]
-%{
-%	\begin{frame}
+		\frametitle{Table of Contents}
+		\tableofcontents[currentsection]
+	\end{frame}
+}
+\AtBeginSubsection[]
+{
+	\begin{frame}
 %	\transdissolve
-%		\frametitle{Table of Contents}
-%		\tableofcontents[currentsection,currentsubsection]
-%	\end{frame}
-%}
+		\frametitle{Table of Contents}
+		\tableofcontents[currentsection,currentsubsection]
+	\end{frame}
+}
 
 \usepackage{xspace}
 \usepackage{array}
@@ -121,18 +121,20 @@
 	\section{Introduction}
 	\begin{frame}
 		\frametitle{Introduction}
-
+		LTI filters: essential tools in signal processing and control communities
+		Implementation in software works well.
+		Idea: implementing LTI Filters in hardware can be very useful
 	\end{frame}
 
 	
 	\section{Signal processing and filters}
-	\include{firstPart}
+	\input{firstPart}
 
 	\section{Implementation}
-	\include{secondPart}
+	\input{secondPart}
 
 	\section{Future Work}
-	\include{thirdPart}
+	\input{thirdPart}
 
 	\begin{frame}
 	\frametitle{Conclusion}
@@ -141,6 +143,11 @@
 			\bfseries
 			To conclude
 		\end{center}
+		\begin{itemize}
+			\item Adapting LTI Filters generation from software to hardware
+			\item Reuse of Lopez's calculations in our context
+			\item Implementation for FPGAs in a parametric view
+		\end{itemize}
 
 	\end{frame}
 
@@ -165,4 +172,18 @@
 			Any question?
 		\end{center}
 	\end{frame}
+
+	\bgroup
+	\setbeamercolor*{background canvas}{bg=black}
+	\setbeamertemplate {footline}{} 
+	\addtocounter{framenumber}{-1}
+	\begin{frame}[plain]
+	%\setbeamertemplate {footline}{} 
+	%\vspace{-175pt}
+	%\textcolor{white}{\hspace{-28pt}\tiny End of the presentation. Click to exit.}
+	\end{frame}
+	\setbeamercolor*{background canvas}{bg=white}
+	\input{backup}
+	\egroup
+
 \end{document}

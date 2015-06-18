@@ -31,7 +31,7 @@
 	\frametitle{Purpose of this work}
 	What is the purpose of this work?
 	\begin{itemize}
-		\item Lopez's PhD thesis states how to compute LTI filters in software:
+		\item Lopez's PhD thesis studies how to compute LTI filters in software:
 			\begin{itemize} 
 				\item scheduling issues
 				\item fixed size
@@ -59,17 +59,17 @@
 \begin{figure}[]
 \resizebox{!}{100pt}{
   \begin{tikzpicture}
-	\only<2->{
+	\only<2>{
      \draw[dotted,green, fill=green!20] (-5ex,-3.5ex) rectangle +(61ex,-15ex);   
 	}
 	\only<2->{
-     \node[green]  at (-2ex,-17.5ex) {{\small SOPC}};   
+     \node[green!50!black]  at (-2ex,-17.5ex) {{\small SOPC}};   
 	}
 	\only<1,3->{
-	\node[draw, thick, dotted, rectangle, minimum width = 6cm, minimum height=3.5cm, align=left, green!100, fill=green!30] (sop1) at (2cm,-2.5cm) {};
+	\node[draw, thick, dotted, rectangle, minimum width = 6cm, minimum height=3.5cm, align=left, green!100, fill=green!20] (sop1) at (2cm,-2.5cm) {};
 	}
 	\only<3->{
-	\node[draw, thick, dotted, rectangle, minimum width = 4cm, minimum height=3.5cm, align=left, green!100, fill=green!30] (sop2) at (7.5cm,-2.5cm) {};
+	\node[draw, thick, dotted, rectangle, minimum width = 4cm, minimum height=3.5cm, align=left, green!100, fill=green!20] (sop2) at (7.5cm,-2.5cm) {};
 	}
     \draw[hwbus] (-8, 0) node[left] {$u(k)$} --  ++(8, 0)  ;
     \draw[hwbus,->] (-8, 0) --  ++(3, 0); % just for the arrow
@@ -117,7 +117,7 @@
       \draw[line width=3pt] ($(-8*\i  +60 + 4, -3)$) --  +(0, 6);
     }
 	}
-    \only<1>{\draw[hwbus, <-] (40,-15) -- ++(-10,0) node [near end] {\only<5>{/}} node [near end,below, text width=4cm, xshift=0.5cm] {\only<5>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {$y^*(k)$} -- ++(-1,0) ;
+    \only<1,4>{\draw[hwbus, <-] (40,-15) -- ++(-10,0) node [near end,xshift=-5mm] {\only<4>{/}} node [near end,below, text width=4cm, xshift=0.5cm] {\only<3>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {\only<3>{$y^*(k)$}} -- ++(-1,0) ;
 	}
     \only<2->{\draw[hwbus, <-] (70,-15) -- ++(-15,0) node [near end] {\only<4>{/}} node [near end,below, text width=4cm, xshift=1.5cm] {\only<4>{\footnotesize$(msb_{out},$ $ lsb_{out})$}} node[near start,above] {$y^*(k)$} -- ++(-1,0) ;
 	}
@@ -125,14 +125,14 @@
 	\only<2->{
     \draw[hwbus] ($(60 , 0)$) --  ++(0,-15);
     \draw[hwbus,<-] ($(60 , -5)$) --  ++(0,-5);
-     \node[green!100]  at (-0.5cm,-4cm) {};% node for keeping scale
+     \node[green!50!black]  at (-0.5cm,-4cm) {};% node for keeping scale
 	}
 	\only<1,3->{
-     \node[green!100]  at (-0.5cm,-4cm) {{\small SOPC}};   
+     \node[green!50!black]  at (-0.5cm,-4cm) {{\small SOPC}};   
 	}
 
 	\only<3->{
-     \node[green!100]  at (6.0cm,-4cm) {{\small SOPC}};   
+     \node[green!50!black]  at (6.0cm,-4cm) {{\small SOPC}};   
 	}
 
 
@@ -207,7 +207,7 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 	\frametitle{The SIF: a unified realization representation}
 	Problems with ABCD:
 	\begin{itemize}
-		\item $lsb$ and $msb$ computations have to be rebuilt for each new filter in this form.
+		\item the whole analysis on precisions has to be rebuilt for each new filter.
 		\item this doesn't gives an explicit order in the operations
 	\end{itemize}
 
@@ -267,7 +267,7 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 
 \begin{frame}
 	\frametitle{A more common notation}
-	An easiest way to communicate SIFs:\\
+	An easier way to communicate SIFs:\\
 		The Z matrix:\\
 	\begin{equation}
 		Z = 
@@ -288,7 +288,7 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 		  \tiny
 		  \begin{tikzpicture}[]
 		  
-		   \node[draw, fill = gray!20, shape = rectangle, minimum width = 2cm, minimum height= 2cm] at (-4cm,4cm) {FixSIF} ;
+		   \node[draw, fill = orange!20, shape = rectangle, minimum width = 2cm, minimum height= 2cm] at (-4cm,4cm) {FixSIF} ;
 		   \node[draw, fill = gray!20, shape = rectangle, minimum width = 1cm, minimum height= 1.2cm] at (-1cm,4cm) {VHDL} ;
 			\draw (-6.5cm, 4.5cm) -- (-5cm,4.5cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{$(a_i)_{1 < \leq i \leq n},(b_i)_{1 < \leq i \leq n}$};
 			\draw (-6.5cm, 4cm) -- (-5cm,4cm) [->, thick] node[above,near start, text width = 3cm, align=center, xshift=-1cm]{input format ($msbs_u$,$lsbs_u$)};
@@ -302,8 +302,8 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 			%zoom view
 			%\draw (-9.5cm, 0.7cm) -- (-8cm,0.7cm) [->, thick] node[above,near start, text width = 3cm, align=center]{User filter specification};
 			\draw (-5.5cm, 0.7cm) -- (-3.0cm,0.7cm) [->, thick] node[below,xshift=-1.2cm]{$\begin{pmatrix}\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\ \boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\ \boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y \end{pmatrix}$};
-			\draw (-8cm,0.0cm) rectangle ++(2.5cm,1.4cm)[thick] node [midway, text width = 4cm, align=center]{Realization Choice \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6 \\(Front-End)}; 
-			\draw (-3.0cm,0.0cm) rectangle ++(3.0cm,1.4cm)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work) \\(Back-End)}; 
+			\draw[fill=orange!20] (-8cm,0.0cm) rectangle ++(2.5cm,1.4cm)[thick] node [midway, text width = 4cm, align=center]{Realization choice \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6 \\(Front-End)}; 
+			\draw[fill=orange!20] (-3.0cm,0.0cm) rectangle ++(3.0cm,1.4cm)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work) \\(Back-End)}; 
 
 			%\draw (1cm,0cm) rectangle ++(2.5cm,1.4cm)[thick] node [midway]{VHDL}; 
 			%\draw (0.0cm, 0.7cm) -- (1cm,0.7cm) [->, thick] node[above,near start]{};
@@ -311,7 +311,8 @@ Abstract architecture for the direct form realization of an \only<1>{FIR}\only<2
 		  \end{tikzpicture}
 
 		}
-		\caption{Workflow overview of tools usage \label{fig:workflow}}
 		\end{figure}
+		\centering
+		Workflow overview of tools usage
 \end{frame}
 

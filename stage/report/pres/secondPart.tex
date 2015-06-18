@@ -54,7 +54,7 @@
   \begin{tikzpicture}[scale=1.0, every node/.style={scale=1.0}]
     \footnotesize 
      \draw[green, fill=green!20] (-0.5cm,-2.2cm) rectangle +(10cm,5cm);   
-	 \node[green] at(0cm, -2cm) {SOPC};
+	 \node[green!50!black] at(0cm, -2cm) {SOPC};
     
     \node[hwblock, align=center,minimum width=60ex] (sum) at ($(32ex,-5ex)$) {Bit-heap based \\ summation architecture};
 
@@ -70,11 +70,11 @@
       }
     }
 
-    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start, yshift=-1mm] {$/$} node[near start,left, yshift=-1mm] {\normalsize$msb_{out}-lsb{out}$} node[near end,right] {$y$};
+    \draw[hwbus,->] (sum.south) --  ++(0,-12ex) node[near start, yshift=-1mm] {$/$} node[near start,left, yshift=-1mm] {\normalsize ($msb_{out}-lsb{out}$)} node[near end,right] {$y$};
  \end{tikzpicture}
 \end{figure}
 \centering
-SOPC architecture: based on the KCM architecture, split in 3 chunks 
+SOPC architecture
 %\end{multicols}
 
 	\end{frame}
@@ -85,7 +85,8 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 	\frametitle{Architecture generation algorithm}
 	\begin{algorithm}[H]
 	\caption{Architecture Generation Algorithm}
-	computeMSBSLSBS($[msbs,lsbs][][]$) //get the matrix of msbs lsbs. \\
+	Assuming all the MSBs and LSBs are known.
+	%computeMSBSLSBS($[msbs,lsbs][][]$) \\%//get the matrix of msbs lsbs. \\
 	\For{i=1; i=Z.size(); i++} {
 	 	row[ ]= Z[i][ ] //pick first row of Z \\
 	 	\For {j=1; j=1; j=Z.size() j++} {
@@ -105,8 +106,6 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 \end{frame}
 
 \begin{frame}
-	\centering
-	Each line will be a SOPC
 	\frametitle{Example}
 	\begin{figure}
 	  \begin{tikzpicture}
@@ -149,6 +148,8 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 
 		\end{tikzpicture}
 	\end{figure}
+	\centering
+	Each line will be a SOPC
 \end{frame}
 
 
@@ -167,7 +168,7 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 	\end{figure}
 \end{frame}
 
-\section{Details of the implementation}
+\section{Computing the parameters}
 
 \subsection{Computing the MSB}
 \begin{frame}
@@ -176,6 +177,9 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 	\begin{tikzpicture}[domain=0:7.5, samples=1000]
 		\draw[->] (-0.2,0) -- (10.2,0) node[right] {\tiny$k$};
 		\draw[->] (0,-1.2) -- (0,7.2) node[above] {};
+		\draw[<->] (3,-4.5) -- (3,5.5) node[above] {};
+		\draw[-,dotted] (0.2,5.5) -- (3,5.5) node[right, yshift=2mm, xshift=-4mm] {\tiny $\|u\|_{l^\infty}$};
+		\draw[-,dotted] (3,-4.5) -- (6,-4.5) node[above] {};
 		\draw[color=blue] plot[id=sin] function{sin(x)+sin(2*x)+sin(3*x)+sin(4*x)+sin(5*x)+sin(6*x)+sin(7*x) * sin(8*x) +sin(9*x) *sin(10*x)} node[right] {\tiny$u(k)$};
 		\draw (3.8cm,-0.3cm) -- (5.8cm,-0.3cm) [->, thick] node[above,near end]{};
 		\draw (0.3cm,-0.3cm) -- (2.3cm,-0.3cm) [->, thick] node[above,near end]{};
@@ -183,7 +187,7 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 		\draw[->] (23.8,1) -- (33.8,1) node[right] {\tiny$k$};
 		\draw[->] (24,0.2) -- (24,8.2) node[above] {};
 		\draw[<->] (27,-1.0) -- (27,3.0) node[above] {};
-		\draw[-,dotted] (27,-1.0) -- (29,-1.0) node[right, yshift=5mm, xshift=-4mm] {\tiny wcpg};
+		\draw[-,dotted] (27,-1.0) -- (29,-1.0) node[right, yshift=9mm, xshift=-7mm] {\tiny $\|h * u\|_{l^\infty}$};
 		\draw[-,dotted] (27,3.0) -- (26,3.0) node[above] {};
 		\draw[color=red, xshift=117] plot[id=out] function{1+2*sin(x)} node[right] {\tiny$y(k)$};
 	\end{tikzpicture}
@@ -196,50 +200,11 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 \end{frame}
 
 \subsection{Computing the LSB}
-\begin{frame}
-	\frametitle{Computing the LSB: Error definition}
-	Let's define:% $v'= n_t + n_x + n_y$ \\
-			\begin{equation}
-				\tiny
-				\boldsymbol{v'}=
-				\begin{pmatrix}
-					\boldsymbol{t}(k+1) \\
-					\boldsymbol{x}(k+1) \\
-					\boldsymbol{y}(k)   \\
-				\end{pmatrix}
-			\end{equation}
-	Errors introduced by SOPCs:
-	\begin{equation}
-		\tiny
-		\boldsymbol{\varepsilon}_{v'}(k) =
-		\begin{pmatrix}
-			\boldsymbol{\varepsilon}_t(k) \\
-			\boldsymbol{\varepsilon}_x(k) \\
-			\boldsymbol{\varepsilon}_y(k) \\
-		\end{pmatrix}
-		=
-		\begin{pmatrix}
-			{\varepsilon}_{t_1}(k) \\
-			{\varepsilon}_{t_2}(k) \\
-			\vdots \\
-			{\varepsilon}_{t_{n_t}}(k) \\
-			\hspace{5pt} \\
-			{\varepsilon}_{x_1}(k) \\
-			{\varepsilon}_{x_2}(k) \\
-			\vdots \\
-			{\varepsilon}_{x_{n_x}}(k) \\
-			\hspace{5pt} \\
-			{\varepsilon}_{y_1}(k) \\
-			{\varepsilon}_{y_2}(k) \\
-			\vdots \\
-			{\varepsilon}_{y_{n_y}}(k) \\
-		\end{pmatrix}
-	\end{equation}
-	\footnotesize
-	$\boldsymbol{\varepsilon}_{v'}^*(k)$ will represent the total error and is defined similarly to $\boldsymbol{\varepsilon}_{v'}(k)$
-\end{frame}
 
 \begin{frame}
+	$\boldsymbol{\varepsilon}$ is the error introduced by the SOPC (closely related to $2^{lsb_i}$). \\
+	$\boldsymbol{\varepsilon^*}$ is the total error (taking the loopback into account)
+
 	\frametitle{Computing the LSB: Point of view about error}
 			\begin{figure}[h] 
 			  \centering
@@ -288,6 +253,16 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 \begin{frame}
 	%3 dernières équations de calcul (avec le WCPG)
 	\frametitle{Computing the LSB: current solution}
+	Let's define:% $v'= n_t + n_x + n_y$ \\
+			\begin{equation}
+				\tiny
+				\boldsymbol{v'}=
+				\begin{pmatrix}
+					\boldsymbol{t}(k+1) \\
+					\boldsymbol{x}(k+1) \\
+					\boldsymbol{y}(k)   \\
+				\end{pmatrix}
+			\end{equation}
 	Main constraint:
 		\begin{equation} \label{constraint}
 			\boldsymbol{\varepsilon}_{v} < \boldsymbol{2}^{-lsb_{v}}
@@ -302,8 +277,8 @@ SOPC architecture: based on the KCM architecture, split in 3 chunks
 		\end{equation}
 	%Then: constraint on each line of the computation algorithm.
 	Lopez gives a simple solution that matches the fixed size constraint.
+	The solution matching the hardware constraint (arbitrary precision) is work in progress.
 
-	In the present case, a better solution is achievable at the end of this work.
 %		\begin{eqnarray}
 %			\boldsymbol{\mathfrak{A}}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} %\\
 %			%\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}

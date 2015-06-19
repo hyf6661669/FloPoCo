@@ -53,13 +53,13 @@
 \begin{figure}
   \begin{tikzpicture}[scale=1.0, every node/.style={scale=1.0}]
     \footnotesize 
-     \draw[green, fill=green!20] (-0.5cm,-2.2cm) rectangle +(10cm,5cm);   
+     \draw[green, fill=green!20] (-0.5cm,-2.2cm) rectangle +(10cm,4.4cm);   
 	 \node[green!50!black] at(0cm, -2cm) {SOPC};
     
     \node[hwblock, align=center,minimum width=60ex] (sum) at ($(32ex,-5ex)$) {Bit-heap based \\ summation architecture};
 
     \foreach \i in {0,...,3} {
-      \node (x) at  ($(15*\i ex+10ex, 17ex)$) {$x_\i$};
+      \node (x) at  ($(15*\i ex+10ex, 18ex)$) {$x_\i$};
       \coordinate (xb) at  ($(x)+(0, -3ex)$);
       \draw[hwbus,very thick] (x) --  (xb);
       
@@ -85,7 +85,7 @@ SOPC architecture
 	\frametitle{Architecture generation algorithm}
 	\begin{algorithm}[H]
 	\caption{Architecture Generation Algorithm}
-	Assuming all the MSBs and LSBs are known.
+	Assuming all the MSBs and LSBs are known. \\
 	%computeMSBSLSBS($[msbs,lsbs][][]$) \\%//get the matrix of msbs lsbs. \\
 	\For{i=1; i=Z.size(); i++} {
 	 	row[ ]= Z[i][ ] //pick first row of Z \\
@@ -101,7 +101,7 @@ SOPC architecture
 \begin{frame}
 	\frametitle{Example}
 	\begin{figure}
-		\includegraphics[scale=0.4]{pictures/exampleFull.pdf}
+		\includegraphics[scale=0.4]{pictures/exampleGreenFull.pdf}
 	\end{figure}
 \end{frame}
 
@@ -157,14 +157,14 @@ SOPC architecture
 	\frametitle{Example}
 	\begin{figure}
 		%\includegraphics[scale=0.8]{pictures/exampleScheme.pdf}
-		\includegraphics[scale=0.7, trim=0cm 5cm 2cm 0cm,clip]{pictures/exampleScheme.pdf}
+		\includegraphics[scale=0.7, trim=0cm 5cm 2cm 0cm,clip]{pictures/exampleGreenScheme.pdf}
 	\end{figure}
 \end{frame}
 
 \begin{frame}
 	\frametitle{Example}
 	\begin{figure}
-		\includegraphics[scale=0.8, trim=5cm 0cm 0cm 5cm,clip]{pictures/exampleScheme.pdf}
+		\includegraphics[scale=0.8, trim=5cm 0cm 0cm 5cm,clip]{pictures/exampleGreenScheme.pdf}
 	\end{figure}
 \end{frame}
 
@@ -173,6 +173,7 @@ SOPC architecture
 \subsection{Computing the MSB}
 \begin{frame}
 	\frametitle{Computing the MSB}
+	MSB should allow the full range of the signal.
 	\begin{figure}
 	\begin{tikzpicture}[domain=0:7.5, samples=1000]
 		\draw[->] (-0.2,0) -- (10.2,0) node[right] {\tiny$k$};
@@ -229,7 +230,7 @@ SOPC architecture
 			  \end{tikzpicture}
 
 			%\caption{A signal view of the error propagation with respect to the ideal filter \label{fig:ltierror}}
-			A signal view of the error propagation with respect to the ideal filter
+			Error propagation with respect to the ideal filter
 			\end{figure}
 \end{frame}
 
@@ -276,8 +277,8 @@ SOPC architecture
 			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
 		\end{equation}
 	%Then: constraint on each line of the computation algorithm.
-	Lopez gives a simple solution that matches the fixed size constraint.
-	The solution matching the hardware constraint (arbitrary precision) is work in progress.
+	Lopez gives a simple solution that matches the fixed size constraint.\\
+	The solution matching the hardware context (arbitrary precision) is work in progress.
 
 %		\begin{eqnarray}
 %			\boldsymbol{\mathfrak{A}}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i} %\\

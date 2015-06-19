@@ -14,94 +14,96 @@
 \headcommand {\slideentry {1}{1}{2}{5/5}{Fundamentals, Purpose}{0}}
 \headcommand {\beamer@framepages {5}{5}}
 \headcommand {\beamer@subsectionentry {0}{1}{2}{6}{FIR, IIR}}\headcommand {\beamer@subsectionpages {4}{5}}
-\headcommand {\slideentry {1}{2}{1}{6/9}{FIR, IIR}{0}}
-\headcommand {\beamer@framepages {6}{9}}
-\headcommand {\beamer@subsectionentry {0}{1}{3}{10}{State-Space representation}}\headcommand {\beamer@subsectionpages {6}{9}}
-\headcommand {\slideentry {1}{3}{1}{10/10}{State-Space representation}{0}}
-\headcommand {\beamer@framepages {10}{10}}
-\headcommand {\beamer@subsectionentry {0}{1}{4}{11}{The SIF: a unified realization representation }}\headcommand {\beamer@subsectionpages {10}{10}}
-\headcommand {\slideentry {1}{4}{1}{11/11}{The SIF: a unified realization representation }{0}}
+\headcommand {\slideentry {1}{2}{1}{6/10}{FIR, IIR}{0}}
+\headcommand {\beamer@framepages {6}{10}}
+\headcommand {\beamer@subsectionentry {0}{1}{3}{11}{State-Space representation}}\headcommand {\beamer@subsectionpages {6}{10}}
+\headcommand {\slideentry {1}{3}{1}{11/11}{State-Space representation}{0}}
 \headcommand {\beamer@framepages {11}{11}}
-\headcommand {\slideentry {1}{4}{2}{12/12}{The SIF: a unified realization representation }{0}}
+\headcommand {\beamer@subsectionentry {0}{1}{4}{12}{The SIF: a unified realization representation }}\headcommand {\beamer@subsectionpages {11}{11}}
+\headcommand {\slideentry {1}{4}{1}{12/12}{The SIF: a unified realization representation }{0}}
 \headcommand {\beamer@framepages {12}{12}}
-\headcommand {\slideentry {1}{4}{3}{13/13}{The SIF: a unified realization representation }{0}}
+\headcommand {\slideentry {1}{4}{2}{13/13}{The SIF: a unified realization representation }{0}}
 \headcommand {\beamer@framepages {13}{13}}
-\headcommand {\slideentry {1}{4}{4}{14/14}{The SIF: a unified realization representation }{0}}
+\headcommand {\slideentry {1}{4}{3}{14/14}{The SIF: a unified realization representation }{0}}
 \headcommand {\beamer@framepages {14}{14}}
-\headcommand {\sectionentry {2}{Generating the architecture}{15}{Generating the architecture}{0}}
-\headcommand {\beamer@sectionpages {3}{14}}
-\headcommand {\beamer@subsectionpages {11}{14}}
-\headcommand {\slideentry {2}{0}{5}{15/15}{}{0}}
+\headcommand {\slideentry {1}{4}{4}{15/15}{The SIF: a unified realization representation }{0}}
 \headcommand {\beamer@framepages {15}{15}}
-\headcommand {\beamer@subsectionentry {0}{2}{1}{16}{The FloPoCo Framework: computing just right}}\headcommand {\beamer@subsectionpages {15}{15}}
-\headcommand {\slideentry {2}{1}{1}{16/16}{The FloPoCo Framework: computing just right}{0}}
+\headcommand {\sectionentry {2}{Generating the architecture}{16}{Generating the architecture}{0}}
+\headcommand {\beamer@sectionpages {3}{15}}
+\headcommand {\beamer@subsectionpages {12}{15}}
+\headcommand {\slideentry {2}{0}{5}{16/16}{}{0}}
 \headcommand {\beamer@framepages {16}{16}}
-\headcommand {\beamer@subsectionentry {0}{2}{2}{17}{Basic block: SOPC}}\headcommand {\beamer@subsectionpages {16}{16}}
-\headcommand {\slideentry {2}{2}{1}{17/17}{Basic block: SOPC}{0}}
+\headcommand {\beamer@subsectionentry {0}{2}{1}{17}{The FloPoCo Framework: computing just right}}\headcommand {\beamer@subsectionpages {16}{16}}
+\headcommand {\slideentry {2}{1}{1}{17/17}{The FloPoCo Framework: computing just right}{0}}
 \headcommand {\beamer@framepages {17}{17}}
-\headcommand {\beamer@subsectionentry {0}{2}{3}{18}{Architecture generation}}\headcommand {\beamer@subsectionpages {17}{17}}
-\headcommand {\slideentry {2}{3}{1}{18/18}{Architecture generation}{0}}
+\headcommand {\beamer@subsectionentry {0}{2}{2}{18}{Basic block: SOPC}}\headcommand {\beamer@subsectionpages {17}{17}}
+\headcommand {\slideentry {2}{2}{1}{18/18}{Basic block: SOPC}{0}}
 \headcommand {\beamer@framepages {18}{18}}
-\headcommand {\slideentry {2}{3}{2}{19/19}{Architecture generation}{0}}
+\headcommand {\beamer@subsectionentry {0}{2}{3}{19}{Architecture generation}}\headcommand {\beamer@subsectionpages {18}{18}}
+\headcommand {\slideentry {2}{3}{1}{19/19}{Architecture generation}{0}}
 \headcommand {\beamer@framepages {19}{19}}
-\headcommand {\slideentry {2}{3}{3}{20/20}{Architecture generation}{0}}
+\headcommand {\slideentry {2}{3}{2}{20/20}{Architecture generation}{0}}
 \headcommand {\beamer@framepages {20}{20}}
-\headcommand {\slideentry {2}{3}{4}{21/21}{Architecture generation}{0}}
+\headcommand {\slideentry {2}{3}{3}{21/21}{Architecture generation}{0}}
 \headcommand {\beamer@framepages {21}{21}}
-\headcommand {\slideentry {2}{3}{5}{22/22}{Architecture generation}{0}}
+\headcommand {\slideentry {2}{3}{4}{22/22}{Architecture generation}{0}}
 \headcommand {\beamer@framepages {22}{22}}
-\headcommand {\sectionentry {3}{Computing the parameters}{23}{Computing the parameters}{0}}
-\headcommand {\beamer@sectionpages {15}{22}}
-\headcommand {\beamer@subsectionpages {18}{22}}
-\headcommand {\slideentry {3}{0}{6}{23/23}{}{0}}
+\headcommand {\slideentry {2}{3}{5}{23/23}{Architecture generation}{0}}
 \headcommand {\beamer@framepages {23}{23}}
-\headcommand {\beamer@subsectionentry {0}{3}{1}{24}{Computing the MSB}}\headcommand {\beamer@subsectionpages {23}{23}}
-\headcommand {\slideentry {3}{1}{1}{24/24}{Computing the MSB}{0}}
+\headcommand {\sectionentry {3}{Computing the parameters}{24}{Computing the parameters}{0}}
+\headcommand {\beamer@sectionpages {16}{23}}
+\headcommand {\beamer@subsectionpages {19}{23}}
+\headcommand {\slideentry {3}{0}{6}{24/24}{}{0}}
 \headcommand {\beamer@framepages {24}{24}}
-\headcommand {\beamer@subsectionentry {0}{3}{2}{25}{Computing the LSB}}\headcommand {\beamer@subsectionpages {24}{24}}
-\headcommand {\slideentry {3}{2}{1}{25/26}{Computing the LSB}{0}}
-\headcommand {\beamer@framepages {25}{26}}
-\headcommand {\slideentry {3}{2}{2}{27/27}{Computing the LSB}{0}}
-\headcommand {\beamer@framepages {27}{27}}
-\headcommand {\slideentry {3}{2}{3}{28/28}{Computing the LSB}{0}}
+\headcommand {\beamer@subsectionentry {0}{3}{1}{25}{Computing the MSB}}\headcommand {\beamer@subsectionpages {24}{24}}
+\headcommand {\slideentry {3}{1}{1}{25/25}{Computing the MSB}{0}}
+\headcommand {\beamer@framepages {25}{25}}
+\headcommand {\beamer@subsectionentry {0}{3}{2}{26}{Computing the LSB}}\headcommand {\beamer@subsectionpages {25}{25}}
+\headcommand {\slideentry {3}{2}{1}{26/27}{Computing the LSB}{0}}
+\headcommand {\beamer@framepages {26}{27}}
+\headcommand {\slideentry {3}{2}{2}{28/28}{Computing the LSB}{0}}
 \headcommand {\beamer@framepages {28}{28}}
-\headcommand {\sectionentry {4}{Future Work}{29}{Future Work}{0}}
-\headcommand {\beamer@sectionpages {23}{28}}
-\headcommand {\beamer@subsectionpages {25}{28}}
-\headcommand {\slideentry {4}{0}{4}{29/29}{}{0}}
+\headcommand {\slideentry {3}{2}{3}{29/29}{Computing the LSB}{0}}
 \headcommand {\beamer@framepages {29}{29}}
-\headcommand {\slideentry {4}{0}{5}{30/30}{}{0}}
+\headcommand {\sectionentry {4}{Future Work}{30}{Future Work}{0}}
+\headcommand {\beamer@sectionpages {24}{29}}
+\headcommand {\beamer@subsectionpages {26}{29}}
+\headcommand {\slideentry {4}{0}{4}{30/30}{}{0}}
 \headcommand {\beamer@framepages {30}{30}}
-\headcommand {\slideentry {4}{0}{6}{31/31}{}{0}}
+\headcommand {\slideentry {4}{0}{5}{31/31}{}{0}}
 \headcommand {\beamer@framepages {31}{31}}
-\headcommand {\slideentry {4}{0}{7}{32/32}{}{0}}
+\headcommand {\slideentry {4}{0}{6}{32/32}{}{0}}
 \headcommand {\beamer@framepages {32}{32}}
-\headcommand {\slideentry {4}{0}{8}{33/33}{}{0}}
+\headcommand {\slideentry {4}{0}{7}{33/33}{}{0}}
 \headcommand {\beamer@framepages {33}{33}}
-\headcommand {\slideentry {4}{0}{9}{34/34}{}{0}}
+\headcommand {\slideentry {4}{0}{8}{34/34}{}{0}}
 \headcommand {\beamer@framepages {34}{34}}
-\headcommand {\slideentry {4}{0}{10}{35/35}{}{0}}
+\headcommand {\slideentry {4}{0}{9}{35/35}{}{0}}
 \headcommand {\beamer@framepages {35}{35}}
-\headcommand {\slideentry {4}{0}{11}{36/36}{}{0}}
+\headcommand {\slideentry {4}{0}{10}{36/36}{}{0}}
 \headcommand {\beamer@framepages {36}{36}}
-\headcommand {\slideentry {4}{0}{12}{37/37}{}{0}}
+\headcommand {\slideentry {4}{0}{11}{37/37}{}{0}}
 \headcommand {\beamer@framepages {37}{37}}
-\headcommand {\slideentry {4}{0}{13}{38/38}{}{0}}
+\headcommand {\slideentry {4}{0}{12}{38/38}{}{0}}
 \headcommand {\beamer@framepages {38}{38}}
-\headcommand {\slideentry {4}{0}{14}{39/39}{}{0}}
+\headcommand {\slideentry {4}{0}{13}{39/39}{}{0}}
 \headcommand {\beamer@framepages {39}{39}}
-\headcommand {\slideentry {4}{0}{15}{40/40}{}{0}}
+\headcommand {\slideentry {4}{0}{14}{40/40}{}{0}}
 \headcommand {\beamer@framepages {40}{40}}
-\headcommand {\slideentry {4}{0}{16}{41/41}{}{0}}
+\headcommand {\slideentry {4}{0}{15}{41/41}{}{0}}
 \headcommand {\beamer@framepages {41}{41}}
-\headcommand {\slideentry {4}{0}{17}{42/42}{}{0}}
+\headcommand {\slideentry {4}{0}{16}{42/42}{}{0}}
 \headcommand {\beamer@framepages {42}{42}}
-\headcommand {\slideentry {4}{0}{17}{42/43}{}{0}}
-\headcommand {\beamer@framepages {42}{43}}
-\headcommand {\slideentry {4}{0}{17}{42/44}{}{0}}
-\headcommand {\beamer@framepages {42}{44}}
-\headcommand {\beamer@partpages {1}{44}}
-\headcommand {\beamer@subsectionpages {29}{44}}
-\headcommand {\beamer@sectionpages {29}{44}}
-\headcommand {\beamer@documentpages {44}}
-\headcommand {\def \inserttotalframenumber {36}}
+\headcommand {\slideentry {4}{0}{17}{43/43}{}{0}}
+\headcommand {\beamer@framepages {43}{43}}
+\headcommand {\slideentry {4}{0}{18}{44/44}{}{0}}
+\headcommand {\beamer@framepages {44}{44}}
+\headcommand {\slideentry {4}{0}{18}{44/45}{}{0}}
+\headcommand {\beamer@framepages {44}{45}}
+\headcommand {\slideentry {4}{0}{18}{44/46}{}{0}}
+\headcommand {\beamer@framepages {44}{46}}
+\headcommand {\beamer@partpages {1}{46}}
+\headcommand {\beamer@subsectionpages {30}{46}}
+\headcommand {\beamer@sectionpages {30}{46}}
+\headcommand {\beamer@documentpages {46}}
+\headcommand {\def \inserttotalframenumber {37}}

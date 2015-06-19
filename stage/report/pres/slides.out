@@ -1,13 +1,13 @@
 \BOOKMARK [2][]{Outline0.1}{Signal processing and filters}{}% 1
 \BOOKMARK [3][]{Outline0.1.1.4}{Fundamentals, Purpose}{Outline0.1}% 2
 \BOOKMARK [3][]{Outline0.1.2.6}{FIR, IIR}{Outline0.1}% 3
-\BOOKMARK [3][]{Outline0.1.3.11}{State-Space representation}{Outline0.1}% 4
-\BOOKMARK [3][]{Outline0.1.4.12}{The SIF: a unified realization representation }{Outline0.1}% 5
+\BOOKMARK [3][]{Outline0.1.3.12}{State-Space representation}{Outline0.1}% 4
+\BOOKMARK [3][]{Outline0.1.4.13}{The SIF: a unified realization representation }{Outline0.1}% 5
 \BOOKMARK [2][]{Outline0.2}{Generating the architecture}{}% 6
-\BOOKMARK [3][]{Outline0.2.1.17}{The FloPoCo Framework: computing just right}{Outline0.2}% 7
-\BOOKMARK [3][]{Outline0.2.2.18}{Basic block: SOPC}{Outline0.2}% 8
-\BOOKMARK [3][]{Outline0.2.3.19}{Architecture generation}{Outline0.2}% 9
+\BOOKMARK [3][]{Outline0.2.1.18}{The FloPoCo Framework: computing just right}{Outline0.2}% 7
+\BOOKMARK [3][]{Outline0.2.2.19}{Basic block: SOPC}{Outline0.2}% 8
+\BOOKMARK [3][]{Outline0.2.3.20}{Architecture generation}{Outline0.2}% 9
 \BOOKMARK [2][]{Outline0.3}{Computing the parameters}{}% 10
-\BOOKMARK [3][]{Outline0.3.1.25}{Computing the MSB}{Outline0.3}% 11
-\BOOKMARK [3][]{Outline0.3.2.26}{Computing the LSB}{Outline0.3}% 12
+\BOOKMARK [3][]{Outline0.3.1.26}{Computing the MSB}{Outline0.3}% 11
+\BOOKMARK [3][]{Outline0.3.2.27}{Computing the LSB}{Outline0.3}% 12
 \BOOKMARK [2][]{Outline0.4}{Future Work}{}% 13

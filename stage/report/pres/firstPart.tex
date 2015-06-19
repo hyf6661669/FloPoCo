@@ -48,29 +48,29 @@
 \subsection{FIR, IIR}
 \begin{frame}
 	\frametitle{FIR, IIR}
-	\only<1,2> {The most simple LTI Filter: the FIR (Finite Impulse Response) filter}
-	\only<3-> {Full LTI complexity: the IIR (Infinite Impulse Response) filter:}
+	\only<1,2,3> {The most simple LTI Filter: the FIR (Finite Impulse Response) filter}
+	\only<4-> {Full LTI complexity: the IIR (Infinite Impulse Response) filter:}
 	\begin{equation} \label{iirdef}
-		\only<1,2>{y(k)=\sum_{i=0}^n b_i u(k-i)}
-		\only<3->{y(k)=\sum_{i=0}^n b_i u(k-i) - \sum_{i=0}^n a_i y(k-i)}
+		\only<1,2,3>{y(k)=\sum_{i=0}^n b_i u(k-i)}
+		\only<4->{y(k)=\sum_{i=0}^n b_i u(k-i) - \sum_{i=0}^n a_i y(k-i)}
 	\end{equation}
 
 
-\only<2>{Abstract architecture for the direct form realization of \only<2>{a FIR}\only<3->{an IIR} filter:}
+\only<2,3->{Abstract architecture for the direct form realization of \only<2,3>{a FIR}\only<4->{an IIR} filter:}
 	\only<2->{
 \begin{figure}[]
 \resizebox{!}{100pt}{
   \begin{tikzpicture}
-	\only<3>{
+	\only<4>{
      \draw[dotted,green, fill=green!20] (-5ex,-3.5ex) rectangle +(61ex,-15ex);   
 	}
-	\only<3->{
+	\only<4->{
      \node[green!50!black]  at (-2ex,-17.5ex) {{\small SOPC}};   
 	}
-	\only<4->{
+	\only<3,5->{
 	\node[draw, thick, dotted, rectangle, minimum width = 6cm, minimum height=2.9cm, align=left, green!100, fill=green!20] (sop1) at (2cm,-2.1cm) {};
 	}
-	\only<4->{
+	\only<5->{
 	\node[draw, thick, dotted, rectangle, minimum width = 4cm, minimum height=2.9cm, align=left, green!100, fill=green!20] (sop2) at (7.5cm,-2.1cm) {};
 	}
     \draw[hwbus] (-8, 0) node[left] {$u(k)$} --  ++(8, 0)  ;
@@ -99,11 +99,11 @@
       \draw[hwbus, ->]  (nm1) -- (n.west);
       \draw[hwbus]  (n.east) -- ++ (3,0);
     }
-	\only<5>{\node [] at (30,-15) {/};}
+	\only<6>{\node [] at (30,-15) {/};}
 
     %\draw (74, -15) node[hwblock,align=center] (fr) {final\\round} ;
 
-	\only<3->{
+	\only<4->{
     \foreach \i in {1,...,3} {
       \draw[hwbus, ->] ($(-8*\i  + 60 , 0)$) --  ++(0, -5);
       \draw[hwblock] ($(-8*\i  + 60 , -5)$) -- ++(3, 0) -- ++(-3, -4) -- ++(-3, 4) -- cycle; 
@@ -115,28 +115,28 @@
       \draw[hwbus, ->] ($(-8*\i  + 60, -9)$) --  (n.north);
       \draw[hwbus, <-] (n.west) -- ++(-5,0);
       % The registers
-      \draw[hwbus] ($(-8*\i  + 60  +8, 0)$) --  ++(-8, 0) node [above,text=blue] {\footnotesize $y\only<5>{^*}(k-\i)$};
+      \draw[hwbus] ($(-8*\i  + 60  +8, 0)$) --  ++(-8, 0) node [above,text=blue] {\footnotesize $y\only<6>{^*}(k-\i)$};
       \draw[hwbus,->] ($(-8*\i  + 60  +8, 0)$) --  ++(-3, 0); % just for the arrow
       \draw[line width=3pt] ($(-8*\i  +60 + 4, -3)$) --  +(0, 6);
     }
 	}
-    \only<2>{\draw[hwbus, <-] (40,-15) -- ++(-10,0) node [near end,xshift=-5mm] {\only<5>{/}} node [near end,below, text width=4cm, xshift=0.5cm] {\only<3>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {\only<2>{$y(k)$}} -- ++(-1,0) ;
+    \only<2,3>{\draw[hwbus, <-] (40,-15) -- ++(-10,0) node [near end,xshift=-5mm] {\only<6>{/}} node [near end,below, text width=4cm, xshift=0.5cm] {\only<4>{\footnotesize$(msb_{out},$ $ lsb_{out}+g)$}} node[near start,above] {\only<2,3>{$y(k)$}} -- ++(-1,0) ;
 	}
-    \only<3->{\draw[hwbus, <-] (70,-15) -- ++(-15,0) node [near end] {\only<5>{/}} node [near end,below, text width=4cm, xshift=1.5cm] {\only<5>{\footnotesize$(msb_{out},$ $ lsb_{out})$}} node[near start,above] {$y\only<5>{^*}(k)$} -- ++(-1,0) ;
+    \only<4->{\draw[hwbus, <-] (70,-15) -- ++(-15,0) node [near end] {\only<6>{/}} node [near end,below, text width=4cm, xshift=1.5cm] {\only<6>{\footnotesize$(msb_{out},$ $ lsb_{out})$}} node[near start,above] {$y\only<6>{^*}(k)$} -- ++(-1,0) ;
 	}
     %\draw[hwbus, ->] (fr.east) -- ++(12,0) node [midway] {/} node [midway,below, text width=2cm] {\footnotesize$(msb_{out},$ $lsb_{out}+g)$} node[right] {$\yout(k)$} ;
-	\only<3->{
+	\only<4->{
     \draw[hwbus] ($(60 , 0)$) --  ++(0,-15);
     \draw[hwbus,<-] ($(60 , -5)$) --  ++(0,-5);
 	}
 	\only<2->{
      \node[green!50!black]  at (-0.5cm,-4cm) {};% node for keeping scale
 	}
-	\only<4->{
+	\only<3,5->{
      \node[green!50!black]  at (-0.5cm,-3.4cm) {{\small SOPC}};   
 	}
 
-	\only<4->{
+	\only<5->{
      \node[green!50!black]  at (6.0cm,-3.4cm) {{\small SOPC}};   
 	}
 
@@ -144,7 +144,8 @@
   \end{tikzpicture}
   }
 \only<3->{
-SOPC (Sum Of Products by Constants): basic block of LTI filters implementation.
+	\\
+SOPC (Sum Of Products by Constants):\\basic block of LTI filters implementation.
 }
 
 %\caption{Abstract architecture for the direct form realization of an LTI filter \label{fig:ltiarch}}
@@ -218,8 +219,8 @@ SOPC (Sum Of Products by Constants): basic block of LTI filters implementation.
 		\item the whole analysis on precisions has to be rebuilt for each new realization.
 	\end{itemize}
 
-	The SIF generalizes the state-space.\\
-	Addition: $\boldsymbol{t}(k)$ describes the operations order:
+	The SIF (Speciallized Implicit Form) generalizes the state-space.\\
+	Addition: $\boldsymbol{t}(k)$ describes explicit intermediate computations:
 
 	%\frametitle{Definition of the SIF}
 	\begin{equation} \label{sifdef}

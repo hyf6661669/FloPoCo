@@ -53,8 +53,8 @@
 \begin{figure}
   \begin{tikzpicture}[scale=1.0, every node/.style={scale=1.0}]
     \footnotesize 
-     \draw[green, fill=green!20] (-0.5cm,-2.2cm) rectangle +(10cm,4.4cm);   
-	 \node[green!50!black] at(0cm, -2cm) {SOPC};
+     \draw[green, fill=green!20] (-0.5cm,-1.8cm) rectangle +(10cm,4.0cm);   
+	 \node[green!50!black] at(0cm, -1.6cm) {SOPC};
     
     \node[hwblock, align=center,minimum width=60ex] (sum) at ($(32ex,-5ex)$) {Bit-heap based \\ summation architecture};
 
@@ -70,7 +70,7 @@
       }
     }
 
-    \draw[hwbus,->] (sum.south) --  ++(0,-12ex) node[near start, yshift=-1mm] {$/$} node[near start,left, yshift=-1mm] {\normalsize ($msb_{out}-lsb{out}$)} node[near end,right] {$y$};
+    \draw[hwbus,->] (sum.south) --  ++(0,-12ex) node[near start, yshift=-6mm] {$/$} node[near start,left, yshift=-6mm] {\normalsize ($msb_{out}-lsb_{out}$)} node[near end,right] {$y$};
  \end{tikzpicture}
 \end{figure}
 \centering
@@ -87,9 +87,9 @@ SOPC architecture
 	\caption{Architecture Generation Algorithm}
 	Assuming all the MSBs and LSBs are known. \\
 	%computeMSBSLSBS($[msbs,lsbs][][]$) \\%//get the matrix of msbs lsbs. \\
-	\For{i=1; i=Z.size(); i++} {
+	\For{i=1; i=Z.nbLines(); i++} {
 	 	row[ ]= Z[i][ ] //pick first row of Z \\
-	 	\For {j=1; j=1; j=Z.size() j++} {
+	 	\For {j=1; j=1; j=Z.nbCols() j++} {
 	 		assign(SOPC[i], row[j], {"T","X","U"},[msbs,lsbs][i][j])
 	 	}
 		Second pass for wiring.
@@ -173,7 +173,8 @@ SOPC architecture
 \subsection{Computing the MSB}
 \begin{frame}
 	\frametitle{Computing the MSB}
-	MSB should allow the full range of the signal.
+	MSB should allow the full range of the signal.\\
+	Worst-Case Peak Gain (WCPG):
 	\begin{figure}
 	\begin{tikzpicture}[domain=0:7.5, samples=1000]
 		\draw[->] (-0.2,0) -- (10.2,0) node[right] {\tiny$k$};

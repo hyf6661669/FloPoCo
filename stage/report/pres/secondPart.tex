@@ -90,7 +90,7 @@ SOPC architecture
 	\For{i=1; i=Z.nbLines(); i++} {
 	 	row[ ]= Z[i][ ] //pick first row of Z \\
 	 	\For {j=1; j=1; j=Z.nbCols() j++} {
-	 		assign(SOPC[i], row[j], {"T","X","U"},[msbs,lsbs][i][j])
+	 		assign(SOPC[i], row[j], {"T","X","Y"},[msbs,lsbs][i][j])
 	 	}
 		Second pass for wiring.
 	}

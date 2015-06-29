@@ -309,8 +309,8 @@ namespace flopoco {
 		for (uint32_t i = 0; i < nx; i++){
 			stringstream sig;
 			sig<<"Xplus"<<i;
-			REPORT(0,"export 	X"<<i<<" <= "<<delay(sig.str(),1)<<";");
-			vhdl << tab << join("X",i)<<" <= "<<delay(sig.str(),1)<<";"<<endl;
+//			REPORT(0,"export 	X"<<i<<" <= "<<delay(sig.str(),1)<<";");
+//			vhdl << tab << join("X",i)<<" <= "<<delay(sig.str(),1)<<";"<<endl;
 		}
 		REPORT(0, "time shifting done");
 	//TODO: end of new code

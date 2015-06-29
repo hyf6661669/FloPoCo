@@ -1,4 +1,4 @@
-/*
+/**
 
   This file is part of the FloPoCo project
   initiated by the Aric team at Ecole Normale Superieure de Lyon

@@ -39,7 +39,7 @@ namespace flopoco {
 //			if (i<n-1)
 //				nextCycle();
 
-			vhdl << tab << join("Xd", i) << " <= " << delay("XX", i) << ";" << endl;
+			//vhdl << tab << join("Xd", i) << " <= " << delay("XX", i) << ";" << endl;
 		}
 
 		//setPipelineDepth(0);

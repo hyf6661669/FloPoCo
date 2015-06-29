@@ -145,13 +145,13 @@ namespace flopoco{
 		//		declareTable[name] = s->getCycle();
 	}
 
-	void Operator::addOutput(const std::string name) {
-		addOutput (name, 1, 1, false);
-	}
-
-	void Operator::addOutput(const char* name) {
-		addOutput (name, 1, 1, false);
-	}
+//	void Operator::addOutput(const std::string name) {
+//		addOutput (name, 1, 1, false);
+//	}
+//
+//	void Operator::addOutput(const char* name) {
+//		addOutput (name, 1, 1, false);
+//	}
 
 
 #if 1
@@ -343,10 +343,10 @@ namespace flopoco{
 		return uniqueName_;
 	}
 
-	int Operator::getNewUId(){
-		Operator::uid++;
-		return Operator::uid;
-	}
+//	int Operator::getNewUId(){
+//		Operator::uid++;
+//		return Operator::uid;
+//	}
 
 	int Operator::getIOListSize() const{
 		return ioList_.size();
@@ -440,32 +440,32 @@ namespace flopoco{
 		copyrightString_ = authorsYears;
 	}
 
-	void Operator::useStdLogicUnsigned() {
-		stdLibType_ = 0;
-	};
+//	void Operator::useStdLogicUnsigned() {
+//		stdLibType_ = 0;
+//	};
 
 	/** use the Synopsys de-facto standard ieee.std_logic_unsigned for this entity
 	 */
-	void Operator::useStdLogicSigned() {
-		stdLibType_ = -1;
-	};
-
-	void Operator::useNumericStd() {
-		stdLibType_ = 1;
-	};
-
-	void Operator::useNumericStd_Signed() {
-		stdLibType_ = 2;
-	};
-
-	void Operator::useNumericStd_Unsigned() {
-		stdLibType_ = 3;
-	};
-
-	int Operator::getStdLibType() {
-		return stdLibType_;
-	};
-
+//	void Operator::useStdLogicSigned() {
+//		stdLibType_ = -1;
+//	};
+//
+//	void Operator::useNumericStd() {
+//		stdLibType_ = 1;
+//	};
+//
+//	void Operator::useNumericStd_Signed() {
+//		stdLibType_ = 2;
+//	};
+//
+//	void Operator::useNumericStd_Unsigned() {
+//		stdLibType_ = 3;
+//	};
+//
+//	int Operator::getStdLibType() {
+//		return stdLibType_;
+//	};
+//
 	void Operator::licence(std::ostream& o){
 		licence(o, copyrightString_);
 	}
@@ -895,9 +895,9 @@ namespace flopoco{
 	}
 
 
-	string Operator::declare(string name, Signal::SignalType regType ) {
-		return declare(name, 1, false, regType);
-	}
+//	string Operator::declare(string name, Signal::SignalType regType ) {
+//		return declare(name, 1, false, regType);
+//	}
 
 
 	// TODO: factor code between next and previous methods
@@ -1189,7 +1189,7 @@ namespace flopoco{
 
 		o << tab << tab << "port map ( ";
 		// build vhdl and erase portMap_
-		map<string,string>::iterator it;
+		unordered_map<string,string>::iterator it;
 		if(op->isSequential()) {
 			o << "clk  => clk";
 			o << "," << endl << tab << tab << "           rst  => rst";
@@ -1311,24 +1311,24 @@ namespace flopoco{
 	}
 
 
-	void Operator::setArchitectureName(string architectureName) {
-		architectureName_ = architectureName;
-	};
-
-
-	void Operator::newArchitecture(std::ostream& o, std::string name){
-		o << "architecture " << architectureName_ << " of " << name  << " is" << endl;
-	}
-
-
-	void Operator::beginArchitecture(std::ostream& o){
-		o << "begin" << endl;
-	}
-
-
-	void Operator::endArchitecture(std::ostream& o){
-		o << "end architecture;" << endl << endl;
-	}
+//	void Operator::setArchitectureName(string architectureName) {
+//		architectureName_ = architectureName;
+//	};
+//
+//
+//	void Operator::newArchitecture(std::ostream& o, std::string name){
+//		o << "architecture " << architectureName_ << " of " << name  << " is" << endl;
+//	}
+//
+//
+//	void Operator::beginArchitecture(std::ostream& o){
+//		o << "begin" << endl;
+//	}
+//
+//
+//	void Operator::endArchitecture(std::ostream& o){
+//		o << "end architecture;" << endl << endl;
+//	}
 
 
 	string Operator::buildVHDLComponentDeclarations() {
@@ -1373,7 +1373,7 @@ namespace flopoco{
 
 	string Operator::buildVHDLTypeDeclarations() {
 		ostringstream o;
-		for(map<string, string >::iterator it = types_.begin(); it !=types_.end(); it++) {
+		for(unordered_map<string, string >::iterator it = types_.begin(); it !=types_.end(); it++) {
 			string name  = it->first;
 			string value = it->second;
 			o <<  "type " << name << " is "  << value << ";" << endl;
@@ -1384,7 +1384,7 @@ namespace flopoco{
 
 	string Operator::buildVHDLConstantDeclarations() {
 		ostringstream o;
-		for(map<string, pair<string, string> >::iterator it = constants_.begin(); it !=constants_.end(); it++) {
+		for(unordered_map<string, pair<string, string> >::iterator it = constants_.begin(); it !=constants_.end(); it++) {
 			string name  = it->first;
 			string type = it->second.first;
 			string value = it->second.second;
@@ -1398,7 +1398,7 @@ namespace flopoco{
 	string Operator::buildVHDLAttributes() {
 		ostringstream o;
 		// First add the declarations of attribute names
-		for(map<string, string>::iterator it = attributes_.begin(); it !=attributes_.end(); it++) {
+		for(unordered_map<string, string>::iterator it = attributes_.begin(); it !=attributes_.end(); it++) {
 			string name  = it->first;
 			string type = it->second;
 			o <<  "attribute " << name << ": " << type << ";" << endl;
@@ -1572,7 +1572,7 @@ namespace flopoco{
 		return outDelayMap;
 	}
 
-	map<string, int> Operator::getDeclareTable(){
+	unordered_map<string, int> Operator::getDeclareTable(){
 		return declareTable;
 	}
 
@@ -1601,7 +1601,7 @@ namespace flopoco{
 	void Operator::parse2(){
 		REPORT(DEBUG, "Starting second-level parsing for operator "<<srcFileName);
 		vector<pair<string,int> >:: iterator iterUse;
-		map<string, int>::iterator iterDeclare;
+		unordered_map<string, int>::iterator iterDeclare;
 
 		string name;
 		int declareCycle, useCycle;
@@ -2228,15 +2228,15 @@ namespace flopoco{
 		return false;
 	}
 
-	void Operator::setHasDelay1Feedbacks()
-	{
-		hasDelay1Feedbacks_=true;
-	}
-
-
-	bool Operator::hasDelay1Feedbacks(){
-		return hasDelay1Feedbacks_;
-	}
+//	void Operator::setHasDelay1Feedbacks()
+//	{
+//		hasDelay1Feedbacks_=true;
+//	}
+//
+//
+//	bool Operator::hasDelay1Feedbacks(){
+//		return hasDelay1Feedbacks_;
+//	}
 
 
 }

@@ -4,7 +4,7 @@ the base Operator class, every operator should inherit it
 Author : Florent de Dinechin, Bogdan Pasca
 
 Initial software.
-Copyright © ENS-Lyon, INRIA, CNRS, UCBL,  
+Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 2008-2010.
   All rights reserved.
 
@@ -25,14 +25,14 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 
 
 namespace flopoco{
-	
+
 
 	// global variables used through most of FloPoCo,
 	// to be encapsulated in something, someday?
 	int Operator::uid = 0; //init of the uid static member of Operator
 	multimap < string, TestState > Operator::testMemory;		/*init the multimap */
 	int verbose=0;
-	
+
 	Operator::Operator(Target* target, map<string, double> inputDelays){
 		stdLibType_                 = 0; // unfortunately this is the historical default.
 		target_                     = target;
@@ -51,9 +51,9 @@ namespace flopoco{
 		architectureName_			= "arch";
 		indirectOperator_           = NULL;
 		hasDelay1Feedbacks_         = false;
-		
 
-		// Currently we set the pipeline and clockenable from the global target. 
+
+		// Currently we set the pipeline and clockenable from the global target.
 		// This is relatively safe from command line, in the sense that they can only be changed by the command-line,
 		// so each sub-component of an operator will share the same target.
 		// Il also makes the subcomponent calls easier: pass clock and ce without thinking about it.
@@ -61,30 +61,30 @@ namespace flopoco{
 		if (target_->isPipelined())
 			setSequential();
 		else
-			setCombinatorial();	
-		
+			setCombinatorial();
+
 		setClockEnable(target_->useClockEnable());
 
-		vhdl.disableParsing(!target_->isPipelined());	
+		vhdl.disableParsing(!target_->isPipelined());
 
 		//------- Resource estimation and floorplanning ----------------
 		resourceEstimate << "Starting Resource estimation report for entity: " << uniqueName_ << " --------------- " << endl;
 		resourceEstimateReport << "";
-		
+
 		reHelper = new ResourceEstimationHelper(target_, this);
 		reHelper->initResourceEstimation();
-		
+
 		reActive = false;
-		
+
 		//--------------------------------------------------------------
 		floorplan << "";
-		
+
 		flpHelper = new FloorplanningHelper(target_, this);
-		flpHelper->initFloorplanning(0.75); 							// ratio (to what degree will the sub-components' bounding boxes 
+		flpHelper->initFloorplanning(0.75); 							// ratio (to what degree will the sub-components' bounding boxes
 																		// be filled), see Tools/FloorplanningHelper
 		//--------------------------------------------------------------
 	}
-	
+
 
 
 
@@ -111,10 +111,10 @@ namespace flopoco{
 				globalOpListRef->push_back(this);
 
 	}
-	
 
 
-	
+
+
 	void Operator::addInput(const std::string name, const int width, const bool isBus) {
 		if (signalMap_.find(name) != signalMap_.end()) {
 			std::ostringstream o;
@@ -128,7 +128,7 @@ namespace flopoco{
 		numberOfInputs_ ++;
 		declareTable[name] = s->getCycle();
 	}
-	
+
 	void Operator::addOutput(const std::string name, const int width, const int numberOfPossibleOutputValues, const bool isBus) {
 		if (signalMap_.find(name) != signalMap_.end()) {
 			std::ostringstream o;
@@ -138,14 +138,22 @@ namespace flopoco{
 		Signal *s = new Signal(name, Signal::out, width, isBus) ;
 		s -> setNumberOfPossibleValues(numberOfPossibleOutputValues);
 		ioList_.push_back(s);
-		for(int i=0; i<numberOfPossibleOutputValues; i++) 
+		for(int i=0; i<numberOfPossibleOutputValues; i++)
 			testCaseSignals_.push_back(s);
 		signalMap_[name] = s ;
 		numberOfOutputs_ ++;
-		//commented out because the output is declared at cycle 0
 		//		declareTable[name] = s->getCycle();
 	}
-	
+
+	void Operator::addOutput(const std::string name) {
+		addOutput (name, 1, 1, false);
+	}
+
+	void Operator::addOutput(const char* name) {
+		addOutput (name, 1, 1, false);
+	}
+
+
 #if 1
 	void Operator::addFixInput(const std::string name, const bool isSigned, const int msb, const int lsb) {
 		if (signalMap_.find(name) != signalMap_.end()) {
@@ -160,7 +168,7 @@ namespace flopoco{
 		numberOfInputs_ ++;
 		declareTable[name] = s->getCycle();
 	}
-	
+
 	void Operator::addFixOutput(const std::string name, const bool isSigned, const int msb, const int lsb, const int numberOfPossibleOutputValues) {
 		if (signalMap_.find(name) != signalMap_.end()) {
 			std::ostringstream o;
@@ -170,13 +178,13 @@ namespace flopoco{
 		Signal *s = new Signal(name, Signal::out, isSigned, msb, lsb) ;
 		s -> setNumberOfPossibleValues(numberOfPossibleOutputValues);
 		ioList_.push_back(s);
-		for(int i=0; i<numberOfPossibleOutputValues; i++) 
+		for(int i=0; i<numberOfPossibleOutputValues; i++)
 			testCaseSignals_.push_back(s);
 		signalMap_[name] = s ;
 		numberOfOutputs_ ++;
 	}
 #endif
-	
+
 	void Operator::addFPInput(const std::string name, const int wE, const int wF) {
 		if (signalMap_.find(name) != signalMap_.end()) {
 			std::ostringstream o;
@@ -190,7 +198,7 @@ namespace flopoco{
 		numberOfInputs_ ++;
 		declareTable[name] = s->getCycle();
 	}
-	
+
 	void Operator::addFPOutput(const std::string name, const int wE, const int wF, const int numberOfPossibleOutputValues) {
 		if (signalMap_.find(name) != signalMap_.end()) {
 			std::ostringstream o;
@@ -200,14 +208,14 @@ namespace flopoco{
 		Signal *s = new Signal(name, Signal::out, wE, wF) ;
 		s -> setNumberOfPossibleValues(numberOfPossibleOutputValues);
 		ioList_.push_back(s);
-		for(int i=0; i<numberOfPossibleOutputValues; i++) 
+		for(int i=0; i<numberOfPossibleOutputValues; i++)
 			testCaseSignals_.push_back(s);
 		signalMap_[name] = s ;
 		numberOfOutputs_ ++;
 		//		declareTable[name] = s->getCycle();
 	}
-	
-	
+
+
 	void Operator::addIEEEInput(const std::string name, const int wE, const int wF) {
 		if (signalMap_.find(name) != signalMap_.end()) {
 			std::ostringstream o;
@@ -221,7 +229,7 @@ namespace flopoco{
 		numberOfInputs_ ++;
 		declareTable[name] = s->getCycle();
 	}
-	
+
 	void Operator::addIEEEOutput(const std::string name, const int wE, const int wF, const int numberOfPossibleOutputValues) {
 		if (signalMap_.find(name) != signalMap_.end()) {
 			std::ostringstream o;
@@ -231,32 +239,30 @@ namespace flopoco{
 		Signal *s = new Signal(name, Signal::out, wE, wF, true) ;
 		s -> setNumberOfPossibleValues(numberOfPossibleOutputValues);
 		ioList_.push_back(s);
-		for(int i=0; i<numberOfPossibleOutputValues; i++) 
+		for(int i=0; i<numberOfPossibleOutputValues; i++)
 			testCaseSignals_.push_back(s);
 		signalMap_[name] = s ;
 		numberOfOutputs_ ++;
 		//		declareTable[name] = s->getCycle();
 	}
-	
-	
-	
+
+
+
 	Signal * Operator::getDelayedSignalByName(string name) {
 		// strip the _dnnn.
-		/*
 		string n=name;
 		bool success=false;
-
 		char c = n.back();
-		if(c>='0' & c <='9') {
-			while (c>='0' & c <='9') {
+		if(c>='0' && c <='9') {
+			while (c>='0' && c <='9') {
 				n.pop_back();
 				c = n.back();
 			}
 			// not sure yet there is a _d in front
-			if (c=='d') {
+			if (c=='d' && n.length()>0) {
 				n.pop_back();
 				c = n.back();
-				if (c=='_') {
+				if (c=='_' && n.length()>0) {
 					n.pop_back();
 					c = n.back();
 					success=true;
@@ -264,31 +270,19 @@ namespace flopoco{
 			}
 
 			if(success) {
-				// cout << "**** Stripped " << name << " into " << n << endl;
+				 cout << "**** Stripped " << name << " into " << n << endl;
 				name=n;
 			}
 		}
-		return signalMap_[name];
-		*/
-		//any word that ends in '_dxx..xx', where the 'x's are digits
-
-		regex endPattern(".*_d[0-9]*$");
-		string n = name;
-
-		if(regex_match(n, endPattern))
-		{
-			n = n.substr(0, n.find('_'));
-		}
 
 		ostringstream e;
-		if(signalMap_.find(n) ==  signalMap_.end()) {
-			e << srcFileName << " (" << uniqueName_ << "): ERROR in getDelayedSignalByName, signal " << n << " not declared";
+		if(signalMap_.find(name) ==  signalMap_.end()) {
+			e << srcFileName << " (" << uniqueName_ << "): ERROR in getDelayedSignalByName, signal " << name<< " not declared";
 			throw e.str();
 		}
-		return signalMap_[n];
-
+		return signalMap_[name];
 	}
-	
+
 
 
 	Signal * Operator::getSignalByName(string name) {
@@ -299,7 +293,7 @@ namespace flopoco{
 		}
 		return signalMap_[name];
 	}
-	
+
 	bool Operator::isSignalDeclared(string name){
 		ostringstream e;
 		if(signalMap_.find(name) ==  signalMap_.end()) {
@@ -307,17 +301,17 @@ namespace flopoco{
 		}
 		return true;
 	}
-	
+
 
 	void Operator::addHeaderComment(std::string comment){
 		headerComment_ +=  comment;
 	}
-	
+
 	void Operator::setName(std::string prefix, std::string postfix){
 		ostringstream pr, po;
 		if (prefix.length()>0)
-			pr << prefix << "_"; 
-		else 
+			pr << prefix << "_";
+		else
 			pr << "";
 		if (postfix.length()>0)
 			po << "_"<<postfix;
@@ -325,21 +319,21 @@ namespace flopoco{
 			po << "";
 		uniqueName_ = pr.str() + uniqueName_ + po.str();
 	}
-	
+
 	void Operator::setName(std::string operatorName){
 		uniqueName_ = operatorName;
 	}
-	
+
 	void Operator::setNameWithFreq(std::string operatorName){
 		std::ostringstream o;
 		o <<  operatorName <<  "_" ;
-		if(target_->isPipelined()) 
+		if(target_->isPipelined())
 			o << target_->frequencyMHz() ;
 		else
 			o << "comb";
 		uniqueName_ = o.str();
 	}
-	
+
 	void  Operator::changeName(std::string operatorName){
 		commentedName_ = uniqueName_;
 		uniqueName_ = operatorName;
@@ -348,31 +342,36 @@ namespace flopoco{
 	string Operator::getName() const{
 		return uniqueName_;
 	}
-	
+
+	int Operator::getNewUId(){
+		Operator::uid++;
+		return Operator::uid;
+	}
+
 	int Operator::getIOListSize() const{
 		return ioList_.size();
 	}
-	
+
 	vector<Signal*> * Operator::getIOList(){
-		return &ioList_; 
+		return &ioList_;
 	}
-	
+
 	Signal * Operator::getIOListSignal(int i){
 		return ioList_[i];
 	}
-	
-	
-	
+
+
+
 	void  Operator::outputVHDLSignalDeclarations(std::ostream& o) {
 		for (unsigned int i=0; i < this->signalList_.size(); i++){
 			Signal* s = this->signalList_[i];
 			o<<tab<<  s->toVHDL() << ";" << endl;
 		}
-		
+
 	}
-	
-	
-	
+
+
+
 	void Operator::outputVHDLComponent(std::ostream& o, std::string name) {
 		unsigned int i;
 		o << tab << "component " << name << " is" << endl;
@@ -381,17 +380,17 @@ namespace flopoco{
 			o << tab << tab << "port ( ";
 			if(isSequential()) {
 				// add clk, rst, etc. signals which are not member of iolist
-				if(hasClockEnable()) 
+				if(hasClockEnable())
 					o << "clk, rst, ce : in std_logic;" <<endl;
 				else if(isRecirculatory())
 					o << "clk, rst stall_s: in std_logic;" <<endl;
-				else 
+				else
 					o << "clk, rst : in std_logic;" <<endl;
 			}
 
 			for (i=0; i<this->ioList_.size(); i++){
 				Signal* s = this->ioList_[i];
-				if (i>0 || isSequential()) // align signal names 
+				if (i>0 || isSequential()) // align signal names
 					o<<tab<<"          ";
 				o<<  s->toVHDL();
 				if(i < this->ioList_.size()-1)  o<<";" << endl;
@@ -400,13 +399,13 @@ namespace flopoco{
 		}
 		o << tab << "end component;" << endl;
 	}
-	
-	void Operator::outputVHDLComponent(std::ostream& o) {
-		this->outputVHDLComponent(o,  this->uniqueName_); 
-	}
-	
 
-	
+	void Operator::outputVHDLComponent(std::ostream& o) {
+		this->outputVHDLComponent(o,  this->uniqueName_);
+	}
+
+
+
 	void Operator::outputVHDLEntity(std::ostream& o) {
 		unsigned int i;
 		o << "entity " << uniqueName_ << " is" << endl;
@@ -415,86 +414,111 @@ namespace flopoco{
 			o << tab << "port ( ";
 			if(isSequential()) {
 					// add clk, rst, etc. signals which are not member of iolist
-				if(hasClockEnable()) 
+				if(hasClockEnable())
 					o << "clk, rst, ce : in std_logic;" <<endl;
-				else if(isRecirculatory()) 
+				else if(isRecirculatory())
 					o << "clk, rst stall_s: in std_logic;" <<endl;
-				else 
+				else
 					o << "clk, rst : in std_logic;" <<endl;
 			}
-			
+
 			for (i=0; i<this->ioList_.size(); i++){
 				Signal* s = this->ioList_[i];
-				if (i>0 || isSequential()) // align signal names 
+				if (i>0 || isSequential()) // align signal names
 					o<<"          ";
 				o<<  s->toVHDL();
 				if(i < this->ioList_.size()-1)  o<<";" << endl;
 			}
-			
+
 			o << tab << ");"<<endl;
 		}
 		o << "end entity;" << endl << endl;
 	}
-	
-	
+
+
 	void Operator::setCopyrightString(std::string authorsYears){
 		copyrightString_ = authorsYears;
 	}
-	
-	
+
+	void Operator::useStdLogicUnsigned() {
+		stdLibType_ = 0;
+	};
+
+	/** use the Synopsys de-facto standard ieee.std_logic_unsigned for this entity
+	 */
+	void Operator::useStdLogicSigned() {
+		stdLibType_ = -1;
+	};
+
+	void Operator::useNumericStd() {
+		stdLibType_ = 1;
+	};
+
+	void Operator::useNumericStd_Signed() {
+		stdLibType_ = 2;
+	};
+
+	void Operator::useNumericStd_Unsigned() {
+		stdLibType_ = 3;
+	};
+
+	int Operator::getStdLibType() {
+		return stdLibType_;
+	};
+
 	void Operator::licence(std::ostream& o){
 		licence(o, copyrightString_);
 	}
-	
-	
+
+
 	void Operator::licence(std::ostream& o, std::string authorsyears){
 		o<<"--------------------------------------------------------------------------------"<<endl;
 		// centering the unique name
 		int s, i;
 		if(uniqueName_.size()<76) s = (76-uniqueName_.size())/2; else s=0;
-		o<<"--"; for(i=0; i<s; i++) o<<" "; o  << uniqueName_ << endl; 
-		
+		o<<"--"; for(i=0; i<s; i++) o<<" "; o  << uniqueName_ << endl;
+
 		// if this operator was renamed from the command line, show the original name
 		if(commentedName_!="") {
 			if(commentedName_.size()<74) s = (74-commentedName_.size())/2; else s=0;
-			o<<"--"; for(i=0; i<s; i++) o<<" "; o << "(" << commentedName_ << ")" << endl; 
+			o<<"--"; for(i=0; i<s; i++) o<<" "; o << "(" << commentedName_ << ")" << endl;
 		}
-		o<< headerComment_; 
+		o<< headerComment_;
 		o<<"-- This operator is part of the Infinite Virtual Library FloPoCoLib"<<endl;
 		o<<"-- All rights reserved "<<endl;
 		o<<"-- Authors: " << authorsyears <<endl;
 		o<<"--------------------------------------------------------------------------------"<<endl;
 	}
-	
-	
-	
+
+
+
 	void Operator::pipelineInfo(std::ostream& o){
 		if(isSequential())
 			o<<"-- Pipeline depth: " <<getPipelineDepth() << " cycles"  <<endl <<endl;
-		else 
+		else
 			o<<"-- combinatorial"  <<endl <<endl;
 	}
-	
+
 
 	void Operator::stdLibs(std::ostream& o){
 		o << "library ieee;"<<endl
 		  << "use ieee.std_logic_1164.all;"<<endl;
-		  
+
 		if(stdLibType_==0){
 			o << "use ieee.std_logic_arith.all;"<<endl
-			  << "use ieee.std_logic_unsigned.all;"<<endl; 
+			  << "use ieee.std_logic_unsigned.all;"<<endl;
 		}
 		if(stdLibType_==-1){
 			o << "use ieee.std_logic_arith.all;"<<endl
-			  << "use ieee.std_logic_signed.all;"<<endl; 
+			  << "use ieee.std_logic_signed.all;"<<endl;
 		}
 		if(stdLibType_==1){
-			o << "use ieee.numeric_std.all;"<<endl;			
+			o << "use ieee.numeric_std.all;"<<endl;
 		}
 		// ???
 		if(stdLibType_==2){
 			o << "use ieee.numeric_std.all;"<<endl
-			  << "use ieee.std_logic_signed.all;"<<endl; 
+			  << "use ieee.std_logic_signed.all;"<<endl;
 		}
 		if(stdLibType_==3){
 			o << "use ieee.numeric_std.all;"<<endl
@@ -502,42 +526,42 @@ namespace flopoco{
 		}
 
 		o << "library std;" << endl
-		  << "use std.textio.all;"<< endl 
+		  << "use std.textio.all;"<< endl
 		  << "library work;"<<endl<< endl;
 	};
 
 
 	void Operator::outputVHDL(std::ostream& o) {
-		this->outputVHDL(o, this->uniqueName_); 
+		this->outputVHDL(o, this->uniqueName_);
 	}
-	
+
 	bool Operator::isSequential() {
-		return isSequential_; 
+		return isSequential_;
 	}
-	
+
 	bool Operator::isRecirculatory() {
-		return needRecirculationSignal_; 
+		return needRecirculationSignal_;
 	}
-	
+
 	void Operator::setSequential() {
-		isSequential_=true; 
-		vhdl.disableParsing(false); 
+		isSequential_=true;
+		vhdl.disableParsing(false);
 	}
-	
+
 	void Operator::setCombinatorial() {
 		isSequential_=false;
-		vhdl.disableParsing(true); 
+		vhdl.disableParsing(true);
 	}
-	
+
 	void Operator::setRecirculationSignal() {
 		needRecirculationSignal_ = true;
 	}
-	
-	
+
+
 	int Operator::getPipelineDepth() {
-		return pipelineDepth_; 
+		return pipelineDepth_;
 	}
-	
+
 	void Operator::setPipelineDepth(int d) {
 		pipelineDepth_ = d;
 	}
@@ -556,19 +580,19 @@ namespace flopoco{
 		else{ // Hard operator
 			for (unsigned i=0; i< getOpList().size(); i++)
 				if (! getOpListR().empty())
-					getOpListR()[i]->outputFinalReport(level+1);	
-			
+					getOpListR()[i]->outputFinalReport(level+1);
+
 			ostringstream tabs, ctabs;
 			for (int i=0;i<level-1;i++){
 				tabs << "|" << tab;
 				ctabs << "|" << tab;
 			}
-			
+
 			if (level>0){
 				tabs << "|" << "---";
 				ctabs << "|" << tab;
 			}
-			
+
 			cerr << tabs.str() << "Entity " << uniqueName_ << endl;
 			if(this->getPipelineDepth()!=0)
 				cerr << ctabs.str() << tab << "Pipeline depth = " << getPipelineDepth() << endl;
@@ -588,30 +612,30 @@ namespace flopoco{
 			if(report){
 				vhdl << tab << "----------------Synchro barrier, entering cycle " << currentCycle_ << "----------------" << endl ;
 			}
-			// automatically update pipeline depth of the operator 
-			if (currentCycle_ > pipelineDepth_) 
+			// automatically update pipeline depth of the operator
+			if (currentCycle_ > pipelineDepth_)
 				pipelineDepth_ = currentCycle_;
 		}
 	}
-	
+
 	int Operator::getCurrentCycle(){
 		return currentCycle_;
-	} 
-	
+	}
+
 	void Operator::nextCycle(bool report) {
 		// lexing part
 		vhdl.flush(currentCycle_);
-		
+
 		if(isSequential()) {
-			
-			currentCycle_ ++; 
+
+			currentCycle_ ++;
 			vhdl.setCycle(currentCycle_);
 			if(report)
 				vhdl << tab << "----------------Synchro barrier, entering cycle " << currentCycle_ << "----------------" << endl;
-			
+
 			criticalPath_ = 0;
-			// automatically update pipeline depth of the operator 
-			if (currentCycle_ > pipelineDepth_) 
+			// automatically update pipeline depth of the operator
+			if (currentCycle_ > pipelineDepth_)
 				pipelineDepth_ = currentCycle_;
 		}
 	}
@@ -619,89 +643,89 @@ namespace flopoco{
 	void Operator::previousCycle(bool report) {
 		// lexing part
 		vhdl.flush(currentCycle_);
-		
+
 		if(isSequential()) {
-			
-			currentCycle_ --; 
+
+			currentCycle_ --;
 			vhdl.setCycle(currentCycle_);
 			if(report)
 				vhdl << tab << "----------------Synchro barrier, entering cycle " << currentCycle_ << "----------------" << endl;
-			
+
 		}
 	}
-	
-	
+
+
 	void Operator::setCycleFromSignal(string name, bool report) {
 		setCycleFromSignal(name, 0.0, report);
 	}
-	
-	
+
+
 	void Operator::setCycleFromSignal(string name, double criticalPath, bool report) {
 		// lexing part
 		vhdl.flush(currentCycle_);
-		
+
+		ostringstream e;
+		e << srcFileName << " (" << uniqueName_ << "): ERROR in setCycleFromSignal, "; // just in case
+
 		if(isSequential()) {
 			Signal* s;
 			try {
 				s=getSignalByName(name);
 			}
 			catch (string e2) {
-				ostringstream e;
-
-				e << srcFileName << " (" << uniqueName_ << "): ERROR in setCycleFromSignal, ";
 				e << endl << tab << e2;
 				throw e.str();
 			}
-			
-			if( s->getCycle() < 0 ) {
-				ostringstream o;
-				o << "signal " << name << " doesn't have (yet?) a valid cycle";
-				throw o.str();
-			} 
-			
-			currentCycle_ = s->getCycle();
-			criticalPath_ = criticalPath;
-			vhdl.setCycle(currentCycle_);
-			
-			if(report)
-				vhdl << tab << "---------------- cycle " << currentCycle_ << "----------------" << endl ;
-			// automatically update pipeline depth of the operator 
-			if (currentCycle_ > pipelineDepth_) 
-				pipelineDepth_ = currentCycle_;
-		}
-	}
-	
-	
-	int Operator::getCycleFromSignal(string name, bool report) {
-		// lexing part
-		vhdl.flush(currentCycle_);
-		
-		if(isSequential()) {
-			Signal* s;
-			try {
-				s=getSignalByName(name);
-			}
-			catch (string e2) {
-				ostringstream e;
 
-				e << srcFileName << " (" << uniqueName_ << "): ERROR in getCycleFromSignal, ";
-				e << endl << tab << e2;
-				throw e.str();
-			}
-			
 			if( s->getCycle() < 0 ) {
 				ostringstream o;
 				o << "signal " << name<< " doesn't have (yet?) a valid cycle";
 				throw o.str();
-			} 
-			
+			}
+
+			currentCycle_ = s->getCycle();
+			criticalPath_ = criticalPath;
+			vhdl.setCycle(currentCycle_);
+
+			if(report)
+				vhdl << tab << "---------------- cycle " << currentCycle_ << "----------------" << endl ;
+			// automatically update pipeline depth of the operator
+			if (currentCycle_ > pipelineDepth_)
+				pipelineDepth_ = currentCycle_;
+		}
+	}
+
+
+	int Operator::getCycleFromSignal(string name, bool report) {
+		// lexing part
+		vhdl.flush(currentCycle_);
+
+		ostringstream e;
+		e << srcFileName << " (" << uniqueName_ << "): ERROR in getCycleFromSignal, "; // just in case
+
+		if(isSequential()) {
+			Signal* s;
+			try {
+				s=getSignalByName(name);
+			}
+			catch (string e2) {
+				e << endl << tab << e2;
+				throw e.str();
+			}
+
+			if( s->getCycle() < 0 ) {
+				ostringstream o;
+				o << "signal " << name<< " doesn't have (yet?) a valid cycle";
+				throw o.str();
+			}
+
 			return s->getCycle();
 		}else{
 			return 0; //if combinatorial everything happens at cycle 0
 		}
 	}
-	
-	
+
+
 	bool Operator::syncCycleFromSignal(string name, bool report) {
 		return(syncCycleFromSignal(name, 0.0, report));
 	}
@@ -716,7 +740,7 @@ namespace flopoco{
 		vhdl.flush(currentCycle_);
 		ostringstream e;
 		e << srcFileName << " (" << uniqueName_ << "): ERROR in syncCycleFromSignal, "; // just in case
-		
+
 		if(isSequential()) {
 			Signal* s;
 			try {
@@ -726,27 +750,27 @@ namespace flopoco{
 				e << endl << tab << e2;
 				throw e.str();
 			}
-			
+
 			if( s->getCycle() < 0 ) {
 				ostringstream o;
 				o << "signal " << name << " doesn't have (yet?) a valid cycle";
 				throw o.str();
-			} 
+			}
 
 			if (s->getCycle() == currentCycle_){
 				advanceCycle = false;
 				if (criticalPath>criticalPath_)
 					criticalPath_=criticalPath ;
 			}
-						
+
 			if (s->getCycle() > currentCycle_){
 				advanceCycle = true;
 				currentCycle_ = s->getCycle();
 				criticalPath_= criticalPath;
 				vhdl.setCycle(currentCycle_);
 			}
-			
-			// if (s->getCycle() < currentCycle_) do nothing: 
+
+			// if (s->getCycle() < currentCycle_) do nothing:
 			//   the argument signal will be delayed, so its critical path will be 0
 
 			// cout << tab << "----------------Synchro barrier on " << s->getName() << ",  entering cycle " << currentCycle_ << "----------------"  ;
@@ -754,11 +778,11 @@ namespace flopoco{
 			if(report && advanceCycle)
 				vhdl << tab << "----------------Synchro barrier, entering cycle " << currentCycle_ << "----------------" << endl ;
 
-			// automatically update pipeline depth of the operator 
-			if (currentCycle_ > pipelineDepth_) 
+			// automatically update pipeline depth of the operator
+			if (currentCycle_ > pipelineDepth_)
 				pipelineDepth_ = currentCycle_;
 		}
-		
+
 		return advanceCycle;
 	}
 
@@ -772,8 +796,8 @@ namespace flopoco{
 			return;
 		}
 
-		s->setDelay(delay);		
-	}	
+		s->setDelay(delay);
+	}
 
 	double Operator::getSignalDelay(string name){
 		Signal* s;
@@ -785,52 +809,57 @@ namespace flopoco{
 			return 0.0;
 		}
 
-		return s->getDelay();		
+		return s->getDelay();
 	}
 
 	double Operator::getCriticalPath() {return criticalPath_;}
-	
+
 	void Operator::setCriticalPath(double delay) {criticalPath_=delay;}
-	
+
 	void Operator::addToCriticalPath(double delay){
 		criticalPath_ += delay;
 	}
-	
-//	bool Operator::manageCriticalPath(double delay, bool report){
-//		//		criticalPath_ += delay;
-//		if ( target_->ffDelay() + (criticalPath_ + delay) + target_->localWireDelay() > (1.0/target_->frequency())){
-//			nextCycle(report); //TODO Warning
-//			criticalPath_ = min(delay, 1.0/target_->frequency());
-//			return true;
-//		}
-//		else{
-//			criticalPath_ += delay;
-//			return false;
-//		}
-//	}
+
+
+
+
 
 	bool Operator::manageCriticalPath(double delay, bool report){
-		//		criticalPath_ += delay;
-		if(isSequential()) {
-			if ( target_->ffDelay() + (criticalPath_ + delay) > (1.0/target_->frequency())){
-				nextCycle(report); //TODO Warning
-				criticalPath_ = min(delay, 1.0/target_->frequency());
-				return true;
-			}
-			else{
-				criticalPath_ += delay;
-				return false;
-			}
-		}
-		else {
-			criticalPath_ += delay;
-			return false;
-		}
+				if(isSequential()) {
+#if 0 // code up to version 3.0
+					if ( target_->ffDelay() + (totalDelay) > (1.0/target_->frequency())){
+						nextCycle(report); //TODO Warning
+						criticalPath_ = min(delay, 1.0/target_->frequency());
+						return true;
+					}
+					else{
+						criticalPath_ += delay;
+						return false;
+					}
+#else // May insert several register levels, experimental in 3.0
+					double totalDelay = criticalPath_ + delay;
+					criticalPath_ = totalDelay;  // will possibly be reset in the loop below
+					// cout << "total delay =" << totalDelay << endl;
+					while ( target_->ffDelay() + (totalDelay) > (1.0/target_->frequency())){
+						// This code behaves as the previous as long as delay < 1/frequency
+						// if delay > 1/frequency, it may insert several pipeline levels.
+						// This is what we want to pipeline blockrams and DSPs up to the nominal frequency by just passing their overall delay.
+							nextCycle(); // this resets criticalPath. Therefore, if we entered the loop, CP=0 when we exit
+							totalDelay -= (1.0/target_->frequency()) + target_->ffDelay();
+							// cout << " after one nextCycle total delay =" << totalDelay << endl;
+					}
+					return true;
+#endif
+				}
+				else {
+					criticalPath_ += delay;
+					return false;
+				}
 	}
 
-	
+
 	double Operator::getOutputDelay(string s) {return outDelayMap[s];}  // TODO add checks
-	
+
 
 	string Operator::declare(string name, const int width, bool isbus, Signal::SignalType regType) {
 		Signal* s;
@@ -852,18 +881,24 @@ namespace flopoco{
 		s = new Signal(name, regType, width, isbus);
 
 
-		// define its cycle 
+		// define its cycle
 		if(isSequential())
 			s->setCycle(this->currentCycle_);
-		
+
 		// add this signal to the declare table
 		declareTable[name] = s->getCycle();
-		
+
 		// add the signal to signalMap and signalList
-		signalList_.push_back(s);    
+		signalList_.push_back(s);
 		signalMap_[name] = s ;
 		return name;
 	}
+
+
+	string Operator::declare(string name, Signal::SignalType regType ) {
+		return declare(name, 1, false, regType);
+	}
+
 
 	// TODO: factor code between next and previous methods
 	string Operator::declareFixPoint(string name, const bool isSigned, const int MSB, const int LSB, Signal::SignalType regType){
@@ -878,42 +913,42 @@ namespace flopoco{
 		// construct the signal (lifeSpan and cycle are reset to 0 by the constructor)
 		s = new Signal(name, regType, isSigned, MSB, LSB);
 
-		// define its cycle 
+		// define its cycle
 		if(isSequential())
 			s->setCycle(this->currentCycle_);
-		
+
 		// add this signal to the declare table
 		declareTable[name] = s->getCycle();
-		
+
 		// add the signal to signalMap and signalList
-		signalList_.push_back(s);    
+		signalList_.push_back(s);
 		signalMap_[name] = s ;
 		return name;
 	}
 
 	/** Resizes a fixed-point signal and assigns it to a new declared signal.
 			May zero-extend, sign-extend, or truncate.
-			Warns at high debug levels when truncating. Warns at all levels when truncating MSBs.  
+			Warns at high debug levels when truncating. Warns at all levels when truncating MSBs.
 	 */
 	void  Operator::resizeFixPoint(string lhsName, string rhsName, const int MSB, const int LSB, const int indentLevel){
-		Signal* rhsSignal=getSignalByName(rhsName); 
+		Signal* rhsSignal=getSignalByName(rhsName);
 		bool isSigned = rhsSignal->isFixSigned();
 		int oldMSB = rhsSignal->MSB();
 		int oldLSB = rhsSignal->LSB();
-		REPORT(DEBUG, "Resizing signal " << rhsName << " from (" << oldMSB << ", " << oldLSB << ") to (" << MSB << ", " << LSB << ")"); 
+		REPORT(DEBUG, "Resizing signal " << rhsName << " from (" << oldMSB << ", " << oldLSB << ") to (" << MSB << ", " << LSB << ")");
 
 		for (int i=0; i<indentLevel; i++)
 			vhdl << tab;
 		vhdl << declareFixPoint(lhsName, isSigned, MSB, LSB) << " <= ";
 
 		// Cases (old is input, new is output)
-    //            1            2W             3W        4         5E         6 E 
+	//            1            2W             3W        4         5E         6 E
 		// Old:      ooooooo   oooooooo      oooooooooo    oooo     ooo               ooo
 		// New:  nnnnnnnn        nnnnnnnn     nnnnnn      nnnnnnn       nnnn      nnn
 
-		bool paddLeft, paddRight; 
+		bool paddLeft, paddRight;
 		int m,l, paddLeftSize, paddRightSize, oldSize; 	// eventually we take the slice m downto l of the input bit vector
-		
+
 		paddLeft      = MSB>oldMSB;
 		paddLeftSize  = MSB-oldMSB; // in case paddLeft is true
 		paddRight     = LSB<oldLSB;
@@ -924,9 +959,9 @@ namespace flopoco{
 		if (LSB>=oldLSB) { // case 1 or 3
 			l = LSB-oldLSB;
 		}
-		else {             // case 2 or 4 
+		else {             // case 2 or 4
 			l=0;
-		}		
+		}
 
 		// and from what bit?
 		if (MSB>oldMSB) { // cases 1 or 4
@@ -934,7 +969,7 @@ namespace flopoco{
 		}
 		else { // oldMSB>=MSB, cases 2 or 3
 			if(MSB<oldMSB)
-				REPORT(DETAILED, "Warning: cutting off some MSBs when resizing signal " << rhsName << " from (" << oldMSB << ", " << oldLSB << ") to (" << MSB << ", " << LSB << ")"); 
+				REPORT(DETAILED, "Warning: cutting off some MSBs when resizing signal " << rhsName << " from (" << oldMSB << ", " << oldLSB << ") to (" << MSB << ", " << LSB << ")");
 			m = oldSize-(oldMSB-MSB)-1;
 		}
 
@@ -942,8 +977,7 @@ namespace flopoco{
 		// Possible left padding/sign extension
 		if(paddLeft) {
 			if(isSigned) 	{
-				for(int i=0; i<paddLeftSize; i++)
-					vhdl << rhsName << of(oldSize-1) << " & "; // sign extension
+				vhdl << "(" << paddLeftSize -1 << " downto 0 => " << rhsName << of(oldSize-1) << ") & "; // sign extension
 			}
 			else {
 				vhdl << zg(paddLeftSize) << " & ";
@@ -957,43 +991,35 @@ namespace flopoco{
 		if(paddRight) {
 			vhdl << " & " << zg(paddRightSize);
 		}
-		
+
 		vhdl << "; -- fix resize from (" << oldMSB << ", " << oldLSB << ") to (" << MSB << ", " << LSB << ")" << endl;
 	}
 
 
-	string Operator::delay(string signalName, int nbDelayCycles)
-	{
-		ostringstream result;
 
-		result << signalName << "_FloPoCoDelay_" << nbDelayCycles;
-		return result.str();
-	}
-
-	
-	
 	#if 1
 	string Operator::use(string name) {
 		ostringstream e;
-		
+		e << "ERROR in use(), "; // just in case
+
 		if(isSequential()) {
 			Signal *s;
 			try {
 				s=getSignalByName(name);
 			}
 			catch (string e2) {
-				e << "ERROR in use(), " << endl << tab << e2;
+				e << endl << tab << e2;
 				throw e.str();
 			}
 			if(s->getCycle() < 0) {
-				e << "ERROR in use(), " << "signal " << name<< " doesn't have (yet?) a valid cycle";
+				e << "signal " << name<< " doesn't have (yet?) a valid cycle";
 				throw e.str();
-			} 
+			}
 			if(s->getCycle() > currentCycle_) {
 				ostringstream e;
-				e << "ERROR in use(), " << "active cycle of signal " << name<< " is later than current cycle, cannot delay it";
+				e << "active cycle of signal " << name<< " is later than current cycle, cannot delay it";
 				throw e.str();
-			} 
+			}
 			// update the lifeSpan of s
 			s->updateLifeSpan( currentCycle_ - s->getCycle() );
 			//return s->delayedName( currentCycle_ - s->getCycle() );
@@ -1002,38 +1028,39 @@ namespace flopoco{
 		else
 			return name;
 	}
-	
+
 	string Operator::use(string name, int delay) {
+
 		ostringstream e;
-		
+		e << "ERROR in use(), "; // just in case
+
 		if(isSequential()) {
 			Signal *s;
 			try {
 				s=getSignalByName(name);
 			}
 			catch (string e2) {
-				e << "ERROR in use(), " << endl << tab << e2;
+				e << endl << tab << e2;
 				throw e.str();
 			}
 			// update the lifeSpan of s
-			
+
 			s->updateLifeSpan( delay );
 			//return s->delayedName( currentCycle_ - s->getCycle() );
 			return s->delayedName( delay );
 		}else
 			return name;
 	}
-	
+
 	#endif
-	
+
 	void Operator::outPortMap(Operator* op, string componentPortName, string actualSignalName, bool newSignal){
 		Signal* formal;
 		Signal* s;
 		ostringstream e;
-
+		e << srcFileName << " (" << uniqueName_ << "): ERROR in outPortMap() for entity " << op->getName()  << ", "; // just in case
 		// check the signals doesn't already exist
 		if(signalMap_.find(actualSignalName) !=  signalMap_.end() && newSignal) {
-			e << srcFileName << " (" << uniqueName_ << "): ERROR in outPortMap() for entity " << op->getName()  << ", ";
 			e << "signal " << actualSignalName << " already exists";
 			throw e.str();
 		}
@@ -1041,13 +1068,11 @@ namespace flopoco{
 			formal=op->getSignalByName(componentPortName);
 		}
 		catch (string e2) {
-			e << srcFileName << " (" << uniqueName_ << "): ERROR in outPortMap() for entity " << op->getName()  << ", ";
 			e << endl << tab << e2;
 			throw e.str();
 		}
 		if (formal->type()!=Signal::out){
-			e << srcFileName << " (" << uniqueName_ << "): ERROR in outPortMap() for entity " << op->getName()  << ", ";
-			e << "signal " << componentPortName << " of component " << op->getName() 
+			e << "signal " << componentPortName << " of component " << op->getName()
 			<< " doesn't seem to be an output port";
 			throw e.str();
 		}
@@ -1058,116 +1083,113 @@ namespace flopoco{
 			// construct the signal (lifeSpan and cycle are reset to 0 by the constructor)
 			s = new Signal(actualSignalName, Signal::wire, width, isbus);
 #else
-			s = new Signal(*formal); 		// a copy using the default copy constructor
-			s->setName(actualSignalName); 	// except for the name
-			s->setType(Signal::wire); 		// ... and the fact that we declare a wire
+			s = new Signal(*formal); // a copy using the default copy constructor
+			s->setName(actualSignalName); // except for the name
+			s->setType(Signal::wire); // ... and the fact that we declare a wire
 #endif
-			// define its cycle 
+			// define its cycle
 			if(isSequential())
 				s->setCycle( this->currentCycle_ + op->getPipelineDepth() );
 			// REPORT(0, "outPortMap: signal " << actualSignalName << " declared at cycle " << s->getCycle());
 			// add this signal to the declare table
 			declareTable[actualSignalName] = s->getCycle();
-			
+
 			// add the signal to signalMap and signalList
-			signalList_.push_back(s);    
+			signalList_.push_back(s);
 			signalMap_[actualSignalName] = s ;
 		};
 		// add the mapping to the mapping list of Op
 		op->portMap_[componentPortName] = actualSignalName;
 	}
-	
-	
+
+
 	void Operator::inPortMap(Operator* op, string componentPortName, string actualSignalName){
 		Signal* formal;
 		ostringstream e;
 		string name;
-		
+		e  << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMap() for entity " << op->getName() << ","; // just in case
+
 		if(isSequential()) {
 			Signal *s;
 			try {
 				s=getSignalByName(actualSignalName);
 			}
 			catch (string e2) {
-				e  << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMap() for entity " << op->getName() << ",";
 				e << endl << tab << e2;
 				throw e.str();
 			}
 			if(s->getCycle() < 0) {
-				e  << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMap() for entity " << op->getName() << ",";
+				ostringstream e;
 				e << "signal " << actualSignalName<< " doesn't have (yet?) a valid cycle";
 				throw e.str();
-			} 
+			}
 			if(s->getCycle() > currentCycle_) {
-				e  << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMap() for entity " << op->getName() << ",";
+				ostringstream e;
 				e << "active cycle of signal " << actualSignalName<< " is later than current cycle, cannot delay it";
 				throw e.str();
-			} 
+			}
 			// update the lifeSpan of s
 			s->updateLifeSpan( currentCycle_ - s->getCycle() );
 			name = s->delayedName( currentCycle_ - s->getCycle() );
 		}
 		else
 			name = actualSignalName;
-		
+
 		try {
 			formal=op->getSignalByName(componentPortName);
 		}
 		catch (string e2) {
-			e  << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMap() for entity " << op->getName() << ",";
 			e << endl << tab << e2;
 			throw e.str();
 		}
 		if (formal->type()!=Signal::in){
-			e  << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMap() for entity " << op->getName() << ",";
-			e << "signal " << componentPortName << " of component " << op->getName() 
+			e << "signal " << componentPortName << " of component " << op->getName()
 			<< " doesn't seem to be an input port";
 			throw e.str();
 		}
-		
+
 		// add the mapping to the mapping list of Op
 		op->portMap_[componentPortName] = name;
 	}
-	
-	
-	
+
+
+
 	void Operator::inPortMapCst(Operator* op, string componentPortName, string actualSignal){
 		Signal* formal;
 		ostringstream e;
 		string name;
-		
+		e << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMapCst() for entity " << op->getName()  << ", "; // just in case
+
 		try {
 			formal=op->getSignalByName(componentPortName);
 		}
 		catch (string e2) {
-			e << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMapCst() for entity " << op->getName()  << ", ";
 			e << endl << tab << e2;
 			throw e.str();
 		}
 		if (formal->type()!=Signal::in){
-			e << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMapCst() for entity " << op->getName()  << ", ";
-			e << "signal " << componentPortName << " of component " << op->getName() 
+			e << "signal " << componentPortName << " of component " << op->getName()
 			<< " doesn't seem to be an input port";
 			throw e.str();
 		}
-		
+
 		// add the mapping to the mapping list of Op
 		op->portMap_[componentPortName] = actualSignal;
 	}
-	
-	
+
+
 	string Operator::instance(Operator* op, string instanceName){
 		ostringstream o;
 		// TODO add checks here? Check that all the signals are covered for instance
-		
+
 		o << tab << instanceName << ": " << op->getName();
-		if (op->isSequential()) 
+		if (op->isSequential())
 			o << "  -- pipelineDepth="<< op->getPipelineDepth() << " maxInDelay=" << getMaxInputDelays(op->inputDelayMap);
 		o << endl;
+
 		o << tab << tab << "port map ( ";
 		// build vhdl and erase portMap_
-		unordered_map<string,string>::iterator it;
-
+		map<string,string>::iterator it;
 		if(op->isSequential()) {
 			o << "clk  => clk";
 			o << "," << endl << tab << tab << "           rst  => rst";
@@ -1178,40 +1200,40 @@ namespace flopoco{
 				o << "," << endl << tab << tab << "           ce => ce";
 			};
 		}
-		
+
 
 		for (it=op->portMap_.begin()  ; it != op->portMap_.end(); it++ ) {
 			bool outputSignal = false;
 			for ( int k = 0; k < int(op->ioList_.size()); k++){
-				if ((op->ioList_[k]->type() == Signal::out) && ( op->ioList_[k]->getName() == (*it).first )){ 
+				if ((op->ioList_[k]->type() == Signal::out) && ( op->ioList_[k]->getName() == (*it).first )){
 					outputSignal = true;
 				}
 			}
-			
+
 			bool parsing = vhdl.isParsing();
-			
+
 			if ( outputSignal && parsing){
 				vhdl.flush(currentCycle_);
 				vhdl.disableParsing(true);
 			}
-			
-			if (it!=op->portMap_.begin() || op->isSequential())				
+
+			if (it!=op->portMap_.begin() || op->isSequential())
 				o << "," << endl <<  tab << tab << "           ";
 
 			// The following code assumes that the IO is declared as standard_logic_vector
-			// If the actual parameter is a signed or unsigned, we want to automatically convert it 
+			// If the actual parameter is a signed or unsigned, we want to automatically convert it
 			Signal* rhs;
 			string rhsString;
 			// The following try was intended to distinguish between variable and constant
 			// but getSignalByName doesn't catch delayed variables
 			try{
-				//				cout << "its = " << (*it).second << "  " << endl;
+				//cout << "its = " << (*it).second << "  " << endl;
 				rhs = getDelayedSignalByName((*it).second);
 				if (rhs->isFix() && !outputSignal){
-					rhsString = std_logic_vector((*it).second);
-				}
+						rhsString = std_logic_vector((*it).second);
+					}
 				else {
-					rhsString = (*it).second;
+						rhsString = (*it).second;
 				}
 
 			}
@@ -1220,34 +1242,35 @@ namespace flopoco{
 				rhsString=(*it).second;
 			}
 
-
 			o << (*it).first << " => " << rhsString;
-			
+
 			if ( outputSignal && parsing ){
 				vhdl << o.str();
+
 				vhdl.flush(currentCycle_);
 				o.str("");
 				vhdl.disableParsing(!parsing);
 			}
 			//op->portMap_.erase(it);
 		}
+
 		o << ");" << endl;
-		
-		
+
+
 		//Floorplanning related-----------------------------------------
 		floorplan << manageFloorplan();
 		flpHelper->addToFlpComponentList(op->getName());
 		flpHelper->addToInstanceNames(op->getName(), instanceName);
 		//--------------------------------------------------------------
-		
-		
-		// add the operator to the subcomponent list 
+
+
+		// add the operator to the subcomponent list
 		subComponents_[op->getName()]  = op;
 		return o.str();
 	}
 
 
-	
+
 	string Operator::buildVHDLSignalDeclarations() {
 		ostringstream o;
 		for(unsigned int i=0; i<signalList_.size(); i++) {
@@ -1258,37 +1281,56 @@ namespace flopoco{
 		for (unsigned int i=0; i<ioList_.size(); i++) {
 			Signal *s = ioList_[i];
 			if (s->getLifeSpan()>0){
-				o << s->toVHDLDeclaration() << endl;	
+				o << s->toVHDLDeclaration() << endl;
 			}
-			
+
 		}
-		
-		return o.str();	
+
+		return o.str();
 	}
-	
-	
+
+
 	void Operator::useHardRAM(Operator* t) {
-		if (target_->getVendor() == "Xilinx") 
+		if (target_->getVendor() == "Xilinx")
 		{
 			addAttribute("rom_extract", "string", t->getName()+": component", "yes");
 			addAttribute("rom_style", "string", t->getName()+": component", "block");
 		}
-		if (target_->getVendor() == "Altera") 
+		if (target_->getVendor() == "Altera")
 			addAttribute("altera_attribute", "string", t->getName()+": component", "-name ALLOW_ANY_ROM_SIZE_FOR_RECOGNITION ON");
 	}
-	
+
 	void Operator::useSoftRAM(Operator* t) {
-		if (target_->getVendor() == "Xilinx") 
+		if (target_->getVendor() == "Xilinx")
 		{
 			addAttribute("rom_extract", "string", t->getName()+": component", "yes");
 			addAttribute("rom_style", "string", t->getName()+": component", "distributed");
 		}
-		if (target_->getVendor() == "Altera") 
+		if (target_->getVendor() == "Altera")
 			addAttribute("altera_attribute", "string", t->getName()+": component", "-name ALLOW_ANY_ROM_SIZE_FOR_RECOGNITION OFF");
 	}
-	
-	
-	
+
+
+	void Operator::setArchitectureName(string architectureName) {
+		architectureName_ = architectureName;
+	};
+
+
+	void Operator::newArchitecture(std::ostream& o, std::string name){
+		o << "architecture " << architectureName_ << " of " << name  << " is" << endl;
+	}
+
+
+	void Operator::beginArchitecture(std::ostream& o){
+		o << "begin" << endl;
+	}
+
+
+	void Operator::endArchitecture(std::ostream& o){
+		o << "end architecture;" << endl << endl;
+	}
+
+
 	string Operator::buildVHDLComponentDeclarations() {
 		ostringstream o;
 		for(map<string, Operator*>::iterator it = subComponents_.begin(); it !=subComponents_.end(); it++) {
@@ -1296,67 +1338,67 @@ namespace flopoco{
 			op->outputVHDLComponent(o);
 			o<< endl;
 		}
-		return o.str();	
+		return o.str();
 	}
-	
-	
+
+
 	void Operator::addConstant(std::string name, std::string t, mpz_class v) {
-		ostringstream tmp; 
+		ostringstream tmp;
 		tmp << v;
 		constants_[name] =  make_pair(t, tmp.str());
 	}
-	
+
 	void Operator::addType(std::string name, std::string value) {
 		types_ [name] =  value;
 	}
-	
+
 	void Operator::addConstant(std::string name, std::string t, int v) {
-		ostringstream tmp; 
+		ostringstream tmp;
 		tmp << v;
 		constants_[name] =  make_pair(t, tmp.str());
 	}
-	
+
 	void Operator::addConstant(std::string name, std::string t, string v) {
 		constants_[name] =  make_pair(t, v);
 	}
-	
-	
+
+
 	void Operator::addAttribute(std::string attributeName,  std::string attributeType,  std::string object, std::string value ) {
 		// TODO add some checks ?
 		attributes_[attributeName] = attributeType;
 		pair<string,string> p = make_pair(attributeName,object);
 		attributesValues_[p] = value;
 	}
-	
-	
+
+
 	string Operator::buildVHDLTypeDeclarations() {
 		ostringstream o;
-		for(unordered_map<string, string >::iterator it = types_.begin(); it !=types_.end(); it++) {
+		for(map<string, string >::iterator it = types_.begin(); it !=types_.end(); it++) {
 			string name  = it->first;
 			string value = it->second;
 			o <<  "type " << name << " is "  << value << ";" << endl;
 		}
-		return o.str();	
+		return o.str();
 	}
-	
-	
+
+
 	string Operator::buildVHDLConstantDeclarations() {
 		ostringstream o;
-		for(unordered_map<string, pair<string, string> >::iterator it = constants_.begin(); it !=constants_.end(); it++) {
+		for(map<string, pair<string, string> >::iterator it = constants_.begin(); it !=constants_.end(); it++) {
 			string name  = it->first;
 			string type = it->second.first;
 			string value = it->second.second;
 			o <<  "constant " << name << ": " << type << " := " << value << ";" << endl;
 		}
-		return o.str();	
+		return o.str();
 	}
-	
-	
-	
+
+
+
 	string Operator::buildVHDLAttributes() {
 		ostringstream o;
 		// First add the declarations of attribute names
-		for(unordered_map<string, string>::iterator it = attributes_.begin(); it !=attributes_.end(); it++) {
+		for(map<string, string>::iterator it = attributes_.begin(); it !=attributes_.end(); it++) {
 			string name  = it->first;
 			string type = it->second;
 			o <<  "attribute " << name << ": " << type << ";" << endl;
@@ -1370,15 +1412,15 @@ namespace flopoco{
 				value = '"' + value + '"';
 			o <<  "attribute " << name << " of " << object << " is " << value << ";" << endl;
 		}
-		return o.str();	
+		return o.str();
 	}
-	
+
 
 
 
 	string  Operator::buildVHDLRegisters() {
 		ostringstream o;
-		
+
 		// execute only if the operator is sequential, otherwise output nothing
 		string recTab = "";
 		if ( isRecirculatory() || hasClockEnable() )
@@ -1392,7 +1434,7 @@ namespace flopoco{
 			else if (hasClockEnable()) o << tab << tab << tab << tab << "if ce = '1' then" << endl;
 			for(unsigned int i=0; i<signalList_.size(); i++) {
 				Signal *s = signalList_[i];
-				if ((s->type() == Signal::registeredWithoutReset) || (s->type()==Signal::registeredWithZeroInitialiser) || (s->type() == Signal::wire)) 
+				if ((s->type() == Signal::registeredWithoutReset) || (s->type()==Signal::registeredWithZeroInitialiser) || (s->type() == Signal::wire))
 					if(s->getLifeSpan() >0) {
 						for(int j=1; j <= s->getLifeSpan(); j++)
 							o << recTab << tab << tab <<tab << tab << s->delayedName(j) << " <=  " << s->delayedName(j-1) <<";" << endl;
@@ -1405,11 +1447,11 @@ namespace flopoco{
 						o << recTab << tab << tab <<tab << tab << s->delayedName(j) << " <=  " << s->delayedName(j-1) <<";" << endl;
 				}
 			}
-			if (isRecirculatory() || hasClockEnable()) 
+			if (isRecirculatory() || hasClockEnable())
 				o << tab << tab << tab << tab << "end if;" << endl;
 			o << tab << tab << tab << "end if;\n";
-			o << tab << tab << "end process;\n"; 
-			
+			o << tab << tab << "end process;\n";
+
 			// then registers with asynchronous reset
 			if (hasRegistersWithAsyncReset_) {
 				o << tab << "process(clk, rst)" << endl;
@@ -1417,7 +1459,7 @@ namespace flopoco{
 				o << tab << tab << tab << "if rst = '1' then" << endl;
 				for(unsigned int i=0; i<signalList_.size(); i++) {
 					Signal *s = signalList_[i];
-					if (s->type() == Signal::registeredWithAsyncReset)  
+					if (s->type() == Signal::registeredWithAsyncReset)
 						if(s->getLifeSpan() >0) {
 							for(int j=1; j <= s->getLifeSpan(); j++){
 								if ( (s->width()>1) || (s->isBus()))
@@ -1426,24 +1468,24 @@ namespace flopoco{
 									o << tab <<tab << tab << tab << s->delayedName(j) << " <=  '0';" << endl;
 							}
 						}
-				}			
+				}
 				o << tab << tab << tab << "elsif clk'event and clk = '1' then" << endl;
 				if (isRecirculatory()) o << tab << tab << tab << tab << "if stall_s = '0' then" << endl;
 				else if (hasClockEnable()) o << tab << tab << tab << tab << "if ce = '1' then" << endl;
 				for(unsigned int i=0; i<signalList_.size(); i++) {
 					Signal *s = signalList_[i];
-					if (s->type() == Signal::registeredWithAsyncReset)  
+					if (s->type() == Signal::registeredWithAsyncReset)
 						if(s->getLifeSpan() >0) {
 							for(int j=1; j <= s->getLifeSpan(); j++)
 								o << recTab << tab <<tab << tab << tab << s->delayedName(j) << " <=  " << s->delayedName(j-1) <<";" << endl;
 						}
 				}
-			if (isRecirculatory() || hasClockEnable()) 
+			if (isRecirculatory() || hasClockEnable())
 				o << tab << tab << tab << tab << "end if;" << endl;
 				o << tab << tab << tab << "end if;" << endl;
 				o << tab << tab <<"end process;" << endl;
 			}
-			
+
 			// then registers with synchronous reset
 			if (hasRegistersWithSyncReset_) {
 				o << tab << "process(clk, rst)" << endl;
@@ -1452,7 +1494,7 @@ namespace flopoco{
 				o << tab << tab << tab << tab << "if rst = '1' then" << endl;
 				for(unsigned int i=0; i<signalList_.size(); i++) {
 					Signal *s = signalList_[i];
-					if (s->type() == Signal::registeredWithSyncReset)  
+					if (s->type() == Signal::registeredWithSyncReset)
 						if(s->getLifeSpan() >0) {
 							for(int j=1; j <= s->getLifeSpan(); j++){
 								if ( (s->width()>1) || (s->isBus()))
@@ -1461,19 +1503,19 @@ namespace flopoco{
 									o << tab <<tab << tab <<tab << tab << s->delayedName(j) << " <=  '0';" << endl;
 							}
 						}
-				}			
+				}
 				o << tab << tab << tab << tab << "else" << endl;
 				if (isRecirculatory()) o << tab << tab << tab << tab << "if stall_s = '0' then" << endl;
 				else if (hasClockEnable()) o << tab << tab << tab << tab << "if ce = '1' then" << endl;
 				for(unsigned int i=0; i<signalList_.size(); i++) {
 					Signal *s = signalList_[i];
-					if (s->type() == Signal::registeredWithSyncReset)  
+					if (s->type() == Signal::registeredWithSyncReset)
 						if(s->getLifeSpan() >0) {
 							for(int j=1; j <= s->getLifeSpan(); j++)
 								o << tab <<tab << tab <<tab << tab << s->delayedName(j) << " <=  " << s->delayedName(j-1) <<";" << endl;
 						}
-				}			
-				if (isRecirculatory() || hasClockEnable()) 
+				}
+				if (isRecirculatory() || hasClockEnable())
 					o << tab << tab << tab << tab << "end if;" << endl;
 				o << tab << tab << tab << tab << "end if;" << endl;
 				o << tab << tab << tab << "end if;" << endl;
@@ -1482,174 +1524,58 @@ namespace flopoco{
 		}
 		return o.str();
 	}
-	
-	
+
+
 	void Operator::buildStandardTestCases(TestCaseList* tcl) {
 		// Each operator should overload this method. If not, it is mostly harmless but deserves a warning.
 		cerr << "WARNING: No standard test cases implemented for this operator" << endl;
 	}
-	
-	
-	
-	
+
+
+
+
 	void Operator::buildRandomTestCaseList(TestCaseList* tcl, int n){
 
 		TestCase *tc;
-		// Generate test cases using random input numbers
+		/* Generate test cases using random input numbers */
 		for (int i = 0; i < n; i++) {
 			// TODO free all this memory when exiting TestBench
-			tc = buildRandomTestCase(i); 
+			tc = buildRandomTestCase(i);
 			tcl->add(tc);
 		}
-
-
-		/*
-		//Testcases generated in parellel
-
-		//get the number of cores of the machine
-		int nbThreads = sysconf(_SC_NPROCESSORS_ONLN);
-		pthread_t threads[nbThreads];
-		pthread_attr_t threadAttr;
-		struct thread_data threadDataArray[nbThreads];
-		int threadIndicator;
-		void *status;
-
-		//initialize the TestCaseLists
-		for(int i=0; i<nbThreads; i++)
-		{
-			TestCaseList *tcList = new TestCaseList();
-
-			testCases.push_back(tcList);
-		}
-
-		//initialize and set thread detached attribute
-		pthread_attr_init(&threadAttr);
-		pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
-
-		//create the threads
-		for(int i=0; i<nbThreads; i++)
-		{
-			//create the arguments for the new thread
-			threadDataArray[i].threadId = i;
-			threadDataArray[i].numTests = (i!=(nbThreads-1)) ? (n/nbThreads) : (n-(nbThreads-1)*(n/nbThreads));
-			threadDataArray[i].op = this;
-
-			//create the thread
-			threadIndicator = pthread_create(&threads[i], &threadAttr, Operator::buildRandomTestCaseWorker, (void *)&threadDataArray[i]);
-			if (threadIndicator){
-				printf("ERROR; return code from pthread_create() is %d\n", threadIndicator);
-				exit(-1);
-			}
-		}
-
-		//free the attribute
-		pthread_attr_destroy(&threadAttr);
-
-		//wait for the threads
-		for(int i=0; i<nbThreads; i++)
-		{
-			threadIndicator = pthread_join(threads[i], &status);
-			if(threadIndicator)
-			{
-				printf("ERROR; return code from pthread_join() is %d\n", threadIndicator);
-				exit(-1);
-			}
-		}
-
-		//join all the TestCaseLists
-		for(int i=0; i<nbThreads; i++)
-		{
-			TestCaseList *tcList = testCases[i];
-
-			for(int j=0; j<tcList->getNumberOfTestCases(); j++)
-			{
-				tcl->add(tcList->getTestCase(j));
-			}
-		}
-
-		//cleanup testCases
-		testCases.clear();
-		*/
-	}
-	
-	void *Operator::buildRandomTestCaseWorker(void *threadData){
-		TestCase *tc;
-		TestCaseList *tcl;
-		int tid, numTests;
-		Operator *op;
-
-		tid = ((struct thread_data *)threadData)->threadId;
-		numTests = ((struct thread_data *)threadData)->numTests;
-		op = ((struct thread_data *)threadData)->op;
-
-		tcl = op->testCases[tid];
-
-		/* Generate test cases */
-		for (int i = 0; i < numTests; i++) {
-			// TODO free all this memory when exiting TestBench
-			tc = buildRandomTestCase(tid*numTests + i, op);
-			tcl->add(tc);
-		}
-
-		pthread_exit(NULL);
 	}
 
-	TestCase* Operator::buildRandomTestCase(int i, Operator *op){
-		//TestCase *tc = new TestCase(this);
-		TestCase *tc = new TestCase(op);
+	TestCase* Operator::buildRandomTestCase(int i){
+		TestCase *tc = new TestCase(this);
 		/* Generate test cases using random input numbers */
 		// TODO free all this memory when exiting TestBench
 		/* Fill inputs */
-		for (unsigned int j = 0; j < op->ioList_.size(); j++) {
-			Signal* s = op->ioList_[j];
+		for (unsigned int j = 0; j < ioList_.size(); j++) {
+			Signal* s = ioList_[j];
 			if (s->type() == Signal::in) {
 				mpz_class a = getLargeRandom(s->width());
 				tc->addInput(s->getName(), a);
 			}
 		}
 		/* Get correct outputs */
-		op->emulate(tc);
-		
+		emulate(tc);
+
 		//		cout << tc->getInputVHDL();
 		//    cout << tc->getExpectedOutputVHDL();
-		
-		
+
+
 		// add to the test case list
 		return tc;
 	}
-	
-	TestCase* Operator::buildRandomTestCase(int i){
-			TestCase *tc = new TestCase(this);
-
-			/* Generate test cases using random input numbers */
-			// TODO free all this memory when exiting TestBench
-			/* Fill inputs */
-			for (unsigned int j = 0; j < ioList_.size(); j++) {
-				Signal* s = ioList_[j];
-				if (s->type() == Signal::in) {
-					mpz_class a = getLargeRandom(s->width());
-					tc->addInput(s->getName(), a);
-				}
-			}
-			/* Get correct outputs */
-			emulate(tc);
-
-			//		cout << tc->getInputVHDL();
-			//    cout << tc->getExpectedOutputVHDL();
-
-
-			// add to the test case list
-			return tc;
-		}
 
 	map<string, double> Operator::getOutDelayMap(){
 		return outDelayMap;
 	}
-	
-	unordered_map<string, int> Operator::getDeclareTable(){
+
+	map<string, int> Operator::getDeclareTable(){
 		return declareTable;
 	}
-	
+
 	void Operator::outputVHDL(std::ostream& o, std::string name) {
 		if (! vhdl.isEmpty() ){
 			licence(o);
@@ -1657,13 +1583,13 @@ namespace flopoco{
 			stdLibs(o);
 			outputVHDLEntity(o);
 			newArchitecture(o,name);
-			o << buildVHDLComponentDeclarations();	
+			o << buildVHDLComponentDeclarations();
 			o << buildVHDLSignalDeclarations();
 			o << buildVHDLTypeDeclarations();
 			o << buildVHDLConstantDeclarations();
 			o << buildVHDLAttributes();
-			beginArchitecture(o);		
-			o << buildVHDLRegisters();
+			beginArchitecture(o);
+			o<<buildVHDLRegisters();
 			if(getIndirectOperator())
 				o << getIndirectOperator()->vhdl.str();
 			else
@@ -1671,37 +1597,34 @@ namespace flopoco{
 			endArchitecture(o);
 		}
 	}
-	
+
 	void Operator::parse2(){
-		REPORT(DEBUG, "Starting second-level parsing for operator " << srcFileName);
-		//vector<pair<string,int> >:: iterator iterUse;
-		unordered_map<string, int>::iterator iterDeclare;
-		
-		int declareCycle, useCycle;
+		REPORT(DEBUG, "Starting second-level parsing for operator "<<srcFileName);
+		vector<pair<string,int> >:: iterator iterUse;
+		map<string, int>::iterator iterDeclare;
+
 		string name;
-		
-		string str(vhdl.str());
-		
-		//why pass several times over the code, when you can do several lookups instead?
-		/*
-		// parse the useTable and check that the declarations are OK
-		for (iterUse = (vhdl.useTable).begin(); iterUse!=(vhdl.useTable).end(); ++iterUse){
+		int declareCycle, useCycle;
+
+		string str (vhdl.str());
+
+		/* parse the useTable and check that the declarations are ok */
+		for (iterUse = (vhdl.useTable).begin(); iterUse!=(vhdl.useTable).end();++iterUse){
 			name     = (*iterUse).first;
 			useCycle = (*iterUse).second;
-			
+
 			ostringstream tSearch;
 			ostringstream tReplace;
 			string replaceString;
-			
-			tSearch << "__" << name << "__" << useCycle << "__";
-			string searchString(tSearch.str());
-			
+
+			tSearch << "__"<<name<<"__"<<useCycle<<"__";
+			string searchString (tSearch.str());
+
 			iterDeclare = declareTable.find(name);
+			declareCycle = iterDeclare->second;
 
 			if (iterDeclare != declareTable.end()){
-				declareCycle = iterDeclare->second;
-
-				tReplace << use(name, useCycle - declareCycle); 
+				tReplace << use(name, useCycle - declareCycle);
 				replaceString = tReplace.str();
 				if (useCycle<declareCycle){
 					if(!hasDelay1Feedbacks_){
@@ -1715,7 +1638,7 @@ namespace flopoco{
 					}
 				}
 			}else{
-				// parse the declare by hand and check lower/upper case
+				/* parse the declare by hand and check lower/upper case */
 				bool found = false;
 				string tmp;
 				for (iterDeclare = declareTable.begin(); iterDeclare!=declareTable.end();++iterDeclare){
@@ -1725,172 +1648,61 @@ namespace flopoco{
 						break;
 					}
 				}
-				
+
 				if (found == true){
 					cerr  << srcFileName << " (" << uniqueName_ << "): ERROR: Clash on signal:"<<name<<". Definition used signal name "<<tmp<<". Check signal case!"<<endl;
 					exit(-1);
 				}
-				
-				//FIXME: useful only for the input/output signals
+
 				tReplace << name;
 				replaceString = tReplace.str();
 			}
-			
+
 			if ( searchString != replaceString ){
 				string::size_type pos = 0;
 				while ( (pos = str.find(searchString, pos)) != string::npos ) {
 					str.replace( pos, searchString.size(), replaceString );
 					pos++;
 				}
-			}				
-		}
-		*/
-
-		// the new version only passes once over the code
-		regex namePattern("__([A-Za-z][A-Za-z0-9_]*)__([0-9]*)__");
-		regex delayedNamePattern("([A-Za-z][A-Za-z0-9_]*)_FloPoCoDelay_([0-9]+)$");
-		smatch delayNameMatch;
-		sregex_iterator strIterator(str.begin(), str.end(), namePattern);
-		sregex_iterator strIteratorEnd;
-		string termReplace;
-		string strReplace(str);
-		int strOffset = 0;
-
-		for(; strIterator!=strIteratorEnd; ++strIterator)
-		{
-			int signalPosition = strIterator->position();
-			string signalName = regex_replace(strIterator->str(), namePattern, "$1");
-			int signalCycle = stoi(regex_replace(strIterator->str(), namePattern, "$2"));
-			ostringstream tReplace;
-
-			//check if the signal is in the declareTable
-			iterDeclare = declareTable.find(signalName);
-			if(iterDeclare != declareTable.end())
-			{
-				declareCycle = iterDeclare->second;
-				useCycle = signalCycle;
-
-				tReplace << use(signalName, useCycle - declareCycle);
-				termReplace = tReplace.str();
-				if (useCycle<declareCycle){
-					if(!hasDelay1Feedbacks_){
-						cerr << srcFileName << " (" << uniqueName_ << "): WARNING: Signal " << signalName
-								<<" defined @ cycle " <<declareCycle<<" and used @ cycle " << useCycle << endl;
-						cerr << srcFileName << " (" << uniqueName_ << "): If this is a feedback signal you may ignore this warning"<<endl;
-					}else{
-						if(declareCycle - useCycle != 1){
-							cerr << srcFileName << " (" << uniqueName_ << "): ERROR: Signal " << signalName
-									<<" defined @ cycle "<<declareCycle<<" and used @ cycle " << useCycle <<endl;
-							exit(1);
-						}
-					}
-				}
-			}else
-			{
-				// parse the declare by hand and check lower/upper case
-				bool found = false;
-				string tmp;
-				for (iterDeclare = declareTable.begin(); iterDeclare!=declareTable.end();++iterDeclare){
-					tmp = iterDeclare->first;
-					if ( (to_lowercase(tmp)).compare(to_lowercase(signalName))==0){
-						found = true;
-						break;
-					}
-				}
-
-				if (found == true){
-					cerr  << srcFileName << " (" << uniqueName_ << "): ERROR: Clash on signal:"<<signalName
-							<<". Definition used signal name "<<tmp<<". Check signal case!"<<endl;
-					exit(-1);
-				}
-
-				//FIXME: useful only for the input/output signals
-				tReplace << signalName;
-				termReplace = tReplace.str();
-
-				//try to find delayed signals
-				if(regex_match(signalName, delayNameMatch, delayedNamePattern))
-				{
-					string delayedSignalName(delayNameMatch[1]);
-					string delayedSignalDelayStr(delayNameMatch[2]);
-					int delayedSignalDelay = stoi(delayedSignalDelayStr);
-
-					iterDeclare = declareTable.find(delayedSignalName);
-					if(iterDeclare != declareTable.end())
-					{
-						declareCycle = iterDeclare->second;
-						useCycle = signalCycle + delayedSignalDelay;
-
-						tReplace.str("");
-						tReplace << use(delayedSignalName, useCycle - declareCycle);
-						termReplace = tReplace.str();
-
-						Signal *delayedSignal = getSignalByName(delayedSignalName);
-						if(delayedSignal != NULL)
-						{
-							delayedSignal->setType(Signal::registeredWithAsyncReset);
-							hasRegistersWithAsyncReset_ = true;
-						}
-					}
-				}
-
-
 			}
-
-			//replace the term
-			strReplace.replace(signalPosition-strOffset, strIterator->str().length(), termReplace);
-			strOffset += strIterator->str().length() - termReplace.length();
 		}
-
-		str = strReplace;
-
-
-		//why pass several times over the code, when you can do several lookups instead?
-		/*
 		for (iterDeclare = declareTable.begin(); iterDeclare!=declareTable.end();++iterDeclare){
 			name = iterDeclare->first;
 			useCycle = iterDeclare->second;
-			
+
 			ostringstream tSearch;
-			tSearch << "__"<<name<<"__"<<useCycle<<"__"; 
+			tSearch << "__"<<name<<"__"<<useCycle<<"__";
+			//			cout << "searching for: " << tSearch.str() << endl;
 			string searchString (tSearch.str());
-			
+
 			ostringstream tReplace;
 			tReplace << name;
 			string replaceString(tReplace.str());
-			
+
 			if ( searchString != replaceString ){
+
 				string::size_type pos = 0;
 				while ( (pos = str.find(searchString, pos)) != string::npos ) {
 					str.replace( pos, searchString.size(), replaceString );
 					pos++;
 				}
-			}				
+			}
 		}
-		*/
-
-		//the new version only passes once over the code
-		string nameReplacement = "$1";
-
-		str = regex_replace(str, namePattern, nameReplacement);
-
-
-		//all done, now write the code
 		vhdl.setSecondLevelCode(str);
 		REPORT(DEBUG, "   ... done second-level parsing for operator "<<srcFileName);
 	}
-	
+
 
 
 	void  Operator::setIndirectOperator(Operator* op){
 		indirectOperator_=op;
-		if(op!=NULL) 	{		
-			op->setuid(getuid()); //the selected implemetation becomes this operator 
-			
+		if(op!=NULL) 	{
+			op->setuid(getuid()); //the selected implemetation becomes this operator
+
 			// TODO outDelayMap["R"] = op->getOutputDelay("R"); //populate output delays
 			setCycle(op->getPipelineDepth());
 			op->setName (getName() );//accordingly set the name of the implementation
-				
+
 			signalList_ = op->signalList_;
 			subComponents_ = op->subComponents_;
 			ioList_ = op->ioList_;
@@ -1900,15 +1712,15 @@ namespace flopoco{
 	void Operator::cleanup(vector<Operator*> *ol, Operator* op){
 		//iterate through all the components of op
 		map<string, Operator*>::iterator it;
-	
+
 		for (it = op->subComponents_.begin(); it!= op->subComponents_.end(); it++)
 			cleanup(ol, it->second);
-			
+
 		for (unsigned j=0; j< (*ol).size(); j++){
 			if ((*ol)[j]->myuid == op->myuid){
 				(*ol).erase((*ol).begin()+j);
 			}
-		}	
+		}
 	}
 
 	string Operator::signExtend(string name, int w){
@@ -1924,7 +1736,7 @@ namespace flopoco{
 			throw e.str();
 		}
 
-		//get the signals's width 
+		//get the signals's width
 		if (w == s->width()){
 			//nothing to do
 			return name;
@@ -1956,7 +1768,7 @@ namespace flopoco{
 			throw e.str();
 		}
 
-		//get the signals's width 
+		//get the signals's width
 		if (w == s->width()){
 			//nothing to do
 			return name;
@@ -1970,14 +1782,14 @@ namespace flopoco{
 			return r;
 		}
 	}
-	
+
 	void Operator::emulate(TestCase * tc) {
 		throw std::string("emulate() not implemented for ") + uniqueName_;
 	}
-	
+
 	bool Operator::hasComponent(string s){
 		map<string, Operator*>::iterator theIterator;
-		
+
 		theIterator = subComponents_.find(s);
 		if (theIterator != subComponents_.end() )
 			return true;
@@ -1993,7 +1805,7 @@ namespace flopoco{
 		string align = "--";
 		// - 2 for the two spaces
 		for (unsigned i = 2; i < (lineLength - 2- comment.size()) / 2; i++) align += "-";
-		vhdl << align << " " << comment << " " << align << endl; 
+		vhdl << align << " " << comment << " " << align << endl;
 	}
 
 
@@ -2006,11 +1818,11 @@ namespace flopoco{
 				REPORT(FULL, "---------------OPERATOR: "<<oplist[i]->getName() <<"-------------");
 				REPORT(FULL, "  DECLARE LIST" << printMapContent(oplist[i]->getDeclareTable()));
 				REPORT(FULL, "  USE LIST" << printVectorContent(  (oplist[i]->getFlopocoVHDLStream())->getUseTable()) );
-				
-				// check for subcomponents 
+
+				// check for subcomponents
 				if (! oplist[i]->getOpListR().empty() ){
 					//recursively call to print subcomponent
-					outputVHDLToFile(oplist[i]->getOpListR(), file);	
+					outputVHDLToFile(oplist[i]->getOpListR(), file);
 				}
 				oplist[i]->getFlopocoVHDLStream()->flush();
 
@@ -2019,8 +1831,8 @@ namespace flopoco{
 					REPORT (FULL, "  2nd PASS");
 					oplist[i]->parse2();
 				}
-				oplist[i]->outputVHDL(file);			
-			
+				oplist[i]->outputVHDL(file);
+
 			} catch (std::string s) {
 					cerr << "Exception while generating '" << oplist[i]->getName() << "': " << s <<endl;
 			}
@@ -2045,141 +1857,141 @@ namespace flopoco{
 		// generate the code
 		Operator::outputVHDLToFile(oplist, file);
 	}
-	
+
 #endif
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////Functions used for resource estimations
 
-	
+
 	//--Logging functions
-	
+
 	std::string Operator::addFF(int count){
-		
+
 		reActive = true;
 		return reHelper->addFF(count);
 	}
-	
+
 	std::string Operator::addLUT(int nrInputs, int count){
-		
+
 		reActive = true;
 		return reHelper->addLUT(nrInputs, count);
 	}
-	
+
 	std::string Operator::addReg(int width, int count){
-				
+
 		reActive = true;
 		return reHelper->addReg(width, count);
 	}
-	
+
 	//TODO: verify increase in the DSP count
 	std::string Operator::addMultiplier(int count){
-		
+
 		reActive = true;
 		return reHelper->addMultiplier(count);
 	}
-	
-	//TODO: verify increase in the DSP count 
+
+	//TODO: verify increase in the DSP count
 	std::string Operator::addMultiplier(int widthX, int widthY, double ratio, int count){
-		
+
 		reActive = true;
 		return reHelper->addMultiplier(widthX, widthY, ratio, count);
 	}
-	
+
 	//TODO: verify increase in the element count
 	std::string Operator::addAdderSubtracter(int widthX, int widthY, double ratio, int count){
-		
+
 		reActive = true;
 		return reHelper->addAdderSubtracter(widthX, widthY, ratio, count);
 	}
-	
-	//TODO: take into account the memory type (RAM or ROM); depending on 
+
+	//TODO: take into account the memory type (RAM or ROM); depending on
 	//		the type, might be implemented through distributed memory or
 	//		dedicated memory blocks
 	std::string Operator::addMemory(int size, int width, int type, int count){
-		
+
 		reActive = true;
 		return reHelper->addMemory(size, width, type, count);
 	}
-	
+
 	//---More particular resource logging
 	std::string Operator::addDSP(int count){
-		
+
 		reActive = true;
 		return reHelper->addDSP(count);
 	}
-	
+
 	std::string Operator::addRAM(int count){
-		
+
 		reActive = true;
 		return reHelper->addRAM(count);
 	}
-	
+
 	std::string Operator::addROM(int count){
-		
+
 		reActive = true;
 		return reHelper->addROM(count);
 	}
-	
+
 	//TODO: should count the shift registers according to their bitwidths
 	std::string Operator::addSRL(int width, int depth, int count){
-				
+
 		reActive = true;
 		return reHelper->addSRL(width, depth, count);
 	}
-	
+
 	std::string Operator::addWire(int count, std::string signalName){
-		
+
 		reActive = true;
 		return reHelper->addWire(count, signalName);
 	}
-	
+
 	std::string Operator::addIOB(int count, std::string portName){
-		
+
 		reActive = true;
 		return reHelper->addIOB(count, portName);
 	}
-	
+
 	//---Even more particular resource logging-------------------------
-	
-	//TODO: get a more accurate count of the number of multiplexers 
+
+	//TODO: get a more accurate count of the number of multiplexers
 	//		needed; currently specific resources are not taken into account
 	std::string Operator::addMux(int width, int nrInputs, int count){
-				
+
 		reActive = true;
 		return reHelper->addMux(width, nrInputs, count);
 	}
-	
+
 	//TODO: count the counters according to their bitwidth
 	//TODO: get estimations when using specific resources (like DSPs)
 	//		involves also changes to getLUTPerCounter() getFFPerCounter()
 	std::string Operator::addCounter(int width, int count){
-				
+
 		reActive = true;
 		return reHelper->addCounter(width, count);
 	}
-	
+
 	//TODO: count the accumulators according to their bitwidth
 	std::string Operator::addAccumulator(int width, bool useDSP, int count){
-		
+
 		reActive = true;
 		return reHelper->addAccumulator(width, useDSP, count);
 	}
-	
-	//TODO: count the decoders according to their input and output 
+
+	//TODO: count the decoders according to their input and output
 	//		bitwidths
 	std::string Operator::addDecoder(int wIn, int wOut, int count){
-		
+
 		reActive = true;
 		return reHelper->addDecoder(wIn, wOut, count);
 	}
-	
+
 	std::string Operator::addArithOp(int width, int nrInputs, int count){
-		
+
 		reActive = true;
 		return reHelper->addArithOp(width, nrInputs, count);
 	}
-	
+
 	//TODO: find a better approximation for the resources
 	//		currently just logic corresponding to the multiplexers
 	//TODO: find a better approximation for the resources
@@ -2187,109 +1999,109 @@ namespace flopoco{
 	//TODO: find a better approximation for the resources
 	//		for now, RAM blocks are not used
 	std::string Operator::addFSM(int nrStates, int nrTransitions, int count){
-		
+
 		reActive = true;
 		return reHelper->addFSM(nrStates, nrTransitions, count);
 	}
-	
+
 	//--Resource usage statistics---------------------------------------
 	std::string Operator::generateStatistics(int detailLevel){
-		
+
 		reActive = true;
 		return reHelper->generateStatistics(detailLevel);
 	}
-	
+
 	//--Utility functions related to the generation of resource usage statistics
-	
+
 	//TODO: find a more precise way to determine the required number of
 	//		registers due to pipeline
 	std::string Operator::addPipelineFF(){
-		
+
 		reActive = true;
 		return reHelper->addPipelineFF();
 	}
-	
+
 	std::string Operator::addWireCount(){
-		
+
 		reActive = true;
 		return reHelper->addWireCount();
 	}
-	
+
 	std::string Operator::addPortCount(){
-		
+
 		reActive = true;
 		return reHelper->addPortCount();
 	}
-	
+
 	//TODO: add function to add resource count from specified component
 	std::string Operator::addComponentResourceCount(){
-		
+
 		reActive = true;
 		return reHelper->addComponentResourceCount();
 	}
-	
+
 	void Operator::addAutomaticResourceEstimations(){
-				
+
 		reActive = true;
 		resourceEstimate << reHelper->addAutomaticResourceEstimations();
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////Functions used for floorplanning
-	
+
 	std::string Operator::manageFloorplan(){
-		
+
 		return flpHelper->manageFloorplan();
 	}
-	
+
 	std::string Operator::addPlacementConstraint(std::string source, std::string sink, int type){
-		
+
 		return flpHelper->addPlacementConstraint(source, sink, type);
 	}
-	
+
 	std::string Operator::addConnectivityConstraint(std::string source, std::string sink, int nrWires){
-		
+
 		return flpHelper->addConnectivityConstraint(source, sink, nrWires);
 	}
-	
+
 	std::string Operator::addAspectConstraint(std::string source, double ratio){
-		
+
 		return flpHelper->addAspectConstraint(source, ratio);
 	}
-	
+
 	std::string Operator::addContentConstraint(std::string source, int value, int length){
-		
+
 		return flpHelper->addContentConstraint(source, value, length);
 	}
-	
+
 	std::string Operator::processConstraints(){
-				
+
 		return flpHelper->processConstraints();
 	}
-	
+
 	std::string Operator::createVirtualGrid(){
-				
+
 		return flpHelper->createVirtualGrid();
 	}
-	
+
 	std::string Operator::createPlacementGrid(){
-				
+
 		return flpHelper->createPlacementGrid();
 	}
-	
+
 	std::string Operator::createConstraintsFile(){
-		
+
 		return flpHelper->createConstraintsFile();
 	}
-	
+
 	std::string Operator::createPlacementForComponent(std::string moduleName){
-				
+
 		return flpHelper->createPlacementForComponent(moduleName);
 	}
-	
+
 	std::string Operator::createFloorplan(){
-				
+
 		return flpHelper->createFloorplan();
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2298,18 +2110,18 @@ namespace flopoco{
 	void  Operator::cloneOperator(Operator *op){
 		stdLibType_ = op->stdLibType_;
 		subComponents_ = op->getSubComponents();
-		signalList_ = op->getSignalList();	
+		signalList_ = op->getSignalList();
 		ioList_     = op->getIOListV();
 		target_           = op->getTarget();
 		uniqueName_       = op->getUniqueName();
 		architectureName_ = op->getArchitectureName();
-		testCaseSignals_ = op->getTestCaseSignals();	
+		testCaseSignals_ = op->getTestCaseSignals();
 		portMap_ = op->getPortMap();
 		outDelayMap = map<string,double>(op->getOutDelayMap());
 		inputDelayMap = op->getInputDelayMap();
 		vhdl.vhdlCodeBuffer << op->vhdl.vhdlCodeBuffer.str();
 		vhdl.vhdlCode       << op->vhdl.vhdlCode.str();
-		vhdl.currentCycle_   = op->vhdl.currentCycle_;	
+		vhdl.currentCycle_   = op->vhdl.currentCycle_;
 		vhdl.useTable        = op->vhdl.useTable;
 		srcFileName = op->getSrcFileName();
 		declareTable = op->getDeclareTable();
@@ -2337,7 +2149,7 @@ namespace flopoco{
 
 		oplist                      = op->getOpList();
 	}
-	
+
 	/**
 	* Method returning a random num depending on a fixed limit, the mean and
 	* the standard deviation
@@ -2383,20 +2195,20 @@ namespace flopoco{
 		}
 		return element;
 	}
-	
+
 	/**
 	* Once the valid TestState parameters is created with pickRandomNum, this method check
 	* if parameters already exist or no for the operator selected opName
-	* Tests are realized with the multimap testMemory 
+	* Tests are realized with the multimap testMemory
 	**/
 	bool Operator::checkExistence ( TestState parameters, string opName ){
 		if ( !testMemory.empty () ){
 			multimap < string, TestState >::key_compare memoryComp = testMemory.key_comp ();
 			multimap < string, TestState >::iterator it = testMemory.begin ();
 			while ( it != testMemory.end () && memoryComp ( ( *it ).first, opName ) ){
-				it++;	
+				it++;
 			}
-			
+
 			// boolean indicating that we are still analysing TestState on the same operator
 			bool firstEqual = true;
 			for (; it != testMemory.end () && firstEqual ; it++ ){
@@ -2415,7 +2227,18 @@ namespace flopoco{
 		}
 		return false;
 	}
-	
+
+	void Operator::setHasDelay1Feedbacks()
+	{
+		hasDelay1Feedbacks_=true;
+	}
+
+
+	bool Operator::hasDelay1Feedbacks(){
+		return hasDelay1Feedbacks_;
+	}
+
+
 }
 
 

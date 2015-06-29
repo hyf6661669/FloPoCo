@@ -68,16 +68,8 @@ void usage(char *name, string opName = ""){
 		cerr << "Each operator specification is one of: \n";
 	}
 
-
-    
-    
-    
-
-
 	if ( full )
 		cerr << center("SHIFTERS/LZOC", '_') << "\n";
-
-    
     
 	if ( full || opName == "LeftShifter") 
 		OP("LeftShifter","wIn MaxShift");
@@ -245,16 +237,27 @@ void usage(char *name, string opName = ""){
 		OP( "IntConstMult","w c");
 		cerr << "Multiplier of an integer of w bits by the constant c, using shift-and-add\n";
 	}
+	if ( full || opName == "IntMultiplier" || opName == "IntConstMCM"){
+		OP( "IntConstMCM","w nbConst c0 c1...");
+		cerr << "Multiple constant multiplier of an integer of w bits by the nbConst constants c0, c1,... using shift-and-add\n";
+	}
 	if ( full || opName == "IntMultiplier" || opName == "IntIntKCM"){					
 		OP( "IntIntKCM","w c signedInput");
 		cerr << "Integer constant multiplier using KCM: w - input size, c - the constant\n";
 	}
 
 	if ( full || opName == "FixRealKCM"){					
-		OP( "FixRealKCM"," signedInput msbIn lsbIn lsbOut constant useBitheap");
+		OP( "FixRealKCM"," signedInput msbIn lsbIn lsbOut constant");
 		cerr << "Faithful multiplier of a fixed-point input by a real constant\n";
 		cerr << "The constant is provided as a Sollya expression, e.g \"log(2)\"\n";
 	}
+
+//	if(full || opName == "FixComplexKCM")
+//	{
+//		OP("FixComplexKCM", "signedInput msbIn lsbIn lsbOut constantRealPart constantImaginaryPart");
+//		cerr << "Faithful multiplier of a fixed-point input by a complex constant\n";
+//		cerr << "The constant real and imaginary parts are provided as a Sollya expression, e.g \"log(2)\"\n";
+//	}
 
 	if ( full || opName == "IntConstDiv"){					
 		OP( "IntConstDiv","n d alpha");
@@ -429,9 +432,6 @@ void usage(char *name, string opName = ""){
 		cerr << "Evaluator of function f on [0,1), using a piecewise polynomial of degree d with Horner scheme \n";
 	}
 
-
-
-
 	if ( full )
 		cerr << center("FIXED POINT FILTERS", '_') << "\n";
 
@@ -449,6 +449,12 @@ void usage(char *name, string opName = ""){
 		cerr << "A faithful sum-of-products-by-constants, inputting signed numbers in [-1,1]. Inputs and outputs have lsb precision\n";
 		cerr << "  [coeff list] is a space-separated list of real numbers in Sollya syntax, e.g. \"sin(3*pi/8)\" \n";
 	}
+#if 1
+	if ( full || opName == "FixSOPCExpert") {
+		OP("FixSOPCExpert","msbOut lsbOut N  msbIn1 lsbIn1 coeff1   msbIn2 lsbIn2 coeff2  ...   msbInN lsbInN coeffN");
+		cerr << "A faithful sum-of-N-products-by-constants. lsb and msb are provided for all ins and outs.\n";
+	}
+#endif
 	if ( full || opName == "FixIIR") {
 		OP("FixIIR","msbOut lsbOut H tapsB [coeffb list] tapsA [coeffa list]");
 		cerr << "A faithful IIR, inputting signed numbers in [-1,1]. Inputs and outputs have lsbOut precision\n";
@@ -870,16 +876,41 @@ bool parseCommandLine(int argc, char* argv[]){
 				usage(argv[0],opname);
 			else {
 				int lsb = atoi(argv[i++]);
-				int taps = checkStrictlyPositive(argv[i++], argv[0]);
-				if (i+taps > argc)
+				int N = checkStrictlyPositive(argv[i++], argv[0]);
+				if (i+N > argc)
 					usage(argv[0],opname);
 				else {
 					std::vector<string> coeff;
-					for (int j = 0; j < taps; j++) 
+					for (int j = 0; j < N; j++) 
 						{
 							coeff.push_back(argv[i++]);
 						}
 					op = new FixSOPC(target, lsb, lsb, coeff);
+					addOperator(op);
+				}
+			}
+		}
+
+		else if(opname=="FixSOPCExpert")
+		{
+			if (i+6 > argc)
+				usage(argv[0],opname);
+			else {
+				int msbOut = atoi(argv[i++]);
+				int lsbOut = atoi(argv[i++]);
+				int N = checkStrictlyPositive(argv[i++], argv[0]);
+				if (i+3*N > argc)
+					usage(argv[0],opname);
+				else {
+					std::vector<int> msbIn;
+					std::vector<int> lsbIn;
+					std::vector<string> coeff;
+					for (int j = 0; j < N; j++) {
+						msbIn.push_back(atoi(argv[i++]));
+						lsbIn.push_back(atoi(argv[i++]));
+						coeff.push_back(argv[i++]);
+					}
+					op = new FixSOPC(target, msbIn, lsbIn, msbOut, lsbOut, coeff);
 					addOperator(op);
 				}
 			}
@@ -1293,6 +1324,26 @@ bool parseCommandLine(int argc, char* argv[]){
 			}        
 		}
 
+		else if(opname=="IntConstMCM"){
+			int nargs = 2;
+			if (i+nargs > argc)
+				usage(argv[0],opname);
+			else {
+				int w 			= atoi(argv[i++]);
+				int nbConst 	= atoi(argv[i++]);
+				vector<mpz_class> constants;
+				if (i+nbConst > argc)
+					usage(argv[0],opname);
+				for(int count=0; count<nbConst; count++)
+				{
+					mpz_class mpc(argv[i++]);
+					constants.push_back(mpc);
+				}
+				op = new IntConstMCM(target, w, nbConst, constants);
+				addOperator(op);
+			}
+		}
+
 		else if(opname=="IntConstDiv"){
 			int nargs = 3;
 			if (i+nargs > argc)
@@ -1382,7 +1433,7 @@ bool parseCommandLine(int argc, char* argv[]){
 		} 	
 
 		else if(opname=="FixRealKCM"){
-			int nargs = 6;
+			int nargs = 5;
 			if (i+nargs > argc)
 				usage(argv[0],opname);
 			else {
@@ -1391,24 +1442,41 @@ bool parseCommandLine(int argc, char* argv[]){
 				int lsbIn = atoi(argv[i++]);
 				int lsbOut = atoi(argv[i++]);
 				string constant = argv[i++];
-				int useBitheap = checkBoolean(argv[i++], argv[0]);
-				op = new FixRealKCM(target, signedInput, msbIn, lsbIn, lsbOut, constant, 1.0, emptyDelayMap, useBitheap);
+				op = new FixRealKCM(target, signedInput, msbIn, lsbIn, lsbOut, constant);
 				addOperator(op);
 			}
 		}
+
+//		else if(opname=="FixComplexKCM"){
+//			int nargs = 6;
+//			if (i+nargs > argc)
+//			{
+//				usage(argv[0],opname);
+//			}
+//			else {
+//				int signedInput = checkBoolean(argv[i++], argv[0]);
+//				int msbIn = atoi(argv[i++]);
+//				int lsbIn = atoi(argv[i++]);
+//				int lsbOut = atoi(argv[i++]);
+//				string re_constant = argv[i++];
+//				string im_constant = argv[i++];
+//				op = new FixComplexKCM(target, signedInput, msbIn, lsbIn, lsbOut, re_constant, im_constant);
+//				addOperator(op);
+//			}
+//		}
 		
 		else if(opname=="FixRealKCMExpert"){ // hidden, for debug
 			int nargs = 6;
 			if (i+nargs > argc)
 				usage(argv[0],opname);
 			else {
-				int lsbIn = atoi(argv[i++]);
-				int msbIn = atoi(argv[i++]);
 				int signedInput = checkBoolean(argv[i++], argv[0]);
+				int msbIn = atoi(argv[i++]);
+				int lsbIn = atoi(argv[i++]);
 				int lsbOut = atoi(argv[i++]);
 				string constant = argv[i++];
 				float targetUlpError = atof(argv[i++]);
-				op = new FixRealKCM(target, lsbIn, msbIn, signedInput, lsbOut, constant, targetUlpError);
+				op = new FixRealKCM(target, signedInput, msbIn, lsbIn, lsbOut, constant, targetUlpError);
 				addOperator(op);
 			}        
 		}
@@ -1531,9 +1599,9 @@ bool parseCommandLine(int argc, char* argv[]){
 			string func = argv[i++];
 			double targetAcc = atof(argv[i++]);
 			int g =  atof(argv[i++]);
-			BasicPolyApprox *toto = new BasicPolyApprox(func, targetAcc, g);
-			cout << "Computed degree is " << toto->degree;
-			cout << "Accuracy is " << toto->approxErrorBound << " ("<< log2(toto->approxErrorBound) << " bits)";
+			BasicPolyApprox *bpa = new BasicPolyApprox(func, targetAcc, g);
+			cout << "Computed degree is " << bpa->degree;
+			cout << "Accuracy is " << bpa->approxErrorBound << " ("<< log2(bpa->approxErrorBound) << " bits)";
 		}
 		else if (opname == "PiecewisePolyApprox") {
 			int nargs = 3;
@@ -1542,7 +1610,7 @@ bool parseCommandLine(int argc, char* argv[]){
 			string func = argv[i++];
 			double targetAcc = atof(argv[i++]);
 			int degree =  atof(argv[i++]);
-			PiecewisePolyApprox *toto = new PiecewisePolyApprox(func, targetAcc, degree);
+			new PiecewisePolyApprox(func, targetAcc, degree);
 		}
 
 
@@ -1771,6 +1839,34 @@ bool parseCommandLine(int argc, char* argv[]){
 				addOperator(op);
 			}
 		}
+		else if (opname == "InputIEEE")
+		{
+			int nargs = 4;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wEI = checkStrictlyPositive(argv[i++], argv[0]);
+			int wFI = checkStrictlyPositive(argv[i++], argv[0]);
+			int wEO = checkStrictlyPositive(argv[i++], argv[0]);
+			int wFO = checkStrictlyPositive(argv[i++], argv[0]);
+			cerr << "> InputIEEE: wEI=" << wEI << " wFI=" << wFI << " wEO=" << wEO << " wFO=" << wFO << endl;
+			op = new InputIEEE(target, wEI, wFI, wEO, wFO);
+			addOperator(op);
+		}
+
+		else if (opname == "OutputIEEE")
+		{
+			int nargs = 4;
+			if (i+nargs > argc)
+				usage(argv[0],opname); // and exit
+			int wEI = checkStrictlyPositive(argv[i++], argv[0]);
+			int wFI = checkStrictlyPositive(argv[i++], argv[0]);
+			int wEO = checkStrictlyPositive(argv[i++], argv[0]);
+			int wFO = checkStrictlyPositive(argv[i++], argv[0]);
+			cerr << "> OutputIEEE: wEI=" << wEI << " wFI=" << wFI << " wEO=" << wEO << " wFO=" << wFO << endl;
+			op = new OutputIEEE(target, wEI, wFI, wEO, wFO);
+			addOperator(op);
+		}
+
 
 #if 0 // TODO, won't compile, bits of CMakeList to bring from toSollya4.0
 		// hidden and undocumented for now

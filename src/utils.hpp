@@ -366,7 +366,7 @@ namespace flopoco{
 	 */ 
 	string printInputDelays( map <string, double> inputDelays);
 
-	string printMapContent( unordered_map<string, int> inputDelays);
+	string printMapContent( map<string, int> inputDelays);
 	
 	string printVectorContent( vector< pair<string, int> > table);
 	

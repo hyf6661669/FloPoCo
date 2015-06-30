@@ -855,7 +855,7 @@ public:
 	/**
 	* @return the output map containing the signal -> declaration cycle 
 	*/	
-	unordered_map<string, int> getDeclareTable();
+	map<string, int> getDeclareTable();
 
 	Target* getTarget(){
 		return target_;
@@ -902,7 +902,7 @@ public:
 		return numberOfOutputs_;
 	}
 	
-	unordered_map<string, Signal*> getSignalMap(){
+	map<string, Signal*> getSignalMap(){
 		return signalMap_;
 	}
 
@@ -1454,7 +1454,7 @@ protected:
 	map<string, double> outDelayMap;      					/**< Slack delays on the outputs */
 	map<string, double> inputDelayMap;      				/**< Slack delays on the inputs */
 	string              srcFileName;      					/**< Used to debug and report.  */
-	unordered_map<string, int>    declareTable;     					/**< Table containing the name and declaration cycle of the signal */
+	map<string, int>    declareTable;     					/**< Table containing the name and declaration cycle of the signal */
 	int                 myuid;              				/**<unique id>*/
 	int                 cost;             					/**< the cost of the operator depending on different metrics */
 	vector<Operator*>   oplist;                     /**< A list of all the sub-operators */
@@ -1466,7 +1466,7 @@ private:
 	int                    numberOfOutputs_;            	/**< The number of outputs of the operator */
 	bool                   isSequential_;               	/**< True if the operator needs a clock signal*/
 	int                    pipelineDepth_;              	/**< The pipeline depth of the operator. 0 for combinatorial circuits */
-	unordered_map<string, Signal*>   signalMap_;                  	/**< A container of tuples for recovering the signal based on it's name */
+	map<string, Signal*>   signalMap_;                  	/**< A container of tuples for recovering the signal based on it's name */
 	unordered_map<string, pair<string, string> > constants_;      	/**< The list of constants of the operator: name, <type, value> */
 	unordered_map<string, string>    attributes_;                  	/**< The list of attribute declarations (name, type) */
 	unordered_map<string, string>    types_;                      	/**< The list of type declarations (name, type) */

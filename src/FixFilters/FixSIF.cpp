@@ -152,14 +152,18 @@ namespace flopoco {
 		for (uint32_t i=0; i<nu; i++) {
 			ostringstream input;
 			input << "U" <<i;
-			addFixInput(input.str(), 1, 1+msbIn[i], lsbIn[i]);
+			addFixInput(string(input.str()), true, 1+msbIn[i], lsbIn[i]);
+			REPORT(0,"Popopo"<<i);
 		}
 
 		//ny outputs numbering from 0 to ny-1 FIXME: check the relevance of this convention dealing with SIFs
 		for (uint32_t i=0; i<ny; i++) {
 			ostringstream output;
-			output << "Y" << i;
-			addFixOutput(output.str(), 1, 1+msbOut[i], lsbOut[i]);
+			//output << "Y";// << i;
+			cerr<<"FuckOutputs"<<i<<endl;
+			string name=join("Y",i);
+			cerr<<"Olololol"<<i<<endl;
+			addFixOutput(name, 1, 1+msbOut[i], lsbOut[i]);
 		}
 	
 		//declare intermediate X and X(k+1)

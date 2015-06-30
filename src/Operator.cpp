@@ -24,6 +24,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 #include <boost/random/uniform_int.hpp>
 
 
+
 namespace flopoco{
 
 
@@ -156,6 +157,7 @@ namespace flopoco{
 
 #if 1
 	void Operator::addFixInput(const std::string name, const bool isSigned, const int msb, const int lsb) {
+		REPORT(0, "Entering addFixInput with parameters:\n name="<<name<<"\nisSigned="<<isSigned<<"\nmsb="<<msb<<"\nlsb="<<lsb);
 		if (signalMap_.find(name) != signalMap_.end()) {
 			std::ostringstream o;
 			o << srcFileName << " (" << uniqueName_ << "): ERROR in addFixInput, signal " << name<< " seems to already exist";
@@ -164,9 +166,13 @@ namespace flopoco{
 		Signal *s = new Signal(name, Signal::in, isSigned, msb, lsb);
 		s->setCycle(0);
 		ioList_.push_back(s);
+		REPORT(0, "pipelineDepth_ stored at:" << &pipelineDepth_ <<", signalMap_ stored at:"<<&signalMap_<<", constants_ stored at:"<< &constants_ );
 		signalMap_[name] = s ;
+		//signalMap_.emplace(name, s);
 		numberOfInputs_ ++;
+		REPORT(0,"signal_Map["<<name<<"]="<<signalMap_[name]);
 		declareTable[name] = s->getCycle();
+		REPORT(0,"Toto est content");
 	}
 
 	void Operator::addFixOutput(const std::string name, const bool isSigned, const int msb, const int lsb, const int numberOfPossibleOutputValues) {
@@ -1572,7 +1578,7 @@ namespace flopoco{
 		return outDelayMap;
 	}
 
-	unordered_map<string, int> Operator::getDeclareTable(){
+	map<string, int> Operator::getDeclareTable(){
 		return declareTable;
 	}
 
@@ -1601,7 +1607,7 @@ namespace flopoco{
 	void Operator::parse2(){
 		REPORT(DEBUG, "Starting second-level parsing for operator "<<srcFileName);
 		vector<pair<string,int> >:: iterator iterUse;
-		unordered_map<string, int>::iterator iterDeclare;
+		map<string, int>::iterator iterDeclare;
 
 		string name;
 		int declareCycle, useCycle;

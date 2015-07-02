@@ -12,7 +12,7 @@
 
 #define BUF_SIZE 256 //default buffer size
 #define DEFAULT_LSB -64 //default precision for sopcs
-#define DEFAULT_MSB 0 //default precision for sopcs
+#define DEFAULT_MSB 8 //default precision for sopcs
 
 using namespace std;
 	int getFullLine( ifstream &f, string &s, int &lc ){
@@ -116,31 +116,21 @@ namespace flopoco {
 		n = nt + nx + nu; //TODO: update this definition with a clever number
 		readPrecision(msbIn, lsbIn, msbOut, lsbOut, 0);
 
-		for ( uint32_t i = 0; i<lsbOut.size(); i++)
-		{
-			cout<<"lsbOut["<<i<<"]="<<lsbOut[i]<<endl;
-		}
-		cout<<"nt="<<nt<<", nx="<<nx<<", ny="<<ny<<", nu="<<nu<<endl;
 		useNumericStd_Unsigned();
 		//if(p<1) {
 		//	THROWERROR("Can't build an architecture for this value of LSB")
 		//}
 
 		// initialize stuff for emulate
-		cout<<"reserve 0"<<endl;
-		xHistories[0]= (mpfr_t *) malloc ( nx * sizeof(mpfr_t*));
-		cout<<"reserve 1"<<endl;
-		xHistories[1]= (mpfr_t *) malloc ( nx * sizeof(mpfr_t*));
+		//xPrec= (mpfr_t *) malloc ( nx * sizeof(mpfr_t*));
+		xPrec= new mpfr_t[nx];
+		//xCurrent= (mpfr_t *) malloc ( nx * sizeof(mpfr_t*));
+		xCurrent= new mpfr_t[nx];
 		for (uint32_t i=0; i<nx; i++){
-			cout << "init 0"<< endl;
-			mpfr_init2( xHistories[0][i], veryLargePrec );
-			cout << "init 1"<< endl;
-			mpfr_init2( xHistories[1][i], veryLargePrec );
-			cout << "set 0"<< endl;
-			mpfr_set_ui( xHistories[0][i], 0, GMP_RNDN );
-			cout << "set 1"<< endl;
-			mpfr_set_ui( xHistories[1][i], 0, GMP_RNDN );
-			cout << "init set finished"<< endl;
+			mpfr_init2( xPrec[i], veryLargePrec );
+			mpfr_init2( xCurrent[i], veryLargePrec );
+			mpfr_set_ui( xPrec[i], 0, GMP_RNDN );
+			mpfr_set_ui( xCurrent[i], 0, GMP_RNDN );
 		}
 
 		//declare intermediate T(k+1)
@@ -198,6 +188,7 @@ namespace flopoco {
 			//drop zeros and (implicit) ones in the diagonal but keep indices for consistency
 			int ib = 0; //bias in vector indices induced by erase operations
 			uint32_t i = 0;
+			vector <int> lsbInC, msbInC;
 			for ( ; i<nt; i++ ){
 				if ( ( stof(nonZeros[i+ib].c_str()) == 0.0 ) || ( (stof(nonZeros[i+ib].c_str()) == 1.0)&&(n-coefDel.size()==i)) ){
 					REPORT(0,"no coef found at "<<i+ib);
@@ -207,6 +198,8 @@ namespace flopoco {
 				}
 				else {
 					coefIndst.push(i);
+					lsbInC.push_back(lsbIn[i]);
+					msbInC.push_back(msbIn[i]);
 					REPORT(0,"coef found at "<<i+ib);
 					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
 					REPORT(0,"pushing "<<i<<" in list of indices for T");
@@ -225,6 +218,8 @@ namespace flopoco {
 				}
 				else{
 					coefIndsx.push(i-nt);
+					lsbInC.push_back(lsbIn[i]);
+					msbInC.push_back(msbIn[i]);
 					REPORT(0,"coef found at "<<i+ib);
 					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
 					REPORT(0, "pushing "<<i-nt<<" in list of indices for x");
@@ -243,6 +238,8 @@ namespace flopoco {
 				}
 				else{
 					coefIndsu.push(i-nt-nx);
+					lsbInC.push_back(lsbIn[i]);
+					msbInC.push_back(msbIn[i]);
 					REPORT(0,"coef found at "<<i+ib);
 					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
 					REPORT(0, "pushing "<<i-nt<<" in list of indices for x");
@@ -252,16 +249,22 @@ namespace flopoco {
 			//if only one coeff, just write a multiplier, if only ones, just write an adder
 			//if ( nonZeros.size() > 1 ) 
 					
-				REPORT(0, "trying to push SOPC with following parameters:");
-				REPORT(0, "lsbOut="<<*lsbOut.begin()<<", nonZeros.size()="<<nonZeros.size());
-				for ( uint32_t i = 0; i<nonZeros.size(); i++){
-					REPORT(0, "numerical value of non zero coeff at "<<i<<":"<<nonZeros[i]);
-				}
-
-					sopcs.push_back(new FixSOPC( target_, *lsbIn.begin(), *lsbOut.begin(), nonZeros));
+					REPORT(0, "Calling FixSOPC with arguments:");
+					REPORT(0, "	target="<<target_);
+					for ( unsigned int deb=0; deb<msbIn.size(); deb++ ) {
+						REPORT(0, "	msbIn["<<deb<<"]="<<msbIn[deb]);
+						REPORT(0, "	lsbIn["<<deb<<"]="<<lsbIn[deb]);
+					}
+					REPORT(0, "	sizeof lsbIn="<<lsbIn.size());
+					REPORT(0, "	msbOut="<<*msbOut.begin());
+					REPORT(0, "	lsbOut="<<*lsbOut.begin());
+					for ( unsigned int deb=0; deb<nonZeros.size(); deb++ ) {
+						REPORT(DEBUG, "	nonZeros["<<deb<<"]="<<nonZeros[deb]);
+					}
+					sopcs.push_back(new FixSOPC( target_, msbInC, lsbInC, *msbOut.begin(), *lsbOut.begin(), nonZeros));
 
 					addSubComponent(*sopcs.rbegin());
-					lsbIn.erase(lsbIn.begin());
+					msbOut.erase(msbOut.begin());
 					lsbOut.erase(lsbOut.begin());
 
 					//wiring
@@ -391,7 +394,7 @@ namespace flopoco {
 						}
 						else if (c<nt+nx){
 		cout<<"	toto is ok 6"<<endl;
-							mpfr_mul(resMul, xHistories[0][c], coeff, GMP_RNDN);
+							mpfr_mul(resMul, xPrec[c], coeff, GMP_RNDN);
 		cout<<"	toto is ok 6.1"<<endl;
 							mpfr_add(result, result, resMul, GMP_RNDN);
 		cout<<"	toto is ok 7"<<endl;
@@ -413,7 +416,7 @@ namespace flopoco {
 		cout<<"	toto is ok 9"<<endl;
 			}
 			else if (l<nt+nx) {
-				mpfr_set(xHistories[1][l], result, GMP_RNDN);
+				mpfr_set(xCurrent[l], result, GMP_RNDN);
 		cout<<"	toto is ok 10"<<endl;
 			}
 			if (l>=nx+nt){
@@ -444,7 +447,7 @@ namespace flopoco {
 		}
 		for ( uint32_t i=0; i<nx; i++ ) {
 		cout<<"	toto is ok 15"<<endl;
-			mpfr_set( xHistories[0][i], xHistories[1][i], GMP_RNDN );
+			mpfr_set( xPrec[i], xCurrent[i], GMP_RNDN );
 		}
 
 
@@ -818,6 +821,7 @@ namespace flopoco {
 		return 0;
 	}
 
+	int FixSIF::commputeMSBsLSBs(vector<int> &msbsOut, vector<int> &lsbsOut);
 	int FixSIF::readPrecision( vector<int> &msbsIn, vector<int> &lsbsIn, vector<int> &msbsOut, vector<int> &lsbsOut, bool inFile ){
 		//TODO:return wcpg*error min
 
@@ -842,7 +846,7 @@ namespace flopoco {
 			precisions.close();
 		}
 		else {
-			for ( uint32_t i=0; i<nt+nx+ny; i++ ) {
+			for ( uint32_t i=0; i<nu+nt+nx+ny; i++ ) {
 				msbsIn.push_back(DEFAULT_MSB);
 				lsbsIn.push_back(DEFAULT_LSB);
 				msbsOut.push_back(DEFAULT_MSB);

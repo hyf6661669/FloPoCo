@@ -28,7 +28,7 @@ namespace flopoco{
 				If g=0, the architecture will have no guard bit, no final round bit will be added. The architecture will not be faithful. 
 				If g>0, the provided number of guard bits will be used and a final round bit added in position lsbOut-1.
  */
-		FixSOPC(Target* target, vector<int> msbIn, vector<int> lsbIn, int msbOut, int lsbOut, vector<string> coeff_, int g=-1);
+		FixSOPC(Target* target, vector<int> &msbIn, vector<int> &lsbIn, int msbOut, int lsbOut, vector<string> coeff_, int g=-1);
 
 		/** destructor */
 		~FixSOPC();

@@ -38,7 +38,8 @@ namespace flopoco{
 		mpfr_t mpcoeff[10000];			/**< the absolute values of the coefficients as MPFR numbers */
 		bool coeffsign[10000];			/**< the signs of the coefficients */
 
-		mpfr_t *xHistories[2]; //history of xs used by emulate (only 2 )
+		mpfr_t *xPrec; //history of xs used by emulate (only 2 )
+		mpfr_t *xCurrent; //history of xs used by emulate (only 2 )
 		//mpz_class xHistory[10000]; // history of x used by emulate
 		//int currentIndexB;
 		//mpfr_t yHistory[10000]; // history of y (result) used by emulate
@@ -72,6 +73,8 @@ namespace flopoco{
 		int readMatrices( vector< vector <vector<string> >**> &Z, ifstream &openedFile, int &lc);
 
 		int readMatrix(string &header, string JKLMNPQRS, vector < vector <string> > * &toFill, ifstream &openedFile, int lc = 0 );
+
+		int commputeMSBsLSBs( vector<int> &msbsOut, vector<int> &lsbsOut );
 
 		int readPrecision( vector <int> &msbsIn, vector<int> &lsbsIn, vector<int> &msbsOut, vector<int> &lsbsOut, bool inFile=1 );
 	};

@@ -27,7 +27,7 @@ namespace flopoco{
 	}
 	
 
-	FixSOPC::FixSOPC(Target* target_, vector<int> msbIn_, vector<int> lsbIn_, int msbOut_, int lsbOut_, vector<string> coeff_, int g_) :
+	FixSOPC::FixSOPC(Target* target_, vector<int> &msbIn_, vector<int> &lsbIn_, int msbOut_, int lsbOut_, vector<string> coeff_, int g_) :
 		Operator(target_),  msbIn(msbIn_), lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_), coeff(coeff_), g(g_), computeMSBOut(false)
 	{
 		n = coeff.size();
@@ -36,6 +36,9 @@ namespace flopoco{
 
 		addFinalRoundBit = (g==0 ? false : true);
 
+				for(unsigned int toto=0;toto<lsbIn.size();toto++){
+					REPORT(0,"lsbIn["<<toto<<"]="<<lsbIn[toto]);
+				}
 		initialize();
 	}
 
@@ -149,16 +152,21 @@ namespace flopoco{
 			bitHeap = new BitHeap(this, sumSize);
 			
 			for (int i=0; i<n; i++)	{
-		cout<<"calling Fix RealKCM constructor with parameters:"<<endl;
-		cout<<"	"<<this<<endl;
-		cout<<"	"<<getTarget()<<endl;
-		cout<<"	X"<<i<<endl;
-		cout<<"	true"<<endl;
-		cout<<"	"<<msbIn[i]-1<<endl;
-		cout<<"	"<<lsbIn[i]<<endl;
-		cout<<"	"<<lsbOutKCM<<endl;
-		cout<<"	"<<coeff[i]<<endl;
-		cout<<"	"<<bitHeap<<endl;
+				for(unsigned int toto=0;toto<lsbIn.size();toto++){
+					REPORT(0,"lsbIn["<<toto<<"]="<<lsbIn[toto]);
+				}
+		REPORT(0, "calling extended Fix RealKCM constructor with parameters:"<<endl
+		<<"		parentOp="<<this<<endl
+		<<"		target="<<getTarget()<<endl
+		<<"		miltuplicandX=X"<<i<<endl
+		<<"		signedInput=true"<<endl
+		<<"		msbIn="<<msbIn[i]-1<<endl
+		<<"		lsbIn="<<lsbIn[i]<<endl
+		<<"		lsbOut="<<lsbOutKCM<<endl
+		<<"		constant="<<coeff[i]<<endl
+		<<"		bitheap="<<bitHeap<<endl
+		<<"		i="<<i<<", sizeof lsbIn="<<lsbIn.size()<<endl
+		);
 				// Multiplication: instantiating a KCM object. It will add bits also to the right of lsbOutKCM
 				new FixRealKCM(this,				// the envelopping operator
 											 getTarget(), 	// the target FPGA
@@ -189,6 +197,14 @@ namespace flopoco{
 
 			// All the KCMs in parallel
 			for(int i=0; i< n; i++)	{
+		REPORT(0, "calling simple Fix RealKCM constructor with parameters:"<<endl
+		<<"		target="<<getTarget()<<endl
+		<<"		signedInput=true"<<endl
+		<<"		msbIn="<<msbIn[i]-1<<endl
+		<<"		lsbIn="<<lsbIn[i]<<endl
+		<<"		lsbOut="<<lsbOut-g<<endl
+		<<"		constant="<<coeff[i]<<endl
+		);
 				FixRealKCM* mult = new FixRealKCM(getTarget(), 
 																					true, // signed
 																					msbIn[i]-1, // input MSB,TODO one sign bit will be added by KCM because it has a non-standard interface. To be fixed someday

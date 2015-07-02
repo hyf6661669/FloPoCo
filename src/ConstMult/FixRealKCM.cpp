@@ -776,6 +776,10 @@ namespace flopoco{
 						", output size=" << ppiSize[i]);
 
 				// Now produce the VHDL
+				if (ppiSize[i]<1){
+					nbOfTables=i+1;
+					break;
+				}
 				t[i] = new FixRealKCMTable(target, this, i, highBit, // already updated
 				                  diSize[i], ppiSize[i], tableSigned, last, 1);
 				parentOp->useSoftRAM(t[i]);
@@ -792,7 +796,9 @@ namespace flopoco{
 				parentOp->setCycleFromSignal(join("d", i, "_kcmMult_", getuid()));
 				parentOp->manageCriticalPath(target->lutDelay());
 				
+			REPORT(DEBUG, "	Toto is happy!");
 				parentOp->inPortMap (t[i] , "X", join("d", i, "_kcmMult_", getuid()));
+			REPORT(DEBUG, "	Toto is less happy!");
 				parentOp->outPortMap(t[i] , "Y", join("pp", i, "_kcmMult_", getuid()));
 				parentOp->vhdl << parentOp->instance(t[i] , 
 						join("KCMTable_", i, "_kcmMult_", getuid()));

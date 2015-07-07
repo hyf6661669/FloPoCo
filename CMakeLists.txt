@@ -95,6 +95,14 @@ ENDIF (MPFR_FOUND)
 
 ADD_DEFINITIONS(-DHAVE_LNS)
 
+# use boost for basic linear algebra in FixSIF
+find_package(Boost) 
+find_package(Boost COMPONENTS numeric) 
+
+if(Boost_FOUND)
+	include_directories(${Boost_INCLUDE_DIRS}) 
+endif()
+
 # Create target for the lexer
  ADD_CUSTOM_TARGET(VHDLLexer echo "Creating VHDLLexer.c VHDLLexer.h")
 

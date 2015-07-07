@@ -10,9 +10,60 @@
 
 #include "ShiftReg.hpp"
 
+#include <boost/numeric/ublas/lu.hpp> 
+#include <boost/numeric/ublas/io.hpp>
+
 #define BUF_SIZE 256 //default buffer size
 #define DEFAULT_LSB -64 //default precision for sopcs
 #define DEFAULT_MSB 8 //default precision for sopcs
+
+namespace ublas = boost::numeric::ublas; 
+template<class T> 
+bool invertMatrix (const ublas::matrix<T>& input, ublas::matrix<T>& inverse) { 
+	using namespace boost::numeric::ublas; 
+	typedef permutation_matrix<std::size_t> pmatrix; 
+	// create a working copy of the input 
+	matrix<T> A(input); 
+	// create a permutation matrix for the LU-factorization 
+	pmatrix pm(A.size1()); 
+	// perform LU-factorization 
+	int res = lu_factorize(A,pm); 
+	if( res != 0 )
+		return false; 
+	// create identity matrix of "inverse" 
+	inverse.assign(ublas::identity_matrix<T>(A.size1())); 
+	// backsubstitute to get the inverse 
+	lu_substitute(A, pm, inverse); 
+	return true; 
+}
+bool matMul (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::matrix<double> const &Y) { 
+	if(X.size2()!=Y.size1())
+		return false;
+
+	for (size_t i=1; i<X.size1(); i++) {
+		for (size_t j=1; j<X.size1(); j++) {
+			res(i,j)=0.0;
+		}
+	}
+	
+	for (size_t i=1; i<X.size1(); i++) {
+		for (size_t j=1; j<Y.size2(); j++) {
+			for (size_t k=1; k<X.size2(); k++) {
+				res(i,j) += X(i,k) * Y(k,j);
+			}
+		}
+	}
+	return true;
+}
+
+bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::matrix<double> const &Y) { 
+	for (size_t i=1; i<X.size1(); i++) {
+		for (size_t j=1; j<X.size1(); j++) {
+			res(i,j) = X(i,j) + Y(i,j);
+		}
+	}
+	return true;
+}
 
 using namespace std;
 	int getFullLine( ifstream &f, string &s, int &lc ){
@@ -821,7 +872,93 @@ namespace flopoco {
 		return 0;
 	}
 
-	int FixSIF::commputeMSBsLSBs(vector<int> &msbsOut, vector<int> &lsbsOut);
+	/**
+		bMToDoubleM: fills the matrix doubleM from the coefficients stored in bM.
+		Note: this assumes that doubleM is instanciated
+		input: 
+			-bM: boost matrix to convert in an array-matrix j
+			-doubleM: the array to fill
+		Ouptut: 0 if success.
+	*/
+	int FixSIF::bMToDoubleM( ublas::matrix<double> const &bM, double * &doubleM ) {
+		for (size_t i=0; i<bM.size1(); i++) {
+			for (size_t j=0; j<bM.size2(); j++) {
+				doubleM [i*bM.size1()+j] = bM(i,j);
+			}
+		}
+		return 0;
+	}
+
+
+	/**
+		vvToBoostMatrix: fills the matrix bM from the string coefficients stored in sM.
+		Note: this assumes that bM is instanciated
+		Input:
+			-sM: vector of vector of strings (it won't be modified)
+			-bM: boost matrix to be filled
+		Output:
+			-0 if success
+	  */
+	int FixSIF::vvToBoostMatrix( vector< vector <string> > const &sM, ublas::matrix<double> &bM ) {
+
+		for ( unsigned int i=0; i<sM.size(); i++) {
+			for ( unsigned int j=0; i<sM[i].size(); j++ ) {
+				bM(i,j)=atof( sM[i][j].c_str() );
+			}
+		}
+		return 0;
+	}
+
+	int FixSIF::computeABCD(ublas::matrix<double> const &bJ, ublas::matrix<double> const &bK, ublas::matrix<double> const &bL, ublas::matrix<double> const &bM, ublas::matrix<double> const &bN, ublas::matrix<double> const &bP, ublas::matrix<double> const &bQ, ublas::matrix<double> const &bR, ublas::matrix<double> const &bS, ublas::matrix<double> &bA, ublas::matrix<double> &bB, ublas::matrix<double> &bC, ublas::matrix<double> &bD){
+		ublas::matrix<double>invbJ(bJ.size1(),bJ.size2());
+		invertMatrix(bJ,invbJ);
+
+		ublas::matrix<double>A1(bK.size1(), bJ.size2());
+		ublas::matrix<double>A2(bP.size1(), bP.size2());
+
+		ublas::matrix<double>B1(bK.size1(), bJ.size2());
+		ublas::matrix<double>B2(bQ.size1(), bQ.size2());
+
+		ublas::matrix<double>C1(bK.size1(), bJ.size1());
+		ublas::matrix<double>C2(bR.size1(), bR.size2());
+
+		ublas::matrix<double>D1(bK.size1(), bJ.size1());
+		ublas::matrix<double>D2(bS.size1(), bS.size2());
+
+		if (!matMul(A1, bK, invbJ))
+			return false;
+		if (!matMul(A2, A1, bM   ))
+			return false;
+		if (!matAdd(bA, A2, bP   ))
+			return false;
+                                  
+		if (!matMul(B1, bK, invbJ))
+			return false;
+		if (!matMul(B2, B1, bN   ))
+			return false;
+		if (!matAdd(bB, B2, bQ   ))
+			return false;
+                                  
+		if (!matMul(C1, bL, invbJ))
+			return false;
+		if (!matMul(C2, C1, bM   ))
+			return false;
+		if (!matAdd(bC, C2, bR   ))
+			return false;
+                                  
+		if (!matMul(D1, bL, invbJ))
+			return false;
+		if (!matMul(D2, D1, bN   ))
+			return false;
+		if (!matAdd(bD, D2, bS   ))
+			return false;
+		return true;
+	}
+	int FixSIF::computeMSBsLSBs(vector<int> &msbsOut, vector<int> &lsbsOut){
+		//double *A, *B, *C, *D;
+
+	}
+
 	int FixSIF::readPrecision( vector<int> &msbsIn, vector<int> &lsbsIn, vector<int> &msbsOut, vector<int> &lsbsOut, bool inFile ){
 		//TODO:return wcpg*error min
 

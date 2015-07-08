@@ -65,6 +65,10 @@ bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::
 	return true;
 }
 
+double max( double *wcpg, int l, int c, int cs) {
+	
+}
+
 using namespace std;
 	int getFullLine( ifstream &f, string &s, int &lc ){
 
@@ -955,8 +959,96 @@ namespace flopoco {
 		return true;
 	}
 	int FixSIF::computeMSBsLSBs(vector<int> &msbsOut, vector<int> &lsbsOut){
-		//double *A, *B, *C, *D;
+		double *A = new double[nx*nt] ;
+		double *B = new double[nx*nu] ;
+		double *C = new double[ny*nx] ;
+		double *D = new double[ny*nu] ;
 
+
+		ublas::matrix<double> Z(nt+nx+ny,nt+nx+nu);
+		vvToBoostMatrix(coeffs, Z);
+		
+
+		ublas::matrix<double> J(nt,nt);
+		ublas::matrix<double> K(nx,nt);
+		ublas::matrix<double> L(ny,nt);
+		ublas::matrix<double> M(nt,nx);
+		ublas::matrix<double> N(nt,nu);
+		ublas::matrix<double> P(nx,nx);
+		ublas::matrix<double> Q(nx,nu);
+		ublas::matrix<double> R(ny,nx);
+		ublas::matrix<double> S(ny,nu);
+
+		unsigned int i;
+		unsigned int j;
+		for ( i = 0; i<nt; i++ ){
+			for ( j = 0; j<nt; j++ ){
+				J(i,j) = Z(i,j);
+			}
+
+			for ( j = 0; j<nx; j++ ){
+				M(i,j) = Z(i,j+nt);
+			}
+
+			for ( j = 0; j<nu; j++ ){
+				N(i,j) = Z(i,j+nt+nx);
+			}
+		}
+		
+		for ( i = 0 ; i<nx; i++ ){
+			for ( j = 0; j<nt; j++ ){
+				K(i,j) = Z(i+nt,j);
+			}
+
+			for ( j = 0; j<nx; j++ ){
+				P(i,j) = Z(i+nt,j+nt);
+			}
+
+			for ( j = 0; j<nu; j++ ){
+				Q(i,j) = Z(i+nt,j+nt+nx);
+			}
+		}
+		
+		
+		for ( i = 0 ; i<ny; i++ ){
+			for ( j = 0; j<nt; j++ ){
+				L(i,j) = Z(i+nt+nx,j);
+			}
+
+			for ( j = 0; j<nx; j++ ){
+				R(i,j) = Z(i+nt+nx,j+nt);
+			}
+
+			for ( j = 0; j<nu; j++ ){
+				S(i,j) = Z(i+nt+nx,j+nt+nx);
+			}
+		}
+
+		ublas::matrix<double> bA(nx,nx);
+		ublas::matrix<double> bB(nx,nu);
+		ublas::matrix<double> bC(ny,nx);
+		ublas::matrix<double> bD(ny,nu);
+
+		computeABCD(J, K, L, M, N, P, Q, R, S, bA, bB, bC, bD);
+
+		bMToDoubleM( bA, A);
+		bMToDoubleM( bB, B);
+		bMToDoubleM( bC, C);
+		bMToDoubleM( bD, D);
+		//compute WCPG;
+
+		for ( unsigned int i=0; i<nt; i++ ) {
+			msbsOut[i]=pow(2,ceil(log2(max(wcpg[i],))));
+		}
+
+
+
+
+		
+
+
+
+		return 0;
 	}
 
 	int FixSIF::readPrecision( vector<int> &msbsIn, vector<int> &lsbsIn, vector<int> &msbsOut, vector<int> &lsbsOut, bool inFile ){

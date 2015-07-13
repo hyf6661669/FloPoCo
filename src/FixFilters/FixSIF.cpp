@@ -1042,6 +1042,53 @@ namespace flopoco {
 		}
 
 
+	   SoPlex mysoplex;
+
+	   /* set the objective sense */
+	   mysoplex.setIntParam(SoPlex::OBJSENSE, SoPlex::OBJSENSE_MAXIMIZE);
+
+	   /* we first add variables */
+	   DSVector dummycol(0);
+	   //set weight to 1 in the objective function and upper bound to 1
+	   //FIXME: compute a better lower bound for better performance
+	   mysoplex.addColReal(LPCol(1.0, dummycol, 1.0, -infinity));
+	   mysoplex.addColReal(LPCol(1.0, dummycol, 1.0, -infinity));
+
+	   /* then constraints one by one */
+	   for (unsigned int i=0; i<ny; i++){
+		   DSVector row(nt+nx+ny);
+		   for (unsigned int j=0; j<nt+nx+ny; j++) {
+			   row.add(j, W[j+i*(nt+nx+ny)]);
+		   }
+		   mysoplex.addRowReal(LPRow( -infinity, row,pow(2,lsb[i])));
+	   }
+
+	   /* NOTE: alternatively, we could have added the matrix nonzeros in dummycol already; nonexisting rows are then
+		* automatically created. */
+
+	   /* write LP in .lp format */
+	   mysoplex.writeFileReal("dump.lp", NULL, NULL, NULL);
+
+	   /* solve LP */
+	   SPxSolver::Status stat;
+	   DVector prim(2);
+	   DVector dual(1);
+	   stat = mysoplex.solve();
+
+	   /* get solution */
+	   if( stat == SPxSolver::OPTIMAL )
+	   {
+		  mysoplex.getPrimalReal(prim);
+		  mysoplex.getDualReal(dual);
+		  std::cout << "LP solved to optimality.\n";
+		  std::cout << "Objective value is " << mysoplex.objValueReal() << ".\n";
+		  std::cout << "Primal solution is [" << prim[0] << ", " << prim[1] << "].\n";
+		  std::cout << "Dual solution is [" << dual[0] << "].\n";
+	   }
+	   for ( int i=0; i<nt+nx+ny; i++ ) {
+		   lsbs[i]=prim[i];
+	   }
+
 
 
 		

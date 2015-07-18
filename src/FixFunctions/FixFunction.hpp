@@ -8,7 +8,7 @@
 #include <gmpxx.h>
 #include "../TestBenches/TestCase.hpp"
 
-using namespace std;
+//using namespace std;
 
 /* Stylistic convention here: all the sollya_obj_t have names that end with a capital S */
 namespace flopoco{
@@ -37,12 +37,12 @@ namespace flopoco{
 			 So this is currently left to the user.
 			 There are defaults for lsbOut and msbOut for situations when they are computed afterwards.
 		 */
-		FixFunction(string sollyaString, bool signedIn, int lsbIn=0, int msbOut=0, int lsbOut=0);
+		FixFunction(std::string sollyaString, bool signedIn, int lsbIn=0, int msbOut=0, int lsbOut=0);
 		FixFunction(sollya_obj_t fS, bool signedIn);
 
 		virtual ~FixFunction();
 
-		string getDescription() const;
+		std::string getDescription() const;
 
 		/** helper method: computes the value of the function on a double; no range check */
 		double eval(double x) const;
@@ -62,7 +62,7 @@ namespace flopoco{
 		int lsbOut;
 		int wOut;
 		bool signedIn;
-		string description;
+		std::string description;
 		sollya_obj_t fS;
 		sollya_obj_t rangeS;
 	};

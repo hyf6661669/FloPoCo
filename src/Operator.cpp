@@ -24,6 +24,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 #include <boost/random/uniform_int.hpp>
 
 
+using namespace std;
 
 namespace flopoco{
 

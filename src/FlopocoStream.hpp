@@ -52,7 +52,7 @@ namespace flopoco{
 			return output; 
 		}
 		
-		friend FlopocoStream& operator<<( FlopocoStream& output, UNUSED(ostream& (*f)(ostream& fs)) ){
+		friend FlopocoStream& operator<<( FlopocoStream& output, UNUSED(std::ostream& (*f)(std::ostream& fs)) ){
 			output.vhdlCodeBuffer << std::endl;
 			return output;
 		}
@@ -78,7 +78,7 @@ namespace flopoco{
 			 * flushed 
 			 * @return the augmented string encapsulated by FlopocoStream  
 			 */
-			string str(){
+			std::string str(){
 				flush(currentCycle_);
 				return vhdlCode.str();
 			}
@@ -87,7 +87,7 @@ namespace flopoco{
 			 * Resets both the buffer and the code stream. 
 			 * @return returns empty string for compatibility issues.
 			 */ 
-			string str(string UNUSED(s) ){
+			std::string str(std::string UNUSED(s) ){
 				vhdlCode.str("");
 				vhdlCodeBuffer.str("");
 				return "";
@@ -102,8 +102,8 @@ namespace flopoco{
 			 */
 			void flush(int currentCycle){
 				if (! disabledParsing ){
-					ostringstream bufferCode;
-					if ( vhdlCodeBuffer.str() != string("") ){
+					std::ostringstream bufferCode;
+					if ( vhdlCodeBuffer.str() != std::string("") ){
 						/* do processing if buffer is not empty */
 					
 						/* scan buffer sequence and annotate ids */
@@ -134,10 +134,10 @@ namespace flopoco{
 			 * @param[in] currentCycle Cycle Information
 			 * @return the string containing the annotated information
 			 */
-			string annotateIDs( int currentCycle ){
+			std::string annotateIDs( int currentCycle ){
 //				vhdlCode << "-- CurrentCycle is = " << currentCycle << endl;
-				ostringstream vhdlO;
-				istringstream in( vhdlCodeBuffer.str() );
+				std::ostringstream vhdlO;
+				std::istringstream in( vhdlCodeBuffer.str() );
 				/* instantiate the flex++ object  for lexing the buffer info */
 				LexerContext* lexer = new LexerContext(&in, &vhdlO);
 				/* This variable is visible from within the flex++ scanner class */
@@ -161,10 +161,10 @@ namespace flopoco{
 			 * @param[in] tmpUseTable a vector of pairs which will be copied 
 			 *            into the member variable useTable 
 			 */
-			void updateUseTable(vector<pair<string,int> > tmpUseTable){
-				vector<pair<string, int> >::iterator iter;
+			void updateUseTable(std::vector<std::pair<std::string,int> > tmpUseTable){
+				std::vector<std::pair<std::string, int> >::iterator iter;
 				for (iter = tmpUseTable.begin(); iter!=tmpUseTable.end();++iter){
-					pair < string, int> tmp;
+					std::pair < std::string, int> tmp;
 					tmp.first  =  (*iter).first;
 					tmp.second = (*iter).second;
 					useTable.push_back(tmp);
@@ -189,7 +189,7 @@ namespace flopoco{
 			 * was perfromed
 			 * @param[in] code the 2nd parse level code 
 			 */
-			void setSecondLevelCode(string code){
+			void setSecondLevelCode(std::string code){
 				vhdlCode.str("");
 				vhdlCode << code;
 			}
@@ -197,7 +197,7 @@ namespace flopoco{
 			/**
 			 * Returns the useTable
 			 */  
-			vector<pair<string, int> > getUseTable(){
+			std::vector<std::pair<std::string, int> > getUseTable(){
 				return useTable;
 			}
 
@@ -215,12 +215,12 @@ namespace flopoco{
 			}
 
 
-			ostringstream vhdlCode;              /**< the vhdl code afte */
-			ostringstream vhdlCodeBuffer;        /**< the vhdl code buffer */
+			std::ostringstream vhdlCode;              /**< the vhdl code afte */
+			std::ostringstream vhdlCodeBuffer;        /**< the vhdl code buffer */
 			
 			int currentCycle_;                   /**< the current cycle is used in the picewise code scanning */
 	
-			vector<pair<string, int> > useTable; /**< table contating <id, cycle> info */
+			std::vector<std::pair<std::string, int> > useTable; /**< table contating <id, cycle> info */
 
 		protected:
 		

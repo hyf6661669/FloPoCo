@@ -1,6 +1,8 @@
 #include "TestBenches/TestCase.hpp"
 #include "Operator.hpp"
 
+using namespace std;
+
 namespace flopoco{
 
 

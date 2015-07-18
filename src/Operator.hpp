@@ -25,7 +25,7 @@
 #include "Tools/FloorplanningHelper.hpp"
 #include "TestState.hpp"
 
-using namespace std;
+//using namespace std;
 
 // variables set by the command-line interface in main.cpp
 
@@ -33,7 +33,7 @@ using namespace std;
 namespace flopoco {
 
 	// global const variables
-	static const map<string, double> emptyDelayMap;
+	static const std::map<std::string, double> emptyDelayMap;
 	const std::string tab = "   ";
 
 	// Reporting levels
@@ -46,8 +46,8 @@ namespace flopoco {
 #define INNER_SEPARATOR "................................................................................"
 #define DEBUG_SEPARATOR "________________________________________________________________________________"
 #define OUTER_SEPARATOR "################################################################################"
-#define REPORT(level, stream) {if ((level)<=(verbose)){ cerr << "> " << srcFileName << ": " << stream << endl;}else{}} 
-#define THROWERROR(stream) {{ostringstream o; o << " ERROR in " << uniqueName_ << " (" << srcFileName << "): " << stream << endl; throw o.str();}} 
+#define REPORT(level, stream) {if ((level)<=(verbose)){ std::cerr << "> " << srcFileName << ": " << stream << std::endl;}else{}} 
+#define THROWERROR(stream) {{std::ostringstream o; o << " ERROR in " << uniqueName_ << " (" << srcFileName << "): " << stream << std::endl; throw o.str();}} 
 
 
 //Floorplanning - direction of placement constraints
@@ -92,19 +92,19 @@ public:
 
 
 	/** generates the code for a list of operators and all their subcomponents */
-	static void outputVHDLToFile(vector<Operator*> &oplist, ofstream& file);
+	static void outputVHDLToFile(std::vector<Operator*> &oplist, std::ofstream& file);
 
 
 #if 1
 	/** generates the code for this operator and all its subcomponents */
-	void outputVHDLToFile(ofstream& file);
+	void outputVHDLToFile(std::ofstream& file);
 #endif
 
 	/** Operator Constructor.
 	 * Creates an operator instance with an instantiated target for deployment.
 	 * @param target_ The deployment target of the operator.
 	 */
-	Operator(Target* target, map<string, double> inputDelays = emptyDelayMap);
+	Operator(Target* target, std::map<std::string, double> inputDelays = emptyDelayMap);
 		
 
 	/** Operator Destructor.
@@ -222,7 +222,7 @@ public:
 
 	
 
-	/** sets the copyright string, should be authors + year
+	/** sets the copyright std::string, should be authors + year
 	 * @param authorsYears the names of the authors and the years of their contributions
 	 */
 	void setCopyrightString(std::string authorsYears);
@@ -284,24 +284,24 @@ public:
 	void changeName(std::string operatorName);
 	
 	/** Sets Operator name to prefix_(uniqueName_)_postfix
-	 * @param prefix the prefix string which will be placed in front of the operator name
+	 * @param prefix the prefix std::string which will be placed in front of the operator name
 	 *               formed with the operator internal parameters
-	 * @param postfix the postfix string which will be placed at the end of the operator name
+	 * @param postfix the postfix std::string which will be placed at the end of the operator name
 	 *                formed with the operator internal parameters
 	*/
 	void setName(std::string prefix, std::string postfix);
 
 
-	/** Adds a comment before the entity declaration, along with the copyright string etc.
-			The "comment" string should include -- at the beginning of each line.
+	/** Adds a comment before the entity declaration, along with the copyright std::string etc.
+			The "comment" std::string should include -- at the beginning of each line.
 	*/
 	void addHeaderComment(std::string comment);
 		
 	/** Return the operator name. 
-	 * Returns a string value representing the name of the operator. 
+	 * Returns a std::string value representing the name of the operator. 
 	 * @return operator name
 	 */
-	string getName() const;
+	std::string getName() const;
 
 	/** produces a new unique identifier */
 	static int getNewUId(){
@@ -351,20 +351,20 @@ public:
 
 	/** get the critical path delay associated to a given output of the operator
 	 * @param the name of the output */
-	double getOutputDelay(string s); 
+	double getOutputDelay(std::string s); 
 
 	/** Set the current cycle to that of a signal and reset the critical path. It may increase or decrease current cycle. 
 	 * @param name is the signal name. It must have been defined before 
 	 * @param report is a boolean, if true it will report the cycle 
 	 */
-	void setCycleFromSignal(string name, bool report=true) ;
+	void setCycleFromSignal(std::string name, bool report=true) ;
 
 	/** Set the current cycle and the critical path. It may increase or decrease current cycle. 
 	 * @param name is the signal name. It must have been defined before. 
 	 * @param criticalPath is the critical path delay associated to this signal: typically getDelay(name)
 	 * @param report is a boolean, if true it will report the cycle 
 	 */
-	void setCycleFromSignal(string name, double criticalPath, bool report=true) ;
+	void setCycleFromSignal(std::string name, double criticalPath, bool report=true) ;
 	// TODO: FIXME  
 	// param criticalPath is the critical path delay associated to this signal: typically getDelay(name)
 	// Shouldn't this be the default behaviour?
@@ -372,7 +372,7 @@ public:
 
 
 
-	int getCycleFromSignal(string name, bool report = false);
+	int getCycleFromSignal(std::string name, bool report = false);
 		
 	
 	/** advance the current cycle to that of a signal. It may only increase current cycle. To synchronize
@@ -382,7 +382,7 @@ public:
 		 * @param name is the signal name. It must have been defined before 
 		 * @param report is a boolean, if true it will report the cycle 
 		 */
-	bool syncCycleFromSignal(string name, bool report=true) ;
+	bool syncCycleFromSignal(std::string name, bool report=true) ;
 
 	/** advance the current cycle to that of a signal, updating critical paths.
 		 * @param name is the signal name. It must have been defined before 
@@ -393,20 +393,20 @@ public:
 		 2/ currentCycle < name.cycle, then advance currentCycle to name.cycle, and set the current critical path to criticalPath
 		 3/ currentCycle = name.cycle: set critical path to the max of the two critical paths.
 		 */
-	bool syncCycleFromSignal(string name, double criticalPath, bool report=true) ;
+	bool syncCycleFromSignal(std::string name, double criticalPath, bool report=true) ;
 
 
 	/** sets the delay of the signal with name given by first argument 
 		@param name the name of the signal
 		@param delay the delay to be associated with the name	
 	**/
-	void setSignalDelay(string name, double delay);
+	void setSignalDelay(std::string name, double delay);
 
 	/** returns the delay on the signal with the name denoted by the argument 
 		@param name signal Name
 		@return delay of this signal
 	*/
-	double getSignalDelay(string name);
+	double getSignalDelay(std::string name);
 
 
 	/** Declares a signal appearing on the Left Hand Side of a VHDL assignment
@@ -416,7 +416,7 @@ public:
 	 * @param regType: the registring type of this signal. See also the Signal Class for more info
 	 * @return name
 	 */
-	string declare(string name, const int width, bool isbus=true, Signal::SignalType regType = Signal::wire );
+	std::string declare(std::string name, const int width, bool isbus=true, Signal::SignalType regType = Signal::wire );
 
 	/** Declares a signal of length 1 as in the previous declare() function, but as std_logic by default
 	 * @param name is the name of the signal
@@ -424,7 +424,7 @@ public:
 	 * @param regType: the registring type of this signal. See also the Signal Class for mor info
 	 * @return name
 	 */
-	string declare(string name, Signal::SignalType regType = Signal::wire ) {
+	std::string declare(std::string name, Signal::SignalType regType = Signal::wire ) {
 		return declare(name, 1, false, regType);
 	}
 
@@ -432,7 +432,7 @@ public:
 	 * @param name is the name of the signal
 	 * @return name
 	 */
-	string declareFixPoint(string name, const bool isSigned, const int MSB, const int LSB, Signal::SignalType regType = Signal::wire );
+	std::string declareFixPoint(std::string name, const bool isSigned, const int MSB, const int LSB, Signal::SignalType regType = Signal::wire );
 
 	/** Resizes a fixed-point signal and assigns it to a new declared signal.
 			May zero-extend, sign-extend, or truncate.
@@ -441,7 +441,7 @@ public:
 	 * @param rhsName is the name of the old (to be resized) signal
 	 * @return name
 	 */
-	void resizeFixPoint(string lhsName, string rhsName, const int MSB, const int LSB, const int indentLevel=1);
+	void resizeFixPoint(std::string lhsName, std::string rhsName, const int MSB, const int LSB, const int indentLevel=1);
 
 
 	/**
@@ -449,7 +449,7 @@ public:
 	 * @param signalName the signal to delay
 	 * @param nbDelayCycles the number of cycles the signal will be delayed
 	 */
-	string delay(string signalName, int nbDelayCycles = 1);
+	std::string delay(std::string signalName, int nbDelayCycles = 1);
 
 
 	// TODO: add methods that allow for signals with reset (when rewriting FPLargeAcc for the new framework)
@@ -460,40 +460,40 @@ public:
 	 * @param name is the name of the signal
 	 * @return name
 	 */
-	string use(string name);
+	std::string use(std::string name);
 
-	string use(string name, int delay);
+	std::string use(std::string name, int delay);
 #endif
 
-	/** Declare an output mapping for an instance of a sub-component
+	/** Declare an output std::mapping for an instance of a sub-component
 	 * Also declares the local signal implicitely, with width taken from the component 	
 	 * @param op is a pointer to the subcomponent
 	 * @param componentPortName is the name of the port on the component
-	 * @param actualSignalName is the name of the signal in This mapped to this port
+	 * @param actualSignalName is the name of the signal in This std::mapped to this port
 	 * @param newSignal_ (by default true), defined wheter or not actualSignalName has to be declared as a new signal by outPortMap
 	 * @return name
 	 */
-	void outPortMap(Operator* op, string componentPortName, string actualSignalName, bool newSignal = true);
+	void outPortMap(Operator* op, std::string componentPortName, std::string actualSignalName, bool newSignal = true);
 
 
 	/** use a signal as input of a subcomponent
 	 * @param componentPortName is the name of the port on the component
-	 * @param actualSignalName is the name of the signal (of this) mapped to this port
+	 * @param actualSignalName is the name of the signal (of this) std::mapped to this port
 	 */
-	void inPortMap(Operator* op, string componentPortName, string actualSignalName);
+	void inPortMap(Operator* op, std::string componentPortName, std::string actualSignalName);
 
 	/** use a constant signal as input of a subcomponent. 
 	 * @param componentPortName is the name of the port on the component
-	 * @param actualSignal is the constant signal to be mapped to this port
+	 * @param actualSignal is the constant signal to be std::mapped to this port
 	 */
-	void inPortMapCst(Operator* op, string componentPortName, string actualSignal);
+	void inPortMapCst(Operator* op, std::string componentPortName, std::string actualSignal);
 
 	/** returns the VHDL for an instance of a sub-component. 
-	 * @param op represents the operator to be port mapped 
+	 * @param op represents the operator to be port std::mapped 
 	 * @param instanceName is the name of the instance as a label
 	 * @return name
 	 */
-	string instance(Operator* op, string instanceName);
+	std::string instance(Operator* op, std::string instanceName);
 
 
 
@@ -507,7 +507,7 @@ public:
 	/** define architecture name for this operator (by default : arch)
 	 *	@param[in] 	architectureName		- new name for the operator architecture
 	 **/
-	void setArchitectureName(string architectureName) {
+	void setArchitectureName(std::string architectureName) {
 		architectureName_ = architectureName;
 	};	
 
@@ -518,7 +518,7 @@ public:
 	 * @param[in]     name	- the name of the entity corresponding to this architecture
 	 **/
 	inline void newArchitecture(std::ostream& o, std::string name){
-		o << "architecture " << architectureName_ << " of " << name  << " is" << endl;
+		o << "architecture " << architectureName_ << " of " << name  << " is" << std::endl;
 	}
 	
 	/**
@@ -526,7 +526,7 @@ public:
 	 * @param[in,out] o 	- the stream to which the begin line will be added
 	 **/
 	inline void beginArchitecture(std::ostream& o){
-		o << "begin" << endl;
+		o << "begin" << std::endl;
 	}
 
 	/**
@@ -534,7 +534,7 @@ public:
 	 * @param[in,out] o 	- the stream to which the begin line will be added
 	 **/
 	inline void endArchitecture(std::ostream& o){
-		o << "end architecture;" << endl << endl;
+		o << "end architecture;" << std::endl << std::endl;
 	}
 
 
@@ -617,26 +617,26 @@ public:
 
 	/** build all the signal declarations from signals implicitely declared by declare().
 	 */
-	string buildVHDLSignalDeclarations();
+	std::string buildVHDLSignalDeclarations();
 
 	/** build all the component declarations from the list built by instance().
 	 */
-	string buildVHDLComponentDeclarations();
+	std::string buildVHDLComponentDeclarations();
 
 	/** build all the registers from signals implicitely delayed by declare() 
 	 *	 This is the 2.0 equivalent of outputVHDLSignalRegisters
 	 */
-	string buildVHDLRegisters();
+	std::string buildVHDLRegisters();
 
 	/** build all the type declarations.
 	 */
-	string buildVHDLTypeDeclarations();
+	std::string buildVHDLTypeDeclarations();
 
 	/** output the VHDL constants. */
-	string buildVHDLConstantDeclarations();
+	std::string buildVHDLConstantDeclarations();
 
 	/** output the VHDL constants. */
-	string buildVHDLAttributes();
+	std::string buildVHDLAttributes();
 
 
 
@@ -712,18 +712,18 @@ public:
 	  * @param s then name of the signal we want to return
 	  * @return the pointer to the signal having name s 
 	  */
-	Signal* getSignalByName(string s);
+	Signal* getSignalByName(std::string s);
 
 	/** Same as getSignalByName() but will strip the _d1 inserted by automatic pipelining.
 			Mostly for internal use. 
 	*/
-	Signal* getDelayedSignalByName(string s);
+	Signal* getDelayedSignalByName(std::string s);
 
-	vector<Signal*> getSignalList(){
+	std::vector<Signal*> getSignalList(){
 		return signalList_;
 	};
 
-	bool isSignalDeclared(string name);
+	bool isSignalDeclared(std::string name);
 		
 
 
@@ -751,12 +751,12 @@ public:
 	/** Returns a pointer to the list containing the IO signals.
 	 * @return pointer to ioList 
 	 */
-	vector<Signal*> * getIOList();
+	std::vector<Signal*> * getIOList();
 
 	/** passes the IOList by value.
 	 * @return the ioList 
 	 */
-	vector<Signal*> getIOListV(){
+	std::vector<Signal*> getIOListV(){
 		return ioList_;
 	}
 
@@ -815,7 +815,7 @@ public:
 
 	void addConstant(std::string name, std::string ctype, mpz_class cvalue);
 	
-	void addConstant(std::string name, std::string ctype, string cvalue);
+	void addConstant(std::string name, std::string ctype, std::string cvalue);
 	
 
 	/** Add attribute, declaring the attribute name if it is not done already.
@@ -826,7 +826,7 @@ public:
 	 * A new line inline function
 	 * @param[in,out] o the stream to which the new line will be added
 	 **/
-	inline void newLine(std::ostream& o) {	o<<endl; }
+	inline void newLine(std::ostream& o) {	o<<std::endl; }
 
 
 
@@ -848,45 +848,45 @@ public:
 	void setPipelineDepth(int d);
 
 	/**
-	* @return the output map containing the signal -> delay associations 
+	* @return the output std::map containing the signal -> delay associations 
 	*/	
-	map<string, double> getOutDelayMap();
+	std::map<std::string, double> getOutDelayMap();
 	
 	/**
-	* @return the output map containing the signal -> declaration cycle 
+	* @return the output std::map containing the signal -> declaration cycle 
 	*/	
-	map<string, int> getDeclareTable();
+	std::map<std::string, int> getDeclareTable();
 
 	Target* getTarget(){
 		return target_;
 	}
 
-	string getUniqueName(){
+	std::string getUniqueName(){
 		return uniqueName_;
 	}
 
-	string getArchitectureName(){
+	std::string getArchitectureName(){
 		return architectureName_;
 	}
 	
-	vector<Signal*> getTestCaseSignals(){
+	std::vector<Signal*> getTestCaseSignals(){
 		return testCaseSignals_;
 	}
 	
-	unordered_map<string, string> getPortMap(){
+	std::unordered_map<std::string, std::string> getPortMap(){
 		return portMap_;
 	}
 	
 	
-	map<string, double> getInputDelayMap(){
+	std::map<std::string, double> getInputDelayMap(){
 		return inputDelayMap;
 	}
 	
-	map<string, Operator*> getSubComponents(){
+	std::map<std::string, Operator*> getSubComponents(){
 		return subComponents_;
 	}
 	
-	string getSrcFileName(){
+	std::string getSrcFileName(){
 		return srcFileName;
 	}
 	
@@ -902,23 +902,23 @@ public:
 		return numberOfOutputs_;
 	}
 	
-	map<string, Signal*> getSignalMap(){
+	std::map<std::string, Signal*> getSignalMap(){
 		return signalMap_;
 	}
 
-	unordered_map<string, pair<string, string> > getConstants(){
+	std::unordered_map<std::string, std::pair<std::string, std::string> > getConstants(){
 		return constants_;
 	}
 	
-	unordered_map<string, string> getAttributes(){
+	std::unordered_map<std::string, std::string> getAttributes(){
 		return attributes_;
 	}
 	
-	unordered_map<string, string> getTypes(){
+	std::unordered_map<std::string, std::string> getTypes(){
 		return types_;
 	}
 	
-	map<pair<string,string>, string> getAttributesValues(){
+	std::map<std::pair<std::string,std::string>, std::string> getAttributesValues(){
 		return attributesValues_;
 	}
 
@@ -946,7 +946,7 @@ public:
 		hasClockEnable_=val;
 	}
 
-	string getCopyrightString(){
+	std::string getCopyrightString(){
 		return copyrightString_;
 	}
 
@@ -960,19 +960,19 @@ public:
 
 	void setIndirectOperator(Operator* op);
 	
-	vector<Operator*> getOpList(){
+	std::vector<Operator*> getOpList(){
 		return oplist;
 	}
 
 
-	vector<Operator*>& getOpListR(){
+	std::vector<Operator*>& getOpListR(){
 		return oplist;
 	}
 
 	
-	bool hasComponent(string s);
+	bool hasComponent(std::string s);
 	
-	void cleanup(vector<Operator*> *ol, Operator* op);
+	void cleanup(std::vector<Operator*> *ol, Operator* op);
 	
 	FlopocoStream* getFlopocoVHDLStream(){
 		return &vhdl;
@@ -991,9 +991,9 @@ public:
 
 
 
-	string signExtend(string name, int w);
+	std::string signExtend(std::string name, int w);
 	
-	string zeroExtend(string name, int w);
+	std::string zeroExtend(std::string name, int w);
 
 	int level; //printing issues
 
@@ -1001,10 +1001,10 @@ public:
 
 
 	/** add a comment line in to vhdl stream */
-	void addComment(string comment, string align = tab);
+	void addComment(std::string comment, std::string align = tab);
 
 	/** add a full line of '-' with comment centered within */
-	void addFullComment(string comment, int lineLength = 80);
+	void addFullComment(std::string comment, int lineLength = 80);
 
 
 	/** Completely replace "this" with a copy of another operator. */
@@ -1019,7 +1019,7 @@ public:
 	/**
 	 * Add @count flip-flops to the total estimate
 	 * @param count (by default 1) the number of elements to add
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addFF(int count = 1);
 	
@@ -1028,7 +1028,7 @@ public:
 	 * from the register characteristics
 	 * @param count (by default 1) the number of registers to add
 	 * @param width the width of each register
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addReg(int width, int count = 1);
 	
@@ -1039,7 +1039,7 @@ public:
 	 * @param count (by default 1) the number of elements to add
 	 * @param nrInputs number of inputs of the LUT (0 for default option 
 	 * of target technology)
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addLUT(int nrInputs = 0, int count = 1); 
 	
@@ -1047,7 +1047,7 @@ public:
 	 * Add @count multipliers to the total estimate
 	 * NOTE: also increases the DSP count
 	 * @param count (by default 1) the number of elements to add
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addMultiplier(int count = 1);
 	
@@ -1061,7 +1061,7 @@ public:
 	 * @param width the bitwidth of the multipliers
 	 * @param ratio (by default 1) the ratio to which the multipliers 
 	 * are implemented in logic (0 for 0%, 1 for 100%)
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addMultiplier(int widthX, int widthY, double ratio = 1, int count = 1);
 	
@@ -1075,7 +1075,7 @@ public:
 	 * @param width the bitwidth of the multipliers
 	 * @param ratio (by default 0) the ratio to which the multipliers 
 	 * are implemented in logic (0 for 0%, 1 for 100%)
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addAdderSubtracter(int widthX, int widthY, double ratio = 0, int count = 1);
 	
@@ -1090,7 +1090,7 @@ public:
 	 * @param width the bitwidth of each of the memory's word
 	 * @param type (by default 0) the type of the memory  
 	 * (0 for RAM, 1 for ROM)
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addMemory(int size, int width, int type = 0, int count = 1);
 	
@@ -1098,7 +1098,7 @@ public:
 	/**
 	 * Add @count DSP(s) to the total estimate
 	 * @param count (by default 1) the number of elements to add
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addDSP(int count = 1);
 	
@@ -1108,7 +1108,7 @@ public:
 	 * @addMemory() function with the corresponding parameters
 	 * NOTE: adds memories with the default widths and sizes
 	 * @param count (by default 1) the number of elements to add
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addRAM(int count = 1);
 	
@@ -1118,7 +1118,7 @@ public:
 	 * @addMemory() function with the corresponding parameters
 	 * NOTE: adds memories with the default widths and sizes
 	 * @param count (by default 1) the number of elements to add
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addROM(int count = 1);
 	
@@ -1131,7 +1131,7 @@ public:
 	 * @param count (by default 1) the number of elements to add
 	 * @param width the bitwidth of the registers
 	 * @param depth the depth of the shift register
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addSRL(int width, int depth, int count = 1);
 	
@@ -1145,9 +1145,9 @@ public:
 	 * NOTE: if @signalName is provided, @count can be omitted, as it 
 	 * serves no purpose
 	 * @param count (by default 1) the number of elements to add
-	 * @param signalName (by default the empty string) the name of the
+	 * @param signalName (by default the empty std::string) the name of the
 	 * corresponding signal
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addWire(int count = 1, std::string signalName = "");
 	
@@ -1161,9 +1161,9 @@ public:
 	 * NOTE: if @portName is provided, @count can be omitted, as it 
 	 * serves no purpose
 	 * @param count (by default 1) the number of elements to add
-	 * @param portName (by default the empty string) the name of the
+	 * @param portName (by default the empty std::string) the name of the
 	 * corresponding port
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addIOB(int count = 1, std::string portName = "");
 	
@@ -1177,7 +1177,7 @@ public:
 	 * @param count (by default 1) the number of elements to add
 	 * @param nrInputs (by default 2) the number of inputs to the MUX
 	 * @param width the bitwidth of the inputs and the output
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addMux(int width, int nrInputs = 2, int count = 1);
 	
@@ -1189,7 +1189,7 @@ public:
 	 * result in counting the resources multiple times and overestimate
 	 * @param count (by default 1) the number of elements to add
 	 * @param width the bitwidth of the counter
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addCounter(int width, int count = 1);
 	
@@ -1203,7 +1203,7 @@ public:
 	 * @param count (by default 1) the number of elements to add
 	 * @param width the bitwidth of the accumulator
 	 * @param useDSP (by default false) whether the use of DSPs is allowed
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addAccumulator(int width, bool useDSP = false, int count = 1);
 	
@@ -1215,7 +1215,7 @@ public:
 	 * as not to result in counting the resources multiple times and 
 	 * overestimate
 	 * @param count (by default 1) the number of elements to add
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addDecoder(int wIn, int wOut, int count = 1);
 	
@@ -1228,7 +1228,7 @@ public:
 	 * @param count (by default 1) the number of elements to add
 	 * @param nrInputs (by default 2) the number of inputs of the gate
 	 * @param width the bitwidth of the inputs
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addArithOp(int width, int nrInputs = 2, int count = 1);
 	
@@ -1243,7 +1243,7 @@ public:
 	 * @param nrStates the number of states of the FSM
 	 * @param nrTransitions (by default 0) the number of transitions of 
 	 * the FSM
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addFSM(int nrStates, int nrTransitions = 0, int count = 1);
 	
@@ -1255,32 +1255,32 @@ public:
 	 * the level of detail to which the resource utilizations are 
 	 * reported (0 - basic report; 1 - include the more specific 
 	 * resources; 2 - include all statistics)
-	 * @return a formatted string containing the statistics
+	 * @return a formatted std::string containing the statistics
 	 */
 	std::string generateStatistics(int detailLevel = 0);
 	
 	//--Utility functions related to the generation of resource usage statistics
 	/**
 	 * Count registers that are due to design pipelining
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addPipelineFF();
 	
 	/**
 	 * Count wires from declared signals
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addWireCount();
 	
 	/**
 	 * Count I/O ports from declared inputs and outputs
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addPortCount();
 	
 	/**
 	 * Count resources added from components
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	std::string addComponentResourceCount();
 	
@@ -1290,7 +1290,7 @@ public:
 	 * 		- count input/output ports
 	 * 		- count resources in subcomponents
 	 * Should not be used together with the manual estimation functions addWireCount, addPortCount, addComponentResourceCount!
-	 * @return the string describing the performed operation
+	 * @return the std::string describing the performed operation
 	 */
 	void addAutomaticResourceEstimations();
 	/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1313,7 +1313,7 @@ public:
 	 * Possibly to be integrated in the instance() method, as the 
 	 * process can be done without the intervention of the user.
 	 * Uses and updates the pastEstimation... set of variables.
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string manageFloorplan();
 	
@@ -1327,7 +1327,7 @@ public:
 	 * @param source the source sub-component
 	 * @param sink the sink sub-component
 	 * @param type the constraint type (has as value predefined constant)
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string addPlacementConstraint(std::string source, std::string sink, int type);
 	
@@ -1340,7 +1340,7 @@ public:
 	 * @param source the source sub-component
 	 * @param sink the sink sub-component
 	 * @param nrWires the number of wires that connect the two modules
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string addConnectivityConstraint(std::string source, std::string sink, int nrWires);
 	
@@ -1350,7 +1350,7 @@ public:
 	 * its width".
 	 * @param source the source sub-component
 	 * @param ratio the aspect ratio
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string addAspectConstraint(std::string source, double ratio);
 	
@@ -1362,7 +1362,7 @@ public:
 	 * @param value the type of content constraint
 	 * @param length the length, if needed, of the component (for 
 	 * example for adders or multipliers)
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string addContentConstraint(std::string source, int value, int length);
 	
@@ -1371,33 +1371,33 @@ public:
 	 * user has input using the corresponding functions.
 	 * Start by processing the placement constraints and then, when 
 	 * needed, process the connectivity constraints
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string processConstraints();
 	
 	/**
 	 * Create the virtual grid for the sub-components.
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string createVirtualGrid();
 	
 	/**
 	 * Transform the virtual placement grid into the actual placement on 
 	 * the device, ready to generate the actual constraints file.
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string createPlacementGrid();
 	
 	/**
 	 * Create the file that will contain the floorplanning constraints.
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string createConstraintsFile();
 	
 	/**
 	 * Generate the placement for a given module.
 	 * @param moduleName the name of the module
-	 * @return the string summarizing the operation
+	 * @return the std::string summarizing the operation
 	 */
 	std::string createPlacementForComponent(std::string moduleName);
 	
@@ -1408,7 +1408,7 @@ public:
 	std::string createFloorplan();
 
 	static float pickRandomNum ( float limit = 0, int fp = 8, int sp = 4 );
-	static bool checkExistence ( TestState parameters, string opName );
+	static bool checkExistence ( TestState parameters, std::string opName );
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1416,9 +1416,9 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////BEWARE: don't add anything below without adding it to cloneOperator, too
 
-	map<string, Operator*> subComponents_;					/**< The list of sub-components */
-	vector<Signal*>     signalList_;      					/**< The list of internal signals of the operator */
-	vector<Signal*>     ioList_;          					/**< The list of I/O signals of the operator */
+	std::map<std::string, Operator*> subComponents_;					/**< The list of sub-components */
+	std::vector<Signal*>     signalList_;      					/**< The list of internal signals of the operator */
+	std::vector<Signal*>     ioList_;          					/**< The list of I/O signals of the operator */
 
 	FlopocoStream       vhdl;             					/**< The internal stream to which the constructor will build the VHDL code */
 	int                 numberOfTests;    					/**< The number of tests, set by TestBench before this operator is tested */
@@ -1442,22 +1442,22 @@ public:
 	FloorplanningHelper*		flpHelper;					/**< Tools for floorplanning */
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	static multimap < string, TestState > testMemory;			/**< multimap which will be used to test if the selected operator already had been tested */
+	static std::multimap < std::string, TestState > testMemory;			/**< std::multimap which will be used to test if the selected operator already had been tested */
 
 protected:    
 	Target*             target_;          					/**< The target on which the operator will be deployed */
-	string              uniqueName_;      					/**< By default, a name derived from the operator class and the parameters */
-	string 				architectureName_;					/**< Name of the operator architecture */
-	vector<Signal*>     testCaseSignals_; 					/**< The list of pointers to the signals in a test case entry. Its size also gives the dimension of a test case */
+	std::string              uniqueName_;      					/**< By default, a name derived from the operator class and the parameters */
+	std::string 				architectureName_;					/**< Name of the operator architecture */
+	std::vector<Signal*>     testCaseSignals_; 					/**< The list of pointers to the signals in a test case entry. Its size also gives the dimension of a test case */
 
-	unordered_map<string, string> portMap_;         					/**< Port map for an instance of this operator */
-	map<string, double> outDelayMap;      					/**< Slack delays on the outputs */
-	map<string, double> inputDelayMap;      				/**< Slack delays on the inputs */
-	string              srcFileName;      					/**< Used to debug and report.  */
-	map<string, int>    declareTable;     					/**< Table containing the name and declaration cycle of the signal */
+	std::unordered_map<std::string, std::string> portMap_;         					/**< Port std::map for an instance of this operator */
+	std::map<std::string, double> outDelayMap;      					/**< Slack delays on the outputs */
+	std::map<std::string, double> inputDelayMap;      				/**< Slack delays on the inputs */
+	std::string              srcFileName;      					/**< Used to debug and report.  */
+	std::map<std::string, int>    declareTable;     					/**< Table containing the name and declaration cycle of the signal */
 	int                 myuid;              				/**<unique id>*/
 	int                 cost;             					/**< the cost of the operator depending on different metrics */
-	vector<Operator*>   oplist;                     /**< A list of all the sub-operators */
+	std::vector<Operator*>   oplist;                     /**< A list of all the sub-operators */
 	
 
 private:
@@ -1466,17 +1466,17 @@ private:
 	int                    numberOfOutputs_;            	/**< The number of outputs of the operator */
 	bool                   isSequential_;               	/**< True if the operator needs a clock signal*/
 	int                    pipelineDepth_;              	/**< The pipeline depth of the operator. 0 for combinatorial circuits */
-	map<string, Signal*>   signalMap_;                  	/**< A container of tuples for recovering the signal based on it's name */
-	unordered_map<string, pair<string, string> > constants_;      	/**< The list of constants of the operator: name, <type, value> */
-	unordered_map<string, string>    attributes_;                  	/**< The list of attribute declarations (name, type) */
-	unordered_map<string, string>    types_;                      	/**< The list of type declarations (name, type) */
-	map<pair<string,string>, string >  attributesValues_;	/**< attribute values <attribute name, object (component, signal, etc)> ,  value> */
+	std::map<std::string, Signal*>   signalMap_;                  	/**< A container of tuples for recovering the signal based on it's name */
+	std::unordered_map<std::string, std::pair<std::string, std::string> > constants_;      	/**< The list of constants of the operator: name, <type, value> */
+	std::unordered_map<std::string, std::string>    attributes_;                  	/**< The list of attribute declarations (name, type) */
+	std::unordered_map<std::string, std::string>    types_;                      	/**< The list of type declarations (name, type) */
+	std::map<std::pair<std::string,std::string>, std::string >  attributesValues_;	/**< attribute values <attribute name, object (component, signal, etc)> ,  value> */
 	bool                   hasRegistersWithoutReset_;   	/**< True if the operator has registers without a reset */
 	bool                   hasRegistersWithAsyncReset_; 	/**< True if the operator has registers having an asynch reset */
 	bool                   hasRegistersWithSyncReset_;  	/**< True if the operator has registers having a synch reset */
-	string                 commentedName_;              	/**< Usually is the default name of the architecture.  */
-	string                 headerComment_;              	/**< Optional comment that gets added to the header. Possibly multiline.  */
-	string                 copyrightString_;            	/**< Authors and years.  */
+	std::string                 commentedName_;              	/**< Usually is the default name of the architecture.  */
+	std::string                 headerComment_;              	/**< Optional comment that gets added to the header. Possibly multiline.  */
+	std::string                 copyrightString_;            	/**< Authors and years.  */
 	int                    currentCycle_;               	/**< The current cycle, when building a pipeline */
 	double                 criticalPath_;               	/**< The current delay of the current pipeline stage */
 	bool                   needRecirculationSignal_;    	/**< True if the operator has registers having a recirculation signal  */
@@ -1484,7 +1484,7 @@ private:
 	int					    hasDelay1Feedbacks_;		/**< True if this operator has feedbacks of one cycle, and no more than one cycle (i.e. an error if the distance is more). False gives warnings */
 	Operator*              indirectOperator_;              /**< NULL if this operator is just an interface operator to several possible implementations, otherwise points to the instance*/
 
-	vector<TestCaseList*>	testCases;
+	std::vector<TestCaseList*>	testCases;
 };
 
 	// global variables used through most of FloPoCo,

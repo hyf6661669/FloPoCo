@@ -43,7 +43,7 @@ namespace flopoco{
 
         //gmp_randstate_t* FloPoCoRandomState::getState() { return m_state;};
 
-	/** return a string representation of an mpz_class on a given number of bits */
+	/** return a std::string representation of an mpz_class on a given number of bits */
 	string unsignedBinary(mpz_class x, int size){
 		string s;
 		mpz_class po2, number;
@@ -674,7 +674,7 @@ namespace flopoco{
 		return stream.str();
 	}
 
-	string join( std::string id, string sep, int n)
+	string join( std::string id, std::string sep, int n)
 	{
 		ostringstream stream;
 
@@ -740,12 +740,12 @@ namespace flopoco{
 		return stream.str();
 	}
 	
-	string join( std::string id, string n)
+	string join( std::string id, std::string n)
 	{
 		return id+n;
 	}
 
-	string join( std::string id, string id2, string id3)
+	string join( std::string id, std::string id2, std::string id3)
 	{
 		return id+id2+id3;
 	}
@@ -777,7 +777,7 @@ namespace flopoco{
 		return o.str();
 	}
 
-	string align( int left, string s, int right ){
+	string align( int left, std::string s, int right ){
 		ostringstream tmp;
 		tmp << "(" << (left>0?zg(left,0) + " & ":"") << s << (right>0?" & " +zg(right, 0):"") << ")";
 		return tmp.str(); 
@@ -833,21 +833,21 @@ namespace flopoco{
 	}
 
 
-	string std_logic_vector(const string& s ){
+	string std_logic_vector(const std::string& s ){
 		ostringstream o;
 		o << "std_logic_vector(" << s << ")";
 		return o.str();
 	};
 
 
-	string center(const string& str, char padchar, int width) {
+	string center(const std::string& str, char padchar, int width) {
     int len = str.length();
     if(width < len) 
 			return str;
     int diff = width - len;
     int pad1 = diff/2;
     int pad2 = diff - pad1;
-    return string(pad1, padchar) + str + string(pad2, padchar);
+    return std::string(pad1, padchar) + str + std::string(pad2, padchar);
 	}
 
 }

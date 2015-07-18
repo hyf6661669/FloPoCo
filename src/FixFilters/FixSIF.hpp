@@ -16,7 +16,7 @@ namespace flopoco{
 	  
 	public:
 		/** normal constructor, building the SIF out of the specificatin file */
-		FixSIF(Target* target, int lsb, string file,  map<string, double> inputDelays = emptyDelayMap); 
+		FixSIF(Target* target, int lsb, std::string file,  std::map<std::string, double> inputDelays = emptyDelayMap); 
 
 		/* Destructor */
 		~FixSIF();
@@ -36,7 +36,7 @@ namespace flopoco{
 		int wO;
 
 	private:
-		string file;
+		std::string file;
 		mpfr_t mpcoeff[10000];			/**< the absolute values of the coefficients as MPFR numbers */
 		bool coeffsign[10000];			/**< the signs of the coefficients */
 
@@ -46,10 +46,10 @@ namespace flopoco{
 		//int currentIndexB;
 		//mpfr_t yHistory[10000]; // history of y (result) used by emulate
 
-		vector < vector<string> > coeffs;			/**< the coefficients as strings */
-		vector <FixSOPC*> sopcs; //list of sopcs (corresponding to matrix lines)
+		std::vector < std::vector<std::string> > coeffs;			/**< the coefficients as strings */
+		std::vector <FixSOPC*> sopcs; //list of sopcs (corresponding to matrix lines)
 
-		vector <int> msbIn, lsbIn, msbOut, lsbOut;
+		std::vector <int> msbIn, lsbIn, msbOut, lsbOut;
 
 		uint32_t nt; /**< number of intermediate computations */
 		uint32_t nx; /**< size of the state-space */
@@ -80,7 +80,7 @@ namespace flopoco{
 				-msbsOut: the desired msbs of outputs for the operator
 				-lsbsOut: the desired lsbs of outputs for the operator
 		  */
-		int computeMSBsLSBs( vector<int> &msbsOut, vector<int> &lsbsOut );
+		int computeMSBsLSBs( std::vector<int> &msbsOut, std::vector<int> &lsbsOut );
 
 	int computeABCD(boost::numeric::ublas::matrix<double> const &bJ, boost::numeric::ublas::matrix<double> const &bK, boost::numeric::ublas::matrix<double> const &bL, boost::numeric::ublas::matrix<double> const &bM, boost::numeric::ublas::matrix<double> const &bN, boost::numeric::ublas::matrix<double> const &bP, boost::numeric::ublas::matrix<double> const &bQ, boost::numeric::ublas::matrix<double> const &bR, boost::numeric::ublas::matrix<double> const &bS, boost::numeric::ublas::matrix<double> &bA, boost::numeric::ublas::matrix<double> &bB, boost::numeric::ublas::matrix<double> &bC, boost::numeric::ublas::matrix<double> &bD);
 		/**
@@ -97,7 +97,7 @@ namespace flopoco{
 				-1 if error
 				TODO: handle error propagation in the parsing framework
 		  */
-		int readPrecision( vector <int> &msbsIn, vector<int> &lsbsIn, vector<int> &msbsOut, vector<int> &lsbsOut, bool inFile=1 );
+		int readPrecision( std::vector <int> &msbsIn, std::vector<int> &lsbsIn, std::vector<int> &msbsOut, std::vector<int> &lsbsOut, bool inFile=1 );
 
 		/**
 			bMToDoubleM: fills the matrix doubleM from the coefficients stored in bM.
@@ -113,17 +113,17 @@ namespace flopoco{
 			vvToBoostMatrix: fills the matrix bM from the string coefficients stored in sM.
 			Note: this assumes that bM is instanciated
 			Input:
-				-sM: vector of vector of strings (it won't be modified)
+				-sM: std::vector of std::vector of strings (it won't be modified)
 				-bM: boost matrix to be filled
 			Output:
 				-0 if success
 		  */
-		int vvToBoostMatrix( vector< vector <string> > const &sM, boost::numeric::ublas::matrix<double> &bM );
+		int vvToBoostMatrix( std::vector< std::vector <std::string> > const &sM, boost::numeric::ublas::matrix<double> &bM );
 
 
-		int readMatrices( vector< vector <vector<string> >**> &Z, ifstream &openedFile, int &lc);
+		int readMatrices( std::vector< std::vector < std::vector<std::string> >**> &Z, std::ifstream &openedFile, int &lc);
 
-		int readMatrix(string &header, string JKLMNPQRS, vector < vector <string> > * &toFill, ifstream &openedFile, int lc = 0 );
+		int readMatrix(std::string &header, std::string JKLMNPQRS, std::vector < std::vector <std::string> > * &toFill, std::ifstream &openedFile, int lc = 0 );
 
 
 	};

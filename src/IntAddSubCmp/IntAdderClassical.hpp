@@ -28,7 +28,7 @@ namespace flopoco {
 			*            2: optimize slice/ALM count
 			* @param[in] srl              optimize for use of shift registers
 			**/
-			IntAdderClassical ( Target* target, int wIn, map<string, double> inputDelays = emptyDelayMap, int optimizeType = 2, bool srl = true);
+			IntAdderClassical ( Target* target, int wIn, std::map<std::string, double> inputDelays = emptyDelayMap, int optimizeType = 2, bool srl = true);
 			
 			/**
 			* Returns the cost in LUTs of the Classical implementation
@@ -38,7 +38,7 @@ namespace flopoco {
 			* @param[in] srl               optimize for use of shift registers
 			* @return                      the number of LUTS
 			*/
-			int getLutCostClassical ( Target* target, int wIn, map<string, double> inputDelays, bool srl );
+			int getLutCostClassical ( Target* target, int wIn, std::map<std::string, double> inputDelays, bool srl );
 			
 			/**
 			* Returns the cost in Registers of the Classical implementation
@@ -48,7 +48,7 @@ namespace flopoco {
 			* @param[in] srl               optimize for use of shift registers
 			* @return                      the number of Registers
 			*/
-			int getRegCostClassical ( Target* target, int wIn, map<string, double> inputDelays, bool srl );
+			int getRegCostClassical ( Target* target, int wIn, std::map<std::string, double> inputDelays, bool srl );
 			
 			/**
 			* Returns the cost in Slices of the Classical implementation
@@ -58,7 +58,7 @@ namespace flopoco {
 			* @param[in] srl               optimize for use of shift registers
 			* @return                      the number of Slices
 			*/
-			int getSliceCostClassical ( Target* target, int wIn, map<string, double> inputDelays, bool srl );
+			int getSliceCostClassical ( Target* target, int wIn, std::map<std::string, double> inputDelays, bool srl );
 			
 			/**
 			*  Destructor

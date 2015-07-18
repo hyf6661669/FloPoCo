@@ -11,7 +11,7 @@ namespace flopoco{
 
 	public:
 		/* Constructor ; you must use bitheap in case of negative coefficient*/
-		FixIIR(Target* target, int msbOut_, int lsbOut_, double H_, vector<string> coeffb_, vector<string> coeffa_, map<string, double> inputDelays = emptyDelayMap); 
+		FixIIR(Target* target, int msbOut_, int lsbOut_, double H_, std::vector<std::string> coeffb_, std::vector<std::string> coeffa_, std::map<std::string, double> inputDelays = emptyDelayMap); 
 
 		/* Destructor */
 		~FixIIR();
@@ -28,8 +28,8 @@ namespace flopoco{
 		int msbOut;					/**< weight of the MSB in the result */
 		int lsbOut;					/**< weight of the LSB in the result */ 
 		double H;						/**< Worst case peak gain */
-		vector<string> coeffb;			/**< the b_i coefficients as strings */
-		vector<string> coeffa;			/**< the a_i coefficients as strings */
+		std::vector<std::string> coeffb;			/**< the b_i coefficients as strings */
+		std::vector<std::string> coeffa;			/**< the a_i coefficients as strings */
 		int n;							/**< number of taps on the numerator */
 		int m;							/**< number of taps on the denominator */
 

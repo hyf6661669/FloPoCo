@@ -64,7 +64,7 @@ namespace flopoco{
 		    * @param fullInput boolean, if true input mantissa is of size wE+wF+1, so that input shift doesn't padd it with 0s (useful for FPPow)
 		    */
 
-		FPExp(Target* target, int wE, int wF, int k, int d, int guardBits=-1, bool fullInput=false,  map<string, double> inputDelays = emptyDelayMap);
+		FPExp(Target* target, int wE, int wF, int k, int d, int guardBits=-1, bool fullInput=false,  std::map<std::string, double> inputDelays = emptyDelayMap);
 		~FPExp();
 		
 		// Overloading the virtual functions of Operator

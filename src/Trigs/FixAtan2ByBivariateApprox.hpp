@@ -46,7 +46,7 @@ namespace flopoco {
 		 * 									2 = based on an order 2 Taylor approximating polynomial
 		 * 									3 = based on rotating using a table (for sine and cosine) and then using the Taylor series for (1/x)
 		 **/
-		FixAtan2ByBivariateApprox(Target* target, int wIn, int wOut, int architectureType = 0,   map<string, double> inputDelays = emptyDelayMap);
+		FixAtan2ByBivariateApprox(Target* target, int wIn, int wOut, int architectureType = 0,   std::map<std::string, double> inputDelays = emptyDelayMap);
 
 
 		/**

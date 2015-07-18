@@ -38,7 +38,7 @@ namespace flopoco
 		{
 			public:
 
-				Snapshot(vector<list<WeightedBit*> > bitheap, int minWeight_, int maxWeight_, unsigned maxHeight,  
+				Snapshot(std::vector<std::list<WeightedBit*> > bitheap, int minWeight_, int maxWeight_, unsigned maxHeight,  
 						bool didCompress_,  int cycle, double cp);
 
 				~Snapshot(){};
@@ -58,14 +58,14 @@ namespace flopoco
 
 				//unsigned getMaxHeight();
 
-				vector<list<WeightedBit*> > bits;
+				std::vector<std::list<WeightedBit*> > bits;
 				int maxWeight;
 				int minWeight;
 				unsigned maxHeight;
 				bool didCompress; 
 				int cycle;
 				double cp;
-				string srcFileName;
+				std::string srcFileName;
 		};
 		
 		/** 
@@ -91,14 +91,14 @@ namespace flopoco
 		/** 
 		 * plots multiplier area and sheared views 
 		 */
-		void plotMultiplierConfiguration(string name, vector<MultiplierBlock*> mulBlocks, int wX, int wY, int wOut, int g);
+		void plotMultiplierConfiguration(std::string name, std::vector<MultiplierBlock*> mulBlocks, int wX, int wY, int wOut, int g);
 
 		void setBitHeap(BitHeap* bh_);
 
 		void addSmallMult(int topX, int topY, int dx, int dy);
 
 
-		stringstream ss;
+		std::stringstream ss;
 
 
 	private:
@@ -116,12 +116,12 @@ namespace flopoco
 		/** 
 		 * draws the area view of the DSP configuration 
 		 */
-		void drawAreaView(string name, vector<MultiplierBlock*> mulBlocks, int wX, int wY, int wOut, int g);
+		void drawAreaView(std::string name, std::vector<MultiplierBlock*> mulBlocks, int wX, int wY, int wOut, int g);
 
 		/** 
 		 * draws the sheared view of the DSP configuration 
 		 */
-		void drawLozengeView(string name, vector<MultiplierBlock*> mulBlocks, int wX, int wY, int wOut, int g);
+		void drawLozengeView(std::string name, std::vector<MultiplierBlock*> mulBlocks, int wX, int wY, int wOut, int g);
 
 		/** 
 		 * draws a line between the specified coordinates 
@@ -145,29 +145,29 @@ namespace flopoco
 
 		void initializeHeapPlotting(bool isInitial);
 
-		void drawInitialConfiguration( vector<list<WeightedBit*> > bits, int maxWeight, int offsetY, int turnaroundX);
+		void drawInitialConfiguration( std::vector<std::list<WeightedBit*> > bits, int maxWeight, int offsetY, int turnaroundX);
 
-		void drawConfiguration(vector<list<WeightedBit*> > bits, unsigned nr, int cycle, double cp, 
+		void drawConfiguration(std::vector<std::list<WeightedBit*> > bits, unsigned nr, int cycle, double cp, 
 				int maxWeight, int offsetY, int turnaroundX, bool timeCondition);
 
 		/** 
 		 * draws a single bit 
 		 */
-		void drawBit(int cnt, int w, int turnaroundX, int offsetY, int color, int cycle, int cp, string name);
+		void drawBit(int cnt, int w, int turnaroundX, int offsetY, int color, int cycle, int cp, std::string name);
 
 		void addECMAFunction();
 
-		ofstream fig;
-		ofstream fig2;
+		std::ofstream fig;
+		std::ofstream fig2;
 		//			vector<vector<list<WeightedBit*> > > snapshots;
-		vector<Snapshot*> snapshots;
+		std::vector<Snapshot*> snapshots;
 
 		int topX[10000];
 		int topY[10000];
 		int dx, dy;
 		int smallMultIndex;
 
-		string srcFileName;
+		std::string srcFileName;
 
 		int stagesPerCycle;
 		int lastStage;

@@ -29,7 +29,7 @@ namespace flopoco{
 		 * @param[in]		wER			the the with of the exponent for the addition result
 		 * @param[in]		wFR			the the with of the fraction for the addition result
 		 */
-		FPAddSub(Target* target, int wEX, int wFX, int wEY, int wFY, int wER, int wFR, map<string, double> inputDelays = emptyDelayMap);
+		FPAddSub(Target* target, int wEX, int wFX, int wEY, int wFY, int wER, int wFR, std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		/**
 		 * FPAddSub destructor

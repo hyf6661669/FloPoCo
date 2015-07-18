@@ -72,7 +72,7 @@ namespace flopoco{
 										1 = using only an adder tree,
 										2 = using a mix of the two, with an addition tree at the end of the compression
 		*/
-		BitHeap(Operator* op, int maxWeight, bool enableSuperTiles = true, string name = "", int compressionType = COMPRESSION_TYPE);
+		BitHeap(Operator* op, int maxWeight, bool enableSuperTiles = true, std::string name = "", int compressionType = COMPRESSION_TYPE);
 		~BitHeap();
 
 		/** add a bit to the bit heap. The bit will be added at the cycle op->currentCycle() with critical path op->getCriticalPath().
@@ -83,7 +83,7 @@ namespace flopoco{
 		    0 - compression
 		    1 - external
 		    2 - constant */
-		void addBit(int weight, string rhs, string comment="", int type=1);
+		void addBit(int weight, std::string rhs, std::string comment="", int type=1);
 
 		/** add a constant 1 to the bit heap. All the constant bits are added to the constantBits mpz, so we don't generate hardware to compress constants....
 		    @param weight   the weight of the 1 to be added */
@@ -101,59 +101,59 @@ namespace flopoco{
 		/**
 		 * add to the bit heap the value held by a signal, considered as an unsigned integer
 		 */
-		void addUnsignedBitVector(int weight, string x, unsigned size);
+		void addUnsignedBitVector(int weight, std::string x, unsigned size);
 
 		/**
 		 * add to the bit heap the value held by a signal, considered as an unsigned integer
 		 * only add the bits between indices msb and lsb, including
 		 */
-		void addUnsignedBitVector(int weight, string x, unsigned size, int msb, int lsb, bool negativeWeight=false);
+		void addUnsignedBitVector(int weight, std::string x, unsigned size, int msb, int lsb, bool negativeWeight=false);
 
 		/**
 		 * add to the bit heap the opposite of the value held by a signal, considered as an unsigned integer
 		 */
-		void subtractUnsignedBitVector(int weight, string x, unsigned size);
+		void subtractUnsignedBitVector(int weight, std::string x, unsigned size);
 
 		/**
 		 * add to the bit heap the opposite of the value held by a signal, considered as an unsigned integer
 		 * only subtract the bits between indices msb and lsb, including
 		 */
-		void subtractUnsignedBitVector(int weight, string x, unsigned size, int msb, int lsb, bool negativeWeight=false);
+		void subtractUnsignedBitVector(int weight, std::string x, unsigned size, int msb, int lsb, bool negativeWeight=false);
 
 		/**
 		 * add to the bit heap the value held by a signal, considered as a signed integer. size includes the sign bit
 		 */
-		void addSignedBitVector(int weight, string x, unsigned size);
+		void addSignedBitVector(int weight, std::string x, unsigned size);
 
 		/**
 		 * add to the bit heap the value held by a signal, considered as a signed integer. size includes the sign bit
 		 * only add bits of weight at least lsb
 		 */
-		void addSignedBitVector(int weight, string x, unsigned size, int lsb, bool negativeWeight=false);
+		void addSignedBitVector(int weight, std::string x, unsigned size, int lsb, bool negativeWeight=false);
 
 		/**
 		 * add to the bit heap the opposite of the value held by a signal, considered as a signed integer. size includes the sign bit
 		 */
-		void subtractSignedBitVector(int weight, string x, unsigned size);
+		void subtractSignedBitVector(int weight, std::string x, unsigned size);
 
 		/**
 		 * add to the bit heap the opposite of the value held by a signal, considered as a signed integer. size includes the sign bit
 		 * only subtract bits of weight at least lsb
 		 */
-		void subtractSignedBitVector(int weight, string x, unsigned size, int lsb, bool negativeWeight=false);
+		void subtractSignedBitVector(int weight, std::string x, unsigned size, int lsb, bool negativeWeight=false);
 
 
 		/** generate the VHDL for the bit heap. To be called last by operators using BitHeap.*/
 		void generateCompressorVHDL();
 
 		/** returns the name of the compressed sum */
-		string getSumName();
+		std::string getSumName();
 
 		/** returns the name of the compressed sum, with the range (msb, lsb)
 		 *  @param msb the msb for the range
 		 *  @param lsb the lsb for the range
 		 */
-		string getSumName(int msb, int lsb);
+		std::string getSumName(int msb, int lsb);
 
 		/** returns the current stage of the bitheap, given the global cycle and CP */
 		int computeStage();
@@ -175,7 +175,7 @@ namespace flopoco{
 		 * in order to have the addition inferred inside the DSP block for Altera
 		 * architectures.
 		 */
-		void generateAlteraSupertileVHDL(MultiplierBlock* x, MultiplierBlock* y, string resultName);
+		void generateAlteraSupertileVHDL(MultiplierBlock* x, MultiplierBlock* y, std::string resultName);
 
 
 		/** returns the maximum weight of the bit heap */
@@ -198,7 +198,7 @@ namespace flopoco{
 		int getGUid();
 
 		/** return the UID of the bit heap*/
-		string getName();
+		std::string getName();
 
 
 		void setSignedIO(bool s);
@@ -263,7 +263,7 @@ namespace flopoco{
 
 
 		/** counts the bits not processed yet in wb */
-		int count(list<WeightedBit*> wb, int cycle);
+		int count(std::list<WeightedBit*> wb, int cycle);
 
 		void printColumnInfo(int w);
 
@@ -289,16 +289,16 @@ namespace flopoco{
 		void printBitHeapStatus();
 
 	public: // TODO privatize
-		vector<list<WeightedBit*> > bits; 			/**<  Each list is ordered by arrival time of the bits, i.e. lexicographic order on (cycle, cp).
+		std::vector<std::list<WeightedBit*> > bits; 			/**<  Each list is ordered by arrival time of the bits, i.e. lexicographic order on (cycle, cp).
 															During the generation of the compressor, bits are added and removed to these lists */
-		vector<list<WeightedBit*> > history; 		/**<  remembers all the changes to bits */
+		std::vector<std::list<WeightedBit*> > history; 		/**<  remembers all the changes to bits */
 	private:
 		Operator* op;
 		int compressionType;						/**< The type of compression performed (explained in the header of the constructor)*/
 		unsigned maxWeight;							/**< The compressor tree will produce a result for weights < maxWeight (work modulo 2^maxWeight)*/
 		unsigned minWeight;							/**< bits smaller than this one are already compressed */
 		mpz_class constantBits;						/**< This int gather all the constant bits that need to be added to the bit heap (for rounding, two's complement etc) */
-		vector<BasicCompressor *> possibleCompressors;
+		std::vector<BasicCompressor *> possibleCompressors;
 		bool usedCompressors[100];					/** the list of compressors which were used at least once*/ // 100 should be more than enough for everybody
 		BasicCompressor * halfAdder;
 		BasicCompressor * fullAdder;
@@ -308,20 +308,20 @@ namespace flopoco{
 		unsigned compressorIndex;					/** the index of the instance of compressors*/
 		unsigned adderIndex;						/** the index of the instance of IntAdder*/
 		unsigned cnt[100000];						/** number of bits which will be compressed in the current iteration*/
-		vector<int> uid;							/**< unique id, per weight */
+		std::vector<int> uid;							/**< unique id, per weight */
 		int guid;									/**< global uid  for this bit heap, useful in operators managing several bit heaps */
-		ofstream fileFig;
-		ostringstream fig;
+		std::ofstream fileFig;
+		std::ostringstream fig;
 		bool drawCycleLine;
 		int drawCycleNumber;
 		int stagesPerCycle;
 		double elementaryTime;
 		bool didCompress;
-		vector<MultiplierBlock*> mulBlocks; //the vector of multiplier blocks
+		std::vector<MultiplierBlock*> mulBlocks; //the vector of multiplier blocks
 		Plotter* plotter;
 		// For error reporting to work
-		string srcFileName;
-		string uniqueName_;
+		std::string srcFileName;
+		std::string uniqueName_;
 		// TODO? signedIO should be managed multiplier block per multiplier block.
 		bool signedIO;								/**< true if the uncompressed multiplier blocks have signed IO*/
 		int plottingStage;

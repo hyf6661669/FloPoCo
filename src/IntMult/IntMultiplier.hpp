@@ -73,7 +73,7 @@ namespace flopoco {
 		 * @param[in] signedIO       false=unsigned, true=signed
 		 **/
 		IntMultiplier(Target* target, int wX, int wY, int wOut=0, bool signedIO = false,
-		              map<string, double> inputDelays = emptyDelayMap,bool enableSuperTiles=false);
+		              std::map<std::string, double> inputDelays = emptyDelayMap,bool enableSuperTiles=false);
 
 
 		/**
@@ -110,10 +110,10 @@ namespace flopoco {
 		 */
 		static IntMultiplier* newComponentAndInstance(
 														 Operator* op,
-														 string instanceName,
-														 string xSignalName,
-														 string ySignalName,
-														 string rSignalName,
+														 std::string instanceName,
+														 std::string xSignalName,
+														 std::string ySignalName,
+														 std::string rSignalName,
 														 int rMSB,
 														 int rLSB
 														 );
@@ -140,12 +140,12 @@ namespace flopoco {
 
 	protected:
 		// add a unique identifier for the multiplier, and possibly for the block inside the multiplier
-		string addUID(string name, int blockUID=-1);
+		std::string addUID(std::string name, int blockUID=-1);
 
 
-		string PP(int i, int j, int uid=-1);
-		string PPTbl( int i, int j, int uid=-1);
-		string XY(int i, int j, int uid=-1);
+		std::string PP(int i, int j, int uid=-1);
+		std::string PPTbl( int i, int j, int uid=-1);
+		std::string XY(int i, int j, int uid=-1);
 
 		/** Can we pack a multiplier of this size in a table? */
 		static bool tabulatedMultiplierP(Target* target, int wX, int wY);
@@ -226,17 +226,17 @@ namespace flopoco {
 		// TODO the three following variable pairs seem ugly redundant
 		Signal* x;
 		Signal* y; 
-		string xname;
-		string yname;
-		string inputName1;
-		string inputName2;
+		std::string xname;
+		std::string yname;
+		std::string inputName1;
+		std::string inputName2;
 		bool negate;                    /**< if true this multiplier computes -xy */
 		int signedIO;                   /**< true if the IOs are two's complement */
 		bool enableSuperTiles;     		/**< if true, supertiles are built (fewer resources, longer latency */
 		int multiplierUid;
 
-		vector<MultiplierBlock*> localSplitVector;	
-		vector<int> multWidths;	
+		std::vector<MultiplierBlock*> localSplitVector;	
+		std::vector<int> multWidths;	
 		//vector<DSP*> dsps;
 		//ofstream fig;
 

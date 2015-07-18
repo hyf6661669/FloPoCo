@@ -17,6 +17,8 @@
 #include "FixFunction.hpp"
 #include <sstream>
 
+using namespace std;
+
 namespace flopoco{
 
 

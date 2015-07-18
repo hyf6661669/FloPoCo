@@ -27,7 +27,7 @@
 #include "utils.hpp"
 #include "Tools/ResourceEstimationHelper.hpp"
 
-using namespace std;
+//using namespace std;
 
 
 
@@ -69,8 +69,8 @@ namespace flopoco{
 	struct constraintType
 	{
 		int type;				/**< The constraint type: placement or connection */
-		string source;			/**< The origin component */
-		string sink;			/**< The destination module */
+		std::string source;			/**< The origin component */
+		std::string sink;			/**< The destination module */
 		int value;				/**< The value of the constraint, both for placement, connectivity and content;
 									 for connectivity constraints, it represents the number of wires, or
 									 the level (strong, weak, average etc.)
@@ -222,16 +222,16 @@ namespace flopoco{
 
 		double 					floorplanningRatio;				/**< The level to which the areas in the floorplan are filled to */
 
-		vector<string> 				  flComponentList;				/**< The list of sub-components in the order in which they are instantiated */
-		map<string, string>		  	  flInstanceNames;				/**< The list of eqivalences between instance names and components */
-		map<string, Operator*>		  flVirtualComponentList;		/**< The list of virtual components, created for florplanning */
-		map<string, coordinateType> flComponentCordVirtual;		/**< The coordinates of the sub-components in the virtual grid */
-		map<string, coordinateType> flComponentCordReal;			/**< The coordinates of the sub-components in the real grid */
-		map<string, coordinateType> flComponentDimension;			/**< The dimensions of the sub-components in the real grid */
-		vector<constraintType> 	  flPlacementConstraintList;	/**< The list of placement constraints between components */
-		vector<constraintType> 	  flConnectivityConstraintList;	/**< The list of placement constraints between components */
-		vector<constraintType> 	  flAspectConstraintList;		/**< The list of placement constraints between components */
-		vector<constraintType> 	  flContentConstraintList;		/**< The list of placement constraints between components */
+		std::vector<std::string> 				  flComponentList;				/**< The list of sub-components in the order in which they are instantiated */
+		std::map<std::string, std::string>		  	  flInstanceNames;				/**< The list of eqivalences between instance names and components */
+		std::map<std::string, Operator*>		  flVirtualComponentList;		/**< The list of virtual components, created for florplanning */
+		std::map<std::string, coordinateType> flComponentCordVirtual;		/**< The coordinates of the sub-components in the virtual grid */
+		std::map<std::string, coordinateType> flComponentCordReal;			/**< The coordinates of the sub-components in the real grid */
+		std::map<std::string, coordinateType> flComponentDimension;			/**< The dimensions of the sub-components in the real grid */
+		std::vector<constraintType> 	  flPlacementConstraintList;	/**< The list of placement constraints between components */
+		std::vector<constraintType> 	  flConnectivityConstraintList;	/**< The list of placement constraints between components */
+		std::vector<constraintType> 	  flAspectConstraintList;		/**< The list of placement constraints between components */
+		std::vector<constraintType> 	  flContentConstraintList;		/**< The list of placement constraints between components */
 
 		int 						  virtualModuleId;				/**< The unique identifier of each virtual module created, assigned in the order of their appearance */
 

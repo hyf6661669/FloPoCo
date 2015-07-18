@@ -10,7 +10,7 @@ namespace flopoco{
 	class FPRealKCM : public Operator
 	{
 	public:
-		FPRealKCM (Target* target, int wE, int wF,  string constant, map<string, double> inputDelays = emptyDelayMap);
+		FPRealKCM (Target* target, int wE, int wF,  std::string constant, std::map<std::string, double> inputDelays = emptyDelayMap);
 		~FPRealKCM();
 
 		// Overloading the virtual functions of Operator
@@ -19,7 +19,7 @@ namespace flopoco{
 
 		int wE;
 		int wF;
-		string constant;
+		std::string constant;
 		mpfr_t mpC;
 		
 		

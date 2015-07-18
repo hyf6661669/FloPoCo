@@ -5,6 +5,7 @@
 #include "gmp.h"
 #include "mpfr.h"
 #include "sollya.h"
+#include "soplex.h"
 
 #include "FixSIF.hpp"
 
@@ -12,18 +13,20 @@
 
 #include <boost/numeric/ublas/lu.hpp> 
 #include <boost/numeric/ublas/io.hpp>
+#include "/usr/local/include/wcpg_API.h"
+//#include "/usr/local/include/clapack_headers_config.h"	
 
 #define BUF_SIZE 256 //default buffer size
 #define DEFAULT_LSB -64 //default precision for sopcs
 #define DEFAULT_MSB 8 //default precision for sopcs
 
+//using namespace std;
 namespace ublas = boost::numeric::ublas; 
 template<class T> 
 bool invertMatrix (const ublas::matrix<T>& input, ublas::matrix<T>& inverse) { 
-	using namespace boost::numeric::ublas; 
-	typedef permutation_matrix<std::size_t> pmatrix; 
+	typedef ublas::permutation_matrix<std::size_t> pmatrix; 
 	// create a working copy of the input 
-	matrix<T> A(input); 
+	ublas::matrix<T> A(input); 
 	// create a permutation matrix for the LU-factorization 
 	pmatrix pm(A.size1()); 
 	// perform LU-factorization 
@@ -65,12 +68,11 @@ bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::
 	return true;
 }
 
-double max( double *wcpg, int l, int c, int cs) {
+double maxi( double *wcpg, int l, int c, int cs) {
 	
 }
 
-using namespace std;
-	int getFullLine( ifstream &f, string &s, int &lc ){
+	int getFullLine( std::ifstream &f, std::string &s, int &lc ){
 
 			getline(f, s);
 			lc++;
@@ -99,12 +101,12 @@ using namespace std;
 namespace flopoco {
 	const int veryLargePrec = 6400;  /*6400 bits should be enough for anybody */
 
-	int displayMatrix( vector< vector<string> > &m, string name = "matrix"){
-		string srcFileName="FixSIF";
+	int displayMatrix( std::vector< std::vector<std::string> > &m, std::string name = "matrix"){
+		std::string srcFileName="FixSIF";
 		//srcFileName<<"TOTO.cpp";
 		REPORT(0, "Displaying Matrix "<<name<<" "<<m.size()<<" "<<m[0].size());
 		for (uint32_t i=0; i<m.size(); i++){
-			stringstream line;
+			std::stringstream line;
 			for (uint32_t  j=0; j<m[i].size(); j++){
 				line<<m[i][j];
 				if (j!=m[i].size()-1){
@@ -117,7 +119,7 @@ namespace flopoco {
 	}
 
 
-	FixSIF::FixSIF(Target* target, int lsb_, string file_, map<string, double> inputDelays) : 
+	FixSIF::FixSIF(Target* target, int lsb_, std::string file_, std::map<std::string, double> inputDelays) : 
 		Operator(target), file(file_)
 	{
 		target->setNotPipelined();
@@ -125,7 +127,7 @@ namespace flopoco {
 		srcFileName="FixSIF";
 		setCopyrightString ( "Antoine Martinet, Florent de Dinechin (2014)" );
 
-		ostringstream name;
+		std::ostringstream name;
 		//name << "FixSIF_" << p << "_" << coeffs.size() << "_uid" << getNewUId();
 		name << "FixSIF_uid" << getNewUId();
 		setNameWithFreq( name.str() );
@@ -195,19 +197,19 @@ namespace flopoco {
 
 		//nu inputs numbering from 0 to nu-1 FIXME: check the relevance of this convention dealing with SIF
 		for (uint32_t i=0; i<nu; i++) {
-			ostringstream input;
+			std::ostringstream input;
 			input << "U" <<i;
-			addFixInput(string(input.str()), true, 1+msbIn[i], lsbIn[i]);
+			addFixInput(std::string(input.str()), true, 1+msbIn[i], lsbIn[i]);
 			REPORT(0,"Popopo"<<i);
 		}
 
 		//ny outputs numbering from 0 to ny-1 FIXME: check the relevance of this convention dealing with SIFs
 		for (uint32_t i=0; i<ny; i++) {
-			ostringstream output;
+			std::ostringstream output;
 			//output << "Y";// << i;
-			cerr<<"FuckOutputs"<<i<<endl;
-			string name=join("Y",i);
-			cerr<<"Olololol"<<i<<endl;
+			std::cerr<<"FuckOutputs"<<i<<std::endl;
+			std::string name=join("Y",i);
+			std::cerr<<"Olololol"<<i<<std::endl;
 			addFixOutput(name, 1, 1+msbOut[i], lsbOut[i]);
 		}
 	
@@ -217,7 +219,7 @@ namespace flopoco {
 			declare(join("X",i), 1-lsbOut[i]);
 		}
 
-		vector < vector <string> > coefDel(nt+nx+ny); //copy of coeffs which will be deleted.
+		std::vector < std::vector <std::string> > coefDel(nt+nx+ny); //copy of coeffs which will be deleted.
 		//FIXME: refactor algorithm with iterators not to use copies.
 		for ( uint32_t i=0; i<coeffs.size(); i++ ) {
 			for ( uint32_t j=0; j<coeffs.size(); j++ ){
@@ -227,10 +229,10 @@ namespace flopoco {
 
 		while ( !coefDel.empty() ) {
 
-			vector <string> nonZeros(n);
-			queue <int> coefIndst;
-			queue <int> coefIndsx;
-			queue <int> coefIndsu;
+			std::vector <std::string> nonZeros(n);
+			std::queue <int> coefIndst;
+			std::queue <int> coefIndsx;
+			std::queue <int> coefIndsu;
 
 			//copy first line of coeffs
 				REPORT(0,"non zeros coefficients number="<<nonZeros.size());
@@ -238,16 +240,16 @@ namespace flopoco {
 				nonZeros[i] = coefDel[0][i];
 				REPORT(0,"coeffs["<<i<<"]="<<coefDel[0][i]);
 			}
-			//output matrix vector
+			//output matrix std::vector
 			//three steps (t, x and u) because all are not treated the same way
 			//drop zeros and (implicit) ones in the diagonal but keep indices for consistency
-			int ib = 0; //bias in vector indices induced by erase operations
+			int ib = 0; //bias in std::vector indices induced by erase operations
 			uint32_t i = 0;
-			vector <int> lsbInC, msbInC;
+			std::vector <int> lsbInC, msbInC;
 			for ( ; i<nt; i++ ){
-				if ( ( stof(nonZeros[i+ib].c_str()) == 0.0 ) || ( (stof(nonZeros[i+ib].c_str()) == 1.0)&&(n-coefDel.size()==i)) ){
+				if ( ( std::stof(nonZeros[i+ib].c_str()) == 0.0 ) || ( (std::stof(nonZeros[i+ib].c_str()) == 1.0)&&(n-coefDel.size()==i)) ){
 					REPORT(0,"no coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
@@ -256,7 +258,7 @@ namespace flopoco {
 					lsbInC.push_back(lsbIn[i]);
 					msbInC.push_back(msbIn[i]);
 					REPORT(0,"coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
 					REPORT(0,"pushing "<<i<<" in list of indices for T");
 				}
 			}
@@ -265,9 +267,9 @@ namespace flopoco {
 			
 			//only drop zeros for x
 			for ( ; i<nt+nx; i++ ){
-				if ( stof(nonZeros[i+ib].c_str()) == 0.0 ){
+				if ( std::stof(nonZeros[i+ib].c_str()) == 0.0 ){
 					REPORT(0,"no coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
@@ -276,7 +278,7 @@ namespace flopoco {
 					lsbInC.push_back(lsbIn[i]);
 					msbInC.push_back(msbIn[i]);
 					REPORT(0,"coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
 					REPORT(0, "pushing "<<i-nt<<" in list of indices for x");
 				}
 			}
@@ -285,9 +287,9 @@ namespace flopoco {
 
 			//and for u
 			for ( ; i<nu+nx+nt; i++ ){
-				if ( stof(nonZeros[i+ib].c_str()) == 0.0 ){
+				if ( std::stof(nonZeros[i+ib].c_str()) == 0.0 ){
 					REPORT(0,"no coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
@@ -296,7 +298,7 @@ namespace flopoco {
 					lsbInC.push_back(lsbIn[i]);
 					msbInC.push_back(msbIn[i]);
 					REPORT(0,"coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<stof(nonZeros[i+ib].c_str()));
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
 					REPORT(0, "pushing "<<i-nt<<" in list of indices for x");
 				}
 			}
@@ -340,7 +342,7 @@ namespace flopoco {
 						inPortMap(*sopcs.rbegin(), join("X", i), join("U", coefIndsu.front()));
 						coefIndsu.pop();
 					}
-					REPORT(0, "inport map done");
+					REPORT(0, "inport std::map done");
 
 					if (sopcs.size() <= nt) {
 					REPORT(0, "outporting T, with parameters R"<<" and T"<<sopcs.size()-1);
@@ -360,7 +362,7 @@ namespace flopoco {
 					else {
 						THROWERROR("Unexpected error happened during internal building");
 						}
-					REPORT(0, "outport map done");
+					REPORT(0, "outport std::map done");
 					
 
 
@@ -369,7 +371,7 @@ namespace flopoco {
 					REPORT(0, "finished line. Beginning step "<<coefDel.size()<<", coeffs.empty()="<<coefDel.empty());
 		}
 		for (uint32_t i = 0; i < nx; i++){
-			stringstream sig;
+			std::stringstream sig;
 			sig<<"Xplus"<<i;
 //			REPORT(0,"export 	X"<<i<<" <= "<<delay(sig.str(),1)<<";");
 //			vhdl << tab << join("X",i)<<" <= "<<delay(sig.str(),1)<<";"<<endl;
@@ -385,123 +387,123 @@ namespace flopoco {
 
 	void FixSIF::emulate(TestCase * tc){
 
-		cout<<"	toto is ok -6"<<endl;
-		vector<mpz_class> uValues(nu);
-		cout<<"	toto is ok -5"<<endl;
-		vector<mpfr_t> uVals(nu);
-		cout<<"	toto is ok -4"<<endl;
-		vector<mpfr_t> t(nt);
-		cout<<"	toto is ok -3"<<endl;
+		std::cout<<"	toto is ok -6"<<std::endl;
+		std::vector<mpz_class> uValues(nu);
+		std::cout<<"	toto is ok -5"<<std::endl;
+		std::vector<mpfr_t> uVals(nu);
+		std::cout<<"	toto is ok -4"<<std::endl;
+		std::vector<mpfr_t> t(nt);
+		std::cout<<"	toto is ok -3"<<std::endl;
 		mpfr_t coeff, resMul, result;
-		cout<<"	toto is ok -2"<<endl;
+		std::cout<<"	toto is ok -2"<<std::endl;
 		mpfr_init2(resMul, veryLargePrec);
-		cout<<"	toto is ok -1"<<endl;
+		std::cout<<"	toto is ok -1"<<std::endl;
 		mpfr_init2(result, veryLargePrec);
-		cout<<"	toto is ok 0"<<endl;
+		std::cout<<"	toto is ok 0"<<std::endl;
 		for (uint32_t i=0; i<nt; i++) {
 			mpfr_init2(t[i], veryLargePrec);
 			mpfr_init2(uVals[i], veryLargePrec);
 		}
 
-		cout<<"	toto is ok 1"<<endl;
+		std::cout<<"	toto is ok 1"<<std::endl;
 		for (uint32_t i = 0; i<nu; i++){
-		cout<<"	toto is ok 1.0"<<endl;
+		std::cout<<"	toto is ok 1.0"<<std::endl;
 				uValues[i]=tc->getInputValue(join("U",i));
-		cout<<"	toto is ok 1.1"<<endl;
-		cout<<"uValues["<<i<<"]="<<uValues[i]<<endl;
-		cout<<"lsbIn["<<i<<"]="<<lsbIn[i]<<endl;
+		std::cout<<"	toto is ok 1.1"<<std::endl;
+		std::cout<<"uValues["<<i<<"]="<<uValues[i]<<std::endl;
+		std::cout<<"lsbIn["<<i<<"]="<<lsbIn[i]<<std::endl;
 			mpfr_set_z( uVals[i],uValues[i].get_mpz_t(),GMP_RNDD );
 			mpfr_mul_2si( uVals[i], uVals[i], lsbIn[i], GMP_RNDD );
-		cout<<"uVals["<<i<<"]=";
+		std::cout<<"uVals["<<i<<"]=";
 			mpfr_printf( "%.65RNf\n", uVals[i]);
-		cout<<"	toto is ok 1.2"<<endl;
+		std::cout<<"	toto is ok 1.2"<<std::endl;
 				
 		}
-		cout<<"	toto is ok 2"<<endl;
+		std::cout<<"	toto is ok 2"<<std::endl;
 
 		for (uint32_t l=0; l<nt+nx+ny; l++){
 			for (uint32_t c=0; c<nt+nx+nu; c++){
 
-		cout<<"	toto is ok 3"<<endl;
+		std::cout<<"	toto is ok 3"<<std::endl;
 				sollya_obj_t stringCoeff;
 				//get coeff as sollya object
 				stringCoeff = sollya_lib_parse_string(coeffs[l][c].c_str());
 				// If conversion did not succeed (i.e. parse error)
 				if(stringCoeff == 0)	{
-						ostringstream error;
-						error << srcFileName << ":"<<"emulate(): Unable to parse string " << coeffs[l][c] << " as a numeric constant" << endl;
+						std::ostringstream error;
+						error << srcFileName << ":"<<"emulate(): Unable to parse std::string " << coeffs[l][c] << " as a numeric constant" << std::endl;
 						throw error.str();
 				}
-		cout<<"	toto is ok 4"<<endl;
+		std::cout<<"	toto is ok 4"<<std::endl;
 				mpfr_init2(coeff, veryLargePrec);
 				//get coeff as mpfr
 				sollya_lib_get_constant(coeff, stringCoeff);
 				sollya_lib_clear_obj(stringCoeff);
-		cout<<"	toto is ok 5"<<endl;
+		std::cout<<"	toto is ok 5"<<std::endl;
 				if (coeff != 0){
 					if ( !(l==c && l<nt) ) { //ones on the J diagonal are implicit
 						if (c<nt){
-		cout<<"	toto is ok 5.1"<<endl;
+		std::cout<<"	toto is ok 5.1"<<std::endl;
 
 							mpfr_mul(resMul, t[c], coeff, GMP_RNDN);
-		cout<<"	toto is ok 5.2"<<endl;
+		std::cout<<"	toto is ok 5.2"<<std::endl;
 							mpfr_add(result, result, resMul, GMP_RNDN);
 						}
 						else if (c<nt+nx){
-		cout<<"	toto is ok 6"<<endl;
+		std::cout<<"	toto is ok 6"<<std::endl;
 							mpfr_mul(resMul, xPrec[c], coeff, GMP_RNDN);
-		cout<<"	toto is ok 6.1"<<endl;
+		std::cout<<"	toto is ok 6.1"<<std::endl;
 							mpfr_add(result, result, resMul, GMP_RNDN);
-		cout<<"	toto is ok 7"<<endl;
+		std::cout<<"	toto is ok 7"<<std::endl;
 
 						}
 						else {
-		cout<<"	toto is ok 7.1"<<endl;
+		std::cout<<"	toto is ok 7.1"<<std::endl;
 
 							mpfr_mul(resMul, uVals[c-nt-nx], coeff, GMP_RNDN);
-		cout<<"	toto is ok 7.2"<<endl;
+		std::cout<<"	toto is ok 7.2"<<std::endl;
 							mpfr_add(result, result, resMul, GMP_RNDN);
-		cout<<"	toto is ok 8"<<endl;
+		std::cout<<"	toto is ok 8"<<std::endl;
 						}
 					}
 				}
 			}
 			if (l<nt){
 				mpfr_set(t[l],result, GMP_RNDN);
-		cout<<"	toto is ok 9"<<endl;
+		std::cout<<"	toto is ok 9"<<std::endl;
 			}
 			else if (l<nt+nx) {
 				mpfr_set(xCurrent[l], result, GMP_RNDN);
-		cout<<"	toto is ok 10"<<endl;
+		std::cout<<"	toto is ok 10"<<std::endl;
 			}
 			if (l>=nx+nt){
-		cout<<"	toto is ok 11.0"<<endl;
+		std::cout<<"	toto is ok 11.0"<<std::endl;
 				mpfr_t rd, ru;
 				mpfr_init2 (rd, 1+msbIn[l]-lsbOut[l]);
 				mpfr_init2 (ru, 1+msbIn[l]-lsbOut[l]);		
 				mpz_class rdz, ruz;
-		cout<<"	toto is ok 11"<<endl;
+		std::cout<<"	toto is ok 11"<<std::endl;
 
 				mpfr_get_z (rdz.get_mpz_t(), result, GMP_RNDD); 					// there can be a real rounding here
 				rdz=signedToBitVector(rdz, 1-lsbIn[l]-lsbOut[l]);
 //TODO: here we should have computed msbIns
 //TODO: replace lsbIn by MsbIn
-		cout<<"	toto is ok 12"<<endl;
+		std::cout<<"	toto is ok 12"<<std::endl;
 
 				mpfr_get_z (ruz.get_mpz_t(), result, GMP_RNDU); 					// there can be a real rounding here	
 				ruz=signedToBitVector(ruz, 1-lsbIn[l]-lsbOut[l]);
 				
 				mpfr_clears ( result, rd, ru, NULL);
 
-		cout<<"	toto is ok 13"<<endl;
+		std::cout<<"	toto is ok 13"<<std::endl;
 				tc->addExpectedOutput(join("Y",l-nt-nx), rdz);
 				tc->addExpectedOutput(join("Y",l-nt-nx), ruz);
-		cout<<"	toto is ok 14"<<endl;
+		std::cout<<"	toto is ok 14"<<std::endl;
 			}
 
 		}
 		for ( uint32_t i=0; i<nx; i++ ) {
-		cout<<"	toto is ok 15"<<endl;
+		std::cout<<"	toto is ok 15"<<std::endl;
 			mpfr_set( xPrec[i], xCurrent[i], GMP_RNDN );
 		}
 
@@ -511,7 +513,7 @@ namespace flopoco {
 //
 //		for (int i=0; i< n; i++)
 //		{
-//			u_ = xHistory[(currentIndexB+n-i)%n];		// get the input bit vector as an integer		
+//			u_ = xHistory[(currentIndexB+n-i)%n];		// get the input bit std::vector as an integer		
 //			u_ = bitVectorToSigned(sx, 1+p); 						// convert it to a signed mpz_class		
 //			mpfr_set_z (x, sx.get_mpz_t(), GMP_RNDD); 				// convert this integer to an MPFR; this rounding is exact
 //			mpfr_div_2si (x, x, p, GMP_RNDD); 						// multiply this integer by 2^-p to obtain a fixed-point value; this rounding is again exact
@@ -594,7 +596,7 @@ namespace flopoco {
 //			for (int i=0; i< n; i++)
 //			{
 //
-//				mpz_class sx = listTC[k]->getInputValue("X"); 		// get the input bit vector as an integer
+//				mpz_class sx = listTC[k]->getInputValue("X"); 		// get the input bit std::vector as an integer
 //				sx = bitVectorToSigned(sx, 1+p); 						// convert it to a signed mpz_class
 //				mpfr_set_z (x, sx.get_mpz_t(), GMP_RNDD); 				// convert this integer to an MPFR; this rounding is exact
 //				mpfr_div_2si (x, x, p, GMP_RNDD); 						// multiply this integer by 2^-p to obtain a fixed-point value; this rounding is again exact
@@ -640,9 +642,9 @@ namespace flopoco {
 //#endif
 	};
 
-	int FixSIF::readMatrices( vector< vector <vector<string> >**> &Z, ifstream &openedFile, int &lc){
+	int FixSIF::readMatrices( std::vector< std::vector <std::vector<std::string> >**> &Z, std::ifstream &openedFile, int &lc){
 
-		string line;
+		std::string line;
 		for ( int i=0; i<9; i++ ){
 
 			int gotLine=getFullLine(openedFile, line, lc);
@@ -693,39 +695,39 @@ namespace flopoco {
 
 	}
 
-	int FixSIF::readMatrix(string &header, string JKLMNPQRS, vector < vector <string> > * &toFill, ifstream &openedFile, int lc){
+	int FixSIF::readMatrix(std::string &header, std::string JKLMNPQRS, std::vector < std::vector <std::string> > * &toFill, std::ifstream &openedFile, int lc){
 
-			string line;
+			std::string line;
 
 			int nc=0;
 			int nl=0;
 			REPORT(0, "Reading matrix given the header: \""<<header<<"\". Matrix descriptor: "<<JKLMNPQRS);
-			if (header.find_first_of(JKLMNPQRS) != string::npos){
+			if (header.find_first_of(JKLMNPQRS) != std::string::npos){
 				size_t bNum = header.find_first_of(" ");
 				size_t aNum = header.find_first_of(" ",bNum+1);
-				if (bNum != string::npos){
+				if (bNum != std::string::npos){
 					nl = stoi(header.substr(bNum+1,aNum-1));
 					size_t bNum = header.find_first_of(" ",aNum);
-					if (bNum != string::npos){
+					if (bNum != std::string::npos){
 						nc = stoi(header.substr(aNum+1,bNum-1));
-						toFill = new vector< vector<string> >(nl);
+						toFill = new std::vector< std::vector<std::string> >(nl);
 					}
 					else {
-							stringstream error;
+							std::stringstream error;
 							error<<"line "<<lc<<": space missing";
 							THROWERROR(error.str());
 					}
 					
 				}
 				else {
-						stringstream error;
+						std::stringstream error;
 						error<<"line "<<lc<<": no space found";
 						THROWERROR(error.str());
 				}
 				REPORT(0, nc<<" columns and "<<nl<<" lines found in matrix from header: \""<<header<<"\"");
 			}
 			else{
-				stringstream error;
+				std::stringstream error;
 				error<<"line "<<lc<<": Matrix descriptor "<< JKLMNPQRS <<" not found at its expected place";
 				THROWERROR(error.str());
 			}
@@ -756,7 +758,7 @@ namespace flopoco {
 				size_t aNum = 0;
 				for (int j = 0; j<nc; j++) {
 					aNum = line.find_first_of("	", bNum);
-					if (aNum != string::npos){
+					if (aNum != std::string::npos){
 						 (*toFill)[i].push_back(line.substr(bNum,aNum-bNum));
 						 bNum=aNum+1;
 					}
@@ -765,7 +767,7 @@ namespace flopoco {
 						 (*toFill)[i].push_back(line.substr(bNum,line.size()-bNum));
 					}
 					else {
-						stringstream error;
+						std::stringstream error;
 						error<<"line "<<lc<<": no tab found";
 						THROWERROR(error.str());
 					}
@@ -782,19 +784,19 @@ namespace flopoco {
 	int FixSIF::parseFile(){
 
 		int lineCounter=0;
-		ifstream input;
-		input.open( file, ifstream::in );
-		vector < vector<string> > *J;
-		vector < vector<string> > *K;
-		vector < vector<string> > *L;
-		vector < vector<string> > *M;
-		vector < vector<string> > *N;
-		vector < vector<string> > *P;
-		vector < vector<string> > *Q;
-		vector < vector<string> > *R;
-		vector < vector<string> > *S;
+		std::ifstream input;
+		input.open( file, std::ifstream::in );
+		std::vector < std::vector<std::string> > *J;
+		std::vector < std::vector<std::string> > *K;
+		std::vector < std::vector<std::string> > *L;
+		std::vector < std::vector<std::string> > *M;
+		std::vector < std::vector<std::string> > *N;
+		std::vector < std::vector<std::string> > *P;
+		std::vector < std::vector<std::string> > *Q;
+		std::vector < std::vector<std::string> > *R;
+		std::vector < std::vector<std::string> > *S;
 
-		vector < vector< vector<string> >** > Z;
+		std::vector < std::vector< std::vector<std::string> >** > Z;
 		Z.push_back( &J );
 		Z.push_back( &K );
 		Z.push_back( &L );
@@ -821,12 +823,12 @@ namespace flopoco {
 			input.close();
 		}
 		else {
-			stringstream error;
-			error << "Cannot open file "<<file<<endl;
+			std::stringstream error;
+			error << "Cannot open file "<<file<<std::endl;
 			THROWERROR(error.str());
 		}
 
-		coeffs = vector< vector<string> > (nt+nx+ny); //FIXME: check if nt+nx+ny is effectiveley relevant, regarding nt+nx+nu.
+		coeffs = std::vector< std::vector<std::string> > (nt+nx+ny); //FIXME: check if nt+nx+ny is effectiveley relevant, regarding nt+nx+nu.
 
 		uint32_t i=0, j;
 		for (; i<nt; i++){
@@ -895,15 +897,15 @@ namespace flopoco {
 
 
 	/**
-		vvToBoostMatrix: fills the matrix bM from the string coefficients stored in sM.
+		vvToBoostMatrix: fills the matrix bM from the std::string coefficients stored in sM.
 		Note: this assumes that bM is instanciated
 		Input:
-			-sM: vector of vector of strings (it won't be modified)
+			-sM: std::vector of std::vector of std::strings (it won't be modified)
 			-bM: boost matrix to be filled
 		Output:
 			-0 if success
 	  */
-	int FixSIF::vvToBoostMatrix( vector< vector <string> > const &sM, ublas::matrix<double> &bM ) {
+	int FixSIF::vvToBoostMatrix( std::vector< std::vector <std::string> > const &sM, ublas::matrix<double> &bM ) {
 
 		for ( unsigned int i=0; i<sM.size(); i++) {
 			for ( unsigned int j=0; i<sM[i].size(); j++ ) {
@@ -958,7 +960,8 @@ namespace flopoco {
 			return false;
 		return true;
 	}
-	int FixSIF::computeMSBsLSBs(vector<int> &msbsOut, vector<int> &lsbsOut){
+	
+	int FixSIF::computeMSBsLSBs(std::vector<int> &msbsOut, std::vector<int> &lsbsOut){
 		double *A = new double[nx*nt] ;
 		double *B = new double[nx*nu] ;
 		double *C = new double[ny*nx] ;
@@ -1038,29 +1041,29 @@ namespace flopoco {
 		//compute WCPG;
 
 		for ( unsigned int i=0; i<nt; i++ ) {
-			msbsOut[i]=pow(2,ceil(log2(max(wcpg[i],))));
+			//msbsOut[i]=pow(2,ceil(log2(max(wcpg[i],))));
 		}
 
 
-	   SoPlex mysoplex;
+		soplex::SoPlex mysoplex;
 
 	   /* set the objective sense */
-	   mysoplex.setIntParam(SoPlex::OBJSENSE, SoPlex::OBJSENSE_MAXIMIZE);
+	   mysoplex.setIntParam(soplex::SoPlex::OBJSENSE, soplex::SoPlex::OBJSENSE_MAXIMIZE);
 
 	   /* we first add variables */
-	   DSVector dummycol(0);
+	   soplex::DSVector dummycol(0);
 	   //set weight to 1 in the objective function and upper bound to 1
 	   //FIXME: compute a better lower bound for better performance
-	   mysoplex.addColReal(LPCol(1.0, dummycol, 1.0, -infinity));
-	   mysoplex.addColReal(LPCol(1.0, dummycol, 1.0, -infinity));
+	   mysoplex.addColReal(soplex::LPCol(1.0, dummycol, 1.0, -(soplex::infinity)));
+	   mysoplex.addColReal(soplex::LPCol(1.0, dummycol, 1.0, -(soplex::infinity)));
 
 	   /* then constraints one by one */
 	   for (unsigned int i=0; i<ny; i++){
-		   DSVector row(nt+nx+ny);
+		   soplex::DSVector row(nt+nx+ny);
 		   for (unsigned int j=0; j<nt+nx+ny; j++) {
-			   row.add(j, W[j+i*(nt+nx+ny)]);
+			   //row.add(j, W[j+i*(nt+nx+ny)]);
 		   }
-		   mysoplex.addRowReal(LPRow( -infinity, row,pow(2,lsb[i])));
+		   //mysoplex.addRowReal(LPRow( -infinity, row,pow(2,lsb[i])));
 	   }
 
 	   /* NOTE: alternatively, we could have added the matrix nonzeros in dummycol already; nonexisting rows are then
@@ -1070,13 +1073,13 @@ namespace flopoco {
 	   mysoplex.writeFileReal("dump.lp", NULL, NULL, NULL);
 
 	   /* solve LP */
-	   SPxSolver::Status stat;
-	   DVector prim(2);
-	   DVector dual(1);
+	   soplex::SPxSolver::Status stat;
+	   soplex::DVector prim(2);
+	   soplex::DVector dual(1);
 	   stat = mysoplex.solve();
 
 	   /* get solution */
-	   if( stat == SPxSolver::OPTIMAL )
+	   if( stat == soplex::SPxSolver::OPTIMAL )
 	   {
 		  mysoplex.getPrimalReal(prim);
 		  mysoplex.getDualReal(dual);
@@ -1084,10 +1087,16 @@ namespace flopoco {
 		  std::cout << "Objective value is " << mysoplex.objValueReal() << ".\n";
 		  std::cout << "Primal solution is [" << prim[0] << ", " << prim[1] << "].\n";
 		  std::cout << "Dual solution is [" << dual[0] << "].\n";
+		  //std::cout << "LP solved to optimality.\n";
+		  //std::cout << "Objective value is " << mysoplex.objValueReal() << ".\n";
+		  //std::cout << "Primal solution is [" << prim[0] << ", " << prim[1] << "].\n";
+		  //std::cout << "Dual solution is [" << dual[0] << "].\n";
 	   }
-	   for ( int i=0; i<nt+nx+ny; i++ ) {
-		   lsbs[i]=prim[i];
+	   for ( unsigned int i=0; i<nt+nx+ny; i++ ) {
+		   //lsbs[i]=prim[i];
 	   }
+	   //real toto=0.7;
+	   //toto+=41.3;
 
 
 
@@ -1098,16 +1107,16 @@ namespace flopoco {
 		return 0;
 	}
 
-	int FixSIF::readPrecision( vector<int> &msbsIn, vector<int> &lsbsIn, vector<int> &msbsOut, vector<int> &lsbsOut, bool inFile ){
+	int FixSIF::readPrecision( std::vector<int> &msbsIn, std::vector<int> &lsbsIn, std::vector<int> &msbsOut, std::vector<int> &lsbsOut, bool inFile ){
 		//TODO:return wcpg*error min
 
 		if ( inFile ){
-			vector < vector<string> > *msbslsbsIn, *msbslsbsOut;
-			ifstream precisions;
-			precisions.open( "precisions.txt", ifstream::in );
-			stringstream head;
+			std::vector < std::vector<std::string> > *msbslsbsIn, *msbslsbsOut;
+			std::ifstream precisions;
+			precisions.open( "precisions.txt", std::ifstream::in );
+			std::stringstream head;
 			head<<"P "<<nt+nx+ny<<" "<<2;
-			string header=head.str();
+			std::string header=head.str();
 			readMatrix( header, "IN", msbslsbsIn, precisions );
 			for ( uint32_t i=0; i<msbslsbsIn->size(); i++ ){
 				msbsIn.push_back(stoi((*msbslsbsIn)[i][0]));

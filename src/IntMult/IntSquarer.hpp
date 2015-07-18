@@ -21,7 +21,7 @@ namespace flopoco{
 		 * @param[in] wIn    the with of the inputs and output
 		 * @param[in] inputDelays the delays for each input
 		 **/
-		IntSquarer(Target* target, int wIn, map<string, double> inputDelays = emptyDelayMap);
+		IntSquarer(Target* target, int wIn, std::map<std::string, double> inputDelays = emptyDelayMap);
 		/*IntSquarer(Target* target, int wIn);
 		  void cmn(Target* target, int wIn, map<string, double> inputDelays);*/
 	
@@ -43,7 +43,7 @@ namespace flopoco{
 		int wIn_;                         /**< the width for X, Y and R*/
 
 	private:
-		map<string, double> inputDelays_; /**< a map between input signal names and their maximum delays */
+		std::map<std::string, double> inputDelays_; /**< a map between input signal names and their maximum delays */
 		int bufferedInputs;               /**< variable denoting an initial buffering of the inputs */
 		double maxInputDelay;             /**< the maximum delay between the inputs present in the map*/
 		int nbOfChunks;                   /**< the number of chunks that the addition will be split in */

@@ -39,7 +39,7 @@ namespace flopoco {
 		 * @param[in] enableSuperTiles  if true, supertiles will decrease resource consumption but increase latency
 		 **/
 		FixMultAdd(Target* target, Signal* x, Signal* y, Signal* a, int outMSB, int outLSB,
-		           bool enableSuperTiles=true, map<string, double> inputDelays = emptyDelayMap);
+		           bool enableSuperTiles=true, std::map<std::string, double> inputDelays = emptyDelayMap);
 
 
 		/**
@@ -56,11 +56,11 @@ namespace flopoco {
 		 */
 		static FixMultAdd* newComponentAndInstance(
 																							 Operator* op,
-																							 string instanceName,
-																							 string xSignalName,
-																							 string ySignalName,
-																							 string aSignalName,
-																							 string rSignalName,
+																							 std::string instanceName,
+																							 std::string xSignalName,
+																							 std::string ySignalName,
+																							 std::string aSignalName,
+																							 std::string rSignalName,
 																							 int rMSB,
 																							 int rLSB
 																							 );
@@ -90,10 +90,10 @@ namespace flopoco {
 		bool signedIO;              /**< if true, inputs and outputs are signed. */
 		bool enableSuperTiles;     	/**< if true, supertiles are built (fewer resources, longer latency */
 
-		string xname;              	/**< X input VHDL name */
-		string yname;              	/**< Y input VHDL name */
-		string aname;              	/**< A input VHDL name */
-		string rname;              	/**< R output VHDL name */
+		std::string xname;              	/**< X input VHDL name */
+		std::string yname;              	/**< Y input VHDL name */
+		std::string aname;              	/**< A input VHDL name */
+		std::string rname;              	/**< R output VHDL name */
 
 		int g ;                    	/**< the number of guard bits if the product is truncated */
 		int maxWeight;             	/**< The max weight for the bit heap of this multiplier, wOut + g*/

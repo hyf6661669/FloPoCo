@@ -30,7 +30,7 @@ namespace flopoco{
 		 * @param[in]		wER			the the with of the exponent for the addition result
 		 * @param[in]		wFR			the the with of the fraction for the addition result
 		 */
-		FPAdd3Input(Target* target, int wE, int wF, map<string, double> inputDelays = emptyDelayMap);
+		FPAdd3Input(Target* target, int wE, int wF, std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		/**
 		 * FPAdd3Input destructor

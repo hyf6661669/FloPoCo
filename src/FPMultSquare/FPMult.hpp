@@ -29,7 +29,7 @@ namespace flopoco{
 		 * @param[in]		wFR			the the with of the fraction for the multiplication result
 		 **/
 		FPMult(Target* target, int wEX, int wFX, int wEY, int wFY, int wER, int wFR, 
-		             bool norm = true, bool correctlyRounded=true, double ratio=1, map<string, double> inputDelays = emptyDelayMap);
+		             bool norm = true, bool correctlyRounded=true, double ratio=1, std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		/**
 		 * FPMult destructor

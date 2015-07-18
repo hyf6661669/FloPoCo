@@ -34,7 +34,7 @@ namespace flopoco{
 		Atan2Table(Target* target, int wIn, int wOut, int archType,
 						int sizeA = -1, int sizeB = -1, int sizeC = -1,
 						int sizeD = -1, int sizeE = -1, int sizeF = -1,
-						map<string, double> inputDelays = emptyDelayMap);
+						std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		~Atan2Table();
 

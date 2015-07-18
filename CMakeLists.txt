@@ -395,6 +395,13 @@ TARGET_LINK_LIBRARIES(
 	${FLOPOCO_LIB}
   )
 
+LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/)
+TARGET_LINK_LIBRARIES(
+  flopoco  
+	/usr/lib/libsoplex-2.2.0.linux.x86_64.gnu.opt.a
+	/usr/local/lib/libwcpg_API.a
+  )
+
 ADD_EXECUTABLE(flopoco_soaktest
  src/main_soaktest
 )
@@ -418,3 +425,10 @@ TARGET_LINK_LIBRARIES(longacc2fp  mpfr gmp gmpxx)
 
 add_subdirectory(src/random)
 target_link_libraries(FloPoCoLib flopoco_random_lib)
+
+TARGET_LINK_LIBRARIES(
+  FloPoCoLib  
+	/usr/lib/libsoplex-2.2.0.linux.x86_64.gnu.opt.a
+	/usr/local/lib/libwcpg_API.a
+  )
+

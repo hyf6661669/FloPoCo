@@ -22,7 +22,7 @@ namespace flopoco{
 		FPConstMult(Target* target, int wE_in, int wF_in, int wE_out, int wF_out);
 		
 		/** A constructor that parses an expression for the constant */
-		FPConstMult(Target* target, int wE_in, int wF_in, int wE_out, int wF_out, int wF_C, string constant);
+		FPConstMult(Target* target, int wE_in, int wF_in, int wE_out, int wF_out, int wF_C, std::string constant);
 
 		~FPConstMult();
 
@@ -38,7 +38,7 @@ namespace flopoco{
 		int cst_exp_when_mantissa_1_2;
 		int cst_exp_when_mantissa_int;
 		mpz_class cstIntSig;
-		string cst_name;
+		std::string cst_name;
 
 		mpfr_t cstSig; // between 1 and 2, high accuracy
 		mpfr_t mpfr_xcut_sig; // between 1 and 2

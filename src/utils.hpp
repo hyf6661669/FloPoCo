@@ -16,7 +16,7 @@
 #include <stdarg.h>
 
 
-using namespace std;
+//using namespace std;
 
 
 namespace flopoco{
@@ -49,12 +49,12 @@ namespace flopoco{
             static void init(int n, bool force = true);
         };
 
-	/** Returns under the form of a string of given size, the unsigned binary representation of an integer.
+	/** Returns under the form of a std::string of given size, the unsigned binary representation of an integer.
 	 * @param x the number to be represented in unsigned binary
-	 * @param size the size of the output string
-	 * @return the string binary representation of x
+	 * @param size the size of the output std::string
+	 * @return the std::string binary representation of x
 	 */
-	string unsignedBinary(mpz_class x, int size);
+	std::string unsignedBinary(mpz_class x, int size);
 
 	/** Return the binary representation of a floating point number in the
 	 * FPLibrary/FloPoCo format
@@ -62,13 +62,13 @@ namespace flopoco{
 	 * @param wE the width (in bits) of the result exponent
 	 * @param wF the width (in bits) of the result fraction
 	 */
-	string fp2bin(mpfr_t x, int wE, int wF);
+	std::string fp2bin(mpfr_t x, int wE, int wF);
 
 	/** return the  bits ranging from msb to lsb of an MPFR, (total size msb-lsb+1) 
 	 * @param x the number to be represented
 	 * @param msb the weight of the MSB. 
 	 * @param lsb the weight of the LSB
-	 * @param[in] margins	integer argument determining the position of the quotes in the output string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
+	 * @param[in] margins	integer argument determining the position of the quotes in the output std::string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
 */
 	std::string unsignedFixPointNumber(mpfr_t x, int msb, int lsb, int margins=0);
 
@@ -77,7 +77,7 @@ namespace flopoco{
 	 * @param x the number to be represented
 	 * @param msb the weight of the MSB. 
 	 * @param lsb the weight of the LSB
-	 * @param[in] margins	integer argument determining the position of the quotes in the output string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
+	 * @param[in] margins	integer argument determining the position of the quotes in the output std::string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
 */
 	std::string signedFixPointNumber(mpfr_t x, int msb, int lsb, int margins=0);
 
@@ -87,24 +87,24 @@ namespace flopoco{
 	 * @param number [uint64_t] the number to be represented
 	 * @param size the number of bits of the output
 	 */
-	void printBinNum(ostream& o, uint64_t x, int size);
+	void printBinNum(std::ostream& o, uint64_t x, int size);
 
 	/** Prints the binary representation of a integer on size bits
 	 * @param o the output stream
 	 * @param number the number to be represented
 	 * @param size the number of bits of the output
 	 */
-	void printBinNumGMP(ostream& o, mpz_class number, int size);
+	void printBinNumGMP(std::ostream& o, mpz_class number, int size);
 
-	/** returns a string for a mpfr_t using the mantissa b exponent notation */
-	string printMPFR(mpfr_t x);
+	/** returns a std::string for a mpfr_t using the mantissa b exponent notation */
+	std::string printMPFR(mpfr_t x);
 
 	/** Prints the binary representation of a positive integer on size bits
 	 * @param o the output stream
 	 * @param number the number to be represented
 	 * @param size the number of bits of the output
 	 */
-	void printBinPosNumGMP(ostream& o, mpz_class number, int size);
+	void printBinPosNumGMP(std::ostream& o, mpz_class number, int size);
 
 	/** Function which rounds a FP on a given number of bits 
 	 * @param number the numer to be rounded
@@ -268,20 +268,20 @@ namespace flopoco{
 	mpz_class getLargeRandom(int n);
 
 	/**
-	 * A zero generator method which takes as input two arguments and returns a string of zeros with quotes as stated by the second argurment
-	 * @param[in] n		    integer argument representing the number of zeros on the output string
-	 * @param[in] margins	integer argument determining the position of the quotes in the output string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
-	 * @return returns a string of zeros with the corresonding quotes given by margins
+	 * A zero generator method which takes as input two arguments and returns a std::string of zeros with quotes as stated by the second argurment
+	 * @param[in] n		    integer argument representing the number of zeros on the output std::string
+	 * @param[in] margins	integer argument determining the position of the quotes in the output std::string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
+	 * @return returns a std::string of zeros with the corresonding quotes given by margins
 	 **/
-	string zg(int n, int margins=0);
+	std::string zg(int n, int margins=0);
 
 	/**
-	* A one generator method which takes as input two arguments and returns a string of zeros with quotes as stated by the second argurment
-	* @param[in] n		    integer argument representing the number of zeros on the output string
-	* @param[in] margins	integer argument determining the position of the quotes in the output string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
-	* @return returns a string of zeros with the corresonding quotes given by margins
+	* A one generator method which takes as input two arguments and returns a std::string of zeros with quotes as stated by the second argurment
+	* @param[in] n		    integer argument representing the number of zeros on the output std::string
+	* @param[in] margins	integer argument determining the position of the quotes in the output std::string. The options are: -2= no quotes; -1=left quote; 0=both quotes 1=right quote
+	* @return returns a std::string of zeros with the corresonding quotes given by margins
 	**/
-	string og(int n, int margins=0);
+	std::string og(int n, int margins=0);
 	
 	/**
 	 * Generate an integer that is of the form : 111....11 (with the number of 
@@ -291,25 +291,25 @@ namespace flopoco{
 	
 	
 	/**
-	 * Turns an arbitrary string (e.g. Sollya expression or FP number) to
+	 * Turns an arbitrary std::string (e.g. Sollya expression or FP number) to
 	 * part of a valid VHDL identifier. May (and usually will) loose information.
 	 * Looks ugly.
 	 * May begin with a digit.
 	 * @param[in] expr		expression to convert
 	 **/
-	string vhdlize(string const & expr);
+	std::string vhdlize(std::string const & expr);
 
 	/**
-	 * Turns a double to a string that will go in a valid VHDL name
+	 * Turns a double to a std::string that will go in a valid VHDL name
 	 */
-	string  vhdlize(double num);
+	std::string  vhdlize(double num);
 
 	/**
-	 * Turns a (possibly negative) int to a string that will go in a valid VHDL name
+	 * Turns a (possibly negative) int to a std::string that will go in a valid VHDL name
 	 */
-	string vhdlize(int num);
+	std::string vhdlize(int num);
 
-	string mpz2string(mpz_class x);
+	std::string mpz2string(mpz_class x);
 
 	/** Helper function for VHDL output: concatenates an id and a number. 
 		 vhdl << join("z", i) << ...       
@@ -317,72 +317,72 @@ namespace flopoco{
 		 vhdl << "z" << i << ...
 		 Its main advantage is that join("z", i) can also be used inside 
 		 declare(),  use(), etc. */
-	string join( std::string id, int n);
+	std::string join( std::string id, int n);
 
-	string join( std::string id, int n1, int n2);
-	string join( std::string id, int n1, int n2, int n3);
-	string join( std::string id, string sep, int n);
-	string join( std::string id1, int n, std::string id2);
-	string join( std::string id, int n, std::string id2 , int n2);
-	string join( std::string id, int n, std::string id2 , int n2, std::string id3);
-	string join( std::string id, int n, std::string id2 , int n2, std::string id3, int n3);
-	string join( std::string id, std::string id2 , int n2, std::string id3);
+	std::string join( std::string id, int n1, int n2);
+	std::string join( std::string id, int n1, int n2, int n3);
+	std::string join( std::string id, std::string sep, int n);
+	std::string join( std::string id1, int n, std::string id2);
+	std::string join( std::string id, int n, std::string id2 , int n2);
+	std::string join( std::string id, int n, std::string id2 , int n2, std::string id3);
+	std::string join( std::string id, int n, std::string id2 , int n2, std::string id3, int n3);
+	std::string join( std::string id, std::string id2 , int n2, std::string id3);
 	
 	/** Same for concatenating two ids. Maybe + would do? */
-	string join( std::string id, std::string n);
+	std::string join( std::string id, std::string n);
 
 	/** Same for concatenating three ids. Maybe + would do? */
-	string join( std::string id, std::string id2, std::string id3);
+	std::string join( std::string id, std::string id2, std::string id3);
 
 	/** Helper function for VHDL output: returns (left downto right)
 	 */
-	string range(int left, int right);
+	std::string range(int left, int right);
 
 	/** Helper function for VHDL output: returns "(left downto right => s)"
 	 */
-	string rangeAssign( int left, int right, std::string s);
+	std::string rangeAssign( int left, int right, std::string s);
 
 	/** Helper function for VHDL output: returns "(x)"
 	 */
-	string of( int x);
+	std::string of( int x);
 
 	
 	/** Helper function for VHDL output: returns s, padded left and right with zeroes. 
 			TODO this function should be removed
 	 */
-	string align( int left, string s, int right );
+	std::string align( int left, std::string s, int right );
 
 	/**
-	 *@param[in] inputDelays	map between signal names and their respective delays
-	 *@return the maximum delay of the input map 
+	 *@param[in] inputDelays	std::map between signal names and their respective delays
+	 *@return the maximum delay of the input std::map 
 	 */ 
-	double getMaxInputDelays( map<string, double> inputDelays );
+	double getMaxInputDelays( std::map<std::string, double> inputDelays );
 	
-	map<string, double> inDelayMap(string s, double d);
+	std::map<std::string, double> inDelayMap(std::string s, double d);
 
 	/**
-	 *@param[in] inputDelays	map between signal names and their respective delays
+	 *@param[in] inputDelays	std::map between signal names and their respective delays
 	 *@return prints the delays
 	 */ 
-	string printInputDelays( map <string, double> inputDelays);
+	std::string printInputDelays( std::map <std::string, double> inputDelays);
 
-	string printMapContent( map<string, int> inputDelays);
+	std::string printMapContent( std::map<std::string, int> inputDelays);
 	
-	string printVectorContent( vector< pair<string, int> > table);
+	std::string printVectorContent( std::vector< std::pair<std::string, int> > table);
 	
-	string to_lowercase(const std::string& s);
+	std::string to_lowercase(const std::string& s);
 
-	/** a function that converts a bit vector (an mpz input to emulate()) to its signed value */
+	/** a function that converts a bit std::vector (an mpz input to emulate()) to its signed value */
 	mpz_class bitVectorToSigned(mpz_class x, int size);
 
-	/** a function that converts a signed mpz_class to the corresponding bit vector represented as two's complement on size bits (sign bit included), to be used in the output of emulate() */
+	/** a function that converts a signed mpz_class to the corresponding bit std::vector represented as two's complement on size bits (sign bit included), to be used in the output of emulate() */
 	mpz_class signedToBitVector(mpz_class x, int size);
 
 	/** A function to help VHDL casts */
-	string std_logic_vector(const string& s );
+	std::string std_logic_vector(const std::string& s );
 
 	/** A helper function when displaying comments: center str to a certain width */
-	string center(const string& str, char padchar=' ', int width=80);
+	std::string center(const std::string& str, char padchar=' ', int width=80);
 
 }
 

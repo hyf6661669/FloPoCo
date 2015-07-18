@@ -26,7 +26,7 @@
 #include "Operator.hpp"
 #include "utils.hpp"
 
-using namespace std;
+//using namespace std;
 
 namespace flopoco{
 
@@ -355,18 +355,18 @@ namespace flopoco{
 		int 				estimatedCountFSM;				/**< The estimated count of Finite State Machines used in the design */
 		
 		//detailed resource estimations statistics
-		vector<string>		estimatedSignalNames;			/**< The names of signals which have a manual resource estimation 
+		std::vector<std::string>		estimatedSignalNames;			/**< The names of signals which have a manual resource estimation 
 																	(DOES NOT CONCERN REGISTERS DUE TO PIPELINING) */
-		vector<string>		estimatedPortNames;				/**< The names of ports which have a manual resource estimation */
+		std::vector<std::string>		estimatedPortNames;				/**< The names of ports which have a manual resource estimation */
 		
-		map<int, int>		estimatedLUTTypes;				/**< The list of different LUT types, based on their widths */
+		std::map<int, int>		estimatedLUTTypes;				/**< The list of different LUT types, based on their widths */
 		
-		map<int, int>		estimatedAdderTypes;				/**< The list of different adder types, based on their widths */
-		map<int, int>		estimatedMultiplierTypes;		/**< The list of different multiplier types, based on their widths */
-		map<int, int>		estimatedRegisterTypes;			/**< The list of different registers types, based on their widths */
-		map<int, int>		estimatedShifterTypes;			/**< The list of different shifter types, based on their widths */
-		map<int, int>		estimatedCounterTypes;			/**< The list of different counter types, based on their widths */
-		map<int, int>		estimatedArithOpTypes;			/**< The list of different arithmetic operator types, based on their widths */
+		std::map<int, int>		estimatedAdderTypes;				/**< The list of different adder types, based on their widths */
+		std::map<int, int>		estimatedMultiplierTypes;		/**< The list of different multiplier types, based on their widths */
+		std::map<int, int>		estimatedRegisterTypes;			/**< The list of different registers types, based on their widths */
+		std::map<int, int>		estimatedShifterTypes;			/**< The list of different shifter types, based on their widths */
+		std::map<int, int>		estimatedCounterTypes;			/**< The list of different counter types, based on their widths */
+		std::map<int, int>		estimatedArithOpTypes;			/**< The list of different arithmetic operator types, based on their widths */
 	};
 	
 }

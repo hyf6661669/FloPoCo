@@ -10,7 +10,7 @@ namespace flopoco{
 	class GenericTable : public Table
 	{
 	public:
-		GenericTable(Target* target, int wIn, int wOut, vector<mpz_class> values,  map<string, double> inputDelays = emptyDelayMap);
+		GenericTable(Target* target, int wIn, int wOut, std::vector<mpz_class> values,  std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		~GenericTable();
 
@@ -18,7 +18,7 @@ namespace flopoco{
 
 		int wIn;
 		int wOut;
-		vector<mpz_class> values; //the values to be stored in the table
+		std::vector<mpz_class> values; //the values to be stored in the table
 	};
 
 }

@@ -10,6 +10,8 @@
 
 #include "IntConstMCM.hpp"
 
+using namespace std;
+
 namespace flopoco {
 
 

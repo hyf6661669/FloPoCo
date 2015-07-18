@@ -61,7 +61,7 @@ namespace flopoco{
 		 * @param[in] wOut   the with of the output in bits  
      * @param[in] logicTable   1 if the table is intended to be implemented as logic; -1 if the table is intended to be implemented as BRAM; 0: let the constructor decide
 		 **/
-		Table(Target* target, int _wIn, int _wOut, int _minIn=0, int _maxIn=-1, int logicTable = 0,  map<string, double> inputDelays = emptyDelayMap );
+		Table(Target* target, int _wIn, int _wOut, int _minIn=0, int _maxIn=-1, int logicTable = 0,  std::map<std::string, double> inputDelays = emptyDelayMap );
 
 		Table(Target* target);
      
@@ -77,7 +77,7 @@ namespace flopoco{
 
 
 		/** Overloading the method of Operator */
-		void outputVHDL(ostream& o, string name);
+		void outputVHDL(std::ostream& o, std::string name);
 
 		/** A function that translates an real value into an integer input.
 			 This function should be overridden by an implementation of Table.

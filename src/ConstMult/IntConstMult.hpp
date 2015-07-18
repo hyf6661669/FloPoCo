@@ -90,9 +90,9 @@ namespace flopoco{
 	protected:
 		bool findBestDivider(const mpz_class n, mpz_t & divider, mpz_t & quotient, mpz_t & remainder);
 		void build_pipeline(ShiftAddOp* sao, double& delay);
-		string printBoothCode(int* BoothCode, int size);
+		std::string printBoothCode(int* BoothCode, int size);
 		void showShiftAddDag();
-		void optimizeLefevre(const vector<mpz_class>& constants);
+		void optimizeLefevre(const std::vector<mpz_class>& constants);
 		ShiftAddOp* buildEuclideanDag(const mpz_class n, ShiftAddDag* constant);
 		int prepareBoothTree(mpz_class &n, ShiftAddDag* &tree_try, ShiftAddOp** &level, ShiftAddOp* &result, ShiftAddOp* &MX, unsigned int* &shifts, int& nonZeroInBoothCode, int& globalshift);
 

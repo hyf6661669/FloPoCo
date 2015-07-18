@@ -4,19 +4,19 @@
 #include <iostream>
 #include <vector>
 
-using namespace std;
+//using namespace std;
 
 class LexerContext {
 public:
 	void* scanner;
 	int result;
-	istream* is;
-	ostream* os;
+	std::istream* is;
+	std::ostream* os;
 	int yyTheCycle;
-	vector<pair<string, int> > theUseTable;
+	std::vector<std::pair<std::string, int> > theUseTable;
 
 public:
-	LexerContext(istream* is = &cin, ostream* os = &cout) {
+	LexerContext(std::istream* is = &std::cin, std::ostream* os = &std::cout) {
 		init_scanner();
 		this->is = is;
 		this->os = os;

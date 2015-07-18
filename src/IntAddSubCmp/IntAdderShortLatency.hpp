@@ -33,7 +33,7 @@ namespace flopoco {
 			*            2: optimize slice/ALM count
 			* @param[in] srl              optimize for use of shift registers
 			**/
-			IntAdderShortLatency ( Target* target, int wIn, map<string, double> inputDelays = emptyDelayMap, int optimizeType = SLICE, bool srl = true);
+			IntAdderShortLatency ( Target* target, int wIn, std::map<std::string, double> inputDelays = emptyDelayMap, int optimizeType = SLICE, bool srl = true);
 			
 		
 			/**
@@ -44,7 +44,7 @@ namespace flopoco {
 			* @param[in] srl               optimize for use of shift registers
 			* @return                      the number of LUTS
 			*/
-			int getLutCostShortLatency ( Target* target, int wIn, map<string, double> inputDelays, bool srl );
+			int getLutCostShortLatency ( Target* target, int wIn, std::map<std::string, double> inputDelays, bool srl );
 			
 
 			
@@ -56,7 +56,7 @@ namespace flopoco {
 			* @param[in] srl               optimize for use of shift registers
 			* @return                      the number of Registers
 			*/
-			int getRegCostShortLatency ( Target* target, int wIn, map<string, double> inputDelays, bool srl );
+			int getRegCostShortLatency ( Target* target, int wIn, std::map<std::string, double> inputDelays, bool srl );
 			
 			/**
 			* Returns the cost in Slices of the Short-Latency implementation
@@ -66,7 +66,7 @@ namespace flopoco {
 			* @param[in] srl               optimize for use of shift registers
 			* @return                      the number of Slices
 			*/
-			int getSliceCostShortLatency ( Target* target, int wIn, map<string, double> inputDelays, bool srl );
+			int getSliceCostShortLatency ( Target* target, int wIn, std::map<std::string, double> inputDelays, bool srl );
 			
 //			/**
 //			* Updates the parameters needed of architecture implementation: wIn is taken from class attributes
@@ -105,7 +105,7 @@ namespace flopoco {
 			* @param[in] k                 the number of chunks
 			*/
 			void tryOptimizedChunkSplittingShortLatency ( Target* target, int wIn, int &k );
-			void tryOptimizedChunkSplittingShortLatency ( Target* target, map<string, double> inputDelays, int wIn, int &k );
+			void tryOptimizedChunkSplittingShortLatency ( Target* target, std::map<std::string, double> inputDelays, int wIn, int &k );
 			
 			/**
 			*  Destructor

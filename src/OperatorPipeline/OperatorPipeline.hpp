@@ -22,7 +22,7 @@
 
 namespace flopoco{
 
-extern vector<Operator*> oplist;
+extern std::vector<Operator*> oplist;
 
 /** The OperatorPipeline class.  */
 class OperatorPipeline : public Operator {
@@ -35,7 +35,7 @@ public:
              * @param[in] wE         Exponent width
              * @param[in] wF         Fraction width
             **/
-    OperatorPipeline(Target* target, string filename, bool fortran_enabled_i, bool use_multi_entry_enabled_i, bool allow_reordering_i);
+    OperatorPipeline(Target* target, std::string filename, bool fortran_enabled_i, bool use_multi_entry_enabled_i, bool allow_reordering_i);
 //arget, filename, fortran_enabled,use_multi_entry_operators,allow_reordering);
     /**
             * OperatorPipeline destructor

@@ -57,7 +57,7 @@ namespace flopoco{
 		 * @param alpha The size of the chunk, or, use radix 2^alpha
 		 */
 
-		ConstDiv3ForSinPoly(Target* target, int wIn, int d=3, int alpha=-1, int nbZeros=0, bool remainderOnly=false, map<string, double> inputDelays = emptyDelayMap);
+		ConstDiv3ForSinPoly(Target* target, int wIn, int d=3, int alpha=-1, int nbZeros=0, bool remainderOnly=false, std::map<std::string, double> inputDelays = emptyDelayMap);
 		~ConstDiv3ForSinPoly();
 		
 		// Overloading the virtual functions of Operator

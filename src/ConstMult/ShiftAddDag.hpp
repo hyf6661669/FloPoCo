@@ -17,13 +17,13 @@ namespace flopoco{
 	class ShiftAddDag {
 	public:
 		IntConstMult* icm;
-		vector<ShiftAddOp*> saolist;  // the shift-and-add operators computed so far
+		std::vector<ShiftAddOp*> saolist;  // the shift-and-add operators computed so far
 		ShiftAddOp* PX;
 		ShiftAddOp* result;
 
 		//support for DAGs with multiple heads
-		vector<ShiftAddOp*> saoHeadlist;  // the shift-and-add operators computed so far which are heads of the DAG
-		vector<int> saoHeadShift;		  // the shift of the heads of the DAG, relative to the weight of the lsb
+		std::vector<ShiftAddOp*> saoHeadlist;  // the shift-and-add operators computed so far which are heads of the DAG
+		std::vector<int> saoHeadShift;		  // the shift of the heads of the DAG, relative to the weight of the lsb
 
 		ShiftAddDag(IntConstMult* icm);
 

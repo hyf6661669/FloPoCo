@@ -1,5 +1,6 @@
 #include "TestState.hpp"
 
+using namespace std;
 namespace flopoco {
 
 	TestState::TestState ( string param ) : paramTypes ( param ) {

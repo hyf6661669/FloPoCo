@@ -27,7 +27,7 @@ namespace flopoco {
 		 * @param[in] ambiguity        this variable isn't actually useful. It is used to 
 		 *                             select this constructor when called from IntAdderClassical ...
 		 **/		
-		IntAdder (Target* target, int wIn, map<string, double> inputDelays, bool ambiguiy):
+		IntAdder (Target* target, int wIn, std::map<std::string, double> inputDelays, bool ambiguiy):
 			Operator(target, inputDelays), wIn_(wIn){
 		}
 	
@@ -42,7 +42,7 @@ namespace flopoco {
 		 *            2: optimize slice/ALM count
 		 * @param[in] srl              optimize for use of shift registers
 		 **/
-		IntAdder ( Target* target, int wIn, map<string, double> inputDelays = emptyDelayMap, int optimizeType = SLICE, bool srl = true, int implementation = -1 );
+		IntAdder ( Target* target, int wIn, std::map<std::string, double> inputDelays = emptyDelayMap, int optimizeType = SLICE, bool srl = true, int implementation = -1 );
 
 		/**
 		 *  Destructor
@@ -84,7 +84,7 @@ namespace flopoco {
 		* @param[out] gamma             the size of the first
 		* @param[out] k                 the number of chunks
 		*/
-		void updateParameters ( Target* target, map<string, double> inputDelays, int &alpha, int &beta, int &gamma, int &k ) {
+		void updateParameters ( Target* target, std::map<std::string, double> inputDelays, int &alpha, int &beta, int &gamma, int &k ) {
 			int typeOfChunks = 1;
 			bool status = target->suggestSlackSubaddSize ( gamma , wIn_, getMaxInputDelays(inputDelays) ); // the first chunk size
 			if (!status){ /* well, it will not work in this case, we will have to register the inputs */
@@ -124,7 +124,7 @@ namespace flopoco {
 		* @param[out] beta              the size of the last chunk
 		* @param[out] k                 the number of chunks
 		*/
-		void updateParameters ( Target* target, map<string, double> inputDelays, int &alpha, int &beta, int &k ) {
+		void updateParameters ( Target* target, std::map<std::string, double> inputDelays, int &alpha, int &beta, int &k ) {
 			bool status = target->suggestSlackSubaddSize ( alpha , wIn_,  getMaxInputDelays ( inputDelays ) ); /* chunk size */
 			if ( !status ) {
 				k=-1;
@@ -144,7 +144,7 @@ namespace flopoco {
 
 		int wIn_;                                    /**< the width for X, Y and R*/
 	private:
-		vector<Operator*> addImplementationList;     /**< this list will be populated with possible adder architectures*/
+		std::vector<Operator*> addImplementationList;     /**< this list will be populated with possible adder architectures*/
 		int selectedVersion;                         /**< the selected version from the addImplementationList */
 	};
 	

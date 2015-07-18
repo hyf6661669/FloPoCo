@@ -19,7 +19,7 @@ namespace flopoco{
 
 		/** simplest constructor for inputs in the fixed-point format (0, lsbIn), computing msbOut out of the coeffs, computing the internal format.
 		 This constructor is all we need for a FIR */
-		FixSOPC(Target* target, int lsbIn, int lsbOut, vector<string> coeff);
+		FixSOPC(Target* target, int lsbIn, int lsbOut, std::vector<std::string> coeff);
 
 
 		/** Generic constructor for inputs in various formats and/or for splitting a SOPC into several ones, etc. 
@@ -28,7 +28,7 @@ namespace flopoco{
 				If g=0, the architecture will have no guard bit, no final round bit will be added. The architecture will not be faithful. 
 				If g>0, the provided number of guard bits will be used and a final round bit added in position lsbOut-1.
  */
-		FixSOPC(Target* target, vector<int> &msbIn, vector<int> &lsbIn, int msbOut, int lsbOut, vector<string> coeff_, int g=-1);
+		FixSOPC(Target* target, std::vector<int> &msbIn, std::vector<int> &lsbIn, int msbOut, int lsbOut, std::vector<std::string> coeff_, int g=-1);
 
 		/** destructor */
 		~FixSOPC();
@@ -43,25 +43,25 @@ namespace flopoco{
 		void buildStandardTestCases(TestCaseList* tcl);
 
 
-		/** Returns an interval in which to find the result, given a vector (x) of inputs.
+		/** Returns an interval in which to find the result, given a std::vector (x) of inputs.
 		  returns a result in very large precision ("6400 bits should be enough for anybody")
 		  */
-		int computeSOPCForEmulate(vector<mpz_class> inputs, mpfr_t &s);
+		int computeSOPCForEmulate(std::vector<mpz_class> inputs, mpfr_t &s);
 
 		/** This method does most of the work for emulate(), because we want to call it also from the emulate() of FixFIR
-			Returns an interval in which to find the result, given a vector (x) of inputs.
+			Returns an interval in which to find the result, given a std::vector (x) of inputs.
 		  */
-		pair<mpz_class,mpz_class> computeSOPCForEmulate(vector<mpz_class> x);
+		std::pair<mpz_class,mpz_class> computeSOPCForEmulate(std::vector<mpz_class> x);
 
 	protected:
-		int n;							        /**< number of products, also size of the vectors coeff, msbIn and lsbIn */
-		vector<int> msbIn;			    /**< MSB weights of the inputs */
-		vector<int> lsbIn;			    /**< LSB weights of the inputs */
+		int n;							        /**< number of products, also size of the std::vectors coeff, msbIn and lsbIn */
+		std::vector<int> msbIn;			    /**< MSB weights of the inputs */
+		std::vector<int> lsbIn;			    /**< LSB weights of the inputs */
 	public: // readable by FIR etc
 		int msbOut;							    /**< MSB weight of the output, may be computed out of the constants (depending on the constructor used) */
 		int lsbOut;							    /**< LSB weight of the output */
 	protected:
-		vector<string> coeff;			  /**< the coefficients as strings */
+		std::vector<std::string> coeff;			  /**< the coefficients as strings */
 		mpfr_t mpcoeff[10000];			/**< the coefficients as MPFR numbers -- 10000 should be enough for anybody */
 		int g;                      /**< Number of guard bits; the internal format will have LSB at lsbOut-g  */
 

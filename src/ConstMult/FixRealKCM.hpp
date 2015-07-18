@@ -24,9 +24,9 @@ namespace flopoco{
 				bool signedInput, 
 				int msbIn, int lsbIn, 
 				int lsbOut, 
-				string constant, 
+				std::string constant, 
 				double targetUlpError = 1.0, 
-				map<string, double> inputDelays = emptyDelayMap
+				std::map<std::string, double> inputDelays = emptyDelayMap
 			);
 
 		FixRealKCM(
@@ -37,10 +37,10 @@ namespace flopoco{
 				int msbIn, 
 				int lsbIn, 
 				int lsbOut, 
-				string constant,
+				std::string constant,
 				BitHeap* bitheap,
 				double targetUlpError = 1.0, 
-				map<string, double> inputDelays = emptyDelayMap
+				std::map<std::string, double> inputDelays = emptyDelayMap
 			);
 
 
@@ -62,7 +62,7 @@ namespace flopoco{
 		int msbOut;
 		int lsbOut;
 		int wOut;
-		string constant;
+		std::string constant;
 		float targetUlpError;
 		mpfr_t mpC;
 		int msbC;

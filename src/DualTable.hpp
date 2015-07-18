@@ -19,7 +19,7 @@ namespace flopoco{
 
 	*/
 
-	using namespace std;
+//	using namespace std;
 
 	class DualTable : public Operator
 	{
@@ -111,7 +111,7 @@ namespace flopoco{
 			/** maximal input value (default 2^wIn-1) */
 			int maxIn; 
 	
-			stringstream inputData;
+			std::stringstream inputData;
 		
 			void setInputData(std::ostringstream&  data);				
 			primitiveDualMemory(Target* target, int _wIn, int _wOut, int _minIn, int _maxIn);

@@ -17,6 +17,7 @@
 #include <sstream> 
 #include "../utils.hpp"
 
+using namespace std;
 
 namespace flopoco{
 	

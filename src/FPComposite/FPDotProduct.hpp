@@ -28,7 +28,7 @@ namespace flopoco{
 		 * @param[in]		LSBA    The weight of the LSB of the accumulator; determines the final accuracy of the result
 		 * @param[in]		MSBA    The weight of the MSB of the accumulator; has to greater than that of the maximal expected result
 		 **/ 
-		FPDotProduct(Target* target, int wE, int wFX, int wFY, int MaxMSBX, int MSBA, int LSBA, double ratio = 0.9, map<string, double> inputDelays = emptyDelayMap);
+		FPDotProduct(Target* target, int wE, int wFX, int wFY, int MaxMSBX, int MSBA, int LSBA, double ratio = 0.9, std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		/**
 		 * FPDotProduct destructor

@@ -20,6 +20,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 #include "utils.hpp"
 #include "ResourceEstimationHelper.hpp"
 
+using namespace std;
 
 namespace flopoco{
 

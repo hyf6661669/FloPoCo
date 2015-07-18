@@ -17,7 +17,7 @@ namespace flopoco{
 	  public:
 	  
 		// constructor, defined there with two parameters (default value 0 for each)
-		CordicSinCos(Target* target, int wIn, int wOut, int reducedIterations = 0, map<string, double> inputDelays = emptyDelayMap);
+		CordicSinCos(Target* target, int wIn, int wOut, int reducedIterations = 0, std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		// destructor
 		~CordicSinCos();
@@ -44,7 +44,7 @@ namespace flopoco{
 		mpfr_t scale;              /**< 1-2^(wOut-1)*/
 		mpfr_t constPi;
 		mpfr_t kfactor;            /**< */
-		vector<mpfr_t> atani;      /**< */
+		std::vector<mpfr_t> atani;      /**< */
 
 	};
 

@@ -5,7 +5,7 @@
 #include <string>
 #include <stdlib.h>
 
-using namespace std;
+//using namespace std;
 
 
 namespace flopoco {
@@ -17,14 +17,14 @@ namespace flopoco {
 		/**
 		 * The default constructor
 		 */
-		MultiplierBlock(int wX, int wY, int lsbX, int lsbY, string input1, string input2, int weightShift = 0, int cycle = -1);
+		MultiplierBlock(int wX, int wY, int lsbX, int lsbY, std::string input1, std::string input2, int weightShift = 0, int cycle = -1);
 	
 		
 		/**
 		 * Set the value of the output signal name
 		 * @param name= the new value
 		 */
-		void setSignalName(string name);
+		void setSignalName(std::string name);
 
 		/**
 		 * Set the value of the output signal length
@@ -44,7 +44,7 @@ namespace flopoco {
 		/**
 		*returns the output signal name
 		**/
-		string getSigName();
+		std::string getSigName();
 
 		/**
 		*returns the output signal length
@@ -89,7 +89,7 @@ namespace flopoco {
 		*for example if the DSP is doing a multiplication like Z <=X * Y
 		*then X is the first input signal and Y is the second input signal
 		**/
-		string getInputName1()
+		std::string getInputName1()
 		{return inputName1;}
 
 		/**
@@ -97,7 +97,7 @@ namespace flopoco {
 		*for example if the DSP is doing a multiplication like Z <=X * Y
 		*then X is the first input signal and Y is the second input signal
 		**/
-		string getInputName2()
+		std::string getInputName2()
 		{return inputName2;}
 		
 		/**
@@ -146,12 +146,12 @@ namespace flopoco {
 		int cycle;							/**< cycle */
 		MultiplierBlock* previous;
 		MultiplierBlock* next;
-		string signalName;					/**<the name of the output signal*/
+		std::string signalName;					/**<the name of the output signal*/
 		int signalLength;					/**<the length of the output signal*/
 		int weight;
 		int weightShift;					/**<wFull-wOut-g*/
-		string inputName1, inputName2;		/**<names of the inputs*/
-		string srcFileName;
+		std::string inputName1, inputName2;		/**<names of the inputs*/
+		std::string srcFileName;
 	};
 
 }

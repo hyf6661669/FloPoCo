@@ -12,7 +12,7 @@
 #include "TestBenches/FPNumber.hpp"
 #include "IEEENumber.hpp"
 
-using namespace std;
+//using namespace std;
 
 namespace flopoco{
 
@@ -46,14 +46,14 @@ namespace flopoco{
 		 * @param s The signal which will value the given value
 		 * @param v The value which will be assigned to the signal
 		 */
-		void addInput(string s, mpz_class v);
+		void addInput(std::string s, mpz_class v);
 
 		/**
 		 * Adds an input in the FloPoCo FP format for this TestCase
 		 * @param s The signal which will value the given value
 		 * @param v The value which will be assigned to the signal
 		 */
-		void addFPInput(string s, FPNumber::SpecialValue v);
+		void addFPInput(std::string s, FPNumber::SpecialValue v);
 
 		/**
 		 * Adds an input in the FloPoCo FP format for this TestCase
@@ -61,21 +61,21 @@ namespace flopoco{
 		 * @param x the value which will be assigned to the signal, provided as a double.
 		 * (use this method with care, typically only for values such as 1.0 which are representable whatever wE or wF) 
 		 */
-		void addFPInput(string s, double x);
+		void addFPInput(std::string s, double x);
 
 		/**
 		 * Adds an input in the FloPoCo FP format for this TestCase
 		 * @param s The signal which will value the given value
 		 * @param x the value which will be assigned to the signal, provided as an FPNumber.
 		 */
-		void addFPInput(string s, FPNumber *x);
+		void addFPInput(std::string s, FPNumber *x);
 
 		/**
 		 * Adds an input in the IEEE FP format for this TestCase
 		 * @param s The signal which will value the given value
 		 * @param v The value which will be assigned to the signal
 		 */
-		void addIEEEInput(string s, IEEENumber::SpecialValue v);
+		void addIEEEInput(std::string s, IEEENumber::SpecialValue v);
 
 		/**
 		 * Adds an input in the IEEE FP format for this TestCase
@@ -83,24 +83,24 @@ namespace flopoco{
 		 * @param x the value which will be assigned to the signal, provided as a double.
 		 * (use this method with care) 
 		 */
-		void addIEEEInput(string s, double x);
+		void addIEEEInput(std::string s, double x);
 
-		void addIEEEInput(string s, IEEENumber ieeeNumber);
+		void addIEEEInput(std::string s, IEEENumber ieeeNumber);
 
 		/**
 		 * recover the mpz associated to an input
 		 * @param s The name of the input
 		 */
-		mpz_class getInputValue(string s);
+		mpz_class getInputValue(std::string s);
 
-		void setInputValue(string s, mpz_class v);
+		void setInputValue(std::string s, mpz_class v);
 
 		/**
 		 * Adds an expected output for this signal
 		 * @param s The signal for which to assign an expected output
 		 * @param v One possible value which the signal might have
 		 */
-		void addExpectedOutput(string s, mpz_class v);
+		void addExpectedOutput(std::string s, mpz_class v);
 
 		/**
 		 * Adds a comment to the output VHDL. "--" are automatically prepended.
@@ -142,7 +142,7 @@ namespace flopoco{
                  * expected outputs, one by line too.
                  * and the order for outputing these IO is given by IOorder
                  */
-                std::string generateInputString(list<string> IOorderInput, list<string> IOorderOutput);
+                std::string generateInputString(std::list<std::string> IOorderInput, std::list<std::string> IOorderOutput);
 
                 /**
                  *    Define the test case integer identifiant
@@ -151,15 +151,15 @@ namespace flopoco{
 
                 int getId();
 
-                string getDescription();
+				std::string getDescription();
 
 	private:
 		Operator *op_;                       /**< The operator for which this test case is being built */
 
-		map<string, mpz_class>          inputs;
-		map<string, vector<mpz_class> >   outputs;
+		std::map<std::string, mpz_class>          inputs;
+		std::map<std::string, std::vector<mpz_class> >   outputs;
 
-		string comment;
+		std::string comment;
                 int intId;                      /* integer identifiant of the test case */ 
 
 	};
@@ -201,8 +201,8 @@ namespace flopoco{
 
 	private:
 		/** Stores the TestCase-es */
-		vector<TestCase*>  v;
-                map<int,TestCase*> mapCase;
+		std::vector<TestCase*>  v;
+		std::map<int,TestCase*> mapCase;
                 /* id given to the last registered test case*/
 
 	};

@@ -23,13 +23,13 @@ namespace flopoco
 	class BasicCompressor:public Operator
 	{
 	public:
-		vector<int> height; /** inverted input vector h **/
+		std::vector<int> height; /** inverted input vector h **/
 		int wOut; /** size of the output vector **/
 		int param; /** computes the range of the output vector **/
 		
 		
 		/** constructor **/	
-		BasicCompressor(Target * target, vector<int> h);
+		BasicCompressor(Target * target, std::vector<int> h);
 	
 	
 		/** destructor**/

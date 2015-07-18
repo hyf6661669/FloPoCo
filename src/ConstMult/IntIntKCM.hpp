@@ -22,9 +22,9 @@ class IntIntKCM : public Operator
 		 * @param[in] C      the constant
 		 * @param[in] inputDelays the delays for each input
 		 **/
-		IntIntKCM(Target* target, int wIn, mpz_class C, bool inputTwosComplement=false, map<string, double> inputDelays = emptyDelayMap);
+		IntIntKCM(Target* target, int wIn, mpz_class C, bool inputTwosComplement=false, std::map<std::string, double> inputDelays = emptyDelayMap);
 		
-		IntIntKCM(Operator* parentOp_, Target* target, Signal* multiplicandX, int wIn, mpz_class C, bool inputTwosComplement=false, BitHeap* bitheap_ = NULL, map<string, double> inputDelays = emptyDelayMap);
+		IntIntKCM(Operator* parentOp_, Target* target, Signal* multiplicandX, int wIn, mpz_class C, bool inputTwosComplement=false, BitHeap* bitheap_ = NULL, std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		/**
 		 *  Destructor
@@ -46,7 +46,7 @@ class IntIntKCM : public Operator
 		Operator*	parentOp;				/**< The operator which envelops this constant multiplier */
 		
 	private:
-		map<string, double> inputDelays_;	/**< a map between input signal names and their maximum delays */
+		std::map<std::string, double> inputDelays_;	/**< a map between input signal names and their maximum delays */
 
 };
 

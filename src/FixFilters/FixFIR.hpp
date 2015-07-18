@@ -19,7 +19,7 @@ namespace flopoco{
 		 If rescale=true, all the coefficients are rescaled by 1/sum(|coeffs|). 
 		 This way the output is also in [-1,1], output size is equal to input size, and the output signal makes full use of the output range.
 		*/
-		FixFIR(Target* target, int lsbInOut, vector<string> coeff, bool rescale=false, map<string, double> inputDelays = emptyDelayMap); 
+		FixFIR(Target* target, int lsbInOut, std::vector<std::string> coeff, bool rescale=false, std::map<std::string, double> inputDelays = emptyDelayMap); 
 		
 		/**empty constructor, to be called by subclasses */
 		FixFIR(Target* target, int lsbInOut, bool rescale=false);
@@ -39,7 +39,7 @@ namespace flopoco{
 
 		int n;							/**< number of taps */
 		int lsbInOut;
-		vector<string> coeff;			  /**< the coefficients as strings */
+		std::vector<std::string> coeff;			  /**< the coefficients as strings */
 		bool rescale; /**< if true, the output is rescaled to [-1,1]  (to the same format as input) */
 		mpz_class xHistory[10000]; // history of x used by emulate
 		int currentIndex;

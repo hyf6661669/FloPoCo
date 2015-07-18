@@ -39,15 +39,15 @@ namespace flopoco{
 	{
 	public:
 		/** The standard constructor, inputs the number to implement */
-		IntConstMCM(Target* target, int xsize, int nbConst, vector<mpz_class> constants);
+		IntConstMCM(Target* target, int xsize, int nbConst, std::vector<mpz_class> constants);
 
 		~IntConstMCM();
 
-		vector<int> rsizes;
-		vector<ShiftAddDag*> implementations;
+		std::vector<int> rsizes;
+		std::vector<ShiftAddDag*> implementations;
 		int nbConst;
 		int nbConstZero;
-		vector<mpz_class> constants;  /**< The constants */
+		std::vector<mpz_class> constants;  /**< The constants */
 
 		// Overloading the virtual functions of Operator
 
@@ -91,7 +91,7 @@ namespace flopoco{
 		ShiftAddOp* sadExistsInTree(ShiftAddOp* tree, ShiftAddOp* node);
 
 
-		vector<BitHeap*> bitheaps;
+		std::vector<BitHeap*> bitheaps;
 
 	};
 }

@@ -30,7 +30,7 @@ namespace flopoco{
 		 * @param[in] wOut the width of the mantissa output
 		 * @param[in] countSize the numbers of bits to count, often equal to wIn but sometimes less (see FPLog)
 		 */
-		LZOCShifterSticky(Target* target, int wIn, int wOut, int wCount, bool compute_sticky, const int countType=-1, map<string, double> inputDelays = emptyDelayMap);
+		LZOCShifterSticky(Target* target, int wIn, int wOut, int wCount, bool compute_sticky, const int countType=-1, std::map<std::string, double> inputDelays = emptyDelayMap);
 	
 		/** The LZOCShifterSticky destructor */
 		~LZOCShifterSticky();
@@ -62,8 +62,8 @@ namespace flopoco{
 		int          wCount_;                /**< The number of bits of the count */
 		bool         computeSticky_;         /**< If true, compute the sticky bit. If false, save this hardware */
 		int          countType_;             /**< -1|0|1. If -1 is present then generic LZOC is instatiated */
-		string       level_[42];             /**< The names of the signals, just to make code more readable */ 
-		string       leveld_[42];            /**< Same but possibly delayed  */
+		std::string       level_[42];             /**< The names of the signals, just to make code more readable */ 
+		std::string       leveld_[42];            /**< Same but possibly delayed  */
 		int          size_[42];              /**< Their size. Do we need to count more than 2^42 bits in FloPoCo? */      
 		entityType_t entityType_;            /**< Entity type. Can be either generic or specific */
 		bool         levelRegistered_ [42]; /**< if boolean true, the corresponding level signal is registered*/ 

@@ -8,7 +8,7 @@
 #include <memory>
 #include <cstdlib>
 
-using namespace std;
+//using namespace std;
 
 namespace flopoco{
 

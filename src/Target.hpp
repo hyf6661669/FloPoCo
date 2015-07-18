@@ -29,7 +29,7 @@
 #include "Targets/DSP.hpp"
 #include "IntMult/MultiplierBlock.hpp"
 
-using namespace std;
+//using namespace std;
 
 namespace flopoco{
 
@@ -49,17 +49,17 @@ namespace flopoco{
 		virtual ~Target() {}
 
 
-		vector<Operator*> * getGlobalOpListRef();
+		std::vector<Operator*> * getGlobalOpListRef();
 
 		/** Returns ID of instantiated target. This ID is represented by the name
 		 * @return the ID
 		 */
-		string getID();
+		std::string getID();
 
 		/** Returns ID of the vendor, currently "Altera" or "Xilinx". 
 		 * @return the ID
 		 */
-		string getVendor();
+		std::string getVendor();
 
 
 		// Methods related to target behaviour and performance
@@ -630,8 +630,8 @@ namespace flopoco{
 		 * NOTE: These variables should be set for each different FPGA 
 		 * architecture, in their corresponding constructor.
 		 */
-		vector<int> multiplierPosition;			/**< The position of the columns of multipliers. The Position represents the neighboring LUT column, on the left. */
-		vector<int> memoryPosition;				/**< The position of the columns of memories. The Position represents the neighboring LUT column, on the left. */
+		std::vector<int> multiplierPosition;			/**< The position of the columns of multipliers. The Position represents the neighboring LUT column, on the left. */
+		std::vector<int> memoryPosition;				/**< The position of the columns of memories. The Position represents the neighboring LUT column, on the left. */
 		int topSliceX;							/**< The x coordinate of the top right slice. */
 		int topSliceY;							/**< The y coordinate of the top right slice. */
 		int lutPerSlice;						/**< The number of function generators per slice. */
@@ -648,8 +648,8 @@ namespace flopoco{
 
 	protected:
 		/* Attributes that belong to the FPGA and are therefore static */
-		string id_;
-		string vendor_;
+		std::string id_;
+		std::string vendor_;
 		double maxFrequencyMHz_ ;   /**< The maximum practical frequency attainable on this target. An indicator of relative performance of FPGAs. 400 is for Virtex4 */
 		int    lutInputs_;          /**< The number of inputs for the LUTs */
 		// DSP related
@@ -675,7 +675,7 @@ namespace flopoco{
 																		1 means: any sub-multiplier, even very small ones, go to DSP*/  
 		bool   plainVHDL_;     /**< True if we want the VHDL code to be concise and readable, with + and * instead of optimized FloPoCo operators. */
 		bool   generateFigures_;  /**< If true, some operators may generate some figures in SVG format */
-		vector<Operator*>  globalOpList;  /**< A list of sub-operators that should be shared with most operators. Semantically it shouldn't be here but it makes code simpler */
+		std::vector<Operator*>  globalOpList;  /**< A list of sub-operators that should be shared with most operators. Semantically it shouldn't be here but it makes code simpler */
 
 	};
 

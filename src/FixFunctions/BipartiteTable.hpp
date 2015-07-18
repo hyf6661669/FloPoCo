@@ -13,7 +13,7 @@
 #include "FixFunction.hpp"
 #include "GenericTable.hpp"
 
-using namespace std;
+//using namespace std;
 
 namespace flopoco{
 
@@ -29,18 +29,18 @@ namespace flopoco{
 			 @param[int]    msbOut  output MSB weight, used to determine wOut
 			 @param[int]    lsbOut  output LSB weight
 		 */
-		BipartiteTable(Target* target, string functionName,
-				int lsbIn=0, int msbOut=0, int lsbOut=0,  map<string, double> inputDelays = emptyDelayMap);
+		BipartiteTable(Target* target, std::string functionName,
+				int lsbIn=0, int msbOut=0, int lsbOut=0,  std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		virtual ~BipartiteTable();
 
 		void emulate(TestCase * tc);
 		void buildStandardTestCases(TestCaseList* tcl);
 
-		void computeTIVvalues(vector<mpz_class> &values);
-		void computeTOvalues(vector<mpz_class> &values);
+		void computeTIVvalues(std::vector<mpz_class> &values);
+		void computeTOvalues(std::vector<mpz_class> &values);
 
-		string functionName;
+		std::string functionName;
 		int lsbIn;
 		int wIn;
 		int msbOut;

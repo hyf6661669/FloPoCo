@@ -7,22 +7,22 @@
 #include "HOTBM/Util.hh"
 #include "Function.hpp"
 #include <stdlib.h>
-using namespace std;
+//using namespace std;
 
 
 namespace flopoco{
 
 	class PiecewiseFunction {
 	public:
-		PiecewiseFunction(string name_);
+		PiecewiseFunction(std::string name_);
 		virtual ~PiecewiseFunction();
 
-		string getName() const;
-		vector<Function*>getPiecewiseFunctionArray() const;
+		std::string getName() const;
+		std::vector<Function*>getPiecewiseFunctionArray() const;
     Function* getPiecewiseFunctionArray(int i) const;
 	private:
-		string name;
-		vector<Function*> fArray;
+		std::string name;
+		std::vector<Function*> fArray;
 	}
 		;
 }

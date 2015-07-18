@@ -8,23 +8,23 @@
 
 #include <sollya.h>
 
-using namespace std;
+//using namespace std;
 
 
 namespace flopoco{
 
 	class Function {
 	public:
-		Function(string name_, double xmin = 0, double xmax = 1, double scale = 1);
+		Function(std::string name_, double xmin = 0, double xmax = 1, double scale = 1);
 		virtual ~Function();
 
-		string getName() const;
+		std::string getName() const;
 		double eval(double x) const;
 		void eval(mpfr_t r, mpfr_t x) const;
 		sollya_obj_t getSollyaNode() const;
 
 	private:
-		string name;
+		std::string name;
 		sollya_obj_t node;
 	
 	}

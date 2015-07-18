@@ -22,7 +22,7 @@
 #include <math.h>
 
 
-using namespace std;
+//using namespace std;
 
 namespace flopoco{
 
@@ -56,7 +56,7 @@ namespace flopoco{
 
 
 			/** Constructor for bits that go to history */
-			WeightedBit(WeightedBit* bit, int deathCycle,  double DeathCP, string killerCompressor);
+			WeightedBit(WeightedBit* bit, int deathCycle,  double DeathCP, std::string killerCompressor);
 
 
 			/** destructor */
@@ -78,7 +78,7 @@ namespace flopoco{
 
 
 			/** return the VHDL signal name of this bit */
-			string getName();
+			std::string getName();
 
 			int getWeight();
 
@@ -101,7 +101,7 @@ namespace flopoco{
 			// Stuff for post-mortem plotting
 			int deathCycle; /**< The cycle at which the bit is removed from the bit heap */
 			int deathCP; /**< The critical path at which the bit is removed from the bit heap */
-			string killerCompressor; /**< the instance name of the compressor that input this bit*/
+			std::string killerCompressor; /**< the instance name of the compressor that input this bit*/
 		};
 
 }

@@ -22,6 +22,8 @@
 #include "Operator.hpp"
 #include "Wrapper.hpp"
 
+using namespace std;
+
 namespace flopoco{
 
 	Wrapper::Wrapper(Target* target, Operator *op):

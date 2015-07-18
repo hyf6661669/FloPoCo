@@ -70,7 +70,7 @@ namespace flopoco{
 
 
 	public:
-		IterativeLog(Target* target, int wE, int wF, int inTableSize=0, map<string, double> inputDelays = emptyDelayMap);
+		IterativeLog(Target* target, int wE, int wF, int inTableSize=0, std::map<std::string, double> inputDelays = emptyDelayMap);
 		~IterativeLog();
 
 		//		Overloading the virtual functions of Operator

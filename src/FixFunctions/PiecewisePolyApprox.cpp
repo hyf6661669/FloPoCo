@@ -26,6 +26,8 @@
 #include <limits.h>
 #include <float.h>
 
+using namespace std;
+
 namespace flopoco{
 
 	PiecewisePolyApprox::PiecewisePolyApprox(FixFunction *f_, double targetAccuracy_, int degree_):

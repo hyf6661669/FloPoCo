@@ -11,7 +11,7 @@
 #include "FixFunction.hpp"
 #include "FixConstant.hpp"
 
-using namespace std;
+//using namespace std;
 
 /* Stylistic convention here: all the sollya_obj_t have names that end with a capital S */
 namespace flopoco{
@@ -79,16 +79,16 @@ namespace flopoco{
 				if -1, add to each coeff a number of LSB bits that corresponds to the bits needed for a faithful Horner evaluation based on faithful (truncated) multipliers
 				@param signedx:  if true, we consider an approximation on [-1,1]. If false, it will be on [0,1]
 		 */
-		BasicPolyApprox(string sollyaString, double targetAccuracy, int addGuardBits=-1, bool signedInput=false);
+		BasicPolyApprox(std::string sollyaString, double targetAccuracy, int addGuardBits=-1, bool signedInput=false);
 
 		/** A constructor for the case you already have the coefficients, e.g. you read them from a file. Beware, f is un-initialized in this case
 		 */
-		BasicPolyApprox(int degree, vector<int> MSB, int LSB, vector<mpz_class> coeff);
+		BasicPolyApprox(int degree, std::vector<int> MSB, int LSB, std::vector<mpz_class> coeff);
 
 
 		virtual ~BasicPolyApprox();
 
-		vector<FixConstant*> coeff;       /**< polynomial coefficients in a hardware-ready form */
+		std::vector<FixConstant*> coeff;       /**< polynomial coefficients in a hardware-ready form */
 		int degree;                       /**< degree of the polynomial approximation */
 		double approxErrorBound;          /**< guaranteed upper bound on the approx error of the approximation provided. Should be smaller than targetAccuracy */
 		void buildApproxFromDegreeAndLSBs(); /**< build an approximation of a certain degree, LSB being already defined, then computes the approx error.
@@ -103,8 +103,8 @@ namespace flopoco{
 		sollya_obj_t polynomialS;         /**< The polynomial approximating it */
 
 
-		string srcFileName;   /**< useful only to enable same kind of reporting as for FloPoCo operators. */
-		string uniqueName_;   /**< useful only to enable same kind of reporting as for FloPoCo operators. */
+		std::string srcFileName;   /**< useful only to enable same kind of reporting as for FloPoCo operators. */
+		std::string uniqueName_;   /**< useful only to enable same kind of reporting as for FloPoCo operators. */
 		bool needToFreeF;     /**< in an ideal world, this should not exist */
 		void initialize();    /**< initialization of various constant objects for Sollya */
 		void buildApproxFromTargetAccuracy(double targetAccuracy, int addGuardBitsToConstant); /**< constructor code for the general case factored out. */

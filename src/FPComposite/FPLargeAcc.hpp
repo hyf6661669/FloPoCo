@@ -23,7 +23,7 @@ namespace flopoco{
 		 * @param LSBA the weight of the least significand bit of the accumulator
 		 * @param MSBA the weight of the most significand bit of the accumulator
 		 */ 
-		FPLargeAcc(Target* target, int wEX, int wFX, int MaxMSBX, int MSBA, int LSBA, map<string, double> inputDelays = emptyDelayMap, bool forDotProd = false, int wFY = -1);
+		FPLargeAcc(Target* target, int wEX, int wFX, int MaxMSBX, int MSBA, int LSBA, std::map<std::string, double> inputDelays = emptyDelayMap, bool forDotProd = false, int wFY = -1);
 	
 		/** Destructor */
 		~FPLargeAcc();
@@ -67,7 +67,7 @@ namespace flopoco{
 		int      maxShift_;         /**< maximum shift ammount */
 		int      E0X_;              /**< the bias value */
 		int      sizeShift_;        /**< the shift size */
-		string   summand2cname_;    /**< ??? */
+		std::string   summand2cname_;    /**< ??? */
 		int      c2ChunkSize_;      /**< for c2 addition */
 		int      c2PipelineDepth_;  /**< for c2 addition */
 

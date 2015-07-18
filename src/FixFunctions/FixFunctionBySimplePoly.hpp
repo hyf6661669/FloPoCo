@@ -31,7 +31,7 @@ namespace flopoco{
 			 This would require quite a lot of work for non-trivial functions (isolating roots of the derivative etc).
 			 So this is currently left to the user.
 		 */
-		FixFunctionBySimplePoly(Target* target, string func, bool signedIn, int lsbIn, int msbOut, int lsbOut, bool finalRounding = true,  map<string, double> inputDelays = emptyDelayMap);
+		FixFunctionBySimplePoly(Target* target, std::string func, bool signedIn, int lsbIn, int msbOut, int lsbOut, bool finalRounding = true,  std::map<std::string, double> inputDelays = emptyDelayMap);
 
 		/**
 		 * FixFunctionBySimplePoly destructor
@@ -47,9 +47,9 @@ namespace flopoco{
 		BasicPolyApprox *poly;
 		bool finalRounding;
 
-		vector<int> coeffMSB; 
-		vector<int> coeffLSB; 
-		vector<int> coeffSize; 
+		std::vector<int> coeffMSB; 
+		std::vector<int> coeffLSB; 
+		std::vector<int> coeffSize; 
 	};
 
 }

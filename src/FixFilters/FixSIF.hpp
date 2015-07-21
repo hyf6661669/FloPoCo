@@ -49,7 +49,7 @@ namespace flopoco{
 		std::vector < std::vector<std::string> > coeffs;			/**< the coefficients as strings */
 		std::vector <FixSOPC*> sopcs; //list of sopcs (corresponding to matrix lines)
 
-		std::vector <int> msbIn, lsbIn, msbOut, lsbOut;
+		std::vector <int> msbIn, lsbIn, msbOut, lsbOut, msbInter, lsbInter;
 
 		uint32_t nt; /**< number of intermediate computations */
 		uint32_t nx; /**< size of the state-space */
@@ -73,14 +73,11 @@ namespace flopoco{
 		int parseFile(); //fills nt, nx, nu, ny and coeffs out of the input file. Returns 0 if succeed, error else.
 
 		/**
-			readPrecision: old function to read precisions in a file
-			input:
-				-msbsIn: the msbs of inputs for the operator
-				-lsbsIn: the lsbs of inputs for the operator
-				-msbsOut: the desired msbs of outputs for the operator
-				-lsbsOut: the desired lsbs of outputs for the operator
+			computeMSBsLSBs: old function to read precisions in a file
+			output:
+				-0 if success
 		  */
-		int computeMSBsLSBs( std::vector<int> &msbsOut, std::vector<int> &lsbsOut );
+		int computeMSBsLSBs();
 
 	int computeABCD(boost::numeric::ublas::matrix<double> const &bJ, boost::numeric::ublas::matrix<double> const &bK, boost::numeric::ublas::matrix<double> const &bL, boost::numeric::ublas::matrix<double> const &bM, boost::numeric::ublas::matrix<double> const &bN, boost::numeric::ublas::matrix<double> const &bP, boost::numeric::ublas::matrix<double> const &bQ, boost::numeric::ublas::matrix<double> const &bR, boost::numeric::ublas::matrix<double> const &bS, boost::numeric::ublas::matrix<double> &bA, boost::numeric::ublas::matrix<double> &bB, boost::numeric::ublas::matrix<double> &bC, boost::numeric::ublas::matrix<double> &bD);
 		/**

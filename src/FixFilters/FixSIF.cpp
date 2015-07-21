@@ -13,7 +13,9 @@
 
 #include <boost/numeric/ublas/lu.hpp> 
 #include <boost/numeric/ublas/io.hpp>
+extern "C" {
 #include "/usr/local/include/wcpg_API.h"
+}
 //#include "/usr/local/include/clapack_headers_config.h"	
 
 #define BUF_SIZE 256 //default buffer size
@@ -24,6 +26,7 @@
 namespace ublas = boost::numeric::ublas; 
 template<class T> 
 bool invertMatrix (const ublas::matrix<T>& input, ublas::matrix<T>& inverse) { 
+	std::cout<<"entering invertMatrix"<<std::endl;
 	typedef ublas::permutation_matrix<std::size_t> pmatrix; 
 	// create a working copy of the input 
 	ublas::matrix<T> A(input); 
@@ -31,12 +34,15 @@ bool invertMatrix (const ublas::matrix<T>& input, ublas::matrix<T>& inverse) {
 	pmatrix pm(A.size1()); 
 	// perform LU-factorization 
 	int res = lu_factorize(A,pm); 
-	if( res != 0 )
+	if( res != 0 ){
+		std::cout<<"exiting invertMatrix by short path"<<std::endl;
 		return false; 
+	}
 	// create identity matrix of "inverse" 
 	inverse.assign(ublas::identity_matrix<T>(A.size1())); 
 	// backsubstitute to get the inverse 
 	lu_substitute(A, pm, inverse); 
+	std::cout<<"exiting invertMatrix by long path"<<std::endl;
 	return true; 
 }
 bool matMul (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::matrix<double> const &Y) { 
@@ -68,11 +74,12 @@ bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::
 	return true;
 }
 
-double maxi( double *wcpg, int l, int c, int cs) {
-	
-}
+//double maxi( double *wcpg, int l, int c, int cs) {
+//	
+//}
 
 	int getFullLine( std::ifstream &f, std::string &s, int &lc ){
+		std::cout<<"entered getFullLine"<<std::endl;
 
 			getline(f, s);
 			lc++;
@@ -85,8 +92,10 @@ double maxi( double *wcpg, int l, int c, int cs) {
 
 			//check for empty lines filled with spaces or other non senses
 			for (uint32_t i = 0; i<s.size(); i++) {
-				if ( isdigit(s[i]) )
+				if ( isdigit(s[i]) ){
+		std::cout<<"exiting getFullLine by short path"<<std::endl;
 					return 0;
+				}
 
 				if ((!isdigit(s[i])) && (i==s.size()-1) && (!f.eof()) ) {
 					getline(f, s);
@@ -94,6 +103,7 @@ double maxi( double *wcpg, int l, int c, int cs) {
 					i=-1;
 				}
 			}
+		std::cout<<"exiting getFullLine by long path"<<std::endl;
 			return 1;
 	}
 
@@ -172,6 +182,10 @@ namespace flopoco {
 		displayMatrix(coeffs, "coeffs");
 		n = nt + nx + nu; //TODO: update this definition with a clever number
 		readPrecision(msbIn, lsbIn, msbOut, lsbOut, 0);
+		int precCompBool=computeMSBsLSBs();
+		if (precCompBool) {
+			THROWERROR("Unknown error occured during precision computation");
+		}
 
 		useNumericStd_Unsigned();
 		//if(p<1) {
@@ -190,9 +204,11 @@ namespace flopoco {
 			mpfr_set_ui( xCurrent[i], 0, GMP_RNDN );
 		}
 
+		REPORT(0,"Emulate init done");
+
 		//declare intermediate T(k+1)
 		for (uint32_t i=0; i<nt; i++) {
-			//declare(join("T",i));
+			declare(join("T",i), 1-lsbInter[i]);
 		}
 
 		//nu inputs numbering from 0 to nu-1 FIXME: check the relevance of this convention dealing with SIF
@@ -207,16 +223,14 @@ namespace flopoco {
 		for (uint32_t i=0; i<ny; i++) {
 			std::ostringstream output;
 			//output << "Y";// << i;
-			std::cerr<<"FuckOutputs"<<i<<std::endl;
 			std::string name=join("Y",i);
-			std::cerr<<"Olololol"<<i<<std::endl;
 			addFixOutput(name, 1, 1+msbOut[i], lsbOut[i]);
 		}
 	
 		//declare intermediate X and X(k+1)
 		for (uint32_t i=0; i<nx; i++) {
 			//declare(join("Xplus",i));
-			declare(join("X",i), 1-lsbOut[i]);
+			declare(join("X",i), 1-lsbInter[nt+i]);
 		}
 
 		std::vector < std::vector <std::string> > coefDel(nt+nx+ny); //copy of coeffs which will be deleted.
@@ -318,11 +332,11 @@ namespace flopoco {
 					for ( unsigned int deb=0; deb<nonZeros.size(); deb++ ) {
 						REPORT(DEBUG, "	nonZeros["<<deb<<"]="<<nonZeros[deb]);
 					}
-					sopcs.push_back(new FixSOPC( target_, msbInC, lsbInC, *msbOut.begin(), *lsbOut.begin(), nonZeros));
+					sopcs.push_back(new FixSOPC( target_, msbInC, lsbInC, *msbInter.begin(), *lsbInter.begin(), nonZeros));
 
 					addSubComponent(*sopcs.rbegin());
-					msbOut.erase(msbOut.begin());
-					lsbOut.erase(lsbOut.begin());
+					msbOut.erase(msbInter.begin());
+					lsbOut.erase(lsbInter.begin());
 
 					//wiring
 					i=0;
@@ -887,11 +901,13 @@ namespace flopoco {
 		Ouptut: 0 if success.
 	*/
 	int FixSIF::bMToDoubleM( ublas::matrix<double> const &bM, double * &doubleM ) {
+		std::cout<<"entering bMToDoubleM"<<std::endl;	
 		for (size_t i=0; i<bM.size1(); i++) {
 			for (size_t j=0; j<bM.size2(); j++) {
 				doubleM [i*bM.size1()+j] = bM(i,j);
 			}
 		}
+		std::cout<<"existing bMToDoubleM"<<std::endl;	
 		return 0;
 	}
 
@@ -907,15 +923,22 @@ namespace flopoco {
 	  */
 	int FixSIF::vvToBoostMatrix( std::vector< std::vector <std::string> > const &sM, ublas::matrix<double> &bM ) {
 
+		std::cout<<"entering vvToBoostMatrix"<<std::endl;
+
 		for ( unsigned int i=0; i<sM.size(); i++) {
-			for ( unsigned int j=0; i<sM[i].size(); j++ ) {
+			for ( unsigned int j=0; j<sM[i].size(); j++ ) {
+				std::cout<<"iteration: i="<<i<<", j="<<j<<std::endl;
 				bM(i,j)=atof( sM[i][j].c_str() );
 			}
 		}
+		std::cout<<"exiting vvToBoostMatrix"<<std::endl;
 		return 0;
 	}
 
 	int FixSIF::computeABCD(ublas::matrix<double> const &bJ, ublas::matrix<double> const &bK, ublas::matrix<double> const &bL, ublas::matrix<double> const &bM, ublas::matrix<double> const &bN, ublas::matrix<double> const &bP, ublas::matrix<double> const &bQ, ublas::matrix<double> const &bR, ublas::matrix<double> const &bS, ublas::matrix<double> &bA, ublas::matrix<double> &bB, ublas::matrix<double> &bC, ublas::matrix<double> &bD){
+
+		std::cout<<"entering computeABCD"<<std::endl;
+		
 		ublas::matrix<double>invbJ(bJ.size1(),bJ.size2());
 		invertMatrix(bJ,invbJ);
 
@@ -930,6 +953,8 @@ namespace flopoco {
 
 		ublas::matrix<double>D1(bK.size1(), bJ.size1());
 		ublas::matrix<double>D2(bS.size1(), bS.size2());
+
+		std::cout<<"computeABCD false for now"<< std::endl;
 
 		if (!matMul(A1, bK, invbJ))
 			return false;
@@ -958,20 +983,31 @@ namespace flopoco {
 			return false;
 		if (!matAdd(bD, D2, bS   ))
 			return false;
+		std::cout<<"exiting computeABCD ok"<<std::endl;
 		return true;
 	}
 	
-	int FixSIF::computeMSBsLSBs(std::vector<int> &msbsOut, std::vector<int> &lsbsOut){
+	int FixSIF::computeMSBsLSBs(){
+		//A, B, C, D are double pointers
+		//J ,K, L, M, N, P, Q, R, and S are boost double matrices
+		//prefix b in bX denotes a boost matrix
+		//First: computing MSBs
+
+		std::cout<<"entering computeMSBsLSBs"<<std::endl;
+
+		//Init ABCD
 		double *A = new double[nx*nt] ;
 		double *B = new double[nx*nu] ;
 		double *C = new double[ny*nx] ;
 		double *D = new double[ny*nu] ;
 
-
+		//Declare Z
 		ublas::matrix<double> Z(nt+nx+ny,nt+nx+nu);
+		//Init Z from coeffs
 		vvToBoostMatrix(coeffs, Z);
 		
 
+		//Declare JKLMNPQRS
 		ublas::matrix<double> J(nt,nt);
 		ublas::matrix<double> K(nx,nt);
 		ublas::matrix<double> L(ny,nt);
@@ -982,6 +1018,7 @@ namespace flopoco {
 		ublas::matrix<double> R(ny,nx);
 		ublas::matrix<double> S(ny,nu);
 
+		//Init JKLMNPQRS from Z
 		unsigned int i;
 		unsigned int j;
 		for ( i = 0; i<nt; i++ ){
@@ -1027,22 +1064,119 @@ namespace flopoco {
 			}
 		}
 
+		//Declare boost ABCD representation
 		ublas::matrix<double> bA(nx,nx);
 		ublas::matrix<double> bB(nx,nu);
 		ublas::matrix<double> bC(ny,nx);
 		ublas::matrix<double> bD(ny,nu);
 
+		//Compute ABCD from JKLMNPQRS into boost ABCD
 		computeABCD(J, K, L, M, N, P, Q, R, S, bA, bB, bC, bD);
 
+		//Transfert into double* format
 		bMToDoubleM( bA, A);
 		bMToDoubleM( bB, B);
 		bMToDoubleM( bC, C);
 		bMToDoubleM( bD, D);
-		//compute WCPG;
 
-		for ( unsigned int i=0; i<nt; i++ ) {
-			//msbsOut[i]=pow(2,ceil(log2(max(wcpg[i],))));
+		//Declare wcpg of the filter
+		double *wcpgF=new double [(nx+ny)*(nx+nu)];
+
+		//Compute WCPG
+		//WCPG_ABCD( wcpgF, A, B, C, D, uint64_t(nx), uint64_t(nu), uint64_t(ny) );
+		WCPG_ABCD( wcpgF, A, B, C, D, nx, nu, ny );
+
+		int maxMSB=0;
+		for ( unsigned int i=0; i<ny; i++) {
+
+			if (ceil(log((pow(2,msbIn[j]+1)-1)*wcpgF[i*nu+j])/log(2)) > maxMSB)
+				maxMSB=ceil(log((pow(2,msbIn[j]+1)-1)*wcpgF[i*nu+j])/log(2));
 		}
+
+		//Init all msbsOut to 0
+		//FIXME: find a better upper bound for MSBs
+		for ( unsigned int i=0; i<nt+nx; i++) {
+			msbInter.push_back(maxMSB);
+		}
+
+		//msbsOut=wcpgF*max(U)
+		//max(U)=2^(msbIn+1)-1
+		for ( unsigned int i=nt+nx; i<ny; i++ ) {
+			for ( unsigned int j=0; j<nu; j++) {
+				msbInter.push_back(ceil(log((pow(2,msbIn[j]+1)-1)*wcpgF[i*nu+j])/log(2)));
+			}
+		}
+
+
+
+		//Declare pseudo identities
+		ublas::matrix<double> Mt(nt,nt+nx+ny);
+		ublas::matrix<double> Mx(nx,nt+nx+ny);
+		ublas::matrix<double> My(ny,nt+nx+ny);
+
+		//Init Mt
+		for ( unsigned int i=0; i<nt; i++ ) {
+			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
+				if ( (j<nt) && (i=j) ) {
+					Mt(i,j)=1;
+				}
+				else {
+					Mt(i,j)=0;
+				}
+			}
+		}
+
+		//Init Mx
+		for ( unsigned int i=0; i<nx; i++ ) {
+			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
+				if ( (j>=nt) && (j<nt+nx) && (i=j) ) {
+					Mx(i,j)=1;
+				}
+				else {
+					Mx(i,j)=0;
+				}
+			}
+		}
+
+		//Init My
+		for ( unsigned int i=0; i<ny; i++ ) {
+			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
+				if ( (j>=nt+nx) && (i=j) ) {
+					My(i,j)=1;
+				}
+				else {
+					My(i,j)=0;
+				}
+			}
+		}
+
+		//Declare boost ABCD representation for the error filter
+		ublas::matrix<double> bAe(nx,nx);
+		ublas::matrix<double> bBe(nx,nu);
+		ublas::matrix<double> bCe(ny,nx);
+		ublas::matrix<double> bDe(ny,nu);
+
+		//Compute ABCD error filter
+		computeABCD(J, K, L, M, Mt, P, Mx, R, My, bAe, bBe, bCe, bDe);
+
+		//Init ABCD for error filter
+		double *Ae = new double[nx*nt] ;
+		double *Be = new double[nx*nu] ;
+		double *Ce = new double[ny*nx] ;
+		double *De = new double[ny*nu] ;
+
+		//Transfert into double* format
+		bMToDoubleM( bAe, Ae );
+		bMToDoubleM( bBe, Be );
+		bMToDoubleM( bCe, Ce );
+		bMToDoubleM( bDe, De );
+
+		//Declare wcpgE of the error filter
+		double *wcpgE=new double [(nt+nx+ny)*(ny)];
+
+		//Compute WCPG error
+		WCPG_ABCD( wcpgE, A, B, C, D, nx, nt+nx+ny, ny );
+
 
 
 		soplex::SoPlex mysoplex;
@@ -1054,16 +1188,17 @@ namespace flopoco {
 	   soplex::DSVector dummycol(0);
 	   //set weight to 1 in the objective function and upper bound to 1
 	   //FIXME: compute a better lower bound for better performance
+	   for ( unsigned int i =0; i<nt+nx+ny; i++){
 	   mysoplex.addColReal(soplex::LPCol(1.0, dummycol, 1.0, -(soplex::infinity)));
-	   mysoplex.addColReal(soplex::LPCol(1.0, dummycol, 1.0, -(soplex::infinity)));
+	   }
 
 	   /* then constraints one by one */
 	   for (unsigned int i=0; i<ny; i++){
 		   soplex::DSVector row(nt+nx+ny);
 		   for (unsigned int j=0; j<nt+nx+ny; j++) {
-			   //row.add(j, W[j+i*(nt+nx+ny)]);
+			   row.add(j, wcpgE[j+i*(nt+nx+ny)]);
 		   }
-		   //mysoplex.addRowReal(LPRow( -infinity, row,pow(2,lsb[i])));
+		   mysoplex.addRowReal( soplex::LPRow( -(soplex::infinity), row, pow(2,lsbOut[i]-1) ) );
 	   }
 
 	   /* NOTE: alternatively, we could have added the matrix nonzeros in dummycol already; nonexisting rows are then
@@ -1074,8 +1209,8 @@ namespace flopoco {
 
 	   /* solve LP */
 	   soplex::SPxSolver::Status stat;
-	   soplex::DVector prim(2);
-	   soplex::DVector dual(1);
+	   soplex::DVector prim(nt+nx+ny);
+	   soplex::DVector dual(nt+nx+ny);
 	   stat = mysoplex.solve();
 
 	   /* get solution */
@@ -1093,7 +1228,7 @@ namespace flopoco {
 		  //std::cout << "Dual solution is [" << dual[0] << "].\n";
 	   }
 	   for ( unsigned int i=0; i<nt+nx+ny; i++ ) {
-		   //lsbs[i]=prim[i];
+		   lsbInter[i]=ceil(log(prim[i])/log(2));
 	   }
 	   //real toto=0.7;
 	   //toto+=41.3;
@@ -1104,13 +1239,16 @@ namespace flopoco {
 
 
 
+		std::cout<<"exiting computeMSBsLSBs"<<std::endl;
 		return 0;
 	}
 
 	int FixSIF::readPrecision( std::vector<int> &msbsIn, std::vector<int> &lsbsIn, std::vector<int> &msbsOut, std::vector<int> &lsbsOut, bool inFile ){
 		//TODO:return wcpg*error min
+		REPORT(0,"Entering readPrecision");
 
 		if ( inFile ){
+			REPORT(0,"Filling with file information");
 			std::vector < std::vector<std::string> > *msbslsbsIn, *msbslsbsOut;
 			std::ifstream precisions;
 			precisions.open( "precisions.txt", std::ifstream::in );
@@ -1127,18 +1265,22 @@ namespace flopoco {
 				msbsOut.push_back(stoi((*msbslsbsOut)[i][0]));
 				lsbsOut.push_back(stoi((*msbslsbsOut)[i][1]));
 			}
+			REPORT(0,"exiting by file reading path");
 			return 0;
 			precisions.close();
 		}
 		else {
+			REPORT(0,"Filling with default precision");
 			for ( uint32_t i=0; i<nu+nt+nx+ny; i++ ) {
 				msbsIn.push_back(DEFAULT_MSB);
 				lsbsIn.push_back(DEFAULT_LSB);
 				msbsOut.push_back(DEFAULT_MSB);
 				lsbsOut.push_back(DEFAULT_LSB);
 			}
+			REPORT(0,"exiting by default precision path");
 			return 0;
 		}
+		REPORT(0,"exiting readPrecision with error");
 		return 1;
 	}
 	

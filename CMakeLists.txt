@@ -400,6 +400,7 @@ TARGET_LINK_LIBRARIES(
   flopoco  
 	/usr/lib/libsoplex-2.2.0.linux.x86_64.gnu.opt.a
 	/usr/local/lib/libwcpg_API.a
+	/usr/lib/liblapack.so
   )
 
 ADD_EXECUTABLE(flopoco_soaktest

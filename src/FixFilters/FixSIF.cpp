@@ -13,12 +13,16 @@
 
 #include <boost/numeric/ublas/lu.hpp> 
 #include <boost/numeric/ublas/io.hpp>
+#define WCPG_F //disable WCPG until it works
+
+#ifndef WCPG_F
 extern "C" {
 #include "/usr/local/include/wcpg_API.h"
 }
+#endif
 //#include "/usr/local/include/clapack_headers_config.h"	
 
-#define BUF_SIZE 256 //default buffer size
+#define BUF_SIZE 256 //default buffer size for parsing the specification file
 #define DEFAULT_LSB -64 //default precision for sopcs
 #define DEFAULT_MSB 8 //default precision for sopcs
 
@@ -45,32 +49,66 @@ bool invertMatrix (const ublas::matrix<T>& input, ublas::matrix<T>& inverse) {
 	std::cout<<"exiting invertMatrix by long path"<<std::endl;
 	return true; 
 }
-bool matMul (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::matrix<double> const &Y) { 
-	if(X.size2()!=Y.size1())
-		return false;
 
-	for (size_t i=1; i<X.size1(); i++) {
-		for (size_t j=1; j<X.size1(); j++) {
+bool matMul (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::matrix<double> const &Y) { 
+
+		std::cout<<"entering matMul: X.size1()="
+			<<X.size1()
+			<<", X.size2()="
+			<<X.size2()
+			<<", Y.size1()="
+			<<Y.size1()
+			<<", Y.size2()="
+			<<Y.size2()
+		<<std::endl;
+
+	if(X.size2()!=Y.size1()) {
+		std::cout<<"matMul: failed to apply matrix product"<<std::endl;
+		return false;
+	}
+
+	for (size_t i=0; i<X.size1(); i++) {
+		for (size_t j=0; j<Y.size2(); j++) {
 			res(i,j)=0.0;
 		}
 	}
 	
-	for (size_t i=1; i<X.size1(); i++) {
-		for (size_t j=1; j<Y.size2(); j++) {
-			for (size_t k=1; k<X.size2(); k++) {
+	for (size_t i=0; i<X.size1(); i++) {
+		for (size_t j=0; j<Y.size2(); j++) {
+			for (size_t k=0; k<X.size2(); k++) {
 				res(i,j) += X(i,k) * Y(k,j);
 			}
 		}
 	}
+	std::cout<<"exiting matMul successfully"<<std::endl;
 	return true;
 }
 
 bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::matrix<double> const &Y) { 
-	for (size_t i=1; i<X.size1(); i++) {
-		for (size_t j=1; j<X.size1(); j++) {
+
+		std::cout<<"entering matAdd: X.size1()="
+			<<X.size1()
+			<<", X.size2()="
+			<<X.size2()
+			<<", Y.size1()="
+			<<Y.size1()
+			<<", Y.size2()="
+			<<Y.size2()
+		<<std::endl;
+
+
+	if ( ( X.size1() != Y.size1() ) || ( X.size2() != X.size2() ) ) {
+		std::cout<<"matAdd: failed to apply matrix addition"<<std::endl;
+		return false;
+	}
+
+	for (size_t i=0; i<X.size1(); i++) {
+		for (size_t j=0; j<X.size2(); j++) {
 			res(i,j) = X(i,j) + Y(i,j);
+			std::cout<<"matAdd: adding "<<X(i,j)<<" with " <<Y(i,j)<<". Result gives: "<<X(i,j)+Y(i,j)<<std::endl;
 		}
 	}
+	std::cout<<"exiting matAdd successfully"<<std::endl;
 	return true;
 }
 
@@ -79,7 +117,6 @@ bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::
 //}
 
 	int getFullLine( std::ifstream &f, std::string &s, int &lc ){
-		std::cout<<"entered getFullLine"<<std::endl;
 
 			getline(f, s);
 			lc++;
@@ -93,7 +130,6 @@ bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::
 			//check for empty lines filled with spaces or other non senses
 			for (uint32_t i = 0; i<s.size(); i++) {
 				if ( isdigit(s[i]) ){
-		std::cout<<"exiting getFullLine by short path"<<std::endl;
 					return 0;
 				}
 
@@ -103,7 +139,6 @@ bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::
 					i=-1;
 				}
 			}
-		std::cout<<"exiting getFullLine by long path"<<std::endl;
 			return 1;
 	}
 
@@ -114,7 +149,7 @@ namespace flopoco {
 	int displayMatrix( std::vector< std::vector<std::string> > &m, std::string name = "matrix"){
 		std::string srcFileName="FixSIF";
 		//srcFileName<<"TOTO.cpp";
-		REPORT(0, "Displaying Matrix "<<name<<" "<<m.size()<<" "<<m[0].size());
+		REPORT(3, "Displaying Matrix "<<name<<" "<<m.size()<<" "<<m[0].size());
 		for (uint32_t i=0; i<m.size(); i++){
 			std::stringstream line;
 			for (uint32_t  j=0; j<m[i].size(); j++){
@@ -123,7 +158,7 @@ namespace flopoco {
 					line<<"	";
 				}
 			}
-			REPORT(0,line.str());
+			REPORT(3,line.str());
 		}
 		return 0;
 	}
@@ -187,6 +222,22 @@ namespace flopoco {
 			THROWERROR("Unknown error occured during precision computation");
 		}
 
+		std::ostringstream precDisp;
+		precDisp<<"msbInter = [";
+		for ( unsigned int i=0; i<msbInter.size(); i++) {
+			precDisp<<" "<<msbInter[i];
+		}
+		precDisp<<" ]";
+		REPORT(0,precDisp.str());
+
+		precDisp<<"lsbInter = [";
+		for ( unsigned int i=0; i<lsbInter.size(); i++) {
+			precDisp<<" "<<lsbInter[i];
+		}
+		precDisp<<" ]";
+		REPORT(0,precDisp.str());
+
+
 		useNumericStd_Unsigned();
 		//if(p<1) {
 		//	THROWERROR("Can't build an architecture for this value of LSB")
@@ -204,7 +255,7 @@ namespace flopoco {
 			mpfr_set_ui( xCurrent[i], 0, GMP_RNDN );
 		}
 
-		REPORT(0,"Emulate init done");
+		REPORT(3,"Emulate init done");
 
 		//declare intermediate T(k+1)
 		for (uint32_t i=0; i<nt; i++) {
@@ -216,7 +267,6 @@ namespace flopoco {
 			std::ostringstream input;
 			input << "U" <<i;
 			addFixInput(std::string(input.str()), true, 1+msbIn[i], lsbIn[i]);
-			REPORT(0,"Popopo"<<i);
 		}
 
 		//ny outputs numbering from 0 to ny-1 FIXME: check the relevance of this convention dealing with SIFs
@@ -263,7 +313,7 @@ namespace flopoco {
 			for ( ; i<nt; i++ ){
 				if ( ( std::stof(nonZeros[i+ib].c_str()) == 0.0 ) || ( (std::stof(nonZeros[i+ib].c_str()) == 1.0)&&(n-coefDel.size()==i)) ){
 					REPORT(0,"no coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<-std::stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
@@ -272,14 +322,11 @@ namespace flopoco {
 					lsbInC.push_back(lsbIn[i]);
 					msbInC.push_back(msbIn[i]);
 					REPORT(0,"coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
-					REPORT(0,"pushing "<<i<<" in list of indices for T");
-				}
-			}
-
-					REPORT(0,"number of non zeros coefficients:"<<nonZeros.size()<<", bias="<<ib<<", iteration="<<i<<", n=nu+nx+nt="<<nu+nx+nt);
-			
-			//only drop zeros for x
+					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<-std::stof(nonZeros[i+ib].c_str()));
+					//hadling "-" for the use of -J in the calculations
+					//this operation is done here because we need the positive version J for all calculations concerning precisions.
+					nonZeros[i+ib]="-"+nonZeros[i+ib];
+					REPORT(0,"pushing "<<i<<" in list of indices for T"); } } REPORT(3,"number of non zeros coefficients:"<<nonZeros.size()<<", bias="<<ib<<", iteration="<<i<<", n=nu+nx+nt="<<nu+nx+nt); //only drop zeros for x
 			for ( ; i<nt+nx; i++ ){
 				if ( std::stof(nonZeros[i+ib].c_str()) == 0.0 ){
 					REPORT(0,"no coef found at "<<i+ib);
@@ -327,8 +374,8 @@ namespace flopoco {
 						REPORT(0, "	lsbIn["<<deb<<"]="<<lsbIn[deb]);
 					}
 					REPORT(0, "	sizeof lsbIn="<<lsbIn.size());
-					REPORT(0, "	msbOut="<<*msbOut.begin());
-					REPORT(0, "	lsbOut="<<*lsbOut.begin());
+					REPORT(0, "	msbOut="<<*msbInter.begin());
+					REPORT(0, "	lsbOut="<<*lsbInter.begin());
 					for ( unsigned int deb=0; deb<nonZeros.size(); deb++ ) {
 						REPORT(DEBUG, "	nonZeros["<<deb<<"]="<<nonZeros[deb]);
 					}
@@ -665,7 +712,7 @@ namespace flopoco {
 			if(gotLine)
 				return 1;
 
-			REPORT(0,"Got header at line "<<lc<<": \""<<line<<"\"")
+			REPORT(3,"Got header at line "<<lc<<": \""<<line<<"\"")
 			if (Z.size()!=9)
 				return 2;
 
@@ -701,7 +748,7 @@ namespace flopoco {
 					return 1;
 					break;
 			}
-					REPORT(0,"Popped back to readMatrices");
+					REPORT(3,"Popped back to readMatrices");
 		}
 		return 0;
 
@@ -715,7 +762,7 @@ namespace flopoco {
 
 			int nc=0;
 			int nl=0;
-			REPORT(0, "Reading matrix given the header: \""<<header<<"\". Matrix descriptor: "<<JKLMNPQRS);
+			REPORT(3, "Reading matrix given the header: \""<<header<<"\". Matrix descriptor: "<<JKLMNPQRS);
 			if (header.find_first_of(JKLMNPQRS) != std::string::npos){
 				size_t bNum = header.find_first_of(" ");
 				size_t aNum = header.find_first_of(" ",bNum+1);
@@ -738,7 +785,7 @@ namespace flopoco {
 						error<<"line "<<lc<<": no space found";
 						THROWERROR(error.str());
 				}
-				REPORT(0, nc<<" columns and "<<nl<<" lines found in matrix from header: \""<<header<<"\"");
+				REPORT(3, nc<<" columns and "<<nl<<" lines found in matrix from header: \""<<header<<"\"");
 			}
 			else{
 				std::stringstream error;
@@ -766,7 +813,7 @@ namespace flopoco {
 
 			for (int i=0; i<nl; i++){
 				getFullLine(openedFile, line, lc);
-				REPORT(0,"Got line "<<lc<<": \""<<line<<"\"")
+				REPORT(3,"Got line "<<lc<<": \""<<line<<"\"")
 
 				size_t bNum = 0;
 				size_t aNum = 0;
@@ -832,7 +879,7 @@ namespace flopoco {
 	//		lineCounter = readMatrix( "N", N, input, lineCounter );
 	//		lineCounter = readMatrix( "Q", Q, input, lineCounter );
 	//		lineCounter = readMatrix( "S", S, input, lineCounter );
-			REPORT(0, "Parsing matrices");
+			REPORT(3, "Parsing matrices");
 			readMatrices(Z, input, lineCounter);
 			input.close();
 		}
@@ -907,7 +954,7 @@ namespace flopoco {
 				doubleM [i*bM.size1()+j] = bM(i,j);
 			}
 		}
-		std::cout<<"existing bMToDoubleM"<<std::endl;	
+		std::cout<<"exiting bMToDoubleM"<<std::endl;	
 		return 0;
 	}
 
@@ -927,7 +974,7 @@ namespace flopoco {
 
 		for ( unsigned int i=0; i<sM.size(); i++) {
 			for ( unsigned int j=0; j<sM[i].size(); j++ ) {
-				std::cout<<"iteration: i="<<i<<", j="<<j<<std::endl;
+				//std::cout<<"iteration: i="<<i<<", j="<<j<<std::endl;
 				bM(i,j)=atof( sM[i][j].c_str() );
 			}
 		}
@@ -948,14 +995,15 @@ namespace flopoco {
 		ublas::matrix<double>B1(bK.size1(), bJ.size2());
 		ublas::matrix<double>B2(bQ.size1(), bQ.size2());
 
-		ublas::matrix<double>C1(bK.size1(), bJ.size1());
+		ublas::matrix<double>C1(bL.size1(), bJ.size1());
 		ublas::matrix<double>C2(bR.size1(), bR.size2());
 
-		ublas::matrix<double>D1(bK.size1(), bJ.size1());
+		ublas::matrix<double>D1(bL.size1(), bJ.size1());
 		ublas::matrix<double>D2(bS.size1(), bS.size2());
 
 		std::cout<<"computeABCD false for now"<< std::endl;
 
+		std::cout<<"computing KJ^(-1)M+P"<< std::endl;
 		if (!matMul(A1, bK, invbJ))
 			return false;
 		if (!matMul(A2, A1, bM   ))
@@ -963,6 +1011,7 @@ namespace flopoco {
 		if (!matAdd(bA, A2, bP   ))
 			return false;
                                   
+		std::cout<<"computing KJ^(-1)N+Q"<< std::endl;
 		if (!matMul(B1, bK, invbJ))
 			return false;
 		if (!matMul(B2, B1, bN   ))
@@ -970,6 +1019,7 @@ namespace flopoco {
 		if (!matAdd(bB, B2, bQ   ))
 			return false;
                                   
+		std::cout<<"computing LJ^(-1)M+R"<< std::endl;
 		if (!matMul(C1, bL, invbJ))
 			return false;
 		if (!matMul(C2, C1, bM   ))
@@ -977,13 +1027,44 @@ namespace flopoco {
 		if (!matAdd(bC, C2, bR   ))
 			return false;
                                   
+		std::cout<<"computing LJ^(-1)N+S"<< std::endl;
 		if (!matMul(D1, bL, invbJ))
 			return false;
 		if (!matMul(D2, D1, bN   ))
 			return false;
 		if (!matAdd(bD, D2, bS   ))
 			return false;
+
+		displayBMatrix(bJ, "computeABCD: J");
+		displayBMatrix(bK, "computeABCD: K");
+		displayBMatrix(bL, "computeABCD: L");
+		displayBMatrix(bM, "computeABCD: M");
+		displayBMatrix(bN, "computeABCD: N");
+		displayBMatrix(bP, "computeABCD: P");
+		displayBMatrix(bQ, "computeABCD: Q");
+		displayBMatrix(bR, "computeABCD: R");
+		displayBMatrix(bS, "computeABCD: S");
+
+		displayBMatrix(invbJ, "computeABCD: J^(-1)");
+		
+		displayBMatrix(A1, "computeABCD: KJ^(-1)");
+		displayBMatrix(A2, "computeABCD: KJ^(-1)M");
+		displayBMatrix(bA, "computeABCD: KJ^(-1)M+P");
+		
+		displayBMatrix(B1, "computeABCD: KJ^(-1)");
+		displayBMatrix(B2, "computeABCD: KJ^(-1)N");
+		displayBMatrix(bB, "computeABCD: KJ^(-1)N+Q");
+		
+		displayBMatrix(C1, "computeABCD: LJ^(-1)");
+		displayBMatrix(C2, "computeABCD: LJ^(-1)M");
+		displayBMatrix(bC, "computeABCD: LJ^(-1)M+R");
+		
+		displayBMatrix(D1, "computeABCD: LJ^(-1)");
+		displayBMatrix(D2, "computeABCD: LJ^(-1)N");
+		displayBMatrix(bD, "computeABCD: LJ^(-1)N+S");
+
 		std::cout<<"exiting computeABCD ok"<<std::endl;
+		
 		return true;
 	}
 	
@@ -994,7 +1075,15 @@ namespace flopoco {
 		//First: computing MSBs
 
 		std::cout<<"entering computeMSBsLSBs"<<std::endl;
+#ifdef WCPG_F
+		for ( unsigned int i=0; i<nt+nx+ny; i++) {
+			lsbInter.push_back(DEFAULT_LSB);
+			msbInter.push_back(DEFAULT_MSB);
+		}
+		return 0;
+#endif
 
+#ifndef WCPG_F
 		//Init ABCD
 		double *A = new double[nx*nt] ;
 		double *B = new double[nx*nu] ;
@@ -1073,6 +1162,22 @@ namespace flopoco {
 		//Compute ABCD from JKLMNPQRS into boost ABCD
 		computeABCD(J, K, L, M, N, P, Q, R, S, bA, bB, bC, bD);
 
+		displayBMatrix(Z, "Z");
+		displayBMatrix(J, "J");
+		displayBMatrix(K, "K");
+		displayBMatrix(L, "L");
+		displayBMatrix(M, "M");
+		displayBMatrix(N, "N");
+		displayBMatrix(P, "P");
+		displayBMatrix(Q, "Q");
+		displayBMatrix(R, "R");
+		displayBMatrix(S, "S");
+
+		displayBMatrix(bA, "bA");
+		displayBMatrix(bB, "bB");
+		displayBMatrix(bC, "bC");
+		displayBMatrix(bD, "bD");
+
 		//Transfert into double* format
 		bMToDoubleM( bA, A);
 		bMToDoubleM( bB, B);
@@ -1081,10 +1186,31 @@ namespace flopoco {
 
 		//Declare wcpg of the filter
 		double *wcpgF=new double [(nx+ny)*(nx+nu)];
+		//double *wcpgF=(double*) malloc( sizeof(double)*(nx+ny)*(nx+nu) );
 
 		//Compute WCPG
 		//WCPG_ABCD( wcpgF, A, B, C, D, uint64_t(nx), uint64_t(nu), uint64_t(ny) );
-		WCPG_ABCD( wcpgF, A, B, C, D, nx, nu, ny );
+		if ( !WCPG_ABCD( wcpgF, A, B, C, D, nx, nu, ny ) ) {
+			THROWERROR("Unable to compute filter WCPG");
+		}
+
+		//displaying wcpg
+		int nanErr=0;
+		std::cout<<"computateABCD: nu="<<nu<<std::endl;
+		for ( unsigned int i=0; i<ny; i++ ) {
+			std::ostringstream wcpgFDisp;
+			wcpgFDisp<<"wcpgF["<<i<<"]:";
+			for ( unsigned int j=0; j<nu; j++ ) {
+				wcpgFDisp<<" "<<wcpgF[i*nu+j];
+				if ( isnan((wcpgF[i*(nu)+j])) )
+					nanErr++;
+			}
+			REPORT(0,wcpgFDisp.str());
+		}
+		if ( nanErr ){
+			REPORT(0,"CRITICAL ERROR: One of the wcpg coefficients is a nan. Any further computation would be garbage. Aborting here.");
+			throw "Aborted.";
+		}
 
 		int maxMSB=0;
 		for ( unsigned int i=0; i<ny; i++) {
@@ -1108,16 +1234,18 @@ namespace flopoco {
 		}
 
 
+		REPORT(0,"MSBs stored.");
 
 		//Declare pseudo identities
 		ublas::matrix<double> Mt(nt,nt+nx+ny);
 		ublas::matrix<double> Mx(nx,nt+nx+ny);
 		ublas::matrix<double> My(ny,nt+nx+ny);
 
+		REPORT(0,"Initializing Mt matrix");
 		//Init Mt
 		for ( unsigned int i=0; i<nt; i++ ) {
 			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
-				if ( (j<nt) && (i=j) ) {
+				if ( (j<nt) && (i==j) ) {
 					Mt(i,j)=1;
 				}
 				else {
@@ -1126,10 +1254,11 @@ namespace flopoco {
 			}
 		}
 
+		REPORT(0,"Initializing Mx matrix");
 		//Init Mx
 		for ( unsigned int i=0; i<nx; i++ ) {
 			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
-				if ( (j>=nt) && (j<nt+nx) && (i=j) ) {
+				if ( (j>=nt) && (j<nt+nx) && (i==(j-nt)) ) {
 					Mx(i,j)=1;
 				}
 				else {
@@ -1138,10 +1267,11 @@ namespace flopoco {
 			}
 		}
 
+		REPORT(0,"Initializing My matrix");
 		//Init My
 		for ( unsigned int i=0; i<ny; i++ ) {
 			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
-				if ( (j>=nt+nx) && (i=j) ) {
+				if ( (j>=nt+nx) && (i==j) ) {
 					My(i,j)=1;
 				}
 				else {
@@ -1152,18 +1282,33 @@ namespace flopoco {
 
 		//Declare boost ABCD representation for the error filter
 		ublas::matrix<double> bAe(nx,nx);
-		ublas::matrix<double> bBe(nx,nu);
+		ublas::matrix<double> bBe(nx,nt+nx+ny);
 		ublas::matrix<double> bCe(ny,nx);
-		ublas::matrix<double> bDe(ny,nu);
+		ublas::matrix<double> bDe(ny,nt+nx+ny);
 
 		//Compute ABCD error filter
 		computeABCD(J, K, L, M, Mt, P, Mx, R, My, bAe, bBe, bCe, bDe);
 
+		displayBMatrix(J, "J");
+		displayBMatrix(K, "K");
+		displayBMatrix(L, "L");
+		displayBMatrix(M, "M");
+		displayBMatrix(Mt, "Mt");
+		displayBMatrix(P, "P");
+		displayBMatrix(Mx, "Mx");
+		displayBMatrix(R, "R");
+		displayBMatrix(My, "My");
+
+		displayBMatrix(bAe, "bAe");
+		displayBMatrix(bBe, "bBe");
+		displayBMatrix(bCe, "bCe");
+		displayBMatrix(bDe, "bDe");
+
 		//Init ABCD for error filter
-		double *Ae = new double[nx*nt] ;
-		double *Be = new double[nx*nu] ;
+		double *Ae = new double[nx*nx] ;
+		double *Be = new double[nx*nt+nx+ny] ;
 		double *Ce = new double[ny*nx] ;
-		double *De = new double[ny*nu] ;
+		double *De = new double[ny*nt+nx+ny] ;
 
 		//Transfert into double* format
 		bMToDoubleM( bAe, Ae );
@@ -1171,11 +1316,68 @@ namespace flopoco {
 		bMToDoubleM( bCe, Ce );
 		bMToDoubleM( bDe, De );
 
+		//displaying Ae
+		for ( unsigned int i=0; i<nx; i++ ) {
+			std::ostringstream doubleMDisp;
+			doubleMDisp<<"Ae["<<i<<"]:";
+			for ( unsigned int j=0; j<nx; j++ ) {
+				doubleMDisp<<" "<<Ae[i*(nx)+j];
+			}
+			REPORT(0,doubleMDisp.str());
+		}
+		
+		//displaying Be
+		for ( unsigned int i=0; i<nx; i++ ) {
+			std::ostringstream doubleMDisp;
+			doubleMDisp<<"Be["<<i<<"]:";
+			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
+				doubleMDisp<<" "<<Be[i*(nt+nx+ny)+j];
+			}
+			REPORT(0,doubleMDisp.str());
+		}
+
+		//displaying Ce
+		for ( unsigned int i=0; i<ny; i++ ) {
+			std::ostringstream doubleMDisp;
+			doubleMDisp<<"Ce["<<i<<"]:";
+			for ( unsigned int j=0; j<nx; j++ ) {
+				doubleMDisp<<" "<<Ce[i*(nx)+j];
+			}
+			REPORT(0,doubleMDisp.str());
+		}
+		
+		//displaying De
+		for ( unsigned int i=0; i<ny; i++ ) {
+			std::ostringstream doubleMDisp;
+			doubleMDisp<<"De["<<i<<"]:";
+			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
+				doubleMDisp<<" "<<De[i*(nt+nx+ny)+j];
+			}
+			REPORT(0,doubleMDisp.str());
+		}
+
 		//Declare wcpgE of the error filter
 		double *wcpgE=new double [(nt+nx+ny)*(ny)];
 
 		//Compute WCPG error
-		WCPG_ABCD( wcpgE, A, B, C, D, nx, nt+nx+ny, ny );
+		if ( !WCPG_ABCD( wcpgE, A, B, C, D, nx, nt+nx+ny, ny ) ) {
+			THROWERROR("Unable to compute wcpg for error filter.");
+		}
+
+		//displaying wcpg
+		nanErr=0;
+		for ( unsigned int i=0; i<ny; i++ ) {
+			std::ostringstream wcpgEDisp;
+			wcpgEDisp<<"wcpgE["<<i<<"]:";
+			for ( unsigned int j=0; j<nt+nx+ny; j++ ) {
+				wcpgEDisp<<" "<<wcpgE[i*(nt+nx+ny)+j];
+				if ( isnan((wcpgE[i*(nt+nx+ny)+j])) )
+					nanErr++;
+			}
+			REPORT(0,wcpgEDisp.str());
+		}
+		if ( nanErr )
+			THROWERROR("One of the wcpg coefficients is a nan. Any further computation would be garbage. Aborting here.");
 
 
 
@@ -1228,7 +1430,7 @@ namespace flopoco {
 		  //std::cout << "Dual solution is [" << dual[0] << "].\n";
 	   }
 	   for ( unsigned int i=0; i<nt+nx+ny; i++ ) {
-		   lsbInter[i]=ceil(log(prim[i])/log(2));
+		   lsbInter.push_back(ceil(log(prim[i])/log(2)));
 	   }
 	   //real toto=0.7;
 	   //toto+=41.3;
@@ -1241,6 +1443,7 @@ namespace flopoco {
 
 		std::cout<<"exiting computeMSBsLSBs"<<std::endl;
 		return 0;
+#endif
 	}
 
 	int FixSIF::readPrecision( std::vector<int> &msbsIn, std::vector<int> &lsbsIn, std::vector<int> &msbsOut, std::vector<int> &lsbsOut, bool inFile ){
@@ -1284,5 +1487,15 @@ namespace flopoco {
 		return 1;
 	}
 	
+
+	void FixSIF::displayBMatrix( ublas::matrix<double> const &M, std::string const name ) const {
+		for ( unsigned int i=0; i<M.size1(); i++ ) {
+			std::ostringstream display;
+			display<<name<<"["<<i<<"]:";
+			for ( unsigned int j=0; j<M.size2(); j++ ) {
+				display<<" "<<M(i,j);
+			}
+			REPORT(0, display.str());
+		}
+	}
 }
-	

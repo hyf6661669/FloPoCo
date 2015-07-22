@@ -122,6 +122,11 @@ namespace flopoco{
 
 		int readMatrix(std::string &header, std::string JKLMNPQRS, std::vector < std::vector <std::string> > * &toFill, std::ifstream &openedFile, int lc = 0 );
 
+		/**
+			displayBMatrix: displays the matrix M using the macro REPORT
+		  */
+		void displayBMatrix( boost::numeric::ublas::matrix<double> const &M , std::string const name ) const;
+
 
 	};
 

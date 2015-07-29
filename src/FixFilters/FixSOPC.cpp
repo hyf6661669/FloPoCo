@@ -155,7 +155,7 @@ namespace flopoco{
 				for(unsigned int toto=0;toto<lsbIn.size();toto++){
 					REPORT(0,"lsbIn["<<toto<<"]="<<lsbIn[toto]);
 				}
-		REPORT(0, "calling extended Fix RealKCM constructor with parameters:"<<endl
+		REPORT(3, "calling extended Fix RealKCM constructor with parameters:"<<endl
 		<<"		parentOp="<<this<<endl
 		<<"		target="<<getTarget()<<endl
 		<<"		miltuplicandX=X"<<i<<endl

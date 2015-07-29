@@ -126,6 +126,8 @@ namespace flopoco{
 			displayBMatrix: displays the matrix M using the macro REPORT
 		  */
 		void displayBMatrix( boost::numeric::ublas::matrix<double> const &M , std::string const name ) const;
+		
+		int displayMatrix( std::vector< std::vector<std::string> > &m, std::string name = "matrix");
 
 
 	};

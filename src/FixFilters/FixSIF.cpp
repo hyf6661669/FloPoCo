@@ -146,9 +146,7 @@ bool matAdd (ublas::matrix<double> &res, ublas::matrix<double> const &X, ublas::
 namespace flopoco {
 	const int veryLargePrec = 6400;  /*6400 bits should be enough for anybody */
 
-	int displayMatrix( std::vector< std::vector<std::string> > &m, std::string name = "matrix"){
-		std::string srcFileName="FixSIF";
-		//srcFileName<<"TOTO.cpp";
+	int FixSIF::displayMatrix( std::vector< std::vector<std::string> > &m, std::string name ){
 		REPORT(3, "Displaying Matrix "<<name<<" "<<m.size()<<" "<<m[0].size());
 		for (uint32_t i=0; i<m.size(); i++){
 			std::stringstream line;
@@ -167,7 +165,7 @@ namespace flopoco {
 	FixSIF::FixSIF(Target* target, int lsb_, std::string file_, std::map<std::string, double> inputDelays) : 
 		Operator(target), file(file_)
 	{
-		target->setNotPipelined();
+		//target->setNotPipelined();
 
 		srcFileName="FixSIF";
 		setCopyrightString ( "Antoine Martinet, Florent de Dinechin (2014)" );
@@ -228,17 +226,20 @@ namespace flopoco {
 			precDisp<<" "<<msbInter[i];
 		}
 		precDisp<<" ]";
-		REPORT(0,precDisp.str());
+		REPORT(3,precDisp.str());
+		precDisp.str(std::string());
 
 		precDisp<<"lsbInter = [";
 		for ( unsigned int i=0; i<lsbInter.size(); i++) {
 			precDisp<<" "<<lsbInter[i];
 		}
 		precDisp<<" ]";
-		REPORT(0,precDisp.str());
+		REPORT(3,precDisp.str());
 
 
+		useNumericStd();
 		useNumericStd_Unsigned();
+		useNumericStd_Signed();
 		//if(p<1) {
 		//	THROWERROR("Can't build an architecture for this value of LSB")
 		//}
@@ -247,7 +248,9 @@ namespace flopoco {
 		//xPrec= (mpfr_t *) malloc ( nx * sizeof(mpfr_t*));
 		xPrec= new mpfr_t[nx];
 		//xCurrent= (mpfr_t *) malloc ( nx * sizeof(mpfr_t*));
+				std::cout<<"xCurrent="<<xCurrent<<std::endl;
 		xCurrent= new mpfr_t[nx];
+				std::cout<<"xCurrent="<<xCurrent<<std::endl;
 		for (uint32_t i=0; i<nx; i++){
 			mpfr_init2( xPrec[i], veryLargePrec );
 			mpfr_init2( xCurrent[i], veryLargePrec );
@@ -259,14 +262,17 @@ namespace flopoco {
 
 		//declare intermediate T(k+1)
 		for (uint32_t i=0; i<nt; i++) {
-			declare(join("T",i), 1-lsbInter[i]);
+			declare(join("T",i), msbInter[i]-lsbInter[i]+1);
 		}
 
 		//nu inputs numbering from 0 to nu-1 FIXME: check the relevance of this convention dealing with SIF
 		for (uint32_t i=0; i<nu; i++) {
 			std::ostringstream input;
 			input << "U" <<i;
-			addFixInput(std::string(input.str()), true, 1+msbIn[i], lsbIn[i]);
+			//addFixInput(std::string(input.str()), true, 1+msbIn[i], lsbIn[i]);
+			addInput(std::string(input.str()), 1+msbIn[i]-lsbIn[i]);
+			declare(join("Ulv",i), msbInter[nt+i]-lsbInter[nt+i]+1);
+			vhdl<< tab << join("Ulv",i) << " <= " << "std_logic_vector(U"<<i<<");"<<std::endl;
 		}
 
 		//ny outputs numbering from 0 to ny-1 FIXME: check the relevance of this convention dealing with SIFs
@@ -274,13 +280,15 @@ namespace flopoco {
 			std::ostringstream output;
 			//output << "Y";// << i;
 			std::string name=join("Y",i);
-			addFixOutput(name, 1, 1+msbOut[i], lsbOut[i]);
+			addFixOutput(name, 1, msbOut[i], lsbOut[i]);
+			declare(join("Ylv",i), 1+msbOut[i]-lsbOut[i]);
 		}
 	
 		//declare intermediate X and X(k+1)
 		for (uint32_t i=0; i<nx; i++) {
 			//declare(join("Xplus",i));
-			declare(join("X",i), 1-lsbInter[nt+i]);
+			declare(join("X",i), msbInter[nt+i]-lsbInter[nt+i]+1);
+			declare(join("Xplus",i), msbInter[nt+i]-lsbInter[nt+i]+1);
 		}
 
 		std::vector < std::vector <std::string> > coefDel(nt+nx+ny); //copy of coeffs which will be deleted.
@@ -299,10 +307,10 @@ namespace flopoco {
 			std::queue <int> coefIndsu;
 
 			//copy first line of coeffs
-				REPORT(0,"non zeros coefficients number="<<nonZeros.size());
+				REPORT(3,"non zeros coefficients number="<<nonZeros.size());
 			for (uint32_t i = 0; i<coefDel[0].size(); i++){
 				nonZeros[i] = coefDel[0][i];
-				REPORT(0,"coeffs["<<i<<"]="<<coefDel[0][i]);
+				REPORT(3,"coeffs["<<i<<"]="<<coefDel[0][i]);
 			}
 			//output matrix std::vector
 			//three steps (t, x and u) because all are not treated the same way
@@ -312,8 +320,8 @@ namespace flopoco {
 			std::vector <int> lsbInC, msbInC;
 			for ( ; i<nt; i++ ){
 				if ( ( std::stof(nonZeros[i+ib].c_str()) == 0.0 ) || ( (std::stof(nonZeros[i+ib].c_str()) == 1.0)&&(n-coefDel.size()==i)) ){
-					REPORT(0,"no coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<-std::stof(nonZeros[i+ib].c_str()));
+					REPORT(3,"no coef found at "<<i+ib);
+					REPORT(3,"numerical value of non zero coeff at "<<i+ib<<":"<<-std::stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
@@ -321,16 +329,21 @@ namespace flopoco {
 					coefIndst.push(i);
 					lsbInC.push_back(lsbIn[i]);
 					msbInC.push_back(msbIn[i]);
-					REPORT(0,"coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<-std::stof(nonZeros[i+ib].c_str()));
+					REPORT(3,"coef found at "<<i+ib);
+					REPORT(3,"numerical value of non zero coeff at "<<i+ib<<":"<<-std::stof(nonZeros[i+ib].c_str()));
 					//hadling "-" for the use of -J in the calculations
 					//this operation is done here because we need the positive version J for all calculations concerning precisions.
-					nonZeros[i+ib]="-"+nonZeros[i+ib];
-					REPORT(0,"pushing "<<i<<" in list of indices for T"); } } REPORT(3,"number of non zeros coefficients:"<<nonZeros.size()<<", bias="<<ib<<", iteration="<<i<<", n=nu+nx+nt="<<nu+nx+nt); //only drop zeros for x
+					if ( nonZeros[i+ib][0]!='-' ) {
+						nonZeros[i+ib]="-"+nonZeros[i+ib];
+					}
+					else {
+						nonZeros[i+ib]=nonZeros[i+ib].substr(1,std::string::npos);
+					}
+					REPORT(3,"pushing "<<i<<" in list of indices for T"); } } REPORT(3,"number of non zeros coefficients:"<<nonZeros.size()<<", bias="<<ib<<", iteration="<<i<<", n=nu+nx+nt="<<nu+nx+nt); //only drop zeros for x
 			for ( ; i<nt+nx; i++ ){
 				if ( std::stof(nonZeros[i+ib].c_str()) == 0.0 ){
-					REPORT(0,"no coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
+					REPORT(3,"no coef found at "<<i+ib);
+					REPORT(3,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
@@ -338,19 +351,19 @@ namespace flopoco {
 					coefIndsx.push(i-nt);
 					lsbInC.push_back(lsbIn[i]);
 					msbInC.push_back(msbIn[i]);
-					REPORT(0,"coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
-					REPORT(0, "pushing "<<i-nt<<" in list of indices for x");
+					REPORT(3,"coef found at "<<i+ib);
+					REPORT(3,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
+					REPORT(3, "pushing "<<i-nt<<" in list of indices for x");
 				}
 			}
 
-			REPORT(0, "cleaning u from implicit zeros, bias="<<ib<<", iteration="<<i<<", n=nu+nx+nt="<<nu+nx+nt);
+			REPORT(3, "cleaning u from implicit zeros, bias="<<ib<<", iteration="<<i<<", n=nu+nx+nt="<<nu+nx+nt);
 
 			//and for u
 			for ( ; i<nu+nx+nt; i++ ){
 				if ( std::stof(nonZeros[i+ib].c_str()) == 0.0 ){
-					REPORT(0,"no coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
+					REPORT(3,"no coef found at "<<i+ib);
+					REPORT(3,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
 					nonZeros.erase(nonZeros.begin()+i+ib);
 					ib--;
 				}
@@ -358,72 +371,91 @@ namespace flopoco {
 					coefIndsu.push(i-nt-nx);
 					lsbInC.push_back(lsbIn[i]);
 					msbInC.push_back(msbIn[i]);
-					REPORT(0,"coef found at "<<i+ib);
-					REPORT(0,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
-					REPORT(0, "pushing "<<i-nt<<" in list of indices for x");
+					REPORT(3,"coef found at "<<i+ib);
+					REPORT(3,"numerical value of non zero coeff at "<<i+ib<<":"<<std::stof(nonZeros[i+ib].c_str()));
+					REPORT(3, "pushing "<<i-nt-nx<<" in list of indices for x");
 				}
 			}
+
+			unsigned int indstS = coefIndst.size();
+			unsigned int indsxS = coefIndsx.size();
+			unsigned int indsuS = coefIndsu.size();
+
+			std::stringstream indOut;
+			indOut<< "coefIndst ("<< coefIndst.size() << ")";
+			REPORT(3,indOut.str());
+			indOut.str( std::string() );
+
+			indOut<< "coefIndsx ("<< coefIndsx.size() << ")";
+			REPORT(3,indOut.str());
+			indOut.str( std::string() );
+
+
+			indOut<< "coefIndsu ("<< coefIndsu.size() << ")";
+			REPORT(3,indOut.str());
+
 
 			//if only one coeff, just write a multiplier, if only ones, just write an adder
 			//if ( nonZeros.size() > 1 ) 
 					
-					REPORT(0, "Calling FixSOPC with arguments:");
-					REPORT(0, "	target="<<target_);
+					REPORT(3, "Calling FixSOPC with arguments:");
+					REPORT(3, "	target="<<target_);
 					for ( unsigned int deb=0; deb<msbIn.size(); deb++ ) {
-						REPORT(0, "	msbIn["<<deb<<"]="<<msbIn[deb]);
-						REPORT(0, "	lsbIn["<<deb<<"]="<<lsbIn[deb]);
+						REPORT(3, "	msbIn["<<deb<<"]="<<msbIn[deb]);
+						REPORT(3, "	lsbIn["<<deb<<"]="<<lsbIn[deb]);
 					}
-					REPORT(0, "	sizeof lsbIn="<<lsbIn.size());
-					REPORT(0, "	msbOut="<<*msbInter.begin());
-					REPORT(0, "	lsbOut="<<*lsbInter.begin());
+					REPORT(3, "	sizeof lsbIn="<<lsbIn.size());
+					REPORT(3, "	msbOut="<<*msbInter.begin());
+					REPORT(3, "	lsbOut="<<*lsbInter.begin());
 					for ( unsigned int deb=0; deb<nonZeros.size(); deb++ ) {
 						REPORT(DEBUG, "	nonZeros["<<deb<<"]="<<nonZeros[deb]);
 					}
 					sopcs.push_back(new FixSOPC( target_, msbInC, lsbInC, *msbInter.begin(), *lsbInter.begin(), nonZeros));
 
 					addSubComponent(*sopcs.rbegin());
-					msbOut.erase(msbInter.begin());
-					lsbOut.erase(lsbInter.begin());
+					msbInter.erase(msbInter.begin());
+					lsbInter.erase(lsbInter.begin());
 
 					//wiring
 					i=0;
-					for ( ; i<coefIndst.size(); i++) {
-					REPORT(0, "inporting T, with parameters X"<<i<<" and T"<<coefIndst.front());
+					for ( ; i<indstS; i++) {
+					REPORT(3, "inporting T, with parameters X"<<i<<" and T"<<coefIndst.front());
 						inPortMap(*sopcs.rbegin(), join("X", i), join("T", coefIndst.front()));
 						coefIndst.pop();
 					}
 
-					for ( ; i-coefIndst.size()<coefIndsx.size(); i++) {
-					REPORT(0, "inporting X, with parameters X"<<i<<" and X"<<coefIndsx.front());
+					for ( ; i-indstS<indsxS; i++) {
+					REPORT(3, "inporting X, with parameters X"<<i<<" and X"<<coefIndsx.front());
 						inPortMap(*sopcs.rbegin(), join("X", i), join("X", coefIndsx.front()));
 						coefIndsx.pop();
 					}
-					for ( ; i-( coefIndst.size() + coefIndsx.size() )<coefIndsu.size(); i++) {
-					REPORT(0, "inporting U, with parameters X"<<i<<" and U"<<coefIndsu.front());
-						inPortMap(*sopcs.rbegin(), join("X", i), join("U", coefIndsu.front()));
+					for ( ; i-( indstS + indsxS )<indsuS; i++) {
+					REPORT(3, "inporting Ulv, with parameters X"<<i<<" and Ulv"<<coefIndsu.front());
+						inPortMap(*sopcs.rbegin(), join("X", i), join("Ulv", coefIndsu.front()));
 						coefIndsu.pop();
 					}
-					REPORT(0, "inport std::map done");
+					REPORT(3, "inport map done"<<i);
 
 					if (sopcs.size() <= nt) {
-					REPORT(0, "outporting T, with parameters R"<<" and T"<<sopcs.size()-1);
-						outPortMap(*sopcs.rbegin(), "R", join("T", sopcs.size()-1));
+					REPORT(3, "outporting T, with parameters R"<<" and T"<<sopcs.size()-1);
+						outPortMap(*sopcs.rbegin(), "R", join("T", sopcs.size()-1),0);
 						vhdl << instance(*sopcs.rbegin(), join("fixSOPC_t",sopcs.size()-1));
 					}
 					else if (sopcs.size()<=nt+nx){
-					REPORT(0, "outporting Xplus, with parameters R"<<" and Xplus"<<sopcs.size()-nt);
-						outPortMap(*sopcs.rbegin(), "R", join("Xplus", sopcs.size()-nt));
+					REPORT(3, "outporting Xplus, with parameters R"<<" and Xplus"<<sopcs.size()-nt-1); //sopcs.size()-nt-1 because X starts from 0
+						outPortMap(*sopcs.rbegin(), "R", join("Xplus", sopcs.size()-nt-1),0);
 						vhdl << instance(*sopcs.rbegin(), join("fixSOPC_y",sopcs.size()));
 					}
 					else if (sopcs.size()<=nt+nx+ny){
-					REPORT(0, "outporting Y, with parameters R"<<" and Y"<<sopcs.size()-nt-nx);
-						outPortMap(*sopcs.rbegin(), "R", join("Y", sopcs.size()-(nt+nx)),0);
+					REPORT(3, "outporting Y, with parameters R"<<" and Y"<<sopcs.size()-nt-nx-1);
+						outPortMap(*sopcs.rbegin(), "R", join("Ylv", sopcs.size()-(nt+nx)-1),0); //spocs.size()-(nt+nx)-1 because Y starts to 0
 						vhdl << instance(*sopcs.rbegin(), join("fixSOPC_y",sopcs.size()));
+						vhdl << tab << join("Y",sopcs.size()-nt-nx-1) << " <= " << join("signed(Ylv",sopcs.size()-nt-nx-1) << ");" << std::endl;
 					}
 					else {
 						THROWERROR("Unexpected error happened during internal building");
 						}
-					REPORT(0, "outport std::map done");
+					REPORT(3, "outport std::map done");
 					
 
 
@@ -434,8 +466,8 @@ namespace flopoco {
 		for (uint32_t i = 0; i < nx; i++){
 			std::stringstream sig;
 			sig<<"Xplus"<<i;
-//			REPORT(0,"export 	X"<<i<<" <= "<<delay(sig.str(),1)<<";");
-//			vhdl << tab << join("X",i)<<" <= "<<delay(sig.str(),1)<<";"<<endl;
+			REPORT(0,"export 	X"<<i<<" <= "<<delay(sig.str(),1)<<";");
+			vhdl << tab << join("X",i)<<" <= "<<delay(sig.str(),1)<<";"<<std::endl;
 		}
 		REPORT(0, "time shifting done");
 	//TODO: end of new code
@@ -448,124 +480,136 @@ namespace flopoco {
 
 	void FixSIF::emulate(TestCase * tc){
 
-		std::cout<<"	toto is ok -6"<<std::endl;
 		std::vector<mpz_class> uValues(nu);
-		std::cout<<"	toto is ok -5"<<std::endl;
 		std::vector<mpfr_t> uVals(nu);
-		std::cout<<"	toto is ok -4"<<std::endl;
 		std::vector<mpfr_t> t(nt);
-		std::cout<<"	toto is ok -3"<<std::endl;
 		mpfr_t coeff, resMul, result;
-		std::cout<<"	toto is ok -2"<<std::endl;
 		mpfr_init2(resMul, veryLargePrec);
-		std::cout<<"	toto is ok -1"<<std::endl;
 		mpfr_init2(result, veryLargePrec);
-		std::cout<<"	toto is ok 0"<<std::endl;
+		mpfr_init2(coeff, veryLargePrec);
 		for (uint32_t i=0; i<nt; i++) {
 			mpfr_init2(t[i], veryLargePrec);
-			mpfr_init2(uVals[i], veryLargePrec);
 		}
+		for ( uint32_t i=0;i<nu; i++)
+			mpfr_init2(uVals[i], veryLargePrec);
 
-		std::cout<<"	toto is ok 1"<<std::endl;
+		std::stringstream uValGot, lsbInGot;
+
+		uValGot<<"uValues ("<<uValues.size()<< ") = [";
+		lsbInGot<<"lsbIn ("<<uValues.size()<< ") = [";
 		for (uint32_t i = 0; i<nu; i++){
-		std::cout<<"	toto is ok 1.0"<<std::endl;
 				uValues[i]=tc->getInputValue(join("U",i));
-		std::cout<<"	toto is ok 1.1"<<std::endl;
-		std::cout<<"uValues["<<i<<"]="<<uValues[i]<<std::endl;
-		std::cout<<"lsbIn["<<i<<"]="<<lsbIn[i]<<std::endl;
+				uValGot << " " << uValues[i];
+				lsbInGot << " " << lsbIn[i];
 			mpfr_set_z( uVals[i],uValues[i].get_mpz_t(),GMP_RNDD );
 			mpfr_mul_2si( uVals[i], uVals[i], lsbIn[i], GMP_RNDD );
-		std::cout<<"uVals["<<i<<"]=";
-			mpfr_printf( "%.65RNf\n", uVals[i]);
-		std::cout<<"	toto is ok 1.2"<<std::endl;
+		//std::cout<<" FixSIF: uVals["<<i<<"]=";
+			//mpfr_printf( "%.65RNf\n", uVals[i]);
 				
 		}
-		std::cout<<"	toto is ok 2"<<std::endl;
+		uValGot << " ]";
+		lsbInGot << " ]";
+		REPORT(0, uValGot.str());
+		REPORT(3, lsbInGot.str());
 
 		for (uint32_t l=0; l<nt+nx+ny; l++){
+			mpfr_set_ui(result,0, GMP_RNDN);
 			for (uint32_t c=0; c<nt+nx+nu; c++){
+		//std::cout<<"GETTING A NEW COEFF"<<std::endl;
 
-		std::cout<<"	toto is ok 3"<<std::endl;
 				sollya_obj_t stringCoeff;
 				//get coeff as sollya object
 				stringCoeff = sollya_lib_parse_string(coeffs[l][c].c_str());
 				// If conversion did not succeed (i.e. parse error)
-				if(stringCoeff == 0)	{
-						std::ostringstream error;
+				if(stringCoeff == 0)	{ std::ostringstream error;
 						error << srcFileName << ":"<<"emulate(): Unable to parse std::string " << coeffs[l][c] << " as a numeric constant" << std::endl;
 						throw error.str();
 				}
-		std::cout<<"	toto is ok 4"<<std::endl;
-				mpfr_init2(coeff, veryLargePrec);
 				//get coeff as mpfr
 				sollya_lib_get_constant(coeff, stringCoeff);
 				sollya_lib_clear_obj(stringCoeff);
-		std::cout<<"	toto is ok 5"<<std::endl;
-				if (coeff != 0){
-					if ( !(l==c && l<nt) ) { //ones on the J diagonal are implicit
-						if (c<nt){
-		std::cout<<"	toto is ok 5.1"<<std::endl;
+				if (coeff != 0){ //if coeff is not null, compute the product and add it to the result for the line
 
-							mpfr_mul(resMul, t[c], coeff, GMP_RNDN);
-		std::cout<<"	toto is ok 5.2"<<std::endl;
-							mpfr_add(result, result, resMul, GMP_RNDN);
+						if (c>0 && c<nt) {
 						}
-						else if (c<nt+nx){
-		std::cout<<"	toto is ok 6"<<std::endl;
-							mpfr_mul(resMul, xPrec[c], coeff, GMP_RNDN);
-		std::cout<<"	toto is ok 6.1"<<std::endl;
+						if (c<nt){ //if multiplicand is a t
+							if ( ( (l>=nt) || (l>c) ) ) {
+							 //ones on the J diagonal are implicit
+								REPORT(3, "computing t, c="<<c<<",l="<<l);
+								mpfr_mul(resMul, t[c], coeff, GMP_RNDN);
+								mpfr_sub(result, result, resMul, GMP_RNDN);
+							}
+						}
+						else if (c<nt+nx){ //if multiplicand is a x
+							mpfr_mul(resMul, xPrec[c-nt], coeff, GMP_RNDN);
 							mpfr_add(result, result, resMul, GMP_RNDN);
-		std::cout<<"	toto is ok 7"<<std::endl;
 
 						}
-						else {
-		std::cout<<"	toto is ok 7.1"<<std::endl;
+						else { //if not t and not x, multiplicand is a u
 
 							mpfr_mul(resMul, uVals[c-nt-nx], coeff, GMP_RNDN);
-		std::cout<<"	toto is ok 7.2"<<std::endl;
 							mpfr_add(result, result, resMul, GMP_RNDN);
-		std::cout<<"	toto is ok 8"<<std::endl;
 						}
-					}
 				}
 			}
+			//for ( unsigned int i=0; i<nx; i++) {
+			//			std::cout<<"FixSIF:emulate: xPrec["<<i<<"]=";
+			//		mpfr_out_str(NULL, 10, 0, xPrec[i], GMP_RNDN);
+			//			std::cout<<std::endl;
+			//}
+			//for ( unsigned int i=0; i<nx; i++) {
+			//			std::cout<<"FixSIF:emulate: xCurrent["<<i<<"]=";
+			//		mpfr_out_str(NULL, 10, 0, xCurrent[i], GMP_RNDN);
+			//			std::cout<<std::endl;
+			//}
+			//for ( unsigned int i=0; i<nt; i++) {
+			//			std::cout<<"FixSIF:emulate: t["<<i<<"]=";
+			//		mpfr_out_str(NULL, 10, 0, t[i], GMP_RNDN);
+			//			std::cout<<std::endl;
+			//}
 			if (l<nt){
 				mpfr_set(t[l],result, GMP_RNDN);
-		std::cout<<"	toto is ok 9"<<std::endl;
 			}
 			else if (l<nt+nx) {
-				mpfr_set(xCurrent[l], result, GMP_RNDN);
-		std::cout<<"	toto is ok 10"<<std::endl;
+				mpfr_set(xCurrent[l-nt], result, GMP_RNDN);
 			}
-			if (l>=nx+nt){
-		std::cout<<"	toto is ok 11.0"<<std::endl;
-				mpfr_t rd, ru;
-				mpfr_init2 (rd, 1+msbIn[l]-lsbOut[l]);
-				mpfr_init2 (ru, 1+msbIn[l]-lsbOut[l]);		
+			else if (l>=nx+nt){
+				//mpfr_t rd, ru;
+				//mpfr_init2 (rd, veryLargePrec);
+				//mpfr_init2 (ru, veryLargePrec);		
 				mpz_class rdz, ruz;
-		std::cout<<"	toto is ok 11"<<std::endl;
+
+				//mpfr_get_z (rdz.get_mpz_t(), result, GMP_RNDD); 					// there can be a real rounding here
 
 				mpfr_get_z (rdz.get_mpz_t(), result, GMP_RNDD); 					// there can be a real rounding here
-				rdz=signedToBitVector(rdz, 1-lsbIn[l]-lsbOut[l]);
+
+				rdz=signedToBitVector(rdz, msbOut[l-(nt+nx)]-lsbOut[l-(nt+nx)]);
 //TODO: here we should have computed msbIns
 //TODO: replace lsbIn by MsbIn
-		std::cout<<"	toto is ok 12"<<std::endl;
 
 				mpfr_get_z (ruz.get_mpz_t(), result, GMP_RNDU); 					// there can be a real rounding here	
-				ruz=signedToBitVector(ruz, 1-lsbIn[l]-lsbOut[l]);
+				ruz=signedToBitVector(ruz, msbOut[l-(nt+nx)]-lsbOut[l-(nt+nx)]);
 				
-				mpfr_clears ( result, rd, ru, NULL);
+				//mpfr_clears ( result, rd, ru, NULL);
+				mpfr_clears ( result, NULL);
 
-		std::cout<<"	toto is ok 13"<<std::endl;
+				REPORT(0, "adding expected output for Y"<<l-nt-nx<<":"<<rdz);
+				REPORT(0, "adding expected output for Y"<<l-nt-nx<<":"<<ruz);
+
 				tc->addExpectedOutput(join("Y",l-nt-nx), rdz);
 				tc->addExpectedOutput(join("Y",l-nt-nx), ruz);
-		std::cout<<"	toto is ok 14"<<std::endl;
 			}
 
 		}
 		for ( uint32_t i=0; i<nx; i++ ) {
-		std::cout<<"	toto is ok 15"<<std::endl;
 			mpfr_set( xPrec[i], xCurrent[i], GMP_RNDN );
+		}
+
+		for( uint32_t i=0;i<nt; i++ ) {
+			mpfr_clears(t[i], NULL);
+		}
+		for( uint32_t i=0;i<nu; i++ ) {
+			mpfr_clears(uVals[i], NULL);
 		}
 
 

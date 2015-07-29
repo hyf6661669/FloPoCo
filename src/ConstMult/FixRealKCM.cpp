@@ -246,6 +246,11 @@ namespace flopoco{
 					last=true;
 				}
 
+				if (ppiSize[i]<1){
+					nbOfTables-i;
+					break;
+				}
+
 				REPORT(DEBUG, "Table i=" << i << ", input size=" << diSize[i] << ", output size=" << ppiSize[i]);
 
 				// Now produce the VHDL
@@ -777,7 +782,7 @@ namespace flopoco{
 
 				// Now produce the VHDL
 				if (ppiSize[i]<1){
-					nbOfTables=i+1;
+					nbOfTables-i;
 					break;
 				}
 				t[i] = new FixRealKCMTable(target, this, i, highBit, // already updated

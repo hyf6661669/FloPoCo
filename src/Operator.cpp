@@ -1003,6 +1003,14 @@ namespace flopoco{
 	}
 
 
+	string Operator::delay(string signalName, int nbDelayCycles)
+	{
+		ostringstream result;
+
+		result << signalName << "_FloPoCoDelay_" << nbDelayCycles;
+		return result.str();
+	}
+
 
 	#if 1
 	string Operator::use(string name) {
@@ -1606,32 +1614,35 @@ namespace flopoco{
 	}
 
 	void Operator::parse2(){
-		REPORT(DEBUG, "Starting second-level parsing for operator "<<srcFileName);
-		vector<pair<string,int> >:: iterator iterUse;
+		REPORT(DEBUG, "Starting second-level parsing for operator " << srcFileName);
+		//vector<pair<string,int> >:: iterator iterUse;
 		map<string, int>::iterator iterDeclare;
-
-		string name;
+		
 		int declareCycle, useCycle;
-
-		string str (vhdl.str());
-
-		/* parse the useTable and check that the declarations are ok */
-		for (iterUse = (vhdl.useTable).begin(); iterUse!=(vhdl.useTable).end();++iterUse){
+		string name;
+		
+		string str(vhdl.str());
+		
+		//why pass several times over the code, when you can do several lookups instead?
+		/*
+		// parse the useTable and check that the declarations are OK
+		for (iterUse = (vhdl.useTable).begin(); iterUse!=(vhdl.useTable).end(); ++iterUse){
 			name     = (*iterUse).first;
 			useCycle = (*iterUse).second;
-
+			
 			ostringstream tSearch;
 			ostringstream tReplace;
 			string replaceString;
-
-			tSearch << "__"<<name<<"__"<<useCycle<<"__";
-			string searchString (tSearch.str());
-
+			
+			tSearch << "__" << name << "__" << useCycle << "__";
+			string searchString(tSearch.str());
+			
 			iterDeclare = declareTable.find(name);
-			declareCycle = iterDeclare->second;
 
 			if (iterDeclare != declareTable.end()){
-				tReplace << use(name, useCycle - declareCycle);
+				declareCycle = iterDeclare->second;
+
+				tReplace << use(name, useCycle - declareCycle); 
 				replaceString = tReplace.str();
 				if (useCycle<declareCycle){
 					if(!hasDelay1Feedbacks_){
@@ -1645,7 +1656,7 @@ namespace flopoco{
 					}
 				}
 			}else{
-				/* parse the declare by hand and check lower/upper case */
+				// parse the declare by hand and check lower/upper case
 				bool found = false;
 				string tmp;
 				for (iterDeclare = declareTable.begin(); iterDeclare!=declareTable.end();++iterDeclare){
@@ -1655,46 +1666,157 @@ namespace flopoco{
 						break;
 					}
 				}
-
+				
 				if (found == true){
 					cerr  << srcFileName << " (" << uniqueName_ << "): ERROR: Clash on signal:"<<name<<". Definition used signal name "<<tmp<<". Check signal case!"<<endl;
 					exit(-1);
 				}
-
+				
+				//FIXME: useful only for the input/output signals
 				tReplace << name;
 				replaceString = tReplace.str();
 			}
-
+			
 			if ( searchString != replaceString ){
 				string::size_type pos = 0;
 				while ( (pos = str.find(searchString, pos)) != string::npos ) {
 					str.replace( pos, searchString.size(), replaceString );
 					pos++;
 				}
-			}
+			}				
 		}
+		*/
+
+		// the new version only passes once over the code
+		regex namePattern("__([A-Za-z][A-Za-z0-9_]*)__([0-9]*)__");
+		regex delayedNamePattern("([A-Za-z][A-Za-z0-9_]*)_FloPoCoDelay_([0-9]+)$");
+		smatch delayNameMatch;
+		sregex_iterator strIterator(str.begin(), str.end(), namePattern);
+		sregex_iterator strIteratorEnd;
+		string termReplace;
+		string strReplace(str);
+		int strOffset = 0;
+
+		for(; strIterator!=strIteratorEnd; ++strIterator)
+		{
+			int signalPosition = strIterator->position();
+			string signalName = regex_replace(strIterator->str(), namePattern, "$1");
+			int signalCycle = stoi(regex_replace(strIterator->str(), namePattern, "$2"));
+			ostringstream tReplace;
+
+			//check if the signal is in the declareTable
+			iterDeclare = declareTable.find(signalName);
+			if(iterDeclare != declareTable.end())
+			{
+				declareCycle = iterDeclare->second;
+				useCycle = signalCycle;
+
+				tReplace << use(signalName, useCycle - declareCycle);
+				termReplace = tReplace.str();
+				if (useCycle<declareCycle){
+					if(!hasDelay1Feedbacks_){
+						cerr << srcFileName << " (" << uniqueName_ << "): WARNING: Signal " << signalName
+								<<" defined @ cycle " <<declareCycle<<" and used @ cycle " << useCycle << endl;
+						cerr << srcFileName << " (" << uniqueName_ << "): If this is a feedback signal you may ignore this warning"<<endl;
+					}else{
+						if(declareCycle - useCycle != 1){
+							cerr << srcFileName << " (" << uniqueName_ << "): ERROR: Signal " << signalName
+									<<" defined @ cycle "<<declareCycle<<" and used @ cycle " << useCycle <<endl;
+							exit(1);
+						}
+					}
+				}
+			}else
+			{
+				// parse the declare by hand and check lower/upper case
+				bool found = false;
+				string tmp;
+				for (iterDeclare = declareTable.begin(); iterDeclare!=declareTable.end();++iterDeclare){
+					tmp = iterDeclare->first;
+					if ( (to_lowercase(tmp)).compare(to_lowercase(signalName))==0){
+						found = true;
+						break;
+					}
+				}
+
+				if (found == true){
+					cerr  << srcFileName << " (" << uniqueName_ << "): ERROR: Clash on signal:"<<signalName
+							<<". Definition used signal name "<<tmp<<". Check signal case!"<<endl;
+					exit(-1);
+				}
+
+				//FIXME: useful only for the input/output signals
+				tReplace << signalName;
+				termReplace = tReplace.str();
+
+				//try to find delayed signals
+				if(regex_match(signalName, delayNameMatch, delayedNamePattern))
+				{
+					string delayedSignalName(delayNameMatch[1]);
+					string delayedSignalDelayStr(delayNameMatch[2]);
+					int delayedSignalDelay = stoi(delayedSignalDelayStr);
+
+					iterDeclare = declareTable.find(delayedSignalName);
+					if(iterDeclare != declareTable.end())
+					{
+						declareCycle = iterDeclare->second;
+						useCycle = signalCycle + delayedSignalDelay;
+
+						tReplace.str("");
+						tReplace << use(delayedSignalName, useCycle - declareCycle);
+						termReplace = tReplace.str();
+
+						Signal *delayedSignal = getSignalByName(delayedSignalName);
+						if(delayedSignal != NULL)
+						{
+							delayedSignal->setType(Signal::registeredWithAsyncReset);
+							hasRegistersWithAsyncReset_ = true;
+						}
+					}
+				}
+
+
+			}
+
+			//replace the term
+			strReplace.replace(signalPosition-strOffset, strIterator->str().length(), termReplace);
+			strOffset += strIterator->str().length() - termReplace.length();
+		}
+
+		str = strReplace;
+
+
+		//why pass several times over the code, when you can do several lookups instead?
+		/*
 		for (iterDeclare = declareTable.begin(); iterDeclare!=declareTable.end();++iterDeclare){
 			name = iterDeclare->first;
 			useCycle = iterDeclare->second;
-
+			
 			ostringstream tSearch;
-			tSearch << "__"<<name<<"__"<<useCycle<<"__";
-			//			cout << "searching for: " << tSearch.str() << endl;
+			tSearch << "__"<<name<<"__"<<useCycle<<"__"; 
 			string searchString (tSearch.str());
-
+			
 			ostringstream tReplace;
 			tReplace << name;
 			string replaceString(tReplace.str());
-
+			
 			if ( searchString != replaceString ){
-
 				string::size_type pos = 0;
 				while ( (pos = str.find(searchString, pos)) != string::npos ) {
 					str.replace( pos, searchString.size(), replaceString );
 					pos++;
 				}
-			}
+			}				
 		}
+		*/
+
+		//the new version only passes once over the code
+		string nameReplacement = "$1";
+
+		str = regex_replace(str, namePattern, nameReplacement);
+
+
+		//all done, now write the code
 		vhdl.setSecondLevelCode(str);
 		REPORT(DEBUG, "   ... done second-level parsing for operator "<<srcFileName);
 	}

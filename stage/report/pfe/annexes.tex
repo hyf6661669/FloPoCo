@@ -1,0 +1,59 @@
+	LTI filters in general are usually defined as sums of products.
+	Several quantities are useful to understand their characteristics
+
+	\subsection{Notations}
+		The entire report will use several notations and conventions:
+		\begin{itemize}
+			\item in signal processing, t is the common notation for continue time and k the notation for discrete time. This report keeps this convention.
+			\item $\langle\langle\mathcal{H}\rangle\rangle _{WCPG}$ is the worst case peak gain of the filter $\mathcal{H}$
+			\item y is an output variable
+			\item x is a state variable
+			\item t is an intermediate variable
+			\item a bold symbol (for example $\boldsymbol{h}$) denotes a matrix, that may be a vector
+			\item a normal symbol (for example $\varepsilon_{t_1}(k)$) denotes a single value
+		\end{itemize}
+
+	\subsection{Reminders about signal processing}
+	\begin{thdef}\label{sig} (Signal)
+		Generally, a signal is a temporal variable, which takes a value from $\mathbb{R}$ at each time t.
+		x(t) denotes the value of the signal x at the instant t.
+		When dealing with discrete time events, the time will be represented by k.
+		Then x(k) is said to be a sample.
+		$\{x(k)\}_{k \geq 0}$ denotes all the values possible for the signal x.
+		The rest of this report, adresses vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
+	\end{thdef}
+
+	\begin{thdef}\label{l_1} ($\ell^1$ norm)
+		The $\ell^1$ norm of a scalar signal x, denoted $\|x\|_{\ell^1}$, is the sum of absolute values of $x(k)$ at each instant k:
+		\begin{equation} \label{l1}
+				\|x\|_{\ell^1}=\sum_{k=0}^{+\infty}|x(k)|
+		\end{equation}
+		This norm exists only if $x$ is $\ell^1$-sommable, that is, if and only if the equation \ref{l1} converges.
+	\end{thdef}
+	
+	\begin{thdef}\label{l_1} ($\ell^2$ norm)
+		The $\ell^2$ norm of a scalar signal x, denoted $\|x\|_{\ell^2}$, is defined as follows:
+		\begin{equation} \label{l2}
+				\|x\|_{\ell^2}=\sqrt{\sum_{k=0}^{+\infty}x(k)^2}
+		\end{equation}
+		This norm exists only if $x$ is square-sommable, that is, if and only if the equation \ref{l2} converges.
+	\end{thdef}
+
+	\begin{thdef}\label{l_inf} ($\ell^\infty$ norm)
+		The $\ell^\infty$ norm of a scalar signal x, denoted $\|x\|_{\ell^\infty}$, is the smallest upper bound among all values (absolute values) possible for the signal x, that is:
+		\begin{equation} \label{l3}
+				\|x\|_{\ell^\infty}=\sup_{k\in \mathbb{N}}|x(k)|
+		\end{equation}
+	\end{thdef}
+
+		\begin{thdef}\label{Dirac} (Dirac)
+			The Dirac function, denoted $\delta$ describes an impulsion of infinite amplitude at a discrete time k (supposed to be instaneous):
+			\begin{equation} \label{ir}
+					\delta(k)=
+					\begin{cases}
+						1 & when\  k=0 \\
+						0 & else
+					\end{cases}
+			\end{equation}
+				
+		\end{thdef}

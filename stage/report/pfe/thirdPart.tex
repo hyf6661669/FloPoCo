@@ -1,0 +1,28 @@
+\subsection{Static analysis on coefficients}
+	Detection of and removal of null coefficients is already implemented.
+	Detecting power of two entries in the coefficients seem to be a quite simple improvement to implement.
+	However, this part should be left to the implementation of SOPCs, and so KCM multipliers.
+	Indeed, pushing this detection at the lowest level is easy and gives the opportunity to the lower operators to give a feedback about their actual accuracy.
+	Detecting a power of two in a KCM multiplier with feedback on precision will help to build better calculations on msbs and lsbs.
+	Moreover, doing the job in the KCM operator will prevent spending compile time analysing the list of coefficients.
+
+
+
+\subsection{Sub-filter detection}
+	Detecting independent loops can be very interesting in the context of saving hardware.
+	Considering a sub-filter with its own loop can permit to use its WCPG to compute the precisions for this sub-filter.
+	This leads to another resolution with a precision specification that depends on the rest of the filter (logic after the sub-filter in the pipeline).
+	However, this optimization can be done at the front-end step, which leads to an open question.
+	In fact, detecting such loops has issues both in front-end and in backend, and is a non-trivial problem.
+	So it remains as an open question for future investigations.
+
+\subsection{Precision calculations improvement}
+	This work kept original calculations from Lopez's PhD \cite{lopez}, trying to adapt them to our context.
+	However, lots of approximations are done through those calculations.
+	Working on this part, going back over all the calculations could really improve the efficiency and size of all hardware implementations.
+
+
+\subsection{File format re-specification}
+	Specifying new formats could help to improve the visibility and the usability of this new operator.
+	The idea is to avoid specification output formatting operations for the user.
+	In the future, the present implementation should recognize input matrices formated in the Python or Matlab formats.

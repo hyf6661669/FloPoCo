@@ -29,7 +29,7 @@
 \setlength{\voffset}{-1in}
 \setlength{\textheight}{8.40in}
 
-\pagenumbering{gobble}
+\pagenumbering{gobble} %TODO: uncomment this at the end of development
 
 
 \usepackage{amsthm}
@@ -102,7 +102,7 @@
 
 \maketitle
 %\tableofcontents
-\noindent Sous la responsabilité de : \\
+\noindent Under the responsability of : \\
 Florent de Dinechin : INRIA Rhône-Alpes \\
 Florent de Dinechin : Département Informatique
 \vspace{20pt}
@@ -113,19 +113,25 @@ Florent de Dinechin : Département Informatique
 	\leftskip0.395in
 	\rightskip\leftskip
 	\noindent \textbf{Abstract.}
-	this is a fucking abstract that is fucking too small and that will be fucking useless.
-	I fuck this fucking template that fucking forces me to say fucking bullshit.
-	Well, fuck, I shouldn't fucking say fuck so many fucking times, wow crap.
+	The literature offers papers comparing different realizations of the same filter,
+	and observing that more accuracy can be obtained at the expense of more multipliers.
+	Such studies are relevant in software implementations, where the multiplier size is a given.
+	In the context of hardware or FPGA implementations, more accuracy can also be bought by larger multipliers.
+	This internship will study this trade-off and design tools that explore it.
+	The ultimate objective is to generate the smallest or fastest filter satisfying a given accuracy specification.
 
 	\vspace{20pt}
 
 \endgroup
 	
 	\noindent \textbf{Key-words:}
+	signal processing
+	architecture generation
+	LTI Filters
 
 
-\section*{ Introduction }
-	\addcontentsline{toc}{section}{Introduction}
+\section{ Introduction }
+	%\addcontentsline{toc}{section}{Introduction}
 
 	Filters are nowadays essential tools for designing responsive systems.
 	%As they appear in both signal processing and command communities,
@@ -138,7 +144,7 @@ Florent de Dinechin : Département Informatique
 %	some interesting applications in hardware could help to accelerate such computations, 
 
 	For most applications, filters can be computed in software.
-	However, for performance reasons hardware implementations are needed in many applications.
+	However, for performance reasons hardware implementations are needed in many cases.
 	There is an interest in FPGAs implementations because they can help for prototyping a software defined radio (SDR).
 	%interest on applications FPGAs implementations because help for prototyping software defined radio. SDR is the main researche subjevt of the SOCRATE team 
 	%\TODO: make a sentence with comment above
@@ -158,17 +164,17 @@ Florent de Dinechin : Département Informatique
 \label{Part1}
 \input{firstPart}
 
-\newpage
+%\newpage
 \section{Architecture generation}
 \label{Part2}
 \input{secondPart}
 
-\newpage
+%\newpage
 \section{Further work}
 \label{Part3}
 \input{thirdPart}
 
-\newpage
+%\newpage
 \section*{Conclusion}
 	\addcontentsline{toc}{section}{Conclusion}
 	This work tried to give an overview of LTI filters, and the considerations to take into account when trying to implement them.
@@ -186,7 +192,7 @@ Florent de Dinechin : Département Informatique
 
 \bibliographystyle{plain}
 \bibliography{report}  % main.bib is the name of the Bibliography in this case
-\newpage
+%\newpage
 %\section*{Appendix: Notations and reminders about signal processing}
 %	\addcontentsline{toc}{section}{Appendix: Notations and reminders about signal processing}
 %\input{annexes}

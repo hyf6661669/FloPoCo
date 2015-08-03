@@ -15,13 +15,13 @@
 		The rest of this report adresses vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
 	\end{thdef}
 
-	\subsubsection{$l^\infty$ norm}
-	\begin{thdef}\label{l_inf} ($\ell^\infty$ norm)
-		The $\ell^\infty$ norm of a scalar signal x, denoted $\|x\|_{\ell^\infty}$, is the smallest upper bound among all values (absolute values) possible for the signal x, that is:
-		\begin{equation} \label{l3}
-				\|x\|_{\ell^\infty}=\sup_{k\in \mathbb{N}}|x(k)|
-		\end{equation}
-	\end{thdef}
+	%\subsubsection{$l^\infty$ norm}
+	%\begin{thdef}\label{l_inf} ($\ell^\infty$ norm)
+	%	The $\ell^\infty$ norm of a scalar signal x, denoted $\|x\|_{\ell^\infty}$, is the smallest upper bound among all values (absolute values) possible for the signal x, that is:
+	%	\begin{equation} \label{l3}
+	%			\|x\|_{\ell^\infty}=\sup_{k\in \mathbb{N}}|x(k)|
+	%	\end{equation}
+	%\end{thdef}
 
 	\subsubsection{Linear Time Invariant Filters (LTI filters)}
 	A filter, denoted by its transfer function $\mathcal{H}$, is an application which transforms a signal vector $\boldsymbol{u}$ (with $dim(\boldsymbol{u}) = n_u$ )
@@ -37,32 +37,32 @@
 		$$ \{\mathcal{H}(\boldsymbol{u})(k-k_0)\}_{k\geq0} = \mathcal{H}(\{\boldsymbol{u}(k-k_0)\}_{k \geq 0} ) $$
 	\end{thdef}
 
-	\subsubsection{Impulse response}
-	\begin{thdef} (Impulse Response)
-	A SISO filter may be defined by its impulse response, denoted $h$. $h$ is the
-	impulse response of H to the impulsion of Dirac.
-	Indeed each input signal can be described as a sum of Dirac impulsions:
-	$$u=\sum_{i\geq0}u(l)\delta_l$$
-	where $\delta_l$ is a Dirac impulsion centered in $l$, that is:
-	\begin{equation}
-		\delta_l(k) =
-		\begin{cases}
-			1 & \hspace{5pt} when \hspace{5pt} k=l\\
-			0 & \hspace{5pt} else\\
-		\end{cases}
-	\end{equation}
-	The linearity condition of $\mathcal{H}$ implies: $\mathcal{H}(u) = \sum_{l\geq0}u(l)\mathcal{H}(\delta_l)$.
-	Time invariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$.
-	Then the computation from inputs to outputs takes this form:
-	$$y(k)=\sum_{l\geq0}u(l)h(k-l)=\sum_{l=0}^ku(k)h(k-l)$$
-	This corresponds with the convolution product definition of $u$ by $h$, denoted $y = h * u$.
-	%Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
-	Dealing with MIMO filters, $\boldsymbol{h}(k) \in \mathbb{R}^{n_y \times n_u}$ is the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}(k)$ is the response on the
-	ith output to the Dirac implusion on the j-th input.
-	The precedent equation becomes:
-	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l=0}^ku_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
-	
-	\end{thdef} 
+	%\subsubsection{Impulse response}
+	%\begin{thdef} (Impulse Response)
+	%A SISO filter may be defined by its impulse response, denoted $h$. $h$ is the
+	%impulse response of H to the impulsion of Dirac.
+	%Indeed each input signal can be described as a sum of Dirac impulsions:
+	%$$u=\sum_{i\geq0}u(l)\delta_l$$
+	%where $\delta_l$ is a Dirac impulsion centered in $l$, that is:
+	%\begin{equation}
+	%	\delta_l(k) =
+	%	\begin{cases}
+	%		1 & \hspace{5pt} when \hspace{5pt} k=l\\
+	%		0 & \hspace{5pt} else\\
+	%	\end{cases}
+	%\end{equation}
+	%The linearity condition of $\mathcal{H}$ implies: $\mathcal{H}(u) = \sum_{l\geq0}u(l)\mathcal{H}(\delta_l)$.
+	%Time invariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$.
+	%Then the computation from inputs to outputs takes this form:
+	%$$y(k)=\sum_{l\geq0}u(l)h(k-l)=\sum_{l=0}^ku(k)h(k-l)$$
+	%This corresponds with the convolution product definition of $u$ by $h$, denoted $y = h * u$.
+	%%Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
+	%Dealing with MIMO filters, $\boldsymbol{h}(k) \in \mathbb{R}^{n_y \times n_u}$ is the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}(k)$ is the response on the
+	%ith output to the Dirac implusion on the j-th input.
+	%The precedent equation becomes:
+	%$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l=0}^ku_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
+	%
+	%\end{thdef} 
 
 	\subsubsection{Worst-Case Peak Gain (WCPG) of a Filter: the maximum possible amplification}
 	\begin{thdef} (Worst-Case Peak Gain)
@@ -91,18 +91,18 @@
 		y(k)=\sum_{i=0}^n b_i u(k-i) - \sum_{i=0}^n a_i y(k-i)
 	\end{equation}
 
-	Here one can observe that the output at time $k$ depends also on all previous $n$ outputs (loopback). 
-	Also remark that a FIR can be seen as an IIR with $\forall i \in [0,n],a_i=0$
-	The impulse response can then be deduced from \ref{iirdef} by resolving the recurrence relation:
+	%Here one can observe that the output at time $k$ depends also on all previous $n$ outputs (loopback). 
+	%Also remark that a FIR can be seen as an IIR with $\forall i \in [0,n],a_i=0$
+	%The impulse response can then be deduced from \ref{iirdef} by resolving the recurrence relation:
 
-	\begin{equation}
-		h(k) =
-		\begin{cases}
-			0 & when \hspace{5pt} k<l\\
-			b_k - \sum_{l=1}^n a_l h(k-l) & when \hspace{5pt} 0\leq k \leq n\\
-			\sum_{l=1}^n a_l h(k-l) & when \hspace{5pt} n< k\\
-		\end{cases}
-	\end{equation}
+	%\begin{equation}
+	%	h(k) =
+	%	\begin{cases}
+	%		0 & when \hspace{5pt} k<l\\
+	%		b_k - \sum_{l=1}^n a_l h(k-l) & when \hspace{5pt} 0\leq k \leq n\\
+	%		\sum_{l=1}^n a_l h(k-l) & when \hspace{5pt} n< k\\
+	%	\end{cases}
+	%\end{equation}
 
 	\subsection{Different realizations: how to compute the output of a filter?}
 	\begin{thdef} (realization)
@@ -244,36 +244,36 @@
 	\end{eqnarray}
 
 	The best way to understand the SIF may be to see it as an algorithm, each line of the equation \ref{sifdef} corresponding to a sequential step of the computation.
-	The algorithm results as follows:
-	\begin{algorithm}
-		\For{int i = 0 ; $i \leq n_t$; i++}{
-			$\boldsymbol{t}_i(k+1) \leftarrow - \sum\limits\limits_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k)$
-		}
-		\For{int i = 0 ; $i \leq n_x$; i++}{
-			$\boldsymbol{x}_i(k+1) \leftarrow - \sum\limits_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k)$
-		}
-		\For{int i = 0 ; $i \leq ny$; i++}{
-			$\boldsymbol{y}_i(k) \leftarrow - \sum\limits_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k)$
-		}
-		\caption{Computation of SIF outputs from inputs}
-	\end{algorithm}
+	%The algorithm results as follows:
+	%\begin{algorithm}
+	%	\For{int i = 0 ; $i \leq n_t$; i++}{
+	%		$\boldsymbol{t}_i(k+1) \leftarrow - \sum\limits\limits_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k)$
+	%	}
+	%	\For{int i = 0 ; $i \leq n_x$; i++}{
+	%		$\boldsymbol{x}_i(k+1) \leftarrow - \sum\limits_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k)$
+	%	}
+	%	\For{int i = 0 ; $i \leq ny$; i++}{
+	%		$\boldsymbol{y}_i(k) \leftarrow - \sum\limits_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k)$
+	%	}
+	%	\caption{Computation of SIF outputs from inputs}
+	%\end{algorithm}
 
-	Here, it is important to see that the form of $\boldsymbol{J}$ allows to compute the $\boldsymbol{t}_i$ sequentially. The algorithm can
-	then be described as follows:
-	\begin{algorithm} \label{algomat}
-		\For{int i = 0 ; $i \leq n_t$; i++}{
-			$\boldsymbol{t}_i(k+1) \leftarrow - \boldsymbol{J'}_{i}\boldsymbol{t}(k+1) + \boldsymbol{M}_{i}\boldsymbol{x}(k) +\boldsymbol{N}_{i}\boldsymbol{u}(k)$
-		}
-		\For{int i = 0 ; $i \leq n_x$; i++}{
-			$\boldsymbol{x}_i(k+1) \leftarrow - \boldsymbol{K}_{i}\boldsymbol{t}(k+1) + \boldsymbol{P}_{i}\boldsymbol{x}(k) +\boldsymbol{Q}_{i}\boldsymbol{u}(k)$
-		}
-		\For{int i = 0 ; $i \leq ny$; i++}{
-			$\boldsymbol{y}_i(k) \leftarrow - \boldsymbol{L}_{i}\boldsymbol{t}(k+1) + \boldsymbol{R}_{i}\boldsymbol{x}(k) + \boldsymbol{S}_{i}\boldsymbol{u}(k)$
-		}
-		\caption{Simplified matricial algorithm}
-	\end{algorithm}
+	%Here, it is important to see that the form of $\boldsymbol{J}$ allows to compute the $\boldsymbol{t}_i$ sequentially. The algorithm can
+	%then be described as follows:
+	%\begin{algorithm} \label{algomat}
+	%	\For{int i = 0 ; $i \leq n_t$; i++}{
+	%		$\boldsymbol{t}_i(k+1) \leftarrow - \boldsymbol{J'}_{i}\boldsymbol{t}(k+1) + \boldsymbol{M}_{i}\boldsymbol{x}(k) +\boldsymbol{N}_{i}\boldsymbol{u}(k)$
+	%	}
+	%	\For{int i = 0 ; $i \leq n_x$; i++}{
+	%		$\boldsymbol{x}_i(k+1) \leftarrow - \boldsymbol{K}_{i}\boldsymbol{t}(k+1) + \boldsymbol{P}_{i}\boldsymbol{x}(k) +\boldsymbol{Q}_{i}\boldsymbol{u}(k)$
+	%	}
+	%	\For{int i = 0 ; $i \leq ny$; i++}{
+	%		$\boldsymbol{y}_i(k) \leftarrow - \boldsymbol{L}_{i}\boldsymbol{t}(k+1) + \boldsymbol{R}_{i}\boldsymbol{x}(k) + \boldsymbol{S}_{i}\boldsymbol{u}(k)$
+	%	}
+	%	\caption{Simplified matricial algorithm}
+	%\end{algorithm}
 
-	With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
+	%With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
 
 	Values of the vector $\boldsymbol{t}(k+1)$ are computed and used at the same iterations, so they are not kept in memory.
 	As the equation \ref{sifdef} is mostly full of zeros, it is more convenient to use it’s compressed formulation, wich is denoted
@@ -287,24 +287,26 @@
 			\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{S} 
 		\end{pmatrix}
 	\end{equation}
+
 	The community usually takes $-\boldsymbol{J}$ for simplicity within further computations.
 
-	The SIF can of course be transformed into an equivalent ABCD (classic state-space) form, which gives:
-
-	\begin{eqnarray} \label{abcdtranspose}
-		\boldsymbol{A_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{M} +\boldsymbol{P}, \hspace{5pt}
-		\boldsymbol{B_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{N} +\boldsymbol{Q}, \nonumber \\
-		\boldsymbol{C_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{M} +\boldsymbol{R}, \hspace{5pt}
-		\boldsymbol{D_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{N} +\boldsymbol{S}, \nonumber \\
-	\end{eqnarray}
-
-	with:
-	\begin{eqnarray}
-		\boldsymbol{A_Z} \in \mathbb{R}^{n_x \times n_x},
-		\boldsymbol{B_Z} \in \mathbb{R}^{n_x \times n_u}, \nonumber \\
-		\boldsymbol{C_Z} \in \mathbb{R}^{n_y \times n_x},
-		\boldsymbol{D_Z} \in \mathbb{R}^{n_y \times n_u},
-	\end{eqnarray}
+	%The SIF can of course be transformed into an equivalent ABCD (classic state-space) form, which gives:
+	The SIF can of course be transformed into an equivalent ABCD (classic state-space) form.
+%
+%	\begin{eqnarray} \label{abcdtranspose}
+%		\boldsymbol{A_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{M} +\boldsymbol{P}, \hspace{5pt}
+%		\boldsymbol{B_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{N} +\boldsymbol{Q}, \nonumber \\
+%		\boldsymbol{C_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{M} +\boldsymbol{R}, \hspace{5pt}
+%		\boldsymbol{D_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{N} +\boldsymbol{S}, \nonumber \\
+%	\end{eqnarray}
+%
+%	with:
+%	\begin{eqnarray}
+%		\boldsymbol{A_Z} \in \mathbb{R}^{n_x \times n_x},
+%		\boldsymbol{B_Z} \in \mathbb{R}^{n_x \times n_u}, \nonumber \\
+%		\boldsymbol{C_Z} \in \mathbb{R}^{n_y \times n_x},
+%		\boldsymbol{D_Z} \in \mathbb{R}^{n_y \times n_u},
+%	\end{eqnarray}
 
 	\subsubsection{Workflow for filter implementation}
 		%Here, we won't discuss the optimality of the SIF description.
@@ -318,9 +320,9 @@
 
 		\begin{figure}[h] 
 		  \centering
-		  \begin{tikzpicture}[x=1cm,y=1cm]
+		  \begin{tikzpicture}[x=0.8cm,y=1cm]
 			\draw (-9.5, 1.0) -- (-8,1.0) [->, thick] node[above,near start, text width = 3cm, align=center]{User filter specification};
-			\draw (-3.5, 1.0) -- (0.0,1.0) [->, thick] node[below,xshift=-1.8cm]{$\begin{pmatrix}\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\ \boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\ \boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y \end{pmatrix}$};
+			\draw (-3.5, 1.0) -- (0.0,1.0) [->, thick] node[below,xshift=-1.4cm]{$\begin{pmatrix}\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\ \boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\ \boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y \end{pmatrix}$};
 			\draw (-8,-0.3) rectangle ++(4.5,2.4)[thick] node [midway, text width = 4cm, align=center]{Realization Choice \\ by \\ Hilaire, Volkova  \\ team PEQUAN, LIP6 \\(Front-End)}; 
 			\draw (0.0,0.0) rectangle ++(3.0,2)[thick] node [midway, text width = 3cm, align=center]{Flopoco core generation \\ (this work) \\(Back-End)}; 
 

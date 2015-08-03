@@ -276,7 +276,7 @@
 	%With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
 
 	Values of the vector $\boldsymbol{t}(k+1)$ are computed and used at the same iterations, so they are not kept in memory.
-	As the equation \ref{sifdef} is mostly full of zeros, it is more convenient to use it’s compressed formulation, wich is denoted
+	As the equation \ref{sifdef} is mostly full of zeros, it is more convenient to use it’s compressed formulation, which is denoted
 	$\boldsymbol{Z}$:
 	
 	\begin{equation} \label{zmatrix}
@@ -292,6 +292,7 @@
 
 	%The SIF can of course be transformed into an equivalent ABCD (classic state-space) form, which gives:
 	The SIF can of course be transformed into an equivalent ABCD (classic state-space) form.
+	About parallelism, it is useful to remark that $t(k+1)$ are computed sequentially, while $x(k+1)$ and $y(k)$ can be computed in parallel.
 %
 %	\begin{eqnarray} \label{abcdtranspose}
 %		\boldsymbol{A_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{M} +\boldsymbol{P}, \hspace{5pt}

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  3 AUG 2015 14:14
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  3 AUG 2015 16:41
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1044,11 +1044,9 @@ een already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.233 	\end{equation}
-                      [3]) (./secondPart.tex
-Underfull \vbox (badness 1005) has occurred while \output is active []
+                      [3]) (./secondPart.texpdfTeX warning (ext4): destination 
+with the same identifier (name{page.}) has been already used, duplicate ignored
 
-pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
-een already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.7 
@@ -1078,7 +1076,7 @@ been already used, duplicate ignored
                    \relax 
 l.351 		\end{eqnarray}
                        [6] (./pictures/example.tex)
-Overfull \hbox (63.95132pt too wide) in paragraph at lines 389--390
+Overfull \hbox (63.95132pt too wide) in paragraph at lines 391--392
  [] 
  []
 
@@ -1089,7 +1087,7 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.417 	\subsubsection
+l.419 	\subsubsection
                      {When $n_x=0$} [7]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
@@ -1097,25 +1095,25 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.417 	\subsubsection
+l.419 	\subsubsection
                      {When $n_x=0$} [8]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 417.
+(hyperref)                removing `math shift' on input line 419.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `subscript' on input line 417.
+(hyperref)                removing `subscript' on input line 419.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 417.
+(hyperref)                removing `math shift' on input line 419.
 
 pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.458 		\begin{verbatim}
+l.460 		\begin{verbatim}
                          [9]) (./thirdPart.tex)pdfTeX warning (ext4): destinati
 on with the same identifier (name{page.}) has been already used, duplicate igno
 red
@@ -1143,7 +1141,7 @@ LaTeX Warning: There were multiply-defined labels.
 Here is how much of TeX's memory you used:
  20852 strings out of 493109
  364935 string characters out of 6140856
- 596097 words of memory out of 5000000
+ 596079 words of memory out of 5000000
  23832 multiletter control sequences out of 15000+600000
  25694 words of font info for 100 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -1178,7 +1176,7 @@ ublic/amsfonts/cm/cmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmti10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
 </usr/share/texmf-dist/fonts/type1/public/amsfonts/euler/eufb10.pfb></usr/share
 /texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on report.pdf (11 pages, 416023 bytes).
+Output written on report.pdf (11 pages, 416398 bytes).
 PDF statistics:
  416 PDF objects out of 1000 (max. 8388607)
  363 compressed objects within 4 object streams

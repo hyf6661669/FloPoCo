@@ -350,6 +350,8 @@
 			%\boldsymbol{D}_{i,j}= | \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j}| \cdot \frac{\boldsymbol{2^{msb_{v'_j}+1}}}{\xi_i}
 		\end{eqnarray}
 
+		And $v\in\{t,x,y\}$.
+
 		 So, all $lsb_{v_i}$ from all $msb_{v_i}$ can  be deduced from \label{constraint}.
 		As $msb_{v_i}$ can be deduced directly from $\langle\langle \mathcal{H} \rangle\rangle_{wcpg}$, choosing and computing each operator precision is possible through linear programming.
 
@@ -366,7 +368,7 @@
 			Computing the worst-case peak gain accurately in finite precision is a non-trivial problem.
 			%As doing such a work is a PhD subject, the present work is about to integrate code developped by Anastasia Lozanova Volkova from Hilaire's team at LIP6 \cite{Volk15a}, under the metalibm project.
 			A state of the art implementation is being developped at LIP6 by Anastatsia Lozanova Volkova from Hilaire's team (PEQUAN) \cite{Volk15a}.
-			This work will use it as soon as it is available.
+			This work uses Lozanova's code.
 
 
 \subsection{Architecture generation algorithm}
@@ -438,7 +440,7 @@
 
 	\subsection{Implementation details}
 	This implementation work has been done in the FixFilter section of the FloPoCo project.
-	It is for now about 900 lines and contains:
+	It is for now about 1500 lines and contains:
 	\begin{itemize}
 		\item the implentation of the SIF algorithm
 		\item the specification parser

@@ -1,40 +1,51 @@
 \select@language {english}
-\contentsline {section}{Introduction}{}{section*.2}
-\contentsline {section}{\numberline {1}Tools for expressing filters and signal processing}{}{section.1}
-\contentsline {subsection}{\numberline {1.1}Fundamentals about signal processsing}{}{subsection.1.1}
-\contentsline {subsubsection}{\numberline {1.1.1}Definition of a signal}{}{subsubsection.1.1.1}
-\contentsline {subsubsection}{\numberline {1.1.2}$l^\infty $ norm}{}{subsubsection.1.1.2}
-\contentsline {subsubsection}{\numberline {1.1.3}Linear Time Invariant Filters (LTI filters)}{}{subsubsection.1.1.3}
-\contentsline {subsubsection}{\numberline {1.1.4}Impulse response}{}{subsubsection.1.1.4}
-\contentsline {subsubsection}{\numberline {1.1.5}Worst-Case Peak Gain (WCPG) of a Filter: the maximum possible amplification}{}{subsubsection.1.1.5}
-\contentsline {subsection}{\numberline {1.2}FIR and IIR: two filters families}{}{subsection.1.2}
-\contentsline {subsection}{\numberline {1.3}Different realizations: how to compute the output of a filter?}{}{subsection.1.3}
-\contentsline {subsubsection}{\numberline {1.3.1}Direct and transposed forms}{}{subsubsection.1.3.1}
-\contentsline {subsubsection}{\numberline {1.3.2}State-space representation: a recurrence to define an infinite response}{}{subsubsection.1.3.2}
-\contentsline {subsection}{\numberline {1.4}The Specialized Implicit Form (SIF): a unified representation}{}{subsection.1.4}
-\contentsline {subsubsection}{\numberline {1.4.1}Definition}{}{subsubsection.1.4.1}
-\contentsline {subsubsection}{\numberline {1.4.2}Workflow for filter implementation}{}{subsubsection.1.4.2}
-\contentsline {section}{\numberline {2}Architecture generation}{}{section.2}
-\contentsline {subsection}{\numberline {2.1}Implementation: what can be done in practise?}{}{subsection.2.1}
-\contentsline {subsubsection}{\numberline {2.1.1}The FloPoCo Framework: computing just right}{}{subsubsection.2.1.1}
-\contentsline {subsubsection}{\numberline {2.1.2}KCM multipliers: an architecture to efficiently compute products on FPGAs}{}{subsubsection.2.1.2}
-\contentsline {subsubsection}{\numberline {2.1.3}SOPCs: exploiting full parallel architecures}{}{subsubsection.2.1.3}
-\contentsline {subsubsection}{\numberline {2.1.4}Precision concerns}{}{subsubsection.2.1.4}
-\contentsline {subsubsection}{\numberline {2.1.5}Size computation in finite precision}{}{subsubsection.2.1.5}
-\contentsline {subsubsection}{\numberline {2.1.6}Error analysis}{}{subsubsection.2.1.6}
-\contentsline {subsubsection}{\numberline {2.1.7}Worst-case peak gain computation}{}{subsubsection.2.1.7}
-\contentsline {subsection}{\numberline {2.2}Architecture generation algorithm}{}{subsection.2.2}
-\contentsline {subsection}{\numberline {2.3}Particular Forms, degenerated cases}{}{subsection.2.3}
-\contentsline {subsubsection}{\numberline {2.3.1}ABCD Form: still achievable}{}{subsubsection.2.3.1}
-\contentsline {subsubsection}{\numberline {2.3.2}When $n_x=0$}{}{subsubsection.2.3.2}
-\contentsline {subsection}{\numberline {2.4}Optimizations}{}{subsection.2.4}
-\contentsline {subsubsection}{\numberline {2.4.1}Sparse matrices}{}{subsubsection.2.4.1}
-\contentsline {subsubsection}{\numberline {2.4.2}Power of two coefficients}{}{subsubsection.2.4.2}
-\contentsline {subsection}{\numberline {2.5}Implementation details}{}{subsection.2.5}
-\contentsline {subsection}{\numberline {2.6}Filter specification interface}{}{subsection.2.6}
-\contentsline {section}{\numberline {3}Further work}{}{section.3}
-\contentsline {subsection}{\numberline {3.1}Static analysis on coefficients}{}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}Sub-filter detection}{}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}Precision calculations improvement}{}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}File format re-specification}{}{subsection.3.4}
-\contentsline {section}{Conclusion}{}{section*.3}
+\contentsline {section}{\numberline {1} Introduction }{}{section.1}
+\contentsline {section}{\numberline {2}Tools for expressing filters and signal processing}{}{section.2}
+\contentsline {subsection}{\numberline {2.1}Fundamentals about signal processsing}{}{subsection.2.1}
+\contentsline {subsubsection}{\numberline {2.1.1}Definition of a signal}{}{subsubsection.2.1.1}
+\contentsline {subsubsection}{\numberline {2.1.2}Linear Time Invariant Filters (LTI filters)}{}{subsubsection.2.1.2}
+\contentsline {subsubsection}{\numberline {2.1.3}Worst-Case Peak Gain (WCPG) of a Filter: the maximum possible amplification}{}{subsubsection.2.1.3}
+\contentsline {subsection}{\numberline {2.2}Different realizations: how to compute the output of a filter?}{}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}The Specialized Implicit Form (SIF): a unified representation}{}{subsection.2.3}
+\contentsline {subsubsection}{\numberline {2.3.1}Definition}{}{subsubsection.2.3.1}
+\contentsline {subsubsection}{\numberline {2.3.2}Workflow for filter implementation}{}{subsubsection.2.3.2}
+\contentsline {section}{\numberline {3}Architecture generation}{}{section.3}
+\contentsline {subsection}{\numberline {3.1}Implementation: what can be done in practise?}{}{subsection.3.1}
+\contentsline {subsubsection}{\numberline {3.1.1}The FloPoCo Framework: computing just right}{}{subsubsection.3.1.1}
+\contentsline {subsubsection}{\numberline {3.1.2}KCM multipliers: an architecture to efficiently compute products on FPGAs}{}{subsubsection.3.1.2}
+\contentsline {subsubsection}{\numberline {3.1.3}SOPCs: exploiting full parallel architecures}{}{subsubsection.3.1.3}
+\contentsline {subsubsection}{\numberline {3.1.4}Precision concerns}{}{subsubsection.3.1.4}
+\contentsline {subsubsection}{\numberline {3.1.5}Size computation in finite precision}{}{subsubsection.3.1.5}
+\contentsline {subsubsection}{\numberline {3.1.6}Error analysis}{}{subsubsection.3.1.6}
+\contentsline {subsubsection}{\numberline {3.1.7}Worst-case peak gain computation}{}{subsubsection.3.1.7}
+\contentsline {subsection}{\numberline {3.2}Architecture generation algorithm}{}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Particular Forms, degenerated cases}{}{subsection.3.3}
+\contentsline {subsubsection}{\numberline {3.3.1}ABCD Form: still achievable}{}{subsubsection.3.3.1}
+\contentsline {subsubsection}{\numberline {3.3.2}When $n_x=0$}{}{subsubsection.3.3.2}
+\contentsline {subsection}{\numberline {3.4}Optimizations}{}{subsection.3.4}
+\contentsline {subsubsection}{\numberline {3.4.1}Sparse matrices}{}{subsubsection.3.4.1}
+\contentsline {subsubsection}{\numberline {3.4.2}Power of two coefficients}{}{subsubsection.3.4.2}
+\contentsline {subsection}{\numberline {3.5}Implementation details}{}{subsection.3.5}
+\contentsline {subsection}{\numberline {3.6}Filter specification interface}{}{subsection.3.6}
+\contentsline {section}{\numberline {4}Further work}{}{section.4}
+\contentsline {subsection}{\numberline {4.1}Static analysis on coefficients}{}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Sub-filter detection}{}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Precision calculations improvement}{}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}File format re-specification}{}{subsection.4.4}
+\contentsline {section}{Conclusion}{}{section*.1}
+\contentsline {section}{Appendices}{}{section*.3}
+\contentsline {section}{\numberline {A}Notations and reminders about signal processing}{}{Appendix.a.A}
+\contentsline {subsection}{\numberline {A.1}Notations}{}{subsection.a.A.1}
+\contentsline {subsection}{\numberline {A.2}Reminders about signal processing}{}{subsection.a.A.2}
+\contentsline {subsubsection}{\numberline {A.2.1}Impulse response}{}{subsubsection.a.A.2.1}
+\contentsline {section}{\numberline {B}Formal definitions about filters}{}{Appendix.a.B}
+\contentsline {section}{\numberline {C}Different filters}{}{Appendix.a.C}
+\contentsline {subsection}{\numberline {C.1}FIR and IIR: two filters families}{}{subsection.a.C.1}
+\contentsline {subsection}{\numberline {C.2}Direct and transposed forms}{}{subsection.a.C.2}
+\contentsline {subsection}{\numberline {C.3}State-space representation: a recurrence to define an infinite response}{}{subsection.a.C.3}
+\contentsline {subsection}{\numberline {C.4}SIF formal Definition}{}{subsection.a.C.4}
+\contentsline {section}{\numberline {D}About precision}{}{Appendix.a.D}
+\contentsline {subsection}{\numberline {D.1}Precision concerns}{}{subsection.a.D.1}
+\contentsline {subsection}{\numberline {D.2}Size computation in finite precision}{}{subsection.a.D.2}
+\contentsline {subsection}{\numberline {D.3}Error analysis}{}{subsection.a.D.3}
+\contentsline {section}{\numberline {E}Table of contents}{}{Appendix.a.E}

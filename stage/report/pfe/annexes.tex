@@ -20,7 +20,7 @@
 		When dealing with discrete time events, the time will be represented by k.
 		Then x(k) is said to be a sample.
 		$\{x(k)\}_{k \geq 0}$ denotes all the values possible for the signal x.
-		The rest of this report, adresses vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
+		The rest of this report adresses vectors of signals $\textbf{x}$, where $\textbf{x}(k) \in \mathbb{R}^{n}$
 	\end{thdef}
 
 	\begin{thdef}\label{l_1} ($\ell^1$ norm)
@@ -57,3 +57,249 @@
 			\end{equation}
 				
 		\end{thdef}
+
+	\subsubsection{Impulse response}
+	\begin{thdef} (Impulse Response)
+	A SISO filter may be defined by its impulse response, denoted $h$. $h$ is the
+	impulse response of H to the impulsion of Dirac.
+	Indeed each input signal can be described as a sum of Dirac impulsions:
+	$$u=\sum_{i\geq0}u(l)\delta_l$$
+	where $\delta_l$ is a Dirac impulsion centered in $l$, that is:
+	\begin{equation}
+		\delta_l(k) =
+		\begin{cases}
+			1 & \hspace{5pt} when \hspace{5pt} k=l\\
+			0 & \hspace{5pt} else\\
+		\end{cases}
+	\end{equation}
+	The linearity condition of $\mathcal{H}$ implies: $\mathcal{H}(u) = \sum_{l\geq0}u(l)\mathcal{H}(\delta_l)$.
+	Time invariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$.
+	Then the computation from inputs to outputs takes this form:
+	$$y(k)=\sum_{l\geq0}u(l)h(k-l)=\sum_{l=0}^ku(k)h(k-l)$$
+	This corresponds with the convolution product definition of $u$ by $h$, denoted $y = h * u$.
+	%Dealing with MIMO filters, we have $\boldsymbol{h} \in \mathbb{R}^{n_y \times n_u}$ as the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}$ is the response on the
+	Dealing with MIMO filters, $\boldsymbol{h}(k) \in \mathbb{R}^{n_y \times n_u}$ is the impulse response of $\mathcal{H}$. $\boldsymbol{h}_{i,j}(k)$ is the response on the
+	ith output to the Dirac implusion on the j-th input.
+	The precedent equation becomes:
+	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l=0}^ku_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
+	
+	\end{thdef} 
+\section{Appendix: Formal definitions about filters}
+	%\addcontentsline{toc}{section}{Appendix: Formal definitions about filters}
+
+	\section{Diferent filters}
+	\subsection{FIR and IIR: two filters families}
+	There are two types of LTI filters: \textit{Finite impulse response} (FIR) and \textit{Infinite impulse response} (IIR) filters.
+	Formally, the impulse response is finite when:
+	\begin{equation} \label{finimp}
+		\exists n \in \mathbb{N} | \forall k \geq n, h(k)=0
+	\end{equation}
+	The smallest $n$ verifying \ref{finimp} is referred as the order of the filter. So a $n$-order FIR can be described by the
+	following equation:
+	\begin{equation} \label{firdef}
+		y(k)=\sum_{i=0}^n b_i u(k-i)
+	\end{equation}
+
+	An IIR will be described as following:
+	\begin{equation} \label{iirdef}
+		y(k)=\sum_{i=0}^n b_i u(k-i) - \sum_{i=0}^n a_i y(k-i)
+	\end{equation}
+
+	Here one can observe that the output at time $k$ depends also on all previous $n$ outputs (loopback). 
+	Also remark that a FIR can be seen as an IIR with $\forall i \in [0,n],a_i=0$
+	The impulse response can then be deduced from \ref{iirdef} by resolving the recurrence relation:
+
+	\begin{equation}
+		h(k) =
+		\begin{cases}
+			0 & when \hspace{5pt} k<l\\
+			b_k - \sum_{l=1}^n a_l h(k-l) & when \hspace{5pt} 0\leq k \leq n\\
+			\sum_{l=1}^n a_l h(k-l) & when \hspace{5pt} n< k\\
+		\end{cases}
+	\end{equation}
+
+	\subsubsection{Direct and transposed forms}
+	Direct and transposed forms are classic realizations. A good description of these forms can be found in Lopez’ and Hilaire’s PhDs \cite{lopez} \cite{hilaire}. 
+	The direct form has been implemented in the FoPoCo project,
+	The hardware implementation of anIIR can be seen on figure \ref{fig:ltiarch}
+
+\begin{figure*}[h]
+  \centering
+  \begin{tikzpicture}
+     \draw[dotted,black, fill=yellow!20] (-5ex,-3.5ex) rectangle +(69ex,-15ex);   
+     \node[black]  at (-2ex,-17.5ex) {{\small SOPC}};   
+    \draw[hwbus] (-8, 0) node[left] {$u(k)$} --  ++(8, 0)  ;
+    \draw[hwbus,->] (-8, 0) --  ++(3, 0); % just for the arrow
+    \foreach \i in {0,...,3} {
+      \draw[hwbus, ->] ($(8*\i, 0)$) --  ++(0, -5);
+      \draw[hwblock] ($(8*\i, -5)$) -- ++(3, 0) -- ++(-3, -4) -- ++(-3, 4) -- cycle; 
+      \node (n) at ($(8*\i , -6.5)$)  {$b_{\i}$} ;
+%      \draw ($(8*\i  + 0.5, -11)$) node[left,tt=black!50] {\footnotesize $p_b(k,\i)$} ;
+%      \draw ($(8*\i  - 0.2, -11)$) node[right,text=black!50] {\footnotesize $p_b(k,\i)$} ;
+
+%      \draw[hwbus, ->] ($(8*\i ex, 0ex)$) --  ++(0, -5ex);
+    }
+
+    
+    \draw[hwbus] (0, -9) -- ++(0,-6);
+      \coordinate (n) at  (0,-15);
+    \foreach \i in {1,...,3} {
+      \draw[line width=3pt] ($(8*\i  - 4, -3)$) --  +(0, 6);
+      \draw[hwbus] ($(8*\i  - 8, 0)$) --  +(8,0) node [above,text=blue] {\footnotesize $u(k-\i)$};
+      \draw[hwbus,->] ($(8*\i  - 8, 0)$) --  ++(3, 0); % just for the arrow
+      % The adders 
+      \coordinate (nm1) at  (n.east);
+      \draw ($(8*\i , -15)$) node[hwblock,circle,minimum height=3] (n) {$+$};
+      \draw[hwbus, ->]  ($(8*\i , -9)$) -- (n.north);
+      \draw[hwbus, ->]  (nm1) -- (n.west);
+      \draw[hwbus]  (n.east) -- ++ (3,0);
+    }
+
+    \draw (74, -15) node[hwblock,align=center] (fr) {final\\round} ;
+    \draw[hwbus, <-] (fr.west) -- ++(-15,0) node [near end] {/} node [near end,below] {\footnotesize$(\msbout, p-g$)} node[near start,above] {$\appr{y}(k)$} -- ++(-1,0) ;
+    \draw[hwbus, ->] (fr.east) -- ++(8,0) node [midway] {/} node [midway,below] {\footnotesize$(\msbout,p)$} node[right] {$\yout(k)$} ;
+
+    \foreach \i in {1,...,3} {
+      \draw[hwbus, ->] ($(-8*\i  + 60 , 0)$) --  ++(0, -5);
+      \draw[hwblock] ($(-8*\i  + 60 , -5)$) -- ++(3, 0) -- ++(-3, -4) -- ++(-3, 4) -- cycle; 
+      \node (ai) at ($(-8*\i  + 60 , -6.5)$)  {$a_{\i}$} ;
+      %\draw ($(-8*\i  +60 + 0.5, -11)$) node[left,text=black!50] {\footnotesize $p_a(k,\i)$} ;
+      %\draw ($(-8*\i  +60 - 0.2, -11)$) node[right,text=black!50] {\footnotesize $p_a(k,\i)$} ;
+      \draw ($(-8*\i  + 60 , -15)$) node[hwblock,circle,minimum height=3] (n) {$+$};
+      \draw (n.north) node[left]{\bf -};
+      \draw[hwbus, ->] ($(-8*\i  + 60, -9)$) --  (n.north);
+      \draw[hwbus, <-] (n.west) -- ++(-5,0);
+      % The registers
+      \draw[hwbus] ($(-8*\i  + 60  +8, 0)$) --  ++(-8, 0) node [above,text=blue] {\footnotesize $\appr{y}(k-\i)$};
+      \draw[hwbus,->] ($(-8*\i  + 60  +8, 0)$) --  ++(-3, 0); % just for the arrow
+      \draw[line width=3pt] ($(-8*\i  +60 + 4, -3)$) --  +(0, 6);
+    }
+    \draw[hwbus] ($(60 , 0)$) --  ++(0,-15);
+    \draw[hwbus,<-] ($(60 , -5)$) --  ++(0,-5);
+
+
+  \end{tikzpicture}
+
+\caption{Abstract architecture for the direct form realization of an LTI filter \label{fig:ltiarch}}
+\end{figure*}
+
+	\subsubsection{State-space representation: a recurrence to define an infinite response}
+	This type of realization consists in expressing the evolution of a system considering its state at time $k$. In
+	continuous time, it is described by differential equations at first order. In discret time (in which we
+	are interested in), it is described by a simple recurrence:
+	\begin{equation} \label{abcddef}
+		\begin{cases}
+			\boldsymbol{x}(k+1)= \boldsymbol{Ax}(k) + \boldsymbol{Bu}(k) \\
+			\boldsymbol{y}(k+1)= \boldsymbol{Cx}(k) + \boldsymbol{Du}(k)
+		\end{cases}
+	\end{equation}
+
+	Where $\boldsymbol{x}(k) \in \mathbb{R}^{n_x}$ is the state vector,
+	$\boldsymbol{u}(k) \in \mathbb{R}^{n_u}$ is the input vector and
+	$\boldsymbol{y}(k) \in \mathbb{R}^{n_y}$ is the output vector, at time k.
+	The matrices $\boldsymbol{A} \in \mathbb{R}^{n_x \times n_x}$ , $\boldsymbol{B} \in \mathbb{R}^{n_x \times n_u}$,
+	$\boldsymbol{C} \in \mathbb{R}^{n_y \times n_x}$, and $\boldsymbol{D} \in \mathbb{R}^{n_y \times n_u}$,
+	with $\boldsymbol{x}(0)$ are sufficient to describe an LTI filter, with convention $\boldsymbol{x}(k)=\boldsymbol{u}(k)=0 \hspace{5pt}, \hspace{5pt} \forall k<0$.
+
+	\subsubsection{SIF formal Definition}
+	The SIF is described as following:
+	\begin{equation} \label{sifdef}
+		\begin{pmatrix}
+			\boldsymbol{J} & \boldsymbol{0} & \boldsymbol{0} \\
+			\boldsymbol{-K} & \boldsymbol{I}_{n_x} & \boldsymbol{0} \\
+			\boldsymbol{-L} & \boldsymbol{0} & \boldsymbol{I}_{n_y} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k+1)  \\
+			\boldsymbol{x} (k+1)  \\
+			\boldsymbol{y} (k) 
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			\boldsymbol{0} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{0} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{0} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k)  \\
+			\boldsymbol{x} (k)  \\
+			\boldsymbol{u} (k) 
+		\end{pmatrix}
+	\end{equation}
+	With $n_t$, $n_x$, $n_y$ and $n_u$ the sizes of $\boldsymbol{t}$, $\boldsymbol{x}$, $\boldsymbol{y}$ and $\boldsymbol{u}$, respectively.
+	$\boldsymbol{J}$, is a lower triangular matrix, with
+	diagonal entries equal to 1.
+	%Then we have the following dimensions for the previous matrices:
+	The previous matrices have the following dimensions:
+
+	\begin{eqnarray}
+		\boldsymbol{J} \in \mathbb{R}^{n_t \times n_t},\boldsymbol{M} \in \mathbb{R}^{n_t \times n_x},\boldsymbol{N} \in \mathbb{R}^{n_t \times n_u}, \nonumber \\
+		\boldsymbol{K} \in \mathbb{R}^{n_x \times n_t},\boldsymbol{P} \in \mathbb{R}^{n_x \times n_x},\boldsymbol{Q} \in \mathbb{R}^{n_x \times n_u}, \\
+		\boldsymbol{L} \in \mathbb{R}^{n_y \times n_t},\boldsymbol{R} \in \mathbb{R}^{n_y \times n_x},\boldsymbol{S} \in \mathbb{R}^{n_y \times n_u}, \nonumber \\
+	\end{eqnarray}
+
+	The best way to understand the SIF may be to see it as an algorithm, each line of the equation \ref{sifdef} corresponding to a sequential step of the computation.
+	The algorithm results as follows:
+	\begin{algorithm}
+		\For{int i = 0 ; $i \leq n_t$; i++}{
+			$\boldsymbol{t}_i(k+1) \leftarrow - \sum\limits\limits_{j<i} \boldsymbol{J}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{M}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{N}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\For{int i = 0 ; $i \leq n_x$; i++}{
+			$\boldsymbol{x}_i(k+1) \leftarrow - \sum\limits_{j=1}^{n_t} \boldsymbol{K}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{P}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{Q}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\For{int i = 0 ; $i \leq ny$; i++}{
+			$\boldsymbol{y}_i(k) \leftarrow - \sum\limits_{j=1}^{n_t} \boldsymbol{L}_{ij}\boldsymbol{t}_j(k+1) + \sum\limits_{j=1}^{n_x} \boldsymbol{R}_{ij}\boldsymbol{x}_j(k) + \sum\limits_{j=1}^{n_u} \boldsymbol{S}_{ij}\boldsymbol{u}_j(k)$
+		}
+		\caption{Computation of SIF outputs from inputs}
+	\end{algorithm}
+
+	Here, it is important to see that the form of $\boldsymbol{J}$ allows to compute the $\boldsymbol{t}_i$ sequentially. The algorithm can
+	then be described as follows:
+	\begin{algorithm} \label{algomat}
+		\For{int i = 0 ; $i \leq n_t$; i++}{
+			$\boldsymbol{t}_i(k+1) \leftarrow - \boldsymbol{J'}_{i}\boldsymbol{t}(k+1) + \boldsymbol{M}_{i}\boldsymbol{x}(k) +\boldsymbol{N}_{i}\boldsymbol{u}(k)$
+		}
+		\For{int i = 0 ; $i \leq n_x$; i++}{
+			$\boldsymbol{x}_i(k+1) \leftarrow - \boldsymbol{K}_{i}\boldsymbol{t}(k+1) + \boldsymbol{P}_{i}\boldsymbol{x}(k) +\boldsymbol{Q}_{i}\boldsymbol{u}(k)$
+		}
+		\For{int i = 0 ; $i \leq ny$; i++}{
+			$\boldsymbol{y}_i(k) \leftarrow - \boldsymbol{L}_{i}\boldsymbol{t}(k+1) + \boldsymbol{R}_{i}\boldsymbol{x}(k) + \boldsymbol{S}_{i}\boldsymbol{u}(k)$
+		}
+		\caption{Simplified matricial algorithm}
+	\end{algorithm}
+
+	With $\boldsymbol{J'} = \boldsymbol{J} - I_{n_t}$.
+
+	Values of the vector $\boldsymbol{t}(k+1)$ are computed and used at the same iterations, so they are not kept in memory.
+	As the equation \ref{sifdef} is mostly full of zeros, it is more convenient to use it’s compressed formulation, which is denoted
+	$\boldsymbol{Z}$:
+	
+	\begin{equation} \label{zmatrix}
+		\boldsymbol{Z}=
+		\begin{pmatrix}
+			\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+	\end{equation}
+
+	The community usually takes $-\boldsymbol{J}$ for simplicity within further computations.
+
+	The SIF can of course be transformed into an equivalent ABCD (classic state-space) form, which gives:
+
+	\begin{eqnarray} \label{abcdtranspose}
+		\boldsymbol{A_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{M} +\boldsymbol{P}, \hspace{5pt}
+		\boldsymbol{B_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{N} +\boldsymbol{Q}, \nonumber \\
+		\boldsymbol{C_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{M} +\boldsymbol{R}, \hspace{5pt}
+		\boldsymbol{D_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{N} +\boldsymbol{S}, \nonumber \\
+	\end{eqnarray}
+
+	with:
+	\begin{eqnarray}
+		\boldsymbol{A_Z} \in \mathbb{R}^{n_x \times n_x},
+		\boldsymbol{B_Z} \in \mathbb{R}^{n_x \times n_u}, \nonumber \\
+		\boldsymbol{C_Z} \in \mathbb{R}^{n_y \times n_x},
+		\boldsymbol{D_Z} \in \mathbb{R}^{n_y \times n_u},
+	\end{eqnarray}
+
+	About parallelism, it is useful to remark that $t(k+1)$ are computed sequentially, while $x(k+1)$ and $y(k)$ can be computed in parallel.

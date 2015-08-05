@@ -31,6 +31,7 @@
 
 \pagenumbering{gobble} %TODO: uncomment this at the end of development
 
+\usepackage[toc,page]{appendix}
 
 \usepackage{amsthm}
 \usepackage{amsfonts}
@@ -192,12 +193,12 @@ Florent de Dinechin : Département Informatique
 
 \bibliographystyle{plain}
 \bibliography{report}  % main.bib is the name of the Bibliography in this case
-%\newpage
-%\section*{Appendix: Notations and reminders about signal processing}
-%	\addcontentsline{toc}{section}{Appendix: Notations and reminders about signal processing}
-%\input{annexes}
+\newpage
+\begin{appendices}
+\section{Appendix: Notations and reminders about signal processing}
+	%\addcontentsline{toc}{section}{Appendix: Notations and reminders about signal processing}
+\input{annexes}
+\end{appendices}
 %\TODO: talk about code: part title: "Implementation" (not in appendix)
-%\TODO: One entries-> powers of two
-%\TODO: Optimality of realization not discussed by me but by LIP6 + figure
 \end{document}
 

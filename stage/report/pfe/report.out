@@ -27,7 +27,7 @@
 \BOOKMARK [2][-]{subsection.3.5}{Implementation details}{section.3}% 27
 \BOOKMARK [2][-]{subsection.3.6}{Filter specification interface}{section.3}% 28
 \BOOKMARK [1][-]{section.4}{Further work}{}% 29
-\BOOKMARK [2][-]{subsection.4.1}{Static analysis on coefficients}{section.4}% 30
+\BOOKMARK [2][-]{subsection.4.1}{Power of two removing}{section.4}% 30
 \BOOKMARK [2][-]{subsection.4.2}{Sub-filter detection}{section.4}% 31
 \BOOKMARK [2][-]{subsection.4.3}{Precision calculations improvement}{section.4}% 32
 \BOOKMARK [2][-]{subsection.4.4}{File format re-specification}{section.4}% 33

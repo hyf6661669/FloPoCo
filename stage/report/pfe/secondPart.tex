@@ -354,6 +354,7 @@
 
 		 So, all $lsb_{v_i}$ from all $msb_{v_i}$ can  be deduced from \label{constraint}.
 		As $msb_{v_i}$ can be deduced directly from $\langle\langle \mathcal{H} \rangle\rangle_{wcpg}$, choosing and computing each operator precision is possible through linear programming.
+		In this case, the problem is solved using the SoPlex library \cite{soplex}.
 
 		%\TODO: check if this step is sufficient.
 
@@ -442,8 +443,8 @@
 	This implementation work has been done in the FixFilter section of the FloPoCo project.
 	It is for now about 1500 lines and contains:
 	\begin{itemize}
-		\item the implentation of the SIF algorithm
-		\item the specification parser
+		\item the implementation of the SIF algorithm \vspace{-8pt}
+		\item the specification parser \vspace{-8pt}
 		\item the testing framework (emulate method)
 	\end{itemize}
 

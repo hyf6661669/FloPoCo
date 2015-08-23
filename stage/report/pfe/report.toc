@@ -28,7 +28,7 @@
 \contentsline {subsection}{\numberline {3.5}Implementation details}{}{subsection.3.5}
 \contentsline {subsection}{\numberline {3.6}Filter specification interface}{}{subsection.3.6}
 \contentsline {section}{\numberline {4}Further work}{}{section.4}
-\contentsline {subsection}{\numberline {4.1}Static analysis on coefficients}{}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.1}Power of two removing}{}{subsection.4.1}
 \contentsline {subsection}{\numberline {4.2}Sub-filter detection}{}{subsection.4.2}
 \contentsline {subsection}{\numberline {4.3}Precision calculations improvement}{}{subsection.4.3}
 \contentsline {subsection}{\numberline {4.4}File format re-specification}{}{subsection.4.4}

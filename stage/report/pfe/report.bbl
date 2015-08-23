@@ -1,4 +1,4 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
 
 \bibitem{Chapman93:edn}
 K.D. Chapman.
@@ -53,5 +53,10 @@ A.~Volkova, T.~Hilaire, and C.~Lauter.
 \newblock {Reliable evaluation of the Worst-Case Peak Gain matrix in multiple
   precision}.
 \newblock In {\em IEEE Symposium on Computer Arithmetic}, 2015.
+
+\bibitem{soplex}
+Roland Wunderling.
+\newblock {\em Paralleler und Objektorientierter Simplex-Algorithmus}.
+\newblock PhD thesis, Zuse Institute Berlin, 1996.
 
 \end{thebibliography}

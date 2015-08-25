@@ -1229,7 +1229,7 @@ namespace flopoco {
 		bMToDoubleM( bD, D);
 
 		//Declare wcpg of the filter
-		double *wcpgF=new double [(nx+ny)*(nx+nu)];
+		double *wcpgF=new double [(ny)*(nu)];
 		//double *wcpgF=(double*) malloc( sizeof(double)*(nx+ny)*(nx+nu) );
 
 		//Compute WCPG

@@ -28,6 +28,11 @@
 //using namespace std;
 
 // variables set by the command-line interface in main.cpp
+namespace flopoco {
+	class Operator;
+	typedef Operator* OperatorPtr;
+}
+
 
 
 namespace flopoco {

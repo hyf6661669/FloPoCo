@@ -38,6 +38,38 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
 SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_BUILD_TYPE release)
 
+FIND_PATH(LAPACK_H
+	  lapacke.h
+	  HINTS ""
+	  DOC "Path of lapacke.h, the include file for GNU lapack library"
+)
+FIND_LIBRARY(LAPACK_LIB
+	NAMES lapack liblapack.so
+	HINTS "/usr/lib"
+	DOC "Directory of the MPFR library"
+)
+
+FIND_PATH(WCPG_H
+	  wcpg_API.h
+	  HINTS "/usr/local/include"
+	  DOC "Path of wcpg_API.h, the include file for wcpg library"
+)
+FIND_LIBRARY(WCPG_LIB
+	NAMES libwcpg_API libwcpg_API.a
+	HINTS "/usr/local/lib"
+	DOC "Directory of the MPFR library"
+)
+
+FIND_PATH(SOPLEX_H
+	  soplex.h
+	  HINTS "/usr/include"
+	  DOC "Path of soplex.h, the include file for soplex library"
+)
+FIND_LIBRARY(SOPLEX_LIB
+	NAMES libsoplex.a libsoplex-2.2.0.linux.x86_64.gnu.opt.a
+	HINTS "/usr/lib"
+	DOC "Directory of the MPFR library"
+)
 
 FIND_PATH(MPFR_H
 	  mpfr.h
@@ -82,10 +114,40 @@ IF ( PYTHON_LIB )
 ELSE ( PYTHON_LIB )
 	MESSAGE ( FATAL_ERROR "Could not find PYTHON_LIB" )
 ENDIF ( PYTHON_LIB )
+	
+IF (LAPACK_H AND LAPACK_LIB)
+    SET(LAPACK_FOUND TRUE)
+ENDIF (LAPACK_H AND LAPACK_LIB)
+	
+IF (WCPG_H AND WCPG_LIB)
+    SET(WCPG_FOUND TRUE)
+ENDIF (WCPG_H AND WCPG_LIB)
+
+IF (SOPLEX_H AND SOPLEX_LIB)
+    SET(SOPLEX_FOUND TRUE)
+ENDIF (SOPLEX_H AND SOPLEX_LIB)
 
 IF (MPFR_H AND MPFR_LIB)
     SET(MPFR_FOUND TRUE)
 ENDIF (MPFR_H AND MPFR_LIB)
+
+IF (LAPACK_FOUND)
+    MESSAGE(STATUS "Found lapack: ${LAPACK_H} ${LAPACK_LIB}")
+ELSE (LAPACK_FOUND)
+    MESSAGE(FATAL_ERROR "Could not find lapack.\n")
+ENDIF (LAPACK_FOUND)
+
+IF (WCPG_FOUND)
+    MESSAGE(STATUS "Found wcpg: ${WCPG_H} ${WCPG_LIB}")
+ELSE (WCPG_FOUND)
+    MESSAGE(FATAL_ERROR "Could not find wcpg.\n")
+ENDIF (WCPG_FOUND)
+
+IF (SOPLEX_FOUND)
+    MESSAGE(STATUS "Found soplex: ${SOPLEX_H} ${SOPLEX_LIB}")
+ELSE (SOPLEX_FOUND)
+    MESSAGE(FATAL_ERROR "Could not find soplex.\n")
+ENDIF (SOPLEX_FOUND)
 
 IF (MPFR_FOUND)
     MESSAGE(STATUS "Found mpfr: ${MPFR_H} ${MPFR_LIB}")

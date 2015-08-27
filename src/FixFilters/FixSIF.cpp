@@ -238,8 +238,8 @@ namespace flopoco {
 
 
 		useNumericStd();
-		useNumericStd_Unsigned();
-		useNumericStd_Signed();
+		//useNumericStd_Unsigned();
+		//useNumericStd_Signed();
 		//if(p<1) {
 		//	THROWERROR("Can't build an architecture for this value of LSB")
 		//}

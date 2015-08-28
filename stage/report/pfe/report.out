@@ -1,6 +1,6 @@
 \BOOKMARK [1][-]{section.1}{ Introduction }{}% 1
 \BOOKMARK [1][-]{section.2}{Tools for expressing filters and signal processing}{}% 2
-\BOOKMARK [2][-]{subsection.2.1}{Fundamentals about signal processsing}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.1}{Fundamentals about signal processsing }{section.2}% 3
 \BOOKMARK [3][-]{subsubsection.2.1.1}{Definition of a signal}{subsection.2.1}% 4
 \BOOKMARK [3][-]{subsubsection.2.1.2}{Linear Time Invariant Filters \(LTI filters\)}{subsection.2.1}% 5
 \BOOKMARK [3][-]{subsubsection.2.1.3}{Worst-Case Peak Gain \(WCPG\) of a Filter: the maximum possible amplification}{subsection.2.1}% 6
@@ -37,14 +37,13 @@
 \BOOKMARK [2][-]{subsection.a.A.1}{Notations}{Appendix.a.A}% 37
 \BOOKMARK [2][-]{subsection.a.A.2}{Reminders about signal processing}{Appendix.a.A}% 38
 \BOOKMARK [3][-]{subsubsection.a.A.2.1}{Impulse response}{subsection.a.A.2}% 39
-\BOOKMARK [1][-]{Appendix.a.B}{Formal definitions about filters}{}% 40
-\BOOKMARK [1][-]{Appendix.a.C}{Different filters}{}% 41
-\BOOKMARK [2][-]{subsection.a.C.1}{FIR and IIR: two filters families}{Appendix.a.C}% 42
-\BOOKMARK [2][-]{subsection.a.C.2}{Direct and transposed forms}{Appendix.a.C}% 43
-\BOOKMARK [2][-]{subsection.a.C.3}{State-space representation: a recurrence to define an infinite response}{Appendix.a.C}% 44
-\BOOKMARK [2][-]{subsection.a.C.4}{SIF formal Definition}{Appendix.a.C}% 45
-\BOOKMARK [1][-]{Appendix.a.D}{About precision}{}% 46
-\BOOKMARK [2][-]{subsection.a.D.1}{Precision concerns}{Appendix.a.D}% 47
-\BOOKMARK [2][-]{subsection.a.D.2}{Size computation in finite precision}{Appendix.a.D}% 48
-\BOOKMARK [2][-]{subsection.a.D.3}{Error analysis}{Appendix.a.D}% 49
-\BOOKMARK [1][-]{Appendix.a.E}{Table of contents}{}% 50
+\BOOKMARK [1][-]{Appendix.a.B}{Different filters}{}% 40
+\BOOKMARK [2][-]{subsection.a.B.1}{FIR and IIR: two filters families}{Appendix.a.B}% 41
+\BOOKMARK [2][-]{subsection.a.B.2}{Direct and transposed forms}{Appendix.a.B}% 42
+\BOOKMARK [2][-]{subsection.a.B.3}{State-space representation: a recurrence to define an infinite response}{Appendix.a.B}% 43
+\BOOKMARK [2][-]{subsection.a.B.4}{SIF formal Definition}{Appendix.a.B}% 44
+\BOOKMARK [1][-]{Appendix.a.C}{About precision}{}% 45
+\BOOKMARK [2][-]{subsection.a.C.1}{Precision concerns}{Appendix.a.C}% 46
+\BOOKMARK [2][-]{subsection.a.C.2}{Size computation in finite precision}{Appendix.a.C}% 47
+\BOOKMARK [2][-]{subsection.a.C.3}{Error analysis}{Appendix.a.C}% 48
+\BOOKMARK [1][-]{Appendix.a.D}{Table of contents}{}% 49

@@ -13,7 +13,7 @@
 
 #include <boost/numeric/ublas/lu.hpp> 
 #include <boost/numeric/ublas/io.hpp>
-#define WCPG_F //disable WCPG until it works
+//#define WCPG_F //disable WCPG until it works
 
 #ifndef WCPG_F
 extern "C" {
@@ -996,6 +996,7 @@ namespace flopoco {
 		for (size_t i=0; i<bM.size1(); i++) {
 			for (size_t j=0; j<bM.size2(); j++) {
 				doubleM [i*bM.size1()+j] = bM(i,j);
+				std::cout<<doubleM [i*bM.size1()+j]<<std::endl;
 			}
 		}
 		std::cout<<"exiting bMToDoubleM"<<std::endl;	
@@ -1129,7 +1130,7 @@ namespace flopoco {
 
 #ifndef WCPG_F
 		//Init ABCD
-		double *A = new double[nx*nt] ;
+		double *A = new double[nx*nx] ;
 		double *B = new double[nx*nu] ;
 		double *C = new double[ny*nx] ;
 		double *D = new double[ny*nu] ;
@@ -1230,8 +1231,11 @@ namespace flopoco {
 
 		//Declare wcpg of the filter
 		double *wcpgF=new double [(ny)*(nu)];
-		//double *wcpgF=(double*) malloc( sizeof(double)*(nx+ny)*(nx+nu) );
-
+		
+		REPORT(0, "trying wcpg");
+		int wRes;
+		wRes=WCPG_ABCD( wcpgF, A, B, C, D, nx, nu, ny );
+		REPORT(0, "wcpg result:"<<wRes);
 		//Compute WCPG
 		//WCPG_ABCD( wcpgF, A, B, C, D, uint64_t(nx), uint64_t(nu), uint64_t(ny) );
 		if ( !WCPG_ABCD( wcpgF, A, B, C, D, nx, nu, ny ) ) {
@@ -1404,7 +1408,7 @@ namespace flopoco {
 		double *wcpgE=new double [(nt+nx+ny)*(ny)];
 
 		//Compute WCPG error
-		if ( !WCPG_ABCD( wcpgE, A, B, C, D, nx, nt+nx+ny, ny ) ) {
+		if ( !WCPG_ABCD( wcpgE, A, B, C, D, nx, ny, nt+nx+ny ) ) {
 			THROWERROR("Unable to compute wcpg for error filter.");
 		}
 

@@ -84,10 +84,10 @@
 	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l=0}^ku_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
 	
 	\end{thdef} 
-\section{Formal definitions about filters}
+%\section{Formal definitions about filters}
 	%\addcontentsline{toc}{section}{Appendix: Formal definitions about filters}
 
-	\section{Different filters}
+	\section{Different filters}\label{fildef}
 	\subsection{FIR and IIR: two filters families}
 	There are two types of LTI filters: \textit{Finite impulse response} (FIR) and \textit{Infinite impulse response} (IIR) filters.
 	Formally, the impulse response is finite when:
@@ -304,7 +304,7 @@
 
 	About parallelism, it is useful to remark that $t(k+1)$ are computed sequentially, while $x(k+1)$ and $y(k)$ can be computed in parallel.
 
-	\section{About precision}
+	\section{About precision}\label{preccal}
 	Here is the full version of the precision computation.
 
 	\subsection{Precision concerns}

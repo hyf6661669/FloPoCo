@@ -90,6 +90,12 @@
 
 	\subsubsection{Precision concerns}
 
+\begingroup
+
+	\fontsize{7}{9}\selectfont
+	For more details about precision calculations, please see appendix \ref{preccal}
+
+\endgroup
 	In SOPCs architectures, accuracy is deducible from the inputs/output specifications and the size of the constants.
 	This is described in \cite{sums}.
 
@@ -225,8 +231,8 @@
 			which describes the behaviour of computation errors at time k on the output.
 			The linearity condition allows to decompose the real $\mathcal{H}^*$ filter in two distinct filters:
 			\begin{itemize}
-				\item $\mathcal{H}$ the absolute filter in infinite precision
-				\item $\mathcal{H}_{\boldsymbol{\varepsilon}}$ the error filter
+				\item $\mathcal{H}$ the absolute filter in infinite precision \vspace{-5pt}
+				\item $\mathcal{H}_{\boldsymbol{\varepsilon}}$ the error filter \vspace{-5pt}
 			\end{itemize}
 
 			\begin{figure}[h] 
@@ -389,23 +395,23 @@
 
 	\begin{figure}[!h]
 	\begin{center}
-	\scalebox{6.5}{\input{pictures/example.tex}}
+	\scalebox{6.6}{\input{pictures/example.tex}}
 	\end{center}
 	\caption{ Architecture generation for implementing a SIF (example from a rho-DFII filter), with $n_t=5$, $n_x=5$ and $n_y=1$ \label{fig:SIFimpl}}
 	\end{figure}
 
-	On the figure \ref{fig:SIFimpl}, the colors in the matrix represent the different steps of computaions:
+	On the figure \ref{fig:SIFimpl}, the colors in the matrix represent the different steps of computations: \vspace{-9pt}
 	\begin{itemize}
-		\item blue for $\boldsymbol{t}$ computations
-		\item green for $\boldsymbol{x}$ computations
-		\item green for $\boldsymbol{y}$ computations
+		\item blue for $\boldsymbol{t}$ computations \vspace{-10pt}
+		\item green for $\boldsymbol{x}$ computations \vspace{-10pt}
+		\item green for $\boldsymbol{y}$ computations \vspace{-8pt}
 	\end{itemize}
 
-	On the architecture scheme:
+	On the architecture scheme: \vspace{-7pt}
 	\begin{itemize}
-		\item grey background for x registers
-		\item purple for loopback from the x registers
-		\item orange for inputs
+		\item grey background for x registers \vspace{-8pt}
+		\item purple for loopback from the x registers \vspace{-8pt}
+		\item orange for inputs \vspace{-8pt}
 	\end{itemize}
 	
 	A small remark is needed here:
@@ -457,6 +463,7 @@
 		To communicate with our SIF operator in FloPoCo, simply pass the coefficients in command line as it is done for the direct form is not affordable.
 		So, a simple file format has been defined, in collaboration with our co-workers at LIP6, to store all the coefficients.
 		The format is defined as follows:
+		\vspace{-10pt}
 
 		\begin{verbatim}
 			X l c
@@ -467,6 +474,7 @@
 			.
 			x_l_1 x_l_2 ... x_l_c
 		\end{verbatim}
+		\vspace{-10pt}
 
 		Where X is the name of the matrix (X $\in$ \{ J, K, L, M, N, P, Q, R, S, T\}), x\_i\_j is the coefficient (with $i \in [1, l]$ and $j \in [1, c]$), l is the number of lines and c the numer of columns.
 

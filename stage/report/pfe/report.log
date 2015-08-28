@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  28 AUG 2015 12:35
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  28 AUG 2015 14:39
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -917,9 +917,6 @@ Package csquotes Info: Checking for multilingual support...
 Package csquotes Info: ... found 'babel' package.
 (./report.aux
 
-LaTeX Warning: Label `constraint' multiply defined.
-
-
 LaTeX Warning: Label `sig' multiply defined.
 
 
@@ -942,12 +939,6 @@ LaTeX Warning: Label `fig:ltierror' multiply defined.
 
 
 LaTeX Warning: Label `deltaerr' multiply defined.
-
-
-LaTeX Warning: Label `constraint' multiply defined.
-
-
-LaTeX Warning: Label `constraint' multiply defined.
 
 )
 \openout1 = `report.aux'.
@@ -1062,15 +1053,18 @@ LaTeX Font Info:    Try loading font information for U+rsfs on input line 106.
 
 (/usr/share/texmf-dist/tex/latex/jknapltx/ursfs.fd
 File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
-) (./firstPart.tex [1
+) (./firstPart.tex
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]pdfTeX warning (ext4): dest
 ination with the same identifier (name{page.}) has been already used, duplicate
  ignored
 <to be read again> 
                    \relax 
-l.211 
-       [2]
+l.187 	\begin{equation}
+                        \label{abcddef} [2]
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
@@ -1088,21 +1082,21 @@ l.89 \end{figure}
 r (name{page.}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.233 			\begin{itemize}
+l.227 			\begin{itemize}
                          [5]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 234.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 228.
 
  (/usr/share/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 234.
-LaTeX Font Info:    Try loading font information for U+euf on input line 349.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 228.
+LaTeX Font Info:    Try loading font information for U+euf on input line 343.
 
 (/usr/share/texmf-dist/tex/latex/amsfonts/ueuf.fd
 File: ueuf.fd 2013/01/14 v3.01 Euler Fraktur
 ) (./pictures/example.tex)
-Overfull \hbox (71.50667pt too wide) in paragraph at lines 398--399
+Overfull \hbox (71.50667pt too wide) in paragraph at lines 392--393
  [] 
  []
 
@@ -1113,7 +1107,7 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.415 	\end{itemize}
+l.409 	\end{itemize}
                      [6]
 
 LaTeX Warning: Text page  contains only floats.
@@ -1122,25 +1116,25 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.415 	\end{itemize}
+l.409 	\end{itemize}
                      [7]
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 426.
+(hyperref)                removing `math shift' on input line 420.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `subscript' on input line 426.
+(hyperref)                removing `subscript' on input line 420.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 426.
+(hyperref)                removing `math shift' on input line 420.
 
 pdfTeX warning (ext4): destination with the same identifier (name{page.}) has b
 een already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.467 
+l.461 
        [8]) (./thirdPart.tex)pdfTeX warning (ext4): destination with the same i
 dentifier (name{page.}) has been already used, duplicate ignored
 <to be read again> 
@@ -1218,17 +1212,17 @@ Package atveryend Info: Empty hook `AfterLastShipout' on input line 206.
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 206.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 206.
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 8C338CC81276EA40AD11E4E776F35170;3995.
+(rerunfilecheck)             Checksum: FDF7346807F4119FA1E74C5E49168ACC;3993.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 21038 strings out of 493109
- 367456 string characters out of 6140856
- 600585 words of memory out of 5000000
- 23953 multiletter control sequences out of 15000+600000
+ 21042 strings out of 493109
+ 367497 string characters out of 6140856
+ 600657 words of memory out of 5000000
+ 23954 multiletter control sequences out of 15000+600000
  26001 words of font info for 101 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,16n,54p,822b,929s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1264,10 +1258,10 @@ fonts/cm/cmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10
 re/texmf-dist/fonts/type1/public/amsfonts/euler/eufb10.pfb></usr/share/texmf-di
 st/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/
 type1/public/amsfonts/symbols/msbm7.pfb>
-Output written on report.pdf (20 pages, 464663 bytes).
+Output written on report.pdf (20 pages, 465348 bytes).
 PDF statistics:
- 625 PDF objects out of 1000 (max. 8388607)
- 559 compressed objects within 6 object streams
- 126 named destinations out of 1000 (max. 500000)
+ 634 PDF objects out of 1000 (max. 8388607)
+ 568 compressed objects within 6 object streams
+ 129 named destinations out of 1000 (max. 500000)
  405 words of extra memory for PDF output out of 10000 (max. 10000000)
 

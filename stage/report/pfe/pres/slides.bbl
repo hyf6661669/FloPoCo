@@ -1,0 +1,74 @@
+\begin{thebibliography}{10}
+
+\bibitem{Chapman93:edn}
+K.D. Chapman.
+\newblock Fast integer multipliers fit in {FPGAs} ({EDN} 1993 design idea
+  winner).
+\newblock {\em EDN magazine}, 39(10):80, May 1993.
+
+\bibitem{ChevillardJoldesLauter2010}
+S.~Chevillard, M.~Jolde\c{s}, and C.~Lauter.
+\newblock Sollya: An environment for the development of numerical codes.
+\newblock In K.~Fukuda, J.~van~der Hoeven, M.~Joswig, and N.~Takayama, editors,
+  {\em Mathematical Software - ICMS 2010}, volume 6327 of {\em Lecture Notes in
+  Computer Science}, pages 28--31, Heidelberg, Germany, September 2010.
+  Springer.
+
+\bibitem{sums}
+Florent de~Dinechin, Matei Istoan, and Abdelbassat Massouri.
+\newblock Sum-of-product architectures computing just right.
+\newblock In {\em Application-Specific Systems, Architectures and Processors
+  (ASAP)}. IEEE, 2014.
+
+\bibitem{DinechinPasca2011-DaT}
+Florent de~Dinechin and Bogdan Pasca.
+\newblock Designing custom arithmetic data paths with {FloPoCo}.
+\newblock {\em {IEEE} Design \& Test of Computers}, 28(4):18--27, July 2011.
+
+\bibitem{hilaire}
+Thibaut Hilaire.
+\newblock {\em Analyse et synthèse de l'implémentation de lois de
+  contrôle-commande en précision finie}.
+\newblock PhD thesis, Université de Nantes, 2006.
+
+\bibitem{loopshaping}
+P.Chawdhry I.Njabeleke, R.Pannett and C.Burrows.
+\newblock Design of h-infiny loop-shaping controllers for fluid power systems.
+\newblock In {\em IEEE Colloquium Robust Control - Theory, Software and
+  Applications}, 1997.
+
+\bibitem{stability}
+J.F.Whidborne and R.H.Istepanian.
+\newblock Reduction of controller fragility by pole sensivity minimization.
+\newblock In {\em Int. J.Control}, 2000.
+
+\bibitem{constructing}
+G.Li J.Wu, S.Chen and J.Chu.
+\newblock Constructing sparse realizations of finite precision digital
+  controllers based on a closed-loop stability related measure.
+\newblock In {\em IEEE Proc. Control Theory and Applications}, 2003.
+
+\bibitem{lopez}
+Benoit Lopez.
+\newblock {\em Impl\'ementation optimale de filtres lin\'eaires en
+  arithm\'etique virgule fixe}.
+\newblock PhD thesis, Universit\'e Paris VI, 2014.
+
+\bibitem{sif}
+P.Chevel T.Hilaire and J.F.Whidbornz.
+\newblock A unifying framework for finite wordlength realizations.
+\newblock In {\em IEEE}, 2007.
+
+\bibitem{sifd}
+P.Chevel T.Hilaire and Y.Trinquet.
+\newblock Implicit state-space representation: a unifying framework for {FWL}
+  implementation of {LTI} systems.
+\newblock In {\em Proc. of the 16th IFAC World Congress.}, 2005.
+
+\bibitem{Volk15a}
+A.~Volkova, T.~Hilaire, and C.~Lauter.
+\newblock {Reliable evaluation of the Worst-Case Peak Gain matrix in multiple
+  precision}.
+\newblock In {\em IEEE Symposium on Computer Arithmetic}, 2015.
+
+\end{thebibliography}

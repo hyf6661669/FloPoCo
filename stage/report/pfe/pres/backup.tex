@@ -1,0 +1,334 @@
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	\frametitle{Full definition of the SIF}
+	\begin{equation} \label{sifdef}
+		\begin{pmatrix}
+			\boldsymbol{J} & \boldsymbol{0} & \boldsymbol{0} \\
+			\boldsymbol{-K} & \boldsymbol{I}_{n_x} & \boldsymbol{0} \\
+			\boldsymbol{-L} & \boldsymbol{0} & \boldsymbol{I}_{n_y} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k+1)  \\
+			\boldsymbol{x} (k+1)  \\
+			\boldsymbol{y} (k) 
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			\boldsymbol{0} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{0} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{0} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k)  \\
+			\boldsymbol{x} (k)  \\
+			\boldsymbol{u} (k) 
+		\end{pmatrix}
+	\end{equation}
+	\\
+	\vspace{10pt}
+	With: \\
+	\begin{eqnarray}
+		\boldsymbol{J} \in \mathbb{R}^{n_t \times n_t},\boldsymbol{M} \in \mathbb{R}^{n_t \times n_x},\boldsymbol{N} \in \mathbb{R}^{n_t \times n_u}, \nonumber \\
+		\boldsymbol{K} \in \mathbb{R}^{n_x \times n_t},\boldsymbol{P} \in \mathbb{R}^{n_x \times n_x},\boldsymbol{Q} \in \mathbb{R}^{n_x \times n_u}, \\
+		\boldsymbol{L} \in \mathbb{R}^{n_y \times n_t},\boldsymbol{R} \in \mathbb{R}^{n_y \times n_x},\boldsymbol{S} \in \mathbb{R}^{n_y \times n_u}, \nonumber \\
+	\end{eqnarray}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{A more common notation}
+	A non-compact notation:
+	\begin{equation} \label{sifdef}
+		\begin{pmatrix}
+			\boldsymbol{J} & \boldsymbol{0} & \boldsymbol{0} \\
+			\boldsymbol{-K} & \boldsymbol{I}_{n_x} & \boldsymbol{0} \\
+			\boldsymbol{-L} & \boldsymbol{0} & \boldsymbol{I}_{n_y} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k+1)  \\
+			\boldsymbol{x} (k+1)  \\
+			\boldsymbol{y} (k) 
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			\boldsymbol{0} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{0} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{0} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+		\begin{pmatrix}
+			\boldsymbol{t} (k)  \\
+			\boldsymbol{x} (k)  \\
+			\boldsymbol{u} (k) 
+		\end{pmatrix}
+	\end{equation}
+	An easier way to communicate SIFs:\\
+		The Z matrix:\\
+	\begin{equation}
+		Z = 
+		\begin{pmatrix}
+			\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+	\end{equation}
+\end{frame}
+
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	\frametitle{KCM multiplier}
+\begin{figure}[]
+  \begin{tikzpicture}[scale=0.6,every node/.style={scale=0.6}]
+    \footnotesize 
+    \node at (-1em,0)  {$x_i=$} ;
+    \foreach \x in {1,...,18} {
+%    \draw[] ($(-5*\x ex, -7ex)$) -- ($(-5*\x ex, -5ex)$) node[above] {$2^\x$} ;
+      \node (n) at ($(3.4*\x ex, 0ex)$)  {$b_{\x}$} ;
+      \draw[black!25, very thin] ($(n)+(1.7ex,1.5ex)$) -- ++(0, -3ex);
+    }
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d1) at (3.4*3ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=20ex,minimum height=6ex] (T1) at ($(d1)+(0,-10ex)$) { $T_{i1}: \circ_p(c_i\times d_{i1})$};
+    \draw[hwbus,->] (d1.south) --  (T1.north) node[midway,right] {$d_{i1}$};
+
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d2) at (3.4*9ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=15ex] (T2) at ($(d2)+(0,-10ex)$) { $T_{i2}$};
+    \draw[hwbus,->] (d2.south) --  (T2.north) node[midway,right] {$d_{i2}$};
+
+    \node[draw, thick, rectangle, minimum width = 3.4*6ex, minimum height=3ex] (d3) at (3.4*15ex+1.7ex,0) {} ;
+    \node[hwblock, minimum width=10ex,minimum height=3.5ex] (T3) at ($(d3)+(0,-10ex)$) { $T_{i3}$};
+    \draw[hwbus,->] (d3.south) --  (T3.north) node[midway,right] {$d_{i3}$};
+
+    
+    \node[hwblock, minimum width=50ex] (sum) at ($(T2)+(0,-11.3ex)$) {\Large $+$};
+    \draw[hwbus,->]  (T1.south) --  ($(sum.80)!(T1)!(sum.north)$) % This means: point that is the projection of T1 on the line  (sum.80) -- (sum.north)
+       node[near start] {$/$} node[near start,left] {$q_i+g$}          node[near end,right] {$\widetilde{t}_{i1}$};
+    \draw[hwbus,->]  (T2.south) --  ($(sum.80)!(T2)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-\alpha+g$}   node[near end,right] {$\widetilde{t}_{i2}$};
+    \draw[hwbus,->]  (T3.south) -- ($(sum.80)!(T3)!(sum.north)$) node[near start] {$/$} node[near start,left] {$q_i-2\alpha+g$}  node[near end,right] {$\widetilde{t}_{i3}$};
+
+    \draw[hwbus,->] (sum.south) --  ++(0,-6ex) node[near start] {$/$} node[near start,left] {$q_i+g$} node[near end,right] {$\widetilde{p}_i\approx c_ix_i$};
+ \end{tikzpicture}
+\end{figure}
+The FixRealKCM method when $x_i$ is split in 3 chunks
+\end{frame}
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	\frametitle{Mathematical definition of a filter $\mathcal{H}$}
+		Definition of a filter:
+		$\boldsymbol{y} = \mathcal{H}(\boldsymbol{u})$
+		With $dim(\boldsymbol{y}) = n_y$ and, $dim(\boldsymbol{u}) = n_u$ \\
+		Linearity:
+		$$ \mathcal{H}(\alpha \cdot \boldsymbol{u}_1+ \beta \cdot \boldsymbol{u}_2)= \alpha\cdot\mathcal{H}(\boldsymbol{u}_1) +  \beta\cdot\mathcal{H}(\boldsymbol{u}_2)$$
+
+		Time invariance:
+		$$ \{\mathcal{H}(\boldsymbol{u})(k-k_0)\}_{k\geq0} = \mathcal{H}(\{\boldsymbol{u}(k-k_0)\}_{k \geq 0} ) $$
+\end{frame}
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	\frametitle{Impulse response}
+	$$u=\sum_{i\geq0}u(l)\delta_l$$
+	Where $\delta_l$ is a Dirac impulsion centered in $l$:
+	\begin{equation}
+		\delta_l(k) =
+		\begin{cases}
+			1 & \hspace{5pt} when \hspace{5pt} k=l\\
+			0 & \hspace{5pt} else\\
+		\end{cases}
+	\end{equation}
+
+	Time invariance gives: $\mathcal{H}(\delta_l)(k)=h(k-l)$
+
+	Computation of the outputs:
+	$$y_i(k)=\sum_{j=1}^{n_u}\sum_{l=0}^ku_j(l)h_{i,j}(k-l), \hspace{5pt} \forall 1 \leq i \leq n_y$$
+
+
+\end{frame}
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	From:
+	\begin{equation} \label{zmatrix}
+		\boldsymbol{Z}=
+		\begin{pmatrix}
+			\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{N} \\
+			\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{Q} \\
+			\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{S} 
+		\end{pmatrix}
+	\end{equation}
+
+	The ABCD form is deducible from the SIF:
+
+	\begin{eqnarray} \label{abcdtranspose}
+		\boldsymbol{A_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{M} +\boldsymbol{P}, \hspace{5pt}
+		\boldsymbol{B_Z} = \boldsymbol{KJ}^{-1}\boldsymbol{N} +\boldsymbol{Q}, \nonumber \\
+		\boldsymbol{C_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{M} +\boldsymbol{R}, \hspace{5pt}
+		\boldsymbol{D_Z} = \boldsymbol{LJ}^{-1}\boldsymbol{N} +\boldsymbol{S}, \nonumber \\
+	\end{eqnarray}
+
+	with:
+	\begin{eqnarray}
+		\boldsymbol{A_Z} \in \mathbb{R}^{n_x \times n_x},
+		\boldsymbol{B_Z} \in \mathbb{R}^{n_x \times n_u}, \nonumber \\
+		\boldsymbol{C_Z} \in \mathbb{R}^{n_y \times n_x},
+		\boldsymbol{D_Z} \in \mathbb{R}^{n_y \times n_u},
+	\end{eqnarray}
+\end{frame}
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	Definition of the error filter:
+		\begin{equation} \label{zepsmatrix}
+		\boldsymbol{Z_\varepsilon}=
+					\begin{pmatrix}
+						\boldsymbol{-J} & \boldsymbol{M} & \boldsymbol{M}_t \\
+						\boldsymbol{K} & \boldsymbol{P} & \boldsymbol{M}_x \\
+						\boldsymbol{L} & \boldsymbol{R} & \boldsymbol{M}_y 
+					\end{pmatrix}
+		\end{equation}
+
+		with:
+		\begin{eqnarray} \label{deltaerr}
+			\boldsymbol{M}_t=(\boldsymbol{I}_{n_t} \hspace{5pt} \boldsymbol{0}_{n_t \times n_x} \hspace{5pt} \boldsymbol{0}_{n_t \times n_y}), \\
+			\boldsymbol{M}_x=(\boldsymbol{0}_{n_x \times n_t} \hspace{5pt} \boldsymbol{I}_{n_x} \hspace{5pt} \boldsymbol{0}_{n_x \times n_y}), \\
+			\boldsymbol{M}_y=(\boldsymbol{0}_{n_y \times n_t} \hspace{5pt} \boldsymbol{0}_{n_y \times n_x} \hspace{5pt} \boldsymbol{I}_{n_y}),
+		\end{eqnarray}
+\end{frame}
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	Interface specification: \\
+		
+	\hspace{10pt}	X l c \\
+	\hspace{10pt}	x\_1\_1 x\_1\_2 ... x\_1\_c \\
+	\hspace{10pt}	x\_2\_1 x\_2\_2 ... x\_2\_c \\
+	\hspace{10pt}	.\\
+	\hspace{10pt}	.\\
+	\hspace{10pt}	.\\
+	\hspace{10pt}	x\_l\_1 x\_l\_2 ... x\_l\_c\\
+			
+
+		Where:
+		\begin{itemize}
+			\item X = name of the matrix
+			\item X $\in$ \{ J, K, L, M, N, P, Q, R, S, T\}
+			\item x\_i\_j = the coefficient
+			\item $i \in [1, l]$
+			\item $j \in [1, c]$
+			\item l = the number of lines
+			\item c = the numer of columns.
+		\end{itemize}
+
+\end{frame}
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	\frametitle{Computing the LSB: Error definition}
+	Errors introduced by SOPCs:
+	\begin{equation}
+		\tiny
+		\boldsymbol{\varepsilon}_{v'}(k) =
+		\begin{pmatrix}
+			\boldsymbol{\varepsilon}_t(k) \\
+			\boldsymbol{\varepsilon}_x(k) \\
+			\boldsymbol{\varepsilon}_y(k) \\
+		\end{pmatrix}
+		=
+		\begin{pmatrix}
+			{\varepsilon}_{t_1}(k) \\
+			{\varepsilon}_{t_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{t_{n_t}}(k) \\
+			\hspace{5pt} \\
+			{\varepsilon}_{x_1}(k) \\
+			{\varepsilon}_{x_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{x_{n_x}}(k) \\
+			\hspace{5pt} \\
+			{\varepsilon}_{y_1}(k) \\
+			{\varepsilon}_{y_2}(k) \\
+			\vdots \\
+			{\varepsilon}_{y_{n_y}}(k) \\
+		\end{pmatrix}
+	\end{equation}
+	\footnotesize
+	$\boldsymbol{\varepsilon}_{v'}^*(k)$ will represent the total error and is defined similarly to $\boldsymbol{\varepsilon}_{v'}(k)$
+\end{frame}
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	\frametitle{LSB computation I}
+		\begin{equation} \label{constraint}
+			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{} | \cdot \boldsymbol{2}^{lsb_{v'}+1} < \boldsymbol{2}^{-lsb_{y_i}}
+			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+		Expanded line:
+		\begin{equation} \label{constraint}
+		\tiny
+			\sum_{j=1}^{n_t}| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \boldsymbol{2}^{lsb_{t_i}+1} +
+			\sum_{j=n_t}^{n_t+n_x}| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \boldsymbol{2}^{lsb_{x_i}+1} +
+			\sum_{j=n_t+n_x}^{n_t+n_x+n_u}| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \boldsymbol{2}^{lsb_{u_i}+1}
+			< \boldsymbol{2}^{-lsb_{y_i}}
+			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+\end{frame}
+
+\addtocounter{framenumber}{-1}
+\begin{frame}
+	\frametitle{LSB computation II}
+		Splitting error in $n'=nt+nx+nu$ equal chunks:
+
+		\begin{equation} \label{constraint}
+			| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,j} | \cdot \boldsymbol{2}^{lsb_{v'}+1} < \frac{\boldsymbol{2}^{-lsb_{y_i}}}{n'}
+			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+		$\Leftrightarrow$
+		\begin{equation} \label{constraint}
+			\boldsymbol{2}^{lsb_{t_j}+1} < \frac{\boldsymbol{2}^{-lsb_{y_i}}}{| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,t_j} | \cdot n'}
+			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+		\begin{equation} \label{constraint}
+			\boldsymbol{2}^{lsb_{x_j}+1} < \frac{\boldsymbol{2}^{-lsb_{y_i}}}{| \langle\langle \mathcal{H}_{\boldsymbol{\varepsilon}} \rangle\rangle_{i,x_j} | \cdot n'}
+			%\boldsymbol{D} \cdot \boldsymbol{2}^{lsb_{v'}-msb_{v'}-1} < \boldsymbol{1}_{n_y}
+		\end{equation}
+		Then:
+		\begin{eqnarray}
+			lsb_{x_j} < lsb_{y_i}-log(n' \cdot \| \langle\langle \mathcal{H}_\varepsilon \rangle\rangle \|_{i,x_j})-1 \\
+			lsb_{t_j} < lsb_{y_i}-log(n' \cdot \| \langle\langle \mathcal{H}_\varepsilon \rangle\rangle \|_{i,t_j})-1
+		\end{eqnarray}
+
+
+
+
+		
+	
+\addtocounter{framenumber}{-3}
+\end{frame}
+
+	\begin{frame}[allowframebreaks]
+	\frametitle{References}
+	%\transdissolve
+		\begin{center}
+			\bfseries
+			Small bibliography
+		\end{center}
+		\tiny
+		\bibliographystyle{plain}
+		\nocite{ChevillardJoldesLauter2010}
+		\nocite{Volk15a}
+		\nocite{DinechinPasca2011-DaT}
+		\nocite{Chapman93:edn}
+		\nocite{sifd}
+		\nocite{sif}
+		\nocite{sums}
+		\nocite{hilaire}
+		\nocite{lopez}
+		\nocite{loopshaping}
+		\nocite{stability}
+		\nocite{constructing}
+		\bibliography{../report}  
+		%\nocite{paper}
+
+	\end{frame}
+
+

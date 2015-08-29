@@ -13,7 +13,7 @@
 
 #include <boost/numeric/ublas/lu.hpp> 
 #include <boost/numeric/ublas/io.hpp>
-//#define WCPG_F //disable WCPG until it works
+#define WCPG_F //disable WCPG until it works
 
 #ifndef WCPG_F
 extern "C" {
@@ -1231,6 +1231,10 @@ namespace flopoco {
 
 		//Declare wcpg of the filter
 		double *wcpgF=new double [(ny)*(nu)];
+//		REPORT(0,"Resetting  wcpgF");
+//		for (int i = 0; i<ny*nu; i++){
+//			wcpgF[i]=0;
+//		}
 		
 		REPORT(0, "trying wcpg");
 		int wRes;

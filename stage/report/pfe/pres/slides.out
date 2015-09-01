@@ -6,8 +6,8 @@
 \BOOKMARK [2][]{Outline0.2}{Generating the architecture}{}% 6
 \BOOKMARK [3][]{Outline0.2.1.21}{The FloPoCo Framework: computing just right}{Outline0.2}% 7
 \BOOKMARK [3][]{Outline0.2.2.22}{Basic block: SOPC}{Outline0.2}% 8
-\BOOKMARK [3][]{Outline0.2.3.23}{Architecture generation}{Outline0.2}% 9
+\BOOKMARK [3][]{Outline0.2.3.24}{Architecture generation}{Outline0.2}% 9
 \BOOKMARK [2][]{Outline0.3}{Computing the parameters}{}% 10
-\BOOKMARK [3][]{Outline0.3.1.30}{Computing the MSB}{Outline0.3}% 11
-\BOOKMARK [3][]{Outline0.3.2.31}{Computing the LSB}{Outline0.3}% 12
+\BOOKMARK [3][]{Outline0.3.1.31}{Computing the MSB}{Outline0.3}% 11
+\BOOKMARK [3][]{Outline0.3.2.32}{Computing the LSB}{Outline0.3}% 12
 \BOOKMARK [2][]{Outline0.4}{Future Work}{}% 13

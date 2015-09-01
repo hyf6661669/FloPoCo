@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  29 AUG 2015 13:36
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014/Arch Linux) (preloaded format=pdflatex 2015.5.31)  1 SEP 2015 11:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1585,106 +1585,111 @@ Overfull \vbox (8.45952pt too high) detected at line 270
 
 ] [22
 
-] [23
+]pdfTeX warning (ext4): destination with the same identifier (name{sifdef}) has
+ been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.118 \end{frame}
+                  [23
 
 ] [24
 
+] [25
+
 ]
-<pictures/exampleGreenFull.pdf, id=1380, 471.72314pt x 525.27628pt>
+<pictures/exampleGreenFull.pdf, id=1430, 471.72314pt x 525.27628pt>
 File: pictures/exampleGreenFull.pdf Graphic file (type pdf)
 
 <use pictures/exampleGreenFull.pdf>
-Package pdftex.def Info: pictures/exampleGreenFull.pdf used on input line 122.
+Package pdftex.def Info: pictures/exampleGreenFull.pdf used on input line 161.
 (pdftex.def)             Requested size: 188.68591pt x 210.10678pt.
 
-Overfull \vbox (14.69753pt too high) detected at line 122
+Overfull \vbox (14.69753pt too high) detected at line 161
  []
 
-[25
+[26
 
- <./pictures/exampleGreenFull.pdf>] [26
+ <./pictures/exampleGreenFull.pdf>] [27
 
 ]
 File: pictures/exampleGreenScheme.pdf Graphic file (type pdf)
 
 <use pictures/exampleGreenScheme.pdf>
-Package pdftex.def Info: pictures/exampleGreenScheme.pdf used on input line 178
+Package pdftex.def Info: pictures/exampleGreenScheme.pdf used on input line 217
 .
 (pdftex.def)             Requested size: 290.37036pt x 164.6925pt.
- [27
+ [28
 
 ]
 File: pictures/exampleGreenScheme.pdf Graphic file (type pdf)
 
 <use pictures/exampleGreenScheme.pdf>
-Package pdftex.def Info: pictures/exampleGreenScheme.pdf used on input line 185
+Package pdftex.def Info: pictures/exampleGreenScheme.pdf used on input line 224
 .
 (pdftex.def)             Requested size: 263.56784pt x 188.22154pt.
- [28
+ [29
 
-] (./slides.toc) [29
+] (./slides.toc) [30
 
 ]
 \openout3 = `slides.out.gnuplot'.
 
 runsystem(gnuplot slides.out.gnuplot)...disabled (restricted).
 
- [30
+ [31
 
 ]
-Overfull \hbox (22.7209pt too wide) in paragraph at lines 252--252
- [] 
- []
-
-[31
-
-]
-Overfull \hbox (22.7209pt too wide) in paragraph at lines 252--252
+Overfull \hbox (22.7209pt too wide) in paragraph at lines 291--291
  [] 
  []
 
 [32
 
-] [33
+]
+Overfull \hbox (22.7209pt too wide) in paragraph at lines 291--291
+ [] 
+ []
+
+[33
+
+] [34
 
 ]
 
-LaTeX Font Warning: Command \tiny invalid in math mode on input line 305.
+LaTeX Font Warning: Command \tiny invalid in math mode on input line 344.
 
-[34
+[35
 
 pdfTeX warning (ext4): destination with the same identifier (name{constraint}) 
 has been already used, duplicate ignored
 
 \@EveryShipout@Output ...@Org@Shipout \box \@cclv 
                                                   
-l.305 \end{frame}
-                 ]) (./slides.toc) [35
+l.344 \end{frame}
+                 ]) (./slides.toc) [36
 
-] (./thirdPart.tex [36
+] (./thirdPart.tex [37
 
-]) [37
+]) [38
 
-] [38
+] [39
 
 ]
-[39
+[40
 
 ] (./backup.texpdfTeX warning (ext4): destination with the same identifier (nam
 e{sifdef}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.36 \end{frame}
-                 [40
+                 [41
 
 ]pdfTeX warning (ext4): destination with the same identifier (name{sifdef}) has
  been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.74 \end{frame}
-                 [41
-
-] [42
+                 [42
 
 ] [43
 
@@ -1693,6 +1698,8 @@ l.74 \end{frame}
 ] [45
 
 ] [46
+
+] [47
 
 ]
 LaTeX Font Info:    Try loading font information for OMS+cmss on input line 222
@@ -1704,13 +1711,13 @@ LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
 (Font)              using `OMS/cmsy/m/n' instead
 (Font)              for symbol `textbraceleft' on input line 222.
 
-[47
+[48
 
 ]
 
 LaTeX Font Warning: Command \tiny invalid in math mode on input line 256.
 
-[48
+[49
 
 ]pdfTeX warning (ext4): destination with the same identifier (name{constraint})
  has been already used, duplicate ignored
@@ -1726,7 +1733,7 @@ l.274 \end{frame}
 
 LaTeX Font Warning: Command \tiny invalid in math mode on input line 274.
 
-[49
+[50
 
 ]pdfTeX warning (ext4): destination with the same identifier (name{constraint})
  has been already used, duplicate ignored
@@ -1743,14 +1750,14 @@ ame{constraint}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.306 \end{frame}
-                  [50
+                  [51
 
-] (./slides.bbl) [51
+] (./slides.bbl) [52
 
- </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [52
+ </usr/share/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [53
 
 
-] [53
+] [54
 
 
 ])
@@ -1768,9 +1775,15 @@ Package atveryend Info: Empty hook `AfterLastShipout' on input line 265.
  (./slides.aux)
 Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 265.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 265.
-Package rerunfilecheck Info: File `slides.out' has not changed.
-(rerunfilecheck)             Checksum: B31371C41D4E63E20C8F0A69B808F0AB;902.
 
+
+Package rerunfilecheck Warning: File `slides.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `slides.out':
+(rerunfilecheck)             Before: B31371C41D4E63E20C8F0A69B808F0AB;902
+(rerunfilecheck)             After:  F627345930BDFE5B345D2D9A80385B02;902.
 
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
@@ -1784,48 +1797,57 @@ LaTeX Warning: There were multiply-defined labels.
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 265.
  ) 
 Here is how much of TeX's memory you used:
- 28632 strings out of 493109
- 575287 string characters out of 6140856
+ 28637 strings out of 493109
+ 575351 string characters out of 6140856
  830888 words of memory out of 5000000
  31325 multiletter control sequences out of 15000+600000
  32897 words of font info for 104 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  56i,20n,67p,406b,956s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/share/t
-exmf-dist/fonts/type1/public/amsfonts/cm/cmbsy10.pfb></usr/share/texmf-dist/fon
-ts/type1/public/amsfonts/cmextra/cmbsy5.pfb></usr/share/texmf-dist/fonts/type1/
-public/amsfonts/cmextra/cmbsy6.pfb></usr/share/texmf-dist/fonts/type1/public/am
-sfonts/cmextra/cmbsy8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmex10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex7.pf
-b></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/sh
-are/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-dist
-/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texmf-dist/fonts/type1/pu
-blic/amsfonts/cm/cmmi6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/c
-m/cmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></u
-sr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texm
-f-dist/fonts/type1/public/amsfonts/cmextra/cmmib5.pfb></usr/share/texmf-dist/fo
-nts/type1/public/amsfonts/cmextra/cmmib6.pfb></usr/share/texmf-dist/fonts/type1
-/public/amsfonts/cmextra/cmmib8.pfb></usr/share/texmf-dist/fonts/type1/public/a
-msfonts/cmextra/cmmib9.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/c
-m/cmss10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb><
-/usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmss17.pfb></usr/share/tex
-mf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/share/texmf-dist/fonts/t
-ype1/public/amsfonts/cm/cmss9.pfb></usr/share/texmf-dist/fonts/type1/public/ams
-fonts/cm/cmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cms
-si10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi17.pfb></us
-r/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></usr/share/texmf-
-dist/fonts/type1/public/amsfonts/cm/cmssi9.pfb></usr/share/texmf-dist/fonts/typ
-e1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/amsf
-onts/cm/cmsy5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.p
-fb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/
-texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texmf-dist/font
-s/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texmf-dist/fonts/type1/public
-/amsfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super
-/sfso0800.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfso1000.pfb>
-Output written on slides.pdf (53 pages, 1205468 bytes).
+pdfTeX warning (dest): name{Outline0.3.2.31} has been referenced but does not
+ exist, replaced by a fixed one
+
+pdfTeX warning (dest): name{Outline0.3.1.30} has been referenced but does not e
+xist, replaced by a fixed one
+
+pdfTeX warning (dest): name{Outline0.2.3.23} has been referenced but does not e
+xist, replaced by a fixed one
+
+{/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/share/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmbsy10.pfb></usr/share/texmf-dist/fonts
+/type1/public/amsfonts/cmextra/cmbsy5.pfb></usr/share/texmf-dist/fonts/type1/pu
+blic/amsfonts/cmextra/cmbsy6.pfb></usr/share/texmf-dist/fonts/type1/public/amsf
+onts/cmextra/cmbsy8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mex10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex7.pfb>
+</usr/share/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/shar
+e/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-dist/f
+onts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmmi6.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr
+/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texmf-
+dist/fonts/type1/public/amsfonts/cmextra/cmmib5.pfb></usr/share/texmf-dist/font
+s/type1/public/amsfonts/cmextra/cmmib6.pfb></usr/share/texmf-dist/fonts/type1/p
+ublic/amsfonts/cmextra/cmmib8.pfb></usr/share/texmf-dist/fonts/type1/public/ams
+fonts/cmextra/cmmib9.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmss10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></u
+sr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmss17.pfb></usr/share/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/share/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmss9.pfb></usr/share/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi
+10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi17.pfb></usr/
+share/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></usr/share/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmssi9.pfb></usr/share/texmf-dist/fonts/type1
+/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/amsfon
+ts/cm/cmsy5.pfb></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb
+></usr/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texmf-dist/fonts/type1/public/a
+msfonts/symbols/msbm10.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/s
+fso0800.pfb></usr/share/texmf-dist/fonts/type1/public/cm-super/sfso1000.pfb>
+Output written on slides.pdf (54 pages, 1208355 bytes).
 PDF statistics:
- 2987 PDF objects out of 3580 (max. 8388607)
- 2816 compressed objects within 29 object streams
- 141 named destinations out of 1000 (max. 500000)
+ 3041 PDF objects out of 3580 (max. 8388607)
+ 2869 compressed objects within 29 object streams
+ 146 named destinations out of 1000 (max. 500000)
  256 words of extra memory for PDF output out of 10000 (max. 10000000)
 

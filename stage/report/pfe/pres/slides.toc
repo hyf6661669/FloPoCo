@@ -7,8 +7,8 @@
 \beamer@sectionintoc {2}{Generating the architecture}{20}{0}{2}
 \beamer@subsectionintoc {2}{1}{The FloPoCo Framework: computing just right}{21}{0}{2}
 \beamer@subsectionintoc {2}{2}{Basic block: SOPC}{22}{0}{2}
-\beamer@subsectionintoc {2}{3}{Architecture generation}{23}{0}{2}
-\beamer@sectionintoc {3}{Computing the parameters}{29}{0}{3}
-\beamer@subsectionintoc {3}{1}{Computing the MSB}{30}{0}{3}
-\beamer@subsectionintoc {3}{2}{Computing the LSB}{31}{0}{3}
-\beamer@sectionintoc {4}{Future Work}{35}{0}{4}
+\beamer@subsectionintoc {2}{3}{Architecture generation}{24}{0}{2}
+\beamer@sectionintoc {3}{Computing the parameters}{30}{0}{3}
+\beamer@subsectionintoc {3}{1}{Computing the MSB}{31}{0}{3}
+\beamer@subsectionintoc {3}{2}{Computing the LSB}{32}{0}{3}
+\beamer@sectionintoc {4}{Future Work}{36}{0}{4}

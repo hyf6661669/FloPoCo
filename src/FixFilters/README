@@ -1,0 +1,14 @@
+FixSIF readme.
+
+TODO:
+-update FixRealKCM
+-resolve segfault with WCPG
+-debug soplex part (potentially nothing to do)
+-debug emulate
+-resolve bug concerning vhdl libraries (pass everything to numeric_std)
+-check busses bit size (+/-1)
+-enable signed operations in FixSOPC
+-refactor linear algebra API with blas items
+-move type conversions and associated functions in another module
+-refactor generation algorithm to make the circuit in one pass (each size is computed in advance)
+-find a small (quick to generate/compile) and pertinent test example.

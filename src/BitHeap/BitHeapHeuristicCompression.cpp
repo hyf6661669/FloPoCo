@@ -605,7 +605,7 @@ namespace flopoco
                 bool bitFound = false;
                 bool finished = true;
                 bool zerosSet = false;
-                unsigned zeros = 0;     //not needed because it doesn't make it faster
+  //              unsigned zeros;     //not needed because it doesn't make it faster
                 for(unsigned s = 0; s < newBits.size() && finished; s++){
                     //if bitFound == true : a previous stage has unfinished bits
                     //if we find now bits as well, we are not ready
@@ -632,14 +632,14 @@ namespace flopoco
 
                     if(!zerosSet && bitFound){  //set zeros at previous stage and lock that value
                         if(s > 0){
-                            zeros = s - 1;
+//                            zeros = s - 1;
                             zerosSet = true;
                         }
                     }
                     if(!zerosSet && !bitFound && !finished){
                         //we found a stage with more than 2 bits, but no bits in previous stage
                         if(s > 0){
-                            zeros = s - 1;
+//                            zeros = s - 1;
                             zerosSet = true;
                         }
                     }
@@ -1517,7 +1517,7 @@ namespace flopoco
     double BitHeapHeuristicCompression::compEffBitHeap(unsigned s, unsigned c, unsigned compPos){
         int sum = 0;
         bool conditionsMet = true;
-        bool preReductionConditionsMet = true;
+//        bool preReductionConditionsMet = true;
 
         //make sure the width of the current stage is large enough
         if(newBits[s].size() - 1 < c + (compressors[compPos].pointer->getNumberOfColumns() - 1)){
@@ -1543,9 +1543,11 @@ namespace flopoco
                     }
                 }
 
-                if(newBits[s][c + i] - compressors[compPos].pointer->getColumnSize(i) < (int) minimumHeightReduction){
+/*
+                if(((unsigned) newBits[s][c + i]) - compressors[compPos].pointer->getColumnSize(i) < (int) minimumHeightReduction){
                     preReductionConditionsMet = false;      //deactivated
                 }
+*/
             }
 
 
@@ -1681,7 +1683,7 @@ namespace flopoco
             list<pair<int, int> >:: iterator it;
 
             for(it = solution[i].begin(); it != solution[i].end(); it++){
-                if((*it).first == compressors.size()){
+                if((*it).first == (int) compressors.size()){
                     areaSize += 0.5; //cost of flipflop
                 }
                 else{
@@ -1973,7 +1975,7 @@ namespace flopoco
         }
     }
 
-    int BitHeapHeuristicCompression::printLowerBounds(){
+    void BitHeapHeuristicCompression::printLowerBounds(){
         cout << "PA-vector is (";
         for(unsigned i = 0; i < (sizeof(lowerBounds) / sizeof(lowerBounds[0])); i++){
             if(lowerBounds[i] > 4.1){
@@ -2017,7 +2019,7 @@ namespace flopoco
             double currentValue = 0.0;
             unsigned int fractionDigitCount = 0;
             bool foundInf = false;
-            for(int i = 0; i < s.size(); i++){
+            for(unsigned i = 0; i < s.size(); i++){
                 if(valueRead && (s.at(i) == ' ' || s.at(i) == ',' || s.at(i) == ';')){    //new value
                     if(pos < sizeOfLowerBounds){
                         lowerBounds[pos] = currentValue;

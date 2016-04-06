@@ -349,7 +349,6 @@ namespace flopoco{
 		vector<list<WeightedBit*> > history; 		/**<  remembers all the changes to bits */
 	private:
 		Operator* op;
-		int compressionType;						/**< The type of compression performed (explained in the header of the constructor)*/
 		unsigned maxWeight;							/**< The compressor tree will produce a result for weights < maxWeight (work modulo 2^maxWeight)*/
 		unsigned minWeight;							/**< bits smaller than this one are already compressed */
 		mpz_class constantBits;						/**< This int gather all the constant bits that need to be added to the bit heap (for rounding, two's complement etc) */
@@ -386,6 +385,7 @@ namespace flopoco{
 		unsigned int minAdd3Length;					/**< The minimum length of a 3-input adder */
 		unsigned int maxAdd3Length;					/**< The maximum length of a 3-input adder */
 		bool enableSuperTiles;
+		int compressionType;						/**< The type of compression performed (explained in the header of the constructor)*/
 
 		bool bitheapCompressed;						/**< Has the bitheap already been compressed */
 

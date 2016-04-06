@@ -44,10 +44,10 @@ namespace flopoco
 			string efficiencyPerStage
 		) :
 			op(op), 
-			compressionType(compressionType), 
-			efficiencyPerStage(efficiencyPerStage),
 			maxWeight(maxWeight), 
-			enableSuperTiles(enableSuperTiles)
+			enableSuperTiles(enableSuperTiles),
+			compressionType(compressionType), 
+			efficiencyPerStage(efficiencyPerStage)
 	{
 		// Set up the vector of lists of weighted bits, and the vector of uids
 		srcFileName=op->getSrcFileName() + ":BitHeap"; // for REPORT to work
@@ -1016,7 +1016,7 @@ namespace flopoco
 
 
 		// add the bits, at the current (global) instant.
-		for (int j=0; j<bc->getOutputSize(); j++) {
+		for (unsigned j=0; j<bc->getOutputSize(); j++) {
 			addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type);
 		}
 #if 0
@@ -1131,7 +1131,7 @@ namespace flopoco
 			}
 
 			// add the bits, at the current (global) instant.
-			for (int j=0; j<bc->getOutputSize(); j++) {
+			for (unsigned j=0; j<bc->getOutputSize(); j++) {
 				addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
 			}
 		}
@@ -1196,7 +1196,6 @@ namespace flopoco
 		int /*maxCompressibleBits,*/ col0, col1;
 
 		int maxCompressibleBits = op->getTarget()->lutInputs();
-		BasicCompressor* compressor;
 
 
 #if 1 // The other alternative works better but has to be adapted to arbitrary lutInputs
@@ -1217,6 +1216,7 @@ namespace flopoco
 					}
 
 #else // just for test
+		BasicCompressor* compressor;
 
 		/*
 		{//test
@@ -1618,7 +1618,7 @@ namespace flopoco
                         REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
                         cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s << endl;
 //
-                        if((*it).second < maxWeight){
+                        if(((unsigned) (*it).second) < maxWeight){
                             elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
 
                             if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
@@ -2446,8 +2446,8 @@ namespace flopoco
 		if(isXilinx)
 		{
 			stringstream inAdder0, inAdder1/*, outAdder*/;
-			int i;
-			int minIndex, maxIndex;
+			unsigned i;
+			unsigned minIndex, maxIndex;
 
 			//determine the index of the column where the addition should start
 			//	not necessarly the minimum index line

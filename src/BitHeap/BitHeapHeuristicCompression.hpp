@@ -100,7 +100,7 @@ namespace flopoco
         int getMaxStageCount(int maxHeight);
 
         int printBitHeap();
-        int printLowerBounds();
+        void printLowerBounds();
         double computeAreaofSolution();
 
         int noOfColumnsFor606(int s, int c, bool usePreviousStages, bool useSingleCompressor);

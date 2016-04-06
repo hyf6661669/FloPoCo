@@ -113,7 +113,7 @@ namespace flopoco
             cout << "we set up the stages as bh_->getMaxHeight()" << endl;
             noOfStages_=getMaxStageCount(bh_->getMaxHeight());
         }
-		int noOfCompressors=possibleCompressors_->size();
+		unsigned noOfCompressors=possibleCompressors_->size();
         if(useVariableCompressors){
             noOfCompressors += variableBCompressors.size();
         }
@@ -260,7 +260,7 @@ namespace flopoco
 
 
         cout << newBitsCountVars.size() << " " << newBits.size() << endl;
-        for(int i = 0; i < newBitsCountVars.size(); i++){
+        for(unsigned i = 0; i < newBitsCountVars.size(); i++){
             vector<SCIP_VAR*> tempVectorCons = newBitsCountVars.at(i);
             vector<int> tempVectorValue;
             if(newBits.size() <= i){
@@ -273,7 +273,7 @@ namespace flopoco
 
             cout << i << endl;
             cout << tempVectorCons.size() << " " << tempVectorValue.size() << endl;
-            for(int j = 0; j < tempVectorCons.size(); j++){
+            for(unsigned j = 0; j < tempVectorCons.size(); j++){
                 stringstream consName;
                 consName << "C0_" << i << "_" << j;
 
@@ -416,7 +416,7 @@ namespace flopoco
             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, newBitsCountVars[s][c] , 1) );
 
             //now make sure that the U's in later stages are empty
-            for(int z = s + 1 ; z < compCountVars.size(); z++){
+            for(unsigned z = s + 1 ; z < compCountVars.size(); z++){
                 SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, newBitsCountVars[z][c] , 4) );
             }
 			SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, stageVars[s] , LARGE_NUMBER) );
@@ -561,6 +561,7 @@ namespace flopoco
 
 
         cout << "end of SCIP problem description" << endl;
+        return 0;
 	}
 
 	int BitHeapILPCompression::writeProblem(std::string filename)
@@ -573,7 +574,7 @@ namespace flopoco
 		//print model in LP format:
 		SCIP_RESULT result;
 		SCIP_CALL(SCIPwriteLp(scip, NULL, fname, FALSE, SCIP_OBJSENSE_MINIMIZE, 1.0, 0.0, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetNBinVars(scip), SCIPgetNIntVars(scip), SCIPgetNImplVars(scip), SCIPgetNContVars(scip), SCIPgetConss(scip), SCIPgetNOrigConss(scip), &result));
-
+		return 0;
 	}
 
 	bool BitHeapILPCompression::solve()
@@ -743,7 +744,7 @@ namespace flopoco
 
         cout << "in passHeuristicSolution" << endl;
 
-        for(int i = 0; i < heuristicSolutions.size(); i++){
+        for(unsigned i = 0; i < heuristicSolutions.size(); i++){
             cout << "passing heuristic solution number " << i << endl;
             SCIP_CALL( SCIPcreateSol(scip, &heuSol, NULL) );            
             computeCompressorCount(i);      //computes also heuristicN

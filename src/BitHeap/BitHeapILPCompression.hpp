@@ -49,7 +49,7 @@ namespace flopoco
         vector<vector<int> > newBits;  //thats the bits which are added by the heuristic in each Cycle
         double costOfCurrentSolution;
         bool infeasible;
-        int zeroStages;
+        unsigned zeroStages;
         int noOfStages_;
         bool useVariableCompressors;
 

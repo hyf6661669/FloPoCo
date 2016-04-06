@@ -26,18 +26,23 @@ namespace flopoco
 		vector<int> height; /** inverted input vector h **/
 		int wOut; /** size of the output vector **/
 		int param; /** computes the range of the output vector **/
-
+		
+		/* Uni KS start */
+		vector<int> outputs; /** vector of output bits**/
+		double areaCost;        /** area cost of the compressor **/
 
 		/** constructor **/
+		BasicCompressor(Target * target);
+		/* Uni KS stop */
 		BasicCompressor(Target * target, vector<int> h);
-
 
 		/** destructor**/
 		~BasicCompressor();
 
 		unsigned getColumnSize(int column);
+		unsigned getNumberOfColumns();
 
-		int getOutputSize();
+		unsigned getOutputSize();
 
 
 		/** test case generator  **/

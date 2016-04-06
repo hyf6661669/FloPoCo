@@ -63,6 +63,7 @@ int main(int argc, char* argv[] )
 		IntDualSub::registerFactory();
 		IntMultiplier::registerFactory();
 		IntSquarer::registerFactory();
+		IntAdderTree::registerFactory();
 
 		FPConstMult::registerFactory();
 		FPRealKCM::registerFactory();

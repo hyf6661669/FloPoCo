@@ -13,6 +13,7 @@ namespace flopoco
 		sol = NULL;
 		scip = NULL;
 		noOfStagesUsed = -1;
+	    useVariableCompressors = false;
 
 		srcFileName = bh->getOp()->getSrcFileName() + ":Bitheap:BitHeapILPCompression";
 
@@ -136,7 +137,7 @@ namespace flopoco
 
         //if heuristic isn't used, fill up the U with zero - vectors
         if(!useHeuristic){
-            for(unsigned s = 1; s <= noOfStages_; s++){ //first one is filled with initial bits
+            for(int s = 1; s <= noOfStages_; s++){ //first one is filled with initial bits
 
                 vector<int> zero;
                 for(unsigned t = 0; t < bh_->bits.size(); t++){
@@ -171,7 +172,7 @@ namespace flopoco
 		{
 		  stringstream varName;
 		  varName << "D_" << s;
-		  SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), 0.0, SCIPinfinity(scip), 0, SCIP_VARTYPE_BINARY ) );
+		  SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), 0, 1, 0, SCIP_VARTYPE_BINARY ) );
 		  stageVars[s] = tmpvar;
 		  SCIP_CALL( SCIPaddVar(scip, tmpvar) );
 		}
@@ -364,7 +365,8 @@ namespace flopoco
 			  {
                 if((c-ce >= 0) && (c-ce < ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1)))))
 				{
-				  SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c-ce] , (*possibleCompressors_)[e]->outputs[(*possibleCompressors_)[e]->outputs.size()-ce-1]) );
+					cout << "!!" << consName.str() << " : k_" << s << "_" << e << "_" << c-ce << " : " << SCIPvarGetName(compCountVars[s][e][c-ce]) << " : " << (*possibleCompressors_)[e]->outputs[(*possibleCompressors_)[e]->outputs.size()-ce-1] << endl;
+					SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c-ce] , (*possibleCompressors_)[e]->outputs[(*possibleCompressors_)[e]->outputs.size()-ce-1]) );
 				}
 			  }
 			}
@@ -574,7 +576,7 @@ namespace flopoco
 
 	}
 
-	int BitHeapILPCompression::solve()
+	bool BitHeapILPCompression::solve()
 	{
 		//set a time limit:
 		float timeout;
@@ -626,7 +628,7 @@ namespace flopoco
         else{
             SCIP_Real area = SCIPgetPrimalbound(scip);
             preReductionAreaCost += (double)area;
-            cout << "The size of the complete Solution is " << preReductionAreaCost << " slices" << endl;
+            cout << "The size of the complete Solution is " << preReductionAreaCost << " LUTs" << endl;
             costOfCurrentSolution = (double)area;
             infeasible = false;
         }
@@ -671,7 +673,7 @@ namespace flopoco
 		solution.resize(noOfStagesUsed);
         cout << "before convertion " << endl;
         cout << "stages = " << noOfStages_ << endl;
-        for(int j = 0; j < solution.size(); j++){
+        for(unsigned j = 0; j < solution.size(); j++){
             list<pair<int,int> >:: iterator it;
             for(it = solution[j].begin(); it != solution[j].end(); it++){
                 cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
@@ -710,7 +712,7 @@ namespace flopoco
         }
         cout << "after SCIP in BitHeapILPCompression" << endl;
         cout << solution.size() << endl;
-        for(int j = 0; j < solution.size(); j++){
+        for(unsigned j = 0; j < solution.size(); j++){
             list<pair<int,int> >:: iterator it;
             for(it = solution[j].begin(); it != solution[j].end(); it++){
                 cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
@@ -719,7 +721,7 @@ namespace flopoco
         }
         //quick fix: delete empty stages
         unsigned int realStagesUsed = 0;
-        for(int j = 0; j < solution.size(); j++){
+        for(unsigned j = 0; j < solution.size(); j++){
             if(solution[j].size() > 0){
                 realStagesUsed = j;
             }
@@ -727,6 +729,8 @@ namespace flopoco
         cout << "before resizing solution: in ilpCompression " << solution.size() << endl;
         solution.resize(realStagesUsed + 1);
         cout << "after resizing solution: in ilpCompression " << solution.size() << endl;
+        
+        return infeasible;
 	}
 
 
@@ -889,9 +893,9 @@ namespace flopoco
 
 
 
-	int BitHeapILPCompression::plotSolution()
+	void BitHeapILPCompression::plotSolution()
 	{
-		if(sol == NULL) return -1;
+		if(sol == NULL) return;
 
 		SCIP_Real obj;
 		obj = SCIPgetPrimalbound(scip);

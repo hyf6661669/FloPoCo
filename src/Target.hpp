@@ -387,6 +387,46 @@ namespace flopoco{
 		/** Constructs a specific DSP to each target */
 		virtual DSP* createDSP() = 0;
 		
+		/* Uni KS start */
+		
+		/*** Returns the compression type for bit heap compression */
+		int compressionType(){
+			return compressionType_;
+        }
+
+		/** Sets the compression type for bit heap compression
+		 *  @param compressionType the type of compression (for more details, see description of BitHeap constructor)
+		 */
+		void setCompressionType(int compressionType){
+			this->compressionType_ = compressionType;
+		}
+
+        /*** Returns the efficiency per stage for bit heap compression */
+        string efficiencyPerStage(){
+            return efficiencyPerStage_;
+        }
+
+        /** Sets the efficiency per stage for bit heap compression
+         *  @param String of the efficiencies (for more details, see description of BitHeap)
+         */
+        void setEfficiencyPerStage(string efficiencyPerStage){
+            this->efficiencyPerStage_ = efficiencyPerStage;
+        }
+
+		/*** Returns the ILP solver timeout in seconds */
+		int ilpTimeout(){
+			return ilpTimeout_;
+		}
+
+		/** Sets the timeout of the ILP solver, after this time, the best solution is taken (if any)
+		 *  @param ilpTimeout ILP solver timeout in seconds
+		 */
+		void setIlpTimeout(int ilpTimeout){
+			this->ilpTimeout_ = ilpTimeout;
+		}
+		
+		/* Uni KS stop */
+		
 		
 		/*------------ Resource Estimation - target specific ---------*/
 		/*------------------------------------------------------------*/
@@ -671,6 +711,11 @@ namespace flopoco{
 		bool   plainVHDL_;     /**< True if we want the VHDL code to be concise and readable, with + and * instead of optimized FloPoCo operators. */
 		bool   generateFigures_;  /**< If true, some operators may generate some figures in SVG format */
 
+		/* Uni KS start */
+		int    compressionType_;		/**< The type of compression (for operators using bit heaps) */
+        string efficiencyPerStage_;      /**< String of efficiencies (for operators using bit heaps). */
+		int    ilpTimeout_;             /**< The timeout of the ILP solver in seconds */
+		/* Uni KS stop */
 	};
 
 }

@@ -36,6 +36,7 @@ namespace flopoco{
 			frequency_         = 400000000.;
 			useHardMultipliers_= true;
 			unusedHardMultThreshold_=0.5;
+			ilpTimeout_        = 3600;
 		}
 	
 	Target::~Target()

@@ -115,6 +115,83 @@ ELSE ( WCPG_FOUND )
 	MESSAGE ( STATUS "Could not find WCPG, this will affect the FixIIR operator" )
 ENDIF ( WCPG_FOUND )
 
+#Uni KS start
+FIND_PATH(SCIP_H
+	  scip.h
+	  HINTS "/usr/local/include/scip"
+	  DOC "Path of scip.h, the include file for the SCIP library"
+)
+
+# Detect presence of SCIP
+FIND_LIBRARY(SCIP_LIB
+	NAMES scip
+	HINTS "/usr/local/lib64/"
+	DOC "Directory of the SCIP library")
+
+	
+#Detect presence of supporting libraries for SCIP
+FIND_LIBRARY(READLINE_LIB NAMES readline)
+FIND_LIBRARY(Z_LIB NAMES z)
+FIND_LIBRARY(SOPLEX_LIB NAMES soplex)
+FIND_LIBRARY(GMP_LIB NAMES gmp)
+FIND_LIBRARY(ZIMPL_LIB NAMES zimpl.linux.x86_64.gnu.opt)
+FIND_LIBRARY(NLPI_LIB NAMES nlpi.cppad)
+FIND_LIBRARY(LPISPX_LIB NAMES lpispx)
+
+IF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND GMP_LIB AND ZIMPL_LIB)
+    SET(SCIP_FOUND TRUE)
+ENDIF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND GMP_LIB AND ZIMPL_LIB)
+
+IF (READLINE_LIB)
+	MESSAGE(STATUS "Found readline (supporting library of SCIP): ${READLINE_LIB}")
+ELSE (READLINE_LIB)
+	MESSAGE(STATUS "readline (supporting library of SCIP) not found, no optimal bit heap compression available")
+ENDIF (READLINE_LIB)
+
+IF (Z_LIB)
+	MESSAGE(STATUS "Found z (supporting library of SCIP): ${Z_LIB}")
+ELSE (Z_LIB)
+	MESSAGE(STATUS "z (supporting library of SCIP) not found, no optimal bit heap compression available")
+ENDIF (Z_LIB)
+
+IF (GMP_LIB)
+	MESSAGE(STATUS "Found gmp (supporting library of SCIP): ${GMP_LIB}")
+ELSE (GMP_LIB)
+	MESSAGE(STATUS "gmp (supporting library of SCIP) not found, no optimal bit heap compression available")
+ENDIF (GMP_LIB)
+
+IF (SOPLEX_LIB)
+	MESSAGE(STATUS "Found soplex (supporting library of SCIP): ${SOPLEX_LIB}")
+ELSE (SOPLEX_LIB)
+	MESSAGE(STATUS "soplex (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
+ENDIF (SOPLEX_LIB)
+
+IF (ZIMPL_LIB)
+	MESSAGE(STATUS "Found zimpl (supporting library of SCIP): ${ZIMPL_LIB}")
+ELSE (ZIMPL_LIB)
+	MESSAGE(STATUS "zimpl (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
+ENDIF (ZIMPL_LIB)
+
+IF (NLPI_LIB)
+	MESSAGE(STATUS "Found nlpi (supporting library of SCIP): ${NLPI_LIB}")
+ELSE (NLPI_LIB)
+	MESSAGE(STATUS "nlpi (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
+ENDIF (NLPI_LIB)
+
+IF (LPISPX_LIB)
+	MESSAGE(STATUS "Found lpispx (supporting library of SCIP): ${LPISPX_LIB}")
+ELSE (LPISPX_LIB)
+	MESSAGE(STATUS "lpispx (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
+ENDIF (LPISPX_LIB)
+
+IF (SCIP_FOUND)
+	ADD_DEFINITIONS(-DHAVE_SCIP)
+	MESSAGE(STATUS "Found SCIP: ${SCIP_H} ${SCIP_LIB}")
+ELSE (SCIP_FOUND)
+	MESSAGE(STATUS "SCIP MILP optimizer not found (or supporting libraries missing), no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
+ENDIF (SCIP_FOUND)
+
+#Uni KS stop
 
 ADD_DEFINITIONS(-DHAVE_LNS)
 
@@ -241,8 +318,10 @@ ADD_LIBRARY(FloPoCoLib STATIC
  src/BitHeap/BitHeap
  src/BitHeap/WeightedBit
  src/BitHeap/Plotter
+ src/BitHeap/BitHeapHeuristicCompression
+ src/BitHeap/BitHeapILPCompression
 
-
+ 
 #--------------------------------------------------------------------
 #               OPERATORS          
 #--------------------------------------------------------------------
@@ -277,6 +356,8 @@ src/Conversions/Fix2FP
  src/IntAddSubCmp/IntComparator
  src/IntAddSubCmp/IntDualSub
  src/IntAddSubCmp/BasicCompressor
+ src/IntAddSubCmp/TargetOptCompressor
+ src/IntAddSubCmp/IntAdderTree
  
 # ---------- First generation of fast large adders ------------------------
  src/IntAddSubCmp/LongIntAdderAddAddMuxGen1 
@@ -410,6 +491,15 @@ TARGET_LINK_LIBRARIES(
   ${PYTHON_LIB}
   )
 ENDIF (PYTHON_LIB)
+
+#Uni KS start
+IF (SCIP_FOUND)
+TARGET_LINK_LIBRARIES(
+  FloPoCoLib
+  ${SCIP_LIB} ${READLINE_LIB} ${Z_LIB} ${NLPI_LIB} ${LPISPX_LIB} ${SOPLEX_LIB} ${GMP_LIB} ${ZIMPL_LIB}
+  )
+ENDIF (SCIP_FOUND)
+#Uni KS stop
 
 IF (WCPG_FOUND)
 TARGET_LINK_LIBRARIES(

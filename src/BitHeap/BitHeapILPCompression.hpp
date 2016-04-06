@@ -33,9 +33,9 @@ namespace flopoco
 		~BitHeapILPCompression();
 		int generateProblem();
 		int writeProblem(std::string filename = "");
-		int solve();
+		bool solve();
         int passHeuristicSolutions();
-		int plotSolution();
+		void plotSolution();
         int cleanUp();
 
         vector<list<pair<int,int> > > solution; //index is stage s, list contains pairs of compression elements (1st) and column (2nd), note that there may be several compression elements for the same column

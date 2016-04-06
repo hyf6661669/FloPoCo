@@ -15,6 +15,10 @@
 
 
 #include "BitHeap.hpp"
+/* Uni KS start */
+#include "BitHeapILPCompression.hpp"
+#include "BitHeapHeuristicCompression.hpp"
+/* Uni KS stop */
 #include "Plotter.hpp"
 #include <iostream>
 #include <fstream>
@@ -36,10 +40,12 @@ namespace flopoco
 			int maxWeight, 
 			bool enableSuperTiles, 
 			string name, 
-			int compressionType
+			int compressionType,
+			string efficiencyPerStage
 		) :
 			op(op), 
 			compressionType(compressionType), 
+			efficiencyPerStage(efficiencyPerStage),
 			maxWeight(maxWeight), 
 			enableSuperTiles(enableSuperTiles)
 	{
@@ -760,7 +766,7 @@ namespace flopoco
 	}
 
 
-	void  BitHeap::addBit(int w, string rhs, string comment, int type)
+	void  BitHeap::addBit(int w, string rhs, string comment, int type, int cycle)
 	{
 		if (w<0)
 			THROWERROR("Negative weight (" << w << ") in addBit");
@@ -774,7 +780,13 @@ namespace flopoco
 			return;
 		}
 
-		WeightedBit* bit= new WeightedBit(getGUid(), newUid(w), w, type, op->getCurrentCycle(), op->getCriticalPath()) ;
+		/* Uni KS start */
+		if(cycle < 0)
+			cycle = op->getCurrentCycle();
+
+		WeightedBit* bit= new WeightedBit(getGUid(), newUid(w), w, type, cycle, op->getCriticalPath()) ;
+		/* Uni KS stop */			
+		
 		// created at (op->getCycle(), opt-getCriticalPath())
 
 		int bitStage = bit->computeStage(stagesPerCycle, elementaryTime);
@@ -813,23 +825,38 @@ namespace flopoco
 	};
 
 
-
-	void BitHeap::removeBit(unsigned weight, int dir)
+	/* Uni KS start */
+	void BitHeap::removeBit(unsigned weight, int dir, int cycle)
 	{
 		list<WeightedBit*>& l=bits[weight];
 
-		//WeightedBit* bit;
-
-		//if dir=0 the bit will be removed from the begining of the list, else from the end of the list of weighted bits
-		if(dir==0)
-			l.pop_front();
-		else if(dir==1)
-			l.pop_back();
-
-
-
-		REPORT(DEBUG,"remove bit from column " << weight);
+		if(l.size() > 0)
+		{
+			//if dir=0 the bit will be removed from the begining of the list, else from the end of the list of weighted bits
+			if(dir==0)
+			{
+				if(cycle >= 0)
+				{
+					if((*(l.begin()))->getCycle() == cycle)
+						l.pop_front();
+				}
+				else
+					l.pop_front();
+			}
+			else if(dir==1)
+			{
+				if(cycle >= 0)
+				{
+					if(l.back()->getCycle() == cycle)
+						l.pop_back();
+				}
+				else
+					l.pop_back();
+			}
+			REPORT(DEBUG,"remove bit from column " << weight);
+		}
 	}
+	/* Uni KS stop */
 
 
 
@@ -876,8 +903,42 @@ namespace flopoco
 			}
 	}
 
+	/* Uni KS start */
+	WeightedBit* BitHeap::latestInputBitToCompressor(unsigned w, BasicCompressor* bc)
+	{
+		list<WeightedBit*>::iterator it;
 
+		WeightedBit *worstBit=NULL;
 
+		if(w>=maxWeight)	{
+			REPORT(DEBUG, "latestInputBitToCompressor returns null because w>=maxWeight");
+			return NULL;
+		}
+
+		for(unsigned c=0; c < bc->getNumberOfColumns(); c++)
+		{
+			if(bits.size() > w+c)
+			{
+				for(it = bits[w+c].begin(); it != bits[w+c].end(); ++it)
+				{
+					if(worstBit == NULL)
+					{
+						worstBit = *it;
+					}
+					else
+					{
+						if((*worstBit) > *(*it))
+						{
+							worstBit = *it;
+						}
+					}
+				}
+			}
+		}
+		return worstBit;
+
+	}
+	/* Uni KS stop */
 
 	void BitHeap::elemReduce(unsigned i, BasicCompressor* bc, int type)
 	{
@@ -971,6 +1032,113 @@ namespace flopoco
 
 	}
 
+	void BitHeap::elemReduceFixedCycle(unsigned i, BasicCompressor* bc, int type) //what is the meaning of type (compression, external, constant, 3 ??)??
+	{
+		REPORT(DEBUG, "Entering elemReduceFixedCycle for column "<< i << " using compressor " << bc->getName() ); //!!!
+
+		stringstream signal[bc->getNumberOfColumns()];
+
+
+		WeightedBit* b =  latestInputBitToCompressor(i, bc) ;
+
+		if(b)
+		{
+			REPORT(DEBUG, "latest bit for this reduction" << b->getName());
+		}
+		else
+		{
+			if(bc->getNumberOfColumns() == 1 && bc->getColumnSize(0) == 1)
+			{
+				REPORT(DEBUG, "Warning: No latest bit?");
+				return; //in combinatorial bit heaps it may happen that "pseudo flip flops" are placed in empty columns
+			}
+            cout << "compressor is " << bc->getName() << "in column " << i << endl;
+            cout << "error" << endl;
+            flush(cout);
+            THROWERROR("elemReduceFixedCycle: No latest bit?");
+		}
+		//declare inputs of the compressor
+		for(unsigned c=0; c < bc->getNumberOfColumns(); c++)
+		{
+            if(i + c < maxWeight){
+                list<WeightedBit*>::iterator it = bits[i+c].begin();
+
+                for(unsigned j=0; j < bc->getColumnSize(c); j++)
+                {
+                    if(it != bits[i+c].end() && (*it)->getCycle() == op->getCurrentCycle())
+                    {
+                        //bit heap column contains bits to compress
+                        signal[c] << (*it)->getName();
+                        it++;
+                    }
+                    else
+                    {
+                        //bit heap column contains no more bits to compress, apped zeros to the compressor input
+                        signal[c] << "'0'";
+                    }
+                    if(j != bc->getColumnSize(c)-1)
+                        signal[c] << " & ";
+                }
+            }
+            else{
+                //we reached maximum weight of the bitheap. Therefore fill inputs with zeros
+                for(unsigned j = 0; j < bc->getColumnSize(c); j++){
+                    signal[c] << "'0'";
+                    if(j != bc->getColumnSize(c)-1){
+                        signal[c] << " & ";
+                    }
+                }
+            }
+
+
+		}
+
+		string in_concat=join("CompressorIn_bh", getGUid(), "_");
+		string out_concat=join("CompressorOut_bh", getGUid(), "_");
+		string compressor=join("Compressor_bh", getGUid(), "_");
+
+		if(bc->getNumberOfColumns() == 1 && bc->getColumnSize(0) == 1)
+		{
+			removeCompressedBits(i,1,op->getCurrentCycle());
+			addBit(i, signal[0].str(),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+		}
+		else
+		{
+			for(unsigned j=0; j < bc->height.size(); j++)
+			{
+				if(bc->getColumnSize(j)>0)
+                {
+					if(bc->getColumnSize(j)==1)
+						op->vhdl << tab << op->declare(join(in_concat, compressorIndex,"_", inConcatIndex), bc->getColumnSize(j))
+								 << "(0) <= " << signal[j].str() << ";" << endl;
+					else
+						op->vhdl << tab << op->declare(join(in_concat, compressorIndex,"_", inConcatIndex), bc->getColumnSize(j))
+								 << " <= " << signal[j].str() << ";" << endl;
+					op->inPortMap(bc, join("X",j), join(in_concat, compressorIndex,"_", inConcatIndex));
+				}
+				++inConcatIndex;
+			}
+
+			op->outPortMap(bc, "R", join(out_concat, compressorIndex,"_", outConcatIndex));
+
+			op->vhdl << tab << op->instance(bc, join(compressor, compressorIndex));
+
+			for(unsigned j=0; j < bc->height.size(); j++)
+			{
+                if(i + j < maxWeight){
+                    removeCompressedBits(i+j,bc->getColumnSize(j),op->getCurrentCycle());
+                }
+			}
+
+			// add the bits, at the current (global) instant.
+			for (int j=0; j<bc->getOutputSize(); j++) {
+				addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+			}
+		}
+
+		++compressorIndex;
+		++outConcatIndex;
+	}
 
 
 	unsigned BitHeap::currentHeight(unsigned w) {
@@ -982,15 +1150,16 @@ namespace flopoco
 
 
 	//c - the current column, red- number of bits to be reduced
-	void BitHeap::removeCompressedBits(int c, int red)
+ 	/* Uni KS start */
+ 	void BitHeap::removeCompressedBits(int c, int red, int cycle)
 	{
 		while(red>0)
 		{
-			removeBit(c,0);
+			removeBit(c,0,cycle);
 			red--;
 		}
 	}
-
+ 	/* Uni KS stop */
 
 	unsigned BitHeap::getMaxHeight()
 	{
@@ -1004,6 +1173,18 @@ namespace flopoco
 		return max;
 	}
 
+ 	/* Uni KS start */
+	unsigned BitHeap::getSize()
+	{
+		unsigned sum=0;
+
+		for(unsigned i=0; i < maxWeight; i++)
+		{
+			sum += bits[i].size();
+		}
+		return sum;
+	}
+ 	/* Uni KS stop */
 
 
 
@@ -1014,11 +1195,11 @@ namespace flopoco
 		//Build a vector of basic compressors that are fit for this target
 		int /*maxCompressibleBits,*/ col0, col1;
 
-		//maxCompressibleBits = op->getTarget()->lutInputs();
+		int maxCompressibleBits = op->getTarget()->lutInputs();
 		BasicCompressor* compressor;
 
 
-#if 0 // The other alternative works better but has to be adapted to arbitrary lutInputs
+#if 1 // The other alternative works better but has to be adapted to arbitrary lutInputs
 		// TODO FIXME What fitness function?
 		//Generate all "workable" compressors for 2 columns, on this target, descending on fitness function
 		for(col0=maxCompressibleBits; col0>=3; col0--)
@@ -1110,6 +1291,71 @@ namespace flopoco
 		}
 
 #endif
+		/* Uni KS start */
+		//as the FloPoCo heuristic has problems with >2 columns, the TargetOptCompressors are only generated when compressionType is right:
+		if(compressionType >= 3) 
+		{
+			std::string targetID = op->getTarget()->getID();
+			if((targetID == "Virtex5") || (targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6"))
+			{
+				REPORT(INFO, "Using target specific compressors for " << targetID);
+
+				vector<int> inputs;
+				TargetOptCompressor* toc ;
+
+				//(6,0,6;5) GPC:
+				inputs.clear();
+				inputs.push_back(6);
+				inputs.push_back(0);
+				inputs.push_back(6);
+				toc = new TargetOptCompressor(op->getTarget(),inputs);
+				toc->areaCost = 4.0;
+				possibleCompressors.push_back(toc);
+
+				//(1,4,1,5;5) GPC:
+				inputs.clear();
+				inputs.push_back(5);
+				inputs.push_back(1);
+				inputs.push_back(4);
+				inputs.push_back(1);
+				toc = new TargetOptCompressor(op->getTarget(),inputs);
+				toc->areaCost = 4.0;
+				possibleCompressors.push_back(toc);
+
+				//(1,4,0,6;5) GPC:
+				inputs.clear();
+				inputs.push_back(6);
+				inputs.push_back(0);
+				inputs.push_back(4);
+				inputs.push_back(1);
+				toc = new TargetOptCompressor(op->getTarget(),inputs);
+				toc->areaCost = 4.0;
+				possibleCompressors.push_back(toc);
+
+				//(2,0,4,5;5) GPC:
+				inputs.clear();
+				inputs.push_back(5);
+				inputs.push_back(4);
+				inputs.push_back(0);
+				inputs.push_back(2);
+				toc = new TargetOptCompressor(op->getTarget(),inputs);
+				toc->areaCost = 4.0;
+				possibleCompressors.push_back(toc);
+
+				//(1,3,2,5;5) GPC:
+				inputs.clear();
+				inputs.push_back(5);
+				inputs.push_back(2);
+				inputs.push_back(3);
+				inputs.push_back(1);
+				toc = new TargetOptCompressor(op->getTarget(),inputs);
+				toc->areaCost = 4.0;
+				possibleCompressors.push_back(toc);
+
+			}
+		}
+		/* Uni KS stop */
+		compressorUsage.resize(possibleCompressors.size());
 
 
 		/*
@@ -1125,6 +1371,13 @@ namespace flopoco
 		}
 		*/
 	}
+
+	/* Uni KS start */
+	vector<BasicCompressor *>* BitHeap::getPossibleCompressors()
+	{
+		return &(this->possibleCompressors);
+	}
+	/* Uni KS stop */
 
 
 	void BitHeap::printColumnInfo(int w)
@@ -1214,6 +1467,23 @@ namespace flopoco
 			// There is some compression to do
 			generatePossibleCompressors();
 
+			/* Uni KS start */
+			//print debug info for generated compressors
+			REPORT(INFO, "used compressors: ");
+			if ((INFO)<=(UserInterface::verbose))
+			{
+				for(unsigned i=0; i < possibleCompressors.size(); i++)
+				{
+					cerr << "> compressor " << i << " : (";
+					for(unsigned j=0; j < possibleCompressors[i]->height.size()-1; j++)
+					{
+						cerr << possibleCompressors[i]->height[j] << ",";
+					}
+					cerr << possibleCompressors[i]->height[possibleCompressors[i]->height.size()-1] << ";" << possibleCompressors[i]->getOutputSize() << ") with cost " << possibleCompressors[i]->areaCost << endl;
+				}
+			}
+			/* Uni KS stop */
+
 			elementaryTime = op->getTarget()->lutDelay() + op->getTarget()->localWireDelay();
 			stagesPerCycle = (1/op->getTarget()->frequency()) / elementaryTime;
 			int stage = minCycle*stagesPerCycle + minCP/elementaryTime ;
@@ -1248,6 +1518,136 @@ namespace flopoco
 					stage++;
 				}
 			}
+/* Uni KS start */
+            else if(compressionType == 3)
+            {
+//#define HAVE_SCIP
+#ifdef HAVE_SCIP
+				if(!this->getOp()->getTarget()->isPipelined())
+				{
+					THROWERROR("The optimal compression does currently not support non-pipelined compression, sorry.");
+				}
+
+				BitHeapILPCompression ilp(this);
+                ilp.useHeuristic = false;
+				ilp.generateProblem();
+                ilp.writeProblem("bitheap.lp");
+				ilp.solve();
+				cout << "1" << endl;
+				if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
+                cout << "2" << endl;
+				for(unsigned s=0; s < ilp.solution.size(); s++)
+				{
+					list<pair<int,int> >::iterator it;
+					for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
+					{
+						REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
+                        //elemReduce(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+						if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
+						{
+                            compressorUsage[(*it).first]++;
+                            usedCompressors[(*it).first]=true;
+                        }
+
+					}
+                    plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
+					op->nextCycle(); //!!! ToDo: Manage critical path !!!
+					plottingCycle=0;
+                    plottingCP=0;
+                }
+#else
+				throw string("The optimal compression method requires SCIP, sorry.");
+#endif // HAVE_SCIP
+
+            }
+            else if(compressionType == 4 || compressionType == 5 || compressionType == 6 || compressionType == 7)
+            {
+#ifdef HAVE_SCIP
+                if(!this->getOp()->getTarget()->isPipelined())
+                {
+                    THROWERROR("The optimal compression does currently not support non-pipelined compression, sorry.");
+                }
+
+                std::string mode = "heuristic_full";
+                if(compressionType == 5){
+                    mode = "heuristic_parandeh-afshar_modified";
+                }
+                else if(compressionType == 6){
+                    mode = "heuristic_parandeh-afshar_modified";
+                }
+                else if(compressionType == 7){
+                    mode = "heuristic_pa";
+                }
+
+                //deleting compressor 4 and 6:
+                std::string targetID = op->getTarget()->getID();
+                if((targetID == "Virtex5") || (targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6")){
+                    //TODO: check for unnecessary compressors by iterating through list
+                    if(possibleCompressors.size() > 6){
+                        possibleCompressors.erase(possibleCompressors.begin() + 6);
+                        possibleCompressors.erase(possibleCompressors.begin() + 4);
+                    }
+                }
+                cout << "finished erasing" << endl;
+                //the heuristic solution calls the BitHeapILPCompression
+                BitHeapHeuristicCompression ilp(this, mode);
+                ilp.setLowerBounds(efficiencyPerStage);
+
+                ilp.generateProblem();
+                ilp.writeProblem("bitheap.lp");
+                ilp.solve();
+                cout << "1" << endl;
+                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
+                cout << "2" << endl;
+
+                //copying solution from heuristic to ILPCompression:
+                //ilp.solution = ilp.bitHeapILPCompression.solution;
+
+                cout << "ilp.solution.size(): " << ilp.solution.size() << endl;
+                for(unsigned s = 0; s < ilp.solution.size(); s++){
+                    cout << "ilp.solution[" << s << "]: " << ilp.solution[s].size() << endl;
+                }
+
+
+                for(unsigned s=0; s < ilp.solution.size(); s++)
+                {
+                    list<pair<int,int> >::iterator it;
+                    for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
+                    {
+                        REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
+                        cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s << endl;
+//
+                        if((*it).second < maxWeight){
+                            elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+
+                            if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
+                            {
+                                compressorUsage[(*it).first]++;
+                                usedCompressors[(*it).first]=true;
+                            }
+                        }
+
+
+
+
+                    }
+                    plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
+                    cout << "finished" << endl;
+                    op->nextCycle(); //!!! ToDo: Manage critical path !!!
+                    plottingCycle=0;
+                    plottingCP=0;
+
+
+                }
+                cout << "pipelinedepth: " << op->getPipelineDepth() << endl;
+                cout << "compressionType 4, 5 or 6 ended" << endl;
+#else
+                throw string("The optimal compression method requires SCIP, sorry.");
+#endif // HAVE_SCIP
+
+            }
+/* Uni KS stop */            
 			else
 			{
 				//lutCompressionLevel=2 - compression using a mix of compressors and adder tree for the last lines
@@ -1458,6 +1858,16 @@ namespace flopoco
 			op->addToGlobalOpList(fullAdder);
 
 		op->vhdl << tab << "-- End of code generated by BitHeap::generateCompressorVHDL" << endl;
+
+		REPORT(INFO, "bit heap size: " << getSize());
+
+		double compressorCost=0.0;
+		for(unsigned i=0; i < compressorUsage.size(); i++)
+		{
+			REPORT(INFO, "compressor " << i << " used " << compressorUsage[i] << " times (cost contribution: " << compressorUsage[i]*possibleCompressors[i]->areaCost << ")");
+			compressorCost += compressorUsage[i]*possibleCompressors[i]->areaCost;
+		}
+        REPORT(INFO, "total cost for compressors: " << compressorCost); cout << "done with code generation, guid is " << guid << endl;
 
 		bitheapCompressed = true;
 	}
@@ -2856,6 +3266,7 @@ namespace flopoco
 						{
 							REPORT(DEBUG,endl);
 							REPORT(DEBUG,"Using Compressor " << j <<" to reduce columns " << i << " and " << i+1);
+							compressorUsage[j]++;
 							elemReduce(i, possibleCompressors[j]);
 							cnt[i]-=possibleCompressors[j]->getColumnSize(0);
 							cnt[i+1]-=possibleCompressors[j]->getColumnSize(1);
@@ -2869,6 +3280,7 @@ namespace flopoco
 						{
 							REPORT(DEBUG,endl);
 							REPORT(DEBUG,"Using Compressor " << j <<" to reduce column " << i);
+							compressorUsage[j]++;
 							elemReduce(i, possibleCompressors[j]);
 							cnt[i]-=possibleCompressors[j]->getColumnSize(0);
 							didCompress = true;

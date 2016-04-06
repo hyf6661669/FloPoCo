@@ -23,9 +23,11 @@
 #include "IntAddSubCmp/IntAdder.hpp"
 #include "IntAddSubCmp/BasicCompressor.hpp"
 #include "IntMult//MultiplierBlock.hpp"
+/* Uni KS start */
+#include "IntAddSubCmp/TargetOptCompressor.hpp"
+/* Uni KS stop */
 
-
- #define COMPRESSION_TYPE 0
+ #define COMPRESSION_TYPE 3
 
 
 /*
@@ -66,22 +68,28 @@ namespace flopoco{
 
 		/**
 		 * @brief The constructor
-		 * @param op                the operator in which this bit heap is 
-		 * 							beeing built
-		 * @param maxWeight         the maximum weight of the heap (it should 
-		 * 							be known statically, shouldn't it?)
-		 * @param enableSuperTiles  if true, the bit heap compression will try 
-		 * 							and supertile DSP blocks
-		 * @param name              a description of the heap that will be 
-		 * 							integrated into its unique name
-		 * @param compressionType	the type of compression applied to the bit heap:
-		 *								0 = using only compressors (default),
-		 *								1 = using only an adder tree,
-		 *								2 = using a mix of the two, with an 
-		 *									addition tree at the end of the 
-		 *									compression
+		 * @param op                  the operator in which this bit heap is 
+		 * 							  beeing built
+		 * @param maxWeight           the maximum weight of the heap (it should 
+		 * 							  be known statically, shouldn't it?)
+		 * @param enableSuperTiles    if true, the bit heap compression will try 
+		 * 							  and supertile DSP blocks
+		 * @param name                a description of the heap that will be 
+		 * 							  integrated into its unique name
+		 * @param compressionType	  the type of compression applied to the bit heap: 
+										0 = heuristic1: using only compressors (default),
+										1 = using only an adder tree,
+										2 = using a mix of the two, with an addition tree at the end of the compression
+										3 = optimal: Optimal ILP-based (optimal when solution is found within timelimit) (Kumm & Zipf, Pipelined Compressor Tree Optimization Using Integer Linear Programming, FPL 2014)
+										4 = ...?
+										5 = optimalMinStages: Optimal with minimal number of stages, faster than 'optimal' (unpublished)
+										6 = heuristic3:       Novel Heuristic based on Parandeh-Afshar (unpublished), with -efficiencyPerStage= it is combined with ILP
+										7 = heuristic2:       Heuristic of Parandeh-Afshar (Parandeh-Afshar, Brisk & Ienne, Efficient Synthesis of Compressor Trees on FPGAs, ASPDAC 2008)
+
+
+            @param efficiencyPerStage the efficiency per stage. compressors will be chosen by the heuristic, until the efficiency is below the efficiency specified by efficiencyPerStage
 		 */
-		BitHeap(Operator* op, int maxWeight, bool enableSuperTiles = true, string name = "", int compressionType = COMPRESSION_TYPE);
+		BitHeap(Operator* op, int maxWeight, bool enableSuperTiles = true, string name = "", int compressionType = COMPRESSION_TYPE, string efficiencyPerStage = "");
 		~BitHeap();
 
 		/** @brief add a bit to the bit heap. The bit will be added at the cycle op->currentCycle() with critical path op->getCriticalPath().
@@ -92,7 +100,7 @@ namespace flopoco{
 			0 - compression
 			1 - external
 			2 - constant */
-		void addBit(int weight, string rhs, string comment="", int type=1);
+		void addBit(int weight, string rhs, string comment="", int type=1, int cycle=-1);
 
 		/**
 		 * @brief add a constant 1 to the bit heap. All the constant bits are added to the constantBits mpz, so we don't generate hardware to compress constants....
@@ -208,6 +216,9 @@ namespace flopoco{
 		/** @brief returns the maximum weight of the bit heap */
 		unsigned getMaxWeight();
 
+		/** @brief returns the size of the bit heap (no of bits in all columns) */
+		unsigned getSize();
+		
 		/** @brief returns the minimum weight of the bit heap */
 		unsigned getMinWeight();
 
@@ -232,8 +243,16 @@ namespace flopoco{
 		void setSignedIO(bool s);
 
 		bool getSignedIO();
+		
+		 /* Uni KS start */
+		vector<BasicCompressor *>* getPossibleCompressors(); //returns the vector of compressors
+		 /* Uni KS stop */
+		 
 	protected:
 
+		 /* Uni KS start */
+		void elemReduceFixedCycle(unsigned i, BasicCompressor* bc, int type=0);
+		 /* Uni KS stop */
 
 		void elemReduce(unsigned i, BasicCompressor* bc, int type=0);
 
@@ -254,6 +273,15 @@ namespace flopoco{
 		 */
 		WeightedBit* latestInputBitToCompressor(unsigned w, int c0, int c1);
 
+		/* Uni KS start */
+		/** 
+		 * @brief returns a pointer to the latest bit from the inputs to a compressor applied to the bottom of a bit heap
+		 * w is the weight, bc is the basic compressor which is applied in column w 
+		 */
+		WeightedBit* latestInputBitToCompressor(unsigned w, BasicCompressor* bc);
+		/* Uni KS stop */
+
+
 		/**
 		 * @brief computes the latest bit from the bitheap, in order to manage the cycle before the final adding
 		 */
@@ -267,7 +295,7 @@ namespace flopoco{
 		 * @param dir if dir==0 the bit will be removed from the begining of the list
 					  if dir==1 the bit will be removed from the end of the list
 		*/
-		void removeBit(unsigned weight, int dir);
+		void removeBit(unsigned weight, int dir, int cycle=-1);
 
 		/** get the parent operator */
 
@@ -297,7 +325,7 @@ namespace flopoco{
 		void generatePossibleCompressors();
 
 		/** @brief remove the compressed bits */
-		void removeCompressedBits(int c, int red);
+		void removeCompressedBits(int c, int red, int cycle=-1);
 
 
 		/** @brief generate the VHDL code for 1 dsp */
@@ -360,6 +388,11 @@ namespace flopoco{
 		bool enableSuperTiles;
 
 		bool bitheapCompressed;						/**< Has the bitheap already been compressed */
+
+	 	/* Uni KS start */
+        string efficiencyPerStage;                  /**< The efficiency per stage. */
+		vector<int> compressorUsage;				/**< vector containing statistics about the usage of each compressor (index is compressor id) */
+	 	/* Uni KS stop */
 	};
 
 

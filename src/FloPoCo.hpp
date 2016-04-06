@@ -78,6 +78,9 @@
 #include "IntAddSubCmp/IntComparatorSpecific.hpp"
 #include "IntAddSubCmp/LongIntAdderMuxNetwork.hpp"
 
+/* adder tree, built from 2-input adders, 3-input adders or bitheap compression */
+#include "IntAddSubCmp/IntAdderTree.hpp"
+
 /* Integer and fixed-point multipliers ------------------------ */
 #include "IntMult/IntMultiplier.hpp"
 #include "IntMult/FixMultAdd.hpp"

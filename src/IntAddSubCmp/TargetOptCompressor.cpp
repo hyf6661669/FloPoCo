@@ -50,7 +50,7 @@ namespace flopoco{
 		}
 		wOut=intlog2(param);
 		outputs.resize(wOut);
-		for(int i=0; i < outputs.size(); i++) outputs[i]=1;
+		for(unsigned i=0; i < outputs.size(); i++) outputs[i]=1;
 
 		name << "_" << wOut;
 		setName(name.str());
@@ -86,7 +86,7 @@ namespace flopoco{
 	{
 	}
 
-	int TargetOptCompressor::getOutputSize()
+	unsigned TargetOptCompressor::getOutputSize()
 	{
 		return outputheight.size();
 	}

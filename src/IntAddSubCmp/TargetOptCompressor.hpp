@@ -33,7 +33,7 @@ namespace flopoco
 
 		vector<int> outputheight;
 
-		int getOutputSize();
+		unsigned getOutputSize();
 	
 	};
 }

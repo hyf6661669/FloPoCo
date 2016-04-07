@@ -133,14 +133,12 @@ FIND_LIBRARY(SCIP_LIB
 FIND_LIBRARY(READLINE_LIB NAMES readline)
 FIND_LIBRARY(Z_LIB NAMES z)
 FIND_LIBRARY(SOPLEX_LIB NAMES soplex)
-FIND_LIBRARY(GMP_LIB NAMES gmp)
-FIND_LIBRARY(ZIMPL_LIB NAMES zimpl.linux.x86_64.gnu.opt)
 FIND_LIBRARY(NLPI_LIB NAMES nlpi.cppad)
 FIND_LIBRARY(LPISPX_LIB NAMES lpispx)
 
-IF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND GMP_LIB AND ZIMPL_LIB)
+IF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB)
     SET(SCIP_FOUND TRUE)
-ENDIF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND GMP_LIB AND ZIMPL_LIB)
+ENDIF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB)
 
 IF (READLINE_LIB)
 	MESSAGE(STATUS "Found readline (supporting library of SCIP): ${READLINE_LIB}")
@@ -154,11 +152,6 @@ ELSE (Z_LIB)
 	MESSAGE(STATUS "z (supporting library of SCIP) not found, no optimal bit heap compression available")
 ENDIF (Z_LIB)
 
-IF (GMP_LIB)
-	MESSAGE(STATUS "Found gmp (supporting library of SCIP): ${GMP_LIB}")
-ELSE (GMP_LIB)
-	MESSAGE(STATUS "gmp (supporting library of SCIP) not found, no optimal bit heap compression available")
-ENDIF (GMP_LIB)
 
 IF (SOPLEX_LIB)
 	MESSAGE(STATUS "Found soplex (supporting library of SCIP): ${SOPLEX_LIB}")
@@ -166,11 +159,11 @@ ELSE (SOPLEX_LIB)
 	MESSAGE(STATUS "soplex (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
 ENDIF (SOPLEX_LIB)
 
-IF (ZIMPL_LIB)
-	MESSAGE(STATUS "Found zimpl (supporting library of SCIP): ${ZIMPL_LIB}")
-ELSE (ZIMPL_LIB)
-	MESSAGE(STATUS "zimpl (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
-ENDIF (ZIMPL_LIB)
+#IF (ZIMPL_LIB)
+#	MESSAGE(STATUS "Found zimpl (supporting library of SCIP): ${ZIMPL_LIB}")
+#ELSE (ZIMPL_LIB)
+#	MESSAGE(STATUS "zimpl (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
+#ENDIF (ZIMPL_LIB)
 
 IF (NLPI_LIB)
 	MESSAGE(STATUS "Found nlpi (supporting library of SCIP): ${NLPI_LIB}")
@@ -496,7 +489,7 @@ ENDIF (PYTHON_LIB)
 IF (SCIP_FOUND)
 TARGET_LINK_LIBRARIES(
   FloPoCoLib
-  ${SCIP_LIB} ${READLINE_LIB} ${Z_LIB} ${NLPI_LIB} ${LPISPX_LIB} ${SOPLEX_LIB} ${GMP_LIB} ${ZIMPL_LIB}
+  ${SCIP_LIB} ${READLINE_LIB} ${Z_LIB} ${NLPI_LIB} ${LPISPX_LIB} ${SOPLEX_LIB} ${GMP_LIB}   # ${ZIMPL_LIB}
   )
 ENDIF (SCIP_FOUND)
 #Uni KS stop

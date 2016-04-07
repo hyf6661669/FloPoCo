@@ -86,6 +86,8 @@ namespace flopoco
         void computeCompressorCount(int pos);
         void computeHeuristicN();
         void printNewBits();
+        
+		string uniqueName_; /**< useful only to enable same kind of reporting as for FloPoCo operators. */        
 
 	};
 }

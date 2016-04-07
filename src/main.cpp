@@ -116,7 +116,7 @@ int main(int argc, char* argv[] )
 		cerr << "Error while registering factories: " << e.what() <<endl;
 		exit(EXIT_FAILURE);
 	}
-	// cout << UserInterface::getFactoryCount() << " factories registered " << endl ;
+	//cout << UserInterface::getFactoryCount() << " factories registered " << endl ;
 
 	try {
 		UserInterface::main(argc, argv);

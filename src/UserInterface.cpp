@@ -28,7 +28,7 @@ namespace flopoco
 	double UserInterface::targetFrequencyMHz;
 	bool   UserInterface::pipeline;
 	/* Uni KS start */
-	int    UserInterface::compressionType;
+	string UserInterface::compression;
 	/* Uni KS stop */
 	bool   UserInterface::clockEnable;
 	bool   UserInterface::useHardMult;
@@ -143,7 +143,7 @@ namespace flopoco
 		parseString(args, "target", &targetFPGA, true); // not sticky: will be used, and reset, after the operator parser
 		parsePositiveInt(args, "verbose", &verbose, true); // sticky option
 		/* Uni KS start */
-		parsePositiveInt(args, "compression", &compressionType, true);
+		parseString(args, "compression", &compression, true);
 		/* Uni KS stop */
 		parseFloat(args, "frequency", &targetFrequencyMHz, true); // sticky option
 		parseFloat(args, "hardMultThreshold", &unusedHardMultThreshold, true); // sticky option
@@ -277,9 +277,6 @@ namespace flopoco
 	void UserInterface::initialize(){
 		// Initialize all the command-line options
 		verbose=1;
-		/* Uni KS start */
-		compressionType=0;
-		/* Uni KS stop */
 		outputFileName="flopoco.vhdl";
 		targetFPGA=defaultFPGA;
 		targetFrequencyMHz=400;

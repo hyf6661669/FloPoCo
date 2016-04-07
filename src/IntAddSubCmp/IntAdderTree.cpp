@@ -176,7 +176,9 @@ namespace flopoco {
 		UserInterface::parseInt(args, "wIn", &wIn);
 		int noOfInputs;
 		UserInterface::parseInt(args, "noOfInputs", &noOfInputs);
-		return new IntAdderTree(target, wIn, noOfInputs, "bitheap");
+		string method;
+		UserInterface::parseString(args, "method", &method);
+		return new IntAdderTree(target, wIn, noOfInputs, method);
 	}
 
 
@@ -186,7 +188,8 @@ namespace flopoco {
 											 "BasicInteger", // categories
 											 "",
 											 "wIn(int): word size of inputs;\
-											  noOfInputs(int): no of inputs;",
+											  noOfInputs(int): no of inputs;\
+											  method(string): <bitheap,add2,add3>",
 											 "",
 											 IntAdderTree::parseArguments
 											 ) ;

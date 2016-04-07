@@ -18,6 +18,8 @@ namespace flopoco
 		srcFileName = bh->getOp()->getSrcFileName() + ":Bitheap:BitHeapILPCompression";
 
         useFixedStageCount = false;
+        
+        uniqueName_ = "BitHeapILPCompression for " + bh->getName();
 	}
 
 	BitHeapILPCompression::~BitHeapILPCompression()
@@ -43,15 +45,7 @@ namespace flopoco
 
 	int BitHeapILPCompression::generateProblem()
 	{
-
-        //debug
-        cout << "variableBCompressors before generating" << endl;
-        for(unsigned i = 0; i < variableBCompressors.size(); i++){
-            cout << "height[0] = " << variableBCompressors[i].height[0];
-            cout << " output[0] = " << variableBCompressors[i].outputs[0];
-            cout << " area = " << variableBCompressors[i].areaCost << endl;
-        }
-
+		/*
         //check for solution:
         if(solution.size() > 3){
             if(solution[2].size() > 0){
@@ -59,7 +53,8 @@ namespace flopoco
             }
         }
         cout << endl << endl << endl;
-
+		*/
+		
         //set up first stage of U if there is no heuristic
 
         if(!useHeuristic){
@@ -100,25 +95,20 @@ namespace flopoco
 			flipflop->areaCost = 0.01; //nearly 0 for unpipelined designs
 		}
         REPORT(LIST, "Area cost for flip-flop is set to " << flipflop->areaCost);
-        cout << "possibleCompressors before adding the flipflop: " << possibleCompressors_->size() << endl;
+        REPORT(DEBUG, "possibleCompressors before adding the flipflop: " << possibleCompressors_->size());
         if(!dontAddFlipFlop || !useHeuristic){
             possibleCompressors_->push_back(flipflop);
-            cout << "__________________________" << endl;
-            cout << "flipflop added " << endl;
-            cout << "__________________________" << endl;
         }
         if(!getExternalStageCount){
-            cout << "we set up the stages as bh_->getMaxHeight()" << endl;
+            REPORT(DEBUG, "we set up the stages as bh_->getMaxHeight()");
             noOfStages_=getMaxStageCount(bh_->getMaxHeight());
         }
 		unsigned noOfCompressors=possibleCompressors_->size();
         if(useVariableCompressors){
             noOfCompressors += variableBCompressors.size();
         }
-        cout << "noOfCompressors=" << noOfCompressors << endl;
-        cout << "numberOfStages_ = " << noOfStages_ << endl << endl;
-		REPORT(DEBUG, "noOfStages=" << noOfStages_);
-		REPORT(DEBUG, "noOfCompressors=" << noOfCompressors);
+		REPORT(DEBUG, "no of stages=" << noOfStages_);
+		REPORT(DEBUG, "no of compressors=" << noOfCompressors);
 
 		unsigned compOutputWordSizeMax = 0;
 		for(unsigned e=0; e < possibleCompressors_->size(); e++)
@@ -130,7 +120,7 @@ namespace flopoco
 		}
 		REPORT(DEBUG,"compOutputWordSizeMax=" << compOutputWordSizeMax);
 
-        cout << "compOutputWordSizeMax: " << compOutputWordSizeMax << endl;
+        //cout << "compOutputWordSizeMax: " << compOutputWordSizeMax << endl;
         noOfColumnsMax = newBits[0].size()+noOfStages_*(compOutputWordSizeMax-1);
 
         //if heuristic isn't used, fill up the U with zero - vectors
@@ -217,7 +207,7 @@ namespace flopoco
                 }
             }
 		}
-        cout << "declaration of k done" << endl;
+        //cout << "declaration of k done" << endl;
         //start at second stage. bits of first stage are in U
         columnBitCountVars.clear();
         columnBitCountVars.resize(noOfStages_);
@@ -232,7 +222,7 @@ namespace flopoco
 			SCIP_CALL( SCIPaddVar(scip, tmpvar) );
 		  }
 		}
-        cout << "declaration of N done" << endl;
+        //cout << "declaration of N done" << endl;
         //now create U and store them in newBitsCountVars
         newBitsCountVars.clear();
         newBitsCountVars.resize(noOfStages_+1);
@@ -251,13 +241,13 @@ namespace flopoco
           newBitsCountVars[s] = tempVec;
         }
 
-        cout << "declaration of U done" << endl;
+        //cout << "declaration of U done" << endl;
 		//add constraints:
 		SCIP_CONS* tmpcons;
         //add constraint C0: fill all the U's with values
 
 
-        cout << newBitsCountVars.size() << " " << newBits.size() << endl;
+        //cout << newBitsCountVars.size() << " " << newBits.size() << endl;
         for(unsigned i = 0; i < newBitsCountVars.size(); i++){
             vector<SCIP_VAR*> tempVectorCons = newBitsCountVars.at(i);
             vector<int> tempVectorValue;
@@ -269,8 +259,8 @@ namespace flopoco
                 tempVectorValue = newBits.at(i);
             }
 
-            cout << i << endl;
-            cout << tempVectorCons.size() << " " << tempVectorValue.size() << endl;
+            //cout << i << endl;
+            //cout << tempVectorCons.size() << " " << tempVectorValue.size() << endl;
             for(unsigned j = 0; j < tempVectorCons.size(); j++){
                 stringstream consName;
                 consName << "C0_" << i << "_" << j;
@@ -289,14 +279,14 @@ namespace flopoco
             }
 
 		}
-        cout << compCountVars.size() << " is compCountVars.size()" << endl;
+        //cout << compCountVars.size() << " is compCountVars.size()" << endl;
         if(compCountVars[0][0][0] != NULL){
             //cout << "0-0-0 is full" << endl;
         }
         else{
             //cout << "0-0-0 is not full" << endl;
         }
-        cout << "declaration of C0 done" << endl;
+        //cout << "declaration of C0 done" << endl;
 		const int LARGE_NUMBER = 10000;
 //		int LARGE_NUMBER = bh_->getMaxHeight()+1; //!!!
 
@@ -347,7 +337,7 @@ namespace flopoco
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
 		  }
 
-          cout << "filling of C1 at stage " << s << " done" << endl;
+          //cout << "filling of C1 at stage " << s << " done" << endl;
 
 		  //add constraint C2:
           for(int c=0; c < ((int) (newBits[0].size()+(s+1)*(compOutputWordSizeMax-1))); c++)
@@ -376,15 +366,15 @@ namespace flopoco
                     if((c-ce >= 0) && (c-ce < ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1)))))
                     {
                       SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c-ce] , variableBCompressors[e - offset].outputs[variableBCompressors[e - offset].outputs.size()-ce-1]) );
+                      /*
                       if(e == 14){
                           cout << "added " << e << " " << c-ce << " normal" << endl;
                       }
+                      */
                     }
                   }
                   if(e == noOfCompressors - 1 && variableBCompressors[e - offset].height[0] == 0 && c == ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) ){
-                      cout << "added " << e << " " << c << endl;
                       SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c] , variableBCompressors[variableBCompressors.size() - 1].outputs[0]) );
-                      cout << SCIPvarGetName(compCountVars[s][e][c]) << endl;
                   }
                 }
             }
@@ -393,10 +383,10 @@ namespace flopoco
 
 
 		  }
-          cout << "filling of C2 at stage " << s << " done" << endl;
+          //cout << "filling of C2 at stage " << s << " done" << endl;
 		}
 
-        cout << "C1 and C2 totally done" << endl;
+        //cout << "C1 and C2 totally done" << endl;
 
 		//add constraint C3:
 		for(unsigned s=0; s < compCountVars.size(); s++)
@@ -422,7 +412,7 @@ namespace flopoco
 
 		}
 
-        cout << "C3 filling done" << endl;
+        //cout << "C3 filling done" << endl;
 		//add constraint C4:
 		SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, "C4", 0, NULL, NULL, 1, 1) );
 		for(unsigned s=0; s < stageVars.size(); s++)
@@ -440,7 +430,7 @@ namespace flopoco
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
         }
 
-        cout << "C4 filling done" << endl;
+        //cout << "C4 filling done" << endl;
 
 
         if(useVariableCompressors){
@@ -521,7 +511,7 @@ namespace flopoco
         // now set k = 0 if we solved some of the stages with a heuristic
         //C8
 
-        cout << "zerostages = " << zeroStages << endl;
+        //cout << "zerostages = " << zeroStages << endl;
         for(unsigned i = 0; i < zeroStages; i++){
             vector<vector<SCIP_VAR*> > tempCompCountVars = compCountVars.at(i);
 
@@ -540,7 +530,7 @@ namespace flopoco
 
             }
         }
-        cout << "added constraint C8" << endl;
+        //cout << "added constraint C8" << endl;
 
 
         //C9: settings N's to zero
@@ -557,7 +547,7 @@ namespace flopoco
         }
 
 
-        cout << "end of SCIP problem description" << endl;
+        //cout << "end of SCIP problem description" << endl;
         return 0;
 	}
 
@@ -603,29 +593,24 @@ namespace flopoco
 		status = SCIPgetStatus(scip);
         if(status == SCIP_STATUS_INFORUNBD && !useFixedStageCount)
 		{
-            cerr << "No optimal solution found (problem infeasible or unbounded!)" << endl;
-			exit(-1);
+            THROWERROR("No optimal solution found (problem infeasible or unbounded!)");
 		}
         else if(status == SCIP_STATUS_INFORUNBD && useFixedStageCount){
-            cerr << "No optimal solution found (problem infeasible or unbound!).\n We will try it again with more stages" << endl;
+            REPORT(INFO, "No optimal solution for current stage count found (problem infeasible or unbound!).\n We will try it again with more stages");
             infeasible = true;
         }
 
 		sol = SCIPgetBestSol(scip);
 
-        if(!sol && !useFixedStageCount)
+        if(!sol)
 		{
-			cerr << "No feasible solution found within the ILP timeout of " << timeout << " seconds" << endl;
-			exit(-1);
+			THROWERROR("No feasible solution found within the ILP timeout of " << timeout << " seconds");
 		}
-        else if(!sol && useFixedStageCount){
-            cerr << "No feasible solution found within the ILP timeout of " << timeout << " seconds" << endl;
-            infeasible = true;
-        }
-        else{
+        else
+		{
             SCIP_Real area = SCIPgetPrimalbound(scip);
             preReductionAreaCost += (double)area;
-            cout << "The size of the complete Solution is " << preReductionAreaCost << " LUTs" << endl;
+            REPORT(DEBUG, "The size of the complete Solution is " << preReductionAreaCost << " LUTs");
             costOfCurrentSolution = (double)area;
             infeasible = false;
         }
@@ -671,7 +656,7 @@ namespace flopoco
                 solution.resize(compCountVars.size());
             }
             //convert solution to a more portable data structure:
-            cout << "adding compressors to solution with noOfStages_ = " << noOfStages_ << endl;
+            REPORT(DEBUG, "adding compressors to solution with noOfStages = " << noOfStages_);
             SCIP_Real val;
             for(int s=0; s <= noOfStagesUsed; s++)
             {
@@ -695,12 +680,12 @@ namespace flopoco
                 }
             }
         }
-        cout << "after SCIP in BitHeapILPCompression" << endl;
-        cout << solution.size() << endl;
+        REPORT(DEBUG, "SCIP done in BitHeapILPCompression");
+        //cout << solution.size() << endl;
         for(unsigned j = 0; j < solution.size(); j++){
             list<pair<int,int> >:: iterator it;
             for(it = solution[j].begin(); it != solution[j].end(); it++){
-                cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
+                REPORT(DEBUG, "adding compressor to solution: " << (*it).first << " to column " << (*it).second << " in stage " << j);
             }
 
         }
@@ -726,10 +711,10 @@ namespace flopoco
 
         SCIP_SOL* heuSol;
 
-        cout << "in passHeuristicSolution" << endl;
+        //cout << "in passHeuristicSolution" << endl;
 
         for(unsigned i = 0; i < heuristicSolutions.size(); i++){
-            cout << "passing heuristic solution number " << i << endl;
+            REPORT(DEBUG, "passing heuristic solution number " << i);
             SCIP_CALL( SCIPcreateSol(scip, &heuSol, NULL) );            
             computeCompressorCount(i);      //computes also heuristicN
 
@@ -977,10 +962,9 @@ namespace flopoco
 	int BitHeapILPCompression::cleanUp()
 	{
 		REPORT(DEBUG, "cleaning up SCIP... ");
-        cout << "cleaning up..." << endl;
 		//clean up:
         if(!compCountVars.empty()){
-            cout << "not empty" << endl;
+            //cout << "not empty" << endl;
             for(unsigned s=0; s < compCountVars.size(); s++)
             {
               for(unsigned e=0; e < compCountVars[s].size(); e++)
@@ -1021,16 +1005,16 @@ namespace flopoco
         scip = NULL;
         sol = NULL;
 
-        cout << "cleaning up done " << endl;
+        //cout << "cleaning up done " << endl;
 		return 0;
 	}
 
     void BitHeapILPCompression::printNewBits(){
         for(unsigned i = 0; i < newBits.size(); i++){
             for(unsigned j = 0; j < newBits[i].size(); j++){
-                cout << newBits[i][j] << " ";
+                cerr << newBits[i][j] << " ";
             }
-            cout << endl;
+            cerr << endl;
         }
     }
 
@@ -1062,12 +1046,14 @@ namespace flopoco
         }
 
         //debug
+        /*
         cout << "variableBCompressors after adding" << endl;
         for(unsigned i = 0; i < variableBCompressors.size(); i++){
             cout << "height[0] = " << variableBCompressors[i].height[0];
             cout << " output[0] = " << variableBCompressors[i].outputs[0];
             cout << " area = " << variableBCompressors[i].areaCost << endl;
         }
+        */
 
     }
 }

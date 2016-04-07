@@ -46,7 +46,6 @@ namespace flopoco
 			op(op), 
 			maxWeight(maxWeight), 
 			enableSuperTiles(enableSuperTiles),
-//			compressionType(compressionType), 
 			efficiencyPerStage(efficiencyPerStage)
 	{
 		// Set up the vector of lists of weighted bits, and the vector of uids
@@ -91,7 +90,33 @@ namespace flopoco
 		//bitheapRounded = false;
 		
 		/* Uni KS start */
-		if(compressionType < 0) this->compressionType = UserInterface::compressionType;
+		if(compressionType < 0)
+		{
+			if(UserInterface::compression.compare("heuristic1") == 0)
+			{
+				this->compressionType = 0;
+			}
+			else if(UserInterface::compression.compare("heuristic2") == 0)
+			{
+				this->compressionType = 7;
+			}
+			else if(UserInterface::compression.compare("heuristic3") == 0)
+			{
+				this->compressionType = 6;
+			}
+			else if(UserInterface::compression.compare("optimal") == 0)
+			{
+				this->compressionType = 3;
+			}
+			else if(UserInterface::compression.compare("optimalMinStages") == 0)
+			{
+				this->compressionType = 5;
+			}
+			else
+			{
+				THROWERROR("compression " << UserInterface::compression << " unknown!");
+			}				
+		}
 		/* Uni KS stop */
 	}
 

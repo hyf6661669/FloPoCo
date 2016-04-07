@@ -115,7 +115,7 @@ namespace flopoco
 	public:
 		static vector<OperatorPtr>  globalOpList;  /**< Level-0 operators. Each of these can have sub-operators */
 		static int    verbose;
-		static int    compressionType;
+		static string compression;
 	private:
 		static string outputFileName;
 		static string entityName;

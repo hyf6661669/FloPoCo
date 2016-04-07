@@ -389,18 +389,6 @@ namespace flopoco{
 		
 		/* Uni KS start */
 		
-		/*** Returns the compression type for bit heap compression */
-		int compressionType(){
-			return compressionType_;
-        }
-
-		/** Sets the compression type for bit heap compression
-		 *  @param compressionType the type of compression (for more details, see description of BitHeap constructor)
-		 */
-		void setCompressionType(int compressionType){
-			this->compressionType_ = compressionType;
-		}
-
         /*** Returns the efficiency per stage for bit heap compression */
         string efficiencyPerStage(){
             return efficiencyPerStage_;

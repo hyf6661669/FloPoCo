@@ -99,8 +99,6 @@ namespace flopoco
 		{
 			flipflop->areaCost = 0.01; //nearly 0 for unpipelined designs
 		}
-        //hack!!!
-//        flipflop->areaCost = 0.01; //nearly 0 for unpipelined designs
         REPORT(LIST, "Area cost for flip-flop is set to " << flipflop->areaCost);
         cout << "possibleCompressors before adding the flipflop: " << possibleCompressors_->size() << endl;
         if(!dontAddFlipFlop || !useHeuristic){
@@ -365,7 +363,6 @@ namespace flopoco
 			  {
                 if((c-ce >= 0) && (c-ce < ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1)))))
 				{
-					cout << "!!" << consName.str() << " : k_" << s << "_" << e << "_" << c-ce << " : " << SCIPvarGetName(compCountVars[s][e][c-ce]) << " : " << (*possibleCompressors_)[e]->outputs[(*possibleCompressors_)[e]->outputs.size()-ce-1] << endl;
 					SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c-ce] , (*possibleCompressors_)[e]->outputs[(*possibleCompressors_)[e]->outputs.size()-ce-1]) );
 				}
 			  }
@@ -604,7 +601,6 @@ namespace flopoco
 
 		SCIP_STATUS status;
 		status = SCIPgetStatus(scip);
-		cout << "status=" << status << endl;
         if(status == SCIP_STATUS_INFORUNBD && !useFixedStageCount)
 		{
             cerr << "No optimal solution found (problem infeasible or unbounded!)" << endl;
@@ -670,18 +666,6 @@ namespace flopoco
 			  }
 		}
 
-        /*
-		solution.resize(noOfStagesUsed);
-        cout << "before convertion " << endl;
-        cout << "stages = " << noOfStages_ << endl;
-        for(unsigned j = 0; j < solution.size(); j++){
-            list<pair<int,int> >:: iterator it;
-            for(it = solution[j].begin(); it != solution[j].end(); it++){
-                cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
-            }
-
-        }
-        */
         if(!infeasible){
             if(!useHeuristic){
                 solution.resize(compCountVars.size());
@@ -727,9 +711,9 @@ namespace flopoco
                 realStagesUsed = j;
             }
         }
-        cout << "before resizing solution: in ilpCompression " << solution.size() << endl;
+        //cout << "before resizing solution: in ilpCompression " << solution.size() << endl;
         solution.resize(realStagesUsed + 1);
-        cout << "after resizing solution: in ilpCompression " << solution.size() << endl;
+        //cout << "after resizing solution: in ilpCompression " << solution.size() << endl;
         
         return infeasible;
 	}
@@ -878,7 +862,6 @@ namespace flopoco
                 for(unsigned c = 0; c < heuristicN[s].size(); c++){
                     if(compressorCount[s][e][c] > 0){
                         for(unsigned i = 0; i < outputSize; i++){
-                            //cout << "s = " << s << " e = " << e << " c = " << c << endl;
                             //cout << heuristicN[s + 1].size() << endl;
                             heuristicN[s + 1][c + i] += compressorCount[s][e][c];
                         }

@@ -27,8 +27,6 @@
 #include "IntAddSubCmp/TargetOptCompressor.hpp"
 /* Uni KS stop */
 
- #define COMPRESSION_TYPE 3
-
 
 /*
    Each bit in the bit heap is flagged with the cycle at which it is produced.
@@ -89,7 +87,7 @@ namespace flopoco{
 
             @param efficiencyPerStage the efficiency per stage. compressors will be chosen by the heuristic, until the efficiency is below the efficiency specified by efficiencyPerStage
 		 */
-		BitHeap(Operator* op, int maxWeight, bool enableSuperTiles = true, string name = "", int compressionType = COMPRESSION_TYPE, string efficiencyPerStage = "");
+		BitHeap(Operator* op, int maxWeight, bool enableSuperTiles = true, string name = "", int compressionType = -1, string efficiencyPerStage = "");
 		~BitHeap();
 
 		/** @brief add a bit to the bit heap. The bit will be added at the cycle op->currentCycle() with critical path op->getCriticalPath().

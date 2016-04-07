@@ -55,10 +55,6 @@ namespace flopoco {
 
 		ostringstream bitHeapName;
 		bitHeapName << "_" << target->getID();
-		if(target->compressionType() == 0)
-			bitHeapName << "_heuristic";
-		else
-			bitHeapName << "_optimal";
 
 		for(int i=0; i < noOfInputs; i++)
 		{

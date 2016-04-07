@@ -27,6 +27,9 @@ namespace flopoco
 	string UserInterface::targetFPGA;
 	double UserInterface::targetFrequencyMHz;
 	bool   UserInterface::pipeline;
+	/* Uni KS start */
+	int    UserInterface::compressionType;
+	/* Uni KS stop */
 	bool   UserInterface::clockEnable;
 	bool   UserInterface::useHardMult;
 	bool   UserInterface::plainVHDL;
@@ -139,6 +142,9 @@ namespace flopoco
 		parseString(args, "outputFile", &outputFileName, true); // not sticky: will be used, and reset, after the operator parser
 		parseString(args, "target", &targetFPGA, true); // not sticky: will be used, and reset, after the operator parser
 		parsePositiveInt(args, "verbose", &verbose, true); // sticky option
+		/* Uni KS start */
+		parsePositiveInt(args, "compression", &compressionType, true);
+		/* Uni KS stop */
 		parseFloat(args, "frequency", &targetFrequencyMHz, true); // sticky option
 		parseFloat(args, "hardMultThreshold", &unusedHardMultThreshold, true); // sticky option
 		parseBoolean(args, "useHardMult", &useHardMult, true);
@@ -271,6 +277,9 @@ namespace flopoco
 	void UserInterface::initialize(){
 		// Initialize all the command-line options
 		verbose=1;
+		/* Uni KS start */
+		compressionType=0;
+		/* Uni KS stop */
 		outputFileName="flopoco.vhdl";
 		targetFPGA=defaultFPGA;
 		targetFrequencyMHz=400;
@@ -610,6 +619,8 @@ namespace flopoco
 		s << "  " << COLOR_BOLD << "hardMultThreshold" << COLOR_NORMAL << "=<float>: unused hard mult threshold (O..1, default 0.7) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "generateFigures" << COLOR_NORMAL << "=<0|1>:generate SVG graphics (default off) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL << endl;
 		s << "  " << COLOR_BOLD << "verbose" << COLOR_NORMAL << "=<int>:        verbosity level (0-4, default=1)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+		s << "  " << COLOR_BOLD << "compression" << COLOR_NORMAL << "=<heuristic1,heuristic2,heuristic3,optimal,optimalMinStages>:        compression method (default=heuristic3)" << COLOR_RED_NORMAL << "(sticky option?)" << COLOR_NORMAL<<endl;
+		s << "     heuristic1:Original FloPoCo heuristic, heuristic2:Heuristic of Parandeh-Afshar, heuristic3:Improved heuristic, optimal:Optimal ILP-based, optimalMinStages:Optimal ILP with minimal number of stages"<<endl;
 		s << "Sticky options apply to the rest of the command line, unless changed again" <<endl;
 		s <<endl;
 		s <<  COLOR_BOLD << "List of operators with command-line interface"<< COLOR_NORMAL << " (a few more are hidden inside FloPoCo)" <<endl;

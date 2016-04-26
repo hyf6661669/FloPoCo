@@ -114,7 +114,7 @@ namespace flopoco
 			}
 			else
 			{
-				THROWERROR("compression " << UserInterface::compression << " unknown!");
+				THROWERROR("compression " << UserInterface::compression << "unknown!");
 			}				
 		}
 		/* Uni KS stop */
@@ -1564,7 +1564,7 @@ namespace flopoco
 				ilp.generateProblem();
                 if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
 				ilp.solve();
-				if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
+//				if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 					
 				for(unsigned s=0; s < ilp.solution.size(); s++)
 				{
@@ -1627,7 +1627,7 @@ namespace flopoco
                 ilp.generateProblem();
                 if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
                 ilp.solve();
-                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
+//                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 
                 //copying solution from heuristic to ILPCompression:
                 //ilp.solution = ilp.bitHeapILPCompression.solution;

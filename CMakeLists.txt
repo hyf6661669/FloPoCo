@@ -1,5 +1,10 @@
 PROJECT(FloPoCo C CXX)
 
+#Uni KS start
+SET(Boost_INCLUDE_DIR /usr/include/boost148)
+SET(Boost_LIBRARY_DIR /usr/lib64/boost148)
+find_package( Boost 1.48.0)
+
 MESSAGE("Trying to build FloPoCo on " ${CMAKE_SYSTEM_NAME} ", compiler is " ${CMAKE_C_COMPILER})
 
 # CMake's way of handling various versions
@@ -115,7 +120,6 @@ ELSE ( WCPG_FOUND )
 	MESSAGE ( STATUS "Could not find WCPG, this will affect the FixIIR operator" )
 ENDIF ( WCPG_FOUND )
 
-#Uni KS start
 FIND_PATH(SCIP_H
 	  scip.h
 	  HINTS "/usr/local/include/scip"
@@ -202,7 +206,7 @@ ELSE(FLEXPP_EXECUTABLE)
 ENDIF(FLEXPP_EXECUTABLE)
 
 # necessary to include generated files
-INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions)
+INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions  /usr/include/boost148)
 
 ADD_CUSTOM_COMMAND(
 	OUTPUT VHDLLexer.cpp

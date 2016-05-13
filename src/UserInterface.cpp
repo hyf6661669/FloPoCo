@@ -283,7 +283,7 @@ namespace flopoco
 		pipeline=true;
 		useHardMult=true;
 		unusedHardMultThreshold=0.7;
-		
+		compression = "heuristic3";
 	}
 
 	void UserInterface::buildAll(int argc, char* argv[]) {

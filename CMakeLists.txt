@@ -27,6 +27,10 @@ SET(CPACK_PACKAGE_VERSION_MAJOR "0")
 SET(CPACK_PACKAGE_VERSION_MINOR "9")
 SET(CPACK_PACKAGE_VERSION_PATCH "0")
 
+SET(Boost_INCLUDE_DIR /usr/include/boost148)
+SET(Boost_LIBRARY_DIR /usr/lib64/boost148)
+find_package( Boost 1.48.0)
+
 INCLUDE(CPack)
 # 
 #Compilation flags
@@ -135,6 +139,7 @@ FIND_LIBRARY(Z_LIB NAMES z)
 FIND_LIBRARY(SOPLEX_LIB NAMES soplex)
 FIND_LIBRARY(NLPI_LIB NAMES nlpi.cppad)
 FIND_LIBRARY(LPISPX_LIB NAMES lpispx)
+FIND_LIBRARY(ZIMPL_LIB NAMES zimpl.linux.x86_64.gnu.opt)
 
 IF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB)
     SET(SCIP_FOUND TRUE)
@@ -159,11 +164,11 @@ ELSE (SOPLEX_LIB)
 	MESSAGE(STATUS "soplex (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
 ENDIF (SOPLEX_LIB)
 
-#IF (ZIMPL_LIB)
-#	MESSAGE(STATUS "Found zimpl (supporting library of SCIP): ${ZIMPL_LIB}")
-#ELSE (ZIMPL_LIB)
-#	MESSAGE(STATUS "zimpl (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
-#ENDIF (ZIMPL_LIB)
+IF (ZIMPL_LIB)
+	MESSAGE(STATUS "Found zimpl (supporting library of SCIP): ${ZIMPL_LIB}")
+ELSE (ZIMPL_LIB)
+	MESSAGE(STATUS "zimpl (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
+ENDIF (ZIMPL_LIB)
 
 IF (NLPI_LIB)
 	MESSAGE(STATUS "Found nlpi (supporting library of SCIP): ${NLPI_LIB}")
@@ -202,8 +207,8 @@ ELSE(FLEXPP_EXECUTABLE)
 ENDIF(FLEXPP_EXECUTABLE)
 
 # necessary to include generated files
-INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions)
-
+#INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions)
+INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions  /usr/include/boost148)
 ADD_CUSTOM_COMMAND(
 	OUTPUT VHDLLexer.cpp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/VHDLLexerRule.l
@@ -489,7 +494,7 @@ ENDIF (PYTHON_LIB)
 IF (SCIP_FOUND)
 TARGET_LINK_LIBRARIES(
   FloPoCoLib
-  ${SCIP_LIB} ${READLINE_LIB} ${Z_LIB} ${NLPI_LIB} ${LPISPX_LIB} ${SOPLEX_LIB} ${GMP_LIB}   # ${ZIMPL_LIB}
+  ${SCIP_LIB} ${READLINE_LIB} ${Z_LIB} ${NLPI_LIB} ${LPISPX_LIB} ${SOPLEX_LIB} ${GMP_LIB} ${ZIMPL_LIB}
   )
 ENDIF (SCIP_FOUND)
 #Uni KS stop

@@ -602,9 +602,9 @@ namespace flopoco
 
 		sol = SCIPgetBestSol(scip);
 
-        if(!sol)
+        if(!sol && !useFixedStageCount)     //we need to run ilp-solving several times when trying to determine the minimal amount of stages
 		{
-			THROWERROR("No feasible solution found within the ILP timeout of " << timeout << " seconds");
+                       THROWERROR("No feasible solution found within the ILP timeout of " << timeout << " seconds");
 		}
         else
 		{

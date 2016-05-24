@@ -103,10 +103,7 @@ namespace flopoco
         void printLowerBounds();
         double computeAreaofSolution();
 
-        int noOfColumnsFor606(int s, int c, bool usePreviousStages, bool useSingleCompressor);
-        bool checkColumnFor6Bits(int s, int column, bool usePreviousStages);
-        int use606(int s, int start, int times, bool usePreviousStages, bool useSingleCompressor);
-        int removeBitsIncludePreviousStages(int s, int c, int bitsToRemove);
+
         bool smootherCompressorPlacing(unsigned s, double efficiency);
 
         double computeEfficiency(BasicCompressor* comp);

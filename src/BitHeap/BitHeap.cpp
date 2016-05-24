@@ -1599,9 +1599,9 @@ namespace flopoco
                     THROWERROR("The optimal compression does currently not support non-pipelined compression, sorry.");
                 }
 
-                std::string mode = "heuristic_full";
+                std::string mode = "heuristic_pa";
                 if(compressionType == 5){
-                    mode = "heuristic_parandeh-afshar_modified";
+                    mode = "optimalMinStages";
                 }
                 else if(compressionType == 6){
                     mode = "heuristic_parandeh-afshar_modified";

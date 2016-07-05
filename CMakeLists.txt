@@ -1,9 +1,9 @@
 PROJECT(FloPoCo C CXX)
 
 #Uni KS start
-SET(Boost_INCLUDE_DIR /usr/include/boost148)
-SET(Boost_LIBRARY_DIR /usr/lib64/boost148)
-find_package( Boost 1.48.0)
+#SET(Boost_INCLUDE_DIR /usr/include/boost148)
+#SET(Boost_LIBRARY_DIR /usr/lib64/boost148)
+#find_package( Boost 1.48.0)
 
 MESSAGE("Trying to build FloPoCo on " ${CMAKE_SYSTEM_NAME} ", compiler is " ${CMAKE_C_COMPILER})
 
@@ -32,9 +32,9 @@ SET(CPACK_PACKAGE_VERSION_MAJOR "0")
 SET(CPACK_PACKAGE_VERSION_MINOR "9")
 SET(CPACK_PACKAGE_VERSION_PATCH "0")
 
-SET(Boost_INCLUDE_DIR /usr/include/boost148)
-SET(Boost_LIBRARY_DIR /usr/lib64/boost148)
-find_package( Boost 1.48.0)
+#SET(Boost_INCLUDE_DIR /usr/include/boost)
+#SET(Boost_LIBRARY_DIR /usr/lib64/boost)
+find_package( Boost 1.48)
 
 INCLUDE(CPack)
 # 
@@ -83,7 +83,7 @@ FIND_LIBRARY( SOLLYA_LIB sollya )
 IF (SOLLYA_LIB)
 	MESSAGE(STATUS "Found Sollya: ${SOLLYA_LIB}")
 ELSE (SOLLYA_LIB)
-	MESSAGE(FATAL_ERROR "Sollya not found")
+        MESSAGE(WARNING "Sollya not found")
 ENDIF (SOLLYA_LIB)
 
 IF ( PYTHON_LIB )
@@ -470,6 +470,24 @@ src/Tools/Point
 src/ExpLog/FPExp
 src/ExpLog/IterativeLog
 src/ExpLog/FPPow
+
+# Primitive Components ----------------------------------------------
+src/PrimitiveComponents/Xilinx/Xilinx_Primitive
+src/PrimitiveComponents/Xilinx/Xilinx_LUT_compute
+src/PrimitiveComponents/Xilinx/Xilinx_CARRY4
+src/PrimitiveComponents/Xilinx/Xilinx_LUT5
+src/PrimitiveComponents/Xilinx/Xilinx_LUT6
+src/PrimitiveComponents/Xilinx/Xilinx_MUXF7
+src/PrimitiveComponents/Xilinx/Xilinx_MUXF8
+src/PrimitiveComponents/Xilinx/Xilinx_FDCE
+src/PrimitiveComponents/Xilinx/Xilinx_n2m_Decoder
+src/PrimitiveComponents/Xilinx/Xilinx_Comparator
+#src/PrimitiveComponents/Xilinx/Xilinx_GenericAddSub
+#src/PrimitiveComponents/Xilinx/Xilinx_GenericAddSub_slice
+#src/PrimitiveComponents/Xilinx/Xilinx_GenericMux
+#src/PrimitiveComponents/Xilinx/Xilinx_GenericMux_slice
+#src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State
+#src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State_slice
 
 # If you want to add your operator, feel free
 src/UserDefinedOperator

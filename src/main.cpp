@@ -108,6 +108,9 @@ int main(int argc, char* argv[] )
 		// hidden for now
 		// Fix2DNorm::registerFactory();
 
+        // Uni Ks - Primitive operators
+        Xilinx_Comparator::registerFactory();
+
 		TargetModel::registerFactory();
 		// Uncomment me to play within FloPoCo operator development
 	  UserDefinedOperator::registerFactory();

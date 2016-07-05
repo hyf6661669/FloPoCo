@@ -157,7 +157,8 @@
 #include "Conversions/InputIEEE.hpp"
 #include "Conversions/OutputIEEE.hpp"
 
-
+/* uni ks primitive ops--------------------------------------- */
+#include "PrimitiveComponents/Xilinx/Xilinx_Comparator.hpp"
 
 /* misc ------------------------------------------------------ */
 #include "TestBenches/Wrapper.hpp"

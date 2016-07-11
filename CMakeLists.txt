@@ -482,8 +482,8 @@ src/PrimitiveComponents/Xilinx/Xilinx_MUXF8
 src/PrimitiveComponents/Xilinx/Xilinx_FDCE
 src/PrimitiveComponents/Xilinx/Xilinx_n2m_Decoder
 src/PrimitiveComponents/Xilinx/Xilinx_Comparator
-#src/PrimitiveComponents/Xilinx/Xilinx_GenericAddSub
-#src/PrimitiveComponents/Xilinx/Xilinx_GenericAddSub_slice
+src/PrimitiveComponents/Xilinx/Xilinx_GenericAddSub
+src/PrimitiveComponents/Xilinx/Xilinx_GenericAddSub_slice
 #src/PrimitiveComponents/Xilinx/Xilinx_GenericMux
 #src/PrimitiveComponents/Xilinx/Xilinx_GenericMux_slice
 #src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State

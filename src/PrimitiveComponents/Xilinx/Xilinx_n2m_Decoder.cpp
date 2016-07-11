@@ -19,7 +19,6 @@ namespace flopoco {
         setCopyrightString(copyr.str());
         setCombinatorial();
 
-		setCombinatorial();
         stringstream tname;
         tname << "Xilinx_n2m_Decoder_" << name;
         srcFileName="Xilinx_n2m_Decoder";

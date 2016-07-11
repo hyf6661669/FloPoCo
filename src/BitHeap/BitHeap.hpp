@@ -243,8 +243,8 @@ namespace flopoco{
 		bool getSignedIO();
 		
 		 /* Uni KS start */
-		vector<BasicCompressor *>* getPossibleCompressors(); //returns the vector of compressors
-		 /* Uni KS stop */
+                vector<BasicCompressor *>* getPossibleCompressors(); //returns the vector of compressors
+                /* Uni KS stop */
 		 
 	protected:
 

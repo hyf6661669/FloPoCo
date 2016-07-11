@@ -1,4 +1,4 @@
-#ifdef HAVE_SCIP
+//#ifdef HAVE_SCIP
 
 #include "BitHeapHeuristicCompression.hpp"
 #include <algorithm>
@@ -8,7 +8,10 @@ namespace flopoco
 
 
     BitHeapHeuristicCompression::BitHeapHeuristicCompression(BitHeap* bh, std::string mode)
-       : bh_(bh), mode(mode), bitHeapILPCompression(bh)
+       : bh_(bh), mode(mode)
+#ifdef HAVE_SCIP
+       , bitHeapILPCompression(bh)
+#endif //HAVE_SCIP
     {
         //standard values
         lowerBound = 1.5;
@@ -63,6 +66,19 @@ namespace flopoco
         if(reduceILPStageCount && !passHeuristicSolution){
             reduceILPStageCount = false;
         }
+        cout << "mode is " << mode << endl;
+        //get the compressiontype from mode
+#ifdef HAVE_SCIP
+        if(mode.compare("heuristic_parandeh-afshar_modified") == 0){
+            bitHeapILPCompression.compressionType = 6;
+        }
+        else if(mode.compare("heuristic_pa") == 0){
+            bitHeapILPCompression.compressionType = 7;
+        }
+        else if(mode.compare("optimalMinStages") == 0){
+            bitHeapILPCompression.compressionType = 5;
+        }
+#endif //HAVE_SCIP
     }
 
 
@@ -91,8 +107,10 @@ namespace flopoco
         if(passHeuristicSolution){
             lowerBound = 0.0;
         }
+#ifdef HAVE_SCIP
         bitHeapILPCompression.useVariableCompressors = useVariableCompressors;
         bitHeapILPCompression.buildVariableCompressors();//only done if useVariableCompressors = true
+#endif //HAVE_SCIP
 
         noOfStages_ = getMaxStageCount(bh_->getMaxHeight());
         cout << "noOfStages: " << noOfStages_ << endl;
@@ -274,7 +292,18 @@ namespace flopoco
             vector<int> col(1);
             col[0]=1;
             flipflop = new BasicCompressor(bh_->getOp()->getTarget(),col);
-            flipflop->areaCost = 0.5;
+            if(bh_->getOp()->getTarget()->isPipelined()){
+                std::string targetID = bh_->getOp()->getTarget()->getID();
+                if((targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6")){
+                    flipflop->areaCost = 0.5; //there are two flip-flops per LUT for Virtex 6/7 and Spartan6
+                }
+                else{
+                    flipflop->areaCost = 1; //assume 1 for unknown device //!!!!
+                }
+            }
+            else{
+                flipflop->areaCost = 0.01; //nearly 0 for unpipelined designs
+            }
             compUnsorted->push_back(flipflop);
 
             bhCompressor tempCompressor;
@@ -305,6 +334,7 @@ namespace flopoco
                 cout << "using algorithm" << endl;
 
                 if(passMultipleSolutions){
+#ifdef HAVE_SCIP
                     cout << "solutions in heuristicSolutions before first round are " << bitHeapILPCompression.heuristicSolutions.size() << endl;
 
                     generateAllHeu(false, 1.5);
@@ -315,10 +345,11 @@ namespace flopoco
                     compressors.push_back(tempCompressor);
                     cout << "solutions in heuristicSolutions are " << bitHeapILPCompression.heuristicSolutions.size() << endl;
                     generateAllHeu(false, 1.5);
-
+#endif //HAVE_SCIP
                 }
                 else{
-                    algorithm();
+                    cout << "dontUsePA should be 0, equals " << dontUsePA << endl;
+                    algorithm();            //dontUsePA == false
                 }
 
 
@@ -326,6 +357,7 @@ namespace flopoco
 
             }
             else if(!dontUsePA || passMultipleSolutions){
+#ifdef HAVE_SCIP
                 cout << "!dontUsePA or passMultipleSolutions" << endl << endl;
                 if(passMultipleSolutions){
                     cout << "solutions in heuristicSolutions before first round are " << bitHeapILPCompression.heuristicSolutions.size() << endl;
@@ -349,7 +381,7 @@ namespace flopoco
                     cout << "preReduction done. We now use the optimal method" << endl;
                     printBitHeap();
                 }
-
+#endif //HAVE_SCIP
 
             }
 
@@ -449,7 +481,18 @@ namespace flopoco
             vector<int> col(1);
             col[0]=1;
             flipflop = new BasicCompressor(bh_->getOp()->getTarget(),col);
-            flipflop->areaCost = 0.5;
+            if(bh_->getOp()->getTarget()->isPipelined()){
+                std::string targetID = bh_->getOp()->getTarget()->getID();
+                if((targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6")){
+                    flipflop->areaCost = 0.5; //there are two flip-flops per LUT for Virtex 6/7 and Spartan6
+                }
+                else{
+                    flipflop->areaCost = 1; //assume 1 for unknown device //!!!!
+                }
+            }
+            else{
+                flipflop->areaCost = 0.01; //nearly 0 for unpipelined designs
+            }
             compUnsorted->push_back(flipflop);
 
             bhCompressor tempCompressor;
@@ -457,9 +500,9 @@ namespace flopoco
             tempCompressor.originalPosition = compressors.size();
             tempCompressor.maxEfficiency = 0.0;
             compressors.push_back(tempCompressor);
-
+#ifdef HAVE_SCIP
             bitHeapILPCompression.dontAddFlipFlop = true;
-
+#endif //HAVE_SCIP
             //sorting is the same for the moment TODO: change sorting to parandeh-afshar (sort for bitreduction)
 
             //debug compressors
@@ -491,7 +534,13 @@ namespace flopoco
             cout << endl;
         }
 
+        if((mode.compare("heuristic_parandeh-afshar_modified") == 0) || (mode.compare("heuristic_pa") == 0)){
+            cout << "size of solution is " << solution.size() << endl;
+            return 0;
+        }
+
         //debug output:: compressors:
+        /*
         for(unsigned s=0; s < solution.size(); s++)
         {
             list<pair<int,int> >::iterator it;
@@ -501,6 +550,9 @@ namespace flopoco
 
             }
         }
+        */
+
+#ifdef HAVE_SCIP
 
         //now initialize BitHeapILPCompression
         bitHeapILPCompression.solution = solution;
@@ -625,7 +677,7 @@ namespace flopoco
 
             cout << "there were " << count << " heuristic solutions passed" << endl;
         }
-
+#endif //HAVE_SCIP
         return 0;
     }
 
@@ -1042,10 +1094,12 @@ namespace flopoco
                     cout << "; noOfStages_ is << " << noOfStages_ << " old" << endl;
                     newBits.push_back(tempList);
                     solution.resize(newBits.size());
-                    bitHeapILPCompression.solution.resize(newBits.size());
                     noOfStages_++;
+#ifdef HAVE_SCIP
+                    bitHeapILPCompression.solution.resize(newBits.size());                    
                     bitHeapILPCompression.noOfStages_ = noOfStages_;
                     bitHeapILPCompression.getExternalStageCount = true;
+#endif //HAVE_SCIP
                     cout << "NEW newBitsSize is " << newBits.size() << " and noOfStages_ is " << noOfStages_ << endl;
                 }
             }
@@ -1192,7 +1246,7 @@ namespace flopoco
     //this adds the solution to the heuristicSolutions in the bitHeapILPCompression
     //and resets the problem
     void BitHeapHeuristicCompression::addHeuristicSolutionToILPSolver(){
-
+#ifdef HAVE_SCIP
         bitHeapILPCompression.heuristicSolutions.push_back(solution);
         solution.clear();
         solution.resize(noOfStages_);
@@ -1200,6 +1254,7 @@ namespace flopoco
         printBitHeap();
 
         newBits = originalNewBits;
+#endif //HAVE_SCIP
     }
 
 
@@ -1343,7 +1398,7 @@ namespace flopoco
     //all presolutions with more stages are being deleted
     //otherwise the s in the ILP-problem is the s of the presolution, which needs the most stages
     void BitHeapHeuristicCompression::setUpNewStageCountOfILP(){
-
+#if HAVE_SCIP
         unsigned maxS = 0;
 
         if(!useMaxHeuristicStageCount){
@@ -1401,6 +1456,7 @@ namespace flopoco
         else{
             cout << "numberOfstages_ was reduced as much as possible. heuristic solutions with more stages could have been deleted" << endl;
         }
+#endif //HAVE_SCP
     }
 
 
@@ -1408,13 +1464,26 @@ namespace flopoco
 
         vector<BasicCompressor *> * comps = bh_->getPossibleCompressors();
         double areaSize = 0.0;
+        double flipFlopCost = 0.0;
+        if(bh_->getOp()->getTarget()->isPipelined())        {
+            std::string targetID = bh_->getOp()->getTarget()->getID();
+            if((targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6")){
+                flipFlopCost = 0.5; //there are two flip-flops per LUT for Virtex 6/7 and Spartan6
+            }
+            else{
+                flipFlopCost = 1.0; //assume 1 for unknown device //!!!!
+            }
+        }
+        else{
+            flipFlopCost = 0.01; //nearly 0 for unpipelined designs
+        }
         for(unsigned i = 0; i < solution.size(); i++){
             cout << "i = " << i << endl;
             list<pair<int, int> >:: iterator it;
 
             for(it = solution[i].begin(); it != solution[i].end(); it++){
                 if((*it).first == (int) compressors.size()){
-                    areaSize += 0.5; //cost of flipflop
+                    areaSize += flipFlopCost; //cost of flipflop
                 }
                 else{
                     areaSize += comps->at((*it).first)->areaCost;
@@ -1429,12 +1498,14 @@ namespace flopoco
     //now just functions for the ilp module
 
     int BitHeapHeuristicCompression::writeProblem(std::string filename){
+#ifdef HAVE_SCIP
         bitHeapILPCompression.writeProblem(filename);
-
+#endif //HAVE_SCIP
         return 0;
     }
 
     void BitHeapHeuristicCompression::setUpILPForMoreStages(unsigned stages, bool firstOne){
+#ifdef HAVE_SCIP
         cout << "in setupILPForMoreStages with stages = " << stages << endl;
         bitHeapILPCompression.solution.clear();
         bitHeapILPCompression.solution.resize(stages);
@@ -1469,10 +1540,16 @@ namespace flopoco
         bitHeapILPCompression.noOfStages_ = stages;
 
         cout << "setting up done" << endl;
+#endif //HAVE_SCIP
     }
 
     int BitHeapHeuristicCompression::solve(){
         cout << "in solve()" << endl;
+        if((mode.compare("heuristic_parandeh-afshar_modified") == 0) || (mode.compare("heuristic_pa") == 0)) {
+            cout << "we shouldn't use scip therefore we should be done" << endl;
+            return 0;
+        }
+#ifdef HAVE_SCIP
         if(differentStages){
             cout << "differentStages == true" << endl;
         }
@@ -1612,6 +1689,7 @@ namespace flopoco
 
 
         cout << "done" << endl;
+#endif //HAVE_SCIP
         return 0;
     }
 
@@ -1723,9 +1801,9 @@ namespace flopoco
     }
 
     int BitHeapHeuristicCompression::plotSolution(){
-
+#ifdef HAVE_SCIP
         bitHeapILPCompression.plotSolution();
-
+#endif //HAVE_SCIP
         return 0;
     }
 
@@ -1821,13 +1899,16 @@ namespace flopoco
     }
 
     int BitHeapHeuristicCompression::cleanUp(){
+        if((mode.compare("heuristic_parandeh-afshar_modified") == 0) || (mode.compare("heuristic_pa") == 0)){
+            return 0;
+        }
+#ifdef HAVE_SCIP
         return bitHeapILPCompression.cleanUp();
-        cout << "-------------------" << endl;
-        cout << "cleanUp successfull" << endl;
-        cout << "-------------------" << endl;
-        //return 0;
+#else
+        return 0;
+#endif  //HAVE_SCIP
     }
 }
 
 
-#endif
+//#endif

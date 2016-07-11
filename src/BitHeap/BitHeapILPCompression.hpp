@@ -52,6 +52,7 @@ namespace flopoco
         unsigned zeroStages;
         int noOfStages_;
         bool useVariableCompressors;
+        int compressionType;
 
         void buildVariableCompressors();
 
@@ -73,7 +74,7 @@ namespace flopoco
 		vector<vector<SCIP_VAR*> > columnBitCountVars; //N_s_c: counts the number of bits in stage s (1st index) and column (2nd index)
 		vector<SCIP_VAR*> stageVars; //D_s: true if stage is output stage
 
-        vector<vector<SCIP_VAR*> > newBitsCountVars; //U_s_c: counts the number of bits which are added int stage s (1st index) and column (2nd index)
+        vector<vector<SCIP_VAR*> > newBitsCountVars; //U_s_c: counts the number of bits which are added in stage s (1st index) and column (2nd index)
 
 		SCIP_SOL* sol;
 		int noOfStagesUsed;

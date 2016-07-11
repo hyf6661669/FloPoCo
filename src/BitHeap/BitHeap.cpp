@@ -115,7 +115,7 @@ namespace flopoco
 			else
 			{
 				THROWERROR("compression " << UserInterface::compression << "unknown!");
-			}				
+                        }
 		}
 		/* Uni KS stop */
 	}
@@ -1591,7 +1591,7 @@ namespace flopoco
 #endif // HAVE_SCIP
 
             }
-            else if(compressionType == 4 || compressionType == 5 || compressionType == 6 || compressionType == 7)
+            else if(compressionType == 4 || compressionType == 5)
             {
 #ifdef HAVE_SCIP
                 if(!this->getOp()->getTarget()->isPipelined())
@@ -1603,12 +1603,6 @@ namespace flopoco
                 if(compressionType == 5){
                     mode = "optimalMinStages";
                 }
-                else if(compressionType == 6){
-                    mode = "heuristic_parandeh-afshar_modified";
-                }
-                else if(compressionType == 7){
-                    mode = "heuristic_pa";
-                }
 
                 //deleting compressor 4 and 6:
                 std::string targetID = op->getTarget()->getID();
@@ -1619,13 +1613,14 @@ namespace flopoco
                         possibleCompressors.erase(possibleCompressors.begin() + 4);
                     }
                 }
-                //cout << "finished erasing" << endl;
                 //the heuristic solution calls the BitHeapILPCompression
                 BitHeapHeuristicCompression ilp(this, mode);
                 ilp.setLowerBounds(efficiencyPerStage);
 
                 ilp.generateProblem();
-                if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
+                if(compressionType != 6 && compressionType != 7){   //when we only use the heuristic, we don't have a problem-description
+                    if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
+                }
                 ilp.solve();
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 
@@ -1670,6 +1665,77 @@ namespace flopoco
                 throw string("The optimal compression method requires SCIP, sorry.");
 #endif // HAVE_SCIP
 
+            }
+            else if(compressionType == 6 || compressionType == 7){
+                            if(!this->getOp()->getTarget()->isPipelined())
+                            {
+                                THROWERROR("The optimal compression does currently not support non-pipelined compression, sorry.");
+                            }
+
+                            std::string mode = "heuristic_pa";
+
+                            if(compressionType == 6){
+                                mode = "heuristic_parandeh-afshar_modified";
+                            }
+                            else if(compressionType == 7){
+                                mode = "heuristic_pa";
+                            }
+
+                            //deleting compressor 4 and 6:
+                            std::string targetID = op->getTarget()->getID();
+                            if((targetID == "Virtex5") || (targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6")){
+                                //TODO: check for unnecessary compressors by iterating through list
+                                if(possibleCompressors.size() > 6){
+                                    possibleCompressors.erase(possibleCompressors.begin() + 6);
+                                    possibleCompressors.erase(possibleCompressors.begin() + 4);
+                                }
+                            }
+                            //cout << "finished erasing" << endl;
+                            //the heuristic solution calls the BitHeapILPCompression
+                            BitHeapHeuristicCompression ilp(this, mode);
+                            ilp.setLowerBounds(efficiencyPerStage);
+
+                            ilp.generateProblem();
+                            ilp.solve();
+            //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
+
+                            //copying solution from heuristic to ILPCompression:
+                            //ilp.solution = ilp.bitHeapILPCompression.solution;
+
+                            REPORT(DEBUG, "ilp.solution.size(): " << ilp.solution.size());
+                            for(unsigned s = 0; s < ilp.solution.size(); s++){
+                                REPORT(DEBUG, "ilp.solution[" << s << "]: " << ilp.solution[s].size());
+                            }
+
+
+                            for(unsigned s=0; s < ilp.solution.size(); s++)
+                            {
+                                list<pair<int,int> >::iterator it;
+                                for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
+                                {
+                                    REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
+                                    if(((unsigned) (*it).second) < maxWeight){
+                                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+
+                                        if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
+                                        {
+                                            compressorUsage[(*it).first]++;
+                                            usedCompressors[(*it).first]=true;
+                                        }
+                                    }
+
+
+
+
+                                }
+                                plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
+                                op->nextCycle(); //!!! ToDo: Manage critical path !!!
+                                plottingCycle=0;
+                                plottingCP=0;
+
+
+                            }
+                            REPORT(DEBUG, "pipeline depth in compression: " << op->getPipelineDepth());
             }
 /* Uni KS stop */            
 			else
@@ -3516,7 +3582,7 @@ namespace flopoco
 
 	void BitHeap::setSignedIO(bool s){this->signedIO=s;}
 
-	bool BitHeap::getSignedIO() {return signedIO;}
+        bool BitHeap::getSignedIO() {return signedIO;}
 
 }
 

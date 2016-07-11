@@ -1,7 +1,7 @@
 #ifndef BITHEAPHEURISTICCOMPRESSION_H
 #define BITHEAPHEURISTICCOMPRESSION_H
 
-#ifdef HAVE_SCIP
+//#ifdef HAVE_SCIP
 
 
 #include "BitHeap.hpp"
@@ -92,7 +92,9 @@ namespace flopoco
 
     protected:
 
+#ifdef HAVE_SCIP
         BitHeapILPCompression bitHeapILPCompression;
+#endif //HAVE_SCIP
 
         int noOfStages_;
         int noOfColumnsMax;
@@ -140,6 +142,6 @@ namespace flopoco
 
 
 
-#endif // HAVE_SCIP
+//#endif // HAVE_SCIP
 
 #endif // BITHEAPHEURISTICCOMPRESSION_H

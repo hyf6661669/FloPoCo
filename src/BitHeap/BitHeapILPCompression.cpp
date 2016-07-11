@@ -961,8 +961,20 @@ namespace flopoco
 
 	int BitHeapILPCompression::cleanUp()
 	{
-		REPORT(DEBUG, "cleaning up SCIP... ");
-		//clean up:
+        REPORT(DEBUG, "cleaning up SCIP... ");
+        //clean up:
+
+
+        if(compressionType == 6 || compressionType == 7){
+            //heuristic only. therefore no variables for ilp has been produces
+            //and we don't need to clean up
+            BMScheckEmptyMemory();
+
+            scip = NULL;
+            sol = NULL;
+            return 0;
+        }
+
         if(!compCountVars.empty()){
             //cout << "not empty" << endl;
             for(unsigned s=0; s < compCountVars.size(); s++)

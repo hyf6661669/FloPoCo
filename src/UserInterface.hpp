@@ -115,7 +115,8 @@ namespace flopoco
 	public:
 		static vector<OperatorPtr>  globalOpList;  /**< Level-0 operators. Each of these can have sub-operators */
 		static int    verbose;
-		static string compression;
+        static string compression;
+        static bool   useTargetSpecificOptimization;
 	private:
 		static string outputFileName;
 		static string entityName;
@@ -130,8 +131,7 @@ namespace flopoco
 		static int    resourceEstimation;
 		static bool   floorplanning;
 		static bool   reDebug;
-		static bool   flpDebug;
-        static bool   useTargetSpecificOptimization;
+        static bool   flpDebug;
 		static vector<pair<string,OperatorFactoryPtr>> factoryList; // used to be a map, but I dont want them listed in alphabetical order
 		static const vector<pair<string,string>> categories;
 

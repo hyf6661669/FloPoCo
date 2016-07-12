@@ -468,6 +468,7 @@ src/ExpLog/FPPow
 # Primitive Components ----------------------------------------------
 src/PrimitiveComponents/bool_eq
 src/PrimitiveComponents/GenericLut
+src/PrimitiveComponents/Tests/GenericLut_Test
 
 src/PrimitiveComponents/Xilinx/Xilinx_Primitive
 src/PrimitiveComponents/Xilinx/Xilinx_LUT_compute

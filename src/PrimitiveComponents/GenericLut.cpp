@@ -11,7 +11,6 @@ using namespace std;
 namespace flopoco {
     GenericLut::GenericLut( Target *target, const std::string &name, const std::map<unsigned int, unsigned int> &pairs, const unsigned int &wIn, const unsigned int &wOut ) : Operator( target ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
-        Xilinx_Primitive::checkTargetCompatibility( target );
         setCombinatorial();
         stringstream tname;
         tname << "GenericLut_" << name;
@@ -53,11 +52,11 @@ namespace flopoco {
         }
 
         for( unsigned int i = 0; i < wIn_; ++i ) {
-            addInput( join( "i", i ), 1 );
+            addInput( join( "i", i ), 1, false );
         }
 
         for( unsigned int i = 0; i < wOut_; ++i ) {
-            addOutput( join( "o", i ), 1 );
+            addOutput( join( "o", i ), 1, 1, false  );
         }
 
         for( unsigned int out = 0; out < wOut_; ++out ) {
@@ -83,6 +82,8 @@ namespace flopoco {
 
             equations_.push_back( eq );
         }
+
+        build();
     }
 
     void GenericLut::build() {
@@ -122,32 +123,43 @@ namespace flopoco {
                 output_vec[j] = equations_[j].eval( input_vec );
             }
 
+            bool some_set = false;
+
+            for( uint i = 0; i < wOut_; ++i ) {
+                if( output_vec[i] ) {
+                    some_set = true;
+                    break;
+                }
+            }
+
             // schreiben
-            vhdl << tab << tab << "\"";
+            if( some_set ) {
+                vhdl << tab << tab << "\"";
 
-            for( std::vector<bool>::reverse_iterator it = output_vec.rbegin(); it != output_vec.rend(); ++it ) {
-                vhdl << ( *it ? "1" : "0" );
+                for( std::vector<bool>::reverse_iterator it = output_vec.rbegin(); it != output_vec.rend(); ++it ) {
+                    vhdl << ( *it ? "1" : "0" );
+                }
+
+                vhdl << "\" when \"";
+
+                for( std::vector<bool>::reverse_iterator it = input_vec.rbegin(); it != input_vec.rend(); ++it ) {
+                    vhdl << ( *it ? "1" : "0" );
+                }
+
+                vhdl << "\"," << std::endl;
             }
-
-            vhdl << "\" when \"";
-
-            for( std::vector<bool>::reverse_iterator it = input_vec.rbegin(); it != input_vec.rend(); ++it ) {
-                vhdl << ( *it ? "1" : "0" );
-            }
-
-            vhdl << "\"," << std::endl;
         }
 
         vhdl << tab << tab << "\"";
 
-        for( int i = 0; i < wOut_; ++i ) {
+        for( uint i = 0; i < wOut_; ++i ) {
             vhdl << "0";
         }
 
         vhdl << "\" when others;" << std::endl << std::endl;
 
-        for( unsigned int i = 0; i < wIn_; ++i ) {
-            vhdl << tab << join( "o", i ) << " <= " << "t_out" << of( i ) << std::endl;
+        for( unsigned int i = 0; i < wOut_; ++i ) {
+            vhdl << tab << join( "o", i ) << " <= " << "t_out" << of( i ) << ";" << std::endl;
         }
     }
 

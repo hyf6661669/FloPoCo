@@ -158,6 +158,8 @@
 #include "Conversions/OutputIEEE.hpp"
 
 /* uni ks primitive ops--------------------------------------- */
+#include "PrimitiveComponents/GenericLut.hpp"
+#include "PrimitiveComponents/Tests/GenericLut_Test.hpp"
 #include "PrimitiveComponents/Xilinx/Xilinx_Comparator.hpp"
 
 /* misc ------------------------------------------------------ */

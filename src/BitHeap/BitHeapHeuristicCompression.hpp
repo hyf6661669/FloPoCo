@@ -7,8 +7,10 @@
 #include "BitHeap.hpp"
 #include "BitHeapILPCompression.hpp"
 
-#include <scip/scip.h>
-#include <scip/scipdefplugins.h>
+#ifdef HAVE_SCIP
+    #include <scip/scip.h>
+    #include <scip/scipdefplugins.h>
+#endif
 
 #include <vector>
 #include <list>

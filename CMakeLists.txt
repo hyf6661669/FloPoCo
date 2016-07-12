@@ -42,7 +42,6 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg -Wall")
 SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_BUILD_TYPE release)
 
-
 FIND_PATH(MPFR_H
 	  mpfr.h
 	  HINTS "C:/Program Files/Microsoft Visual Studio 9.0/VC/include"
@@ -140,9 +139,9 @@ FIND_LIBRARY(NLPI_LIB NAMES nlpi.cppad)
 FIND_LIBRARY(LPISPX_LIB NAMES lpispx)
 FIND_LIBRARY(ZIMPL_LIB NAMES zimpl.linux.x86_64.gnu.opt)
 
-IF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB)
+IF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND ZIMPL_LIB)
     SET(SCIP_FOUND TRUE)
-ENDIF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB)
+ENDIF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND ZIMPL_LIB)
 
 IF (READLINE_LIB)
 	MESSAGE(STATUS "Found readline (supporting library of SCIP): ${READLINE_LIB}")
@@ -467,6 +466,9 @@ src/ExpLog/IterativeLog
 src/ExpLog/FPPow
 
 # Primitive Components ----------------------------------------------
+src/PrimitiveComponents/bool_eq
+src/PrimitiveComponents/GenericLut
+
 src/PrimitiveComponents/Xilinx/Xilinx_Primitive
 src/PrimitiveComponents/Xilinx/Xilinx_LUT_compute
 src/PrimitiveComponents/Xilinx/Xilinx_CARRY4

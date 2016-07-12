@@ -131,6 +131,7 @@ namespace flopoco
 		static bool   floorplanning;
 		static bool   reDebug;
 		static bool   flpDebug;
+        static bool   useTargetSpecificOptimization;
 		static vector<pair<string,OperatorFactoryPtr>> factoryList; // used to be a map, but I dont want them listed in alphabetical order
 		static const vector<pair<string,string>> categories;
 

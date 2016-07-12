@@ -39,6 +39,7 @@ namespace flopoco
 	bool   UserInterface::floorplanning;
 	bool   UserInterface::reDebug;
 	bool   UserInterface::flpDebug;
+    bool   UserInterface::useTargetSpecificOptimization = false;
 
 
 	const vector<pair<string,string>> UserInterface::categories = []()->vector<pair<string,string>>{
@@ -154,6 +155,7 @@ namespace flopoco
 		parseBoolean(args, "floorplanning", &floorplanning, true);
 		parseBoolean(args, "reDebug", &reDebug, true );
 		parseBoolean(args, "pipeline", &pipeline, true );
+        parseBoolean(args, "useTargetSpecificOptimization", &useTargetSpecificOptimization, true );
 		//	parseBoolean(args, "", &  );
 	}
 

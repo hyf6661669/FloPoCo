@@ -25,8 +25,9 @@ namespace flopoco {
     Xilinx_Primitive::~Xilinx_Primitive() {}
 
     void Xilinx_Primitive::checkTargetCompatibility( Target *target ) {
-        if( target->getVendor() != "Xilinx" || target->getID() != "Virtex6" )
+        if( target->getVendor() != "Xilinx" || target->getID() != "Virtex6" ) {
             throw std::runtime_error( "This component is only suitable for target Xilinx Virtex6 and above." );
+        }
     }
 
     void Xilinx_Primitive::setGeneric( string name, string value ) {
@@ -55,8 +56,9 @@ namespace flopoco {
         // TODO add checks here? Check that all the signals are covered for instance
         o << tab << instanceName << ": " << op->getName();
 
-        if ( op->isSequential() )
+        if ( op->isSequential() ) {
             o << "  -- pipelineDepth=" << op->getPipelineDepth() << " maxInDelay=" << getMaxInputDelays( op->getInputDelayMap() );
+        }
 
         o << endl;
 
@@ -65,8 +67,9 @@ namespace flopoco {
             std::map<string, string>::iterator it = getGenerics().begin();
             o << it->first << " => " << it->second;
 
-            for( ++it; it != getGenerics().end(); ++it  )
+            for( ++it; it != getGenerics().end(); ++it  ) {
                 o << "," << endl << tab << tab << it->first << " => " << it->second;
+            }
 
             o << ")" << endl;
         }
@@ -79,19 +82,22 @@ namespace flopoco {
             o << "clk  => clk";
             o << "," << endl << tab << tab << "           rst  => rst";
 
-            if ( op->isRecirculatory() )
-                o << "," << endl << tab << tab << "           stall_s => stall_s";;
+            if ( op->isRecirculatory() ) {
+                o << "," << endl << tab << tab << "           stall_s => stall_s";
+            };
 
-            if ( op->hasClockEnable() )
-                o << "," << endl << tab << tab << "           ce => ce";;
+            if ( op->hasClockEnable() ) {
+                o << "," << endl << tab << tab << "           ce => ce";
+            };
         }
 
         for ( it = op->getPortMap().begin()  ; it != op->getPortMap().end(); it++ ) {
             bool outputSignal = false;
 
             for ( int k = 0; k < int( op->getIOList()->size() ); k++ ) {
-                if ( ( op->getIOList()->at( k )->type() == Signal::out ) && ( op->getIOList()->at( k )->getName() == ( *it ).first ) )
+                if ( ( op->getIOList()->at( k )->type() == Signal::out ) && ( op->getIOList()->at( k )->getName() == ( *it ).first ) ) {
                     outputSignal = true;
+                }
             }
 
             bool parsing = vhdl.isParsing();
@@ -101,8 +107,9 @@ namespace flopoco {
                 vhdl.disableParsing( true );
             }
 
-            if ( it != op->getPortMap().begin() || op->isSequential() )
+            if ( it != op->getPortMap().begin() || op->isSequential() ) {
                 o << "," << endl <<  tab << tab << "           ";
+            }
 
             // The following code assumes that the IO is declared as standard_logic_vector
             // If the actual parameter is a signed or unsigned, we want to automatically convert it
@@ -115,10 +122,11 @@ namespace flopoco {
                 //cout << "its = " << (*it).second << "  " << endl;
                 rhs = getDelayedSignalByName( ( *it ).second );
 
-                if ( rhs->isFix() && !outputSignal )
+                if ( rhs->isFix() && !outputSignal ) {
                     rhsString = std_logic_vector( ( *it ).second );
-                else
+                } else {
                     rhsString = ( *it ).second;
+                }
             } catch( string e ) {
                 //constant here
                 rhsString = ( *it ).second;
@@ -150,4 +158,31 @@ namespace flopoco {
         // subComponents_.push_back(op);
         return o.str();
     }
+
+    string UniKs::getAuthorsString( const int &authors ) {
+        std::stringstream out;
+        out << std::endl;
+        out << "-- >> University of Kassel" << std::endl;
+        out << "-- >> Digital Technology Group" << std::endl;
+        out << "-- >> Author(s):" << endl;
+
+        if( authors & AUTHOR_MKUMM ) {
+            out << "-- >> Martin Kumm <kumm@uni-kassel.de>";
+        }
+
+        if( authors & AUTHOR_KMOELLER ) {
+            out << "-- >> Konrad Möller <konrad.moeller@uni-kassel.de>";
+        }
+
+        if( authors & AUTHOR_JKAPPAUF ) {
+            out << "-- >> Johannes Kappauf <uk009669@student.uni-kassel.de>";
+        }
+
+        if( authors & AUTHOR_MKLEINLEIN ) {
+            out << "-- >> Marco Kleinlein <kleinlein@uni-kassel.de>";
+        }
+
+        return out.str();
+    }
+
 }//namespace

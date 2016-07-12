@@ -16,26 +16,7 @@ namespace flopoco {
             AUTHOR_MKLEINLEIN = 0x8
         };
 
-        static std::string getAuthorsString( const int &authors ) {
-            std::stringstream out;
-            out << ">> Universität Kassel" << endl;
-            out << ">> Fachgebiet Digitaltechnik" << endl;
-            out << ">> Author(s):" << endl;
-
-            if( authors & AUTHOR_MKUMM )
-                out << ">> Martin Kumm <kumm@uni-kassel.de>";
-
-            if( authors & AUTHOR_KMOELLER )
-                out << ">> Konrad Moeller <konrad.moeller@uni-kassel.de>";
-
-            if( authors & AUTHOR_JKAPPAUF )
-                out << ">> Johannes Kappauf <uk009669@student.uni-kassel.de>";
-
-            if( authors & AUTHOR_MKLEINLEIN )
-                out << ">> Marco Kleinlein <kleinlein@uni-kassel.de>";
-
-            return out.str();
-        }
+        static std::string getAuthorsString( const int &authors );
     };
 
     // new operator class declaration

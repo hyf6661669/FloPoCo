@@ -5,37 +5,36 @@ namespace flopoco {
     Xilinx_Comparator::Xilinx_Comparator( Target *target, int wIn, ComparatorType type ) : Operator( target ) , m_type( type ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
         Xilinx_Primitive::checkTargetCompatibility( target );
-
         std::stringstream name_str;
         name_str << "Xilinx_Comparator_";
 
         switch( type ) {
-        case flopoco::Xilinx_Comparator::ComparatorType_invalid:
-            break;
+            case flopoco::Xilinx_Comparator::ComparatorType_invalid:
+                break;
 
-        case ComparatorType_gt:
-            name_str << "gt_";
-            break;
+            case ComparatorType_gt:
+                name_str << "gt_";
+                break;
 
-        case ComparatorType_lt:
-            name_str << "lt_";
-            break;
+            case ComparatorType_lt:
+                name_str << "lt_";
+                break;
 
-        case ComparatorType_ge:
-            name_str << "ge_";
-            break;
+            case ComparatorType_ge:
+                name_str << "ge_";
+                break;
 
-        case ComparatorType_le:
-            name_str << "le_";
-            break;
+            case ComparatorType_le:
+                name_str << "le_";
+                break;
 
-        case ComparatorType_eq:
-            name_str << "eq_";
-            break;
+            case ComparatorType_eq:
+                name_str << "eq_";
+                break;
 
-        case ComparatorType_ne:
-            name_str << "ne_";
-            break;
+            case ComparatorType_ne:
+                name_str << "ne_";
+                break;
         }
 
         name_str << wIn;
@@ -74,35 +73,35 @@ namespace flopoco {
         string lut_content;
 
         switch( type ) {
-        case flopoco::Xilinx_Comparator::ComparatorType_invalid:
-            break;
+            case flopoco::Xilinx_Comparator::ComparatorType_invalid:
+                break;
 
-        case ComparatorType_gt:
-            lut_content = getLUT_gt();
-            break;
+            case ComparatorType_gt:
+                lut_content = getLUT_gt();
+                break;
 
-        case ComparatorType_lt:
-            lut_content = getLUT_lt();
-            break;
+            case ComparatorType_lt:
+                lut_content = getLUT_lt();
+                break;
 
-        case ComparatorType_ge:
-            lut_content = getLUT_ge();
-            c_init = true;
-            break;
+            case ComparatorType_ge:
+                lut_content = getLUT_ge();
+                c_init = true;
+                break;
 
-        case ComparatorType_le:
-            lut_content = getLUT_le();
-            c_init = true;
-            break;
+            case ComparatorType_le:
+                lut_content = getLUT_le();
+                c_init = true;
+                break;
 
-        case ComparatorType_eq:
-            lut_content = getLUT_eq();
-            c_init = true;
-            break;
+            case ComparatorType_eq:
+                lut_content = getLUT_eq();
+                c_init = true;
+                break;
 
-        case ComparatorType_ne:
-            lut_content = getLUT_ne();
-            break;
+            case ComparatorType_ne:
+                lut_content = getLUT_ne();
+                break;
         }
 
         for( int i = 0; i < needed_luts; i++ ) {
@@ -165,32 +164,32 @@ namespace flopoco {
         mpz_class expectedResult;
 
         switch( m_type ) {
-        case flopoco::Xilinx_Comparator::ComparatorType_invalid:
-            break;
+            case flopoco::Xilinx_Comparator::ComparatorType_invalid:
+                break;
 
-        case ComparatorType_gt:
-            expectedResult = ( a > b );
-            break;
+            case ComparatorType_gt:
+                expectedResult = ( a > b );
+                break;
 
-        case ComparatorType_lt:
-            expectedResult = ( a < b );
-            break;
+            case ComparatorType_lt:
+                expectedResult = ( a < b );
+                break;
 
-        case ComparatorType_ge:
-            expectedResult = ( a >= b );
-            break;
+            case ComparatorType_ge:
+                expectedResult = ( a >= b );
+                break;
 
-        case ComparatorType_le:
-            expectedResult = ( a <= b );
-            break;
+            case ComparatorType_le:
+                expectedResult = ( a <= b );
+                break;
 
-        case ComparatorType_eq:
-            expectedResult = ( a == b );
-            break;
+            case ComparatorType_eq:
+                expectedResult = ( a == b );
+                break;
 
-        case ComparatorType_ne:
-            expectedResult = ( a != b );
-            break;
+            case ComparatorType_ne:
+                expectedResult = ( a != b );
+                break;
         }
 
         tc->addExpectedOutput( "o", expectedResult );
@@ -207,32 +206,32 @@ namespace flopoco {
                 mpz_class expectedResult;
 
                 switch( m_type ) {
-                case flopoco::Xilinx_Comparator::ComparatorType_invalid:
-                    break;
+                    case flopoco::Xilinx_Comparator::ComparatorType_invalid:
+                        break;
 
-                case ComparatorType_gt:
-                    expectedResult = ( a > b );
-                    break;
+                    case ComparatorType_gt:
+                        expectedResult = ( a > b );
+                        break;
 
-                case ComparatorType_lt:
-                    expectedResult = ( a < b );
-                    break;
+                    case ComparatorType_lt:
+                        expectedResult = ( a < b );
+                        break;
 
-                case ComparatorType_ge:
-                    expectedResult = ( a >= b );
-                    break;
+                    case ComparatorType_ge:
+                        expectedResult = ( a >= b );
+                        break;
 
-                case ComparatorType_le:
-                    expectedResult = ( a <= b );
-                    break;
+                    case ComparatorType_le:
+                        expectedResult = ( a <= b );
+                        break;
 
-                case ComparatorType_eq:
-                    expectedResult = ( a == b );
-                    break;
+                    case ComparatorType_eq:
+                        expectedResult = ( a == b );
+                        break;
 
-                case ComparatorType_ne:
-                    expectedResult = ( a != b );
-                    break;
+                    case ComparatorType_ne:
+                        expectedResult = ( a != b );
+                        break;
                 }
 
                 tc->addExpectedOutput( "o", expectedResult );
@@ -290,20 +289,21 @@ namespace flopoco {
     }
 
     Xilinx_Comparator::ComparatorType Xilinx_Comparator::getTypeFromString( const string &typestr ) {
-        if( typestr == "gt" )
+        if( typestr == "gt" ) {
             return ComparatorType_gt;
-        else if ( typestr == "ge" )
+        } else if ( typestr == "ge" ) {
             return ComparatorType_ge;
-        else if ( typestr == "lt" )
+        } else if ( typestr == "lt" ) {
             return ComparatorType_lt;
-        else if( typestr == "le" )
+        } else if( typestr == "le" ) {
             return ComparatorType_le;
-        else if( typestr == "eq" )
+        } else if( typestr == "eq" ) {
             return ComparatorType_eq;
-        else if( typestr == "ne" )
+        } else if( typestr == "ne" ) {
             return ComparatorType_ne;
-        else
+        } else {
             return ComparatorType_invalid;
+        }
     }
 
     OperatorPtr Xilinx_Comparator::parseArguments( Target *target, vector<string> &args ) {

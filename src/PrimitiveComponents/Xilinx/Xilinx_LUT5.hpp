@@ -7,27 +7,27 @@
 
 namespace flopoco {
     class Xilinx_LUT5_base : public Xilinx_Primitive {
-    public:
-        Xilinx_LUT5_base(Target* target);
+      public:
+        Xilinx_LUT5_base( Target *target );
         ~Xilinx_LUT5_base() {};
         void base_init();
     };
 
     class Xilinx_LUT5 : public Xilinx_LUT5_base {
-    public:
-        Xilinx_LUT5(Target* target);
+      public:
+        Xilinx_LUT5( Target *target );
         ~Xilinx_LUT5() {};
     };
 
     class Xilinx_LUT5_L : public Xilinx_LUT5_base {
-    public:
-        Xilinx_LUT5_L(Target* target);
+      public:
+        Xilinx_LUT5_L( Target *target );
         ~Xilinx_LUT5_L() {};
     };
 
     class Xilinx_LUT5_D : public Xilinx_LUT5_base {
-    public:
-        Xilinx_LUT5_D(Target* target);
+      public:
+        Xilinx_LUT5_D( Target *target );
         ~Xilinx_LUT5_D() {};
     };
 }//namespace

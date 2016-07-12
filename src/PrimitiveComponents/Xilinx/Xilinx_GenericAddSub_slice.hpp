@@ -10,24 +10,22 @@ namespace flopoco {
 	// new operator class declaration
     class Xilinx_GenericAddSub_slice : public Operator {
 
-    public:
+      public:
 		// constructor, defined there with two parameters (default value 0 for each)
-        Xilinx_GenericAddSub_slice(Target* target, int wIn, bool initial,bool fixed=false,bool dss=false);
+        Xilinx_GenericAddSub_slice( Target *target, int wIn, bool initial, bool fixed = false, bool dss = false );
 
 		// destructor
         ~Xilinx_GenericAddSub_slice() {}
 
-        void build_normal(Target *target, int wIn, bool initial);
+        void build_normal( Target *target, int wIn, bool initial );
 
-        void build_fixed_sign(Target *target, int wIn, bool initial);
+        void build_fixed_sign( Target *target, int wIn, bool initial );
 
-        void build_with_dss(Target *target, int wIn, bool initial);
+        void build_with_dss( Target *target, int wIn, bool initial );
 
-        void getLUT_std(){
-
+        void getLUT_std() {
         }
-        void getLUT_init(){
-
+        void getLUT_init() {
         }
 
         string getLUT_dss_init();

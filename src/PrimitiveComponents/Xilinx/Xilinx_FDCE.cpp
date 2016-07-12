@@ -14,15 +14,13 @@
 
 using namespace std;
 namespace flopoco {
-    Xilinx_FDCE::Xilinx_FDCE(Target* target) : Xilinx_Primitive(target) {
-        setName("FDCE");
-        srcFileName="Xilinx_FDCE";
-
-        addInput("clr",1);
-        addInput("ce",1);
-        addInput("d",1);
-        addInput("c",1);
-
-        addOutput("q",1);
+    Xilinx_FDCE::Xilinx_FDCE( Target *target ) : Xilinx_Primitive( target ) {
+        setName( "FDCE" );
+        srcFileName = "Xilinx_FDCE";
+        addInput( "clr", 1 );
+        addInput( "ce", 1 );
+        addInput( "d", 1 );
+        addInput( "c", 1 );
+        addOutput( "q", 1 );
     }
 }//namespace

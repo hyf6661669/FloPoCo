@@ -5,10 +5,9 @@
 #include "utils.hpp"
 #include "Xilinx_LUT6.hpp"
 
-namespace flopoco{
-    class Xilinx_Comparator : public Operator
-    {
-        enum ComparatorType{
+namespace flopoco {
+    class Xilinx_Comparator : public Operator {
+        enum ComparatorType {
             ComparatorType_lt,
             ComparatorType_gt,
             ComparatorType_le,
@@ -17,13 +16,13 @@ namespace flopoco{
             ComparatorType_ne,
             ComparatorType_invalid
         };
-    public:
+      public:
         ComparatorType m_type;
 
-        Xilinx_Comparator(Target *target, int wIn,ComparatorType type);
+        Xilinx_Comparator( Target *target, int wIn, ComparatorType type );
 
-        void emulate(TestCase *tc);
-        void buildStandardTestCases(TestCaseList *tcl);
+        void emulate( TestCase *tc );
+        void buildStandardTestCases( TestCaseList *tcl );
 
         string getLUT_lt();
         string getLUT_gt();
@@ -32,10 +31,10 @@ namespace flopoco{
         string getLUT_eq();
         string getLUT_ne();
 
-        static ComparatorType getTypeFromString(const std::string& typestr);
+        static ComparatorType getTypeFromString( const std::string &typestr );
 
         /** Factory method that parses arguments and calls the constructor */
-        static OperatorPtr parseArguments(Target *target , vector<string> &args);
+        static OperatorPtr parseArguments( Target *target , vector<string> &args );
 
         /** Factory register method */
         static void registerFactory();

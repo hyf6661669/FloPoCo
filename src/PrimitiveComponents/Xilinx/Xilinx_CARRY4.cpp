@@ -14,16 +14,14 @@
 
 using namespace std;
 namespace flopoco {
-    Xilinx_CARRY4::Xilinx_CARRY4(Target* target) : Xilinx_Primitive(target) {
-        setName("CARRY4");
-        srcFileName="Xilinx_CARRY4";
-
-        addInput( "ci",1 );
-        addInput( "cyinit",1 );
-        addInput( "di",4 );
-        addInput( "s",4 );
-
-        addOutput("co",4);
-        addOutput("o",4);
+    Xilinx_CARRY4::Xilinx_CARRY4( Target *target ) : Xilinx_Primitive( target ) {
+        setName( "CARRY4" );
+        srcFileName = "Xilinx_CARRY4";
+        addInput( "ci", 1 );
+        addInput( "cyinit", 1 );
+        addInput( "di", 4 );
+        addInput( "s", 4 );
+        addOutput( "co", 4 );
+        addOutput( "o", 4 );
     }
 }//namespace

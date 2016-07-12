@@ -1,10 +1,5 @@
 PROJECT(FloPoCo C CXX)
 
-#Uni KS start
-#SET(Boost_INCLUDE_DIR /usr/include/boost148)
-#SET(Boost_LIBRARY_DIR /usr/lib64/boost148)
-#find_package( Boost 1.48.0)
-
 MESSAGE("Trying to build FloPoCo on " ${CMAKE_SYSTEM_NAME} ", compiler is " ${CMAKE_C_COMPILER})
 
 # CMake's way of handling various versions
@@ -34,7 +29,7 @@ SET(CPACK_PACKAGE_VERSION_PATCH "0")
 
 #SET(Boost_INCLUDE_DIR /usr/include/boost)
 #SET(Boost_LIBRARY_DIR /usr/lib64/boost)
-find_package( Boost 1.48)
+find_package( Boost 1.48 REQUIRED )
 
 INCLUDE(CPack)
 # 
@@ -484,8 +479,8 @@ src/PrimitiveComponents/Xilinx/Xilinx_n2m_Decoder
 src/PrimitiveComponents/Xilinx/Xilinx_Comparator
 src/PrimitiveComponents/Xilinx/Xilinx_GenericAddSub
 src/PrimitiveComponents/Xilinx/Xilinx_GenericAddSub_slice
-#src/PrimitiveComponents/Xilinx/Xilinx_GenericMux
-#src/PrimitiveComponents/Xilinx/Xilinx_GenericMux_slice
+src/PrimitiveComponents/Xilinx/Xilinx_GenericMux
+src/PrimitiveComponents/Xilinx/Xilinx_GenericMux_slice
 #src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State
 #src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State_slice
 

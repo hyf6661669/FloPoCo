@@ -7,9 +7,9 @@ namespace flopoco {
 
     // new operator class declaration
     class Xilinx_FDCE : public Xilinx_Primitive {
-    public:
+      public:
         // constructor, defined there with two parameters (default value 0 for each)
-        Xilinx_FDCE(Target* target);
+        Xilinx_FDCE( Target *target );
 
         // destructor
         ~Xilinx_FDCE() {};

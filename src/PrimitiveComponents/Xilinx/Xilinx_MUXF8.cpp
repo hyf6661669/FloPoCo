@@ -14,33 +14,32 @@
 
 using namespace std;
 namespace flopoco {
-    Xilinx_MUXF8_base::Xilinx_MUXF8_base(Target* target) : Xilinx_Primitive(target) {}
+    Xilinx_MUXF8_base::Xilinx_MUXF8_base( Target *target ) : Xilinx_Primitive( target ) {}
 
-    Xilinx_MUXF8::Xilinx_MUXF8(Target* target) : Xilinx_MUXF8_base(target) {
-        setName("MUXF8");
-        addOutput("o",1);
+    Xilinx_MUXF8::Xilinx_MUXF8( Target *target ) : Xilinx_MUXF8_base( target ) {
+        setName( "MUXF8" );
+        addOutput( "o", 1 );
         base_init();
     }
 
-    Xilinx_MUXF8_L::Xilinx_MUXF8_L(Target* target) : Xilinx_MUXF8_base(target) {
-        setName("MUXF8_L");
-        addOutput("lo",1);
+    Xilinx_MUXF8_L::Xilinx_MUXF8_L( Target *target ) : Xilinx_MUXF8_base( target ) {
+        setName( "MUXF8_L" );
+        addOutput( "lo", 1 );
         base_init();
     }
 
-    Xilinx_MUXF8_D::Xilinx_MUXF8_D(Target* target) : Xilinx_MUXF8_base(target) {
-        setName("MUXF8_D");
-        addOutput("lo",1);
-        addOutput("o",1);
+    Xilinx_MUXF8_D::Xilinx_MUXF8_D( Target *target ) : Xilinx_MUXF8_base( target ) {
+        setName( "MUXF8_D" );
+        addOutput( "lo", 1 );
+        addOutput( "o", 1 );
         base_init();
     }
 
-    void Xilinx_MUXF8_base::base_init(){
+    void Xilinx_MUXF8_base::base_init() {
         // definition of the source file name, used for info and error reporting using REPORT
-        srcFileName="Xilinx_MUXF8";
-
-        addInput("i0",1);
-        addInput("i1",1);
-        addInput("s",1);
+        srcFileName = "Xilinx_MUXF8";
+        addInput( "i0", 1 );
+        addInput( "i1", 1 );
+        addInput( "s", 1 );
     }
 }//namespace

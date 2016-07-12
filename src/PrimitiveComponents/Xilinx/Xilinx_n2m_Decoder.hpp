@@ -11,11 +11,11 @@ namespace flopoco {
 
 	// new operator class declaration
     class Xilinx_n2m_Decoder : public Operator {
-    public:
+      public:
 		// constructor, defined there with two parameters (default value 0 for each)
-        Xilinx_n2m_Decoder(Target* target, string name, map<int,int> groups, int n=0, int m=0);
+        Xilinx_n2m_Decoder( Target *target, string name, map<int, int> groups, int n = 0, int m = 0 );
 
-        void check_groups(map<int,int> &groups,int& n,int& m);
+        void check_groups( map<int, int> &groups, int &n, int &m );
 		// destructor
         ~Xilinx_n2m_Decoder() {};
 

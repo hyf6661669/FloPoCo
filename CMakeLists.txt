@@ -487,6 +487,9 @@ src/PrimitiveComponents/Xilinx/Xilinx_GenericMux_slice
 src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State
 src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State_slice
 
+# Uni_ks Components ------------------------------------------------------
+src/SAD/SAD
+
 # If you want to add your operator, feel free
 src/UserDefinedOperator
 )

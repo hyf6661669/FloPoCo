@@ -111,6 +111,7 @@ int main(int argc, char* argv[] )
         // Uni Ks - Primitive operators
         Xilinx_Comparator::registerFactory();
         GenericLut_Test::registerFactory();
+        SAD::registerFactory();
 
 		TargetModel::registerFactory();
 		// Uncomment me to play within FloPoCo operator development

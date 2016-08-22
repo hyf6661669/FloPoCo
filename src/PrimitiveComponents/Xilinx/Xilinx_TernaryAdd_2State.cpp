@@ -19,6 +19,7 @@ namespace flopoco {
 
     Xilinx_TernaryAdd_2State::Xilinx_TernaryAdd_2State( Target *target, int wIn, short state, short state2 ) : Operator( target ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
+        UniKs::addUnisimLibrary(this);
         Xilinx_Primitive::checkTargetCompatibility( target );
 
         if( state2 == -1 ) {
@@ -86,6 +87,7 @@ namespace flopoco {
             for( uint i = 0; i < num_slices; ++i ) {
                 if( i == 0 ) {  // FIRST SLICE
                     Xilinx_TernaryAdd_2State_slice *first_slice = new Xilinx_TernaryAdd_2State_slice( target, 4, true, lut_content );
+                    addSubComponent( first_slice );
                     inPortMap( first_slice, "x_in", "x" + range( 3, 0 ) );
                     inPortMap( first_slice, "y_in", "y" + range( 3, 0 ) );
                     inPortMap( first_slice, "z_in", "z" + range( 3, 0 ) );
@@ -98,6 +100,7 @@ namespace flopoco {
                     vhdl << instance( first_slice, join( "slice_", i ) ) << endl;
                 } else if( i == (num_slices - 1) ) { // LAST SLICE
                     Xilinx_TernaryAdd_2State_slice *last_slice = new Xilinx_TernaryAdd_2State_slice( target, wIn - ( 4 * i ), false, lut_content );
+                    addSubComponent( last_slice );
                     inPortMap( last_slice, "x_in", "x" + range( wIn - 1, 4 * i ) );
                     inPortMap( last_slice, "y_in", "y" + range( wIn - 1, 4 * i ) );
                     inPortMap( last_slice, "z_in", "z" + range( wIn - 1, 4 * i ) );
@@ -110,6 +113,7 @@ namespace flopoco {
                     vhdl << instance( last_slice, join( "slice_", i ) ) << endl;
                 } else {
                     Xilinx_TernaryAdd_2State_slice *full_slice = new Xilinx_TernaryAdd_2State_slice( target, 4, false, lut_content );
+                    addSubComponent( full_slice );
                     inPortMap( full_slice, "x_in", "x" + range( ( 4 * i ) + 3, 4 * i ) );
                     inPortMap( full_slice, "y_in", "y" + range( ( 4 * i ) + 3, 4 * i ) );
                     inPortMap( full_slice, "z_in", "z" + range( ( 4 * i ) + 3, 4 * i ) );

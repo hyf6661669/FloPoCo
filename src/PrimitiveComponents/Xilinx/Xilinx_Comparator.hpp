@@ -7,6 +7,7 @@
 
 namespace flopoco {
     class Xilinx_Comparator : public Operator {
+      public:
         enum ComparatorType {
             ComparatorType_lt,
             ComparatorType_gt,
@@ -16,7 +17,7 @@ namespace flopoco {
             ComparatorType_ne,
             ComparatorType_invalid
         };
-      public:
+
         ComparatorType m_type;
 
         Xilinx_Comparator( Target *target, int wIn, ComparatorType type );

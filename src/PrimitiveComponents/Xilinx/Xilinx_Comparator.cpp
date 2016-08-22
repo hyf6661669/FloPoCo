@@ -4,6 +4,7 @@
 namespace flopoco {
     Xilinx_Comparator::Xilinx_Comparator( Target *target, int wIn, ComparatorType type ) : Operator( target ) , m_type( type ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
+        UniKs::addUnisimLibrary(this);
         Xilinx_Primitive::checkTargetCompatibility( target );
         std::stringstream name_str;
         name_str << "Xilinx_Comparator_";
@@ -42,14 +43,13 @@ namespace flopoco {
         setCombinatorial();
         REPORT( DEBUG , "Building" + this->getName() );
         srcFileName = "Xilinx_Comparator";
-        setCombinatorial();
-        addToGlobalOpList( this );
+
         int needed_luts = ( wIn >> 1 );
         int ws_remain = wIn % 2;
         int needed_cc = ( wIn / 8 ) + ( wIn % 8 > 0 ? 1 : 0 );
         addInput( "a", wIn );
         addInput( "b", wIn );
-        addOutput( "o", 1 );
+        addOutput( "o", 1 , 2,false );
         declare( "cc_s", needed_cc * 4 );
         declare( "cc_di", needed_cc * 4 );
         declare( "cc_co", needed_cc * 4 );
@@ -138,7 +138,6 @@ namespace flopoco {
 
         for( int i = 0; i < needed_cc; i++ ) {
             Xilinx_CARRY4 *cur_cc = new Xilinx_CARRY4( target );
-
             if( i == 0 ) {
                 inPortMapCst( cur_cc, "cyinit", ( c_init ? "'1'" : "'0'" ) );
                 inPortMapCst( cur_cc, "ci", "'0'" );
@@ -149,13 +148,13 @@ namespace flopoco {
 
             inPortMap( cur_cc, "di", "cc_di" + range( i * 4 + 3, i * 4 ) );
             inPortMap( cur_cc, "s", "cc_s" + range( i * 4 + 3, i * 4 ) );
-            outPortMap( cur_cc, "co", "cc_co" + range( i * 4 + 3, i * 4 ) );
+            outPortMap( cur_cc, "co", "cc_co" + range( i * 4 + 3, i * 4 ),false );
             stringstream cc_name;
             cc_name << "cc_" << i;
             vhdl << cur_cc->primitiveInstance( cc_name.str() );
         }
 
-        vhdl << tab << "o <= cc_co" << of( needed_luts + ( ws_remain ? 1 : 0 ) - 1 ) << std::endl;
+        vhdl << tab << "o <= cc_co" << of( needed_luts + ( ws_remain ? 1 : 0 ) - 1 ) << ";" << std::endl;
     }
 
     void Xilinx_Comparator::emulate( TestCase *tc ) {

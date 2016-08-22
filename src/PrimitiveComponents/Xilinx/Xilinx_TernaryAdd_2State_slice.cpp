@@ -18,21 +18,22 @@ namespace flopoco {
 
     Xilinx_TernaryAdd_2State_slice::Xilinx_TernaryAdd_2State_slice( Target *target, const uint &wIn , const bool &is_initial , const std::string &lut_content ) : Operator( target ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
+        UniKs::addUnisimLibrary(this);
         Xilinx_Primitive::checkTargetCompatibility( target );
         setName( "Xilinx_TernaryAdd_2State_slice_s" + std::to_string( wIn ) + ( is_initial ? "_init" : "" ) );
         srcFileName = "Xilinx_TernaryAdd_2State_slice";
         //addToGlobalOpList( this );
         setCombinatorial();
         addInput( "sel_in" );
-        addInput( "x_in", wIn );
-        addInput( "y_in", wIn );
-        addInput( "z_in", wIn );
-        addInput( "bbus_in", wIn );
+        addInput( "x_in", wIn , (wIn>1));
+        addInput( "y_in", wIn , (wIn>1));
+        addInput( "z_in", wIn , (wIn>1));
+        addInput( "bbus_in", wIn , (wIn>1));
         addInput( "carry_in" );
         addOutput( "carry_out" );
-        addOutput( "bbus_out", wIn );
-        addOutput( "sum_out", wIn );
-        declare( "lut_o6", wIn );
+        addOutput( "bbus_out", wIn ,1, (wIn>1));
+        addOutput( "sum_out", wIn ,1, (wIn>1));
+        declare( "lut_o6", wIn , (wIn>1));
         declare( "cc_di", 4 );
         declare( "cc_s", 4 );
         declare( "cc_o", 4 );

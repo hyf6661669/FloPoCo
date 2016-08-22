@@ -31,7 +31,7 @@ namespace flopoco {
         GenericMux_SLICE_VARIANT slice_variant;
 
         if( muxWidth <= 2 ) {
-            addInput( "s_in", 1 );
+            addInput( "s_in" );
             bit_per_slice = 8;
             build_width = 2;
             slice_variant = GenericMux_SLICE_2;
@@ -70,18 +70,19 @@ namespace flopoco {
 
         for( int i = 0; i < wIn; i++ ) {
             for( int j = 0; j < muxWidth - 1; j++ )
-                vhdl << tab << "mux_connector" << of( i * build_width + j ) << " <= " << join( "x", j, "_in" ) << of( i ) << std::endl;
+                vhdl << tab << "mux_connector" << of( i * build_width + j ) << " <= " << join( "x", j, "_in" ) << of( i ) << ";" << std::endl;
 
             if( muxWidth == build_width )
-                vhdl << tab << "mux_connector" << of( i * build_width + muxWidth - 1 ) << " <= " << join( "x", muxWidth - 1, "_in" ) << of( i ) << std::endl;
+                vhdl << tab << "mux_connector" << of( i * build_width + muxWidth - 1 ) << " <= " << join( "x", muxWidth - 1, "_in" ) << of( i ) << ";" << std::endl;
             else {
                 for( int f = muxWidth - 1; f < build_width; f++ )
-                    vhdl << tab << "mux_connector" << of( i * build_width + f ) << " <= " << join( "x", muxWidth - 1, "_in" ) << of( i ) << std::endl;
+                    vhdl << tab << "mux_connector" << of( i * build_width + f ) << " <= " << join( "x", muxWidth - 1, "_in" ) << of( i ) << ";" << std::endl;
             }
         }
 
         for( int i = 0; i < num_full_slices; i++ ) {
             Xilinx_GenericMux_slice *slice = new Xilinx_GenericMux_slice( target, slice_variant, bit_per_slice );
+            addSubComponent(slice);
             inPortMap( slice, "m_in", "mux_connector" + range( ( i + 1 ) * 16 - 1, i * 16 ) );
             inPortMap( slice, "s_in", "s_in" );
             outPortMap( slice, "m_out", "x_out" + range( ( i + 1 )*bit_per_slice - 1, i * bit_per_slice ), false );
@@ -92,6 +93,7 @@ namespace flopoco {
 
         if( bits_remaining > 0 ) {
             Xilinx_GenericMux_slice *part_slice = new Xilinx_GenericMux_slice( target, slice_variant, bits_remaining );
+            addSubComponent(part_slice);
             inPortMap( part_slice, "m_in", "mux_connector" + range( ( num_full_slices ) * 16 + build_width * bits_remaining - 1, num_full_slices * 16 ) );
             inPortMap( part_slice, "s_in", "s_in" );
             outPortMap( part_slice, "m_out", "x_out" + range( ( num_full_slices * bit_per_slice ) + bits_remaining - 1, ( num_full_slices * bit_per_slice ) ), false );

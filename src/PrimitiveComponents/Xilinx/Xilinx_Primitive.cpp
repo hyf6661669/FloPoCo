@@ -43,6 +43,7 @@ namespace flopoco {
     }
 
     void Xilinx_Primitive::outputVHDL( ostream &o, string name ) {
+
         o << "library UNISIM;";
         o << "use UNISIM.Vcomponents.all;";
     }
@@ -91,11 +92,13 @@ namespace flopoco {
             };
         }
 
-        for ( it = op->getPortMap().begin()  ; it != op->getPortMap().end(); it++ ) {
+        map<string, string> portmap = op->getPortMap();
+        for ( it = portmap.begin()  ; it != portmap.end(); ++it ) {
             bool outputSignal = false;
-
+            const string port_name = ( *it ).first;
             for ( int k = 0; k < int( op->getIOList()->size() ); k++ ) {
-                if ( ( op->getIOList()->at( k )->type() == Signal::out ) && ( op->getIOList()->at( k )->getName() == ( *it ).first ) ) {
+                const string io_name = op->getIOList()->at( k )->getName();
+                if ( ( op->getIOList()->at( k )->type() == Signal::out ) && (io_name  == port_name ) ) {
                     outputSignal = true;
                 }
             }
@@ -107,7 +110,7 @@ namespace flopoco {
                 vhdl.disableParsing( true );
             }
 
-            if ( it != op->getPortMap().begin() || op->isSequential() ) {
+            if ( it != portmap.begin() || op->isSequential() ) {
                 o << "," << endl <<  tab << tab << "           ";
             }
 
@@ -162,27 +165,43 @@ namespace flopoco {
     string UniKs::getAuthorsString( const int &authors ) {
         std::stringstream out;
         out << std::endl;
-        out << "-- >> University of Kassel" << std::endl;
+        out << "-- >> University of Kassel, Germany" << std::endl;
         out << "-- >> Digital Technology Group" << std::endl;
         out << "-- >> Author(s):" << endl;
-
+        bool needs_newline = false;
         if( authors & AUTHOR_MKUMM ) {
             out << "-- >> Martin Kumm <kumm@uni-kassel.de>";
+            needs_newline = true;
         }
 
         if( authors & AUTHOR_KMOELLER ) {
+            if( needs_newline ) out << std::endl;
             out << "-- >> Konrad Möller <konrad.moeller@uni-kassel.de>";
+            needs_newline = true;
         }
 
         if( authors & AUTHOR_JKAPPAUF ) {
+            if( needs_newline ) out << std::endl;
             out << "-- >> Johannes Kappauf <uk009669@student.uni-kassel.de>";
+            needs_newline = true;
         }
 
         if( authors & AUTHOR_MKLEINLEIN ) {
+            if( needs_newline ) out << std::endl;
             out << "-- >> Marco Kleinlein <kleinlein@uni-kassel.de>";
+            needs_newline = true;
         }
 
         return out.str();
+    }
+
+    void UniKs::addUnisimLibrary(OperatorPtr op){
+        std::stringstream o;
+        o << op->getCopyrightString() << std::endl;
+        o << "--------------------------------------------------------------------------------" << std::endl;
+        o << "library UNISIM;" << std::endl;
+        o << "use UNISIM.Vcomponents.all;";
+        op->setCopyrightString( o.str() );
     }
 
 }//namespace

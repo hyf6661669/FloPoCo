@@ -21,11 +21,11 @@ using namespace std;
 namespace flopoco {
     Xilinx_GenericMux_slice::Xilinx_GenericMux_slice( Target *target, GenericMux_SLICE_VARIANT variant, int wIn ) : Operator( target ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
+        UniKs::addUnisimLibrary(this);
         Xilinx_Primitive::checkTargetCompatibility( target );
         setCombinatorial();
         stringstream namestr;
         namestr << "Xilinx_GenericMux";
-		setCombinatorial();
 
         switch( variant ) {
         case GenericMux_SLICE_2:
@@ -47,7 +47,7 @@ namespace flopoco {
 
         namestr << "_slice_" << wIn;
         setName( namestr.str() );
-        addToGlobalOpList( this );
+
         srcFileName = "Xilinx_GenericMux_slice";
         addOutput( "m_out", wIn );
 
@@ -69,7 +69,7 @@ namespace flopoco {
             REPORT( DEBUG, "LUT_TABLE" + lut_content.truth_table() );
             addConstant( "current_lut_init", "bit_vector", lut_content.get_hex() );
             addInput( "m_in", wIn * 2 );
-            addInput( "s_in", 1 );
+            addInput( "s_in" );
 
             for( int i = 0; i < ( wIn - ( wIn % 2 ) ) / 2; i++ ) {
                 Xilinx_LUT6_2 *luts = new Xilinx_LUT6_2( target );
@@ -80,8 +80,8 @@ namespace flopoco {
                 inPortMap( luts, join( "i", 3 ), "m_in" + of( 4 * i + 3 ) );
                 inPortMap( luts, join( "i", 4 ), "s_in" );
                 inPortMapCst( luts, join( "i", 5 ), "'1'" );
-                outPortMap( luts, "o5", join( "m_out", 2 * i ), false );
-                outPortMap( luts, "o6", join( "m_out", 2 * i + 1 ), false  );
+                outPortMap( luts, "o5", "m_out" + of(2 * i), false );
+                outPortMap( luts, "o6", "m_out" + of(2 * i + 1), false  );
                 stringstream lutname;
                 lutname << "full_lut" << i;
                 vhdl << luts->primitiveInstance( lutname.str() );
@@ -96,7 +96,7 @@ namespace flopoco {
                 inPortMapCst( hluts, join( "i", 3 ), "'0'" );
                 inPortMap( hluts, join( "i", 4 ), "s_in" );
                 inPortMapCst( hluts, join( "i", 5 ), "'1'" );
-                outPortMap( hluts, "o5", join( "m_out", wIn - 1 ) , false );
+                outPortMap( hluts, "o5", "m_out" + of( wIn - 1 ) , false );
                 vhdl << hluts->primitiveInstance( "half_lut" );
             }
         } else {
@@ -123,7 +123,7 @@ namespace flopoco {
                     inPortMap( luts, join( "i", 3 ), "m_in" + of( 4 * i + 3 ) );
                     inPortMap( luts, join( "i", 4 ), "s_in" + of( 0 ) );
                     inPortMap( luts, join( "i", 5 ), "s_in" + of( 1 ) );
-                    outPortMap( luts, "o", join( "m_out", i ), false  );
+                    outPortMap( luts, "o",  "m_out" + of( i ), false  );
                     stringstream lutname;
                     lutname << "full_lut" << i;
                     vhdl << luts->primitiveInstance( lutname.str() );

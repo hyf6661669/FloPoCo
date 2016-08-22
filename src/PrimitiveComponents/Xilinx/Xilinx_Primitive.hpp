@@ -17,6 +17,10 @@ namespace flopoco {
         };
 
         static std::string getAuthorsString( const int &authors );
+
+
+        // this is bad and i should feel bad
+        static void addUnisimLibrary( OperatorPtr op );
     };
 
     // new operator class declaration

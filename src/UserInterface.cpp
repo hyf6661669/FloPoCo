@@ -165,7 +165,7 @@ namespace flopoco
 	vector<pair<string,OperatorFactoryPtr>> UserInterface::factoryList;
 
 	vector<OperatorPtr>  UserInterface::globalOpList;  /**< Level-0 operators. Each of these can have sub-operators */
-
+    vector<OperatorPtr>  UserInterface::knownOpList;
 
 	// This should be obsoleted soon. It is there only because random_main needs it
 	void addOperator(OperatorPtr op) {
@@ -197,24 +197,32 @@ namespace flopoco
 	void UserInterface::outputVHDLToFile(vector<OperatorPtr> oplist, ofstream& file){
 		string srcFileName = "Operator.cpp"; // for REPORT
 		for(auto i: oplist) {
-			try {
-				REPORT(DETAILED, "outputVHDLToFile for  " << i->getName());
-				REPORT(FULL, "  DECLARE LIST" << printMapContent(i->getDeclareTable()));
-				REPORT(FULL, "  USE LIST" << printVectorContent(  (i->getFlopocoVHDLStream())->getUseTable()) );
+            try {
+                // VHDL doesn't allow multiple entities with same name
+                // we can assume that they are the same operator, so it's sufficient to build them once
+                if( !isOperatorKnown(i) ){
+                    REPORT(DETAILED, "outputVHDLToFile for  " << i->getName());
+                    REPORT(FULL, "  DECLARE LIST" << printMapContent(i->getDeclareTable()));
+                    REPORT(FULL, "  USE LIST" << printVectorContent(  (i->getFlopocoVHDLStream())->getUseTable()) );
 
-				// check for subcomponents
-				if (! i->getSubComponents().empty() ){
-					//recursively call to print subcomponent
-					outputVHDLToFile(i->getSubComponents(), file);
-				}
-				i->getFlopocoVHDLStream()->flush();
+                    // check for subcomponents
+                    if (! i->getSubComponents().empty() ){
+                        //recursively call to print subcomponent
+                        outputVHDLToFile(i->getSubComponents(), file);
+                    }
+                    i->getFlopocoVHDLStream()->flush();
 
-				/* second parse is only for sequential operators */
-				if (i->isSequential()){
-					REPORT (FULL, "  2nd PASS");
-					i->parse2();
-				}
-				i->outputVHDL(file);
+                    /* second parse is only for sequential operators */
+
+                    if (i->isSequential()){
+                        REPORT (FULL, "  2nd PASS");
+                        i->parse2();
+                    }
+                    i->outputVHDL(file);
+                    setOperatorKnown(i);
+                }else{
+                    REPORT(DETAILED, "skipped outputVHDLToFile for  " << i->getName() << " as it is already known");
+                }
 
 			} catch (std::string s) {
 					cerr << "Exception while generating '" << i->getName() << "': " << s <<endl;
@@ -619,6 +627,7 @@ namespace flopoco
 		s << "  " << COLOR_BOLD << "hardMultThreshold" << COLOR_NORMAL << "=<float>: unused hard mult threshold (O..1, default 0.7) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "generateFigures" << COLOR_NORMAL << "=<0|1>:generate SVG graphics (default off) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL << endl;
 		s << "  " << COLOR_BOLD << "verbose" << COLOR_NORMAL << "=<int>:        verbosity level (0-4, default=1)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+        s << "  " << COLOR_BOLD << "useTargetSpecificOptimization" << COLOR_NORMAL << "=<0|1>:        use target specific optimizations" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "compression" << COLOR_NORMAL << "=<heuristic1,heuristic2,heuristic3,optimal,optimalMinStages>:        compression method (default=heuristic3)" << COLOR_RED_NORMAL << "(sticky option?)" << COLOR_NORMAL<<endl;
 		s << "     heuristic1:Original FloPoCo heuristic, heuristic2:Heuristic of Parandeh-Afshar, heuristic3:Improved heuristic, optimal:Optimal ILP-based, optimalMinStages:Optimal ILP with minimal number of stages"<<endl;
 		s << "Sticky options apply to the rest of the command line, unless changed again" <<endl;
@@ -956,19 +965,32 @@ namespace flopoco
 		cout << "\t\tmv flopoco_autocomplete ~/.bash_completion.d/flopoco" << endl << endl;
 		cout << "and then add the following line to your .bashrc :"<< endl << endl;
 		cout << "\t\t. ~/.bash_completion.d/flopoco" << endl;
-	}
+    }
+
+    bool UserInterface::isOperatorKnown(OperatorPtr op){
+        for( auto knownOp : knownOpList ){
+            if ( op->getName() == knownOp->getName() ){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void UserInterface::setOperatorKnown(OperatorPtr op){
+        knownOpList.push_back(op);
+    }
 
 
 
 
 
-	////////////////// Operator factory /////////////////////////
-	// Currently very rudimentary
+    ////////////////// Operator factory /////////////////////////
+    // Currently very rudimentary
 
-	string OperatorFactory::getFullDoc(){
-		ostringstream s;
-		s <<COLOR_BOLD_RED_NORMAL << name() << COLOR_NORMAL <<": " << m_description << endl;
-		for (unsigned i=0; i<m_paramNames.size(); i++) {
+    string OperatorFactory::getFullDoc(){
+        ostringstream s;
+        s <<COLOR_BOLD_RED_NORMAL << name() << COLOR_NORMAL <<": " << m_description << endl;
+        for (unsigned i=0; i<m_paramNames.size(); i++) {
 			string pname = m_paramNames[i];
 			s << "  " << ("" != m_paramDefault[pname]?COLOR_BOLD_BLUE_NORMAL:COLOR_BOLD) << pname <<COLOR_NORMAL<< " (" << m_paramType[pname] << "): " << m_paramDoc[pname] << "  ";
 			if("" != m_paramDefault[pname])

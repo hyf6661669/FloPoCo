@@ -95,7 +95,12 @@ namespace flopoco
 
 		/** generates the code for operators in globalOpList, and all their subcomponents */
 		static void outputVHDLToFile(ofstream& file);
-		
+
+        /** checks if the operator is already built and part of the known list */
+        static bool isOperatorKnown( OperatorPtr op );
+
+        /** adds the operator to the known list */
+        static void setOperatorKnown( OperatorPtr op );
 
 	private:
 		/** register a factory */
@@ -111,13 +116,15 @@ namespace flopoco
 
 		/** Build flopoco bash autocompletion file **/
 		static void buildAutocomplete();
+
 		
 	public:
 		static vector<OperatorPtr>  globalOpList;  /**< Level-0 operators. Each of these can have sub-operators */
+        static vector<OperatorPtr>  knownOpList;   /**< Known operators. Every operator that has been built is stored here */
 		static int    verbose;
         static string compression;
         static bool   useTargetSpecificOptimization;
-	private:
+    private:
 		static string outputFileName;
 		static string entityName;
 		static string targetFPGA;

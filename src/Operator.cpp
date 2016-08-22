@@ -22,7 +22,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/uniform_int.hpp>
-
+#include <set>
 
 namespace flopoco{
 
@@ -93,14 +93,16 @@ namespace flopoco{
 		UserInterface::addToGlobalOpList(op);
 	}
 
-	void Operator::addSubComponent(OperatorPtr op) {
-		subComponents_.push_back(op);
+    void Operator::addSubComponent(OperatorPtr op) {
+        if( NULL == getSubComponent( op->getName() ) )  // Just add it, if it's not already there
+            subComponents_.push_back(op);
 		// In newPipeline, we deprecate this function and replace it with the following message.
 		// REPORT(INFO, "addSubComponent() is deprecated, instance() does it automatically. Remove it from the source code to get rid of this annoying message.");
 	}
 
 
 	void Operator::addVirtualSubComponent(OperatorPtr op) {
+
 		virtualSubComponents_.push_back(op);
 	}
 
@@ -1347,9 +1349,9 @@ namespace flopoco{
 	}
 
 
-	string Operator::buildVHDLComponentDeclarations() {
+    string Operator::buildVHDLComponentDeclarations() {
 		ostringstream o;
-		for(auto op: subComponents_) {
+        for(auto op: subComponents_) {
 			op->outputVHDLComponent(o);
 			o<< endl;
 		}

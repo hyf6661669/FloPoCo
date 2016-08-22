@@ -1126,6 +1126,11 @@ namespace flopoco{
 		string name;
 		e  << srcFileName << " (" << uniqueName_ << "): ERROR in inPortMap() for entity " << op->getName() << ","; // just in case
 
+        string range_part;
+        if( actualSignalName.find("(")!=string::npos ){
+            range_part = actualSignalName.substr(actualSignalName.find("("));
+            actualSignalName = actualSignalName.substr(0,actualSignalName.find("("));
+        }
 		if(isSequential()) {
 			Signal *s;
 			try {
@@ -1166,7 +1171,7 @@ namespace flopoco{
 		}
 
 		// add the mapping to the mapping list of Op
-		op->portMap_[componentPortName] = name;
+        op->portMap_[componentPortName] = name + range_part;
 	}
 
 

@@ -12,7 +12,7 @@
 #include "IntAdderTree.hpp"
 #include "BitHeap/BitHeap.hpp"
 #include "IntAddSubCmp/TargetOptCompressor.hpp"
-//#include "PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State.hpp"
+#include "PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State.hpp"
 
 using namespace std;
 namespace flopoco {
@@ -39,7 +39,7 @@ namespace flopoco {
 
 		// definition of the name of the operator
 		ostringstream name;
-		name << "IntAdderTree_" << wIn_ << "_" << noOfInputs_;
+        name << "IntAdderTree_" << method << "_" << wIn_ << "_" << noOfInputs_;
 		setName(name.str());
 		// Copyright 
 		setCopyrightString("ACME and Co 2010");
@@ -114,55 +114,64 @@ namespace flopoco {
 
 			vhdl << tab << "Y <= X_" << s << "_1;" << endl;
 		}
-/*
-		else if(method.compare("add3") == 0)
-		{
-			for(int i=0; i < noOfInputs; i++)
-			{
-				vhdl << tab << declare(join("X_0_",i+1),wIn) << " <= " << join("X",i+1) << ";" << endl;
-			}
-			int inputsAtStage = noOfInputs;
+        else if(method.compare("add3") == 0 )
+        {
+            if( !UserInterface::useTargetSpecificOptimization ){
+                THROWERROR( "This component can't be used without target specific optimization." )
+            }
 
-			int s=0;
-			int wordSizeInStage = wIn;
-			while(inputsAtStage > 1)
-			{
-				int j=1;
-				for(int i=0; i < inputsAtStage; i+=3)
-				{
-					if(i < inputsAtStage-2)
-					{
-						Xilinx_TernaryAdd_2State* add3 = new Xilinx_TernaryAdd_2State(target,wIn+2*(s+1),0,-1);
-						addSubComponent(add3);
+            for(int i=0; i < noOfInputs; i++){
+                vhdl << tab << declare(join("X_0_",i+1),wIn ) << " <= " << join("X",i+1) << ";" << endl;
+            }
+            int inputsAtStage = noOfInputs;
 
-						inPortMap( add3,"x_i",join("X_",s,"_",i+1) );
-						inPortMap( add3,"y_i",join("X_",s,"_",i+2) );
-						inPortMap( add3,"z_i",join("X_",s,"_",i+3) );
-						outPortMap(add3,"sum_o", join("X_",s+1,"_",j++) );
-						vhdl << instance(add3,join("add3_",s,"_",i)) << std::endl;
-					}
-					else if(i < inputsAtStage-1)
-					{
-						vhdl << tab << declare(join("X_",s+1,"_",j++),wIn+2*(s+1)) 
-						<< " <= std_logic_vector(unsigned(\"00\" & " << join("X_",s,"_",i+1) 
-						<< ") + unsigned(\"00\" & " << join("X_",s,"_",i+2) << "));" << endl;
-					}
-					else
-					{
-						vhdl << tab << declare(join("X_",s+1,"_",j++),wIn+2*(s+1)) << " <= \"00\" & " << join("X_",s,"_",i+1) << ";" << endl;
-					}
-				}
-				inputsAtStage = ceil(inputsAtStage/3.0);
-				s++;
-				wordSizeInStage += 2;
-				nextCycle();
-			}
+            int s=0;
+            int wordSizeInStage = wIn;
+            while(inputsAtStage > 1)
+            {
+                int j=1;
+                for(int i=0; i < inputsAtStage; i+=3)
+                {
+                    if(i < inputsAtStage-2)
+                    {
+                        Xilinx_TernaryAdd_2State* add3 = new Xilinx_TernaryAdd_2State(target,wIn+2*(s+1),0,-1);
+                        addSubComponent(add3);
+                        if( 0 == s ){
+                            vhdl << tab << declare(join("X_0_",i+1,"t"),wIn+2 ) << " <= \"00\" & " << join("X_0_",i+1) << ";" << endl;
+                            vhdl << tab << declare(join("X_0_",i+2,"t"),wIn+2 ) << " <= \"00\" & " << join("X_0_",i+2) << ";" << endl;
+                            vhdl << tab << declare(join("X_0_",i+3,"t"),wIn+2 ) << " <= \"00\" & " << join("X_0_",i+3) << ";" << endl;
+                            inPortMap( add3,"x_i",join("X_",s,"_",i+1,"t") );
+                            inPortMap( add3,"y_i",join("X_",s,"_",i+2,"t") );
+                            inPortMap( add3,"z_i",join("X_",s,"_",i+3,"t") );
+                        }else{
+                            inPortMap( add3,"x_i",join("X_",s,"_",i+1) );
+                            inPortMap( add3,"y_i",join("X_",s,"_",i+2) );
+                            inPortMap( add3,"z_i",join("X_",s,"_",i+3) );
+                        }
+                        outPortMap(add3,"sum_o", join("X_",s+1,"_",j++) );
+                        vhdl << instance(add3,join("add3_",s,"_",i)) << std::endl;
+                    }
+                    else if(i < inputsAtStage-1)
+                    {
+                        vhdl << tab << declare(join("X_",s+1,"_",j++),wIn+2*(s+1))
+                        << " <= std_logic_vector(unsigned(\"00\" & " << join("X_",s,"_",i+1)
+                        << ") + unsigned(\"00\" & " << join("X_",s,"_",i+2) << "));" << endl;
+                    }
+                    else
+                    {
+                        vhdl << tab << declare(join("X_",s+1,"_",j++),wIn+2*(s+1)) << " <= \"00\" & " << join("X_",s,"_",i+1) << ";" << endl;
+                    }
+                }
+                inputsAtStage = ceil(inputsAtStage/3.0);
+                s++;
+                wordSizeInStage += 2;
+                nextCycle();
+            }
 
-			addOutput("Y" , wIn+2*s); //currently, this is a worst-case estimate, so some of the MSBs are optimized during synthesis as they are zero
+            addOutput("Y" , wIn+2*s); //currently, this is a worst-case estimate, so some of the MSBs are optimized during synthesis as they are zero
 
-			vhdl << tab << "Y <= X_" << s << "_1;" << endl;
-		}
-*/
+            vhdl << tab << "Y <= X_" << s << "_1;" << endl;
+        }
 		else
 		{
 			THROWERROR("method " << method << " unknown!");

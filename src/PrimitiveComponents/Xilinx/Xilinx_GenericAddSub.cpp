@@ -74,8 +74,8 @@ namespace flopoco {
         declare( "y", effective_ws );
         declare( "neg_x", 1 , false );
         declare( "neg_y", 1 , false );
-        vhdl << tab << "x" << range( effective_ws - 1, 1 ) << " <= x_i;" << std::endl;
-        vhdl << tab << "y" << range( effective_ws - 1, 1 ) << " <= y_i;" << std::endl;
+        vhdl << tab << "x"  << " <= x_i & '0';" << std::endl;
+        vhdl << tab << "y"  << " <= y_i & '0';" << std::endl;
         vhdl << tab << "neg_x <= neg_x_i;" << std::endl;
         vhdl << tab << "neg_y <= neg_y_i;" << std::endl;
         int i = 0;
@@ -153,8 +153,8 @@ namespace flopoco {
         declare( "neg_x", 1 , false );
         declare( "neg_y", 1 , false );
         declare( "bbus", wIn + 1 );
-        vhdl << tab << "x" << range( effective_ws - 1, 0 ) << " <= x_i;" << std::endl;
-        vhdl << tab << "y" << range( effective_ws - 1, 0 ) << " <= y_i;" << std::endl;
+        vhdl << tab << "x" << " <= x_i;" << std::endl;
+        vhdl << tab << "y" << " <= y_i;" << std::endl;
         vhdl << tab << "neg_x <= neg_x_i;" << std::endl;
         vhdl << tab << "neg_y <= neg_y_i;" << std::endl;
         vhdl << tab << "bbus" << of( 0 ) << " <= '0';" << std::endl;
@@ -232,8 +232,8 @@ namespace flopoco {
         declare( "sum_t", effective_ws );
         declare( "x", effective_ws );
         declare( "y", effective_ws );
-        vhdl << tab << "x" << range( effective_ws - 1 , 0 ) << " <= x_i;" << std::endl;
-        vhdl << tab << "y" << range( effective_ws - 1, 0 ) << " <= y_i;" << std::endl;
+        vhdl << tab << "x" << " <= x_i;" << std::endl;
+        vhdl << tab << "y" << " <= y_i;" << std::endl;
         std::string neg_x, neg_y;
 
         if( fixed_signs != 3 ) {

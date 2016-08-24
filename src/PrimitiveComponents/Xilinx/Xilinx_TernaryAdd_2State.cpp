@@ -54,7 +54,7 @@ namespace flopoco {
         declare( "x", wIn );
         declare( "y", wIn );
         declare( "z", wIn );
-        declare( "bbus", wIn );
+        declare( "bbus", wIn + 1 );
         declare( "carry_cct" );
         declare( "carry", num_slices );
 
@@ -66,7 +66,6 @@ namespace flopoco {
         vhdl << tab << "x <= x_i;" << std::endl;
         vhdl << tab << "y <= y_i;" << std::endl;
         vhdl << tab << "z <= z_i;" << std::endl;
-        vhdl << "single_slice: if num_slices = 1 generate";
 
         if( num_slices == 1 ) {
             Xilinx_TernaryAdd_2State_slice *single_slice = new Xilinx_TernaryAdd_2State_slice( target, wIn, true, lut_content );

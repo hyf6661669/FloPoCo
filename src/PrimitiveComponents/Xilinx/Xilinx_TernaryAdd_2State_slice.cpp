@@ -87,7 +87,7 @@ namespace flopoco {
         }
 
         vhdl << tab << "carry_out	<= cc_co" << of( wIn - 1 ) << ";" << std::endl;
-        vhdl << tab << "sum_out <= cc_o" << range( wIn, 0 ) << ";" << std::endl;
+        vhdl << tab << "sum_out <= cc_o" << range( wIn-1, 0 ) << ";" << std::endl;
 	};
 
 }//namespace

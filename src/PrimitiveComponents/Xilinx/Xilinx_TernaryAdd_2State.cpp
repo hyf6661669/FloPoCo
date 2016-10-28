@@ -118,7 +118,7 @@ namespace flopoco {
                     inPortMap( full_slice, "z_in", "z" + range( ( 4 * i ) + 3, 4 * i ) );
                     inPortMap( full_slice, "sel_in", "sel_i" );
                     inPortMap( full_slice, "bbus_in", "bbus" + range( ( 4 * i ) + 3, 4 * i ) );
-                    inPortMap( full_slice, "carry_in", "carry" + of( i + 1 ) );
+                    inPortMap( full_slice, "carry_in", "carry" + of( i - 1 ) );
                     outPortMap( full_slice, "bbus_out", "bbus" + range( ( 4 * i ) + 4, 4 * i + 1 ), false );
                     outPortMap( full_slice, "carry_out", "carry" + of( i ), false );
                     outPortMap( full_slice, "sum_out", "sum_o" + range( ( 4 * i ) + 3, 4 * i ), false );

@@ -17,7 +17,7 @@ namespace flopoco {
         : Operator( target ),
           wordsize( wIn ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKUMM | UniKs::AUTHOR_MKLEINLEIN ) );
-        UniKs::addUnisimLibrary( this );
+
         total_dimension = dimension_x * ( dimension_y > 0 ? dimension_y : dimension_x );
         srcFileName = "SAD";
         ostringstream name;

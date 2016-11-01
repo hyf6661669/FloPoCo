@@ -72,12 +72,12 @@ FIND_LIBRARY(PYTHON_LIB
 
 
 # Detect Sollya's presence
-FIND_LIBRARY( SOLLYA_LIB sollya )
+FIND_LIBRARY( SOLLYA_LIB sollya REQUIRED )
 
 IF (SOLLYA_LIB)
 	MESSAGE(STATUS "Found Sollya: ${SOLLYA_LIB}")
 ELSE (SOLLYA_LIB)
-        MESSAGE(WARNING "Sollya not found")
+        MESSAGE(FATAL_ERROR "Sollya not found")
 ENDIF (SOLLYA_LIB)
 
 IF ( PYTHON_LIB )
@@ -187,11 +187,21 @@ ELSE (SCIP_FOUND)
 	MESSAGE(STATUS "SCIP MILP optimizer not found (or supporting libraries missing), no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
 ENDIF (SCIP_FOUND)
 
+
+# Detect pag_suite
+
+SET(PagSuite_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+FIND_PACKAGE(PagSuite)
+
+IF( PAGSUITE_FOUND )
+	ADD_DEFINITIONS(-DHAVE_PAGLIB)
+ELSE(PAGSUITE_FOUND)
+	Message( "Could not find PagSuite. All related Operators will not be build." )
+ENDIF( PAGSUITE_FOUND ) 
 #Uni KS stop
 
 ADD_DEFINITIONS(-DHAVE_LNS)
 
-#
 # Create custom command for flex++/lex (note the outputs)
 FIND_PROGRAM(FLEXPP_EXECUTABLE
 	NAMES flex
@@ -259,6 +269,17 @@ ADD_CUSTOM_COMMAND(
 	)
 
 SET_SOURCE_FILES_PROPERTIES(ExpressionScanner GENERATED)
+
+IF( PAGSUITE_FOUND )
+	SET( PAGSUITE_DEP_SOURCES 
+		src/ConstMultPAG/ConstMultPAG
+		src/ConstMultPAG/ConstMultPAG_types
+	)
+ELSE( PAGSUITE_FOUND )
+	SET( PAGSUITE_DEP_SOURCES 
+	)
+ENDIF( PAGSUITE_FOUND )
+
 
 
 ADD_LIBRARY(FloPoCoLib STATIC
@@ -468,6 +489,9 @@ src/ExpLog/FPPow
 # Primitive Components ----------------------------------------------
 src/PrimitiveComponents/bool_eq
 src/PrimitiveComponents/GenericLut
+src/PrimitiveComponents/Primitive
+src/PrimitiveComponents/GenericAddSub
+src/PrimitiveComponents/GenericMux
 src/PrimitiveComponents/Tests/GenericLut_Test
 
 src/PrimitiveComponents/Xilinx/Xilinx_Primitive
@@ -487,8 +511,11 @@ src/PrimitiveComponents/Xilinx/Xilinx_GenericMux_slice
 src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State
 src/PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State_slice
 
+src/PrimitiveComponents/Altera/Altera_LCELL
+
 # Uni_ks Components ------------------------------------------------------
 src/SAD/SAD
+${PAGSUITE_DEP_SOURCES}
 
 # If you want to add your operator, feel free
 src/UserDefinedOperator
@@ -528,6 +555,13 @@ TARGET_LINK_LIBRARIES(
   ${WCPG_LIB}
   )
 ENDIF (WCPG_FOUND)
+
+IF(PAGSUITE_FOUND)
+TARGET_LINK_LIBRARIES(
+	FloPoCoLib
+	${PAGSUITE_LIBRARIES}
+)
+ENDIF(PAGSUITE_FOUND)
 
 
 ADD_EXECUTABLE(flopoco

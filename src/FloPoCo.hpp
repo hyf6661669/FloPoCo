@@ -161,6 +161,8 @@
 #include "PrimitiveComponents/GenericLut.hpp"
 #include "PrimitiveComponents/Tests/GenericLut_Test.hpp"
 #include "PrimitiveComponents/Xilinx/Xilinx_Comparator.hpp"
+#include "PrimitiveComponents/Xilinx/Xilinx_GenericAddSub.hpp"
+#include "PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State.hpp"
 #include "SAD/SAD.hpp"
 
 /* misc ------------------------------------------------------ */

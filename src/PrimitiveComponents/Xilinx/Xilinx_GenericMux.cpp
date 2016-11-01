@@ -20,7 +20,7 @@ namespace flopoco {
           wordsize( wIn ),
           width( muxWidth ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
-        Xilinx_Primitive::checkTargetCompatibility( target );
+
         srcFileName = "Xilinx_GenericMux";
         stringstream namestr;
         namestr << "Xilinx_GenericMux_" << muxWidth << "_w" << wIn;

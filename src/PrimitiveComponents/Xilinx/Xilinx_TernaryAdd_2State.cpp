@@ -17,25 +17,23 @@
 using namespace std;
 namespace flopoco {
 
-    Xilinx_TernaryAdd_2State::Xilinx_TernaryAdd_2State( Target *target, int wIn, short state, short state2 ) : Operator( target ) {
+    Xilinx_TernaryAdd_2State::Xilinx_TernaryAdd_2State( Target *target,const int &wIn,const short &state,const short &state2 )
+        : Operator( target ), wIn_(wIn), state_(state),state2_(state2) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
-        UniKs::addUnisimLibrary(this);
-        Xilinx_Primitive::checkTargetCompatibility( target );
-
-        if( state2 == -1 ) {
-            state2 = state;
+        if( state2_ == -1 ) {
+            state2_ = state_;
         }
 
         srcFileName = "Xilinx_TernaryAdd_2State";
         stringstream namestr;
-        namestr << "Xilinx_TernaryAdd_2State_ws" << wIn << "_s" << ( state & 0x7 );
+        namestr << "Xilinx_TernaryAdd_2State_ws" << wIn << "_s" << ( state_ & 0x7 );
 
-        if( state2 != state ) {
-            namestr << "_s" << ( state2 & 0x7 );
+        if( state2_ != state_ ) {
+            namestr << "_s" << ( state2_ & 0x7 );
         }
 
         setName( namestr.str() );
-        string lut_content = computeLUT( state, state2 );
+        string lut_content = computeLUT( );
         setCombinatorial();
         //addGeneric("input_word_size","integer","10");
         //addGeneric("use_carry_in","boolean","false");
@@ -43,7 +41,7 @@ namespace flopoco {
         addInput( "y_i", wIn );
         addInput( "z_i", wIn );
 
-        if( state == state2 ) {
+        if( state_ == state2_ ) {
             vhdl << declare( "sel_i" ) << " <= '0';" << std::endl;
         } else {
             addInput( "sel_i" );
@@ -54,7 +52,7 @@ namespace flopoco {
         declare( "x", wIn );
         declare( "y", wIn );
         declare( "z", wIn );
-        declare( "bbus", wIn + 1 );
+        declare( "bbus", wIn+1 );
         declare( "carry_cct" );
         declare( "carry", num_slices );
 
@@ -62,7 +60,7 @@ namespace flopoco {
             throw std::runtime_error( "An adder with wordsize 0 is not possible." );
         }
 
-        insertCarryInit( state, state2 );
+        insertCarryInit( );
         vhdl << tab << "x <= x_i;" << std::endl;
         vhdl << tab << "y <= y_i;" << std::endl;
         vhdl << tab << "z <= z_i;" << std::endl;
@@ -77,7 +75,7 @@ namespace flopoco {
             inPortMap( single_slice, "bbus_in", "bbus" + range( wIn, 0 ) );
             inPortMap( single_slice, "carry_in", "carry_cct" );
             outPortMap( single_slice, "bbus_out", "bbus" + range( wIn, 0 ), false );
-            outPortMap( single_slice, "carry_out", "carry" + of( 0 ), false );
+            outPortMap( single_slice, "carry_out", "carry" + range(0, 0 ), false );
             outPortMap( single_slice, "sum_out", "sum_o" + range( wIn, 0 ), false );
             vhdl << instance( single_slice, "slice_i" );
         }
@@ -128,7 +126,7 @@ namespace flopoco {
         }
     };
 
-    string Xilinx_TernaryAdd_2State::computeLUT( short state, short state2 ) {
+    string Xilinx_TernaryAdd_2State::computeLUT() {
         lut_op add_o5_co;
         lut_op add_o6_so;
 
@@ -137,11 +135,11 @@ namespace flopoco {
 
             for( int j = 0; j < 3; j++ ) {
                 if( i & ( 0x8 ) ) {
-                    if( ( ( state2 & ( 1 << ( 2 - j ) ) ) && !( i & ( 1 << j ) ) ) || ( !( state2 & ( 1 << ( 2 - j ) ) ) && ( i & ( 1 << j ) ) ) ) {
+                    if( ( ( state2_ & ( 1 << ( 2 - j ) ) ) && !( i & ( 1 << j ) ) ) || ( !( state2_ & ( 1 << ( 2 - j ) ) ) && ( i & ( 1 << j ) ) ) ) {
                         s++;
                     }
                 } else {
-                    if( ( ( state & ( 1 << ( 2 - j ) ) ) && !( i & ( 1 << j ) ) ) || ( !( state & ( 1 << ( 2 - j ) ) ) && ( i & ( 1 << j ) ) ) ) {
+                    if( ( ( state_ & ( 1 << ( 2 - j ) ) ) && !( i & ( 1 << j ) ) ) || ( !( state_ & ( 1 << ( 2 - j ) ) ) && ( i & ( 1 << j ) ) ) ) {
                         s++;
                     }
                 }
@@ -186,15 +184,15 @@ namespace flopoco {
         return lut_add3.get_hex();
     }
 
-    void Xilinx_TernaryAdd_2State::insertCarryInit( short state, short state2 ) {
+    void Xilinx_TernaryAdd_2State::insertCarryInit() {
         int state_ccount = 0, state2_ccount = 0;
 
         for( int i = 0; i < 3; i++ ) {
-            if( state & ( 1 << i ) ) {
+            if( state_ & ( 1 << i ) ) {
                 state_ccount++;
             }
 
-            if( state2 & ( 1 << i ) ) {
+            if( state2_ & ( 1 << i ) ) {
                 state2_ccount++;
             }
         }
@@ -252,17 +250,17 @@ namespace flopoco {
         vhdl << "\tbbus(0) <= "  <<  bbus  <<  ";"  << endl;
     }
 
-    void Xilinx_TernaryAdd_2State::computeState( short state, short state2 ) {
-        if( state == state2 ) {
-            state2 = -1;
+    void Xilinx_TernaryAdd_2State::computeState() {
+        if( state_ == state2_ ) {
+            state2_ = -1;
         }
 
-        short states[] = {state, state2};
+        short states[] = {state_, state2_};
         bool lock[] = {false, false, false};
         stringstream debug;
         int k_max = 2;
 
-        if( state2 == -1 ) {
+        if( state2_ == -1 ) {
             k_max = 1;
         }
 
@@ -296,7 +294,7 @@ namespace flopoco {
             }
         }
 
-        debug << "Ternary_2State with states {" << state << "," << state2 << "}" << endl;
+        debug << "Ternary_2State with states {" << state_ << "," << state2_ << "}" << endl;
         short states_postmap[] = {0, 0};
 
         for( int k = 0; k < k_max; k++ ) {
@@ -307,7 +305,7 @@ namespace flopoco {
             }
         }
 
-        if( state2 == -1 ) {
+        if( state2_ == -1 ) {
             states_postmap[1] = -1;
         } else {
             if( ( states_postmap[0] & 0x6 ) == 6 && ( states_postmap[1] & 0x6 ) == 2 ) {
@@ -363,7 +361,7 @@ namespace flopoco {
         //cerr << debug.str();
         REPORT( DEBUG, debug.str() );
 
-        if( state > 0 && state_type == 0 ) {
+        if( state_ > 0 && state_type == 0 ) {
             throw "2State type not valid";
         }
     }

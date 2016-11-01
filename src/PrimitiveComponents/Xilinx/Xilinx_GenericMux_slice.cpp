@@ -21,8 +21,7 @@ using namespace std;
 namespace flopoco {
     Xilinx_GenericMux_slice::Xilinx_GenericMux_slice( Target *target, GenericMux_SLICE_VARIANT variant, int wIn ) : Operator( target ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
-        UniKs::addUnisimLibrary(this);
-        Xilinx_Primitive::checkTargetCompatibility( target );
+
         setCombinatorial();
         stringstream namestr;
         namestr << "Xilinx_GenericMux";
@@ -84,7 +83,7 @@ namespace flopoco {
                 outPortMap( luts, "o6", "m_out" + of(2 * i + 1), false  );
                 stringstream lutname;
                 lutname << "full_lut" << i;
-                vhdl << luts->primitiveInstance( lutname.str() );
+                vhdl << luts->primitiveInstance( lutname.str(), this );
             }
 
             if( wIn % 2 ) {
@@ -97,7 +96,7 @@ namespace flopoco {
                 inPortMap( hluts, join( "i", 4 ), "s_in" );
                 inPortMapCst( hluts, join( "i", 5 ), "'1'" );
                 outPortMap( hluts, "o5", "m_out" + of( wIn - 1 ) , false );
-                vhdl << hluts->primitiveInstance( "half_lut" );
+                vhdl << hluts->primitiveInstance( "half_lut", this );
             }
         } else {
             lut_op op = ( ( ~lut_in( 5 ) & ~lut_in( 4 ) & lut_in( 0 ) )
@@ -126,7 +125,7 @@ namespace flopoco {
                     outPortMap( luts, "o",  "m_out" + of( i ), false  );
                     stringstream lutname;
                     lutname << "full_lut" << i;
-                    vhdl << luts->primitiveInstance( lutname.str() );
+                    vhdl << luts->primitiveInstance( lutname.str(), this );
                 }
             } else if( variant == GenericMux_SLICE_8 ) {
                 addInput( "m_in", wIn * 8 );
@@ -145,7 +144,7 @@ namespace flopoco {
                     outPortMap( luts, "lo", "intercon_L6_to_M7" + of( i ), false );
                     stringstream lutname;
                     lutname << "full_lut" << i;
-                    vhdl << luts->primitiveInstance( lutname.str() );
+                    vhdl << luts->primitiveInstance( lutname.str(), this );
                 }
 
                 for( int i = 0; i < wIn; i++ ) {
@@ -156,7 +155,7 @@ namespace flopoco {
                     outPortMap( mux7, "o", "m_out" + of( i ), false );
                     stringstream muxname;
                     muxname << "gen_mux7_" << i;
-                    vhdl << mux7->primitiveInstance( muxname.str() );
+                    vhdl << mux7->primitiveInstance( muxname.str(), this );
                 }
             } else if( variant == GenericMux_SLICE_16 ) {
                 addInput( "m_in", wIn * 16 );
@@ -176,7 +175,7 @@ namespace flopoco {
                     outPortMap( luts, "lo", "intercon_L6_to_M7" + of( i ), false );
                     stringstream lutname;
                     lutname << "full_lut" << i;
-                    vhdl << luts->primitiveInstance( lutname.str() );
+                    vhdl << luts->primitiveInstance( lutname.str(), this );
                 }
 
                 for( int i = 0; i < wIn * 2; i++ ) {
@@ -187,7 +186,7 @@ namespace flopoco {
                     outPortMap( mux7, "o", "intercon_M7_to_M8" + of( i ), false );
                     stringstream muxname;
                     muxname << "gen_mux7_" << i;
-                    vhdl << mux7->primitiveInstance( muxname.str() );
+                    vhdl << mux7->primitiveInstance( muxname.str(), this );
                 }
 
                 Xilinx_MUXF8 *mux8 = new Xilinx_MUXF8( target );
@@ -195,7 +194,7 @@ namespace flopoco {
                 inPortMap( mux8, join( "i", 1 ), "intercon_M7_to_M8" + of( 1 ) );
                 inPortMap( mux8, "s", "s_in" + of( 3 ) );
                 outPortMap( mux8, "o", "m_out" + of( 0 ), false );
-                vhdl << mux8->primitiveInstance( "gen_mux8" );
+                vhdl << mux8->primitiveInstance( "gen_mux8", this );
             }
         }
     }

@@ -4,8 +4,7 @@
 namespace flopoco {
     Xilinx_Comparator::Xilinx_Comparator( Target *target, int wIn, ComparatorType type ) : Operator( target ) , m_type( type ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
-        UniKs::addUnisimLibrary(this);
-        Xilinx_Primitive::checkTargetCompatibility( target );
+
         std::stringstream name_str;
         name_str << "Xilinx_Comparator_";
 
@@ -117,7 +116,7 @@ namespace flopoco {
             outPortMap( cur_lut, "o5", "cc_di" + of( i ), false );
             stringstream lut_name;
             lut_name << "lut_" << i;
-            vhdl << cur_lut->primitiveInstance( lut_name.str() ) << endl;
+            vhdl << cur_lut->primitiveInstance( lut_name.str(), this ) << endl;
         }
 
         if( ws_remain ) {
@@ -133,7 +132,7 @@ namespace flopoco {
             outPortMap( cur_lut, "o5", "cc_di" + of( needed_luts ), false );
             stringstream lut_name;
             lut_name << "hlut";
-            vhdl << cur_lut->primitiveInstance( lut_name.str() ) << endl;
+            vhdl << cur_lut->primitiveInstance( lut_name.str(), this ) << endl;
         }
 
         for( int i = 0; i < needed_cc; i++ ) {
@@ -151,7 +150,7 @@ namespace flopoco {
             outPortMap( cur_cc, "co", "cc_co" + range( i * 4 + 3, i * 4 ),false );
             stringstream cc_name;
             cc_name << "cc_" << i;
-            vhdl << cur_cc->primitiveInstance( cc_name.str() );
+            vhdl << cur_cc->primitiveInstance( cc_name.str(), this );
         }
 
         vhdl << tab << "o <= cc_co" << of( needed_luts + ( ws_remain ? 1 : 0 ) - 1 ) << ";" << std::endl;

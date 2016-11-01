@@ -15,9 +15,9 @@
 using namespace std;
 namespace flopoco {
 
-    Xilinx_GenericAddSub::Xilinx_GenericAddSub( Target *target, int wIn, int fixed_signs ) : Operator( target ) {
+    Xilinx_GenericAddSub::Xilinx_GenericAddSub( Target *target, int wIn, int fixed_signs ) : Operator( target ),wIn_(wIn),signs_(fixed_signs),dss_(false) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
-        Xilinx_Primitive::checkTargetCompatibility( target );
+
         srcFileName = "Xilinx_GenericAddSub";
         stringstream name;
         name << "Xilinx_GenericAddSub_" << wIn;
@@ -37,7 +37,7 @@ namespace flopoco {
         }
     }
 
-    Xilinx_GenericAddSub::Xilinx_GenericAddSub( Target *target, int wIn, bool dss ) : Operator( target ) {
+    Xilinx_GenericAddSub::Xilinx_GenericAddSub( Target *target, int wIn, bool dss ) : Operator( target ),wIn_(wIn),signs_(-1),dss_(dss) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
         srcFileName = "Xilinx_GenericAddSub";
         stringstream name;
@@ -61,10 +61,10 @@ namespace flopoco {
     void Xilinx_GenericAddSub::build_normal( Target *target, int wIn ) {
         addInput( "x_i", wIn );
         addInput( "y_i", wIn );
-        addInput( "neg_x_i", 1 , false );
-        addInput( "neg_y_i", 1 , false );
+        addInput( "neg_x_i" );
+        addInput( "neg_y_i" );
         addOutput( "sum_o", wIn );
-        addOutput( "c_o", 1 , 1, false );
+        addOutput( "c_o" );
         const int effective_ws = wIn + 1;
         const int ws_remain = ( effective_ws ) % 4;
         const int num_full_slices = floor( ( effective_ws - ws_remain ) / 4 );
@@ -72,10 +72,10 @@ namespace flopoco {
         declare( "sum_t", effective_ws );
         declare( "x", effective_ws );
         declare( "y", effective_ws );
-        declare( "neg_x", 1 , false );
-        declare( "neg_y", 1 , false );
-        vhdl << tab << "x"  << " <= x_i & '0';" << std::endl;
-        vhdl << tab << "y"  << " <= y_i & '0';" << std::endl;
+        declare( "neg_x");
+        declare( "neg_y");
+        vhdl << tab << "x" << range( effective_ws - 1, 1 ) << " <= x_i;" << std::endl;
+        vhdl << tab << "y" << range( effective_ws - 1, 1 ) << " <= y_i;" << std::endl;
         vhdl << tab << "neg_x <= neg_x_i;" << std::endl;
         vhdl << tab << "neg_y <= neg_y_i;" << std::endl;
         int i = 0;
@@ -117,32 +117,22 @@ namespace flopoco {
                 inPortMap( slice_i, "carry_in" , "carry" + of( i - 1 ) );
             }
 
-            if( i == 0 ) {
-                outPortMap( slice_i, "carry_out", "carry", false );
-            } else {
-                outPortMap( slice_i, "carry_out", "carry" + of( i ), false );
-            }
-
+            outPortMap( slice_i, "carry_out", "carry" + of( i ), false );
             outPortMap( slice_i, "sum_out", "sum_t" + range( effective_ws - 1, 4 * i ), false );
             vhdl << instance( slice_i, slice_name.str() );
         }
 
         vhdl << tab << "sum_o <= sum_t" << range( effective_ws - 1, 1 ) << ";" << std::endl;
-
-        if( i == 0 ) {
-            vhdl << tab << "c_o <= carry;" << std::endl;
-        } else {
-            vhdl << tab << "c_o <= carry" << of( i ) << ";" << std::endl;
-        }
+        vhdl << tab << "c_o <= carry" << of( i ) << ";" << std::endl;
     }
 
     void Xilinx_GenericAddSub::build_with_dss( Target *target, int wIn ) {
         addInput( "x_i", wIn );
         addInput( "y_i", wIn );
-        addInput( "neg_x_i", 1 , false );
-        addInput( "neg_y_i", 1 , false );
+        addInput( "neg_x_i" );
+        addInput( "neg_y_i" );
         addOutput( "sum_o", wIn );
-        addOutput( "c_o", 1 , 1, false );
+        addOutput( "c_o" );
         const int effective_ws = wIn;
         const int ws_remain = ( effective_ws ) % 4;
         const int num_full_slices = ( effective_ws - ws_remain ) / 4;
@@ -150,11 +140,11 @@ namespace flopoco {
         declare( "sum_t", effective_ws );
         declare( "x", effective_ws );
         declare( "y", effective_ws );
-        declare( "neg_x", 1 , false );
-        declare( "neg_y", 1 , false );
+        declare( "neg_x" );
+        declare( "neg_y" );
         declare( "bbus", wIn + 1 );
-        vhdl << tab << "x" << " <= x_i;" << std::endl;
-        vhdl << tab << "y" << " <= y_i;" << std::endl;
+        vhdl << tab << "x" << range( effective_ws - 1, 0 ) << " <= x_i;" << std::endl;
+        vhdl << tab << "y" << range( effective_ws - 1, 0 ) << " <= y_i;" << std::endl;
         vhdl << tab << "neg_x <= neg_x_i;" << std::endl;
         vhdl << tab << "neg_y <= neg_y_i;" << std::endl;
         vhdl << tab << "bbus" << of( 0 ) << " <= '0';" << std::endl;
@@ -175,7 +165,7 @@ namespace flopoco {
             if( i == 0 ) {
                 inPortMapCst( slice_i, "carry_in", "'0'" );
             } else {
-                inPortMap( slice_i, "carry_in" , "carry" + of( i - 1 ) );
+                inPortMap( slice_i, "carry_in" , "carry" + range(i-1, i - 1 ) );
             }
 
             outPortMap( slice_i, "carry_out", "carry" + of( i ), false );
@@ -198,7 +188,7 @@ namespace flopoco {
             if( i == 0 ) {
                 inPortMapCst( slice_i, "carry_in", "'0'" );
             } else {
-                inPortMap( slice_i, "carry_in" , "carry" + of( i - 1 ) );
+                inPortMap( slice_i, "carry_in" , "carry" + range(i-1, i - 1 ) );
             }
 
             if( i == 0 ) {
@@ -224,7 +214,7 @@ namespace flopoco {
         addInput( "x_i", wIn );
         addInput( "y_i", wIn );
         addOutput( "sum_o", wIn );
-        addOutput( "c_o", 1 , 1, false );
+        addOutput( "c_o" );
         const int effective_ws = wIn;
         const int ws_remain = ( effective_ws ) % 4;
         const int num_full_slices = ( effective_ws - ws_remain ) / 4;
@@ -232,8 +222,8 @@ namespace flopoco {
         declare( "sum_t", effective_ws );
         declare( "x", effective_ws );
         declare( "y", effective_ws );
-        vhdl << tab << "x" << " <= x_i;" << std::endl;
-        vhdl << tab << "y" << " <= y_i;" << std::endl;
+        vhdl << tab << "x" << range( effective_ws - 1 , 0 ) << " <= x_i;" << std::endl;
+        vhdl << tab << "y" << range( effective_ws - 1, 0 ) << " <= y_i;" << std::endl;
         std::string neg_x, neg_y;
 
         if( fixed_signs != 3 ) {
@@ -272,10 +262,10 @@ namespace flopoco {
                     inPortMapCst( slice_i, "carry_in", "'0'" );
                 }
             } else {
-                inPortMap( slice_i, "carry_in" , "carry" + of( i - 1 ) );
+                inPortMap( slice_i, "carry_in" , "carry" + range(i-1, i - 1 ) );
             }
 
-            outPortMap( slice_i, "carry_out", "carry" + of( i ), false );
+            outPortMap( slice_i, "carry_out", "carry" + range(i, i ), false );
             outPortMap( slice_i, "sum_out", "sum_t" + range( 4 * i + 3, 4 * i ), false );
             vhdl << instance( slice_i, slice_name.str() );
         }
@@ -297,13 +287,13 @@ namespace flopoco {
                     inPortMapCst( slice_i, "carry_in", "'0'" );
                 }
             } else {
-                inPortMap( slice_i, "carry_in" , "carry" + of( i - 1 ) );
+                inPortMap( slice_i, "carry_in" , "carry" + range(i-1, i - 1 ) );
             }
 
             if( i == 0 ) {
                 outPortMap( slice_i, "carry_out", "carry", false );
             } else {
-                outPortMap( slice_i, "carry_out", "carry" + of( i ), false );
+                outPortMap( slice_i, "carry_out", "carry" + range(i, i ), false );
             }
 
             outPortMap( slice_i, "sum_out", "sum_t" + range( effective_ws - 1, 4 * i ), false );
@@ -319,3 +309,5 @@ namespace flopoco {
         }
     }
 }//namespace
+
+

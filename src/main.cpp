@@ -110,6 +110,8 @@ int main(int argc, char* argv[] )
 
         // Uni Ks - Primitive operators
         Xilinx_Comparator::registerFactory();
+        Xilinx_GenericAddSub::registerFactory();
+        Xilinx_TernaryAdd_2State::registerFactory();
         GenericLut_Test::registerFactory();
         SAD::registerFactory();
 

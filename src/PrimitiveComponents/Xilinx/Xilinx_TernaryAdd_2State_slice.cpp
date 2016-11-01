@@ -18,22 +18,21 @@ namespace flopoco {
 
     Xilinx_TernaryAdd_2State_slice::Xilinx_TernaryAdd_2State_slice( Target *target, const uint &wIn , const bool &is_initial , const std::string &lut_content ) : Operator( target ) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
-        UniKs::addUnisimLibrary(this);
-        Xilinx_Primitive::checkTargetCompatibility( target );
+
         setName( "Xilinx_TernaryAdd_2State_slice_s" + std::to_string( wIn ) + ( is_initial ? "_init" : "" ) );
         srcFileName = "Xilinx_TernaryAdd_2State_slice";
         //addToGlobalOpList( this );
         setCombinatorial();
         addInput( "sel_in" );
-        addInput( "x_in", wIn , (wIn>1));
-        addInput( "y_in", wIn , (wIn>1));
-        addInput( "z_in", wIn , (wIn>1));
-        addInput( "bbus_in", wIn , (wIn>1));
+        addInput( "x_in", wIn );
+        addInput( "y_in", wIn );
+        addInput( "z_in", wIn );
+        addInput( "bbus_in", wIn );
         addInput( "carry_in" );
         addOutput( "carry_out" );
-        addOutput( "bbus_out", wIn ,1, (wIn>1));
-        addOutput( "sum_out", wIn ,1, (wIn>1));
-        declare( "lut_o6", wIn , (wIn>1));
+        addOutput( "bbus_out", wIn );
+        addOutput( "sum_out", wIn );
+        declare( "lut_o6", wIn );
         declare( "cc_di", 4 );
         declare( "cc_s", 4 );
         declare( "cc_o", 4 );
@@ -63,7 +62,7 @@ namespace flopoco {
             inPortMapCst( lut_bit_i, "i5", "'1'" );
             outPortMap( lut_bit_i, "o5", "bbus_out" + of( i ), false );
             outPortMap( lut_bit_i, "o6", "lut_o6" + of( i ), false );
-            vhdl << lut_bit_i->primitiveInstance( join( "lut_bit_", i ) );
+            vhdl << lut_bit_i->primitiveInstance( join( "lut_bit_", i ), this );
         }
 
         if( is_initial ) {
@@ -74,7 +73,7 @@ namespace flopoco {
             inPortMapCst( init_cc, "ci", "'0'" );
             inPortMap( init_cc, "di", "cc_di" );
             inPortMap( init_cc, "s", "cc_s" );
-            vhdl << init_cc->primitiveInstance( "init_cc" );
+            vhdl << init_cc->primitiveInstance( "init_cc", this );
         } else {
             Xilinx_CARRY4 *further_cc = new Xilinx_CARRY4( target );
             outPortMap( further_cc, "co", "cc_co", false );
@@ -83,7 +82,7 @@ namespace flopoco {
             inPortMap( further_cc, "ci", "carry_in" );
             inPortMap( further_cc, "di", "cc_di" );
             inPortMap( further_cc, "s", "cc_s" );
-            vhdl << further_cc->primitiveInstance( "further_cc" );
+            vhdl << further_cc->primitiveInstance( "further_cc", this );
         }
 
         vhdl << tab << "carry_out	<= cc_co" << of( wIn - 1 ) << ";" << std::endl;

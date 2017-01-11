@@ -31,7 +31,7 @@ using namespace std;
 
 namespace flopoco {
 
-ConstMultPAG::ConstMultPAG(Target* target, int wIn_, char* pipelined_realization_str, bool pipelined_, bool syncInOut_, int syncEveryN_, bool syncMux_)
+ConstMultPAG::ConstMultPAG(Target* target, int wIn_, string pipelined_realization_str, bool pipelined_, bool syncInOut_, int syncEveryN_, bool syncMux_)
     : Operator(target),
       wIn(wIn_),
       syncInOut(syncInOut_),
@@ -44,7 +44,7 @@ ConstMultPAG::ConstMultPAG(Target* target, int wIn_, char* pipelined_realization
     name << "PipelinedFlexibleMultiplication_" << wIn;
     setName(name.str());
 
-    if(pipelined_realization_str == NULL) return; //in case the realization string is not defined, don't further process it.
+    if(pipelined_realization_str.empty()) return; //in case the realization string is not defined, don't further process it.
 
     string pipelined_realisation,t(pipelined_realization_str);
 
@@ -1126,6 +1126,37 @@ bool ConstMultPAG::TryRunRPAG(string realisation, string& out)
         }
         return true;
     }
+}
+
+OperatorPtr flopoco::ConstMultPAG::parseArguments( Target *target, vector<string> &args ) {
+    int wIn, sync_every = 0;
+    std::string graph;
+    bool sync_inout,sync_muxes,pipeline;
+
+    UserInterface::parseInt( args, "wIn", &wIn );
+    UserInterface::parseString( args, "graph", &graph );
+    UserInterface::parseBoolean( args, "pipeline", &pipeline );
+    UserInterface::parseBoolean( args, "sync_inout", &sync_inout );
+    UserInterface::parseBoolean( args, "sync_muxes", &sync_muxes );
+    UserInterface::parseInt( args, "sync_every", &sync_every );
+
+    return new ConstMultPAG( target, wIn, graph, pipeline,sync_inout,sync_every,sync_muxes );
+}
+
+void flopoco::ConstMultPAG::registerFactory() {
+    UserInterface::add( "ConstMultPAG", // name
+                        "A component for building constant multipliers based on pipelined adder graphs(pag).", // description, string
+                        "BasicInteger", // category, from the list defined in UserInterface.cpp
+                        "", //seeAlso
+                        "wIn(int): Wordsize of pag inputs; \
+                        graph(string): Realization string of the pag; \
+                        pipeline(bool)=true: Enable pipelining of the pag; \
+                        sync_inout(bool)=true: Enable pipeline registers for input and output stage; \
+                        sync_muxes(bool)=true: Enable counting mux-only stages as full stage; \
+                        sync_every(int)=1: Count of stages after which will be pipelined",
+                        "Nope.",
+                        ConstMultPAG::parseArguments
+                      ) ;
 }
 
 }//namespace

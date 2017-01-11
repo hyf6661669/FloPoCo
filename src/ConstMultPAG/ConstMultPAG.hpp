@@ -21,7 +21,7 @@ namespace flopoco {
      static ostream nostream;
      int noOfPipelineStages;
 
-     ConstMultPAG(Target* target,int wIn_, char* pipelined_realization_str, bool pipelined_=true, bool syncInOut_=true, int syncEveryN_=1,bool syncMux_=true);
+     ConstMultPAG(Target* target,int wIn_, string pipelined_realization_str, bool pipelined_=true, bool syncInOut_=true, int syncEveryN_=1,bool syncMux_=true);
      ConstMultPAG(Target* target, int wIn_, vector<vector<int64_t> > &coefficients, bool pipelined_=true, bool syncInOut_=true, int syncEveryN_=1, bool syncMux_=true);
 
       ~ConstMultPAG() {}
@@ -33,6 +33,9 @@ namespace flopoco {
          vector<vector<int64_t> > output_factors;
          int wordsize;};
      list<output_signal_info>& GetOutputList();
+     static OperatorPtr parseArguments( Target *target, vector<string> &args );
+
+     static void registerFactory();
 
   protected:
      int wIn;
@@ -66,38 +69,7 @@ namespace flopoco {
      string getBinary(int value, int wordsize);
 
 
-	OperatorPtr parseArguments( Target *target, vector<string> &args ) {
-        int wIn, sync_every = 0;
-        std::string graph;
-		bool pipeline,sync_inout,sync_muxes;
-
-        UserInterface::parseInt( args, "wIn", &wIn );
-        UserInterface::parseString( args, "graph", &graph );
-		UserInterface::parseBool( args, "pipeline", &pipeline );
-		UserInterface::parseBool( args, "sync_inout", &sync_inout );
-		UserInterface::parseBool( args, "sync_muxes", &sync_muxes );
-        UserInterface::parseInt( args, "sync_every", &sync_every );
-
-        return new ConstMultPAG( target, wIn, graph.c_str(), pipeline,sync_inout,sync_every,sync_mux );
-    }
-
-    void registerFactory() {
-        UserInterface::add( "ConstMultPAG", // name
-                            "A component for building constant multipliers based on pipelined adder graphs(pag).", // description, string
-                            "BasicInteger", // category, from the list defined in UserInterface.cpp
-                            "", //seeAlso
-                            "wIn (int): Wordsize of pag inputs; \
-                            graph (string): Realization string of the pag; \
-                            pipeline (bool)=true: Enable pipelining of the pag; \
-                            sync_inout (bool)=true: Enable pipeline registers for input and output stage; \
-							sync_muxes (bool)=true: Enable counting mux-only stages as full stage; \
-                            sync_every (int)=1: Count of stages after which will be pipelined",
-                            "Nope.",
-                            ConstMultPAG::parseArguments
-                          ) ;
-  };
-
-
+ };
 }//namespace
 #endif // HAVE_PAGLIB
 #endif

@@ -164,6 +164,7 @@
 #include "PrimitiveComponents/Xilinx/Xilinx_GenericAddSub.hpp"
 #include "PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State.hpp"
 #include "SAD/SAD.hpp"
+#include "ConstMultPAG/ConstMultPAG.hpp"
 
 /* misc ------------------------------------------------------ */
 #include "TestBenches/Wrapper.hpp"

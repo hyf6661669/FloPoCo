@@ -1775,11 +1775,25 @@ namespace flopoco
 
 
         //debug
+        cout << "there where the following variable compressors:" << endl;
         for(unsigned s = 0; s < varCompSolution.size(); s++){
             for(list<variableCompressor>::iterator it = varCompSolution[s].begin(); it != varCompSolution[s].end(); it++){
-                cout << "variable Compressor no. " << (*it).type << " starting at column " << (*it).column << " with middleSize of " << (*it).middleCompressorWidth << endl;
+                cout << "variable Compressor no. " << (*it).type << " starting at column " << (*it).column  << " and stage " << s  << " with middleSize of " << (*it).middleCompressorWidth << endl;
             }
 
+        }
+
+
+        //now print the other variables
+        cout << "other compressors are:" << endl;
+        for(unsigned s = 0; s < solution.size(); s++){
+            std::list<pair<int, int> >::iterator it;
+            for(it = solution[s].begin(); it != solution[s].end(); it++){
+                unsigned type = (*it).first;
+                unsigned column = (*it).second;
+                cout << "normal Compressor " << type << " in column " << column  << " and stage " << s << endl;
+
+            }
         }
     }
 

@@ -114,7 +114,7 @@ int main(int argc, char* argv[] )
         Xilinx_TernaryAdd_2State::registerFactory();
         GenericLut_Test::registerFactory();
         SAD::registerFactory();
-        ConstMultPAG::registerFactory();
+//        ConstMultPAG::registerFactory();
 
 		TargetModel::registerFactory();
 		// Uncomment me to play within FloPoCo operator development

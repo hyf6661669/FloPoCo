@@ -1,3 +1,4 @@
+#define HAVE_SCIP //!!!
 #ifdef HAVE_SCIP
 
 #include "BitHeapILPCompression.hpp"
@@ -1029,6 +1030,8 @@ void BitHeapILPCompression::printNewBits(){
 }
 
 void BitHeapILPCompression::buildVariableCompressors(){
+    cout << "!! BitHeapILPCompression::buildVariableCompressors()" << endl;
+    cout << "!! useVariableCompressors=" << useVariableCompressors << endl;
     if(useVariableCompressors){
         variableBasicCompressor c5_1;
         c5_1.areaCost = 1.0;

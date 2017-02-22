@@ -12,12 +12,14 @@
   All rights reserved.
 
 */
-
+#define HAVE_SCIP //!!!
 
 #include "BitHeap.hpp"
 /* Uni KS start */
 #include "BitHeapILPCompression.hpp"
 #include "BitHeapHeuristicCompression.hpp"
+#include "IntAddSubCmp/VariableColumnCompressor.hpp"
+#include "IntAddSubCmp/FourToTwoCompressor.hpp"
 /* Uni KS stop */
 #include "Plotter.hpp"
 #include <iostream>
@@ -1631,7 +1633,38 @@ namespace flopoco
                 for(unsigned s = 0; s < ilp.solution.size(); s++){
                     REPORT(DEBUG, "ilp.solution[" << s << "]: " << ilp.solution[s].size());
                 }
+                REPORT(DEBUG, "ilp.varCompSolution.size(): " << ilp.varCompSolution.size());
+                for(unsigned s = 0; s < ilp.varCompSolution.size(); s++){
+                    REPORT(DEBUG, "ilp.varCompSolution[" << s << "]: " << ilp.varCompSolution[s].size());
+                }
 
+                //this should happen much earlier (where possibleCompressors are filled)!!!
+//                vector<VariableColumnCompressor *> possibleVariableColumnCompressors;
+//                possibleVariableColumnCompressors.push_back(new FourToTwoCompressor(op->getTarget()));
+
+                for(unsigned s=0; s < ilp.varCompSolution.size(); s++)
+                {
+                    for(BitHeapHeuristicCompression::variableCompressor &vc : ilp.varCompSolution[s])
+                    {
+                        REPORT(DEBUG, "applying variable column compressor " << vc.type << " to column " << vc.column << " of width " << vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth << " in stage " << s);
+
+                        //VariableColumnCompressor *vcc = possibleVariableColumnCompressors[vc.type];
+                        VariableColumnCompressor *vcc=nullptr;
+                        if(vc.type == 0)
+                        {
+                            vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth);
+                            op->addToGlobalOpList(vcc);
+                        }
+                        else
+                        {
+                            THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
+                        }
+
+                        elemReduceFixedCycle(vc.column, vcc);
+
+                        //...
+                    }
+                }
 
                 for(unsigned s=0; s < ilp.solution.size(); s++)
                 {
@@ -1705,6 +1738,10 @@ namespace flopoco
                             REPORT(DEBUG, "ilp.solution.size(): " << ilp.solution.size());
                             for(unsigned s = 0; s < ilp.solution.size(); s++){
                                 REPORT(DEBUG, "ilp.solution[" << s << "]: " << ilp.solution[s].size());
+                            }
+                            REPORT(DEBUG, "ilp.varCompSolution.size(): " << ilp.varCompSolution.size());
+                            for(unsigned s = 0; s < ilp.varCompSolution.size(); s++){
+                                REPORT(DEBUG, "ilp.varCompSolution[" << s << "]: " << ilp.varCompSolution[s].size());
                             }
 
 

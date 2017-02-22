@@ -1,4 +1,4 @@
-//#ifdef HAVE_SCIP
+#define HAVE_SCIP //!!!
 
 #include "BitHeapHeuristicCompression.hpp"
 #include <algorithm>
@@ -55,7 +55,7 @@ namespace flopoco
         //buildSingleStages = true;
         //numberOfBuildStages = 8;
         //useSmootherCompressorPlacing = true;
-        //useVariableCompressors = true;
+        useVariableCompressors = true;
         //useCompleteHeuristic = true;
         getLowerBoundsFromBitHeap = true;
 
@@ -1398,7 +1398,7 @@ namespace flopoco
     //all presolutions with more stages are being deleted
     //otherwise the s in the ILP-problem is the s of the presolution, which needs the most stages
     void BitHeapHeuristicCompression::setUpNewStageCountOfILP(){
-#if HAVE_SCIP
+#ifdef HAVE_SCIP
         unsigned maxS = 0;
 
         if(!useMaxHeuristicStageCount){

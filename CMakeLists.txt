@@ -374,6 +374,8 @@ src/Conversions/Fix2FP
  src/IntAddSubCmp/IntDualSub
  src/IntAddSubCmp/BasicCompressor
  src/IntAddSubCmp/TargetOptCompressor
+ src/IntAddSubCmp/VariableColumnCompressor
+ src/IntAddSubCmp/FourToTwoCompressor
  src/IntAddSubCmp/IntAdderTree
  
 # ---------- First generation of fast large adders ------------------------

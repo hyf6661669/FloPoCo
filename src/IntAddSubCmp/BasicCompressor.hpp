@@ -23,12 +23,12 @@ namespace flopoco
 	class BasicCompressor:public Operator
 	{
 	public:
-		vector<int> height; /** inverted input vector h **/
+        vector<int> height; /** height of inputs, index 0 addresses the MSB column (!), e.g., a (1,5;3) GPC will have height[0]=1 and height[1]=5 **/
 		int wOut; /** size of the output vector **/
 		int param; /** computes the range of the output vector **/
 		
 		/* Uni KS start */
-		vector<int> outputs; /** vector of output bits**/
+        vector<int> outputs; /** height of output bits, index 0 addresses the MSB column (!), for a GPC, each entry is 1, needed for compressors with several outputs per weight, e.g., 4:2 compressor **/
 		double areaCost;        /** area cost of the compressor **/
 
 		/** constructor **/

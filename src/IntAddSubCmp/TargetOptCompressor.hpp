@@ -31,9 +31,9 @@ namespace flopoco
 		/** destructor**/
 		~TargetOptCompressor();
 
-		vector<int> outputheight;
+//		vector<int> outputheight;
 
-		unsigned getOutputSize();
+//		unsigned getOutputSize();
 	
 	};
 }

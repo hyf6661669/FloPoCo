@@ -15,7 +15,7 @@ namespace flopoco{
 
     VariableColumnCompressor::VariableColumnCompressor(Target * target) : BasicCompressor(target)
 	{
-        vhdl << "--VariableColumnCompressor" << endl;
+//        vhdl << "--VariableColumnCompressor" << endl;
 	}
 	
 	VariableColumnCompressor::~VariableColumnCompressor()

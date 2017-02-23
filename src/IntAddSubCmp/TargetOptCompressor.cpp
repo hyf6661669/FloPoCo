@@ -86,11 +86,12 @@ namespace flopoco{
 	{
 	}
 
+/*
 	unsigned TargetOptCompressor::getOutputSize()
 	{
 		return outputheight.size();
 	}
-	
+*/
 }
 	
 

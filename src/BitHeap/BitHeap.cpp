@@ -30,6 +30,7 @@
 #include "utils.hpp"
 #include <vector>
 #include <list>
+#include <algorithm>
 
 using namespace std;
 
@@ -1148,9 +1149,40 @@ namespace flopoco
 				++inConcatIndex;
 			}
 
-			op->outPortMap(bc, "R", join(out_concat, compressorIndex,"_", outConcatIndex));
+            int maxOutputColHeight = *(std::max_element(bc->outputs.begin(), bc->outputs.end()));
 
-			op->vhdl << tab << op->instance(bc, join(compressor, compressorIndex));
+            cout << "compressor " << bc->getName() << " has a max. column height of " << maxOutputColHeight << endl;
+
+#if 0
+            if(maxOutputColHeight == 1) //should be removed later
+            {
+                op->outPortMap(bc, "R", join(out_concat, compressorIndex,"_", outConcatIndex));
+                op->vhdl << tab << op->instance(bc, join(compressor, compressorIndex));
+                // add the bits, at the current (global) instant.
+                for (unsigned j=0; j<bc->getOutputSize(); j++) {
+                    addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+                }
+                ++outConcatIndex;
+            }
+            else
+#endif
+            {
+                for(int outputRow=0; outputRow < maxOutputColHeight; outputRow++)
+                {
+                    op->outPortMap(bc, join("R",outputRow), join(out_concat, compressorIndex,"_", outConcatIndex));
+                    // add the bits, at the current (global) instant.
+                    for (unsigned j=0; j<bc->getOutputSize(); j++)
+                    {
+                        if(outputRow <= bc->outputs[bc->wOut-j-1]-1)
+                        {
+                            addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+                        }
+                    }
+                    ++outConcatIndex;
+                }
+                op->vhdl << tab << op->instance(bc, join(compressor, compressorIndex));
+            }
+
 
 			for(unsigned j=0; j < bc->height.size(); j++)
 			{
@@ -1159,14 +1191,9 @@ namespace flopoco
                 }
 			}
 
-			// add the bits, at the current (global) instant.
-			for (unsigned j=0; j<bc->getOutputSize(); j++) {
-				addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
-			}
 		}
 
-		++compressorIndex;
-		++outConcatIndex;
+        ++compressorIndex;
 	}
 
 
@@ -1638,10 +1665,6 @@ namespace flopoco
                     REPORT(DEBUG, "ilp.varCompSolution[" << s << "]: " << ilp.varCompSolution[s].size());
                 }
 
-                //this should happen much earlier (where possibleCompressors are filled)!!!
-//                vector<VariableColumnCompressor *> possibleVariableColumnCompressors;
-//                possibleVariableColumnCompressors.push_back(new FourToTwoCompressor(op->getTarget()));
-
                 for(unsigned s=0; s < ilp.varCompSolution.size(); s++)
                 {
                     for(BitHeapHeuristicCompression::variableCompressor &vc : ilp.varCompSolution[s])
@@ -1650,7 +1673,7 @@ namespace flopoco
 
                         //VariableColumnCompressor *vcc = possibleVariableColumnCompressors[vc.type];
                         VariableColumnCompressor *vcc=nullptr;
-                        if(vc.type == 0)
+                        if(vc.type == 0) //this information should be read from a vector "possibleVariableColumnCompressors" (similar to "possibleCompressors")
                         {
                             vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth);
                             op->addToGlobalOpList(vcc);
@@ -1956,7 +1979,7 @@ namespace flopoco
 			else
 			{
 				plotter->heapSnapshot(true,  plottingCycle, plottingCP);
-				if(compressionType == 0)
+//				if(compressionType == 0) //??
 					generateFinalAddVHDL(true);
 			}
 

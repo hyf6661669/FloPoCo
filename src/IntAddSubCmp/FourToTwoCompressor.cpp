@@ -62,7 +62,7 @@ namespace flopoco{
             vhdl << tab << "cc_s(" << needed_cc*4-1 << " downto " << width << ") <= (others => '0');" << endl;
             vhdl << tab << "cc_di(" << needed_cc*4-1 << " downto " << width << ") <= (others => '0');" << endl;
         }
-        vhdl << tab << "cc_di(" << width-1 << " downto 0) <= X" << width-1 << "(3)";
+        vhdl << tab << "cc_di(" << width-1 << " downto 0) <= X" << width-1 << "(1)";
         for(int i=1; i < width; i++)
         {
             vhdl << " & X" << width-i-1 << "(3)";
@@ -86,6 +86,8 @@ namespace flopoco{
             inPortMap(cur_lut,"i1",join("X",i) + of(1));
             inPortMap(cur_lut,"i2",join("X",i) + of(2));
             inPortMap(cur_lut,"i3",join("X",i) + of(3));
+            inPortMapCst(cur_lut, "i4","'0'");
+            inPortMapCst(cur_lut, "i5","'1'");
 
             outPortMap(cur_lut,"o5","R1" + of(i+1),false);
             outPortMap(cur_lut,"o6","cc_s" + of(i),false);
@@ -106,7 +108,9 @@ namespace flopoco{
         inPortMapCst(cur_lut,"i1","'0'");
         inPortMapCst(cur_lut,"i2","'0'");
         inPortMap(cur_lut,"i3",join("X",width-1) + of(1));
-        outPortMap(cur_lut,"o5","o5_last_lut");
+        inPortMapCst(cur_lut, "i4","'0'");
+        inPortMapCst(cur_lut, "i5","'1'");
+        outPortMap(cur_lut,"o5","open",false);
         outPortMap(cur_lut,"o6","cc_s" + of(width-1),false);
 
         vhdl << cur_lut->primitiveInstance( join("lut",width-1), this ) << endl;
@@ -131,7 +135,7 @@ namespace flopoco{
 
         vhdl << endl;
 
-        vhdl << tab << "R0 <= cc_o(" << width-1 << " downto 0);" << endl;
+        vhdl << tab << "R0 <= cc_o(" << width << " downto 0);" << endl;
     }
 	
     FourToTwoCompressor::~FourToTwoCompressor()

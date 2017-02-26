@@ -1051,10 +1051,15 @@ void BitHeapILPCompression::buildVariableCompressors(){
 
         variableBasicCompressor c0_2;
         c0_2.areaCost = 1.0;
-        c0_2.height = vector<int> (1);
-        c0_2.outputs = vector<int> (1);
-        c0_2.height[0] = 0;
+//        c0_2.height = vector<int> (2);
+//        c0_2.outputs = vector<int> (2);
+//        c0_2.height.resize(2);
+        c0_2.height.resize(1);
+        c0_2.outputs.resize(2);
+        c0_2.height[0] = 2;
+//        c0_2.height[1] = 0;
         c0_2.outputs[0] = 2;
+        c0_2.outputs[1] = 1;
         variableBCompressors.push_back(c0_2);
     }
 

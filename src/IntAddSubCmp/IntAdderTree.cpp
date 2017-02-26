@@ -221,7 +221,35 @@ namespace flopoco {
 
 	void IntAdderTree::buildStandardTestCases(TestCaseList * tcl) {
 		// please fill me with regression tests or corner case tests!
-	}
+        TestCase *tc;
+
+        tc = new TestCase(this);
+        for(int i=0; i < noOfInputs_; i++)
+        {
+            tc->addInput(join("X",i+1), mpz_class(0));
+        }
+        emulate(tc);
+        tc->addComment("Addition of zeros");
+        tcl->add(tc);
+
+        tc = new TestCase(this);
+        for(int i=0; i < noOfInputs_; i++)
+        {
+            tc->addInput(join("X",i+1), mpz_class(1));
+        }
+        emulate(tc);
+        tc->addComment("Addition of ones");
+        tcl->add(tc);
+
+        tc = new TestCase(this);
+        for(int i=0; i < noOfInputs_; i++)
+        {
+            tc->addInput(join("X",i+1), (mpz_class(1) << wIn_ - 1));
+        }
+        emulate(tc);
+        tc->addComment("Addition of max positive value");
+        tcl->add(tc);
+    }
 	
 	
 	

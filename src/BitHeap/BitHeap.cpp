@@ -1169,7 +1169,10 @@ namespace flopoco
             {
                 for(int outputRow=0; outputRow < maxOutputColHeight; outputRow++)
                 {
-                    op->outPortMap(bc, join("R",outputRow), join(out_concat, compressorIndex,"_", outConcatIndex));
+                    if(maxOutputColHeight == 1) //should be removed later
+                        op->outPortMap(bc, "R", join(out_concat, compressorIndex,"_", outConcatIndex));
+                    else
+                        op->outPortMap(bc, join("R",outputRow), join(out_concat, compressorIndex,"_", outConcatIndex));
                     // add the bits, at the current (global) instant.
                     for (unsigned j=0; j<bc->getOutputSize(); j++)
                     {
@@ -1531,12 +1534,13 @@ namespace flopoco
 				for(unsigned i=0; i < possibleCompressors.size(); i++)
 				{
 					stringstream compstr;
-                    compstr << "> compressor " << i << " : " << possibleCompressors[i] << "(";
+                    compstr << "> compressor " << i << " : " << *(possibleCompressors[i]); /* << "(";
 					for(unsigned j=0; j < possibleCompressors[i]->height.size()-1; j++)
 					{
 						compstr << possibleCompressors[i]->height[j] << ",";
 					}
-					compstr << possibleCompressors[i]->height[possibleCompressors[i]->height.size()-1] << ";" << possibleCompressors[i]->getOutputSize() << ") with cost " << possibleCompressors[i]->areaCost;
+                    compstr << possibleCompressors[i]->height[possibleCompressors[i]->height.size()-1] << ";" << possibleCompressors[i]->getOutputSize() << ")*/
+                    compstr << " with cost " << possibleCompressors[i]->areaCost;
 					REPORT(INFO, compstr.str());
 				}
 			}
@@ -1665,50 +1669,56 @@ namespace flopoco
                     REPORT(DEBUG, "ilp.varCompSolution[" << s << "]: " << ilp.varCompSolution[s].size());
                 }
 
-                for(unsigned s=0; s < ilp.varCompSolution.size(); s++)
+                for(unsigned s=0; s < max(((int) ilp.varCompSolution.size()),((int) ilp.solution.size())); s++)
                 {
-                    for(BitHeapHeuristicCompression::variableCompressor &vc : ilp.varCompSolution[s])
+                    if(s < ilp.varCompSolution.size())
                     {
-                        REPORT(DEBUG, "applying variable column compressor " << vc.type << " to column " << vc.column << " of width " << vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth << " in stage " << s);
-
-                        //VariableColumnCompressor *vcc = possibleVariableColumnCompressors[vc.type];
-                        VariableColumnCompressor *vcc=nullptr;
-                        if(vc.type == 0) //this information should be read from a vector "possibleVariableColumnCompressors" (similar to "possibleCompressors")
+                        for(BitHeapHeuristicCompression::variableCompressor &vc : ilp.varCompSolution[s])
                         {
-                            vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth);
-                            op->addToGlobalOpList(vcc);
-                        }
-                        else
-                        {
-                            THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
-                        }
+                            REPORT(DEBUG, "applying variable column compressor " << vc.type << " to column " << vc.column << " of width " << vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth << " in stage " << s);
 
-                        elemReduceFixedCycle(vc.column, vcc);
-
-                        //...
-                    }
-                }
-
-                for(unsigned s=0; s < ilp.solution.size(); s++)
-                {
-                    list<pair<int,int> >::iterator it;
-                    for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
-                    {
-                        REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
-                        if(((unsigned) (*it).second) < maxWeight){
-                            elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
-
-                            if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
+                            //VariableColumnCompressor *vcc = possibleVariableColumnCompressors[vc.type];
+                            VariableColumnCompressor *vcc=nullptr;
+                            if(vc.type == 0) //this information should be read from a vector "possibleVariableColumnCompressors" (similar to "possibleCompressors")
                             {
-                                compressorUsage[(*it).first]++;
-                                usedCompressors[(*it).first]=true;
+                                vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth);
+                                op->addToGlobalOpList(vcc);
+                            }
+                            else
+                            {
+                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
+                            }
+
+                            elemReduceFixedCycle(vc.column, vcc);
+
+                            //...
+                        }
+                    }
+                    if(s < ilp.solution.size())
+                    {
+                        list<pair<int,int> >::iterator it;
+                        for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
+                        {
+                            REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
+                            if(((unsigned) (*it).second) < maxWeight){
+                                elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+
+                                if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
+                                {
+                                    compressorUsage[(*it).first]++;
+                                    usedCompressors[(*it).first]=true;
+                                }
                             }
                         }
-
-
-
-
                     }
+
+                    cout << "!! remaining bits in stage " << s << " are: ";
+                    for(unsigned i=0; i<maxWeight; i++)
+                    {
+                        cout << bits[i].size() << " ";
+                    }
+                    cout << endl;
+
                     plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
                     op->nextCycle(); //!!! ToDo: Manage critical path !!!
                     plottingCycle=0;
@@ -1824,11 +1834,18 @@ namespace flopoco
 				}
 			}
 
-			//EXPERIMENTAL -----------------------------------------------------
-
-			//only three levels left
+            //EXPERIMENTAL -----------------------------------------------------
+            //only three levels left
 			if(getMaxHeight() > 2)
 			{
+                cout << "!! remaining bits are: ";
+                for(unsigned i=0; i<maxWeight; i++)
+                {
+                    cout << bits[i].size() << " ";
+                }
+                cout << endl;
+                exit(-1); //!!!
+
 				//plotter->heapSnapshot(true, op->getCurrentCycle(), op->getCriticalPath() );
 				REPORT(DEBUG, "only three levels left");
 
@@ -1874,14 +1891,14 @@ namespace flopoco
 
 							concatenateLSBColumns();
 
-							//REPORT(DEBUG, "here" << maxWeight << " " << i);
+                            //REPORT(DEBUG, "here" << maxWeight << " " << i);
 						}
 
 						WeightedBit* latestBit;
 
-						while(i<maxWeight)
+                        while(i<maxWeight)
 						{
-							REPORT(FULL, "i= "<< i << " cnt= " << cnt[i]);
+                            REPORT(FULL, "i= "<< i << " cnt= " << cnt[i] << " maxWeight=" << maxWeight);
 							// Now we are sure cnt[i] is 3
 							if (i==maxWeight-1)
 							{

@@ -42,7 +42,7 @@ namespace flopoco
 		unsigned getColumnSize(int column);
 		unsigned getNumberOfColumns();
 
-		unsigned getOutputSize();
+        unsigned getOutputSize() const;
 
 
 		/** test case generator  **/
@@ -54,6 +54,9 @@ namespace flopoco
 
 		static void registerFactory();
 	};
+
+    std::ostream& operator<<(std::ostream& o, const BasicCompressor& bc );
+
 }
 
 #endif

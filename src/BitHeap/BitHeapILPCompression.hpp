@@ -13,6 +13,12 @@
 
 //#define LARGE_NUMBER 10000; //number which has to be larger than any column in the bit heap (used in ILP)
 
+struct variableBasicCompressor {
+    vector<int> height;
+    vector<int> outputs;
+    double areaCost;
+};
+
 namespace flopoco
 {
     //class BitHeapHeuristicCompression;
@@ -22,11 +28,7 @@ namespace flopoco
 	{
 	public:
 
-        struct variableBasicCompressor {
-            vector<int> height;
-            vector<int> outputs;
-            double areaCost;
-        };
+
 
 
         BitHeapILPCompression(BitHeap* bh);
@@ -53,8 +55,8 @@ namespace flopoco
         int noOfStages_;
         bool useVariableCompressors;
         int compressionType;
-
-        void buildVariableCompressors();
+        vector<variableBasicCompressor> variableBCompressors;
+        
 
 	protected:
 		BitHeap* bh_;
@@ -63,7 +65,7 @@ namespace flopoco
 
 		int noOfColumnsMax;//max. number of columns in the bit heap
 		vector<BasicCompressor *>* possibleCompressors_; //vector containing all possible compressors, (index = compressior id)
-        vector<variableBasicCompressor> variableBCompressors;
+
 		int getMaxStageCount(int maxHeight);
 
 

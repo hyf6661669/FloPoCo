@@ -1040,48 +1040,7 @@ void BitHeapILPCompression::printNewBits(){
     }
 }
 
-void BitHeapILPCompression::buildVariableCompressors(){
-    cout << "!! BitHeapILPCompression::buildVariableCompressors()" << endl;
-    cout << "!! useVariableCompressors=" << useVariableCompressors << endl;
-    if(useVariableCompressors){
-        variableBasicCompressor c5_1;
-        c5_1.areaCost = 1.0;
-        c5_1.height = vector<int> (1);
-        c5_1.outputs = vector<int> (1);
-        c5_1.height[0] = 5;
-        c5_1.outputs[0] = 1;
-        variableBCompressors.push_back(c5_1);
 
-        variableBasicCompressor c4_2;
-        c4_2.areaCost = 1.0;
-        c4_2.height = vector<int> (1);
-        c4_2.outputs = vector<int> (1);
-        c4_2.height[0] = 4;
-        c4_2.outputs[0] = 2;
-        variableBCompressors.push_back(c4_2);
-
-        variableBasicCompressor c0_2;
-        c0_2.areaCost = 1.0;
-        c0_2.height = vector<int> (2);
-        c0_2.outputs = vector<int> (2);
-        c0_2.height[0] = 0;
-        c0_2.height[1] = 2;         //inputs are reversed 
-        c0_2.outputs[0] = 1;
-        c0_2.outputs[1] = 2;        //outputs are reversed
-        variableBCompressors.push_back(c0_2);
-    }
-
-    //debug
-    /*
-    cout << "variableBCompressors after adding" << endl;
-    for(unsigned i = 0; i < variableBCompressors.size(); i++){
-        cout << "height[0] = " << variableBCompressors[i].height[0];
-        cout << " output[0] = " << variableBCompressors[i].outputs[0];
-        cout << " area = " << variableBCompressors[i].areaCost << endl;
-    }
-    */
-
-}
 
 
 

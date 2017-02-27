@@ -1,4 +1,3 @@
-#define HAVE_SCIP //!!!
 #ifdef HAVE_SCIP
 
 #include "BitHeapILPCompression.hpp"
@@ -191,10 +190,12 @@ int BitHeapILPCompression::generateProblem(){
                 compCountVars[s][e].push_back(tmpvar);
                 SCIP_CALL( SCIPaddVar(scip, tmpvar) );
                 if(useVariableCompressors){
-                    if(variableBCompressors[variableBCompressors.size() - 1].height[0] == 0
-                            && e == noOfCompressors - 1 && c == (newBits[0].size()+s*(compOutputWordSizeMax-1)) - 1){ //problem with the (0;1) compressor
+                    unsigned offset = possibleCompressors_->size();
+                    //assume that every complete variable compressor exists of three parts: low middle high. Every high-compressor is at the last position of those three.
+                    //therefore high is at offset + 2, + 5, + 8 ... (=> % 3 == 2)
+                    if(   ((e - offset) % 3 == 2)   && c == (newBits[0].size()+s*(compOutputWordSizeMax-1)) - 1){ //problem with the high-compressor
 
-                        //add for the (0;1) compressor a k-variable which exceeds the boundary.
+                        //add for the high - compressor a k-variable which exceeds the boundary.
                         stringstream varName;
                         varName << "k_" << s << "_" << e << "_" << c+1;
                         SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), 0.0, SCIPinfinity(scip), variableBCompressors[e - possibleCompressors_->size()].areaCost, SCIP_VARTYPE_INTEGER) );
@@ -370,8 +371,19 @@ int BitHeapILPCompression::generateProblem(){
                             */
                         }
                     }
-                    if(e == noOfCompressors - 1 && variableBCompressors[e - offset].height[0] == 0 && c == ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) ){
-                        SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c] , variableBCompressors[variableBCompressors.size() - 1].outputs[0]) );
+                    
+                    
+                    //if(e == noOfCompressors - 1 && variableBCompressors[e - offset].height[0] == 0 && c == ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) ){
+                    
+                    //assume that every complete variable compressor exists of three parts: low middle high. Every high-compressor is at the last position of those three.
+                    //therefore high is at offset + 2, + 5, + 8 ... (=> % 3 == 2)
+                    if(   ((e - offset) % 3 == 2)     && c == ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) ){
+                        for(unsigned tempOutput = 0; tempOutput < variableBCompressors[e - offset].outputs.size(); tempOutput++){
+                            //cout << "s = " << s << " and tempOutput = " << tempOutput << endl;
+                            //cout << "c = " << c << " and compCountVars[s][e].size() = " << compCountVars[s][e].size() << endl;
+                            SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c] , variableBCompressors[e - offset].outputs[tempOutput]) );
+                        }
+                        
                     }
                 }
             }
@@ -382,7 +394,7 @@ int BitHeapILPCompression::generateProblem(){
         }
         //cout << "filling of C2 at stage " << s << " done" << endl;
     }
-
+    
     //cout << "C1 and C2 totally done" << endl;
 
 
@@ -439,7 +451,7 @@ int BitHeapILPCompression::generateProblem(){
 
     if(useVariableCompressors){
 
-
+        cout << "in useVariableCompressors " << endl << endl << endl;
         //assume that the order in variableBCompressors is low - middle -high ( (3;1) - (2;1) - (0;1) )
 
         unsigned offset = possibleCompressors_->size();
@@ -457,7 +469,7 @@ int BitHeapILPCompression::generateProblem(){
                 SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, 0, 0) );
 
                 SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 2][c + 1], 1.0) );
-                if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){	//if it is not the highest column, in the next higher column can be a middle compressor
+                if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){   //if it is not the highest column, in the next higher column can be a middle compressor
                     SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][c + 1], 1.0) );
                 }
                 SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 0][c], -1.0) );
@@ -472,10 +484,10 @@ int BitHeapILPCompression::generateProblem(){
                 SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName2.str().c_str(), 0, NULL, NULL, 0, 0) );
 
                 SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 2][c + 1], 1.0) );
-                if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){	//if it is not the highest column, in the next higher column can be a middle compressor
+                if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){   //if it is not the highest column, in the next higher column can be a middle compressor
                     SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][c + 1], 1.0) );
                 }
-                SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][c], -1.0) );	//(offset + 1 ) only difference to C5
+                SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][c], -1.0) );    //(offset + 1 ) only difference to C5
                 SCIP_CALL( SCIPaddCons(scip, tmpcons) );
 
                 */
@@ -539,7 +551,7 @@ int BitHeapILPCompression::generateProblem(){
 
 
     //C9: settings N's to zero
-    for(unsigned i = 0; i < zeroStages; i++){		//i = 0 are the N's from stage 1
+    for(unsigned i = 0; i < zeroStages; i++){       //i = 0 are the N's from stage 1
         vector<SCIP_VAR*> tempColumnBitCountVars = columnBitCountVars.at(i);
 
         for(unsigned j = 0; j < tempColumnBitCountVars.size(); j++){
@@ -550,7 +562,6 @@ int BitHeapILPCompression::generateProblem(){
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
         }
     }
-
 
     //cout << "end of SCIP problem description" << endl;
     return 0;
@@ -620,7 +631,7 @@ bool BitHeapILPCompression::solve(){
 
     /*
     SCIP_Bool feasible;
-    SCIP_CALL( SCIPcheckSol	( scip,sol,true,true,true,true,&feasible) );
+    SCIP_CALL( SCIPcheckSol ( scip,sol,true,true,true,true,&feasible) );
 
     if(!feasible)
     {
@@ -634,7 +645,7 @@ bool BitHeapILPCompression::solve(){
     SCIP_Real allValues[noOfallVariables];
 
     //display solution:
-    SCIP_CALL( SCIPgetSolVals	(scip,sol,noOfallVariables,allVariables,allValues));
+    SCIP_CALL( SCIPgetSolVals   (scip,sol,noOfallVariables,allVariables,allValues));
 
     REPORT(DEBUG, "solution:");
     for(int i=0; i < noOfallVariables; i++){
@@ -861,105 +872,105 @@ void BitHeapILPCompression::computeHeuristicN(){
 
 
 
-	void BitHeapILPCompression::plotSolution()
-	{
-		if(sol == NULL) return;
+    void BitHeapILPCompression::plotSolution()
+    {
+        if(sol == NULL) return;
 
-		SCIP_Real obj;
-		obj = SCIPgetPrimalbound(scip);
+        SCIP_Real obj;
+        obj = SCIPgetPrimalbound(scip);
 
-		//display bit heap stages:
-		cerr << "bit col: ";
-		for(int c=noOfColumnsMax-1; c >= 0; c--)
-		{
-		  cerr << c << '\t';
-		}
-		cerr << endl;
+        //display bit heap stages:
+        cerr << "bit col: ";
+        for(int c=noOfColumnsMax-1; c >= 0; c--)
+        {
+          cerr << c << '\t';
+        }
+        cerr << endl;
 
-		SCIP_Real val;
-		int overheadTotal=0;
-		for(int s=0; s <= noOfStagesUsed; s++)
-		{
-		  cerr << "-----------------------------------------------------------------------------------------------------------------" << endl;
-		  cerr << "stage " << s << ": ";
-		  int colmnHeight[noOfColumnsMax];
+        SCIP_Real val;
+        int overheadTotal=0;
+        for(int s=0; s <= noOfStagesUsed; s++)
+        {
+          cerr << "-----------------------------------------------------------------------------------------------------------------" << endl;
+          cerr << "stage " << s << ": ";
+          int colmnHeight[noOfColumnsMax];
 
-		  for(int c=noOfColumnsMax-1; c >= 0; c--)
-		  {
-			if(c < ((int) columnBitCountVars[s].size()))
-			{
-			  val = round(SCIPgetSolVal(scip,sol,columnBitCountVars[s][c]));
-			}
-			else
-			{
-			  val = 0;
-			}
-			colmnHeight[c] = (int) val;
-			cerr << val << "\t";
-		  }
-		  cerr << endl;
+          for(int c=noOfColumnsMax-1; c >= 0; c--)
+          {
+            if(c < ((int) columnBitCountVars[s].size()))
+            {
+              val = round(SCIPgetSolVal(scip,sol,columnBitCountVars[s][c]));
+            }
+            else
+            {
+              val = 0;
+            }
+            colmnHeight[c] = (int) val;
+            cerr << val << "\t";
+          }
+          cerr << endl;
 
-		  for(unsigned e=0; e < compCountVars[s].size(); e++)
-		  {
-			for(int c=noOfColumnsMax-1; c >= 0; c--)
-			{
-			  if(c < ((int) compCountVars[s][e].size()))
-			  {
-				val = SCIPgetSolVal(scip,sol,compCountVars[s][e][c]);
-				int k_max = ((int) round(val));
-				if(k_max > 0)
-				{
-				  for(int k=0; k < k_max; k++)
-				  {
-					cerr << "       - ";
-					for(int i=0; i < noOfColumnsMax-((int) (*possibleCompressors_)[e]->height.size())-c; i++)
-					{
-					  cerr << " \t";
-					}
-					for(int ce=0; ce < (int) (*possibleCompressors_)[e]->height.size(); ce++)
-					{
-					  colmnHeight[c+(*possibleCompressors_)[e]->height.size()-ce-1] -= (*possibleCompressors_)[e]->height[ce];
-					  cerr << (*possibleCompressors_)[e]->height[ce] << '\t';
-					}
-					cerr << endl;
-				  }
-				}
-			  }
-			}
-		  }
+          for(unsigned e=0; e < compCountVars[s].size(); e++)
+          {
+            for(int c=noOfColumnsMax-1; c >= 0; c--)
+            {
+              if(c < ((int) compCountVars[s][e].size()))
+              {
+                val = SCIPgetSolVal(scip,sol,compCountVars[s][e][c]);
+                int k_max = ((int) round(val));
+                if(k_max > 0)
+                {
+                  for(int k=0; k < k_max; k++)
+                  {
+                    cerr << "       - ";
+                    for(int i=0; i < noOfColumnsMax-((int) (*possibleCompressors_)[e]->height.size())-c; i++)
+                    {
+                      cerr << " \t";
+                    }
+                    for(int ce=0; ce < (int) (*possibleCompressors_)[e]->height.size(); ce++)
+                    {
+                      colmnHeight[c+(*possibleCompressors_)[e]->height.size()-ce-1] -= (*possibleCompressors_)[e]->height[ce];
+                      cerr << (*possibleCompressors_)[e]->height[ce] << '\t';
+                    }
+                    cerr << endl;
+                  }
+                }
+              }
+            }
+          }
 
-		  cerr << "       = ";
-		  for(int c=noOfColumnsMax-1; c >= 0; c--)
-		  {
-			cerr << colmnHeight[c] << '\t';
-		  }
-		  cerr << endl;
+          cerr << "       = ";
+          for(int c=noOfColumnsMax-1; c >= 0; c--)
+          {
+            cerr << colmnHeight[c] << '\t';
+          }
+          cerr << endl;
 
-		  int overheadStage=0;
-		  for(int c=0; c < noOfColumnsMax; c++)
-		  {
-			if(s == noOfStagesUsed)
-			{
-			  if(colmnHeight[c] > 0)
-				overheadStage += 2-colmnHeight[c];
-			}
-			else
-			{
-			  overheadStage += -colmnHeight[c];
-			}
-		  }
-		  cerr << "overhead (stage " << s << ")=" << overheadStage << endl;
-		  overheadTotal += overheadStage;
-		}
+          int overheadStage=0;
+          for(int c=0; c < noOfColumnsMax; c++)
+          {
+            if(s == noOfStagesUsed)
+            {
+              if(colmnHeight[c] > 0)
+                overheadStage += 2-colmnHeight[c];
+            }
+            else
+            {
+              overheadStage += -colmnHeight[c];
+            }
+          }
+          cerr << "overhead (stage " << s << ")=" << overheadStage << endl;
+          overheadTotal += overheadStage;
+        }
 
 
-		cerr << "overhead (total)=" << overheadTotal << endl;
-		cerr << "no of compressor stages: " << noOfStagesUsed << endl;
-		cerr << "objective value: " << obj << endl;
-	}
+        cerr << "overhead (total)=" << overheadTotal << endl;
+        cerr << "no of compressor stages: " << noOfStagesUsed << endl;
+        cerr << "objective value: " << obj << endl;
+    }
 
-	int BitHeapILPCompression::cleanUp()
-	{
+    int BitHeapILPCompression::cleanUp()
+    {
         REPORT(DEBUG, "cleaning up SCIP... ");
         //clean up:
 
@@ -1017,8 +1028,8 @@ void BitHeapILPCompression::computeHeuristicN(){
         sol = NULL;
 
         //cout << "cleaning up done " << endl;
-		return 0;
-	}
+        return 0;
+    }
 
 void BitHeapILPCompression::printNewBits(){
     for(unsigned i = 0; i < newBits.size(); i++){
@@ -1051,10 +1062,12 @@ void BitHeapILPCompression::buildVariableCompressors(){
 
         variableBasicCompressor c0_2;
         c0_2.areaCost = 1.0;
-        c0_2.height = vector<int> (1);
-        c0_2.outputs = vector<int> (1);
+        c0_2.height = vector<int> (2);
+        c0_2.outputs = vector<int> (2);
         c0_2.height[0] = 0;
-        c0_2.outputs[0] = 2;
+        c0_2.height[1] = 2;         //inputs are reversed 
+        c0_2.outputs[0] = 1;
+        c0_2.outputs[1] = 2;        //outputs are reversed
         variableBCompressors.push_back(c0_2);
     }
 

@@ -12,7 +12,6 @@
   All rights reserved.
 
 */
-#define HAVE_SCIP //!!!
 
 #include "BitHeap.hpp"
 /* Uni KS start */

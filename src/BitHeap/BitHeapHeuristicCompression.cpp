@@ -1,4 +1,4 @@
-#define HAVE_SCIP //!!!
+
 
 #include "BitHeapHeuristicCompression.hpp"
 #include <algorithm>

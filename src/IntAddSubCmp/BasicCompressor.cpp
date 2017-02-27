@@ -151,7 +151,7 @@ BasicCompressor::BasicCompressor(Target * target, vector<int> h)
 			return height[height.size()-column-1];
 	}
 
-	unsigned BasicCompressor::getOutputSize()
+    unsigned BasicCompressor::getOutputSize() const
 	{
 		return wOut;
 	}
@@ -178,6 +178,17 @@ BasicCompressor::BasicCompressor(Target * target, vector<int> h)
 
 		tc->addExpectedOutput("R", r);
 	}
+
+    std::ostream& operator<<(std::ostream& o, const BasicCompressor& bc ) // output
+    {
+        o << "(";
+        for(unsigned j=0; j < bc.height.size()-1; j++)
+        {
+            o << bc.height[j] << ",";
+        }
+        o << bc.height[bc.height.size()-1] << ";" << bc.getOutputSize() << ")";
+        return o;
+    }
 
 //	OperatorPtr BasicCompressor::parseArguments(Target *target, const vector<string> &args) {
 //		return new BasicCompressor(target);

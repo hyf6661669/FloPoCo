@@ -275,11 +275,8 @@ namespace flopoco
                 tempCompressor.originalPosition = pos;
                 tempCompressor.maxEfficiency = efficiency;
 
-                cout << tempCompressor.originalPosition << " has the efficiency of ";
+                cout << "compressor " << tempCompressor.originalPosition << " " << *bc << " has the efficiency of ";
                 cout << tempCompressor.maxEfficiency << "  and outputsize " << tempCompressor.pointer->getOutputSize() << endl;
-
-
-
 
                 //now put it at the back of the compressors-vector
                 compressors.push_back(tempCompressor);
@@ -314,14 +311,9 @@ namespace flopoco
 
 
                   //debug compressors
+            cout << "ordering of sorted compressor list:" << endl;
             for(unsigned i = 0; i < compressors.size(); i++){
-                cout << "(";
-                for(unsigned j = 0; j < compressors[i].pointer->getNumberOfColumns(); j++){
-                    cout << compressors[i].pointer->getColumnSize(j) << ",";
-                }
-
-                cout << ";";
-                cout << compressors[i].pointer->getOutputSize() << ") with efficiency " << compressors[i].maxEfficiency << endl;
+                cout << "compressor " << i << " (original position " << compressors[i].originalPosition << "): " << *(compressors[i].pointer) << " has efficiency " << compressors[i].maxEfficiency << endl;
             }
 
 

@@ -100,6 +100,7 @@ namespace flopoco
 
         int noOfStages_;
         int noOfColumnsMax;
+		unsigned compOutputWordSizeMax;
 
         int getMaxStageCount(int maxHeight);
 

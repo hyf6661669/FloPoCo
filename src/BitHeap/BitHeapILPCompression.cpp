@@ -117,9 +117,9 @@ int BitHeapILPCompression::generateProblem(){
                     compOutputWordSizeMax = (*possibleCompressors_)[e]->getOutputSize();
             }
     }
+	compOutputWordSizeMax -= 1;
     REPORT(DEBUG,"compOutputWordSizeMax=" << compOutputWordSizeMax);
 
-    //cout << "compOutputWordSizeMax: " << compOutputWordSizeMax << endl;
     noOfColumnsMax = newBits[0].size()+noOfStages_*(compOutputWordSizeMax-1);
 
     //if heuristic isn't used, fill up the U with zero - vectors
@@ -189,7 +189,7 @@ int BitHeapILPCompression::generateProblem(){
                 }
                 compCountVars[s][e].push_back(tmpvar);
                 SCIP_CALL( SCIPaddVar(scip, tmpvar) );
-                if(useVariableCompressors){
+                if(useVariableCompressors && e >= possibleCompressors_->size()){
                     unsigned offset = possibleCompressors_->size();
                     //assume that every complete variable compressor exists of three parts: low middle high. Every high-compressor is at the last position of those three.
                     //therefore high is at offset + 2, + 5, + 8 ... (=> % 3 == 2)

@@ -79,6 +79,16 @@ namespace flopoco
             bitHeapILPCompression.compressionType = 5;
         }
 #endif //HAVE_SCIP
+		
+		vector<BasicCompressor *>* possibleCompressors_ = bh->getPossibleCompressors();
+		compOutputWordSizeMax = 0; 
+		for(unsigned e=0; e < possibleCompressors_->size(); e++){
+			if(compOutputWordSizeMax < (*possibleCompressors_)[e]->getOutputSize()){
+				compOutputWordSizeMax = (*possibleCompressors_)[e]->getOutputSize();
+			}
+		}
+		compOutputWordSizeMax -= 1;//every compressor has at least one column of inputs
+		//REPORT(DEBUG,"compOutputWordSizeMax=" << compOutputWordSizeMax);
     }
 
 
@@ -162,7 +172,7 @@ namespace flopoco
             }
         }
         cout << "minFixedStage = " << minFixedStage << " maxFixedStage = " << maxFixedStage << endl;
-
+		cout << "compOutputWordSizeMax = " << compOutputWordSizeMax << endl;
         //generate newBits
         vector<int> firstCycle(bh_->bits.size());
         for(unsigned w = 0; w < bh_->bits.size(); w++){
@@ -175,7 +185,7 @@ namespace flopoco
         //in every stage, the size increases by two, because the (6,0,6;5) compressor can increase the size by two
 
         for(unsigned v = 1; v < (unsigned)noOfStages_; v++){
-            vector<int> tempZeroVector(2 * v + bh_->bits.size());
+            vector<int> tempZeroVector(compOutputWordSizeMax * v + bh_->bits.size());
             for(unsigned w = 0; w < tempZeroVector.size(); w++){
                 tempZeroVector[w] = 0;
             }
@@ -1052,7 +1062,7 @@ namespace flopoco
                 if(!twoBitAdderReached && !found && s == newBits.size() - 1){
                     //add new stage;
                     vector<int> zeroVector;
-                    zeroVector.resize(newBits[s].size() + 2);
+                    zeroVector.resize(newBits[s].size() + compOutputWordSizeMax);
                     newBits.push_back(zeroVector);
 
                     cout << "added a new stage because the parandeh-afshar algorithm wasn't able to find a solution" << endl;
@@ -1078,7 +1088,7 @@ namespace flopoco
                 if(addNewStage){
                     cout << "we weren't able to compute a solution within " << s << " stages. Therefore we need an additional stage." << endl;
                     vector<int> tempList;
-                    tempList.resize(newBits[s].size() + 2);
+                    tempList.resize(newBits[s].size() + compOutputWordSizeMax);
                     for(unsigned k = 0; k < tempList.size(); k++){
                         tempList[k] = 0;
                     }

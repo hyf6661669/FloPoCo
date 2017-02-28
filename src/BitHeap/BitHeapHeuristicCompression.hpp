@@ -116,8 +116,10 @@ namespace flopoco
         double compEffBitHeap(unsigned s, unsigned c, unsigned compPos);
         void useCompressor(unsigned s, unsigned column, unsigned newCompPos);
         void algorithm();
-		pair<double, pair<unsigned, unsigned> > variableCompEffBitHeap(unsigned s, unsigned compPos);
-		double variableCompEffBitHeapBasic(unsigned s,unsigned c,unsigned midLength);
+		pair<double, pair<unsigned, unsigned> > variableCompEffBitHeap(unsigned s, unsigned compType);
+		double variableCompEffBitHeapBasic(unsigned s,unsigned c,unsigned midLength, unsigned compType);
+		void useVariableCompressor(unsigned s, unsigned column, unsigned midLength, unsigned compType);
+		bool variableCompressorNecessary(unsigned s, unsigned column, unsigned midLength, unsigned compType);
         void parandehAfshar();
         int generateAllHeu(bool allCombinations, double efficiency);
         void addHeuristicSolutionToILPSolver();

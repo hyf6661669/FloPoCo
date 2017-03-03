@@ -17,7 +17,7 @@
 namespace flopoco
 {
 
-
+	//struct variableBasicCompressor;
 
     class BitHeapHeuristicCompression
     {
@@ -29,8 +29,7 @@ namespace flopoco
             int middleCompressorWidth;
             int endCompressorWidth;
         };
-
-
+		
         BitHeapHeuristicCompression(BitHeap* bh, std::string mode);
         //BitHeapHeuristicCompression(std::string mode);
         //BitHeapHeuristicCompression();
@@ -85,6 +84,7 @@ namespace flopoco
         unsigned maxFixedStage;
         unsigned minSliceCount;
         unsigned numberOfBuildStages;
+		vector<variableBasicCompressor> variableBCompressors;
 
         struct bhCompressor {
             BasicCompressor * pointer;
@@ -100,6 +100,7 @@ namespace flopoco
 
         int noOfStages_;
         int noOfColumnsMax;
+		unsigned compOutputWordSizeMax;
 
         int getMaxStageCount(int maxHeight);
 
@@ -115,13 +116,17 @@ namespace flopoco
         double compEffBitHeap(unsigned s, unsigned c, unsigned compPos);
         void useCompressor(unsigned s, unsigned column, unsigned newCompPos);
         void algorithm();
+		pair<double, pair<unsigned, unsigned> > variableCompEffBitHeap(unsigned s, unsigned compType);
+		double variableCompEffBitHeapBasic(unsigned s,unsigned c,unsigned midLength, unsigned compType);
+		void useVariableCompressor(unsigned s, unsigned column, unsigned midLength, unsigned compType);
+		bool variableCompressorNecessary(unsigned s, unsigned column, unsigned midLength, unsigned compType);
         void parandehAfshar();
         int generateAllHeu(bool allCombinations, double efficiency);
         void addHeuristicSolutionToILPSolver();
         void preReduction(unsigned minHeight, double minEff);
         void setUpILPForMoreStages(unsigned stages, bool firstOne);
         void buildVariableCompressorSolution();
-
+		void buildVariableCompressors();
 
         void setUpNewStageCountOfILP();
 

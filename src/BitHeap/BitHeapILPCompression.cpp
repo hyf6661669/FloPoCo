@@ -117,9 +117,9 @@ int BitHeapILPCompression::generateProblem(){
                     compOutputWordSizeMax = (*possibleCompressors_)[e]->getOutputSize();
             }
     }
+	compOutputWordSizeMax -= 1;
     REPORT(DEBUG,"compOutputWordSizeMax=" << compOutputWordSizeMax);
 
-    //cout << "compOutputWordSizeMax: " << compOutputWordSizeMax << endl;
     noOfColumnsMax = newBits[0].size()+noOfStages_*(compOutputWordSizeMax-1);
 
     //if heuristic isn't used, fill up the U with zero - vectors
@@ -1073,21 +1073,7 @@ void BitHeapILPCompression::buildVariableCompressors(){
         c0_2.outputs[1] = 2;        //outputs are reversed
         variableBCompressors.push_back(c0_2);
     }
-
-    //debug
-    /*
-    cout << "variableBCompressors after adding" << endl;
-    for(unsigned i = 0; i < variableBCompressors.size(); i++){
-        cout << "height[0] = " << variableBCompressors[i].height[0];
-        cout << " output[0] = " << variableBCompressors[i].outputs[0];
-        cout << " area = " << variableBCompressors[i].areaCost << endl;
-    }
-    */
-
 }
-
-
-
 
 }   //end namespace flopoco
 

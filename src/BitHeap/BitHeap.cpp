@@ -116,7 +116,7 @@ namespace flopoco
 			}
 			else
 			{
-				THROWERROR("compression " << UserInterface::compression << "unknown!");
+                THROWERROR("compression " << UserInterface::compression << " unknown!");
                         }
 		}
 		/* Uni KS stop */
@@ -1694,7 +1694,7 @@ namespace flopoco
                     REPORT(DEBUG, "ilp.varCompSolution[" << s << "]: " << ilp.varCompSolution[s].size());
                 }
 
-                for(unsigned s=0; s < max(((int) ilp.varCompSolution.size()),((int) ilp.solution.size())); s++)
+                for(int s=0; s < max(((int) ilp.varCompSolution.size()),((int) ilp.solution.size())); s++)
                 {
                     if(s < ilp.varCompSolution.size())
                     {
@@ -1762,82 +1762,110 @@ namespace flopoco
 
             }
             else if(compressionType == 6 || compressionType == 7){
-                            if(!this->getOp()->getTarget()->isPipelined())
+				if(!this->getOp()->getTarget()->isPipelined())
+				{
+					THROWERROR("The optimal compression does currently not support non-pipelined compression, sorry.");
+				}
+
+				std::string mode = "heuristic_pa";
+
+				if(compressionType == 6){
+					mode = "heuristic_parandeh-afshar_modified";
+				}
+				else if(compressionType == 7){
+					mode = "heuristic_pa";
+				}
+
+				//deleting compressor 4 and 6:
+				std::string targetID = op->getTarget()->getID();
+				if((targetID == "Virtex5") || (targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6")){
+					//TODO: check for unnecessary compressors by iterating through list
+					if(possibleCompressors.size() > 6){
+						possibleCompressors.erase(possibleCompressors.begin() + 6);
+						possibleCompressors.erase(possibleCompressors.begin() + 4);
+					}
+				}
+				//cout << "finished erasing" << endl;
+				//the heuristic solution calls the BitHeapILPCompression
+				BitHeapHeuristicCompression ilp(this, mode);
+				ilp.setLowerBounds(efficiencyPerStage);
+
+				ilp.generateProblem();
+				ilp.solve();
+//                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
+
+				//copying solution from heuristic to ILPCompression:
+				//ilp.solution = ilp.bitHeapILPCompression.solution;
+
+				REPORT(DEBUG, "ilp.solution.size(): " << ilp.solution.size());
+				for(unsigned s = 0; s < ilp.solution.size(); s++){
+					REPORT(DEBUG, "ilp.solution[" << s << "]: " << ilp.solution[s].size());
+				}
+				REPORT(DEBUG, "ilp.varCompSolution.size(): " << ilp.varCompSolution.size());
+				for(unsigned s = 0; s < ilp.varCompSolution.size(); s++){
+					REPORT(DEBUG, "ilp.varCompSolution[" << s << "]: " << ilp.varCompSolution[s].size());
+				}
+
+
+                for(unsigned s=0; s < max(((int) ilp.varCompSolution.size()),((int) ilp.solution.size())); s++)
+                {
+                    if(s < ilp.varCompSolution.size())
+                    {
+                        for(BitHeapHeuristicCompression::variableCompressor &vc : ilp.varCompSolution[s])
+                        {
+                            REPORT(DEBUG, "applying variable column compressor " << vc.type << " to column " << vc.column << " of width " << vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth << " in stage " << s);
+
+                            //VariableColumnCompressor *vcc = possibleVariableColumnCompressors[vc.type];
+                            VariableColumnCompressor *vcc=nullptr;
+                            if(vc.type == 0) //this information should be read from a vector "possibleVariableColumnCompressors" (similar to "possibleCompressors")
                             {
-                                THROWERROR("The optimal compression does currently not support non-pipelined compression, sorry.");
+                                vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth);
+                                op->addToGlobalOpList(vcc);
                             }
-
-                            std::string mode = "heuristic_pa";
-
-                            if(compressionType == 6){
-                                mode = "heuristic_parandeh-afshar_modified";
-                            }
-                            else if(compressionType == 7){
-                                mode = "heuristic_pa";
-                            }
-
-                            //deleting compressor 4 and 6:
-                            std::string targetID = op->getTarget()->getID();
-                            if((targetID == "Virtex5") || (targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6")){
-                                //TODO: check for unnecessary compressors by iterating through list
-                                if(possibleCompressors.size() > 6){
-                                    possibleCompressors.erase(possibleCompressors.begin() + 6);
-                                    possibleCompressors.erase(possibleCompressors.begin() + 4);
-                                }
-                            }
-                            //cout << "finished erasing" << endl;
-                            //the heuristic solution calls the BitHeapILPCompression
-                            BitHeapHeuristicCompression ilp(this, mode);
-                            ilp.setLowerBounds(efficiencyPerStage);
-
-                            ilp.generateProblem();
-                            ilp.solve();
-            //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
-
-                            //copying solution from heuristic to ILPCompression:
-                            //ilp.solution = ilp.bitHeapILPCompression.solution;
-
-                            REPORT(DEBUG, "ilp.solution.size(): " << ilp.solution.size());
-                            for(unsigned s = 0; s < ilp.solution.size(); s++){
-                                REPORT(DEBUG, "ilp.solution[" << s << "]: " << ilp.solution[s].size());
-                            }
-                            REPORT(DEBUG, "ilp.varCompSolution.size(): " << ilp.varCompSolution.size());
-                            for(unsigned s = 0; s < ilp.varCompSolution.size(); s++){
-                                REPORT(DEBUG, "ilp.varCompSolution[" << s << "]: " << ilp.varCompSolution[s].size());
-                            }
-
-
-                            for(unsigned s=0; s < ilp.solution.size(); s++)
+                            else
                             {
-                                list<pair<int,int> >::iterator it;
-                                for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
-                                {
-                                    REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
-                                    if(((unsigned) (*it).second) < maxWeight){
-                                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
-
-                                        if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
-                                        {
-                                            compressorUsage[(*it).first]++;
-                                            usedCompressors[(*it).first]=true;
-                                        }
-                                    }
-
-
-
-
-                                }
-                                plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
-                                if(this->getOp()->getTarget()->isPipelined())
-                                {
-                                    op->nextCycle(); //!!! ToDo: Manage critical path !!!
-                                }
-                                plottingCycle=0;
-                                plottingCP=0;
-
-
+                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
                             }
-                            REPORT(DEBUG, "pipeline depth in compression: " << op->getPipelineDepth());
+
+                            elemReduceFixedCycle(vc.column, vcc);
+
+                            //...
+                        }
+                    }
+                    if(s < ilp.solution.size())
+                    {
+                        list<pair<int,int> >::iterator it;
+                        for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
+                        {
+                            REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
+                            if(((unsigned) (*it).second) < maxWeight){
+                                elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+
+                                if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
+                                {
+                                    compressorUsage[(*it).first]++;
+                                    usedCompressors[(*it).first]=true;
+                                }
+                            }
+                        }
+                    }
+
+                    cout << "!! remaining bits in stage " << s << " are: ";
+                    for(unsigned i=0; i<maxWeight; i++)
+                    {
+                        cout << bits[i].size() << " ";
+                    }
+                    cout << endl;
+
+                    plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
+                    if(this->getOp()->getTarget()->isPipelined())
+                    {
+                        op->nextCycle(); //!!! ToDo: Manage critical path !!!
+                    }
+                    plottingCycle=0;
+                    plottingCP=0;
+                }
+				REPORT(DEBUG, "pipeline depth in compression: " << op->getPipelineDepth());
             }
 /* Uni KS stop */            
 			else

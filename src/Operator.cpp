@@ -104,7 +104,17 @@ namespace flopoco{
 
 	void Operator::addVirtualSubComponent(OperatorPtr op) {
 
-		virtualSubComponents_.push_back(op);
+        bool alreadyPresent=false;
+        for (auto i: virtualSubComponents_)
+        {
+            if( op->getName() == i->getName() )
+            {
+                alreadyPresent=true;
+            }
+        }
+        if(!alreadyPresent)
+            virtualSubComponents_.push_back(op);
+
 	}
 
 

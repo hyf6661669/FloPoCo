@@ -42,7 +42,7 @@ namespace flopoco {
         name << "IntAdderTree_" << method << "_" << wIn_ << "_" << noOfInputs_;
 		setName(name.str());
 		// Copyright 
-		setCopyrightString("ACME and Co 2010");
+        setCopyrightString("Marco Kleinlein, Martin Kumm");
 
 		setSequential();
 		useNumericStd();
@@ -77,7 +77,8 @@ namespace flopoco {
 
 			bitheap->generateCompressorVHDL();
 
-			addOutput("Y" , bitheap->getMaxWeight()+1);
+            nextCycle(); //sync output (for timing analysis)
+            addOutput("Y" , bitheap->getMaxWeight()+1);
 
 			vhdl << tab << "Y <= " << bitheap->getSumName() << ";" << endl;
 		}
@@ -127,6 +128,7 @@ namespace flopoco {
 
             int s=0;
             int wordSizeInStage = wIn;
+
             while(inputsAtStage > 1)
             {
                 int j=1;
@@ -136,18 +138,14 @@ namespace flopoco {
                     {
                         Xilinx_TernaryAdd_2State* add3 = new Xilinx_TernaryAdd_2State(target,wIn+2*(s+1),0,-1);
                         addSubComponent(add3);
-                        if( 0 == s ){
-                            vhdl << tab << declare(join("X_0_",i+1,"t"),wIn+2 ) << " <= \"00\" & " << join("X_0_",i+1) << ";" << endl;
-                            vhdl << tab << declare(join("X_0_",i+2,"t"),wIn+2 ) << " <= \"00\" & " << join("X_0_",i+2) << ";" << endl;
-                            vhdl << tab << declare(join("X_0_",i+3,"t"),wIn+2 ) << " <= \"00\" & " << join("X_0_",i+3) << ";" << endl;
-                            inPortMap( add3,"x_i",join("X_",s,"_",i+1,"t") );
-                            inPortMap( add3,"y_i",join("X_",s,"_",i+2,"t") );
-                            inPortMap( add3,"z_i",join("X_",s,"_",i+3,"t") );
-                        }else{
-                            inPortMap( add3,"x_i",join("X_",s,"_",i+1) );
-                            inPortMap( add3,"y_i",join("X_",s,"_",i+2) );
-                            inPortMap( add3,"z_i",join("X_",s,"_",i+3) );
-                        }
+
+                        vhdl << tab << declare(join("X_",s,"_",i+1,"t"),wIn+2*(s+1)) << " <= \"00\" & " << join("X_",s,"_",i+1) << ";" << endl;
+                        vhdl << tab << declare(join("X_",s,"_",i+2,"t"),wIn+2*(s+1)) << " <= \"00\" & " << join("X_",s,"_",i+2) << ";" << endl;
+                        vhdl << tab << declare(join("X_",s,"_",i+3,"t"),wIn+2*(s+1)) << " <= \"00\" & " << join("X_",s,"_",i+3) << ";" << endl;
+
+                        inPortMap( add3,"x_i",join("X_",s,"_",i+1,"t") );
+                        inPortMap( add3,"y_i",join("X_",s,"_",i+2,"t") );
+                        inPortMap( add3,"z_i",join("X_",s,"_",i+3,"t") );
                         outPortMap(add3,"sum_o", join("X_",s+1,"_",j++) );
                         vhdl << instance(add3,join("add3_",s,"_",i)) << std::endl;
                     }

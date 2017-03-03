@@ -1128,8 +1128,16 @@ namespace flopoco
 
 		if(bc->getNumberOfColumns() == 1 && bc->getColumnSize(0) == 1)
 		{
-			removeCompressedBits(i,1,op->getCurrentCycle());
-			addBit(i, signal[0].str(),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+            if(this->getOp()->getTarget()->isPipelined())
+            {
+                removeCompressedBits(i,1,op->getCurrentCycle());
+                addBit(i, signal[0].str(),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+            }
+            else
+            {
+                removeCompressedBits(i,1);
+                addBit(i, signal[0].str(),"",type); //!!! ToDo: Manage critical path
+            }
 		}
 		else
 		{
@@ -1177,7 +1185,14 @@ namespace flopoco
                     {
                         if(outputRow <= bc->outputs[bc->wOut-j-1]-1)
                         {
-                            addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+                            if(this->getOp()->getTarget()->isPipelined())
+                            {
+                                addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+                            }
+                            else
+                            {
+                                addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type); //!!! ToDo: Manage critical path
+                            }
                         }
                     }
                     ++outConcatIndex;
@@ -1189,7 +1204,14 @@ namespace flopoco
 			for(unsigned j=0; j < bc->height.size(); j++)
 			{
                 if(i + j < maxWeight){
-                    removeCompressedBits(i+j,bc->getColumnSize(j),op->getCurrentCycle());
+                    if(this->getOp()->getTarget()->isPipelined())
+                    {
+                        removeCompressedBits(i+j,bc->getColumnSize(j),op->getCurrentCycle());
+                    }
+                    else
+                    {
+                        removeCompressedBits(i+j,bc->getColumnSize(j));
+                    }
                 }
 			}
 
@@ -1614,8 +1636,11 @@ namespace flopoco
 
 					}
                     plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
-					op->nextCycle(); //!!! ToDo: Manage critical path !!!
-					plottingCycle=0;
+                    if(this->getOp()->getTarget()->isPipelined())
+                    {
+                        op->nextCycle(); //!!! ToDo: Manage critical path !!!
+                    }
+                    plottingCycle=0;
                     plottingCP=0;
                 }
 #else
@@ -1626,11 +1651,12 @@ namespace flopoco
             else if(compressionType == 4 || compressionType == 5)
             {
 #ifdef HAVE_SCIP
+/*
                 if(!this->getOp()->getTarget()->isPipelined())
                 {
                     THROWERROR("The optimal compression does currently not support non-pipelined compression, sorry.");
                 }
-
+*/
                 std::string mode = "heuristic_pa";
                 if(compressionType == 5){
                     mode = "optimalMinStages";
@@ -1718,8 +1744,12 @@ namespace flopoco
                     }
                     cout << endl;
 
-                    plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
-                    op->nextCycle(); //!!! ToDo: Manage critical path !!!
+                    plotter->heapSnapshot(true, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
+
+                    if(this->getOp()->getTarget()->isPipelined())
+                    {
+                        op->nextCycle(); //!!! ToDo: Manage critical path !!!
+                    }
                     plottingCycle=0;
                     plottingCP=0;
 
@@ -1798,7 +1828,10 @@ namespace flopoco
 
                                 }
                                 plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
-                                op->nextCycle(); //!!! ToDo: Manage critical path !!!
+                                if(this->getOp()->getTarget()->isPipelined())
+                                {
+                                    op->nextCycle(); //!!! ToDo: Manage critical path !!!
+                                }
                                 plottingCycle=0;
                                 plottingCP=0;
 

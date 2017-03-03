@@ -23,25 +23,10 @@ namespace flopoco{
         name << "Compressor_4_to_2_width_" << width;
         setName(name.str());
 
-        stringstream xs;
-        int w=0;
         for(unsigned i=0;i<height.size();i++)
         {
-            w += height[height.size()-i-1];
             addInput(join("X",i), height[height.size()-i-1]);
-
-            if(i!=0)
-            {
-                xs<<"& X"<<height.size()-i-1<<" ";
-            }
-            else
-            {
-                xs<<"X"<<height.size()-1<<" ";
-            }
         }
-
-        xs<<";\n";
-        vhdl << tab << declare("X", w) << " <=" << xs.str();
 
         addOutput("R0", wOut);
         addOutput("R1", wOut);
@@ -117,10 +102,13 @@ namespace flopoco{
 
         for( int i = 0; i < needed_cc; i++ ) {
             Xilinx_CARRY4 *cur_cc = new Xilinx_CARRY4( target );
+
             inPortMapCst( cur_cc, "cyinit", "'0'" );
             if( i == 0 ) {
-                inPortMapCst( cur_cc, "ci", "X0(4)" );
+//                inPortMap( cur_cc, "cyinit", "X0(4)"); //does not work
+                inPortMapCst( cur_cc, "ci", "'0'" );
             } else {
+//                inPortMapCst( cur_cc, "cyinit", "'0'" );
                 inPortMap( cur_cc, "ci", "cc_co" + of( i * 4 - 1 ) );
             }
             inPortMap( cur_cc, "di", "cc_di" + range( i * 4 + 3, i * 4 ) );
@@ -135,7 +123,7 @@ namespace flopoco{
 
         vhdl << endl;
 
-        vhdl << tab << "R0 <= cc_o(" << width << " downto 0);" << endl;
+        vhdl << tab << "R0 <= cc_co(" << width-1 << ") & cc_o(" << width-1 << " downto 0);" << endl;
     }
 	
     FourToTwoCompressor::~FourToTwoCompressor()
@@ -153,7 +141,7 @@ namespace flopoco{
         {
             height[i] = 4;
         }
-        height[width-1] = 5;
+        height[width-1] = 4;
 
         wOut=width+1;
 

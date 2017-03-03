@@ -190,17 +190,20 @@ int BitHeapILPCompression::generateProblem(){
                 compCountVars[s][e].push_back(tmpvar);
                 SCIP_CALL( SCIPaddVar(scip, tmpvar) );
                 if(useVariableCompressors){
-                    unsigned offset = possibleCompressors_->size();
-                    //assume that every complete variable compressor exists of three parts: low middle high. Every high-compressor is at the last position of those three.
-                    //therefore high is at offset + 2, + 5, + 8 ... (=> % 3 == 2)
-                    if(   ((e - offset) % 3 == 2)   && c == (newBits[0].size()+s*(compOutputWordSizeMax-1)) - 1){ //problem with the high-compressor
+                    if(e >= possibleCompressors_->size())
+                    {
+                        unsigned offset = possibleCompressors_->size();
+                        //assume that every complete variable compressor exists of three parts: low middle high. Every high-compressor is at the last position of those three.
+                        //therefore high is at offset + 2, + 5, + 8 ... (=> % 3 == 2)
+                        if(   ((e - offset) % 3 == 2)   && c == (newBits[0].size()+s*(compOutputWordSizeMax-1)) - 1){ //problem with the high-compressor
 
-                        //add for the high - compressor a k-variable which exceeds the boundary.
-                        stringstream varName;
-                        varName << "k_" << s << "_" << e << "_" << c+1;
-                        SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), 0.0, SCIPinfinity(scip), variableBCompressors[e - possibleCompressors_->size()].areaCost, SCIP_VARTYPE_INTEGER) );
-                        compCountVars[s][e].push_back(tmpvar);
-                        SCIP_CALL( SCIPaddVar(scip, tmpvar) );
+                            //add for the high - compressor a k-variable which exceeds the boundary.
+                            stringstream varName;
+                            varName << "k_" << s << "_" << e << "_" << c+1;
+                            SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), 0.0, SCIPinfinity(scip), variableBCompressors[e - possibleCompressors_->size()].areaCost, SCIP_VARTYPE_INTEGER) );
+                            compCountVars[s][e].push_back(tmpvar);
+                            SCIP_CALL( SCIPaddVar(scip, tmpvar) );
+                        }
                     }
                 }
 
@@ -1044,13 +1047,13 @@ void BitHeapILPCompression::buildVariableCompressors(){
     cout << "!! BitHeapILPCompression::buildVariableCompressors()" << endl;
     cout << "!! useVariableCompressors=" << useVariableCompressors << endl;
     if(useVariableCompressors){
-        variableBasicCompressor c5_1;
-        c5_1.areaCost = 1.0;
-        c5_1.height = vector<int> (1);
-        c5_1.outputs = vector<int> (1);
-        c5_1.height[0] = 5;
-        c5_1.outputs[0] = 1;
-        variableBCompressors.push_back(c5_1);
+        variableBasicCompressor c4_1;
+        c4_1.areaCost = 1.0;
+        c4_1.height = vector<int> (1);
+        c4_1.outputs = vector<int> (1);
+        c4_1.height[0] = 4;
+        c4_1.outputs[0] = 1;
+        variableBCompressors.push_back(c4_1);
 
         variableBasicCompressor c4_2;
         c4_2.areaCost = 1.0;

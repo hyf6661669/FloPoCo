@@ -868,8 +868,18 @@ namespace flopoco
 			{
 				if(cycle >= 0)
 				{
-					if((*(l.begin()))->getCycle() == cycle)
-						l.pop_front();
+                    bool removal_successfully=false;
+                    for(auto it=l.begin(); it != l.end(); ++it)
+                    {
+                        WeightedBit* wb=*it;
+                        if(wb->getCycle() == cycle)
+                        {
+                            l.remove(wb);
+                            removal_successfully=true;
+                            break;
+                        }
+                    }
+                    if(!removal_successfully) REPORT(DEBUG,"removeBit: Could not remove bit in cycle " << cycle << " with weight " << weight << ", input of compressor may be unused");
 				}
 				else
 					l.pop_front();
@@ -880,7 +890,8 @@ namespace flopoco
 				{
 					if(l.back()->getCycle() == cycle)
 						l.pop_back();
-				}
+                    else REPORT(DEBUG,"removeBit: Could not remove bit in cycle " << cycle << " with weight " << weight << ", input of compressor may be unused");
+                }
 				else
 					l.pop_back();
 			}
@@ -1235,8 +1246,8 @@ namespace flopoco
 	{
 		while(red>0)
 		{
-			removeBit(c,0,cycle);
-			red--;
+            removeBit(c,0,cycle);
+            red--;
 		}
 	}
  	/* Uni KS stop */
@@ -1422,17 +1433,52 @@ namespace flopoco
 				toc->areaCost = 4.0;
 				possibleCompressors.push_back(toc);
 
-				//(1,3,2,5;5) GPC:
-				inputs.clear();
-				inputs.push_back(5);
-				inputs.push_back(2);
-				inputs.push_back(3);
-				inputs.push_back(1);
-				toc = new TargetOptCompressor(op->getTarget(),inputs);
-				toc->areaCost = 4.0;
-				possibleCompressors.push_back(toc);
+                //(1,3,2,5;5) GPC:
+                inputs.clear();
+                inputs.push_back(5);
+                inputs.push_back(2);
+                inputs.push_back(3);
+                inputs.push_back(1);
+                toc = new TargetOptCompressor(op->getTarget(),inputs);
+                toc->areaCost = 4.0;
+                possibleCompressors.push_back(toc);
 
-			}
+                //(2,0,6;4) GPC (based on a (6,0,6;5) GPC)
+                inputs.clear();
+                inputs.push_back(6);
+                inputs.push_back(0);
+                inputs.push_back(2);
+                toc = new TargetOptCompressor(op->getTarget(),inputs);
+                toc->areaCost = 3.0;
+                possibleCompressors.push_back(toc);
+
+                //(2,1,5;4) GPC based on a (1,4,1,5;5) GPC
+                inputs.clear();
+                inputs.push_back(5);
+                inputs.push_back(1);
+                inputs.push_back(2);
+                toc = new TargetOptCompressor(op->getTarget(),inputs);
+                toc->areaCost = 3.0;
+                possibleCompressors.push_back(toc);
+
+                //(2,2,3;4) GPC based on a (1,3,2,5;5) GPC
+                inputs.clear();
+                inputs.push_back(3);
+                inputs.push_back(2);
+                inputs.push_back(2);
+                toc = new TargetOptCompressor(op->getTarget(),inputs);
+                toc->areaCost = 4.0;
+                possibleCompressors.push_back(toc);
+
+                //(1,2,5;4) GPC based on a (1,3,2,5;5) GPC
+                inputs.clear();
+                inputs.push_back(5);
+                inputs.push_back(2);
+                inputs.push_back(1);
+                toc = new TargetOptCompressor(op->getTarget(),inputs);
+                toc->areaCost = 3.0;
+                possibleCompressors.push_back(toc);
+            }
 		}
 		/* Uni KS stop */
 		compressorUsage.resize(possibleCompressors.size());
@@ -1696,7 +1742,7 @@ namespace flopoco
 
                 for(int s=0; s < max(((int) ilp.varCompSolution.size()),((int) ilp.solution.size())); s++)
                 {
-                    if(s < ilp.varCompSolution.size())
+                    if(s < ((int) ilp.varCompSolution.size()))
                     {
                         for(BitHeapHeuristicCompression::variableCompressor &vc : ilp.varCompSolution[s])
                         {
@@ -1719,7 +1765,7 @@ namespace flopoco
                             //...
                         }
                     }
-                    if(s < ilp.solution.size())
+                    if(s < ((int) ilp.solution.size()))
                     {
                         list<pair<int,int> >::iterator it;
                         for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
@@ -1807,9 +1853,9 @@ namespace flopoco
 				}
 
 
-                for(unsigned s=0; s < max(((int) ilp.varCompSolution.size()),((int) ilp.solution.size())); s++)
+                for(int s=0; s < max(((int) ilp.varCompSolution.size()),((int) ilp.solution.size())); s++)
                 {
-                    if(s < ilp.varCompSolution.size())
+                    if(s < ((int) ilp.varCompSolution.size()))
                     {
                         for(BitHeapHeuristicCompression::variableCompressor &vc : ilp.varCompSolution[s])
                         {
@@ -1832,7 +1878,7 @@ namespace flopoco
                             //...
                         }
                     }
-                    if(s < ilp.solution.size())
+                    if(s < ((int) ilp.solution.size()))
                     {
                         list<pair<int,int> >::iterator it;
                         for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
@@ -1898,6 +1944,7 @@ namespace flopoco
             //only three levels left
 			if(getMaxHeight() > 2)
 			{
+                cout << "Error: more than two bits left per column in last stage!" << endl;
                 cout << "!! remaining bits are: ";
                 for(unsigned i=0; i<maxWeight; i++)
                 {

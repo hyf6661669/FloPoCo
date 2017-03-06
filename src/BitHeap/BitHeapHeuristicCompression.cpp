@@ -474,8 +474,8 @@ namespace flopoco
                 tempCompressor.originalPosition = pos;
                 tempCompressor.maxEfficiency = compressionRatio;
 
-                //cout << tempCompressor.originalPosition << " has the efficiency of ";
-                //cout << tempCompressor.maxEfficiency << "  and outputsize " << tempCompressor.pointer->getOutputSize() << endl;
+                cout << "compressor " << tempCompressor.originalPosition << " " << *bc << " has the efficiency of ";
+                cout << tempCompressor.maxEfficiency << "  and outputsize " << tempCompressor.pointer->getOutputSize() << endl;
 
                 //now put it at the back of the compressors-vector
                 compressors.push_back(tempCompressor);
@@ -2184,13 +2184,13 @@ namespace flopoco
 		cout << "!! BitHeapHeurisiticCompression::buildVariableCompressors()" << endl;
 		cout << "!! useVariableCompressors=" << useVariableCompressors << endl;
 		if(useVariableCompressors){
-			variableBasicCompressor c5_1;
-			c5_1.areaCost = 1.0;
-			c5_1.height = vector<int> (1);
-			c5_1.outputs = vector<int> (1);
-			c5_1.height[0] = 5;
-			c5_1.outputs[0] = 1;
-			variableBCompressors.push_back(c5_1);
+            variableBasicCompressor c4_1;
+            c4_1.areaCost = 1.0;
+            c4_1.height = vector<int> (1);
+            c4_1.outputs = vector<int> (1);
+            c4_1.height[0] = 4;
+            c4_1.outputs[0] = 1;
+            variableBCompressors.push_back(c4_1);
 
 			variableBasicCompressor c4_2;
 			c4_2.areaCost = 1.0;

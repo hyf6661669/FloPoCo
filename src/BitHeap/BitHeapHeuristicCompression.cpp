@@ -40,7 +40,7 @@ namespace flopoco
 
         //lowerBound = 0.0;
         //useHoles = false;
-        //generateSolution = true;
+        generateSolution = true;
         //passMultipleSolutions = true;
         
 		passHeuristicSolution = true;
@@ -130,6 +130,7 @@ namespace flopoco
 #endif //HAVE_SCIP
 
         noOfStages_ = getMaxStageCount(bh_->getMaxHeight());
+		noOfStages_++;	//we need s+1 vectors for s stages
         cout << "noOfStages: " << noOfStages_ << endl;
         //fill solution with empty lists
         solution.resize(noOfStages_);
@@ -150,8 +151,8 @@ namespace flopoco
         //now fill lowerBounds with real values
         //the preset value is infinity (a.k.a. 10.0)
 		if(mode.compare("heuristic_parandeh-afshar_modified") != 0){
-//            lowerBounds[0] = 0;
-//            lowerBounds[1] = 1.75;
+            lowerBounds[0] = 0;
+            lowerBounds[1] = 1.75;
 			//lowerBounds[2] = 1.75;
 			//lowerBounds[3] = 1.75;
 			//lowerBounds[4] = 0;

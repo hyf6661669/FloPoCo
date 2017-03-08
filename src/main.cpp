@@ -114,6 +114,7 @@ int main(int argc, char* argv[] )
         Xilinx_TernaryAdd_2State::registerFactory();
         GenericLut_Test::registerFactory();
         SAD::registerFactory();
+        IntPower::registerFactory();
 //        ConstMultPAG::registerFactory();
 
 		TargetModel::registerFactory();

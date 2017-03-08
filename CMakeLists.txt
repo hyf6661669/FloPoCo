@@ -412,7 +412,10 @@ src/Conversions/Fix2FP
  src/IntMult/FixMultAdd
  src/IntMult/MultiplierBlock
  src/IntMult/IntSquarer
-
+ src/IntMult/GenericBinaryPolynomial
+ src/IntMult/IntPower
+ src/IntMult/FormalBinaryProduct
+ 
 # Complex numbers ---------------------------------------------------
 src/Complex/FixComplexKCM
 # TODO for Matei

@@ -7,35 +7,12 @@
 #include "gmp.h"
 #include "mpfr.h"
 
-#include "../BitHeap.hpp"
+#include "BitHeap/BitHeap.hpp"
 #include "GenericBinaryPolynomial.hpp"
-#include "IntMultiAdder.hpp"
-#include "IntAddition/NewCompressorTree.hpp"
-
-//std::string GenericBinaryPolynomial::operatorInfo = "UserDefinedInfo param0 param1 <options>";
 
 using namespace flopoco;
 
-Option::Option(T x)
-	:empty(false),value(new T(x))
-{
-}
 
-Option::Option()
-	:empty(true),value((T*) 0)
-{
-}
-
-
-bool Option::is_empty () const {
-	return empty;
-}
-
-T const& get_value () const {
-	if (empty)
-		throw "Option object is empty";
-	return *value;
-}
 
 static string vhdl_string_of_monomial_option
 	(const Option<MonomialOfBits>& o)
@@ -81,7 +58,7 @@ GenericBinaryPolynomial::GenericBinaryPolynomial(Target* target,
 		return;
 	}
 
-#if 1 // The new Bit Heap
+    //Creating the Bit Heap, Guillaume's compressor trees were removed
 	//	shared_ptr<BitHeap> bh(new BitHeap(this, ));
 	// The bit heap
 	BitHeap * bitHeap = new BitHeap(this, p.data.size());
@@ -96,46 +73,8 @@ GenericBinaryPolynomial::GenericBinaryPolynomial(Target* target,
 		}
 	}
 
-		bitHeap -> generateCompressorVHDL();
-		vhdl << tab << "R" << " <= " << bitHeap-> getSumName() << range(p.data.size()-1, 0) << ";" << endl;
-
-
-#else // Guillaume's compressor trees
-	vector<unsigned> lengths (p.data.size(), 0);
-	for (unsigned i = 0; i < p.data.size(); i++) {
-		lengths[i] = p.data[i].data.size();
-		if (!lengths[i]) {
-			// if nct_input_i is null, just declare the signal
-			// (such that inPortMap won't complain)
-			declare (join("nct_input_",i),0);
-			continue;
-		}
-		vhdl << declare (join("nct_input_",i),lengths[i]);
-		if (lengths[i] == 1)
-			// if there's no '&' it'll be a std_logic in rhs
-			vhdl << of(0);
-		vhdl << " <= (";
-		list<MonomialOfBits>::const_iterator
-			it = p.data[i].data.begin();
-		for (; it != p.data[i].data.end(); it++) {
-			if (it != p.data[i].data.begin())
-				vhdl << ") & (";
-			vhdl << vhdl_string_of_monomial_option (Option<MonomialOfBits>(*it));
-		}
-		vhdl << ");\n";
-	}
-	NewCompressorTree* nct = new NewCompressorTree (target, lengths);
-	oplist.push_back (nct);
-	outPortMap (nct, "R", "R_ima");
-	for (int i = p.data.size() - 1; i >= 0; i--) {
-		inPortMap (nct, join("X",i), join("nct_input_",i));
-	}
-	vhdl << instance (nct, "final_adder");
-	if(nct->wOut < p.data.size())
-		vhdl << "R <= " << zg(p.data.size() - nct->wOut) << "& R_ima;" << endl;
-	else
-		vhdl << "R <= R_ima" << range(p.data.size()-1, 0) << ";" << endl;
-#endif
+    bitHeap -> generateCompressorVHDL();
+    vhdl << tab << "R" << " <= " << bitHeap-> getSumName() << range(p.data.size()-1, 0) << ";" << endl;
 
 };
 

@@ -7,8 +7,6 @@
 #include "IntPower.hpp"
 #include "FormalBinaryProduct.hpp"
 
-//std::string IntPower::operatorInfo = "UserDefinedInfo param0 param1 <options>";
-
 using namespace flopoco;
 
 IntPower::IntPower(Target* target,
@@ -38,4 +36,25 @@ void IntPower::buildRandomTestCases(TestCaseList *  tcl, int n) {
 TestCase* IntPower::buildRandomTestCases(int i) {
   TestCase* tc = new TestCase(this);
   return tc;
+}
+
+OperatorPtr IntPower::parseArguments( Target *target, vector<string> &args ) {
+    int wIn, n;
+    UserInterface::parseInt( args, "wIn", &wIn );
+    UserInterface::parseInt( args, "n", &n );
+
+    return new IntPower( target, wIn, n);
+}
+
+void IntPower::registerFactory() {
+    UserInterface::add( "IntPower", // name
+                        "Integer power of n, unsigned, with precision wIn (NPY)", // description, string
+                        "BasicInteger", // category, from the list defined in UserInterface.cpp
+                        "", //seeAlso
+                        // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
+                        "wIn (int): Input Wordsize; \
+                        n (int): power.",
+                        "",
+                        IntPower::parseArguments
+                      ) ;
 }

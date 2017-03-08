@@ -87,7 +87,7 @@
 // #include "IntMult/IntKaratsuba.hpp"
 #include "IntMult/IntSquarer.hpp"
 // #include "IntMult/GenericBinaryPolynomial.hpp"
-// #include "IntMult/IntPower.hpp"
+#include "IntMult/IntPower.hpp"
 
 
 /* Floating-point adder variants ----------------------------- */

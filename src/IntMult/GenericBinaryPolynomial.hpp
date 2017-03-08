@@ -3,7 +3,7 @@
 
 #include "Operator.hpp"
 #include "utils.hpp"
-#include "IntMultiAdder.hpp"
+//#include "IntMultiAdder.hpp"
 #include <tr1/memory>
 #include "FormalBinaryProduct.hpp"
 
@@ -13,13 +13,19 @@ namespace flopoco {
 // or eliminated completely in favor of using directly std::auto_ptr
 template<typename T> class Option {
 	public:
-		Option (T x);
+        Option (T x):empty(false),value(new T(x)){}
 
-		Option ();
+        Option () :empty(true),value((T*) 0){}
 
-		bool is_empty () const ;
+        bool is_empty () const {
+            return empty;
+        }
 
-		T const& get_value () const;
+        T const& get_value () const {
+            if (empty)
+                throw "Option object is empty";
+            return *value;
+        }
 
 	protected:
 		bool empty;
@@ -41,7 +47,7 @@ class GenericBinaryPolynomial : public Operator {
     void buildRandomTestCases(TestCaseList* tcl, int n);
     TestCase* buildRandomTestCases(int i);
   protected:
-    IntMultiAdder* ima;
+//    IntMultiAdder* ima;
 };
 
 }

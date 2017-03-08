@@ -14,7 +14,11 @@ class IntPower : public GenericBinaryPolynomial {
     void buildStandardTestCases(TestCaseList* tcl);
     void buildRandomTestCases(TestCaseList* tcl, int n);
     TestCase* buildRandomTestCases(int i);
-  protected:
+
+    static OperatorPtr parseArguments( Target *target, vector<string> &args );
+    static void registerFactory();
+
+protected:
     size_t wIn, n;
 };
 

@@ -130,7 +130,7 @@ namespace flopoco
 #endif //HAVE_SCIP
 
         noOfStages_ = getMaxStageCount(bh_->getMaxHeight());
-		noOfStages_++;	//we need s+1 vectors for s stages
+		//noOfStages_++;	//we need s+1 vectors for s stages
         cout << "noOfStages: " << noOfStages_ << endl;
         //fill solution with empty lists
         solution.resize(noOfStages_);
@@ -151,8 +151,8 @@ namespace flopoco
         //now fill lowerBounds with real values
         //the preset value is infinity (a.k.a. 10.0)
 		if(mode.compare("heuristic_parandeh-afshar_modified") != 0){
-            lowerBounds[0] = 0;
-            lowerBounds[1] = 1.75;
+//            lowerBounds[0] = 0;
+//            lowerBounds[1] = 1.75;
 			//lowerBounds[2] = 1.75;
 			//lowerBounds[3] = 1.75;
 			//lowerBounds[4] = 0;
@@ -192,7 +192,7 @@ namespace flopoco
         //now fill the rest with zeros
         //in every stage, the size increases by two, because the (6,0,6;5) compressor can increase the size by two
 
-        for(unsigned v = 1; v < (unsigned)noOfStages_; v++){
+        for(unsigned v = 1; v < (unsigned)noOfStages_ + 1; v++){
             vector<int> tempZeroVector(compOutputWordSizeMax * v + bh_->bits.size());
             for(unsigned w = 0; w < tempZeroVector.size(); w++){
                 tempZeroVector[w] = 0;
@@ -752,7 +752,7 @@ namespace flopoco
 						unsigned tempColumn = variableResult.second.first;
 						unsigned tempVariableCompressorMidLength = variableResult.second.second;
 						
-						//cout << "for s = " << s << " c = " << tempColumn << " and midLength = " << tempVariableCompressorMidLength << endl;
+						//cout << "for s = " << s << " c = " << tempColumn <<  ", lowCompressor = " << tempVariableLowCompressor << " and midLength = " << tempVariableCompressorMidLength << endl;
 						//cout << "variableAchievedEfficiency is " << variableAchievedEfficiency << endl;
 						
 						if(variableAchievedEfficiency > achievedEfficiencyBest + 0.0001){
@@ -763,6 +763,7 @@ namespace flopoco
 							}
 							if(necessary && variableAchievedEfficiency > (lowerBounds[s] - 0.0001)){
 								//cout << "    variableAchievedEfficiency = " << variableAchievedEfficiency << "and lowerBounds[s] = " << lowerBounds[s] << endl;
+								
 								achievedEfficiencyBest = variableAchievedEfficiency;
 								column = tempColumn;
 								variableCompressorMidLength = tempVariableCompressorMidLength;
@@ -845,7 +846,7 @@ namespace flopoco
                 if(found){
                     //we found a compressor and use it now.
 
-                    cout << "using compressor " <<  compressor  << " in column ";
+                    cout << "-- using compressor " <<  compressor  << " in stage " << s << " and in column ";
 					cout << column << " with efficiency " << achievedEfficiencyBest << endl;
 
                     useCompressor(s, column, compressor);
@@ -854,7 +855,7 @@ namespace flopoco
                 }
 				if(foundVariableCompressor){
 					//printBitHeap();
-                    cout << "using variable compressor " <<  variableCompressor  << " in column ";
+                    cout << "-- using variable compressor " << variableCompressor / 3 << " in stage " << s << " and in column ";	//the variable "variableCompressor" is the position of the variable basic compressor
                     cout << column << " and midLength " << variableCompressorMidLength << " with efficiency " << achievedEfficiencyBest << endl;
 					useVariableCompressor(s, column, variableCompressorMidLength, variableCompressor);
 					
@@ -1464,17 +1465,15 @@ namespace flopoco
 	
 	
 	double BitHeapHeuristicCompression::variableCompEffBitHeapBasic(unsigned s, unsigned c, unsigned midLength, unsigned compType){
-		int sum = 0;
-		//cout << "in variableCOmpEffBitHeapBasic" << endl;
+		int sum = 0; 
 		//cout << "compType is " << compType << endl;
-		int cost = variableBCompressors[compType].areaCost + midLength * variableBCompressors[compType + 1].areaCost + variableBCompressors[compType + 2].areaCost;
-		
+		double cost = variableBCompressors[compType].areaCost + midLength * variableBCompressors[compType + 1].areaCost + variableBCompressors[compType + 2].areaCost;
 		int outputSize = variableBCompressors[compType].outputs[0] + midLength * variableBCompressors[compType + 1].outputs[0];
 		for(unsigned i = 0; i < variableBCompressors[compType + 2].outputs.size(); i++){
 			outputSize += variableBCompressors[compType + 2].outputs[i];
 		}
 		
-		//cout << "cost is " << cost << " and outputSize is " << outputSize << endl;
+		//cout << "the sum of the outputs is " << outputSize << endl;
 		
 		unsigned maxSize = newBits[s].size();
 		//computing sum
@@ -1489,7 +1488,6 @@ namespace flopoco
 				}
 			}
 		}
-		//cout << "low part done" <<endl;
 		
 		//middle part
 		for(unsigned m = 0; m < midLength; m++){
@@ -1504,7 +1502,6 @@ namespace flopoco
 				}
 			}
 		}
-		//cout <<"middle part done " << endl;
 		//high part
 		unsigned bitPosition = c + midLength + 1;	//position in newBits
 		//multicolumns: inputs and outputs reversed
@@ -1512,9 +1509,7 @@ namespace flopoco
 			//cout << "compPosition is " << compPosition << endl;
 			if(maxSize > bitPosition){
 				if(newBits[s][bitPosition] > 0){
-					//cout << "bitPosition is " << bitPosition << endl;
 					
-					//cout << " height of variableBCompressors[compType + 2].height[compPosition] is " << variableBCompressors[compType + 2].height[compPosition] << endl;
 					if((unsigned) newBits[s][bitPosition] >= (unsigned) variableBCompressors[compType + 2].height[compPosition]){
 						sum += variableBCompressors[compType + 2].height[compPosition];
 					}
@@ -1528,11 +1523,10 @@ namespace flopoco
 			bitPosition++;
 		}
 		
-		
+		//cout << "the sum of used inputs is " << sum << endl;
 		int bitsReduced = ((int) sum) - ((int) outputSize);
-		
-		double eff = ((double) bitsReduced) / ((double) cost);
-		//cout << "basic finished" << endl;
+		//cout << "bits Reduced is " << bitsReduced << " and the cost is " << cost << endl;
+		double eff = ((double) bitsReduced) / cost;
 		return eff;
 	}
 
@@ -1673,11 +1667,11 @@ namespace flopoco
 		//add compressors to solution
 		
 		unsigned offset = compressors.size();
-		solution[s].push_back(pair<int,int>(offset + (3 * compType) + 0, column));	//low
+		solution[s].push_back(pair<int,int>(offset + compType + 0, column));	//low
 		for(unsigned m = 0; m < midLength; m++){
-			solution[s].push_back(pair<int,int>(offset + (3 * compType) + 1, column + m + 1));	//mid
+			solution[s].push_back(pair<int,int>(offset + compType + 1, column + m + 1));	//mid
 		}
-		solution[s].push_back(pair<int,int>(offset + (3 * compType) + 2, column + midLength + 1));	//high
+		solution[s].push_back(pair<int,int>(offset + compType + 2, column + midLength + 1));	//high
 	}
 
     void BitHeapHeuristicCompression::useCompressor(unsigned s, unsigned column, unsigned newCompPos){
@@ -1811,7 +1805,7 @@ namespace flopoco
 					}
 					else{
 						cout << "warning: non specified compressor number " << (*it).first << endl;
-						cout << "there are " << variableBCompressors.size() << " many variable basic compressors. ";
+						cout << "there are " << variableBCompressors.size() << " variable basic compressors. ";
 						cout << "but requesting variable basic compressor " << (*it).first - offset << endl;
 					}
 				}
@@ -1828,9 +1822,10 @@ namespace flopoco
 			for(unsigned s = 0; s < varCompSolution.size(); s++){
 				list<variableCompressor>::iterator it;
 				for(it = varCompSolution[s].begin(); it != varCompSolution[s].end(); it++){
-					areaSize += variableBCompressors[(*it).type].areaCost;
-					areaSize += (*it).middleCompressorWidth * variableBCompressors[(*it).type + 1].areaCost;
-					areaSize += variableBCompressors[(*it).type + 2].areaCost;
+					unsigned type = (*it).type * 3;
+					areaSize += variableBCompressors[type].areaCost;
+					areaSize += (*it).middleCompressorWidth * variableBCompressors[type + 1].areaCost;
+					areaSize += variableBCompressors[type + 2].areaCost;
 				} 
 				
 			}
@@ -2053,86 +2048,89 @@ namespace flopoco
 		
         
         int offset = compressors.size();
-        //right now only RCA
-        int rcaLow = 0;			//change these three if necessary
-        int rcaMid = 1;			//value is the position in ilpCompressions variableBCompressors
-        int rcaHigh = 2;
-        rcaLow += offset;
-        rcaMid += offset;
-        rcaHigh += offset;
+		
+		for(unsigned variableOffset = 0; variableOffset < variableBCompressors.size(); variableOffset += 3){
+			
+			//right now only RCA
+			int rcaLow = 0;			//change these three if necessary
+			int rcaMid = 1;			//value is the position in ilpCompressions variableBCompressors
+			int rcaHigh = 2;
+			rcaLow += offset + variableOffset;
+			rcaMid += offset + variableOffset;
+			rcaHigh += offset + variableOffset;
 
-        varCompSolution.resize(solution.size());
+			varCompSolution.resize(solution.size());
 
-        for(unsigned s = 0; s < solution.size(); s++){
+			for(unsigned s = 0; s < solution.size(); s++){
 
-            bool found = true;
-            while(found){
-                found = false;
-                variableCompressor tVarComp;
-                tVarComp.type = 0;			//type 0 == RCA
-                tVarComp.startCompressorWidth = 1;
-                tVarComp.middleCompressorWidth = 0;
-                tVarComp.endCompressorWidth = 1;
+				bool found = true;
+				while(found){
+					found = false;
+					variableCompressor tVarComp;
+					tVarComp.type = (unsigned) (variableOffset / 3);	//three variablebasicCompressors (high mid low) build one variableCompressor
+					tVarComp.startCompressorWidth = 1;
+					tVarComp.middleCompressorWidth = 0;
+					tVarComp.endCompressorWidth = 1;
 
-                //now search for rca low basicVarCompressor
-                bool lowFound = false;
-                int currentColumn = 0;
-                std::list<pair<int, int> >::iterator it;
-                for(it = solution[s].begin(); it != solution[s].end(); it++){
-                    if((*it).first == rcaLow){
-                        //we found the start of a RCA
-                        tVarComp.column = (*it).second;
-                        currentColumn = (*it).second + 1;		//search for middle or high varBasicComp starting with next column
-                        solution[s].erase(it);
-                        lowFound = true;
-                        break;
-                    }
-                }
+					//now search for rca low basicVarCompressor
+					bool lowFound = false;
+					int currentColumn = 0;
+					std::list<pair<int, int> >::iterator it;
+					for(it = solution[s].begin(); it != solution[s].end(); it++){
+						if((*it).first == rcaLow){
+							//we found the start of a RCA
+							tVarComp.column = (*it).second;
+							currentColumn = (*it).second + 1;		//search for middle or high varBasicComp starting with next column
+							solution[s].erase(it);
+							lowFound = true;
+							break;
+						}
+					}
 
-                if(lowFound){
-                    bool highFound = false;
-					bool foundSomething = true;
-                    while(!highFound && foundSomething){
-						foundSomething = false;
-                        for(it = solution[s].begin(); it != solution[s].end(); it++){
-                            if((*it).second == currentColumn){
-                                if((*it).first == rcaMid){		//we found a suitable middle Compressor
-                                    tVarComp.middleCompressorWidth++;
-                                    currentColumn++;
-                                    solution[s].erase(it);
-									foundSomething = true;
-                                    break;				//start again to search
-                                }
-                                else if((*it).first == rcaHigh){	//we found the high compressor
-                                    highFound = true;
-                                    solution[s].erase(it);
-									foundSomething = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
+					if(lowFound){
+						bool highFound = false;
+						bool foundSomething = true;
+						while(!highFound && foundSomething){
+							foundSomething = false;
+							for(it = solution[s].begin(); it != solution[s].end(); it++){
+								if((*it).second == currentColumn){
+									if((*it).first == rcaMid){		//we found a suitable middle Compressor
+										tVarComp.middleCompressorWidth++;
+										currentColumn++;
+										solution[s].erase(it);
+										foundSomething = true;
+										break;				//start again to search
+									}
+									else if((*it).first == rcaHigh){	//we found the high compressor
+										highFound = true;
+										solution[s].erase(it);
+										foundSomething = true;
+										break;
+									}
+								}
+							}
+						}
 
-                    //if we found a RCA compressor, add it to the varCompSolution
-                    if(highFound){
-                        varCompSolution[s].push_back(tVarComp);
-                        found = true;
-						
-                    }
-                    else{
-                        cout << "=============" << endl;
-                        cout << "something went horrible wrong. a RCA compressor is not closed with a high compressor" << endl;
-                        cout << "=============" << endl;
-                    }
-                }
+						//if we found a RCA compressor, add it to the varCompSolution
+						if(highFound){
+							varCompSolution[s].push_back(tVarComp);
+							found = true;
+							
+						}
+						else{
+							cout << "=============" << endl;
+							cout << "something went horrible wrong. a RCA compressor is not closed with a high compressor" << endl;
+							cout << "=============" << endl;
+						}
+					}
 
-            }
+				}
 
-            //place here the search for other compressors with variable width
+				//place here the search for other compressors with variable width
 
-        }
+			}
 
-
+		}
 
 
         //debug
@@ -2210,6 +2208,35 @@ namespace flopoco
 			c0_2.outputs[0] = 1;
 			c0_2.outputs[1] = 2;        //outputs are reversed
 			variableBCompressors.push_back(c0_2);
+			
+			
+			
+			//second variable compressor. high is a (0;2) with cost of 0.5
+            variableBasicCompressor c4_1b;
+            c4_1b.areaCost = 1.0;
+            c4_1b.height = vector<int> (1);
+            c4_1b.outputs = vector<int> (1);
+            c4_1b.height[0] = 4;
+            c4_1b.outputs[0] = 1;
+            variableBCompressors.push_back(c4_1b);
+
+			variableBasicCompressor c4_2b;
+			c4_2b.areaCost = 1.0;
+			c4_2b.height = vector<int> (1);
+			c4_2b.outputs = vector<int> (1);
+			c4_2b.height[0] = 4;
+			c4_2b.outputs[0] = 2;
+			variableBCompressors.push_back(c4_2b);
+
+			variableBasicCompressor c0_2b;
+			c0_2b.areaCost = 0.5;
+			c0_2b.height = vector<int> (1);
+			c0_2b.outputs = vector<int> (1);
+			c0_2b.height[0] = 0;
+			c0_2b.outputs[0] = 2;
+			variableBCompressors.push_back(c0_2b);
+			
+			cout << " there are " << variableBCompressors.size() << " variable basic compressors in variableBCompressors " << endl;
 		}
 
 		//debug

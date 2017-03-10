@@ -460,51 +460,39 @@ int BitHeapILPCompression::generateProblem(){
         unsigned offset = possibleCompressors_->size();
 
         for(unsigned s = 0; s < compCountVars.size() - 1; s++){
+			
+			for(unsigned e = 0; e < variableBCompressors.size(); e += 3){	//C5 only needed for every variable Compressor, not every variable Basic Compressor
+				
+				for(int c=0; c < ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))); c++){
+					//C5:
 
-            for(int c=0; c < ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))); c++){
-                //C5:
+					//format : k_high_c=i+1 + k_mid_c=i+1 = k_mid_c=i + k_low_c=i
+					//setting k_high_0 and k_mid_0 to zero is done after this loop
 
-                //format : k_high_c=i+1 + k_mid_c=i+1 = k_mid_c=i + k_low_c=i
-                //setting k_high_0 and k_mid_0 to zero is done after this loop
+					stringstream consName;
+					consName << "C5_" << s << "_" << e << "_" << c;
+					SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, 0, 0) );
 
-                stringstream consName;
-                consName << "C5_" << s << "_" << c;
-                SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, 0, 0) );
+					SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 2][c + 1], 1.0) );
+					if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){   //if it is not the highest column, in the next higher column can be a middle compressor
+						SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 1][c + 1], 1.0) );
+					}
+					SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 0][c], -1.0) );
+					SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 1][c], -1.0) );            //new: subtract the middle compressors as well
 
-                SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 2][c + 1], 1.0) );
-                if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){   //if it is not the highest column, in the next higher column can be a middle compressor
-                    SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][c + 1], 1.0) );
-                }
-                SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 0][c], -1.0) );
-                SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][c], -1.0) );            //new: subtract the middle compressors as well
+					SCIP_CALL( SCIPaddCons(scip, tmpcons) );
 
-                SCIP_CALL( SCIPaddCons(scip, tmpcons) );
+				}
 
-                /*  not longer needed. C5 and the restrictions regarding high and mid part in lowest column is enough
-                //C6:
-                stringstream consName2;
-                consName2 << "C6_" << s << "_" << c;
-                SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName2.str().c_str(), 0, NULL, NULL, 0, 0) );
+				//make sure that the high compressor and middle compressor are not used in the lowest column.
 
-                SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 2][c + 1], 1.0) );
-                if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){   //if it is not the highest column, in the next higher column can be a middle compressor
-                    SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][c + 1], 1.0) );
-                }
-                SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][c], -1.0) );    //(offset + 1 ) only difference to C5
-                SCIP_CALL( SCIPaddCons(scip, tmpcons) );
-
-                */
-            }
-
-            //make sure that the high compressor and middle compressor are not used in the lowest column.
-
-            stringstream consNameB;
-            consNameB << "C5b_" << s;
-            SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consNameB.str().c_str(), 0, NULL, NULL, 0, 0) );
-            SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 2][0], 1.0) );
-            SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + 1][0], 1.0) );
-            SCIP_CALL( SCIPaddCons(scip, tmpcons) );
-
+				stringstream consNameB;
+				consNameB << "C5b_" << e << "_" << s;
+				SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consNameB.str().c_str(), 0, NULL, NULL, 0, 0) );
+				SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 2][0], 1.0) );
+				SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 1][0], 1.0) );
+				SCIP_CALL( SCIPaddCons(scip, tmpcons) );
+			}
         }
     }
 
@@ -1043,37 +1031,6 @@ void BitHeapILPCompression::printNewBits(){
     }
 }
 
-void BitHeapILPCompression::buildVariableCompressors(){
-    cout << "!! BitHeapILPCompression::buildVariableCompressors()" << endl;
-    cout << "!! useVariableCompressors=" << useVariableCompressors << endl;
-    if(useVariableCompressors){
-        variableBasicCompressor c4_1;
-        c4_1.areaCost = 1.0;
-        c4_1.height = vector<int> (1);
-        c4_1.outputs = vector<int> (1);
-        c4_1.height[0] = 4;
-        c4_1.outputs[0] = 1;
-        variableBCompressors.push_back(c4_1);
-
-        variableBasicCompressor c4_2;
-        c4_2.areaCost = 1.0;
-        c4_2.height = vector<int> (1);
-        c4_2.outputs = vector<int> (1);
-        c4_2.height[0] = 4;
-        c4_2.outputs[0] = 2;
-        variableBCompressors.push_back(c4_2);
-
-        variableBasicCompressor c0_2;
-        c0_2.areaCost = 1.0;
-        c0_2.height = vector<int> (2);
-        c0_2.outputs = vector<int> (2);
-        c0_2.height[0] = 0;
-        c0_2.height[1] = 2;         //inputs are reversed 
-        c0_2.outputs[0] = 1;
-        c0_2.outputs[1] = 2;        //outputs are reversed
-        variableBCompressors.push_back(c0_2);
-    }
-}
 
 }   //end namespace flopoco
 

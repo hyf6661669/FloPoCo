@@ -13,13 +13,13 @@ BitHeapILPCompression::BitHeapILPCompression(BitHeap *bh)
         sol = NULL;
         scip = NULL;
         noOfStagesUsed = -1;
-    useVariableCompressors = true;
+        useVariableCompressors = bh->useVariableColumnCompressors;
 
         srcFileName = bh->getOp()->getSrcFileName() + ":Bitheap:BitHeapILPCompression";
 
-useFixedStageCount = false;
+        useFixedStageCount = false;
 
-uniqueName_ = "BitHeapILPCompression for " + bh->getName();
+        uniqueName_ = "BitHeapILPCompression for " + bh->getName();
 }
 
 BitHeapILPCompression::~BitHeapILPCompression()

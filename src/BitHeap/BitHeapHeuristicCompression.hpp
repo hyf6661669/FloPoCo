@@ -74,7 +74,6 @@ namespace flopoco
         bool useSmootherCompressorPlacing;
         bool dontUsePA;
         double lowerBounds[20];
-        bool useVariableCompressors;
         bool useCompleteHeuristic;
         bool getLowerBoundsFromBitHeap;
 
@@ -93,6 +92,7 @@ namespace flopoco
         };
 
     protected:
+        bool useVariableCompressors;
 
 #ifdef HAVE_SCIP
         BitHeapILPCompression bitHeapILPCompression;

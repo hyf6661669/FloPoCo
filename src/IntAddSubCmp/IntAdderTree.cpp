@@ -20,7 +20,7 @@ namespace flopoco {
 
 
 
-	IntAdderTree::IntAdderTree(Target* target, int wIn, int noOfInputs, string method) : Operator(target), wIn_(wIn), noOfInputs_(noOfInputs) {
+    IntAdderTree::IntAdderTree(Target* target, int wIn, int noOfInputs, string method, bool redundantOutput, bool useVariableColumnCompressors) : Operator(target), wIn_(wIn), noOfInputs_(noOfInputs) {
 		/* constructor of the IntAdderTree
 		   Target is the targeted FPGA : Stratix, Virtex ... (see Target.hpp for more informations)
 		   param0 and param1 are some parameters declared by this Operator developpers, 
@@ -75,12 +75,28 @@ namespace flopoco {
                 bitheap->addUnsignedBitVector(0,join("I",i+1),wIn);
 			}
 
-			bitheap->generateCompressorVHDL();
+            bitheap->useVariableColumnCompressors = useVariableColumnCompressors;
+            bitheap->generateCompressorVHDL(redundantOutput);
 
             nextCycle(); //sync output (for timing analysis)
-            addOutput("Y" , bitheap->getMaxWeight()+1);
+            if(redundantOutput)
+            {
+                int outputwidth=getSignalByName(join(bitheap->getSumName(),0))->width();
+                addOutput("YS" , outputwidth);
+                addOutput("YC" , outputwidth);
 
-			vhdl << tab << "Y <= " << bitheap->getSumName() << ";" << endl;
+                vhdl << tab << "YS <= " << bitheap->getSumName() << "0;" << endl;
+                vhdl << tab << "YC <= " << bitheap->getSumName() << "1";
+                if(getSignalByName(join(bitheap->getSumName(),1))->width() > outputwidth)
+                    vhdl << " & (others => ''0'')";
+                vhdl << ";" << endl;
+            }
+            else
+            {
+                addOutput("Y" , bitheap->getMaxWeight()+1);
+                vhdl << tab << "Y <= " << bitheap->getSumName() << ";" << endl;
+            }
+
 		}
 		else if(method.compare("add2") == 0)
 		{
@@ -91,7 +107,7 @@ namespace flopoco {
 			int inputsAtStage = noOfInputs;
 
 			int s=0;
-			while(inputsAtStage > 1)
+            while(inputsAtStage > 1+redundantOutput) //if redundantOutput=true, check is for >2
 			{
 				int j=1;
 				for(int i=0; i < inputsAtStage; i+=2)
@@ -129,7 +145,7 @@ namespace flopoco {
             int s=0;
             int wordSizeInStage = wIn;
 
-            while(inputsAtStage > 1)
+            while(inputsAtStage > 1+redundantOutput) //if redundantOutput=true, check is for >2
             {
                 int j=1;
                 for(int i=0; i < inputsAtStage; i+=3)
@@ -185,7 +201,14 @@ namespace flopoco {
 		UserInterface::parseInt(args, "noOfInputs", &noOfInputs);
 		string method;
 		UserInterface::parseString(args, "method", &method);
-		return new IntAdderTree(target, wIn, noOfInputs, method);
+
+        bool redundantOutput;
+        UserInterface::parseBoolean(args, "redundant", &redundantOutput);
+
+        bool useVariableColumnCompressors;
+        UserInterface::parseBoolean(args, "useVCC", &useVariableColumnCompressors);
+
+        return new IntAdderTree(target, wIn, noOfInputs, method, redundantOutput, useVariableColumnCompressors);
 	}
 
 
@@ -196,8 +219,10 @@ namespace flopoco {
 											 "",
 											 "wIn(int): word size of inputs;\
 											  noOfInputs(int): no of inputs;\
-											  method(string): <bitheap,add2,add3>",
-											 "",
+                                              method(string): <bitheap,add2,add3>;\
+                                              useVCC(bool)=false: if true, variable column compressors will be included in the bitheap optimization;\
+                                              redundant(bool)=false: if true, the output will be in redundant (carry-save) format and the final adder will be omitted",
+                                             "",
 											 IntAdderTree::parseArguments
 											 ) ;
 	}	

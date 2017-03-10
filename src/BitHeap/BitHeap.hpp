@@ -172,7 +172,7 @@ namespace flopoco{
 
 
 		/** @brief generate the VHDL for the bit heap. To be called last by operators using BitHeap.*/
-		void generateCompressorVHDL();
+        void generateCompressorVHDL(bool redundantOutput=false);
 
 		/**
 		 * @brief returns the name of the compressed sum
@@ -242,9 +242,10 @@ namespace flopoco{
 
 		bool getSignedIO();
 		
-		 /* Uni KS start */
-                vector<BasicCompressor *>* getPossibleCompressors(); //returns the vector of compressors
-                /* Uni KS stop */
+        /* Uni KS start */
+        vector<BasicCompressor *>* getPossibleCompressors(); //returns the vector of compressors
+        bool useVariableColumnCompressors;          /**< Allows the use of variable column compressors */
+        /* Uni KS stop */
 		 
 	protected:
 
@@ -298,7 +299,7 @@ namespace flopoco{
 		/** get the parent operator */
 
 		/** @brief generate the final adder for the bit heap (when the columns height is maximum 2*/
-		void generateFinalAddVHDL(bool isXilinx);
+        void generateFinalAddVHDL(bool isXilinx, bool redundantOutput=false);
 
 		/**
 		 * @brief Compress the bitheap using compressors
@@ -390,7 +391,7 @@ namespace flopoco{
 	 	/* Uni KS start */
         string efficiencyPerStage;                  /**< The efficiency per stage. */
 		vector<int> compressorUsage;				/**< vector containing statistics about the usage of each compressor (index is compressor id) */
-	 	/* Uni KS stop */
+        /* Uni KS stop */
 	};
 
 

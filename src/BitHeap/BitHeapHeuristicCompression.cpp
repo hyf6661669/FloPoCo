@@ -55,7 +55,7 @@ namespace flopoco
         //buildSingleStages = true;
         //numberOfBuildStages = 8;
         //useSmootherCompressorPlacing = true;
-        useVariableCompressors = true;
+        useVariableCompressors = bh->useVariableColumnCompressors;
         //useCompleteHeuristic = true;
         //getLowerBoundsFromBitHeap = true;
 		usePreReduction = true;

@@ -26,7 +26,7 @@ namespace flopoco {
 		// definition of some function for the operator    
 
 		// constructor, defined there with two parameters (default value 0 for each)
-		IntAdderTree(Target* target,int wIn_ = 0, int noOfInputs_ = 0, string method="");
+        IntAdderTree(Target* target, int wIn_ = 0, int noOfInputs_ = 0, string method="", bool redundantOutput=true, bool useVariableColumnCompressors=false);
 
 		// destructor
 		~IntAdderTree() {};

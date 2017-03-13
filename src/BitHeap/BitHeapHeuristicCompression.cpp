@@ -7,8 +7,8 @@ namespace flopoco
 {
 
 
-    BitHeapHeuristicCompression::BitHeapHeuristicCompression(BitHeap* bh, std::string mode)
-       : bh_(bh), mode(mode)
+    BitHeapHeuristicCompression::BitHeapHeuristicCompression(BitHeap* bh, std::string mode, bool useVariableCompressors)
+       : bh_(bh), mode(mode), useVariableCompressors(useVariableCompressors)
 #ifdef HAVE_SCIP
        , bitHeapILPCompression(bh)
 #endif //HAVE_SCIP
@@ -32,7 +32,7 @@ namespace flopoco
         numberOfBuildStages = 0;
         useSmootherCompressorPlacing = false;
         dontUsePA = false;
-        useVariableCompressors = false;
+        //useVariableCompressors = false;
         useCompleteHeuristic = false;
         getLowerBoundsFromBitHeap = false;
 
@@ -55,7 +55,7 @@ namespace flopoco
         //buildSingleStages = true;
         //numberOfBuildStages = 8;
         //useSmootherCompressorPlacing = true;
-        useVariableCompressors = bh->useVariableColumnCompressors;
+        //useVariableCompressors = bh->useVariableColumnCompressors;
         //useCompleteHeuristic = true;
         //getLowerBoundsFromBitHeap = true;
 		usePreReduction = true;
@@ -746,6 +746,8 @@ namespace flopoco
 				
 				
 				if(useVariableCompressors == true){
+					
+					
 					for(unsigned tempVariableLowCompressor = 0; tempVariableLowCompressor < variableBCompressors.size(); tempVariableLowCompressor += 3){
 						pair<double, pair<unsigned, unsigned> > variableResult = variableCompEffBitHeap(s, tempVariableLowCompressor);
 						double variableAchievedEfficiency = variableResult.first;
@@ -775,6 +777,9 @@ namespace flopoco
 
 						}
 					}
+				}
+				else{
+					cout << "##useVariableCompressors is false##" << endl;
 				}
 				
 				

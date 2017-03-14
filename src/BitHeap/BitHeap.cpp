@@ -1753,12 +1753,16 @@ namespace flopoco
                             VariableColumnCompressor *vcc=nullptr;
                             if(vc.type == 0) //this information should be read from a vector "possibleVariableColumnCompressors" (similar to "possibleCompressors")
                             {
-                                vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth);
+                                vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth,true);
+                                cout << "VCC 0: " << *vcc << endl;
                                 op->addToGlobalOpList(vcc);
                             }
                             else
                             {
-                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
+                                vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth,false);
+                                cout << "VCC 1: " << *vcc << endl;
+                                op->addToGlobalOpList(vcc);
+//                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
                             }
 
                             elemReduceFixedCycle(vc.column, vcc);
@@ -1867,11 +1871,15 @@ namespace flopoco
                             if(vc.type == 0) //this information should be read from a vector "possibleVariableColumnCompressors" (similar to "possibleCompressors")
                             {
                                 vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth);
+                                cout << "VCC 0: " << *vcc << endl;
                                 op->addToGlobalOpList(vcc);
                             }
                             else
                             {
-                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
+                                vcc = new FourToTwoCompressor(op->getTarget(),vc.startCompressorWidth+vc.middleCompressorWidth+vc.endCompressorWidth,false);
+                                cout << "VCC 1: " << *vcc << endl;
+                                op->addToGlobalOpList(vcc);
+//                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
                             }
 
                             elemReduceFixedCycle(vc.column, vcc);

@@ -15,17 +15,19 @@
 using namespace std;
 namespace flopoco{
 
-    FourToTwoCompressor::FourToTwoCompressor(Target * target,int width) : VariableColumnCompressor(target)
+    FourToTwoCompressor::FourToTwoCompressor(Target * target, int width, bool useLastColumn) : VariableColumnCompressor(target)
 	{
+        this->useLastColumn = useLastColumn;
         setWidth(width);
 
         ostringstream name;
-        name << "Compressor_4_to_2_width_" << width;
+        name << "Compressor_4_to_2_type" << useLastColumn << "_width_" << width;
         setName(name.str());
 
         for(unsigned i=0;i<height.size();i++)
         {
-            addInput(join("X",i), height[height.size()-i-1]);
+            if(height[height.size()-i-1] > 0)
+                addInput(join("X",i), height[height.size()-i-1]);
         }
 
         addOutput("R0", wOut);
@@ -47,7 +49,13 @@ namespace flopoco{
             vhdl << tab << "cc_s(" << needed_cc*4-1 << " downto " << width << ") <= (others => '0');" << endl;
             vhdl << tab << "cc_di(" << needed_cc*4-1 << " downto " << width << ") <= (others => '0');" << endl;
         }
-        vhdl << tab << "cc_di(" << width-1 << " downto 0) <= X" << width-1 << "(1)";
+        vhdl << tab << "cc_di(" << width-1 << " downto 0) <= ";
+
+        if(useLastColumn)
+            vhdl << "X" << width-1 << "(1)";
+        else
+            vhdl << "'0'";
+
         for(int i=1; i < width; i++)
         {
             vhdl << " & X" << width-i-1 << "(3)";
@@ -81,34 +89,39 @@ namespace flopoco{
             //        addToGlobalOpList(cur_lut);
         }
 
-        //create last LUT:
-        lut_op lutop_o6 = lut_in(0) ^ lut_in(3); //input 0 xor input 3
-        lut_op lutop_o5 = lut_in(3); //identical with input 3
-        lut_init lutop( lutop_o5, lutop_o6 );
+        if(useLastColumn)
+        {
+            //create last LUT:
+            lut_op lutop_o6 = lut_in(0) ^ lut_in(3); //input 0 xor input 3
+            lut_op lutop_o5 = lut_in(3); //identical with input 3
+            lut_init lutop( lutop_o5, lutop_o6 );
 
-        Xilinx_LUT6_2 *cur_lut = new Xilinx_LUT6_2( target );
-        cur_lut->setGeneric( "init", lutop.get_hex() );
+            Xilinx_LUT6_2 *cur_lut = new Xilinx_LUT6_2( target );
+            cur_lut->setGeneric( "init", lutop.get_hex() );
 
-        inPortMap(cur_lut,"i0",join("X",width-1) + of(0));
-        inPortMapCst(cur_lut,"i1","'0'");
-        inPortMapCst(cur_lut,"i2","'0'");
-        inPortMap(cur_lut,"i3",join("X",width-1) + of(1));
-        inPortMapCst(cur_lut, "i4","'0'");
-        inPortMapCst(cur_lut, "i5","'1'");
-        outPortMap(cur_lut,"o5","open",false);
-        outPortMap(cur_lut,"o6","cc_s" + of(width-1),false);
+            inPortMap(cur_lut,"i0",join("X",width-1) + of(0));
+            inPortMapCst(cur_lut,"i1","'0'");
+            inPortMapCst(cur_lut,"i2","'0'");
+            inPortMap(cur_lut,"i3",join("X",width-1) + of(1));
+            inPortMapCst(cur_lut, "i4","'0'");
+            inPortMapCst(cur_lut, "i5","'1'");
+            outPortMap(cur_lut,"o5","open",false);
+            outPortMap(cur_lut,"o6","cc_s" + of(width-1),false);
 
-        vhdl << cur_lut->primitiveInstance( join("lut",width-1), this ) << endl;
+            vhdl << cur_lut->primitiveInstance( join("lut",width-1), this ) << endl;
+        }
+        else
+        {
+            vhdl << "cc_s" + of(width-1) << " <= '0';" << endl;
+        }
 
         for( int i = 0; i < needed_cc; i++ ) {
             Xilinx_CARRY4 *cur_cc = new Xilinx_CARRY4( target );
 
             inPortMapCst( cur_cc, "cyinit", "'0'" );
             if( i == 0 ) {
-//                inPortMap( cur_cc, "cyinit", "X0(4)"); //does not work
-                inPortMapCst( cur_cc, "ci", "'0'" );
+                inPortMapCst( cur_cc, "ci", "'0'" ); //carry-in can not be used as AX input is blocked!!
             } else {
-//                inPortMapCst( cur_cc, "cyinit", "'0'" );
                 inPortMap( cur_cc, "ci", "cc_co" + of( i * 4 - 1 ) );
             }
             inPortMap( cur_cc, "di", "cc_di" + range( i * 4 + 3, i * 4 ) );
@@ -136,7 +149,13 @@ namespace flopoco{
 
         //adjust size of basic compressor to the size of a variable column compressor of this specific size:
         height.resize(width);
-        height[0] = 2; //no of bits at MSB position
+
+        //no of bits at MSB position
+        if(useLastColumn)
+            height[0] = 2;
+        else
+            height[0] = 0;
+
         for(int i=1; i < width-1; i++)
         {
             height[i] = 4;
@@ -146,7 +165,11 @@ namespace flopoco{
         wOut=width+1;
 
         outputs.resize(wOut);
-        outputs[0] = 1; //there is one output at MSB
+        if(useLastColumn)
+            outputs[0] = 1; //there is one output at MSB
+        else
+            outputs[0] = 0; //there is no output at MSB
+
         for(int i=1; i < wOut-1; i++)
         {
             outputs[i] = 2;

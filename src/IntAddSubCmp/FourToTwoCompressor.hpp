@@ -21,12 +21,14 @@ namespace flopoco
 	{
 	public:
 		/** constructor **/
-        FourToTwoCompressor(Target * target, int width);
+        FourToTwoCompressor(Target * target, int width, bool useLastColumn=true);
 
 		/** destructor**/
         ~FourToTwoCompressor();
 
         virtual void setWidth(int width);
+    private:
+        bool useLastColumn;
 	};
 }
  

@@ -32,6 +32,8 @@ namespace flopoco
     protected:
         int width;
 	};
+
+    std::ostream& operator<<(std::ostream& o, const VariableColumnCompressor& vcc);
 }
- 
+
 #endif

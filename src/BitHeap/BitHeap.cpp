@@ -1719,7 +1719,7 @@ namespace flopoco
                     }
                 }
                 //the heuristic solution calls the BitHeapILPCompression
-                BitHeapHeuristicCompression ilp(this, mode);
+                BitHeapHeuristicCompression ilp(this, mode, true);
                 ilp.setLowerBounds(efficiencyPerStage);
 
                 ilp.generateProblem();
@@ -1727,6 +1727,27 @@ namespace flopoco
                     if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
                 }
                 ilp.solve();
+				double area1 = ilp.computeAreaofSolution();
+				
+				BitHeapHeuristicCompression ilp2(this, mode, false);
+				ilp2.useVariableCompressors = false;				
+				ilp2.setLowerBounds(efficiencyPerStage);
+
+				ilp2.generateProblem();
+				ilp2.solve();
+				
+				double area2 = ilp2.computeAreaofSolution();
+				
+				cout << "______________" << endl << endl << endl;
+				
+				cout << "area1 with variable compressors is " << area1 << " and area2 without variable compressors is " << area2 << endl << endl << endl;
+				cout << "______________" << endl;
+				
+				if(area2 < area1 + 0.0001){
+					ilp = ilp2;
+					cout << "using version without variable compressors" << endl;
+				}
+				
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 
                 //copying solution from heuristic to ILPCompression:
@@ -1838,11 +1859,35 @@ namespace flopoco
 				}
 				//cout << "finished erasing" << endl;
 				//the heuristic solution calls the BitHeapILPCompression
-				BitHeapHeuristicCompression ilp(this, mode);
+				BitHeapHeuristicCompression ilp(this, mode, true);
+				ilp.useVariableCompressors = true;
                 ilp.setLowerBounds(efficiencyPerStage);
 
 				ilp.generateProblem();
 				ilp.solve();
+				
+				double area1 = ilp.computeAreaofSolution();
+				
+				
+				BitHeapHeuristicCompression ilp2(this, mode, false);
+				ilp2.useVariableCompressors = false;				
+				ilp2.setLowerBounds(efficiencyPerStage);
+
+				ilp2.generateProblem();
+				ilp2.solve();
+				
+				double area2 = ilp2.computeAreaofSolution();
+				
+				cout << "______________" << endl << endl << endl;
+				
+				cout << "area1 with variable compressors is " << area1 << " and area2 without variable compressors is " << area2 << endl << endl << endl;
+				cout << "______________" << endl;
+				
+				if(area2 < area1 + 0.0001){
+					ilp = ilp2;
+					cout << "using version without variable compressors" << endl;
+				}
+				
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 
 				//copying solution from heuristic to ILPCompression:

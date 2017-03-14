@@ -30,7 +30,7 @@ namespace flopoco
             int endCompressorWidth;
         };
 		
-        BitHeapHeuristicCompression(BitHeap* bh, std::string mode);
+        BitHeapHeuristicCompression(BitHeap* bh, std::string mode, bool useVariableCompressors);
         //BitHeapHeuristicCompression(std::string mode);
         //BitHeapHeuristicCompression();
         //BitHeapHeuristicCompression(int value);
@@ -91,8 +91,10 @@ namespace flopoco
             unsigned originalPosition;
         };
 
+		bool useVariableCompressors;
+		double computeAreaofSolution();
     protected:
-        bool useVariableCompressors;
+        
 
 #ifdef HAVE_SCIP
         BitHeapILPCompression bitHeapILPCompression;
@@ -106,7 +108,7 @@ namespace flopoco
 
         int printBitHeap();
         void printLowerBounds();
-        double computeAreaofSolution();
+        
 
 
         bool smootherCompressorPlacing(unsigned s, double efficiency);

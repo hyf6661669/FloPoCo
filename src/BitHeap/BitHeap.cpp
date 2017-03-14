@@ -1720,6 +1720,7 @@ namespace flopoco
                 }
                 //the heuristic solution calls the BitHeapILPCompression
                 BitHeapHeuristicCompression ilp(this, mode, true);
+                ilp.useVariableCompressors = true;
                 ilp.setLowerBounds(efficiencyPerStage);
 
                 ilp.generateProblem();
@@ -1729,7 +1730,7 @@ namespace flopoco
                 ilp.solve();
 				double area1 = ilp.computeAreaofSolution();
 				
-				BitHeapHeuristicCompression ilp2(this, mode, false);
+                BitHeapHeuristicCompression ilp2(this, mode, false);
 				ilp2.useVariableCompressors = false;				
 				ilp2.setLowerBounds(efficiencyPerStage);
 
@@ -1859,7 +1860,7 @@ namespace flopoco
 				}
 				//cout << "finished erasing" << endl;
 				//the heuristic solution calls the BitHeapILPCompression
-				BitHeapHeuristicCompression ilp(this, mode, true);
+                BitHeapHeuristicCompression ilp(this, mode, true);
 				ilp.useVariableCompressors = true;
                 ilp.setLowerBounds(efficiencyPerStage);
 
@@ -1869,7 +1870,7 @@ namespace flopoco
 				double area1 = ilp.computeAreaofSolution();
 				
 				
-				BitHeapHeuristicCompression ilp2(this, mode, false);
+                BitHeapHeuristicCompression ilp2(this, mode, false);
 				ilp2.useVariableCompressors = false;				
 				ilp2.setLowerBounds(efficiencyPerStage);
 

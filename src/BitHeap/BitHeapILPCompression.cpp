@@ -964,7 +964,8 @@ void BitHeapILPCompression::computeHeuristicN(){
     {
         REPORT(DEBUG, "cleaning up SCIP... ");
         //clean up:
-
+        cout << "!!!skipping cleanup for debug reasons!!!" << endl;
+        return 0; //!!!
 
         if(compressionType == 6 || compressionType == 7){
             //heuristic only. therefore no variables for ilp has been produces

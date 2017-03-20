@@ -1729,7 +1729,8 @@ namespace flopoco
                 }
                 ilp.solve();
 				double area1 = ilp.computeAreaofSolution();
-				
+
+/*
                 BitHeapHeuristicCompression ilp2(this, mode, false);
 				ilp2.useVariableCompressors = false;				
 				ilp2.setLowerBounds(efficiencyPerStage);
@@ -1748,6 +1749,7 @@ namespace flopoco
 					ilp = ilp2;
 					cout << "using version without variable compressors" << endl;
 				}
+*/
 				
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 

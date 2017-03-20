@@ -152,8 +152,8 @@ namespace flopoco
         //now fill lowerBounds with real values
         //the preset value is infinity (a.k.a. 10.0)
 		if(mode.compare("heuristic_parandeh-afshar_modified") != 0){
-//            lowerBounds[0] = 0;
-//            lowerBounds[1] = 1.75;
+            lowerBounds[0] = 0;
+            lowerBounds[1] = 1.75;
 			//lowerBounds[2] = 1.75;
 			//lowerBounds[3] = 1.75;
 			//lowerBounds[4] = 0;

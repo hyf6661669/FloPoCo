@@ -6,7 +6,10 @@
 #include <map>
 
 
-class Node;
+namespace flopoco{
+
+
+class DFGNode;
 
 /**
  * @brief The Node class
@@ -16,10 +19,10 @@ class Node;
 enum NodeTypeEnum {EntryVar,OpAssign,OpConst,OpAdd,OpSub,OpMult,OpDiv,OpLog,OpExp};
 
 
-class Node{
+class DFGNode{
 
 public:
-    Node(){
+    DFGNode(){
         depth=-1;
     }
 
@@ -27,8 +30,8 @@ public:
     NodeTypeEnum type_id;//id du type de node
     int depth;
 
-    std::vector<Node*> parents;
-    std::vector<Node*> childrens;
+    std::vector<DFGNode*> parents;
+    std::vector<DFGNode*> childrens;
 
     int nbr_childrens(){
         return (int)childrens.size();
@@ -38,7 +41,7 @@ public:
         return (int)parents.size();
     }
 
-    void rmv_child(Node* node){
+    void rmv_child(DFGNode* node){
         for (int i=0;i<(int)childrens.size();++i){
             if (childrens[i]==node){
                 childrens.erase(childrens.begin()+i);
@@ -47,7 +50,7 @@ public:
         }
     }
 
-    void rmv_parent(Node* node){
+    void rmv_parent(DFGNode* node){
         for (int i=0;i<(int)parents.size();++i){
             if (parents[i]==node){
                 parents.erase(parents.begin()+i);
@@ -62,10 +65,10 @@ public:
 
 
 struct Program{
-    std::vector<Node*> return_heads;
-    std::map<std::string,Node*> variables;
+    std::vector<DFGNode*> return_heads;
+    std::map<std::string,DFGNode*> variables;
 
-    void propagate_depth(Node* node, int depth){
+    void propagate_depth(DFGNode* node, int depth){
         if (node->depth<depth){
             node->depth=depth;
             std::cout<<node->type_id<<"::"<<depth<<std::endl;
@@ -133,25 +136,27 @@ public:
 };
 
 
-class EntryVariable:public Node{
+class EntryVariable:public DFGNode{
 public:
     Number* nbr;
 
-    EntryVariable():Node(){
+    EntryVariable():DFGNode(){
         type_id=EntryVar;
     }
 };
 
-class OperatorConstant: public Node{
+class OperatorConstant: public DFGNode{
 public:
     NodeTypeEnum operator_type;//indicate *  or +  or /  or -  if it's just a constant number this value indicate (OpConst)
 
     Number* nbr;
 
-    OperatorConstant():Node(){
+    OperatorConstant():DFGNode(){
         type_id=OpConst;
     }
 
 };
+
+}
 
 #endif

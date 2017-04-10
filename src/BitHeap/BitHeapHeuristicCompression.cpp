@@ -441,8 +441,8 @@ namespace flopoco
                             compressionRatio = computeCompressionRatioPA(compUnsorted->at(i));
                             pos = i;
                         }
-                        else if(fabs(computeCompressionRatioPA(compUnsorted->at(i)) - compressionRatio) < 0.0001){
-                            //now check which one has the bigger covering bits:
+                        else if((fabs(computeCompressionRatioPA(compUnsorted->at(i)) - compressionRatio) < 0.0001) && !used[i]){
+                            //now check which one has more covering bits:
 
                             int oldCoveringDots = 0;
                             int newCoveringDots = 0;
@@ -961,6 +961,15 @@ namespace flopoco
     void BitHeapHeuristicCompression::parandehAfshar(){
 
         cout << "in parandeh-Afshar" << endl;
+		double threshold = 0.0;
+		if(paSorting){
+			cout << "paSorting is true" << endl;
+			threshold += 1.0;		//paSorting: to reduce bits, the metric of a compressor has to be bigger than one  (metric is here: inputbits / outputbits)
+		}
+		else{
+			cout << "paSorting is false" << endl;
+		}
+		
 
         //if debugLoop == true, there are only debugMax steps
         bool debugLoop = false;
@@ -1014,7 +1023,7 @@ namespace flopoco
                         //cout << "column is " << currentMaxColumn << " and compressor is " << i << endl;
                         //cout << " right Eff = " << achievedEfficiencyCurrentRight << " and left Eff = " << achievedEfficiencyCurrentLeft << endl;
 
-                        if(achievedEfficiencyCurrentLeft > 0.0001 && achievedEfficiencyCurrentRight <= achievedEfficiencyCurrentLeft + 0.0001){
+                        if(achievedEfficiencyCurrentLeft > (0.0001 + threshold) && achievedEfficiencyCurrentRight <= achievedEfficiencyCurrentLeft + 0.0001){
                             //normal (left) search is successful - prefer it if left and right search has equal efficiency
 
                             if(achievedEfficiencyBest + 0.0001 < achievedEfficiencyCurrentLeft){
@@ -1024,7 +1033,7 @@ namespace flopoco
                             }
                             found = true;
                         }
-                        else if(achievedEfficiencyCurrentRight > 0.0001 && achievedEfficiencyCurrentRight > achievedEfficiencyCurrentLeft + 0.0001){
+                        else if(achievedEfficiencyCurrentRight > (0.0001 + threshold) && achievedEfficiencyCurrentRight > achievedEfficiencyCurrentLeft + 0.0001){
                             //right search is successful
 
                             if(achievedEfficiencyBest + 0.0001 < achievedEfficiencyCurrentRight){
@@ -1043,7 +1052,7 @@ namespace flopoco
 
                 if(found){
                     useCompressor(s, column, compressor);
-                    //cout << "used compressor "<< compressor<< " in column "<<column<< " and stage " << s << endl << endl;
+                    cout << "used compressor "<< compressor<< " in column "<<column<< " and stage " << s << " with efficiency " << achievedEfficiencyBest << endl;
                     //printBitHeap();
                     //cout << endl;
                 }
@@ -1577,6 +1586,11 @@ namespace flopoco
 
 
         }
+		
+		if(paSorting){
+			double ratio = ((double) sum) / ((double) compressors[compPos].pointer->getOutputSize());
+			return ratio;
+		}
 
         //now in sum are the bits which are covered with this compressor
         sum -= compressors[compPos].pointer->getOutputSize();

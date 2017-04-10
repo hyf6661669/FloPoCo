@@ -676,7 +676,7 @@ void OperatorPipeline::optimise_tree(){
 
 }
 
-void OperatorPipeline::generateVHDL_c(Node* n, bool top){
+void OperatorPipeline::generateVHDL_c(DFGNode* n, bool top){
     /* REPORT(DETAILED, "Generating VHDL ... ");
 
     if (n->type == 0){

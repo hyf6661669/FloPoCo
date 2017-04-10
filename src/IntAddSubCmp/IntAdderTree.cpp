@@ -83,6 +83,7 @@ namespace flopoco {
             {
                 int outputwidth=getSignalByName(join(bitheap->getSumName(),0))->width();
                 addOutput("YS" , outputwidth);
+                outputwidth=getSignalByName(join(bitheap->getSumName(),1))->width();
                 addOutput("YC" , outputwidth);
 
                 vhdl << tab << "YS <= " << bitheap->getSumName() << "0;" << endl;

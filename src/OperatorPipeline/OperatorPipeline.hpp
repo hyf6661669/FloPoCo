@@ -49,7 +49,7 @@ public:
              * @param[in] top  Boolean describing if this function is called from
              * the statement level, or in some recursion level
             */
-    void generateVHDL_c(Node* n, bool top);
+    void generateVHDL_c(DFGNode* n, bool top);
 
 
     /**

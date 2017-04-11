@@ -208,6 +208,14 @@ namespace flopoco {
 		initialize();
 		fillBitHeap();
 		// leave the compression to the parent op
+
+        if(getTarget()->unusedHardMultThreshold() == 1){
+            getTarget()->setUnusedHardMultThreshold(0.7);
+            REPORT(DEBUG, "    unusedHardMultThreshold was set to 1. We now set it to 0.7");
+        }
+        else{
+            REPORT(DEBUG, "    unusedHardMultThreshold was set to " << getTarget()->unusedHardMultThreshold());
+        }
 	}
 
 
@@ -227,6 +235,14 @@ namespace flopoco {
 
 		REPORT(DEBUG, "Entering IntMultiplier standalone constructor for wX_=" <<  wX_  << ", wY_=" << wY_ << ", wOut_=" << wOut_);
 		REPORT(DEBUG, "   gettarget()->useHardMultipliers() =" << getTarget()->useHardMultipliers() );
+
+        if(getTarget()->unusedHardMultThreshold() == 1){
+            getTarget()->setUnusedHardMultThreshold(0.7);
+            REPORT(DEBUG, "    unusedHardMultThreshold was set to 1. We now set it to 0.7");
+        }
+        else{
+            REPORT(DEBUG, "    unusedHardMultThreshold was set to " << getTarget()->unusedHardMultThreshold());
+        }
 
 		if(wOut<0)
 		{
@@ -923,6 +939,10 @@ namespace flopoco {
 	/**************************************************************************/
 	void IntMultiplier::buildHeapLogicOnly(int lsbX, int lsbY, int msbX, int msbY,int blockUid)
 	{
+        MultiplierSolutionParser *multiplierSolutionParser = new MultiplierSolutionParser("m32x32_1dsp.sol");
+        multiplierSolutionParser->readSolution();
+		
+
 		REPORT(DETAILED,"buildHeapLogicOnly called for " << lsbX << " " << lsbY << " " << msbX << " " << msbY);
 		Target *target= parentOp->getTarget();
 

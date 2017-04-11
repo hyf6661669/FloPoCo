@@ -415,6 +415,8 @@ src/Conversions/Fix2FP
  src/IntMult/GenericBinaryPolynomial
  src/IntMult/IntPower
  src/IntMult/FormalBinaryProduct
+#uni_ks
+ src/IntMult/MultiplierSolutionParser
  
 # Complex numbers ---------------------------------------------------
 src/Complex/FixComplexKCM

@@ -9,6 +9,7 @@
 #include "Table.hpp"
 #include "BitHeap/BitHeap.hpp"
 #include "TestState.hpp"
+#include "MultiplierSolutionParser.hpp"
 
 #include "IntMult//MultiplierBlock.hpp"
 

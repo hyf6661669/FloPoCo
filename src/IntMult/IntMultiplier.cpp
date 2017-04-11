@@ -942,6 +942,7 @@ namespace flopoco {
         MultiplierSolutionParser *multiplierSolutionParser = new MultiplierSolutionParser("m32x32_1dsp.sol");
         multiplierSolutionParser->readSolution();
 		
+		BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget());
 
 		REPORT(DETAILED,"buildHeapLogicOnly called for " << lsbX << " " << lsbY << " " << msbX << " " << msbY);
 		Target *target= parentOp->getTarget();

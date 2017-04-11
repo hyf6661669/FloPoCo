@@ -10,6 +10,7 @@
 #include "BitHeap/BitHeap.hpp"
 #include "TestState.hpp"
 #include "MultiplierSolutionParser.hpp"
+#include "BaseMultiplierCollection.hpp"
 
 #include "IntMult//MultiplierBlock.hpp"
 

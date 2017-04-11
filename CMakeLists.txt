@@ -417,6 +417,7 @@ src/Conversions/Fix2FP
  src/IntMult/FormalBinaryProduct
 #uni_ks
  src/IntMult/MultiplierSolutionParser
+ src/IntMult/BaseMultiplierCollection
  
 # Complex numbers ---------------------------------------------------
 src/Complex/FixComplexKCM

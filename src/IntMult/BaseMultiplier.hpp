@@ -1,29 +1,25 @@
-#ifndef BaseMultiplierCollection_HPP
-#define BaseMultiplierCollection_HPP
+#ifndef BaseMultiplier_HPP
+#define BaseMultiplier_HPP
 
 #include <string>
 #include <iostream>
 #include <string>
-#include <vector>
 #include "Target.hpp"
-#include "BaseMultiplier.hpp"
 
 namespace flopoco {
 
 
-    class BaseMultiplierCollection {
+    class BaseMultiplier {
 
 	public:
-        BaseMultiplierCollection(Target *target);
-        ~BaseMultiplierCollection();
+        BaseMultiplier();
+        ~BaseMultiplier();
 
-		//BaseMultiplier* getBaseMultiplier(int shape)
 		
 		
     private:
 
 	
-		Target* target_;
 
         string srcFileName; //for debug outputs
 

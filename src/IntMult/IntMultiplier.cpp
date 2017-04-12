@@ -210,8 +210,8 @@ namespace flopoco {
 		// leave the compression to the parent op
 
         if(getTarget()->unusedHardMultThreshold() == 1){
-            getTarget()->setUnusedHardMultThreshold(0.7);
-            REPORT(DEBUG, "    unusedHardMultThreshold was set to 1. We now set it to 0.7");
+            //getTarget()->setUnusedHardMultThreshold(0.7);
+            //REPORT(DEBUG, "    unusedHardMultThreshold was set to 1. We now set it to 0.7");
         }
         else{
             REPORT(DEBUG, "    unusedHardMultThreshold was set to " << getTarget()->unusedHardMultThreshold());
@@ -237,8 +237,8 @@ namespace flopoco {
 		REPORT(DEBUG, "   gettarget()->useHardMultipliers() =" << getTarget()->useHardMultipliers() );
 
         if(getTarget()->unusedHardMultThreshold() == 1){
-            getTarget()->setUnusedHardMultThreshold(0.7);
-            REPORT(DEBUG, "    unusedHardMultThreshold was set to 1. We now set it to 0.7");
+            //getTarget()->setUnusedHardMultThreshold(0.7);
+            //REPORT(DEBUG, "    unusedHardMultThreshold was set to 1. We now set it to 0.7");
         }
         else{
             REPORT(DEBUG, "    unusedHardMultThreshold was set to " << getTarget()->unusedHardMultThreshold());
@@ -1228,7 +1228,7 @@ namespace flopoco {
 			}
 		}
 
-		//now check against the DSPThreshold
+        //now check against the DSPThreshold
 		if(isDSPImplementable || worthUsingOneDSP(topx, topy, botx, boty, wxDSP, wyDSP))
 		{
 			//worth using DSP

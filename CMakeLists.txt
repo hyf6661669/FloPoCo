@@ -418,6 +418,7 @@ src/Conversions/Fix2FP
 #uni_ks
  src/IntMult/MultiplierSolutionParser
  src/IntMult/BaseMultiplierCollection
+ src/IntMult/BaseMultiplier
  
 # Complex numbers ---------------------------------------------------
 src/Complex/FixComplexKCM

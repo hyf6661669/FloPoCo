@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include "Target.hpp"
+#include "Operator.hpp"
 
 namespace flopoco {
 
@@ -12,14 +13,31 @@ namespace flopoco {
     class BaseMultiplier {
 
 	public:
-        BaseMultiplier();
-        ~BaseMultiplier();
+        BaseMultiplier(bool isSignedX, bool isSignedY);
 
-		
-		
+        int getXWordSize() { return wX; }
+        int getYWordSize() { return wY; }
+        int getOutWordSize() { return wOut; }
+
+        /**
+         * @brief generateOperator generates an instance of the corresponding Operator that realizes the given shape
+         * @return the generated operator
+         */
+        virtual Operator *generateOperator() = 0;
+
+        /**
+         * @brief Returns true if x and y coordinates are at valid shape positions
+         * @param x: x-coordinate (relative to multiplier coordinate)
+         * @param y: y-coordinate (relative to multiplier coordinate)
+         * @return true if x and y coordinates are at valid shape positions, false otherwise
+         */
+        virtual bool shapeValid(int x, int y) = 0;
+
     private:
 
-	
+        int wX, wY, wOut;
+
+        bool isSignedX, isSignedY;
 
         string srcFileName; //for debug outputs
 

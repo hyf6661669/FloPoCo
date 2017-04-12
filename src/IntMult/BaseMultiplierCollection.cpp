@@ -11,8 +11,17 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target){
 	
 	target_ = target;
 
+    BaseMultiplier* bm;// = new
+    baseMultipliers.push_back(bm);
 }
 
+BaseMultiplierCollection::~BaseMultiplierCollection()
+{
+    for(BaseMultiplier* bm : baseMultipliers)
+    {
+        delete bm;
+    }
+}
 
 	
 }   //end namespace flopoco

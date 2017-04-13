@@ -59,9 +59,7 @@ namespace flopoco
 //        useVariableCompressors = bh->useVariableColumnCompressors; //!!
         //useCompleteHeuristic = true;
         //getLowerBoundsFromBitHeap = true;
-		usePreReduction = true;
-		
-		
+        usePreReduction = true;
 		
 
         //now some dependencies
@@ -745,8 +743,8 @@ namespace flopoco
                 unsigned column = 0;
 				unsigned variableCompressorMidLength = 0;
 				
-				
-				if(useVariableCompressors == true){
+
+                if(useVariableCompressors == true){
 					for(unsigned tempVariableLowCompressor = 0; tempVariableLowCompressor < variableBCompressors.size(); tempVariableLowCompressor += 3){
 						pair<double, pair<unsigned, unsigned> > variableResult = variableCompEffBitHeap(s, tempVariableLowCompressor);
 						double variableAchievedEfficiency = variableResult.first;
@@ -1907,6 +1905,7 @@ namespace flopoco
 			}
 			double finalCost = computeAreaofSolution();
 			cout << "the compressors have a cost of " << finalCost << endl;
+            removeEmptyStages();
             return 0;
         }
 #ifdef HAVE_SCIP
@@ -2052,8 +2051,35 @@ namespace flopoco
 #endif //HAVE_SCIP
 
 		double finalCost = computeAreaofSolution();
-		cout << "the compressors have a cost of " << finalCost << endl;
+        cout << "the compressors have a cost of " << finalCost << endl;
+
+        removeEmptyStages();
         return 0;
+    }
+
+    //deletes empty stages if there are no later stages with compressors
+    void BitHeapHeuristicCompression::removeEmptyStages(){
+        bool foundEmpty = true;
+
+        while(foundEmpty){
+            foundEmpty = false;
+
+            if(solution.size() >= 1 && solution[solution.size() - 1].size() == 0){
+                solution.pop_back();
+                foundEmpty = true;
+            }
+        }
+
+        foundEmpty = true;
+        while(foundEmpty){
+            foundEmpty = false;
+
+            if(varCompSolution.size() >= 1 && varCompSolution[varCompSolution.size() - 1].size() == 0){
+                varCompSolution.pop_back();
+                foundEmpty = true;
+            }
+        }
+
     }
 
     //this function goes through the solution, finds variableBasicCompressors, deletes them and

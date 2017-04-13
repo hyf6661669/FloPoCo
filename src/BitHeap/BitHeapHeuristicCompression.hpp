@@ -77,6 +77,7 @@ namespace flopoco
         bool useCompleteHeuristic;
         bool getLowerBoundsFromBitHeap;
 
+
         unsigned minimumHeightReduction;
         //double minimumEffReduction;
         unsigned minFixedStage;
@@ -131,6 +132,7 @@ namespace flopoco
 		void buildVariableCompressors();
 
         void setUpNewStageCountOfILP();
+        void removeEmptyStages();
 
         BasicCompressor *flipflop;
 

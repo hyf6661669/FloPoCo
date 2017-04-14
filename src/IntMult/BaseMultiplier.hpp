@@ -26,12 +26,12 @@ namespace flopoco {
         virtual Operator *generateOperator(Target* target) = 0;
 
         /**
-         * @brief Returns true if x and y coordinates are at valid shape positions
+         * @brief Returns true if x and y coordinates are at valid shape positions, override this function if shape is non rectangular within wX and wY
          * @param x: x-coordinate (relative to multiplier coordinate)
          * @param y: y-coordinate (relative to multiplier coordinate)
          * @return true if x and y coordinates are at valid shape positions, false otherwise
          */
-        virtual bool shapeValid(int x, int y) = 0;
+        virtual bool shapeValid(int x, int y);
 
     protected:
 

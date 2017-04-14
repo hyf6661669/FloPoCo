@@ -420,6 +420,7 @@ src/Conversions/Fix2FP
  src/IntMult/BaseMultiplierCollection
  src/IntMult/BaseMultiplier
  src/IntMult/BaseMultiplierLUT
+ src/IntMult/BaseMultiplier2xk
 
 # Complex numbers ---------------------------------------------------
 src/Complex/FixComplexKCM

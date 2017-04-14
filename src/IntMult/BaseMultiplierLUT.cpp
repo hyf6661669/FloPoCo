@@ -19,12 +19,7 @@ Operator* BaseMultiplierLUT::generateOperator(Target* target)
     return new BaseMultiplierLUTOp(target, isSignedX, isSignedY, wX, wY);
 }
 
-bool BaseMultiplierLUT::shapeValid(int x, int y)
-{
-    if((x > 0) && (x < wX) && (y > 0) && (y < wY)) return true;
-    return false;
-}
-	
+
 BaseMultiplierLUTTable::BaseMultiplierLUTTable(Target* target, int dx, int dy, int wO, bool negate, bool signedX, bool signedY) : Table(target, dx+dy, wO, 0, -1, true), // logic table
     dx(dx), dy(dy), wO(wO), negate(negate), signedX(signedX), signedY(signedY)
 {

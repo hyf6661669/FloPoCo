@@ -419,7 +419,8 @@ src/Conversions/Fix2FP
  src/IntMult/MultiplierSolutionParser
  src/IntMult/BaseMultiplierCollection
  src/IntMult/BaseMultiplier
- 
+ src/IntMult/BaseMultiplierLUT
+
 # Complex numbers ---------------------------------------------------
 src/Complex/FixComplexKCM
 # TODO for Matei

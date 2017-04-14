@@ -23,7 +23,7 @@ namespace flopoco {
          * @brief generateOperator generates an instance of the corresponding Operator that realizes the given shape
          * @return the generated operator
          */
-        virtual Operator *generateOperator() = 0;
+        virtual Operator *generateOperator(Target* target) = 0;
 
         /**
          * @brief Returns true if x and y coordinates are at valid shape positions
@@ -33,7 +33,7 @@ namespace flopoco {
          */
         virtual bool shapeValid(int x, int y) = 0;
 
-    private:
+    protected:
 
         int wX, wY, wOut;
 

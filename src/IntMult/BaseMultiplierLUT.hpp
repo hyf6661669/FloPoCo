@@ -1,11 +1,15 @@
-#ifndef BaseMultiplier_HPP
-#define BaseMultiplier_HPP
+#ifndef BaseMultiplierLUT_HPP
+#define BaseMultiplierLUT_HPP
 
 #include <string>
 #include <iostream>
 #include <string>
+#include <gmp.h>
+#include <gmpxx.h>
 #include "Target.hpp"
 #include "Operator.hpp"
+#include "Table.hpp"
+#include "BaseMultiplier.hpp"
 
 namespace flopoco {
 
@@ -20,7 +24,7 @@ namespace flopoco {
          * @brief generateOperator generates an instance of the corresponding Operator that realizes the given shape
          * @return the generated operator
          */
-        virtual Operator *generateOperator();
+        virtual Operator *generateOperator(Target *target);
 
         /**
          * @brief Returns true if x and y coordinates are at valid shape positions
@@ -36,7 +40,18 @@ namespace flopoco {
 
     class BaseMultiplierLUTOp : public Operator
     {
-        BaseMultiplierLUTOp();
+    public:
+        BaseMultiplierLUTOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY);
+    };
+
+    class BaseMultiplierLUTTable : public Table
+    {
+    public:
+        BaseMultiplierLUTTable(Target* target, int dx, int dy, int wO, bool negate=false, bool signedX=false, bool signedY=false );
+        mpz_class function(int x);
+    protected:
+        int dx, dy, wO;
+        bool negate, signedX, signedY;
     };
 }
 #endif

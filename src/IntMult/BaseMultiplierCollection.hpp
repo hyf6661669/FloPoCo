@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 #include <string>
-#include <list>
+#include <vector>
 #include "Target.hpp"
 #include "BaseMultiplier.hpp"
 
@@ -23,13 +23,13 @@ namespace flopoco {
     private:
 
 	
-		Target* target_;
+        Target* target;
 
         string srcFileName; //for debug outputs
 
         string uniqueName_; /**< useful only to enable same kind of reporting as for FloPoCo operators. */
 	
-        list<BaseMultiplier*> baseMultipliers;
+        vector<BaseMultiplier*> baseMultipliers; //the list of base mutlipliers, index is identical to shape
 	};
 }
 #endif

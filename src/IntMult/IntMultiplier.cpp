@@ -312,9 +312,9 @@ namespace flopoco {
 			// initialize the critical path
 			setCriticalPath(getMaxInputDelays ( inputDelays_ ));
 
-            //placeMultipliers();
+            placeMultipliers();
 
-            fillBitHeap();
+            //fillBitHeap();
 
 			// For a stand-alone operator, we add the rounding-by-truncation bit,
 			// The following turns truncation into rounding, except that the overhead is large for small multipliers.
@@ -1923,39 +1923,55 @@ namespace flopoco {
             unsigned int yPos = (*it).second.second;
 			
 
-            /*
+
             BaseMultiplier *baseMultiplier = baseMultiplierCollection->getBaseMultiplier(type);
-            unsigned int outputLength = getOutputLength(baseMultiplier, xPos, yPos);
-            Operator *op = baseMultiplier->getOperator();
-            */
+            //unsigned int outputLength = getOutputLength(baseMultiplier, xPos, yPos);
+            //Operator *op = baseMultiplier->getOperator();
+
 
             //lets assume, that baseMultiplier ix 3x3, Unsigned ...
 
-            unsigned int xInputLength = 3;
-            unsigned int yInputLength = 3;
-            unsigned int outputLength = 6;
+            unsigned int xInputLength = baseMultiplier->getXWordSize();
+            unsigned int yInputLength = baseMultiplier->getXWordSize();
+            unsigned int outputLength = baseMultiplier->getOutWordSize();
             unsigned int lsbZeros = 0;  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
+            unsigned int xInputNonZeros = xInputLength;
+            unsigned int yInputNonZeros = yInputLength;
+            unsigned int outputLengthNonZeros = xInputNonZeros + yInputNonZeros;
+            if(xInputNonZeros == 1 || yInputNonZeros == 1){
+                outputLengthNonZeros -= 1;
+            }
 
-            SmallMultTable *tUU = new SmallMultTable(parentOp->getTarget(), xInputLength, yInputLength, outputLength, false, false, false);
+            //SmallMultTable *tUU = new SmallMultTable(parentOp->getTarget(), xInputLength, yInputLength, outputLength, false, false, false);
+            Operator *op = baseMultiplier->generateOperator(parentOp->getTarget());
 
-            string outputVectorName = placeSingleMultiplier(tUU, xPos, yPos, xInputLength, yInputLength, outputLength, totalOffset, posInList);
+            addToGlobalOpList(op);
+/*
+            if(xPos == 10 && yPos == 12){
+                xInputNonZeros = 1;
+                outputLengthNonZeros = 3;
+            }
+*/
+            string outputVectorName = placeSingleMultiplier(op, xPos, yPos, xInputLength, yInputLength, outputLength, xInputNonZeros, yInputNonZeros, totalOffset, posInList);
             unsigned int startWeight = 0;
 			if(xPos + yPos + lsbZeros > (2 * totalOffset)){
 				startWeight = xPos + yPos + lsbZeros - (2 * totalOffset);
 			}
 			
-			unsigned int outputVectorLSBZeros = 0;
-			if(2 * totalOffset > xPos + yPos){
-				outputVectorLSBZeros = (2 * totalOffset) - (xPos + yPos);
-			}
+            unsigned int outputVectorLSBZeros = 0;
+            if(2 * totalOffset > xPos + yPos){
+                outputVectorLSBZeros = (2 * totalOffset) - (xPos + yPos);
+            }
 			
+
+
             bool isSigned = false;
             //todo: signed case: see line 1110
             if(!isSigned){
-                for(unsigned int i = outputVectorLSBZeros; i < outputLength + outputVectorLSBZeros; i++){
+                for(unsigned int i = outputVectorLSBZeros; i < outputLengthNonZeros + outputVectorLSBZeros; i++){
                     ostringstream s;
                     s << outputVectorName << of(i);
-                    bitHeap->addBit(startWeight + i, s.str());
+                    bitHeap->addBit(startWeight + (i - outputVectorLSBZeros), s.str());
                 }
             }
 
@@ -1964,7 +1980,11 @@ namespace flopoco {
 
     }
 	//totalOffset is normally zero or twelve. The whole big multiplier is moved by totalOffset-Bits in x and y direction to support hard multiplier which protude the right and lower borders. 
-    string IntMultiplier::placeSingleMultiplier(Operator* op, unsigned int xPos, unsigned int yPos, unsigned int xInputLength, unsigned int yInputLength, unsigned int outputLength, unsigned int totalOffset, unsigned int id){
+    string IntMultiplier::placeSingleMultiplier(Operator* op, unsigned int xPos, unsigned int yPos, unsigned int xInputLength, unsigned int yInputLength, unsigned int outputLength, unsigned int xInputNonZeros, unsigned int yInputNonZeros, unsigned int totalOffset, unsigned int id){
+
+        //xPos, yPos is the lower right corner of the multiplier
+        //xInputLength and yInputLength
+
 
 		cout << "(" << xPos << ";" << yPos << ")" << endl;
 		int blockUid = 876;
@@ -2005,7 +2025,7 @@ namespace flopoco {
         }
         unsigned int yEnd = (yPos + yInputLength) - 1;
         unsigned int highYZeros = 0;
-        if(yPos + yInputLength > (wY + totalOffset)){
+        if(yPos + yInputLength + lowYZeros > (wY + totalOffset)){
             highYZeros = (yPos + yInputLength) - (wY + totalOffset);
             yEnd = (wY + totalOffset) - 1;
         }
@@ -2022,18 +2042,19 @@ namespace flopoco {
             vhdl << " & " << zg((int)lowYZeros,0);
         }
         vhdl << ";" << endl;
-		/*		real thing
+
+        //real thing
         inPortMap(op, "X", join(addUID("x",blockUid),"_",id));
         inPortMap(op, "Y", join(addUID("y",blockUid),"_",id));
-        outPortMap(op, "R", join(addUID("r",blockUid),"_",id));
+        outPortMap(op, "Out", join(addUID("r",blockUid),"_",id));
         vhdl << instance(op, join(addUID("Mult",blockUid),"_", id));
         useSoftRAM(op);
 		
 
         return join(addUID("r",blockUid),"_",id);
-		*/
-		
-		vhdl << tab << declare(join(addUID("input_x_y", blockUid), "_", id), xInputLength + yInputLength) << " <= ";
+
+        /*
+        vhdl << tab << declare(join(addUID("input_x_y", blockUid), "_", id), xInputLength + yInputLength) << " <= ";
 		vhdl << join(addUID("y",blockUid),"_",id) << " & " << join(addUID("x",blockUid),"_",id) << ";" << endl;
 		
 		inPortMap(op, "X",join(addUID("input_x_y", blockUid), "_", id));
@@ -2042,7 +2063,7 @@ namespace flopoco {
         useSoftRAM(op);
 		
 		return join(addUID("r",blockUid),"_",id);
-   
+        */
     }
 
 

@@ -24,9 +24,9 @@ BaseMultiplierLUTTable::BaseMultiplierLUTTable(Target* target, int dx, int dy, i
     dx(dx), dy(dy), wO(wO), negate(negate), signedX(signedX), signedY(signedY)
 {
     ostringstream name;
-    srcFileName="BaseMultiplierLUTOp";
+    srcFileName="BaseMultiplierLUTTable";
 
-    name <<"BaseMultiplierLUT"<< (negate?"M":"P") << dy << "x" << dx << "r" << wO << (signedX?"Xs":"Xu") << (signedY?"Ys":"Yu");
+    name <<"BaseMultiplierLUTTable"<< (negate?"M":"P") << dy << "x" << dx << "r" << wO << (signedX?"Xs":"Xu") << (signedY?"Ys":"Yu");
     setName(name.str());
 }
 
@@ -73,6 +73,11 @@ BaseMultiplierLUTOp::BaseMultiplierLUTOp(Target* target, bool isSignedX, bool is
 {
     int wOut = wX + wY;
 
+    ostringstream name;
+    name <<"BaseMultiplierLUTOp"<< (isSignedX?"xS":"xU") << (isSignedY?"yS":"yU") << "_" << wX << "_" << wY;
+    setName(name.str());
+    srcFileName="BaseMultiplierLUTOp";
+
     addInput("X", wX, true);
     addInput("Y", wY, true);
     addOutput("Out", wOut, 1, true);
@@ -81,9 +86,9 @@ BaseMultiplierLUTOp::BaseMultiplierLUTOp(Target* target, bool isSignedX, bool is
 
     addSubComponent(bmlt);
 
-    vhdl << tab << declare("XY") << "X" << " & " << "Y";
+    vhdl << tab << declare("XY",wX+wY) << " <= X" << " & " << "Y;" << endl;
     inPortMap(bmlt, "X", "XY");
-    inPortMap(bmlt, "Y", "Out");
+    outPortMap(bmlt, "Y", "Out",false);
 
 }
 

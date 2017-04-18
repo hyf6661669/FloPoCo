@@ -1,5 +1,6 @@
 #ifndef IntMultiplierS_HPP
 #define IntMultiplierS_HPP
+#include <math.h>
 #include <vector>
 #include <sstream>
 #include <gmp.h>
@@ -162,10 +163,32 @@ namespace flopoco {
 
 		/** Fill the bit heap with all the contributions from this multiplier */
 		void fillBitHeap();
+
+        /** Places a single BaseMultiplier at a given position
+         * xPos, yPos:                  Position of the lower right corner of the BaseMultiplier
+         * xInputLength, yInputLength:  width of the inputs x and y
+         * outputLength:                width of the output
+         * xInputNonZeros, yInputNonZeros:      how many consecutive bits of the inputs are not constantly zero (might not be needed)
+         * totalOffset:                 Multipliers start at position (totalOffset, totalOffset). This has the advantage that BaseMultipliers
+         *                              can protude the lower and right border as well. totalOffset is normally zero or twelve
+         * id:                          just an unique id to not declare signals twice
+         *
+         * returns the name of the output (might not be needed)
+         * */
         string placeSingleMultiplier(Operator* op, unsigned int xPos, unsigned int yPos, unsigned int xInputLength, unsigned int yInputLength, unsigned int outputLength, unsigned int xInputNonZeros, unsigned int yInputNonZeros, unsigned int totalOffset, unsigned int id);
+
+        /** returns the amount of consecutive bits, which are not constantly zero
+         * bm:                          current BaseMultiplier
+         * xPos, yPos:                  position of lower right corner of the BaseMultiplier
+         * totalOffset:                 see placeSingleMultiplier()
+         * */
+        unsigned int getOutputLengthNonZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset);
 
 		void buildLogicOnly();
 		void buildTiling();
+
+
+
 
 
 

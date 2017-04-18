@@ -23,6 +23,9 @@ bool MultiplierSolutionParser::MultiplierSolutionParser::readSolution(){
             if(variableIsTrue(line)){
 				addVariableToSolution(line);
 			}
+            else{
+                checkForOffset(line);
+            }
         }
         solFile.close();
         return true;
@@ -78,6 +81,26 @@ void MultiplierSolutionParser::addVariableToSolution(string line){
 	std::pair <unsigned int, std::pair<unsigned int, unsigned int> > entry (typeValue, coordinates);
 	
 	solution.push_back(entry);
+}
+
+void MultiplierSolutionParser::checkForOffset(string line){
+    std::size_t found = line.find("offset");
+    if(found == std::string::npos){
+        return;
+    }
+    string numberString = "";
+
+    for(unsigned int i = 0; i < line.size(); i++){
+        if(line.at(i) >= 48 && line.at(i) <= 57){
+            numberString.push_back(line.at(i));
+        }
+    }
+    offset = atoi(numberString.c_str());
+    return;
+}
+
+unsigned int MultiplierSolutionParser::getOffset(){
+    return offset;
 }
 
 	

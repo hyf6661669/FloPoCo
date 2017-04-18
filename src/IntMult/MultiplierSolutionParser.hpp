@@ -21,6 +21,8 @@ namespace flopoco {
 
         list<pair< unsigned int, pair<unsigned int, unsigned int> > > getSolution();
         bool readSolution();
+
+        unsigned int getOffset();
 		
 		list<pair< unsigned int, pair<unsigned int, unsigned int> > > solution; 
 		//solution.first: type
@@ -31,6 +33,9 @@ namespace flopoco {
 
 		bool variableIsTrue(string line);
 		void addVariableToSolution(string line);
+        void checkForOffset(string line);
+
+        unsigned int offset;
 
         string solFileName;
 

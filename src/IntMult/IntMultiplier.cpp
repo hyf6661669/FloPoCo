@@ -1916,7 +1916,9 @@ namespace flopoco {
         //note: in XX is x-vector, in YY is y-vector after possible switching
 
         unsigned int posInList = 0;    //needed as id to differ between inputvectors
-		unsigned int totalOffset = 12;
+        unsigned int totalOffset = multiplierSolutionParser->getOffset();
+
+
         for(list<pair< unsigned int, pair<unsigned int, unsigned int> > >::iterator it = solution.begin(); it != solution.end(); it++){
             unsigned int type = (*it).first;
             unsigned int xPos = (*it).second.first;
@@ -1935,12 +1937,17 @@ namespace flopoco {
             unsigned int yInputLength = baseMultiplier->getXWordSize();
             unsigned int outputLength = baseMultiplier->getOutWordSize();
             unsigned int lsbZeros = 0;  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
+
+
+
             unsigned int xInputNonZeros = xInputLength;
             unsigned int yInputNonZeros = yInputLength;
             unsigned int outputLengthNonZeros = xInputNonZeros + yInputNonZeros;
             if(xInputNonZeros == 1 || yInputNonZeros == 1){
                 outputLengthNonZeros -= 1;
             }
+
+            outputLengthNonZeros = getOutputLengthNonZeros(baseMultiplier, xPos, yPos, totalOffset);
 
             //SmallMultTable *tUU = new SmallMultTable(parentOp->getTarget(), xInputLength, yInputLength, outputLength, false, false, false);
             Operator *op = baseMultiplier->generateOperator(parentOp->getTarget());
@@ -2067,7 +2074,25 @@ namespace flopoco {
     }
 
 
+    unsigned int IntMultiplier::getOutputLengthNonZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset){
 
+        unsigned int sum = 0;
+
+        for(int i = 0; i < bm->getXWordSize(); i++){
+            for(int j = 0; j < bm->getYWordSize(); j++){
+                if(i + xPos >= totalOffset && j + yPos >= totalOffset){
+                    if(i + xPos < wX && j + yPos < wY){
+                        if(bm->shapeValid(i,j)){
+                            sum += (int)(pow(2, i + j) + 0.0001);
+                        }
+                    }
+                }
+            }
+        }
+
+        unsigned int length = (unsigned int) ceil(log2(sum + 1));
+        return length;
+    }
 
 
 

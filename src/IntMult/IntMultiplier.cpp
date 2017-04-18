@@ -2053,7 +2053,7 @@ namespace flopoco {
         //real thing
         inPortMap(op, "X", join(addUID("x",blockUid),"_",id));
         inPortMap(op, "Y", join(addUID("y",blockUid),"_",id));
-        outPortMap(op, "Out", join(addUID("r",blockUid),"_",id));
+        outPortMap(op, "R", join(addUID("r",blockUid),"_",id));
         vhdl << instance(op, join(addUID("Mult",blockUid),"_", id));
         useSoftRAM(op);
 		
@@ -2081,27 +2081,16 @@ namespace flopoco {
         for(int i = 0; i < bm->getXWordSize(); i++){
             for(int j = 0; j < bm->getYWordSize(); j++){
                 if(i + xPos >= totalOffset && j + yPos >= totalOffset){
-                    if(i + xPos < (wX + totalOffset) && j + yPos < (wY + totalOffset)){
+                    if(i + xPos < wX && j + yPos < wY){
                         if(bm->shapeValid(i,j)){
                             sum += (int)(pow(2, i + j) + 0.0001);
-                            //cout << " added 2^" << (i+j) << endl;
-                        }
-                        else{
-                            //cout << "not true " << i << " " << j << endl;
                         }
                     }
-                    else{
-                        //cout << "upper borders " << endl;
-                    }
-                }
-                else{
-                    //cout << "lower borders" << endl;
                 }
             }
         }
 
         unsigned int length = (unsigned int) ceil(log2(sum + 1));
-        //cout << " outputLength has a length of " << length << endl;
         return length;
     }
 
@@ -2376,6 +2365,4 @@ namespace flopoco {
 											 IntMultiplier::parseArguments
 											 ) ;
 	}
-
-	
 }

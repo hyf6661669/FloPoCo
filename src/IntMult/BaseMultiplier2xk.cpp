@@ -31,7 +31,7 @@ BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool is
 
     addInput("X", 2, true);
     addInput("Y", width, true);
-    addOutput("Out", width+1, 1, true);
+    addOutput("R", width+1, 1, true);
 
     int needed_cc = ( width / 4 ) + ( width % 4 > 0 ? 1 : 0 ); //no. of required carry chains
 

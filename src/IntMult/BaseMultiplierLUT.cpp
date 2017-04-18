@@ -80,15 +80,17 @@ BaseMultiplierLUTOp::BaseMultiplierLUTOp(Target* target, bool isSignedX, bool is
 
     addInput("X", wX, true);
     addInput("Y", wY, true);
-    addOutput("Out", wOut, 1, true);
+    addOutput("R", wOut, 1, true);
+
+    vhdl << tab << declare("XY",wX+wY) << " <= X" << " & " << "Y;" << endl;
 
     BaseMultiplierLUTTable* bmlt = new BaseMultiplierLUTTable(target, wX, wY, wOut, false, isSignedX, isSignedY);
 
     addSubComponent(bmlt);
-
-    vhdl << tab << declare("XY",wX+wY) << " <= X" << " & " << "Y;" << endl;
     inPortMap(bmlt, "X", "XY");
-    outPortMap(bmlt, "Y", "Out",false);
+    outPortMap(bmlt, "Y", "R", false);
+
+    vhdl << instance(bmlt, "BaseMultiplierLUTTable");
 
 }
 

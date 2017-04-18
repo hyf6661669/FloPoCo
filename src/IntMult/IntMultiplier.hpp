@@ -162,14 +162,15 @@ namespace flopoco {
 
 		/** Fill the bit heap with all the contributions from this multiplier */
 		void fillBitHeap();
-
+        string placeSingleMultiplier(Operator* op, unsigned int xPos, unsigned int yPos, unsigned int xInputLength, unsigned int yInputLength, unsigned int outputLength, unsigned int totalOffset, unsigned int id);
 
 		void buildLogicOnly();
 		void buildTiling();
 
 
 
-
+        /** Uni Kassel: place the Multipliers and add Bits to BitHeap */
+        void placeMultipliers();
 
 
 		/**	builds the logic block ( smallMultTables)

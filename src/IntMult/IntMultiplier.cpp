@@ -312,8 +312,9 @@ namespace flopoco {
 			// initialize the critical path
 			setCriticalPath(getMaxInputDelays ( inputDelays_ ));
 
+            //placeMultipliers();
 
-			fillBitHeap();
+            fillBitHeap();
 
 			// For a stand-alone operator, we add the rounding-by-truncation bit,
 			// The following turns truncation into rounding, except that the overhead is large for small multipliers.
@@ -939,10 +940,10 @@ namespace flopoco {
 	/**************************************************************************/
 	void IntMultiplier::buildHeapLogicOnly(int lsbX, int lsbY, int msbX, int msbY,int blockUid)
 	{
-        MultiplierSolutionParser *multiplierSolutionParser = new MultiplierSolutionParser("m32x32_1dsp.sol");
-        multiplierSolutionParser->readSolution();
+//        MultiplierSolutionParser *multiplierSolutionParser = new MultiplierSolutionParser("m32x32_1dsp.sol");
+//        multiplierSolutionParser->readSolution();
 		
-		BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget());
+//		BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget());
 
 		REPORT(DETAILED,"buildHeapLogicOnly called for " << lsbX << " " << lsbY << " " << msbX << " " << msbY);
 		Target *target= parentOp->getTarget();
@@ -1900,6 +1901,153 @@ namespace flopoco {
 		REPORT(FULL, "in buildXilinxTiling(): Exiting buildXilinxTiling()");
 #endif
 	}
+
+    /* currently reads solution from solutionfile. Initialises needed Multipliers. Wires them correctly and adds Bits to bitheap */
+    void IntMultiplier::placeMultipliers(){
+
+        
+        MultiplierSolutionParser *multiplierSolutionParser = new MultiplierSolutionParser("m10x10_test.sol");
+        multiplierSolutionParser->readSolution();
+
+        list<pair< unsigned int, pair<unsigned int, unsigned int> > > solution = multiplierSolutionParser->getSolution();
+
+        BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget());
+
+        //note: in XX is x-vector, in YY is y-vector after possible switching
+
+        unsigned int posInList = 0;    //needed as id to differ between inputvectors
+		unsigned int totalOffset = 12;
+        for(list<pair< unsigned int, pair<unsigned int, unsigned int> > >::iterator it = solution.begin(); it != solution.end(); it++){
+            unsigned int type = (*it).first;
+            unsigned int xPos = (*it).second.first;
+            unsigned int yPos = (*it).second.second;
+			
+
+            /*
+            BaseMultiplier *baseMultiplier = baseMultiplierCollection->getBaseMultiplier(type);
+            unsigned int outputLength = getOutputLength(baseMultiplier, xPos, yPos);
+            Operator *op = baseMultiplier->getOperator();
+            */
+
+            //lets assume, that baseMultiplier ix 3x3, Unsigned ...
+
+            unsigned int xInputLength = 3;
+            unsigned int yInputLength = 3;
+            unsigned int outputLength = 6;
+            unsigned int lsbZeros = 0;  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
+
+            SmallMultTable *tUU = new SmallMultTable(parentOp->getTarget(), xInputLength, yInputLength, outputLength, false, false, false);
+
+            string outputVectorName = placeSingleMultiplier(tUU, xPos, yPos, xInputLength, yInputLength, outputLength, totalOffset, posInList);
+            unsigned int startWeight = 0;
+			if(xPos + yPos + lsbZeros > (2 * totalOffset)){
+				startWeight = xPos + yPos + lsbZeros - (2 * totalOffset);
+			}
+			
+			unsigned int outputVectorLSBZeros = 0;
+			if(2 * totalOffset > xPos + yPos){
+				outputVectorLSBZeros = (2 * totalOffset) - (xPos + yPos);
+			}
+			
+            bool isSigned = false;
+            //todo: signed case: see line 1110
+            if(!isSigned){
+                for(unsigned int i = outputVectorLSBZeros; i < outputLength + outputVectorLSBZeros; i++){
+                    ostringstream s;
+                    s << outputVectorName << of(i);
+                    bitHeap->addBit(startWeight + i, s.str());
+                }
+            }
+
+            posInList++;
+        }
+
+    }
+	//totalOffset is normally zero or twelve. The whole big multiplier is moved by totalOffset-Bits in x and y direction to support hard multiplier which protude the right and lower borders. 
+    string IntMultiplier::placeSingleMultiplier(Operator* op, unsigned int xPos, unsigned int yPos, unsigned int xInputLength, unsigned int yInputLength, unsigned int outputLength, unsigned int totalOffset, unsigned int id){
+
+		cout << "(" << xPos << ";" << yPos << ")" << endl;
+		int blockUid = 876;
+        //declaring x-input:
+        unsigned int xStart = xPos;
+        unsigned int lowXZeros = 0;
+        if(xPos < totalOffset){
+            lowXZeros = totalOffset - xPos;
+            xStart = totalOffset;
+        }
+        unsigned int xEnd = (xPos + xInputLength) - 1;
+        unsigned int highXZeros = 0;
+        if(xPos + xInputLength > (wX + totalOffset)){
+            highXZeros = (xPos + xInputLength) - (wX + totalOffset);
+            xEnd = (wX + totalOffset) - 1;
+        }
+        //unsigned int xNonZeros = xInputLength - (lowXZeros + highXZeros);
+
+        vhdl << tab << declare(join(addUID("x",blockUid),"_",id),xInputLength) << " <= ";
+        if(highXZeros > 0){
+			cout << "highXzeros: " << highXZeros << endl;
+            vhdl << zg((int)highXZeros,0) << " & ";
+        }
+        vhdl << addUID("XX") << range(xEnd - totalOffset, xStart - totalOffset);
+        if(lowXZeros > 0){
+			cout << "lowXzeros: " << lowXZeros << endl;
+            vhdl << " & " << zg((int)lowXZeros,0);
+        }
+        vhdl << ";" << endl;
+
+
+        //declaring y-input:
+        unsigned int yStart = yPos;
+        unsigned int lowYZeros = 0;
+        if(yPos < totalOffset){
+            lowYZeros = totalOffset - yPos;
+            yStart = totalOffset;
+        }
+        unsigned int yEnd = (yPos + yInputLength) - 1;
+        unsigned int highYZeros = 0;
+        if(yPos + yInputLength > (wY + totalOffset)){
+            highYZeros = (yPos + yInputLength) - (wY + totalOffset);
+            yEnd = (wY + totalOffset) - 1;
+        }
+        //unsigned int yNonZeros = yInputLength - (lowYZeros + highYZeros);
+
+        vhdl << tab << declare(join(addUID("y",blockUid),"_",id),yInputLength) << " <= ";
+        if(highYZeros > 0){
+			cout << "highYzeros: " << highYZeros << endl;
+            vhdl << zg((int)highYZeros,0) << " & ";
+        }
+        vhdl << addUID("YY") << range(yEnd - totalOffset, yStart - totalOffset);
+        if(lowYZeros > 0){
+			cout << "lowYzeros: " << lowYZeros << endl;
+            vhdl << " & " << zg((int)lowYZeros,0);
+        }
+        vhdl << ";" << endl;
+		/*		real thing
+        inPortMap(op, "X", join(addUID("x",blockUid),"_",id));
+        inPortMap(op, "Y", join(addUID("y",blockUid),"_",id));
+        outPortMap(op, "R", join(addUID("r",blockUid),"_",id));
+        vhdl << instance(op, join(addUID("Mult",blockUid),"_", id));
+        useSoftRAM(op);
+		
+
+        return join(addUID("r",blockUid),"_",id);
+		*/
+		
+		vhdl << tab << declare(join(addUID("input_x_y", blockUid), "_", id), xInputLength + yInputLength) << " <= ";
+		vhdl << join(addUID("y",blockUid),"_",id) << " & " << join(addUID("x",blockUid),"_",id) << ";" << endl;
+		
+		inPortMap(op, "X",join(addUID("input_x_y", blockUid), "_", id));
+		outPortMap(op, "Y", join(addUID("r",blockUid),"_",id));
+        vhdl << instance(op, join(addUID("Mult",blockUid),"_", id));
+        useSoftRAM(op);
+		
+		return join(addUID("r",blockUid),"_",id);
+   
+    }
+
+
+
+
 
 
 	// Destructor

@@ -2081,16 +2081,27 @@ namespace flopoco {
         for(int i = 0; i < bm->getXWordSize(); i++){
             for(int j = 0; j < bm->getYWordSize(); j++){
                 if(i + xPos >= totalOffset && j + yPos >= totalOffset){
-                    if(i + xPos < wX && j + yPos < wY){
+                    if(i + xPos < (wX + totalOffset) && j + yPos < (wY + totalOffset)){
                         if(bm->shapeValid(i,j)){
                             sum += (int)(pow(2, i + j) + 0.0001);
+                            //cout << " added 2^" << (i+j) << endl;
+                        }
+                        else{
+                            //cout << "not true " << i << " " << j << endl;
                         }
                     }
+                    else{
+                        //cout << "upper borders " << endl;
+                    }
+                }
+                else{
+                    //cout << "lower borders" << endl;
                 }
             }
         }
 
         unsigned int length = (unsigned int) ceil(log2(sum + 1));
+        //cout << " outputLength has a length of " << length << endl;
         return length;
     }
 

@@ -14,7 +14,7 @@ BaseMultiplier::BaseMultiplier(bool isSignedX, bool isSignedY)
 
 bool BaseMultiplier::shapeValid(int x, int y)
 {
-    if((x > 0) && (x < wX) && (y > 0) && (y < wY)) return true;
+    if((x >= 0) && (x < wX) && (y >= 0) && (y < wY)) return true;
     return false;
 }
 

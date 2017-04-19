@@ -1936,7 +1936,7 @@ namespace flopoco {
             unsigned int xInputLength = baseMultiplier->getXWordSize();
             unsigned int yInputLength = baseMultiplier->getXWordSize();
             unsigned int outputLength = baseMultiplier->getOutWordSize();
-            unsigned int lsbZeros = 0;  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
+            unsigned int lsbZerosInBM = getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
 
 
 
@@ -1949,7 +1949,6 @@ namespace flopoco {
 
             outputLengthNonZeros = getOutputLengthNonZeros(baseMultiplier, xPos, yPos, totalOffset);
 
-            //SmallMultTable *tUU = new SmallMultTable(parentOp->getTarget(), xInputLength, yInputLength, outputLength, false, false, false);
             Operator *op = baseMultiplier->generateOperator(parentOp->getTarget());
 
             addToGlobalOpList(op);
@@ -1961,21 +1960,28 @@ namespace flopoco {
 */
             string outputVectorName = placeSingleMultiplier(op, xPos, yPos, xInputLength, yInputLength, outputLength, xInputNonZeros, yInputNonZeros, totalOffset, posInList);
             unsigned int startWeight = 0;
-			if(xPos + yPos + lsbZeros > (2 * totalOffset)){
-				startWeight = xPos + yPos + lsbZeros - (2 * totalOffset);
+            if(xPos + yPos + lsbZerosInBM > (2 * totalOffset)){
+                startWeight = xPos + yPos + lsbZerosInBM - (2 * totalOffset);
 			}
 			
             unsigned int outputVectorLSBZeros = 0;
+            /*
             if(2 * totalOffset > xPos + yPos){
                 outputVectorLSBZeros = (2 * totalOffset) - (xPos + yPos);
             }
-			
+            */
+
+
+            //TODO: check cases, where the lsbZerosInBM != 0
+            //outputVectorLSBZeros are the amount of lsb Bits of the outputVector, which we have to discard in the vhdl-code.
+            outputVectorLSBZeros = getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, false) - getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);
+            //cout << "for position " << xPos << "," << yPos << " we got outputVectorLSBZeros = " << outputVectorLSBZeros << endl;
 
 
             bool isSigned = false;
             //todo: signed case: see line 1110
             if(!isSigned){
-                for(unsigned int i = outputVectorLSBZeros; i < outputLengthNonZeros + outputVectorLSBZeros; i++){
+                for(unsigned int i = outputVectorLSBZeros; i < outputLengthNonZeros; i++){
                     ostringstream s;
                     s << outputVectorName << of(i);
                     bitHeap->addBit(startWeight + (i - outputVectorLSBZeros), s.str());
@@ -1986,11 +1992,12 @@ namespace flopoco {
         }
 
     }
+
 	//totalOffset is normally zero or twelve. The whole big multiplier is moved by totalOffset-Bits in x and y direction to support hard multiplier which protude the right and lower borders. 
     string IntMultiplier::placeSingleMultiplier(Operator* op, unsigned int xPos, unsigned int yPos, unsigned int xInputLength, unsigned int yInputLength, unsigned int outputLength, unsigned int xInputNonZeros, unsigned int yInputNonZeros, unsigned int totalOffset, unsigned int id){
 
         //xPos, yPos is the lower right corner of the multiplier
-        //xInputLength and yInputLength
+        //xInputLength and yInputLength is the width of the inputs
 
 
 		cout << "(" << xPos << ";" << yPos << ")" << endl;
@@ -2102,6 +2109,45 @@ namespace flopoco {
         unsigned int length = (unsigned int) ceil(log2(sum + 1));
 		//cout << " outputLength has a length of " << length << endl;
         return length;
+    }
+
+
+    /*this function computes the amount of zeros at the lsb position. This is done by checking for every output bit position, if there is a) an input of the current BaseMultiplier, and b) an input of the IntMultiplier. if a or b or both are false, then there is a zero at this position and we check the next position. otherwise we break. If zerosOfBMOnly==true, only condition a) is checked */
+    unsigned int IntMultiplier::getMSBZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset, bool zerosOfBMOnly){
+
+        unsigned int max = min(bm->getXWordSize(), bm->getYWordSize());
+        unsigned int zeros = 0;
+
+        for(unsigned int i = 0; i < max; i++){
+            unsigned int steps = i + 1; //for the lowest bit make one step (pos 0,0), second lowest 2 steps (pos 0,1 and 1,0) ...
+            //the relevant positions for every outputbit lie on a diogonal line.
+
+            bool bmHasInput = false;
+            bool intMultiplierHasBit = false;
+            for(unsigned int j = 0; j < steps; j++){
+                if(bm->shapeValid(j, steps - (j + 1))){
+                    bmHasInput = true;
+                }
+                if(bmHasInput && zerosOfBMOnly){
+                    return zeros;   //only checking condition a)
+                }
+                //x in range?
+                if((xPos + j >= totalOffset && xPos + j < (wX + totalOffset))){
+                    //y in range?
+                    if((yPos + (steps - (j + 1))) >= totalOffset && (yPos + (steps - (j + 1))) < (wY + totalOffset)){
+                        intMultiplierHasBit = true;
+                    }
+                }
+                if(bmHasInput && intMultiplierHasBit){
+                    //this output gets some values. So finished computation and return
+                    return zeros;
+                }
+            }
+
+            zeros++;
+        }
+
+        return zeros;       //if reached, that would mean the the bm shares no area with IntMultiplier
     }
 
 

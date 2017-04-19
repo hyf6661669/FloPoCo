@@ -18,18 +18,21 @@ namespace flopoco {
     {
 
 	public:
-        BaseMultiplier2xk(bool isSignedX, bool isSignedY, int width);
+        BaseMultiplier2xk(bool isSignedX, bool isSignedY, int width, bool flipXY=false);
 
         virtual Operator *generateOperator(Target *target);
 
     private:
+        bool flipXY;
 
 	};
 
     class BaseMultiplier2xkOp : public Operator
     {
     public:
-        BaseMultiplier2xkOp(Target* target, bool isSignedX, bool isSignedY, int width);
+        BaseMultiplier2xkOp(Target* target, bool isSignedX, bool isSignedY, int width, bool flipXY=false);
+    private:
+        int wX, wY;
     };
 
 }

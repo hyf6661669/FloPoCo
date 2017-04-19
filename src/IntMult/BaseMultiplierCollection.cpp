@@ -12,10 +12,19 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target){
 	
     this->target = target;
 
-    //first simple test, shape 0 is a 3x3 mult.:
-    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,3)); //3x3 LUT-based multiplier
+    //create logic-based multipliers:
+    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,1,1)); //1x1 LUT-based multiplier (an AND gate)
+    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,1,2)); //1x2 LUT-based multiplier (two AND gates)
+    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,2,1)); //2x1 LUT-based multiplier (two AND gates)
+    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,2,3)); //2x3 LUT-based multiplier (three LUT6)
+    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,2)); //3x2 LUT-based multiplier (three LUT6)
+    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,3)); //3x3 LUT-based multiplier (six LUT6)
 
-    baseMultipliers.push_back(new BaseMultiplier2xk(false, false, 10)); //2x10 LUT/carry-chain-based multiplier
+    for(int k=2; k < 32; k++) //ToDo: adjust limits
+    {
+        baseMultipliers.push_back(new BaseMultiplier2xk(false, false, k, false)); //2xk LUT/carry-chain-based multiplier
+        baseMultipliers.push_back(new BaseMultiplier2xk(false, false, k, true));  //kx2 LUT/carry-chain-based multiplier
+    }
 }
 
 BaseMultiplier* BaseMultiplierCollection::getBaseMultiplier(int shape)

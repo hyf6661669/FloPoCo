@@ -1,5 +1,6 @@
 #include "BaseMultiplierCollection.hpp"
 #include "BaseMultiplierLUT.hpp"
+#include "BaseMultiplier2xk.hpp"
 
 namespace flopoco {
 
@@ -12,13 +13,14 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target){
     this->target = target;
 
     //first simple test, shape 0 is a 3x3 mult.:
-    BaseMultiplier* bm = new BaseMultiplierLUT(false,false,3,3); //3x3 LUT-based multiplier
-    baseMultipliers.push_back(bm);
+    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,3)); //3x3 LUT-based multiplier
+
+    baseMultipliers.push_back(new BaseMultiplier2xk(false, false, 10)); //2x10 LUT/carry-chain-based multiplier
 }
 
 BaseMultiplier* BaseMultiplierCollection::getBaseMultiplier(int shape)
 {
-    if(shape < baseMultipliers.size())
+    if(shape < ((int) baseMultipliers.size()))
         return baseMultipliers[shape];
     else
         return nullptr;

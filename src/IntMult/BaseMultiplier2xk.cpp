@@ -12,33 +12,39 @@ BaseMultiplier2xk::BaseMultiplier2xk(bool isSignedX, bool isSignedY, int k) : Ba
     srcFileName = "BaseMultiplier2xk";
     uniqueName_ = "BaseMultiplier2xk";
 
-    this->wX = 2;
-    this->wY = k;
+    this->wX = k;
+    this->wY = 2;
 
 }
 
 Operator* BaseMultiplier2xk::generateOperator(Target* target)
 {
-    return new BaseMultiplier2xkOp(target, isSignedX, isSignedY, wY);
+    return new BaseMultiplier2xkOp(target, isSignedX, isSignedY, wX);
 }
 	
 
 BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool isSignedY, int width) : Operator(target)
 {
     ostringstream name;
-    name << "BaseMultiplier2x" << width;
+    name << "BaseMultiplier" << width << "x2";
     setName(name.str());
 
-    addInput("X", 2, true);
-    addInput("Y", width, true);
+    addInput("X", width, true);
+    addInput("Y", 2, true);
     addOutput("R", width+1, 1, true);
 
+    if((isSignedX == true) || (isSignedY == true)) throw string("unsigned inputs currently not supported by BaseMultiplier2xkOp, sorry");
+
     int needed_cc = ( width / 4 ) + ( width % 4 > 0 ? 1 : 0 ); //no. of required carry chains
+    int needed_luts = ( width / 2 ) + ( width % 2 > 0 ? 1 : 0 ); //no. of required LUTs
 
     declare( "cc_s", needed_cc * 4 );
     declare( "cc_di", needed_cc * 4 );
+    declare( "cc_co", needed_cc * 4 );
+    declare( "cc_o", needed_cc * 4 );
 
-    for(int i=0; i < width; i++)
+    //create the LUTs:
+    for(int i=0; i < needed_luts; i++)
     {
         //LUT content of the LUTs:
         lut_op lutop_o6 = (lut_in(0) & lut_in(1)) ^ (lut_in(2) & lut_in(3)); //xor of two partial products
@@ -49,9 +55,10 @@ BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool is
         cur_lut->setGeneric( "init", lutop.get_hex() );
 
         inPortMap(cur_lut,"i0","X" + of(2*i));
-        inPortMap(cur_lut,"i1","Y" + of(2*i));
+        inPortMap(cur_lut,"i1","Y(0)");
+//        if(i+1 == 2*needed_luts)); //ToDo: Handle non even width!!
         inPortMap(cur_lut,"i2","X" + of(2*i+1));
-        inPortMap(cur_lut,"i3","Y" + of(2*i+1));
+        inPortMap(cur_lut,"i3","Y(1)");
         inPortMapCst(cur_lut, "i4","'0'");
         inPortMapCst(cur_lut, "i5","'1'");
 
@@ -60,6 +67,29 @@ BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool is
 
         vhdl << cur_lut->primitiveInstance( join("lut",i), this ) << endl;
     }
+
+    //create the carry chain:
+    for( int i = 0; i < needed_cc; i++ ) {
+        Xilinx_CARRY4 *cur_cc = new Xilinx_CARRY4( target );
+
+        inPortMapCst( cur_cc, "cyinit", "'0'" );
+        if( i == 0 ) {
+            inPortMapCst( cur_cc, "ci", "'0'" ); //carry-in can not be used as AX input is blocked!!
+        } else {
+            inPortMap( cur_cc, "ci", "cc_co" + of( i * 4 - 1 ) );
+        }
+        inPortMap( cur_cc, "di", "cc_di" + range( i * 4 + 3, i * 4 ) );
+        inPortMap( cur_cc, "s", "cc_s" + range( i * 4 + 3, i * 4 ) );
+        outPortMap( cur_cc, "co", "cc_co" + range( i * 4 + 3, i * 4 ), false);
+        outPortMap( cur_cc, "o", "cc_o" + range( i * 4 + 3, i * 4 ), false);
+
+        stringstream cc_name;
+        cc_name << "cc_" << i;
+        vhdl << cur_cc->primitiveInstance( cc_name.str(), this );
+    }
+    vhdl << endl;
+
+    vhdl << tab << "R <= cc_co(" << width-1 << ") & cc_o(" << width-1 << " downto 0);" << endl;
 }
 
 }   //end namespace flopoco

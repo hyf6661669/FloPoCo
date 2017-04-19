@@ -1934,7 +1934,7 @@ namespace flopoco {
             //lets assume, that baseMultiplier ix 3x3, Unsigned ...
 
             unsigned int xInputLength = baseMultiplier->getXWordSize();
-            unsigned int yInputLength = baseMultiplier->getXWordSize();
+            unsigned int yInputLength = baseMultiplier->getYWordSize();
             unsigned int outputLength = baseMultiplier->getOutWordSize();
             unsigned int lsbZerosInBM = getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
 

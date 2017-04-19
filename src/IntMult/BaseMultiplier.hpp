@@ -15,9 +15,11 @@ namespace flopoco {
 	public:
         BaseMultiplier(bool isSignedX, bool isSignedY);
 
+        virtual ~BaseMultiplier();
+
         int getXWordSize() { return wX; }
         int getYWordSize() { return wY; }
-        int getOutWordSize() { return wOut; }
+        int getOutWordSize() { return wR; }
 
         /**
          * @brief generateOperator generates an instance of the corresponding Operator that realizes the given shape
@@ -37,7 +39,7 @@ namespace flopoco {
 
     protected:
 
-        int wX, wY, wOut;
+        int wX, wY, wR;
 
         bool isSignedX, isSignedY;
 

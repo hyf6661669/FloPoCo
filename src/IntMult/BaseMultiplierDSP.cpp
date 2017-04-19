@@ -6,23 +6,23 @@
 namespace flopoco {
 
 
-BaseMultiplierDSP::BaseMultiplierDSP(bool isSignedX, bool isSignedY, int width, bool flipXY) : BaseMultiplier(isSignedX,isSignedY)
+BaseMultiplierDSP::BaseMultiplierDSP(bool isSignedX, bool isSignedY, int wX, int wY, bool flipXY) : BaseMultiplier(isSignedX,isSignedY)
 {
 
     srcFileName = "BaseMultiplierDSP";
-    uniqueName_ = "BaseMultiplierDSP";
+    uniqueName_ = "BaseMultiplierDSP" + std::to_string(wX) + "x" + std::to_string(wY);
 
     this->flipXY = flipXY;
 
     if(!flipXY)
     {
-        wX = 2;
-        wY = width;
+        this->wX = wX;
+        this->wY = wY;
     }
     else
     {
-        wX = width;
-        wY = 2;
+        this->wX = wY;
+        this->wY = wX;
     }
 
 }

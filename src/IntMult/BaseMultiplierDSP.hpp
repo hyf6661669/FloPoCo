@@ -18,7 +18,7 @@ namespace flopoco {
     {
 
 	public:
-        BaseMultiplierDSP(bool isSignedX, bool isSignedY, int width, bool flipXY=false);
+        BaseMultiplierDSP(bool isSignedX, bool isSignedY, int wX, int wY, bool flipXY=false);
 
         virtual Operator *generateOperator(Target *target);
 

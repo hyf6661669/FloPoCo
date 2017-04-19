@@ -1,6 +1,8 @@
 #include "BaseMultiplierCollection.hpp"
 #include "BaseMultiplierLUT.hpp"
 #include "BaseMultiplier2xk.hpp"
+#include "BaseMultiplierDSP.hpp"
+#include "BaseMultiplierDSPSuperTilesXilinx.hpp"
 
 namespace flopoco {
 
@@ -25,6 +27,14 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target){
         baseMultipliers.push_back(new BaseMultiplier2xk(false, false, k, false)); //2xk LUT/carry-chain-based multiplier
         baseMultipliers.push_back(new BaseMultiplier2xk(false, false, k, true));  //kx2 LUT/carry-chain-based multiplier
     }
+
+    //create DSP-based multipliers:
+    baseMultipliers.push_back(new BaseMultiplierDSP(false, false, 17, 24));
+    baseMultipliers.push_back(new BaseMultiplierDSP(false, false, 24, 17));
+
+    //create DSP-based super tiles:
+    baseMultipliers.push_back(new BaseMultiplierDSPSuperTilesXilinx(false, false, BaseMultiplierDSPSuperTilesXilinx::SHAPE_A));
+    baseMultipliers.push_back(new BaseMultiplierDSPSuperTilesXilinx(false, false, BaseMultiplierDSPSuperTilesXilinx::SHAPE_B));
 
     int i=0;
     cout << "The following multiplier shapes were generated:" << endl;

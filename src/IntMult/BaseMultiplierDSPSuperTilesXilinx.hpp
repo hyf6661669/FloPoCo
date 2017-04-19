@@ -45,13 +45,12 @@ namespace flopoco {
     private:
         bool flipXY;
         TILE_SHAPE shape;
-
 	};
 
     class BaseMultiplierDSPSuperTilesXilinxOp : public Operator
     {
     public:
-        BaseMultiplierDSPSuperTilesXilinxOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, bool flipXY=false);
+        BaseMultiplierDSPSuperTilesXilinxOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, int wR, BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape, bool flipXY=false);
     private:
         int wX, wY, wR;
     };

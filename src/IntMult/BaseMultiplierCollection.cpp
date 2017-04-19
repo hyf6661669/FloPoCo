@@ -25,6 +25,14 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target){
         baseMultipliers.push_back(new BaseMultiplier2xk(false, false, k, false)); //2xk LUT/carry-chain-based multiplier
         baseMultipliers.push_back(new BaseMultiplier2xk(false, false, k, true));  //kx2 LUT/carry-chain-based multiplier
     }
+
+    int i=0;
+    cout << "The following multiplier shapes were generated:" << endl;
+
+    for(BaseMultiplier* bm : baseMultipliers)
+    {
+        cout << "shape " << i++ << ": " << bm->getXWordSize() << "x" << bm->getYWordSize() << " of type " << bm->getName() << endl;
+    }
 }
 
 BaseMultiplier* BaseMultiplierCollection::getBaseMultiplier(int shape)

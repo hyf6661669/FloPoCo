@@ -33,6 +33,8 @@ namespace flopoco {
          */
         virtual bool shapeValid(int x, int y);
 
+        string getName(){ return uniqueName_; }
+
     protected:
 
         int wX, wY, wOut;

@@ -19,6 +19,7 @@ namespace flopoco {
 
         BaseMultiplier* getBaseMultiplier(int shape);
 		
+        string getName(){ return uniqueName_; }
 		
     private:
 

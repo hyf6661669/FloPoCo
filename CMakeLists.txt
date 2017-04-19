@@ -421,6 +421,7 @@ src/Conversions/Fix2FP
  src/IntMult/BaseMultiplier
  src/IntMult/BaseMultiplierLUT
  src/IntMult/BaseMultiplier2xk
+ src/IntMult/BaseMultiplierDSP
 
 # Complex numbers ---------------------------------------------------
 src/Complex/FixComplexKCM

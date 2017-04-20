@@ -135,7 +135,7 @@ namespace flopoco {
 
 		string newxname, newyname;
 		if(wYdecl > wXdecl){
-			REPORT(DEBUG, "initialize(): Swapping X and Y")
+            REPORT(DEBUG, "initialize(): Swapping X and Y");
 			wX=wYdecl;
 			wY=wXdecl;
 			newxname=yname;
@@ -221,10 +221,10 @@ namespace flopoco {
 
 
 	// The constructor for a stand-alone operator
-	IntMultiplier::IntMultiplier (Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, map<string, double> inputDelays_, bool enableSuperTiles_):
+    IntMultiplier::IntMultiplier (Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, map<string, double> inputDelays_, bool enableSuperTiles_, string solutionFile_):
 		Operator ( target_, inputDelays_ ),
 		wXdecl(wX_), wYdecl(wY_), wOut(wOut_),
-		negate(false), signedIO(signedIO_),enableSuperTiles(enableSuperTiles_)
+        negate(false), signedIO(signedIO_),enableSuperTiles(enableSuperTiles_),solutionFile(solutionFile_)
 	{
 		srcFileName="IntMultiplier";
 		setCopyrightString ( "Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012" );
@@ -1906,7 +1906,15 @@ namespace flopoco {
     void IntMultiplier::placeMultipliers(){
 
         
-        MultiplierSolutionParser *multiplierSolutionParser = new MultiplierSolutionParser("m10x10_test.sol");
+        MultiplierSolutionParser *multiplierSolutionParser;
+        if(!solutionFile.compare("\"\"")){
+            multiplierSolutionParser = new MultiplierSolutionParser("m10x10_test.sol");
+            cout << "parsed solution from m10x10_test.sol" << endl;
+        }
+        else{
+            multiplierSolutionParser = new MultiplierSolutionParser(solutionFile);
+            cout << "parsed solution from " << solutionFile << endl;
+        }
         multiplierSolutionParser->readSolution();
 
         list<pair< unsigned int, pair<unsigned int, unsigned int> > > solution = multiplierSolutionParser->getSolution();
@@ -1952,12 +1960,7 @@ namespace flopoco {
             Operator *op = baseMultiplier->generateOperator(parentOp->getTarget());
 
             addToGlobalOpList(op);
-/*
-            if(xPos == 10 && yPos == 12){
-                xInputNonZeros = 1;
-                outputLengthNonZeros = 3;
-            }
-*/
+
             string outputVectorName = placeSingleMultiplier(op, xPos, yPos, xInputLength, yInputLength, outputLength, xInputNonZeros, yInputNonZeros, totalOffset, posInList);
             unsigned int startWeight = 0;
             if(xPos + yPos + lsbZerosInBM > (2 * totalOffset)){
@@ -2398,12 +2401,14 @@ namespace flopoco {
 	OperatorPtr IntMultiplier::parseArguments(Target *target, std::vector<std::string> &args) {
 		int wX,wY, wOut ;
 		bool signedIO,superTile;
+        string solutionFile;
 		UserInterface::parseStrictlyPositiveInt(args, "wX", &wX);
 		UserInterface::parseStrictlyPositiveInt(args, "wY", &wY);
 		UserInterface::parsePositiveInt(args, "wOut", &wOut);
 		UserInterface::parseBoolean(args, "signedIO", &signedIO);
 		UserInterface::parseBoolean(args, "superTile", &superTile);
-		return new IntMultiplier(target, wX, wY, wOut, signedIO, emptyDelayMap, superTile);
+        UserInterface::parseString(args, "solutionFile", &solutionFile);
+        return new IntMultiplier(target, wX, wY, wOut, signedIO, emptyDelayMap, superTile, solutionFile);
 	}
 
 
@@ -2416,7 +2421,8 @@ namespace flopoco {
 											 "wX(int): size of input X; wY(int): size of input Y;\
                         wOut(int)=0: size of the output if you want a truncated multiplier. 0 for full multiplier;\
                         signedIO(bool)=false: inputs and outputs can be signed or unsigned;\
-                        superTile(bool)=false: if true, attempts to use the DSP adders to chain sub-multipliers. This may entail lower logic consumption, but higher latency.", // This string will be parsed
+                        superTile(bool)=false: if true, attempts to use the DSP adders to chain sub-multipliers. This may entail lower logic consumption, but higher latency;\
+                        solutionFile(string)=\"\": if string is not empty, IntMultiplier reads the tiling from the specified file", // This string will be parsed
 											 "", // no particular extra doc needed
 											 IntMultiplier::parseArguments
 											 ) ;

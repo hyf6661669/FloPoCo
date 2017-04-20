@@ -76,7 +76,7 @@ namespace flopoco {
 		 * @param[in] signedIO       false=unsigned, true=signed
 		 **/
 		IntMultiplier(Target* target, int wX, int wY, int wOut=0, bool signedIO = false,
-		              map<string, double> inputDelays = emptyDelayMap,bool enableSuperTiles=false);
+                      map<string, double> inputDelays = emptyDelayMap,bool enableSuperTiles=false, string solutionFile="");
 
 
 		/**
@@ -249,6 +249,7 @@ namespace flopoco {
 		int lsbFullMultWeightInBitheap;	/**< the weight in the bit heap of the full multiplication result (used for truncated multiplications)  */
 		double initialCP;    			/**< the initial delay, getMaxInputDelays ( inputDelays_ ).*/
 
+
 	private:
 		void initialize();     			/**< initialization stuff common to both constructors*/
 
@@ -267,7 +268,8 @@ namespace flopoco {
 		bool negate;                    /**< if true this multiplier computes -xy */
 		int signedIO;                   /**< true if the IOs are two's complement */
 		bool enableSuperTiles;     		/**< if true, supertiles are built (fewer resources, longer latency */
-		int multiplierUid;
+        string solutionFile;             /**< the file where the multiplier tiling is specified. Uni Kassel */
+        int multiplierUid;
 
 		vector<MultiplierBlock*> localSplitVector;
 		vector<int> multWidths;

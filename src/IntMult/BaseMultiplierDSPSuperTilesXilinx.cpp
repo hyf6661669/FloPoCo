@@ -8,9 +8,10 @@ namespace flopoco {
 
 BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSignedX, bool isSignedY, TILE_SHAPE shape) : BaseMultiplier(isSignedX,isSignedY)
 {
+    char shapeAsChar = ((char) shape) + 'a' - 1; //convert enum to char
 
     srcFileName = "BaseMultiplierDSPSuperTilesXilinx";
-    uniqueName_ = "BaseMultiplierDSPSuperTilesXilinx";
+    uniqueName_ = string("BaseMultiplierDSPSuperTilesXilinxShape_") + string(1,shapeAsChar);
 
     this->flipXY = flipXY;
     this->shape = shape;
@@ -39,48 +40,46 @@ BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSign
         case SHAPE_E:
             wX = 24;
             wY = 34;
-            wR = 58;
+            wR = 59;
             break;
         case SHAPE_F:
             wX = 48;
             wY = 24;
-            wR = 58;
+            wR = 59;
             break;
         case SHAPE_G:
             wX = 24;
             wY = 41;
-            wR = 58;
+            wR = 59;
             break;
         case SHAPE_H:
             wX = 41;
             wY = 24;
-            wR = 58;
+            wR = 59;
             break;
         case SHAPE_I:
             wX = 41;
             wY = 24;
-            wR = 58;
+            wR = 59;
             break;
         case SHAPE_J:
             wX = 24;
             wY = 41;
-            wR = 58;
+            wR = 59;
             break;
         case SHAPE_K:
             wX = 34;
             wY = 24;
-            wR = 58;
+            wR = 59;
             break;
         case SHAPE_L:
             wX = 24;
             wY = 48;
-            wR = 58;
+            wR = 59;
             break;
         default:
             throw string("Error in ") + srcFileName + string(": shape unknown");
     }
-
-    wR = wX + wY;
 
     if(flipXY)
     {
@@ -157,9 +156,10 @@ Operator* BaseMultiplierDSPSuperTilesXilinx::generateOperator(Target* target)
 
 BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, int wR, BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape, bool flipXY) : Operator(target)
 {
-    ostringstream name;
-    name << "BaseMultiplierDSPSuperTilesXilinx";
-    setName(name.str());
+    useNumericStd();
+
+    char shapeAsChar = ((char) shape) + 'a' - 1; //convert enum to char
+    setName(string("BaseMultiplierDSPSuperTilesXilinxShape_") + string(1,shapeAsChar));
 
     string in1,in2;
 
@@ -194,8 +194,8 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
             break;
         case BaseMultiplierDSPSuperTilesXilinx::SHAPE_E:
             //total operation is: (X(23 downto 0) * Y(16 downto 0)) + (X(23 downto 0) * Y(33 downto 17) << 17)
-            vhdl << tab << "D1 <= std_logic_vector(unsigned(X(23 downto 0)) * unsigned(Y(33 downto 17)));" << endl;
-            vhdl << tab << "D2 <= std_logic_vector(unsigned(X(23 downto 0)) * unsigned(Y(16 downto 0)));" << endl;
+            vhdl << tab << "D1 <= std_logic_vector(unsigned(X(23 downto 0)) * unsigned(Y(16 downto 0)));" << endl;
+            vhdl << tab << "D2 <= std_logic_vector(unsigned(X(23 downto 0)) * unsigned(Y(33 downto 17)));" << endl;
             break;
         case BaseMultiplierDSPSuperTilesXilinx::SHAPE_F:
             //total operation is: ((X(23 downto 0) * Y(23 downto 7)) << 7) + (X(47 downto 24) * Y(16 downto 0) << 24)

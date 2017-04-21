@@ -14,7 +14,7 @@ namespace flopoco {
     class BaseMultiplierCollection {
 
 	public:
-        BaseMultiplierCollection(Target *target);
+        BaseMultiplierCollection(Target *target, unsigned int wX, unsigned int wY);
         ~BaseMultiplierCollection();
 
         BaseMultiplier* getBaseMultiplier(int shape);
@@ -29,6 +29,9 @@ namespace flopoco {
         string srcFileName; //for debug outputs
 
         string uniqueName_; /**< useful only to enable same kind of reporting as for FloPoCo operators. */
+
+        unsigned int wX;
+        unsigned int wY;
 	
         vector<BaseMultiplier*> baseMultipliers; //the list of base mutlipliers, index is identical to shape
 	};

@@ -13,6 +13,7 @@ BaseMultiplier2xk::BaseMultiplier2xk(bool isSignedX, bool isSignedY, int width, 
     uniqueName_ = "BaseMultiplier2xk";
 
     this->flipXY = flipXY;
+    this->width = width;
 
     if(!flipXY)
     {
@@ -29,15 +30,13 @@ BaseMultiplier2xk::BaseMultiplier2xk(bool isSignedX, bool isSignedY, int width, 
 
 Operator* BaseMultiplier2xk::generateOperator(Target* target)
 {
-    return new BaseMultiplier2xkOp(target, isSignedX, isSignedY, wX);
+    return new BaseMultiplier2xkOp(target, isSignedX, isSignedY, width, flipXY);
 }
 	
 
 BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool isSignedY, int width, bool flipXY) : Operator(target)
 {
     ostringstream name;
-    name << "BaseMultiplier" << width << "x2";
-    setName(name.str());
 
     string in1,in2;
 
@@ -47,6 +46,7 @@ BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool is
         wY = width;
         in1 = "Y";
         in2 = "X";
+        name << "BaseMultiplier2x" << width;
     }
     else
     {
@@ -54,7 +54,9 @@ BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool is
         wY = 2;
         in1 = "X";
         in2 = "Y";
+        name << "BaseMultiplier" << width << "x2";
     }
+    setName(name.str());
 
     addInput("X", wX, true);
     addInput("Y", wY, true);
@@ -65,7 +67,7 @@ BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool is
     if((isSignedX == true) || (isSignedY == true)) throw string("unsigned inputs currently not supported by BaseMultiplier2xkOp, sorry");
 
     int needed_luts = width+1;//no. of required LUTs
-    int needed_cc = ( width / 4 ) + ( width % 4 > 0 ? 1 : 0 ); //no. of required carry chains
+    int needed_cc = ( needed_luts / 4 ) + ( needed_luts % 4 > 0 ? 1 : 0 ); //no. of required carry chains
 
     declare( "cc_s", needed_cc * 4 );
     declare( "cc_di", needed_cc * 4 );

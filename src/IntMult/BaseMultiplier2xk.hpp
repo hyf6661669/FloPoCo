@@ -24,7 +24,7 @@ namespace flopoco {
 
     private:
         bool flipXY;
-
+        int width;
 	};
 
     class BaseMultiplier2xkOp : public Operator

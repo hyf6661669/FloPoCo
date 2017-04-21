@@ -46,14 +46,14 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target, unsigned int 
 
 
     //create logic-based multipliers:
-    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,3)); //3x3 LUT-based multiplier (six LUT6)
+    //baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,3)); //3x3 LUT-based multiplier (six LUT6)
     //in old solution files the 3x3 is missing. In problemfiles from thursday 3x3 should be there
 
     baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,2)); //3x2 LUT-based multiplier (three LUT6)
     baseMultipliers.push_back(new BaseMultiplierLUT(false,false,2,3)); //2x3 LUT-based multiplier (three LUT6)
     baseMultipliers.push_back(new BaseMultiplierLUT(false,false,2,1)); //2x1 LUT-based multiplier (two AND gates)
     baseMultipliers.push_back(new BaseMultiplierLUT(false,false,1,2)); //1x2 LUT-based multiplier (two AND gates)
-    //baseMultipliers.push_back(new BaseMultiplierLUT(false,false,2,2)); //2x2 LUT-based multiplier (two LUT6) not in new versions
+    baseMultipliers.push_back(new BaseMultiplierLUT(false,false,2,2)); //2x2 LUT-based multiplier (two LUT6) not in new versions
     baseMultipliers.push_back(new BaseMultiplierLUT(false,false,1,1)); //1x1 LUT-based multiplier (an AND gate)
 
 

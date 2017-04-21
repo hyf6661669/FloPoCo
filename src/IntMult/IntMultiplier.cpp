@@ -1944,7 +1944,7 @@ namespace flopoco {
             unsigned int xInputLength = baseMultiplier->getXWordSize();
             unsigned int yInputLength = baseMultiplier->getYWordSize();
             unsigned int outputLength = baseMultiplier->getOutWordSize();
-            unsigned int lsbZerosInBM = getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
+            unsigned int lsbZerosInBM = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
 
 
 
@@ -1977,18 +1977,22 @@ namespace flopoco {
 
             //TODO: check cases, where the lsbZerosInBM != 0
             //outputVectorLSBZeros are the amount of lsb Bits of the outputVector, which we have to discard in the vhdl-code.
-            outputVectorLSBZeros = getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, false) - getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);
+            outputVectorLSBZeros = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, false) - getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);
             //cout << "for position " << xPos << "," << yPos << " we got outputVectorLSBZeros = " << outputVectorLSBZeros << endl;
 
 
             bool isSigned = false;
             //todo: signed case: see line 1110
             if(!isSigned){
+                if(posInList > 3){
+                    setCycle(0);
+                }
                 for(unsigned int i = outputVectorLSBZeros; i < outputLengthNonZeros; i++){
                     ostringstream s;
                     s << outputVectorName << of(i);
                     bitHeap->addBit(startWeight + (i - outputVectorLSBZeros), s.str());
                 }
+                setCycle(0);
             }
 
             posInList++;
@@ -2146,7 +2150,7 @@ namespace flopoco {
 
 
     /*this function computes the amount of zeros at the lsb position. This is done by checking for every output bit position, if there is a) an input of the current BaseMultiplier, and b) an input of the IntMultiplier. if a or b or both are false, then there is a zero at this position and we check the next position. otherwise we break. If zerosOfBMOnly==true, only condition a) is checked */
-    unsigned int IntMultiplier::getMSBZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset, bool zerosOfBMOnly){
+    unsigned int IntMultiplier::getLSBZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset, bool zerosOfBMOnly){
 
         unsigned int max = min(bm->getXWordSize(), bm->getYWordSize());
         unsigned int zeros = 0;

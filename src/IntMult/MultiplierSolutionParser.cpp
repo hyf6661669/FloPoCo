@@ -21,6 +21,7 @@ bool MultiplierSolutionParser::MultiplierSolutionParser::readSolution(){
         std::string line;
         while(getline(solFile, line)){
             if(variableIsTrue(line)){
+                cout << "found line " << line << endl;
 				addVariableToSolution(line);
 			}
             else{
@@ -43,15 +44,27 @@ list<pair< unsigned int, pair<unsigned int, unsigned int> > > MultiplierSolution
 
 bool MultiplierSolutionParser::variableIsTrue(string line){
 	
+    //cout << "current line: " << line << endl;
 	std::size_t found = line.find("m_");
 	if(found == std::string::npos){
 		return false;	
-	}
-	found = line.find(" 1");
-	if(found == std::string::npos){
-		return false;
-	}
-	return true;
+    }
+
+
+    found = line.find(" ");
+    if(found == std::string::npos){
+        return false;
+    }
+    line.erase(0,found + 1);
+
+    double value = atof(line.c_str());
+
+
+    if(value > 0.99 && value < 1.01){
+        return true;
+    }
+    return false;
+
 }
 
 void MultiplierSolutionParser::addVariableToSolution(string line){

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <stdlib.h>
 #include <fstream>
 #include "Operator.hpp" //for THROWERRROR, etc
 #include "utils.hpp"

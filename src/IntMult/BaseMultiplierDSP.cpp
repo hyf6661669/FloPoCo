@@ -35,6 +35,8 @@ Operator* BaseMultiplierDSP::generateOperator(Target* target)
 
 BaseMultiplierDSPOp::BaseMultiplierDSPOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, bool flipXY) : Operator(target)
 {
+    useNumericStd();
+
     ostringstream name;
     name << "BaseMultiplierDSP";
     setName(name.str());

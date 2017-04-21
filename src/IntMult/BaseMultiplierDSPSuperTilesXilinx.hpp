@@ -35,12 +35,14 @@ namespace flopoco {
             SHAPE_I =  9, //shape (i)
             SHAPE_J = 10, //shape (j)
             SHAPE_K = 11, //shape (k)
-            SHAPE_L = 12 //shape (l)
+            SHAPE_L = 12  //shape (l)
         };
 	public:
         BaseMultiplierDSPSuperTilesXilinx(bool isSignedX, bool isSignedY, TILE_SHAPE shape);
 
         virtual Operator *generateOperator(Target *target);
+
+        virtual bool shapeValid(int x, int y);
 
     private:
         bool flipXY;

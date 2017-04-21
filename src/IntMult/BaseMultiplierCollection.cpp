@@ -39,6 +39,9 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target, unsigned int 
     baseMultipliers.push_back(new BaseMultiplierDSPSuperTilesXilinx(false, false, BaseMultiplierDSPSuperTilesXilinx::SHAPE_L)); //_12 = L
     baseMultipliers.push_back(new BaseMultiplierDSPSuperTilesXilinx(false, false, BaseMultiplierDSPSuperTilesXilinx::SHAPE_F)); //_13 = F
 
+
+    //missing: 4x4 till 17x17
+
     //create logic-based multipliers:
     baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,3)); //3x3 LUT-based multiplier (six LUT6)
     //in old solution files the 3x3 is missing. In problemfiles from thursday 3x3 should be there

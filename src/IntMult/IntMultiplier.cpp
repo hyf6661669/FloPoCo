@@ -2084,16 +2084,41 @@ namespace flopoco {
     }
 
 
-    unsigned int IntMultiplier::getOutputLengthNonZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset){
+    unsigned int IntMultiplier::getOutputLengthNonZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset)
+    {
+        cout << "IntMultiplier::getOutputLengthNonZeros" << endl; flush(cout);
 
-        unsigned int sum = 0;
+//        unsigned long long int sum = 0;
+        mpfr_t sum;
+        mpfr_t two;
+
+        mpfr_inits(sum, two, NULL);
+
+        mpfr_set_si(sum, 1, GMP_RNDN); //init sum to 1 as at the end the log(sum+1) has to be computed
+        mpfr_set_si(two, 2, GMP_RNDN);
+
+/*
+    cout << "sum=";
+    mpfr_out_str(stdout, 10, 0, sum, MPFR_RNDD);
+    cout << endl;
+    flush(cout);
+*/
+
         for(int i = 0; i < bm->getXWordSize(); i++){
             for(int j = 0; j < bm->getYWordSize(); j++){
                 if(i + xPos >= totalOffset && j + yPos >= totalOffset){
                     if(i + xPos < (wX + totalOffset) && j + yPos < (wY + totalOffset)){
                         if(bm->shapeValid(i,j)){
-                            sum += (int)(pow(2, i + j) + 0.0001);
-                            //cout << " added 2^" << (i+j) << endl;
+                            //sum += one << (i + j);
+                            mpfr_t r;
+                            mpfr_t e;
+                            mpfr_inits(r, e, NULL);
+
+                            mpfr_set_si(e, i+j, GMP_RNDD);
+                            mpfr_pow(r, two, e, GMP_RNDD);
+                            mpfr_add(sum, sum, r, GMP_RNDD);
+
+//                            cout << " added 2^" << (i+j) << endl;
                         }
                         else{
                             //cout << "not true " << i << " " << j << endl;
@@ -2109,9 +2134,14 @@ namespace flopoco {
             }
         }
         
-        unsigned int length = (unsigned int) ceil(log2(sum + 1));
-		//cout << " outputLength has a length of " << length << endl;
-        return length;
+        mpfr_t length;
+        mpfr_inits(length, NULL);
+        mpfr_log2(length, sum, GMP_RNDU);
+        mpfr_ceil(length,length);
+
+        unsigned long length_ul = mpfr_get_ui(length, GMP_RNDD);
+        cout << " outputLength has a length of " << length_ul << endl;
+        return (int) length_ul;
     }
 
 

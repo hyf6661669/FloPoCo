@@ -31,6 +31,7 @@ BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSign
             wX = 41;
             wY = 41;
             wR = 42;
+            break;
         case SHAPE_D:
             wX = 34;
             wY = 41;
@@ -142,18 +143,16 @@ bool BaseMultiplierDSPSuperTilesXilinx::shapeValid(int x, int y)
 
 Operator* BaseMultiplierDSPSuperTilesXilinx::generateOperator(Target* target)
 {
-    return new BaseMultiplierDSPSuperTilesXilinxOp(target, isSignedX, isSignedY, wX, wY, wR, shape, flipXY);
+    return new BaseMultiplierDSPSuperTilesXilinxOp(target, isSignedX, isSignedY, wX, wY, wR, shape);
 }
 
 
-BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, int wR, BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape, bool flipXY) : Operator(target)
+BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, int wR, BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape) : Operator(target)
 {
     useNumericStd();
 
     char shapeAsChar = ((char) shape) + 'a' - 1; //convert enum to char
     setName(string("BaseMultiplierDSPSuperTilesXilinxShape_") + string(1,shapeAsChar));
-
-    string in1,in2;
 
     if((isSignedX == true) || (isSignedY == true)) throw string("unsigned inputs currently not supported by BaseMultiplierDSPSuperTilesXilinxOp, sorry");
 
@@ -244,23 +243,8 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
     }
     addOutput("R", wR);
 
-    if(!flipXY)
-    {
-        this->wX = wX;
-        this->wY = wY;
-        in1 = "X";
-        in2 = "Y";
-    }
-    else
-    {
-        this->wX = wY;
-        this->wY = wX;
-        in1 = "Y";
-        in2 = "X";
-    }
-
-    addInput(in1, wX, true);
-    addInput(in2, wY, true);
+    addInput("X", wX, true);
+    addInput("Y", wY, true);
 }
 
 }   //end namespace flopoco

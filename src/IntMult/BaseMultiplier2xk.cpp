@@ -67,7 +67,7 @@ BaseMultiplier2xkOp::BaseMultiplier2xkOp(Target* target, bool isSignedX, bool is
     if((isSignedX == true) || (isSignedY == true)) throw string("unsigned inputs currently not supported by BaseMultiplier2xkOp, sorry");
 
     int needed_luts = width+1;//no. of required LUTs
-    int needed_cc = ( width / 4 ) + ( width % 4 > 0 ? 1 : 0 ); //no. of required carry chains
+    int needed_cc = ( needed_luts / 4 ) + ( needed_luts % 4 > 0 ? 1 : 0 ); //no. of required carry chains
 
     declare( "cc_s", needed_cc * 4 );
     declare( "cc_di", needed_cc * 4 );

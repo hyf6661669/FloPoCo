@@ -31,8 +31,8 @@ bool MultiplierSolutionParser::MultiplierSolutionParser::readSolution(){
         return true;
     }
     else{
-        //THROWERROR("IntMultiplier: unable to open file << fileName");
-        return false;
+        THROWERROR("IntMultiplier: unable to open file" + solFileName);
+//        return false;
     }
 }
 

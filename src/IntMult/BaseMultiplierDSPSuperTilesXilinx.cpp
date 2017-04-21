@@ -241,7 +241,7 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
     else
     {
         //tilings (e) to (l) have a 17 bit shift
-        vhdl << tab << "R <= std_logic_vector(unsigned('0' & D1) + unsigned('0' & D2 & \"00000000000000000\"));" << endl;
+        vhdl << tab << "R <= std_logic_vector(unsigned(D1) + unsigned(D2 & \"00000000000000000\"));" << endl;
     }
     addOutput("R", wR);
 

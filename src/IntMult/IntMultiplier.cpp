@@ -1920,7 +1920,7 @@ namespace flopoco {
         list<pair< unsigned int, pair<unsigned int, unsigned int> > > solution = multiplierSolutionParser->getSolution();
 
         BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget(), wX, wY);
-        cout << "baseMultiplierCollection done " << endl;
+
         //note: in XX is x-vector, in YY is y-vector after possible switching
 
         unsigned int posInList = 0;    //needed as id to differ between inputvectors
@@ -1932,9 +1932,12 @@ namespace flopoco {
             unsigned int xPos = (*it).second.first;
             unsigned int yPos = (*it).second.second;
 			
-
-
             BaseMultiplier *baseMultiplier = baseMultiplierCollection->getBaseMultiplier(type);
+
+            if(!baseMultiplier) THROWERROR("Multiplier of type " << type << " does not exist");
+
+            cout << "found multiplier " << baseMultiplier->getName() << " (type " <<  type << ") at position (" << (int) (xPos-totalOffset) << "," << (int) (yPos-totalOffset) << ")" << endl;
+
             //unsigned int outputLength = getOutputLength(baseMultiplier, xPos, yPos);
             //Operator *op = baseMultiplier->getOperator();
 
@@ -1944,8 +1947,8 @@ namespace flopoco {
             unsigned int xInputLength = baseMultiplier->getXWordSize();
             unsigned int yInputLength = baseMultiplier->getYWordSize();
             unsigned int outputLength = baseMultiplier->getOutWordSize();
-            unsigned int lsbZerosInBM = getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
 
+            unsigned int lsbZerosInBM = getMSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
 
 
             unsigned int xInputNonZeros = xInputLength;
@@ -1966,14 +1969,13 @@ namespace flopoco {
             if(xPos + yPos + lsbZerosInBM > (2 * totalOffset)){
                 startWeight = xPos + yPos + lsbZerosInBM - (2 * totalOffset);
 			}
-			
+
             unsigned int outputVectorLSBZeros = 0;
             /*
             if(2 * totalOffset > xPos + yPos){
                 outputVectorLSBZeros = (2 * totalOffset) - (xPos + yPos);
             }
             */
-
 
             //TODO: check cases, where the lsbZerosInBM != 0
             //outputVectorLSBZeros are the amount of lsb Bits of the outputVector, which we have to discard in the vhdl-code.
@@ -2003,7 +2005,7 @@ namespace flopoco {
         //xInputLength and yInputLength is the width of the inputs
 
 
-		cout << "(" << xPos << ";" << yPos << ")" << endl;
+        cout << "(" << xPos << ";" << yPos << ") "; // << endl;
 		int blockUid = 876;
         //declaring x-input:
         unsigned int xStart = xPos;
@@ -2022,15 +2024,17 @@ namespace flopoco {
 
         vhdl << tab << declare(join(addUID("x",blockUid),"_",id),xInputLength) << " <= ";
         if(highXZeros > 0){
-			cout << "highXzeros: " << highXZeros << endl;
+//			cout << "highXzeros: " << highXZeros << endl;
             vhdl << zg((int)highXZeros,0) << " & ";
         }
         vhdl << addUID("XX") << range(xEnd - totalOffset, xStart - totalOffset);
         if(lowXZeros > 0){
-			cout << "lowXzeros: " << lowXZeros << endl;
+//			cout << "lowXzeros: " << lowXZeros << endl;
             vhdl << " & " << zg((int)lowXZeros,0);
         }
         vhdl << ";" << endl;
+
+        cout << "totalOffset=" << totalOffset << ", xStart=" << xStart << ", xEnd=" << xEnd << ", highXZeros=" << highXZeros << ", lowXZeros=" << lowXZeros << endl;
 
 
         //declaring y-input:
@@ -2050,7 +2054,7 @@ namespace flopoco {
 
         vhdl << tab << declare(join(addUID("y",blockUid),"_",id),yInputLength) << " <= ";
         if(highYZeros > 0){
-			cout << "highYzeros: " << highYZeros << endl;
+//			cout << "highYzeros: " << highYZeros << endl;
             vhdl << zg((int)highYZeros,0) << " & ";
         }
         vhdl << addUID("YY") << range(yEnd - totalOffset, yStart - totalOffset);
@@ -2067,6 +2071,7 @@ namespace flopoco {
         vhdl << instance(op, join(addUID("Mult",blockUid),"_", id));
         useSoftRAM(op);
 		
+        cout << join(addUID("r",blockUid),"_",id) << ":" << getSignalByName(join(addUID("r",blockUid),"_",id))->width() << endl;
 
         return join(addUID("r",blockUid),"_",id);
 
@@ -2086,8 +2091,6 @@ namespace flopoco {
 
     unsigned int IntMultiplier::getOutputLengthNonZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset)
     {
-        cout << "IntMultiplier::getOutputLengthNonZeros" << endl; flush(cout);
-
 //        unsigned long long int sum = 0;
         mpfr_t sum;
         mpfr_t two;
@@ -2140,7 +2143,7 @@ namespace flopoco {
         mpfr_ceil(length,length);
 
         unsigned long length_ul = mpfr_get_ui(length, GMP_RNDD);
-        cout << " outputLength has a length of " << length_ul << endl;
+//        cout << " outputLength has a length of " << length_ul << endl;
         return (int) length_ul;
     }
 
@@ -2458,3 +2461,4 @@ namespace flopoco {
 											 ) ;
 	}
 }
+

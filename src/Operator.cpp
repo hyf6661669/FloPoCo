@@ -89,7 +89,7 @@ namespace flopoco{
 
 
 	void Operator::addToGlobalOpList(OperatorPtr op) {
-        cout << "addToGlobalOpList(" << op->getName() << ")" << endl;
+//        cout << "addToGlobalOpList(" << op->getName() << ")" << endl;
 		addVirtualSubComponent(op);
 		UserInterface::addToGlobalOpList(op);
 	}

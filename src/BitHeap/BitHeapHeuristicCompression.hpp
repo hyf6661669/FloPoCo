@@ -134,6 +134,8 @@ namespace flopoco
         void setUpNewStageCountOfILP();
         void removeEmptyStages();
 
+        bool maximalTwoBitsInCurrentStage(vector<int> currentBits);
+
         BasicCompressor *flipflop;
 
 

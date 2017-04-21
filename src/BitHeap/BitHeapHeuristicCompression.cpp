@@ -105,6 +105,8 @@ namespace flopoco
     }
 
     int BitHeapHeuristicCompression::getMaxStageCount(int maxHeight){
+
+        /*      old, only for one starting cycle
         int height=2;
         int stageCount=0;
 
@@ -117,6 +119,59 @@ namespace flopoco
             stageCount++;
         }
         return stageCount;
+
+        */
+
+        //new one: "reverse" the dadda algorithm: compute for all bits of the current stage: ceil(bitamount * 2.0/3.0) for the next cycle.
+        //in the next cycle add the bits of the current cycle to the remaining
+
+
+        unsigned int stages = 0;
+        vector<int> tempVector(bh_->bits.size());
+        for(unsigned w = 0; w < newBits[0].size(); w++){
+            tempVector[w] = ceil((((float)newBits[0][w]) *  (2.0/3.0)) - 0.00001);
+        }
+
+        cout << "stage " << stages << endl;
+        for(unsigned j = 0; j < tempVector.size(); j++){
+            cout << tempVector[j] << " ";
+        }
+        cout << endl << endl;
+
+
+        while(!maximalTwoBitsInCurrentStage(tempVector) || (stages + 1) < newBits.size()){
+            stages++;
+
+            if(stages < newBits.size()){
+                for(unsigned w = 0; w < newBits[0].size(); w++){
+                    tempVector[w] += newBits[stages][w];
+                }
+            }
+            for(unsigned w = 0; w < newBits[0].size(); w++){
+                tempVector[w] = ceil((((float)tempVector[w]) *  (2.0/3.0)) - 0.00001);
+            }
+            /*
+            cout << "stage " << stages << endl;
+            for(unsigned j = 0; j < tempVector.size(); j++){
+                cout << tempVector[j] << " ";
+            }
+            cout << endl << endl;
+            */
+        }
+
+
+        return stages;
+
+    }
+
+    bool BitHeapHeuristicCompression::maximalTwoBitsInCurrentStage(vector<int> currentBits){
+
+        for(unsigned w = 0; w < currentBits.size(); w++){
+            if(currentBits[w] > 2){
+                return false;
+            }
+        }
+        return true;
     }
 
     int BitHeapHeuristicCompression::generateProblem(){
@@ -128,11 +183,7 @@ namespace flopoco
         bitHeapILPCompression.useVariableCompressors = useVariableCompressors;
 #endif //HAVE_SCIP
 
-        noOfStages_ = getMaxStageCount(bh_->getMaxHeight());
-		//noOfStages_++;	//we need s+1 vectors for s stages
-        cout << "noOfStages: " << noOfStages_ << endl;
-        //fill solution with empty lists
-        solution.resize(noOfStages_);
+
 
         if(!getLowerBoundsFromBitHeap){
             for(unsigned i = 0; i < (sizeof(lowerBounds) / sizeof(lowerBounds[0])); i++){
@@ -180,31 +231,44 @@ namespace flopoco
         }
         cout << "minFixedStage = " << minFixedStage << " maxFixedStage = " << maxFixedStage << endl;
 		cout << "compOutputWordSizeMax = " << compOutputWordSizeMax << endl;
+
+
+
         //generate newBits
-        vector<int> firstCycle(bh_->bits.size());
+
+        //first get maximal cycle
+        unsigned int maxCycle = 0;
         for(unsigned w = 0; w < bh_->bits.size(); w++){
-            firstCycle[w] = bh_->bits[w].size();
-        }
-        newBits.push_back(firstCycle);
-        originalNewBits.push_back(firstCycle);
-
-        //now fill the rest with zeros
-        //in every stage, the size increases by two, because the (6,0,6;5) compressor can increase the size by two
-
-        for(unsigned v = 1; v < (unsigned)noOfStages_ + 1; v++){
-            vector<int> tempZeroVector(compOutputWordSizeMax * v + bh_->bits.size());
-            for(unsigned w = 0; w < tempZeroVector.size(); w++){
-                tempZeroVector[w] = 0;
+            unsigned i = 0;
+            for(list<WeightedBit*>::iterator it = bh_->bits[w].begin(); it != bh_->bits[w].end(); it++){
+                if((*it)->getCycle() > maxCycle){
+                    maxCycle = (*it)->getCycle();
+                }
             }
-            newBits.push_back(tempZeroVector);
-            originalNewBits.push_back(tempZeroVector);
+        }
+        cout << "maxCycle is " << maxCycle << endl;
+
+
+        for(unsigned int cy = 0; cy <= maxCycle; cy++){
+            vector<int> cycleVector(bh_->bits.size() + compOutputWordSizeMax * cy);
+            for(unsigned w = 0; w < bh_->bits.size() + compOutputWordSizeMax * cy; w++){
+                int amount = 0;
+                if(w < bh_->bits.size()){   //every bitposition > bh_->bits.size() == 0
+                    for(list<WeightedBit*>::iterator it = bh_->bits[w].begin(); it != bh_->bits[w].end(); it++){
+                        if((*it)->getCycle() == cy){
+                            amount++;
+                        }
+                    }
+                }
+                cycleVector[w] = amount;
+            }
+            newBits.push_back(cycleVector);
+            originalNewBits.push_back(cycleVector);
         }
 
-        //cout << mode << endl;
-
+/*
         //debug output:: newBits
         unsigned int sumOfBits = 0;
-        cout << "newbits before heuristic:" << endl;
         for(unsigned i = 0; i < newBits.size(); i++){
             for(unsigned j = 0; j < newBits[i].size(); j++){
                 cout << newBits[i][j] << " ";
@@ -213,6 +277,56 @@ namespace flopoco
             cout << endl;
         }
         cout << "The total amount of initial Bits in the Bitheap is " << sumOfBits << endl;
+*/
+        noOfStages_ = getMaxStageCount(bh_->getMaxHeight());
+
+        noOfStages_ += 3;   //to be sure. Can be deleted after testing.
+
+        noOfStages_++;	//we need s+1 vectors for s stages. DONT DELETE THIS
+
+        cout << "noOfStages: " << noOfStages_ << endl;
+        //fill solution with empty lists
+        solution.resize(noOfStages_);
+
+
+        /*
+        vector<int> firstCycle(bh_->bits.size());
+        for(unsigned w = 0; w < bh_->bits.size(); w++){
+            firstCycle[w] = bh_->bits[w].size();
+        }
+        newBits.push_back(firstCycle);
+        originalNewBits.push_back(firstCycle);
+        */
+
+        for(unsigned w = 0; w < bh_->bits.size(); w++){
+            unsigned i = 0;
+            for(list<WeightedBit*>::iterator it = bh_->bits[w].begin(); it != bh_->bits[w].end(); it++){
+                cout << "bit " << i << " in column " << w << " has the cycle " << (*it)->getCycle() << endl;
+                i++;
+            }
+
+        }
+
+        //now fill the rest with zeros
+
+        for(unsigned v = newBits.size(); v < (unsigned)noOfStages_ + 1; v++){
+            vector<int> tempZeroVector(compOutputWordSizeMax * v + bh_->bits.size());
+            for(unsigned w = 0; w < tempZeroVector.size(); w++){
+                tempZeroVector[w] = 0;
+            }
+            newBits.push_back(tempZeroVector);
+            originalNewBits.push_back(tempZeroVector);
+        }
+
+        for(unsigned i = 0; i < newBits.size(); i++){
+            for(unsigned j = 0; j < newBits[i].size(); j++){
+                cout << newBits[i][j] << " ";
+            }
+            cout << endl;
+        }
+
+        //cout << mode << endl;
+
 
 
 

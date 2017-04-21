@@ -1987,7 +1987,8 @@ namespace flopoco {
             bool isSigned = false;
             //todo: signed case: see line 1110
             if(!isSigned){
-                if(posInList > 3){
+                if(type >= 2 && type <= 13){
+                    //for the twelve supertiles. setCycle(n) works
                     setCycle(0);
                 }
                 for(unsigned int i = outputVectorLSBZeros; i < outputLengthNonZeros; i++){

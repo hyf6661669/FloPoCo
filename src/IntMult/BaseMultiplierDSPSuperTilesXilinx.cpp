@@ -40,42 +40,42 @@ BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSign
         case SHAPE_E:
             wX = 24;
             wY = 34;
-            wR = 59;
+            wR = 58;
             break;
         case SHAPE_F:
             wX = 48;
             wY = 24;
-            wR = 59;
+            wR = 58;
             break;
         case SHAPE_G:
             wX = 24;
             wY = 41;
-            wR = 59;
+            wR = 58;
             break;
         case SHAPE_H:
             wX = 41;
             wY = 24;
-            wR = 59;
+            wR = 58;
             break;
         case SHAPE_I:
             wX = 41;
             wY = 24;
-            wR = 59;
+            wR = 58;
             break;
         case SHAPE_J:
             wX = 24;
             wY = 41;
-            wR = 59;
+            wR = 58;
             break;
         case SHAPE_K:
             wX = 34;
             wY = 24;
-            wR = 59;
+            wR = 58;
             break;
         case SHAPE_L:
             wX = 24;
             wY = 48;
-            wR = 59;
+            wR = 58;
             break;
         default:
             throw string("Error in ") + srcFileName + string(": shape unknown");
@@ -230,6 +230,8 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
         default:
             throw string("Error in ") + srcFileName + string(": shape unknown");
     }
+
+//    nextCycle();
 
     if((shape >= BaseMultiplierDSPSuperTilesXilinx::SHAPE_A) && (shape <= BaseMultiplierDSPSuperTilesXilinx::SHAPE_D))
     {

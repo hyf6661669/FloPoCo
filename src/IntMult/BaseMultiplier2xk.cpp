@@ -19,11 +19,13 @@ BaseMultiplier2xk::BaseMultiplier2xk(bool isSignedX, bool isSignedY, int width, 
     {
         wX = 2;
         wY = width;
+        uniqueName_ = string("BaseMultiplier2x") + std::to_string(width);
     }
     else
     {
         wX = width;
         wY = 2;
+        uniqueName_ = string("BaseMultiplier") + std::to_string(width) + string("x2");
     }
 
 }

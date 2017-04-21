@@ -1920,7 +1920,7 @@ namespace flopoco {
         list<pair< unsigned int, pair<unsigned int, unsigned int> > > solution = multiplierSolutionParser->getSolution();
 
         BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget(), wX, wY);
-
+        cout << "baseMultiplierCollection done " << endl;
         //note: in XX is x-vector, in YY is y-vector after possible switching
 
         unsigned int posInList = 0;    //needed as id to differ between inputvectors

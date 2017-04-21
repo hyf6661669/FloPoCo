@@ -7,7 +7,7 @@
 namespace flopoco {
 
 
-BaseMultiplierCollection::BaseMultiplierCollection(Target* target, unsigned int wX, unsigned int xY){
+BaseMultiplierCollection::BaseMultiplierCollection(Target* target, unsigned int wX, unsigned int wY){
 
     srcFileName = "BaseMultiplierCollection";
     uniqueName_ = "BaseMultiplierCollection";
@@ -40,7 +40,10 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target, unsigned int 
     baseMultipliers.push_back(new BaseMultiplierDSPSuperTilesXilinx(false, false, BaseMultiplierDSPSuperTilesXilinx::SHAPE_F)); //_13 = F
 
 
-    //missing: 4x4 till 17x17
+    for(unsigned int width = 4; width <= 17; width++){
+        baseMultipliers.push_back(new BaseMultiplierDSP(false, false, width, width));
+    }
+
 
     //create logic-based multipliers:
     baseMultipliers.push_back(new BaseMultiplierLUT(false,false,3,3)); //3x3 LUT-based multiplier (six LUT6)
@@ -55,7 +58,7 @@ BaseMultiplierCollection::BaseMultiplierCollection(Target* target, unsigned int 
 
 
     unsigned int maxWidth = (wX > wY ? wX : wY);
-    for(int k=4; k < maxWidth; k++) //ToDo: adjust limits
+    for(int k=4; k <= maxWidth; k++) //ToDo: adjust limits
     {
         baseMultipliers.push_back(new BaseMultiplier2xk(false, false, k, true));  //kx2 LUT/carry-chain-based multiplier
         baseMultipliers.push_back(new BaseMultiplier2xk(false, false, k, false)); //2xk LUT/carry-chain-based multiplier        

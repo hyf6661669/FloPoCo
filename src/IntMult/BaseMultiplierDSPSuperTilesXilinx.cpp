@@ -13,7 +13,6 @@ BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSign
     srcFileName = "BaseMultiplierDSPSuperTilesXilinx";
     uniqueName_ = string("BaseMultiplierDSPSuperTilesXilinxShape_") + string(1,shapeAsChar);
 
-    this->flipXY = flipXY;
     this->shape = shape;
 
     switch(shape)
@@ -79,13 +78,6 @@ BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSign
             break;
         default:
             throw string("Error in ") + srcFileName + string(": shape unknown");
-    }
-
-    if(flipXY)
-    {
-        int tmp = wX;
-        wX = wY;
-        wY = tmp;
     }
 
 }

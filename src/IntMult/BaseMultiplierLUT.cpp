@@ -7,7 +7,7 @@ BaseMultiplierLUT::BaseMultiplierLUT(bool isSignedX, bool isSignedY, int wX, int
 {
 
     srcFileName = "BaseMultiplierLUT";
-    uniqueName_ = "BaseMultiplierLUT";
+    uniqueName_ = string("BaseMultiplierLUT") + to_string(wX) + string("x") + to_string(wY);
 
     this->wX = wX;
     this->wY = wY;

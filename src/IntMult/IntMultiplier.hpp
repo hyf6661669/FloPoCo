@@ -185,7 +185,7 @@ namespace flopoco {
         unsigned int getOutputLengthNonZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset);
 
 
-        unsigned int getLSBZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset, bool zerosOfBMOnly);
+        unsigned int getLSBZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset, int mode);
 
 		void buildLogicOnly();
 		void buildTiling();

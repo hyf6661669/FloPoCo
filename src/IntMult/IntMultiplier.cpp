@@ -1948,28 +1948,30 @@ namespace flopoco {
             unsigned int yInputLength = baseMultiplier->getYWordSize();
             unsigned int outputLength = baseMultiplier->getOutWordSize();
 
-            unsigned int lsbZerosInBM = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
+            unsigned int lsbZerosInBM = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, 1);  //normally, starting position of output is computed by xPos + yPos. But if the output starts at an higher weight, lsbZeros counts the offset
 
-
-
+			unsigned int completeOffset = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, 0);
+			unsigned int resultVectorOffset = completeOffset - lsbZerosInBM;
             unsigned int xInputNonZeros = xInputLength;
             unsigned int yInputNonZeros = yInputLength;
+			unsigned int realBitHeapPosOffset = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, 2);
+			
             unsigned int outputLengthNonZeros = xInputNonZeros + yInputNonZeros;
-            if(xInputNonZeros == 1 || yInputNonZeros == 1){
-                outputLengthNonZeros -= 1;
-            }
 
             outputLengthNonZeros = getOutputLengthNonZeros(baseMultiplier, xPos, yPos, totalOffset);
 
             Operator *op = baseMultiplier->generateOperator(parentOp->getTarget());
 
             addToGlobalOpList(op);
+			
+			
 
             string outputVectorName = placeSingleMultiplier(op, xPos, yPos, xInputLength, yInputLength, outputLength, xInputNonZeros, yInputNonZeros, totalOffset, posInList);
             unsigned int startWeight = 0;
-            if(xPos + yPos + lsbZerosInBM > (2 * totalOffset)){
-                startWeight = xPos + yPos + lsbZerosInBM - (2 * totalOffset);
+            if(xPos + yPos > (2 * totalOffset)){
+                startWeight = xPos + yPos - (2 * totalOffset);
 			}
+			startWeight += realBitHeapPosOffset;
 
             unsigned int outputVectorLSBZeros = 0;
             /*
@@ -1980,9 +1982,13 @@ namespace flopoco {
 
             //TODO: check cases, where the lsbZerosInBM != 0
             //outputVectorLSBZeros are the amount of lsb Bits of the outputVector, which we have to discard in the vhdl-code.
-            outputVectorLSBZeros = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, false) - getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, true);
-            //cout << "for position " << xPos << "," << yPos << " we got outputVectorLSBZeros = " << outputVectorLSBZeros << endl;
-
+            outputVectorLSBZeros = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, 0) - getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, 1);
+			cout << "for position " << xPos << "," << yPos << " we got outputVectorLSBZeros = " << outputVectorLSBZeros << endl;
+			cout << "outputLengthNonZeros = " << outputLengthNonZeros << endl;
+			cout << "startWeight is " << startWeight << endl;
+			cout << "complete offset is " << completeOffset << endl;
+			cout << "resultVectorOffset is " << resultVectorOffset << endl;
+			cout << "realBitHeapPosOffset is " << realBitHeapPosOffset << endl;
 
             bool isSigned = false;
             //todo: signed case: see line 1110
@@ -1991,10 +1997,10 @@ namespace flopoco {
                     //for the twelve supertiles. setCycle(n) works
                     setCycle(0);
                 }
-                for(unsigned int i = outputVectorLSBZeros; i < outputLengthNonZeros; i++){
+                for(unsigned int i = resultVectorOffset; i < outputLengthNonZeros - lsbZerosInBM; i++){
                     ostringstream s;
                     s << outputVectorName << of(i);
-                    bitHeap->addBit(startWeight + (i - outputVectorLSBZeros), s.str());
+                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str());
                 }
                 setCycle(0);
             }
@@ -2154,23 +2160,27 @@ namespace flopoco {
     }
 
 
-    /*this function computes the amount of zeros at the lsb position. This is done by checking for every output bit position, if there is a) an input of the current BaseMultiplier, and b) an input of the IntMultiplier. if a or b or both are false, then there is a zero at this position and we check the next position. otherwise we break. If zerosOfBMOnly==true, only condition a) is checked */
-    unsigned int IntMultiplier::getLSBZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset, bool zerosOfBMOnly){
-
+    /*this function computes the amount of zeros at the lsb position (mode 0). This is done by checking for every output bit position, if there is a) an input of the current BaseMultiplier, and b) an input of the IntMultiplier. if a or b or both are false, then there is a zero at this position and we check the next position. otherwise we break. If mode==1, only condition a) is checked */
+	/*if mode is 2, only the offset for the bitHeap is computed. this is done by counting how many diagonals have a position, where is an IntMultiplierInput but not a BaseMultiplier input. */
+    unsigned int IntMultiplier::getLSBZeros(BaseMultiplier* bm, unsigned int xPos, unsigned int yPos, unsigned int totalOffset, int mode){
+		//cout << "mode is " << mode << endl;
         unsigned int max = min(bm->getXWordSize(), bm->getYWordSize());
         unsigned int zeros = 0;
+		unsigned int mode2Zeros = 0;
+		bool startCountingMode2 = false;
 
         for(unsigned int i = 0; i < max; i++){
             unsigned int steps = i + 1; //for the lowest bit make one step (pos 0,0), second lowest 2 steps (pos 0,1 and 1,0) ...
             //the relevant positions for every outputbit lie on a diogonal line.
 
-            bool bmHasInput = false;
-            bool intMultiplierHasBit = false;
+
             for(unsigned int j = 0; j < steps; j++){
+				bool bmHasInput = false;
+				bool intMultiplierHasBit = false;				
                 if(bm->shapeValid(j, steps - (j + 1))){
                     bmHasInput = true;
                 }
-                if(bmHasInput && zerosOfBMOnly){
+                if(bmHasInput && mode == 1){
                     return zeros;   //only checking condition a)
                 }
                 //x in range?
@@ -2180,16 +2190,33 @@ namespace flopoco {
                         intMultiplierHasBit = true;
                     }
                 }
+				if(mode == 2 && yPos + xPos + (steps - 1) > 2 * totalOffset){
+					startCountingMode2 = true;
+				}
+				//cout << "position " << j << "," << (steps - (j + 1)) << " has " << bmHasInput << " and " << intMultiplierHasBit << endl;
                 if(bmHasInput && intMultiplierHasBit){
                     //this output gets some values. So finished computation and return
-                    return zeros;
+					if(mode == 0){
+						return zeros;
+					}
+					else{	//doesnt matter if startCountingMode2 is true or not. mode2Zeros are being incremented at the end of the diagonal
+						return mode2Zeros;
+					}
+                    
                 }
             }
-
+			
             zeros++;
+			if(startCountingMode2 == true){
+				mode2Zeros++;
+			}
         }
-
-        return zeros;       //if reached, that would mean the the bm shares no area with IntMultiplier
+		if(mode != 2){
+			return zeros;       //if reached, that would mean the the bm shares no area with IntMultiplier
+		}
+        else{
+			return mode2Zeros;
+		}
     }
 
 

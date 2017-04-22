@@ -828,6 +828,24 @@ namespace flopoco
         if(buildSingleStages && (numberOfBuildStages > 0) ){
             numberOfStages = numberOfBuildStages;
         }
+		bool compressionNeeded = false;
+		for(unsigned b = 0; b < newBits[0].size(); b++){
+			if(newBits[0][b] > 2){
+				compressionNeeded = true;
+				break;
+			}
+			else{
+				for(unsigned a = 1; a < newBits.size(); a++){
+					if(newBits[a][b] > 0){
+						compressionNeeded = true;
+					}
+				}
+			}
+		}
+		if(compressionNeeded == false){
+			cout << "no compression necessary" << endl;
+			return;
+		}
 		
         //find a compressor which fits the best and use it.
         for(unsigned s = 0; s < numberOfStages && !(debugLoop && debugCount >= debugMax); s++){

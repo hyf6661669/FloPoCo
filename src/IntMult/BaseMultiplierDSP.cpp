@@ -38,7 +38,7 @@ BaseMultiplierDSPOp::BaseMultiplierDSPOp(Target* target, bool isSignedX, bool is
     useNumericStd();
 
     ostringstream name;
-    name << "BaseMultiplierDSP";
+    name <<"BaseMultiplierDSP"<< (isSignedX?"xS":"xU") << (isSignedY?"yS":"yU") << "_" << wX << "_" << wY;
     setName(name.str());
 
     string in1,in2;

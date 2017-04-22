@@ -2006,7 +2006,8 @@ namespace flopoco {
                     ostringstream s;
                     s << outputVectorName << of(i);
 
-                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str(), "", 1, getCycleFromSignal(outputVectorName));
+                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str());
+//                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str(), "", 1, getCycleFromSignal(outputVectorName));
 
                 }
 //                setCycle(0); ??

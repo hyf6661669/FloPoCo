@@ -66,7 +66,9 @@ BaseMultiplierDSPOp::BaseMultiplierDSPOp(Target* target, bool isSignedX, bool is
     wR = wX + wY; //ToDo: addjust this for signed
     addOutput("R", wR);
 
-    vhdl << tab << "R <= std_logic_vector(unsigned(X) * unsigned(Y));" << endl;
+    vhdl << tab << declare("T",wR) << " <= std_logic_vector(unsigned(X) * unsigned(Y));" << endl;
+//    nextCycle();
+    vhdl << tab << "R <= T;" << endl;
 }
 
 }   //end namespace flopoco

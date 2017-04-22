@@ -1960,6 +1960,8 @@ namespace flopoco {
 
             outputLengthNonZeros = getOutputLengthNonZeros(baseMultiplier, xPos, yPos, totalOffset);
 
+            setCycle(0); //reset to cycle 0
+
             Operator *op = baseMultiplier->generateOperator(parentOp->getTarget());
 
             addToGlobalOpList(op);
@@ -1967,6 +1969,9 @@ namespace flopoco {
 			
 
             string outputVectorName = placeSingleMultiplier(op, xPos, yPos, xInputLength, yInputLength, outputLength, xInputNonZeros, yInputNonZeros, totalOffset, posInList);
+
+//            syncCycleFromSignal(outputVectorName);
+
             unsigned int startWeight = 0;
             if(xPos + yPos > (2 * totalOffset)){
                 startWeight = xPos + yPos - (2 * totalOffset);
@@ -1995,14 +2000,16 @@ namespace flopoco {
             if(!isSigned){
                 if(type >= 2 && type <= 13){
                     //for the twelve supertiles. setCycle(n) works
-                    setCycle(0);
+//                    setCycle(0);
                 }
                 for(unsigned int i = resultVectorOffset; i < outputLengthNonZeros - lsbZerosInBM; i++){
                     ostringstream s;
                     s << outputVectorName << of(i);
-                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str());
+
+                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str(), "", 1, getCycleFromSignal(outputVectorName));
+
                 }
-                setCycle(0);
+//                setCycle(0); ??
             }
 
             posInList++;

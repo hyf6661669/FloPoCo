@@ -231,7 +231,7 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
             throw string("Error in ") + srcFileName + string(": shape unknown");
     }
 
-//    nextCycle();
+    nextCycle();
 
     if((shape >= BaseMultiplierDSPSuperTilesXilinx::SHAPE_A) && (shape <= BaseMultiplierDSPSuperTilesXilinx::SHAPE_D))
     {

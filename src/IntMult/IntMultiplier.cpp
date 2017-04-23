@@ -2006,8 +2006,7 @@ namespace flopoco {
                     ostringstream s;
                     s << outputVectorName << of(i);
 
-                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str());
-//                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str(), "", 1, getCycleFromSignal(outputVectorName));
+                    bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str(), "", 1, getCycleFromSignal(outputVectorName));
 
                 }
 //                setCycle(0); ??
@@ -2198,7 +2197,7 @@ namespace flopoco {
                         intMultiplierHasBit = true;
                     }
                 }
-				if(mode == 2 && yPos + xPos + (steps - 1) > 2 * totalOffset){
+				if(mode == 2 && yPos + xPos + (steps - 1) >= 2 * totalOffset){
 					startCountingMode2 = true;
 				}
 				//cout << "position " << j << "," << (steps - (j + 1)) << " has " << bmHasInput << " and " << intMultiplierHasBit << endl;
@@ -2416,6 +2415,19 @@ namespace flopoco {
 		tc->addInput("Y", y);
 		emulate(tc);
 		tcl->add(tc);
+		
+		//check ever position 
+		for(unsigned tempX = 0; tempX < wXdecl; tempX++){
+			for(unsigned tempY = 0; tempY < wYdecl; tempY++){
+				x = (mpz_class(1) << tempX);
+				y = (mpz_class(1) << tempY);
+				tc = new TestCase(this);
+				tc->addInput("X", x);
+				tc->addInput("Y", y);
+				emulate(tc);
+				tcl->add(tc);
+			}
+		}
 	}
 
 	/**

@@ -225,7 +225,7 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
             //total operation is: ((X(23 downto 7) * Y(23 downto 0) << 7) + (X(16 downto 0) * Y(47 downto 24) << 24)
             //realized as:        (X(23 downto 7) * Y(23 downto 0)) + (X(16 downto 0) * Y(47 downto 24) << 17)
             vhdl << tab << "D1 <= std_logic_vector(unsigned(X(23 downto 7)) * unsigned(Y(23 downto 0)));" << endl;
-            vhdl << tab << "D2 <= std_logic_vector(unsigned(X(23 downto 7)) * unsigned(Y(47 downto 24)));" << endl;
+            vhdl << tab << "D2 <= std_logic_vector(unsigned(X(16 downto 0)) * unsigned(Y(47 downto 24)));" << endl;
             break;
         default:
             throw string("Error in ") + srcFileName + string(": shape unknown");

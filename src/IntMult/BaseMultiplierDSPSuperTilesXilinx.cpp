@@ -18,7 +18,7 @@ BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSign
     switch(shape)
     {
         case SHAPE_A:
-            wX = 31;
+            wX = 41;
             wY = 34;
             wR = 42; //not counting the zeros!
             break;
@@ -203,7 +203,7 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
             //total operation is: ((X(23 downto 0) * Y(23 downto 7)) << 7) + (X(40 downto 24) * Y(16 downto 0) << 24)
             //realized as:        (X(23 downto 0) * Y(23 downto 7)) + (X(40 downto 24) * Y(16 downto 0) << 17)
             vhdl << tab << "D1 <= std_logic_vector(unsigned(X(23 downto 0)) * unsigned(Y(23 downto 7)));" << endl;
-            vhdl << tab << "D2 <= std_logic_vector(unsigned(X(40 downto 24)) * unsigned(Y(16 downto 0)));" << endl;
+            vhdl << tab << "D2 <= std_logic_vector(unsigned(X(40 downto 24)) * unsigned(Y(23 downto 0)));" << endl;
             break;
         case BaseMultiplierDSPSuperTilesXilinx::SHAPE_I:
             //total operation is: (X(16 downto 0) * Y(23 downto 0) + (X(40 downto 17) * Y(16 downto 0) << 17)

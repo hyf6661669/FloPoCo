@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include "HOTBM/Util.hh"
+#include "../HOTBM/Util.hh"
 #include "Function.hpp"
 #include <stdlib.h>
 using namespace std;

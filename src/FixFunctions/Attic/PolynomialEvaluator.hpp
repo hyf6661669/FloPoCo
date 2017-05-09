@@ -6,9 +6,9 @@
 #include <gmpxx.h>
 #include "../utils.hpp"
 
-#include "../IntMultiplier.hpp"
-#include "../IntAdder.hpp"
-#include "../Operator.hpp"
+#include "../../IntMult/IntMultiplier.hpp"
+#include "../../IntAddSubCmp/IntAdder.hpp"
+#include "../../Operator.hpp"
 
 
 namespace flopoco{

@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 
-#include "HOTBM/Util.hh"
+#include "../HOTBM/Util.hh"
 
 #include <sollya.h>
 

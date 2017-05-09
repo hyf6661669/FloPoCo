@@ -3,7 +3,7 @@
 
 #include "../Operator.hpp"
 #include "../utils.hpp"
-#include "../FixFunctions/FunctionEvaluator.hpp"
+#include "../FixFunctions/Attic/FunctionEvaluator.hpp"
 
 namespace flopoco{ 
 

@@ -14,7 +14,7 @@
 
 #include "Function.hpp"
 #include "PiecewiseFunction.hpp"
-#include "HOTBM/MPPolynomial.hh"
+#include "../HOTBM/MPPolynomial.hh"
 
 namespace flopoco{
   // The following was cut from UtilSollya, to be removed some day

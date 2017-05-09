@@ -8,7 +8,7 @@
 
 #include "../Operator.hpp"
 #include "PolyCoeffTable.hpp"
-#include "../IntAdder.hpp"
+#include "../../IntAddSubCmp/IntAdder.hpp"
 
 namespace flopoco{
 

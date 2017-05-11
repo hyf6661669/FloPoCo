@@ -41,6 +41,7 @@ BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSign
             wX = 24;
             wY = 34;
             wR = 58;
+//            wR = 41;
             break;
         case SHAPE_F:
             wX = 48;
@@ -241,7 +242,9 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
     else
     {
         //tilings (e) to (l) have a 17 bit shift
-        vhdl << tab << "R <= std_logic_vector(unsigned(D1) + unsigned(D2 & \"00000000000000000\"));" << endl;
+//        vhdl << tab << "R <= std_logic_vector(unsigned(D1) + unsigned(D2 & \"00000000000000000\"));" << endl;
+        vhdl << tab << "R(57 downto 17) <= std_logic_vector(unsigned(D2) + unsigned(\"00000000000000000\" & D1(40 downto 17)));" << endl;
+        vhdl << tab << "R(16 downto 0) <= D1(16 downto 0);" << endl;
     }
     addOutput("R", wR);
 

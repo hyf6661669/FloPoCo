@@ -231,9 +231,8 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
         default:
             throw string("Error in ") + srcFileName + string(": shape unknown");
     }
-
-//    nextCycle();
-
+    nextCycle();
+	
     if((shape >= BaseMultiplierDSPSuperTilesXilinx::SHAPE_A) && (shape <= BaseMultiplierDSPSuperTilesXilinx::SHAPE_D))
     {
         //tilings (a) to (d) doesn't have a shift

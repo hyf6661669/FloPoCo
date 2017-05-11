@@ -1998,18 +1998,14 @@ namespace flopoco {
             bool isSigned = false;
             //todo: signed case: see line 1110
             if(!isSigned){
-                if(type >= 2 && type <= 13){
-                    //for the twelve supertiles. setCycle(n) works
-//                    setCycle(0);
-                }
+				setCycleFromSignal(outputVectorName);	//we assume that the whole vector has the same cycle
                 for(unsigned int i = resultVectorOffset; i < outputLengthNonZeros - lsbZerosInBM; i++){
                     ostringstream s;
                     s << outputVectorName << of(i);
-
                     bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str());
-
+					
+                    //bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str(), "", 1, getCycleFromSignal(outputVectorName));
                 }
-//                setCycle(0); ??
             }
 
             posInList++;

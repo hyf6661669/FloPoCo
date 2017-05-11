@@ -67,7 +67,7 @@ BaseMultiplierDSPOp::BaseMultiplierDSPOp(Target* target, bool isSignedX, bool is
     addOutput("R", wR);
 
     vhdl << tab << declare("T",wR) << " <= std_logic_vector(unsigned(X) * unsigned(Y));" << endl;
-//    nextCycle();
+    nextCycle();
     vhdl << tab << "R <= T;" << endl;
 }
 

@@ -14,7 +14,7 @@ namespace flopoco {
     class BaseMultiplierCollection {
 
 	public:
-        BaseMultiplierCollection(Target *target, unsigned int wX, unsigned int wY);
+        BaseMultiplierCollection(Target *target, unsigned int wX, unsigned int wY, bool pipelineDSPs);
         ~BaseMultiplierCollection();
 
         BaseMultiplier* getBaseMultiplier(int shape);

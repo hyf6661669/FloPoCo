@@ -6,13 +6,14 @@
 namespace flopoco {
 
 
-BaseMultiplierDSP::BaseMultiplierDSP(bool isSignedX, bool isSignedY, int wX, int wY, bool flipXY) : BaseMultiplier(isSignedX,isSignedY)
+BaseMultiplierDSP::BaseMultiplierDSP(bool isSignedX, bool isSignedY, int wX, int wY, bool pipelineDSPs, bool flipXY) : BaseMultiplier(isSignedX,isSignedY)
 {
 
     srcFileName = "BaseMultiplierDSP";
     uniqueName_ = "BaseMultiplierDSP" + std::to_string(wX) + "x" + std::to_string(wY);
 
     this->flipXY = flipXY;
+    this->pipelineDSPs = pipelineDSPs;
 
     if(!flipXY)
     {
@@ -29,11 +30,11 @@ BaseMultiplierDSP::BaseMultiplierDSP(bool isSignedX, bool isSignedY, int wX, int
 
 Operator* BaseMultiplierDSP::generateOperator(Target* target)
 {
-    return new BaseMultiplierDSPOp(target, isSignedX, isSignedY, wX, wY, flipXY);
+    return new BaseMultiplierDSPOp(target, isSignedX, isSignedY, wX, wY, pipelineDSPs, flipXY);
 }
 	
 
-BaseMultiplierDSPOp::BaseMultiplierDSPOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, bool flipXY) : Operator(target)
+BaseMultiplierDSPOp::BaseMultiplierDSPOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, bool pipelineDSPs, bool flipXY) : Operator(target)
 {
     useNumericStd();
 
@@ -67,7 +68,12 @@ BaseMultiplierDSPOp::BaseMultiplierDSPOp(Target* target, bool isSignedX, bool is
     addOutput("R", wR);
 
     vhdl << tab << declare("T",wR) << " <= std_logic_vector(unsigned(X) * unsigned(Y));" << endl;
-    nextCycle();
+
+    if(pipelineDSPs) //ToDo: decide on target frequency whether to pipeline or not (and how depth)
+    {
+        nextCycle();
+    }
+
     vhdl << tab << "R <= T;" << endl;
 }
 

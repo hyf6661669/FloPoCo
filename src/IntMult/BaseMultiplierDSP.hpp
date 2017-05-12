@@ -18,19 +18,19 @@ namespace flopoco {
     {
 
 	public:
-        BaseMultiplierDSP(bool isSignedX, bool isSignedY, int wX, int wY, bool flipXY=false);
+        BaseMultiplierDSP(bool isSignedX, bool isSignedY, int wX, int wY, bool pipelineDSPs, bool flipXY=false);
 
         virtual Operator *generateOperator(Target *target);
 
     private:
         bool flipXY;
-
+        bool pipelineDSPs;
 	};
 
     class BaseMultiplierDSPOp : public Operator
     {
     public:
-        BaseMultiplierDSPOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, bool flipXY=false);
+        BaseMultiplierDSPOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, bool pipelineDSPs, bool flipXY=false);
     private:
         int wX, wY, wR;
     };

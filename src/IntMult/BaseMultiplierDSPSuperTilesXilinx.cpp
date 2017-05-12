@@ -6,7 +6,7 @@
 namespace flopoco {
 
 
-BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSignedX, bool isSignedY, TILE_SHAPE shape) : BaseMultiplier(isSignedX,isSignedY)
+BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSignedX, bool isSignedY, TILE_SHAPE shape, bool pipelineDSPs) : BaseMultiplier(isSignedX,isSignedY)
 {
     char shapeAsChar = ((char) shape) + 'a' - 1; //convert enum to char
 
@@ -14,6 +14,7 @@ BaseMultiplierDSPSuperTilesXilinx::BaseMultiplierDSPSuperTilesXilinx(bool isSign
     uniqueName_ = string("BaseMultiplierDSPSuperTilesXilinxShape_") + string(1,shapeAsChar);
 
     this->shape = shape;
+    this->pipelineDSPs = pipelineDSPs;
 
     switch(shape)
     {
@@ -144,11 +145,11 @@ bool BaseMultiplierDSPSuperTilesXilinx::shapeValid(int x, int y)
 
 Operator* BaseMultiplierDSPSuperTilesXilinx::generateOperator(Target* target)
 {
-    return new BaseMultiplierDSPSuperTilesXilinxOp(target, isSignedX, isSignedY, wX, wY, wR, shape);
+    return new BaseMultiplierDSPSuperTilesXilinxOp(target, isSignedX, isSignedY, wX, wY, wR, shape, pipelineDSPs);
 }
 
 
-BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, int wR, BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape) : Operator(target)
+BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target* target, bool isSignedX, bool isSignedY, int wX, int wY, int wR, BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape, bool pipelineDSPs) : Operator(target)
 {
     useNumericStd();
 
@@ -231,20 +232,32 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
         default:
             throw string("Error in ") + srcFileName + string(": shape unknown");
     }
-    nextCycle();
-	
+
+    if(pipelineDSPs) //ToDo: decide on target frequency whether to pipeline or not (and how depth)
+    {
+        nextCycle();
+    }
+
+    declare("T",wR);
     if((shape >= BaseMultiplierDSPSuperTilesXilinx::SHAPE_A) && (shape <= BaseMultiplierDSPSuperTilesXilinx::SHAPE_D))
     {
         //tilings (a) to (d) doesn't have a shift
-        vhdl << tab << "R <= std_logic_vector(unsigned('0' & D1) + unsigned('0' & D2));" << endl;
+        vhdl << tab << "T <= std_logic_vector(unsigned('0' & D1) + unsigned('0' & D2));" << endl;
     }
     else
     {
         //tilings (e) to (l) have a 17 bit shift
-//        vhdl << tab << "R <= std_logic_vector(unsigned(D1) + unsigned(D2 & \"00000000000000000\"));" << endl;
-        vhdl << tab << "R(57 downto 17) <= std_logic_vector(unsigned(D2) + unsigned(\"00000000000000000\" & D1(40 downto 17)));" << endl;
-        vhdl << tab << "R(16 downto 0) <= D1(16 downto 0);" << endl;
+        vhdl << tab << "T(57 downto 17) <= std_logic_vector(unsigned(D2) + unsigned(\"00000000000000000\" & D1(40 downto 17)));" << endl;
+        vhdl << tab << "T(16 downto 0) <= D1(16 downto 0);" << endl;
     }
+
+    if(pipelineDSPs) //ToDo: decide on target frequency whether to pipeline or not (and how depth)
+    {
+        nextCycle();
+    }
+
+    vhdl << tab << "R <= T;" << endl;
+
     addOutput("R", wR);
 
     addInput("X", wX, true);

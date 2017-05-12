@@ -221,10 +221,10 @@ namespace flopoco {
 
 
 	// The constructor for a stand-alone operator
-    IntMultiplier::IntMultiplier (Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, map<string, double> inputDelays_, bool enableSuperTiles_, string solutionFile_):
+    IntMultiplier::IntMultiplier (Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, map<string, double> inputDelays_, bool enableSuperTiles_, string solutionFile_, bool pipelineDSPs):
 		Operator ( target_, inputDelays_ ),
 		wXdecl(wX_), wYdecl(wY_), wOut(wOut_),
-        negate(false), signedIO(signedIO_),enableSuperTiles(enableSuperTiles_),solutionFile(solutionFile_)
+        negate(false), signedIO(signedIO_),enableSuperTiles(enableSuperTiles_),solutionFile(solutionFile_),pipelineDSPs(pipelineDSPs)
 	{
 		srcFileName="IntMultiplier";
 		setCopyrightString ( "Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012" );
@@ -1919,7 +1919,7 @@ namespace flopoco {
 
         list<pair< unsigned int, pair<unsigned int, unsigned int> > > solution = multiplierSolutionParser->getSolution();
 
-        BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget(), wX, wY);
+        BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget(), wX, wY, pipelineDSPs);
 
         //note: in XX is x-vector, in YY is y-vector after possible switching
 
@@ -2484,13 +2484,15 @@ namespace flopoco {
 		int wX,wY, wOut ;
 		bool signedIO,superTile;
         string solutionFile;
-		UserInterface::parseStrictlyPositiveInt(args, "wX", &wX);
+        bool pipelineDSPs;
+        UserInterface::parseStrictlyPositiveInt(args, "wX", &wX);
 		UserInterface::parseStrictlyPositiveInt(args, "wY", &wY);
 		UserInterface::parsePositiveInt(args, "wOut", &wOut);
 		UserInterface::parseBoolean(args, "signedIO", &signedIO);
-		UserInterface::parseBoolean(args, "superTile", &superTile);
+        UserInterface::parseBoolean(args, "superTile", &superTile);
+        UserInterface::parseBoolean(args, "pipelineDSPs", &pipelineDSPs);
         UserInterface::parseString(args, "solutionFile", &solutionFile);
-        return new IntMultiplier(target, wX, wY, wOut, signedIO, emptyDelayMap, superTile, solutionFile);
+        return new IntMultiplier(target, wX, wY, wOut, signedIO, emptyDelayMap, superTile, solutionFile, pipelineDSPs);
 	}
 
 
@@ -2504,6 +2506,7 @@ namespace flopoco {
                         wOut(int)=0: size of the output if you want a truncated multiplier. 0 for full multiplier;\
                         signedIO(bool)=false: inputs and outputs can be signed or unsigned;\
                         superTile(bool)=false: if true, attempts to use the DSP adders to chain sub-multipliers. This may entail lower logic consumption, but higher latency;\
+                        pipelineDSPs(bool)=true: if true, the DSP and supertiles are internally pipelined;\
                         solutionFile(string)=\"\": if string is not empty, IntMultiplier reads the tiling from the specified file", // This string will be parsed
 											 "", // no particular extra doc needed
 											 IntMultiplier::parseArguments

@@ -5,7 +5,6 @@
  *  Version:
  *  Datum: 20.11.2014
  */
-
 #ifdef HAVE_PAGLIB
 
 #include "Operator.hpp"

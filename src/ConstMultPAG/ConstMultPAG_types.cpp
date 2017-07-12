@@ -223,7 +223,7 @@ string ConstMultPAG_DECODER::get_realisation(map<adder_graph_base_node_t *, Cons
     string dec_name = outputSignalName+"r";
     GenericLut* dec = new GenericLut(node->target,dec_name,decoder_content,configurationSignalWordsize,decoder_size);
     base_op->addSubComponent(dec);
-    base_op->inPortMap(dec,"x_in","config_no");
+    base_op->inPortMap(dec,"x_in_this_does_not_exist!!","config_no");
     base_op->outPortMap(dec,"x_out",outputSignalName,true);
     base_op->vhdl << base_op->instance(dec,outputSignalName+"r_i") << endl;
 

@@ -5,7 +5,6 @@
  *  Datum: 20.11.2014
  */
 
-#define HAVE_PAGLIB //!!!
 #ifdef HAVE_PAGLIB
 
 #include "pag_lib/adder_graph.h"

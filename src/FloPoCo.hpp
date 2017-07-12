@@ -165,6 +165,7 @@
 #include "PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State.hpp"
 #include "SAD/SAD.hpp"
 #include "ConstMultPAG/ConstMultPAG.hpp"
+#include "FullyParallelFFT.hpp"
 
 /* misc ------------------------------------------------------ */
 #include "TestBenches/Wrapper.hpp"

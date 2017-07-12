@@ -117,6 +117,7 @@ int main(int argc, char* argv[] )
         IntPower::registerFactory();
 #ifdef HAVE_PAGLIB
         ConstMultPAG::registerFactory();
+        FullyParallelFFT::registerFactory();
 #endif
 		TargetModel::registerFactory();
 		// Uncomment me to play within FloPoCo operator development

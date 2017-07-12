@@ -274,6 +274,7 @@ IF( PAGSUITE_FOUND )
 	SET( PAGSUITE_DEP_SOURCES 
 		src/ConstMultPAG/ConstMultPAG
 		src/ConstMultPAG/ConstMultPAG_types
+		src/FullyParallelFFT
 	)
 ELSE( PAGSUITE_FOUND )
 	SET( PAGSUITE_DEP_SOURCES 

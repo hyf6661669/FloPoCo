@@ -1,5 +1,4 @@
 // general c++ library for manipulating streams
-#define HAVE_PAGLIB //!!!
 #ifdef HAVE_PAGLIB
 #include <iostream>
 #include <sstream>

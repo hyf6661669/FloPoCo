@@ -9,12 +9,12 @@ namespace flopoco {
 	class FullyParallelFFT : public Operator {
 	public:
         int wIn;
-        string rotator_file_name,FFT_realization_file_name;
+        string rotatorFileName,FFTRealizationFileName;
 
 
 	public:
 
-        FullyParallelFFT(Target* target, int wIn_ = 16,  string rotator_file_name_=0, string FFT_realization_file_name_=0);
+        FullyParallelFFT(Target* target, int wIn_ = 16,  string rotatorFileName_=0, string FFTRealizationFileName_=0);
 
 		// destructor
 		~FullyParallelFFT() {};

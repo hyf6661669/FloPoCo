@@ -2,6 +2,8 @@
 // general c++ library for manipulating streams
 #include <iostream>
 #include <sstream>
+#include <fstream>
+
 
 #include "gmp.h"
 #include "mpfr.h"
@@ -14,17 +16,40 @@ namespace flopoco {
 
 
 
-FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotator_file_name_, string FFT_realization_file_name_)
+FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotatorFileName_, string FFTRealizationFileName_)
     : Operator(target),
       wIn(wIn_),
-      rotator_file_name(rotator_file_name_),
-      FFT_realization_file_name(FFT_realization_file_name_)
+      rotatorFileName(rotatorFileName_),
+      FFTRealizationFileName(FFTRealizationFileName_)
 {
+
+        std::ifstream rotFile(rotatorFileName);
+        std::ifstream FFTFile(FFTRealizationFileName);
+
+        // Parse in rotators
+        std::string line;
+        while (std::getline(rotFile, line))
+        {
+            std::istringstream iss(line);
+           cerr << iss.str()<< endl;
+
+            // process pair (a,b)
+        }
+
+        // Parse in FFT realization
+        while (std::getline(FFTFile, line))
+        {
+            std::istringstream iss(line);
+            cerr << iss.str()<< endl;
+
+            // process pair (a,b)
+        }
+
 
 		srcFileName="FullyParallelFFT";
 		ostringstream name;
-        name << "FullyParallelFFT_" << wIn << "_" << rotator_file_name <<"_"<< FFT_realization_file_name;
-        cerr << name.str();
+        name << "FullyParallelFFT_" << wIn << "_" << rotatorFileName <<"_"<< FFTRealizationFileName;
+        cerr << name.str() << endl;
 		setName(name.str());
 		// Copyright 
         setCopyrightString("Konrad Möller, Martin Kumm, Mario Garrido");
@@ -48,7 +73,7 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotator_file
 		// basic message
 		REPORT(INFO,"Declaration of FullyParallelFFT \n");
 		// more detailed message
-        REPORT(DETAILED, "this operator has received three parameters " << wIn << ", " << rotator_file_name << " and " << FFT_realization_file_name)
+        REPORT(DETAILED, "this operator has received three parameters " << wIn << ", " << rotatorFileName << " and " << FFTRealizationFileName)
 		// debug message for developper
 		REPORT(DEBUG,"debug of FullyParallelFFT");
 
@@ -77,11 +102,11 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotator_file
 
 	OperatorPtr FullyParallelFFT::parseArguments(Target *target, vector<string> &args) {
         int wIn;
-        string rotator_file_name, FFT_realization_file_name;
+        string rotatorFileName, FFTRealizationFileName;
         UserInterface::parseInt(args, "wIn", &wIn); // param0 has a default value, this method will recover it if it doesnt't find it in args,
-        UserInterface::parseString(args, "rotator_file_name", &rotator_file_name);
-        UserInterface::parseString(args, "FFT_realization_file_name", &FFT_realization_file_name);
-        return new FullyParallelFFT(target, wIn, rotator_file_name, FFT_realization_file_name);
+        UserInterface::parseString(args, "rotatorFileName", &rotatorFileName);
+        UserInterface::parseString(args, "FFTRealizationFileName", &FFTRealizationFileName);
+        return new FullyParallelFFT(target, wIn, rotatorFileName, FFTRealizationFileName);
 	}
 	
 	void FullyParallelFFT::registerFactory(){
@@ -94,8 +119,8 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotator_file
 											 // Syntax is: a semicolon-separated list of parameterDescription;
 											 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString 
                                              "wIn(int)=16: A first parameter, here used as the input size; \
-                           rotator_file_name(string): A second parameter, here used as the output size; \
-                           FFT_realization_file_name(string): A third parameter, here used as the output size",
+                           rotatorFileName(string): A second parameter, here used as the output size; \
+                           FFTRealizationFileName(string): A third parameter, here used as the output size",
 											 // More documentation for the HTML pages. If you want to link to your blog, it is here.
 											 "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",
 											 FullyParallelFFT::parseArguments

@@ -115,8 +115,9 @@ int main(int argc, char* argv[] )
         GenericLut_Test::registerFactory();
         SAD::registerFactory();
         IntPower::registerFactory();
-//        ConstMultPAG::registerFactory();
-
+#ifdef HAVE_PAGLIB
+        ConstMultPAG::registerFactory();
+#endif
 		TargetModel::registerFactory();
 		// Uncomment me to play within FloPoCo operator development
 	  UserDefinedOperator::registerFactory();

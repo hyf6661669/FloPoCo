@@ -27,7 +27,7 @@ namespace flopoco {
         if( hasFlags(TERNARY|CONF_MID) )
             addInput("iM_c",1,false);
 
-        addOutput("oSum",wIn);
+        addOutput("sum_o",wIn);
 
         if( UserInterface::useTargetSpecificOptimization && target->getVendor() == "Xilinx" )
             buildXilinx(target,wIn);
@@ -100,7 +100,7 @@ namespace flopoco {
                 }
                 vhdl << ");" << std::endl;
             }
-            vhdl << "\t" << "when others => oSum <= (others=>'X');" << std::endl;
+            vhdl << "\t" << "when others => sum_o <= (others=>'X');" << std::endl;
             vhdl << "end case;" << std::endl;
         }
     }
@@ -115,7 +115,7 @@ namespace flopoco {
     }
 
     string GenericAddSub::getOutputName() const{
-        return "oSum";
+        return "sum_o";
     }
 
     bool GenericAddSub::hasFlags(const uint32_t &flag) const{

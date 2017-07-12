@@ -196,7 +196,7 @@ FIND_PACKAGE(PagSuite)
 IF( PAGSUITE_FOUND )
 	ADD_DEFINITIONS(-DHAVE_PAGLIB)
 ELSE(PAGSUITE_FOUND)
-	Message( "Could not find PagSuite. All related Operators will not be build." )
+	Message( "Could not find PagSuite. All related Operators (ConstMultPAG, ...) will not be build." )
 ENDIF( PAGSUITE_FOUND ) 
 #Uni KS stop
 

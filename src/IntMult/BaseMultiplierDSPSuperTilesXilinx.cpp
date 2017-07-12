@@ -251,10 +251,12 @@ BaseMultiplierDSPSuperTilesXilinxOp::BaseMultiplierDSPSuperTilesXilinxOp(Target*
         vhdl << tab << "T(16 downto 0) <= D1(16 downto 0);" << endl;
     }
 
+/*
     if(pipelineDSPs) //ToDo: decide on target frequency whether to pipeline or not (and how depth)
     {
         nextCycle();
     }
+*/
 
     vhdl << tab << "R <= T;" << endl;
 

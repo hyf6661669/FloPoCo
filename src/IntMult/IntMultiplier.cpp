@@ -1964,6 +1964,8 @@ namespace flopoco {
 
             Operator *op = baseMultiplier->generateOperator(parentOp->getTarget());
 
+            nextCycle(); //add register after each multiplier
+
             addToGlobalOpList(op);
 			
 			

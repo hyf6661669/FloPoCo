@@ -1074,9 +1074,11 @@ namespace flopoco
 
 	}
 
-	void BitHeap::elemReduceFixedCycle(unsigned i, BasicCompressor* bc, int type) //what is the meaning of type (compression, external, constant, 3 ??)??
+    void BitHeap::elemReduceFixedCycle(unsigned i, BasicCompressor* bc, int type, int s) //what is the meaning of type (compression, external, constant, 3 ??)??
 	{
 		REPORT(DEBUG, "Entering elemReduceFixedCycle for column "<< i << " using compressor " << bc->getName() ); //!!!
+
+        if(s < 0) s = op->getCurrentCycle();
 
 		stringstream signal[bc->getNumberOfColumns()];
 
@@ -1105,7 +1107,7 @@ namespace flopoco
 
                 for(unsigned j=0; j < bc->getColumnSize(c); j++)
                 {
-                    if(it != bits[i+c].end() && (*it)->getCycle() == op->getCurrentCycle())
+                    if(it != bits[i+c].end() && (*it)->getCycle() == s)
                     {
                         //bit heap column contains bits to compress
                         signal[c] << (*it)->getName();
@@ -1141,8 +1143,8 @@ namespace flopoco
 		{
             if(this->getOp()->getTarget()->isPipelined())
             {
-                removeCompressedBits(i,1,op->getCurrentCycle());
-                addBit(i, signal[0].str(),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+                removeCompressedBits(i,1,s);
+                addBit(i, signal[0].str(),"",type,s+1); //!!! ToDo: Manage critical path
             }
             else
             {
@@ -1198,7 +1200,7 @@ namespace flopoco
                         {
                             if(this->getOp()->getTarget()->isPipelined())
                             {
-                                addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,op->getCurrentCycle()+1); //!!! ToDo: Manage critical path
+                                addBit(i+j, join(out_concat, compressorIndex,"_", outConcatIndex, of(j)),"",type,s+1); //!!! ToDo: Manage critical path
                             }
                             else
                             {
@@ -1217,7 +1219,7 @@ namespace flopoco
                 if(i + j < maxWeight){
                     if(this->getOp()->getTarget()->isPipelined())
                     {
-                        removeCompressedBits(i+j,bc->getColumnSize(j),op->getCurrentCycle());
+                        removeCompressedBits(i+j,bc->getColumnSize(j),s);
                     }
                     else
                     {
@@ -1244,6 +1246,7 @@ namespace flopoco
  	/* Uni KS start */
  	void BitHeap::removeCompressedBits(int c, int red, int cycle)
 	{
+        cout << "!! removeCompressedBits(" << c << "," << red << "," << cycle << ")" << endl;
 		while(red>0)
 		{
             removeBit(c,0,cycle);
@@ -1674,7 +1677,7 @@ namespace flopoco
 					{
 						REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
                         //elemReduce(((unsigned) (*it).second), possibleCompressors[(*it).first]);
-                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
 						if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
 						{
                             compressorUsage[(*it).first]++;
@@ -1789,7 +1792,7 @@ namespace flopoco
 //                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
                             }
 
-                            elemReduceFixedCycle(vc.column, vcc);
+                            elemReduceFixedCycle(vc.column, vcc, 0, s);
 
                             //...
                         }
@@ -1801,7 +1804,7 @@ namespace flopoco
                         {
                             REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
                             if(((unsigned) (*it).second) < maxWeight){
-                                elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+                                elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
 
                                 if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
                                 {
@@ -1930,7 +1933,7 @@ namespace flopoco
 //                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
                             }
 
-                            elemReduceFixedCycle(vc.column, vcc);
+                            elemReduceFixedCycle(vc.column, vcc, 0, s);
 
                             //...
                         }
@@ -1942,7 +1945,7 @@ namespace flopoco
                         {
                             REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
                             if(((unsigned) (*it).second) < maxWeight){
-                                elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+                                elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
 
                                 if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
                                 {

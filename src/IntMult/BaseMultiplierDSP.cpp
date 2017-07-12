@@ -67,14 +67,20 @@ BaseMultiplierDSPOp::BaseMultiplierDSPOp(Target* target, bool isSignedX, bool is
     wR = wX + wY; //ToDo: addjust this for signed
     addOutput("R", wR);
 
-    vhdl << tab << declare("T",wR) << " <= std_logic_vector(unsigned(X) * unsigned(Y));" << endl;
 
+/*
     if(pipelineDSPs) //ToDo: decide on target frequency whether to pipeline or not (and how depth)
     {
+        vhdl << tab << declare("T",wR) << " <= std_logic_vector(unsigned(X) * unsigned(Y));" << endl;
         nextCycle();
+        vhdl << tab << "R <= T;" << endl;
+    }
+    else
+*/
+    {
+        vhdl << tab << "R <= std_logic_vector(unsigned(X) * unsigned(Y));" << endl;
     }
 
-    vhdl << tab << "R <= T;" << endl;
 }
 
 }   //end namespace flopoco

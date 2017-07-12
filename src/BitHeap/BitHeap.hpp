@@ -250,7 +250,7 @@ namespace flopoco{
 	protected:
 
 		 /* Uni KS start */
-		void elemReduceFixedCycle(unsigned i, BasicCompressor* bc, int type=0);
+        void elemReduceFixedCycle(unsigned i, BasicCompressor* bc, int type=0, int s=-1);
 		 /* Uni KS stop */
 
 		void elemReduce(unsigned i, BasicCompressor* bc, int type=0);

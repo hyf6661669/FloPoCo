@@ -280,7 +280,8 @@ namespace flopoco
 */
         noOfStages_ = getMaxStageCount(bh_->getMaxHeight());
 
-        noOfStages_ += 3;   //to be sure. Can be deleted after testing.
+//        noOfStages_ += 3;   //to be sure. Can be deleted after testing.
+        noOfStages_ += 4;   //to be even more sure. Can be deleted after testing.
 
         noOfStages_++;	//we need s+1 vectors for s stages. DONT DELETE THIS
 

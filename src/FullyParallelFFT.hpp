@@ -1,3 +1,6 @@
+#ifndef __FULLYPARALLELFFT_HPP
+#define __FULLYPARALLELFFT_HPP
+
 #ifdef HAVE_PAGLIB
 
 #include "Operator.hpp"
@@ -19,6 +22,7 @@ namespace flopoco {
 		// destructor
 		~FullyParallelFFT() {};
 		void emulate(TestCase * tc);
+        int getBitReverse(int value, int bits);
 		void buildStandardTestCases(TestCaseList* tcl);
 
 		/** Factory method that parses arguments and calls the constructor */
@@ -31,3 +35,4 @@ namespace flopoco {
 
 }//namespace
 #endif // HAVE_PAGLIB
+#endif //__FULLYPARALLELFFT_HPP

@@ -7,8 +7,10 @@
 
 #include "gmp.h"
 #include "mpfr.h"
-
+#include "FloPoCo.hpp"
+#include "ConstMultPAG/ConstMultPAG.hpp"
 #include "FullyParallelFFT.hpp"
+
 
 using namespace std;
 namespace flopoco {
@@ -115,14 +117,14 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotatorFileN
         {stringstream tmpSignal; tmpSignal << "In_"<< r << "_y";
             addInput(tmpSignal.str() , wIn);}
 
-        //declare intermediate signals
+      /*  //declare intermediate signals
         for (unsigned c=0; c<n-1; c++) {
 
             {stringstream tmpSignal; tmpSignal << "post_s"<<c+1<<"_r"<<r<<"_x";
                 declare(tmpSignal.str(),wIn);}
             {stringstream tmpSignal; tmpSignal << "post_s"<<c+1<<"_r"<<r<<"_y";
                 declare(tmpSignal.str(),wIn);}
-        }
+        }*/
 
         // declaring outputs
         {stringstream tmpSignal; tmpSignal << "Out_"<< r << "_x";
@@ -131,42 +133,94 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotatorFileN
             addOutput(tmpSignal.str() , wIn);}
     }
 
-    //Building the FFTadders
+    //Building the FFT
     for (unsigned stage=1; stage<n+1; stage++) {
         for (unsigned row=0; row<N; row++) {
             if (stage==1){ //first stage requires the input
                 stringstream tmpSignalx; tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
                 stringstream tmpSignaly; tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
-                if(row<N/2){
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row<<"_x)+signed(In_"<<row+N/(2*stage)<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row<<"_y)+signed(In_"<<row+N/(2*stage)<<"_y),"<<wIn+1<<")));"<<endl;
+                if(!((row) & (1<<((int)(log2(N)-stage))))){
+                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row<<"_x)+signed(In_"<<row+N/(pow(2,stage))<<"_x),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row<<"_y)+signed(In_"<<row+N/(pow(2,stage))<<"_y),"<<wIn+1<<")));"<<endl;
                 }else{
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row-N/(2*stage)<<"_x)-signed(In_"<<row<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row-N/(2*stage)<<"_y)-signed(In_"<<row<<"_y),"<<wIn+1<<")));"<<endl;
-                }
-            }
-            else if (stage<=n) {
-                stringstream tmpSignalx; tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
-                stringstream tmpSignaly; tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
-                if(row<N/2){
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x)+signed(post_s"<<stage-1<<"_r"<<row+N/(2*stage)<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y)+signed(post_s"<<stage-1<<"_r"<<row+N/(2*stage)<<"_y),"<<wIn+1<<")));"<<endl;
-                }else{
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(2*stage)<<"_x)-signed(post_s"<<stage-1<<"_r"<<row<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(2*stage)<<"_y)-signed(post_s"<<stage-1<<"_r"<<row<<"_y),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row-N/(pow(2,stage))<<"_x)-signed(In_"<<row<<"_x),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row-N/(pow(2,stage))<<"_y)-signed(In_"<<row<<"_y),"<<wIn+1<<")));"<<endl;
                 }
 
+                //put stage 1 rotators here
+                stringstream tmpOutSignalx; tmpOutSignalx << "post_s"<<stage<<"_r"<<row<<"_x";
+                stringstream tmpOutSignaly; tmpOutSignaly << "post_s"<<stage<<"_r"<<row<<"_y";
+                string rotatorString = rotators.at(FFTRealization[row].at(stage-1));
+                Operator* cMult = new flopoco::ConstMultPAG(target,wIn+1,rotatorString);
+                cMult->setName("rotator",to_string(FFTRealization[row].at(stage-1)));
+                inPortMap(cMult,"x_in0",tmpSignalx.str());
+                inPortMap(cMult,"x_in1",tmpSignaly.str());
+                list<flopoco::ConstMultPAG::output_signal_info> tmp_output_list = ((flopoco::ConstMultPAG*)(cMult))->GetOutputList();
+                int iteration=0;
+                for (list<flopoco::ConstMultPAG::output_signal_info>::iterator it=tmp_output_list.begin(); it!=tmp_output_list.end(); it++){
+                    iteration++;
+                    if (iteration == 1)
+                        outPortMap(cMult,(*it).signal_name,tmpOutSignalx.str(),true);
+                    else if (iteration == 2)
+                        outPortMap(cMult,(*it).signal_name,tmpOutSignaly.str(),true);
+                    else
+                        THROWERROR("Bad CMM component in Fully Parallel FFT");
+                }
+                addSubComponent(cMult);
+                stringstream rotatorName;
+                rotatorName << "rotator_" << FFTRealization[row].at(stage-1) << "at_s" << stage << "_r" << row;
+                vhdl << instance(cMult, rotatorName.str());
+
+
             }
-            else{ //last stage feeds outputs and no rotation
+            else if (stage<n) { // intermediate stages
                 stringstream tmpSignalx; tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
                 stringstream tmpSignaly; tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
-                if(row<N/2){
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x)+signed(post_s"<<stage-1<<"_r"<<row+N/(2*stage)<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y)+signed(post_s"<<stage-1<<"_r"<<row+N/(2*stage)<<"_y),"<<wIn+1<<")));"<<endl;
+                if(!((row) & (1<<((int)(log2(N)-stage))))){
+                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x)+signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y)+signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y),"<<wIn+1<<")));"<<endl;
                 }else{
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(2*stage)<<"_x)-signed(post_s"<<stage-1<<"_r"<<row<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(2*stage)<<"_y)-signed(post_s"<<stage-1<<"_r"<<row<<"_y),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x)-signed(post_s"<<stage-1<<"_r"<<row<<"_x),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y)-signed(post_s"<<stage-1<<"_r"<<row<<"_y),"<<wIn+1<<")));"<<endl;
                 }
+                 //put other rotators here
+                stringstream tmpOutSignalx; tmpOutSignalx << "post_s"<<stage<<"_r"<<row<<"_x";
+                stringstream tmpOutSignaly; tmpOutSignaly << "post_s"<<stage<<"_r"<<row<<"_y";
+                string rotatorString = rotators.at(FFTRealization[row].at(stage-1));
+                Operator* cMult = new flopoco::ConstMultPAG(target,wIn+1,rotatorString);
+                cMult->setName("rotator",to_string(FFTRealization[row].at(stage-1)));
+                inPortMap(cMult,"x_in0",tmpSignalx.str());
+                inPortMap(cMult,"x_in1",tmpSignaly.str());
+                list<flopoco::ConstMultPAG::output_signal_info> tmp_output_list = ((flopoco::ConstMultPAG*)(cMult))->GetOutputList();
+                int iteration=0;
+                for (list<flopoco::ConstMultPAG::output_signal_info>::iterator it=tmp_output_list.begin(); it!=tmp_output_list.end(); it++){
+                    iteration++;
+                    if (iteration == 1)
+                        outPortMap(cMult,(*it).signal_name,tmpOutSignalx.str(),true);
+                    else if (iteration == 2)
+                        outPortMap(cMult,(*it).signal_name,tmpOutSignaly.str(),true);
+                    else
+                        THROWERROR("Bad CMM component in Fully Parallel FFT");
+                }
+                addSubComponent(cMult);
+                stringstream rotatorName;
+                rotatorName << "rotator_" << FFTRealization[row].at(stage-1) << "at_s" << stage << "_r" << row;
+                vhdl << instance(cMult, rotatorName.str());
+
+            }
+            else{ //last stage feeds outputs and doesn't include rotations
+                stringstream tmpSignalx; tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
+                stringstream tmpSignaly; tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
+                if(!((row) & (1<<((int)(log2(N)-stage))))){
+                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x)+signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y)+signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y),"<<wIn+1<<")));"<<endl;
+                }else{
+                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x)-signed(post_s"<<stage-1<<"_r"<<row<<"_x),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y)-signed(post_s"<<stage-1<<"_r"<<row<<"_y),"<<wIn+1<<")));"<<endl;
+                }
+                //Assigning the output
+                vhdl << tab  <<  "Out_"<< getBitReverse(row,log2(N)) << "_x <= " << tmpSignalx.str() << "(" << wIn << " downto 1);" << endl;
+                vhdl << tab  <<  "Out_"<< getBitReverse(row,log2(N)) << "_y <= " << tmpSignaly.str() << "(" << wIn << " downto 1);" << endl;
             }
 
         }
@@ -178,6 +232,15 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotatorFileN
 void FullyParallelFFT::emulate(TestCase * tc) {
     /* This function will be used when the TestBench command is used in the command line
            we have to provide a complete and correct emulation of the operator, in order to compare correct output generated by this function with the test input generated by the vhdl code */
+}
+
+
+int FullyParallelFFT::getBitReverse(int value, int bits) {
+    int revValue=0;
+    for (int i=0;i<bits;i++){
+        if (((value) & (1<<i))) revValue+= pow(2,bits-i-1);
+    }
+    return revValue;
 }
 
 

@@ -165,6 +165,9 @@
 #include "PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State.hpp"
 #include "SAD/SAD.hpp"
 #include "ConstMultPAG/ConstMultPAG.hpp"
+#include "ConstMultPAG/IntConstMultOpt.hpp"
+#include "ConstMultPAG/IntConstMultOptTernary.hpp"
+
 
 /* misc ------------------------------------------------------ */
 #include "TestBenches/Wrapper.hpp"

@@ -74,8 +74,8 @@ namespace flopoco {
 		void emulate(TestCase * tc);
 		void buildStandardTestCases(TestCaseList* tcl);
 
-		static OperatorPtr parseArguments(Target *target , vector<string> &args);
-		static void registerFactory();
+//		static OperatorPtr parseArguments(Target *target , vector<string> &args);
+//		static void registerFactory();
     public:
         ///
         /// \brief buildXilinx builds the Xilinx implementation of the primitive adder

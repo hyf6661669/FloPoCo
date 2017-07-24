@@ -10,6 +10,7 @@ using namespace std;
 namespace flopoco {
     GenericAddSub::GenericAddSub(Target* target, const uint32_t &wIn, const uint32_t &flags) : Operator(target), flags_(flags) {
         setCopyrightString( UniKs::getAuthorsString( UniKs::AUTHOR_MKLEINLEIN ) );
+        this->useNumericStd();
         srcFileName="GenericAddSub";
 		ostringstream name;
         name << "GenericAddSub_w" << wIn << "_" << printFlags();
@@ -103,6 +104,15 @@ namespace flopoco {
             vhdl << "\t" << "when others => sum_o <= (others=>'X');" << std::endl;
             vhdl << "end case;" << std::endl;
         }
+        else
+        {
+            vhdl << "\tsum_o <= std_logic_vector(" << (hasFlags(SUB_LEFT)?"-":"");
+            if(hasFlags(TERNARY))
+            {
+                vhdl << "signed(iM)" << (hasFlags(SUB_MID)?"-":"+") << " signed(iM)";
+            }
+            vhdl << "signed(iL)" << (hasFlags(SUB_RIGHT)?"-":"+") << " signed(iR));" << endl;
+        }
     }
 
     string GenericAddSub::getInputName(const uint32_t &index, const bool &c_input) const{
@@ -161,7 +171,7 @@ namespace flopoco {
 
 
 
-
+#if 0
     OperatorPtr GenericAddSub::parseArguments(Target *target, vector<string> &args) {
         /*int param0, param1;
 		UserInterface::parseInt(args, "param0", &param0); // param0 has a default value, this method will recover it if it doesnt't find it in args, 
@@ -186,5 +196,5 @@ namespace flopoco {
 											 UserDefinedOperator::parseArguments
                                              ) ;*/
 	}
-
+#endif
 }//namespace

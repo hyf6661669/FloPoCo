@@ -119,6 +119,7 @@ int main(int argc, char* argv[] )
         ConstMultPAG::registerFactory();
         IntConstMultOpt::registerFactory();
         IntConstMultOptTernary::registerFactory();
+        FullyParallelFFT::registerFactory();
 #endif
 		TargetModel::registerFactory();
 		// Uncomment me to play within FloPoCo operator development

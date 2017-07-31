@@ -88,6 +88,11 @@ ConstMultPAG::ConstMultPAG(Target* target, int wIn_, string pipelined_realizatio
     {
         ProcessConstMultPAG(target,t);
     }
+
+    /* for(OperatorPtr sc : getSubComponents())
+    {
+        cerr << "--> sub component: " << sc->getName() << endl;
+    }*/
 };
 
 ConstMultPAG::ConstMultPAG(Target *target, int wIn_, vector<vector<int64_t> >& coefficients, bool pipelined_, bool syncInOut_, int syncEveryN_, bool syncMux_)
@@ -97,7 +102,7 @@ ConstMultPAG::ConstMultPAG(Target *target, int wIn_, vector<vector<int64_t> >& c
       pipelined(pipelined_),
       syncEveryN(syncEveryN_)
 {
-        syncMux=syncMux_;
+    syncMux=syncMux_;
     output_coefficients = coefficients;
 
     stringstream coefficients_str;
@@ -123,11 +128,11 @@ ConstMultPAG::ConstMultPAG(Target *target, int wIn_, vector<vector<int64_t> >& c
 void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realization_str)
 {
     REPORT( INFO, "ConstMultPAG started with syncoptions:")
-    REPORT( INFO, "\tsyncInOut: " << (syncInOut?"enabled":"disabled"))
-    REPORT( INFO, "\tsyncMux: " << (syncMux?"enabled":"disabled"))
-    REPORT( INFO, "\tsync every " << syncEveryN << " stages" << std::endl )
+            REPORT( INFO, "\tsyncInOut: " << (syncInOut?"enabled":"disabled"))
+            REPORT( INFO, "\tsyncMux: " << (syncMux?"enabled":"disabled"))
+            REPORT( INFO, "\tsync every " << syncEveryN << " stages" << std::endl )
 
-    if(RPAGused)
+            if(RPAGused)
     {
         std::stringstream o;
         o <<  "Starting with coefficients ";
@@ -137,7 +142,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
             if(j>0) o << ",";
             o << "[";
             for(int i=0;i<(int)output_coefficients[j].size();i++){
-                 if(i>0)o <<",";
+                if(i>0)o <<",";
                 o << output_coefficients[j][i];
             }
             o << "]";
@@ -155,13 +160,13 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
     setCopyrightString(UniKs::getAuthorsString(UniKs::AUTHOR_MKLEINLEIN|UniKs::AUTHOR_MKUMM|UniKs::AUTHOR_KMOELLER));
 
     REPORT( INFO, "parse graph...")
-    validParse = pipelined_adder_graph.parse_to_graph(pipelined_realization_str);
+            validParse = pipelined_adder_graph.parse_to_graph(pipelined_realization_str,false);
 
     if(validParse)
     {
         REPORT( INFO,  "check graph...")
-        pipelined_adder_graph.check_and_correct(pipelined_realization_str);
-        pipelined_adder_graph.drawdot("pag_input_graph.dot");
+                pipelined_adder_graph.check_and_correct(pipelined_realization_str);
+        pipelined_adder_graph.drawdot("pag_input_graph.dot",true);
 
         noOfConfigurations = (*pipelined_adder_graph.nodes_list.begin())->output_factor.size();
         noOfInputs = (*pipelined_adder_graph.nodes_list.begin())->output_factor[0].size();
@@ -171,11 +176,11 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
             if ((*iter)->stage > noOfPipelineStages) noOfPipelineStages=(*iter)->stage;
 
         REPORT( INFO, "noOfInputs: " << noOfInputs)
-        REPORT( INFO, "noOfConfigurations: " << noOfConfigurations)
-        REPORT( INFO, "noOfPipelineStages: " << noOfPipelineStages)
+                REPORT( INFO, "noOfConfigurations: " << noOfConfigurations)
+                REPORT( INFO, "noOfPipelineStages: " << noOfPipelineStages)
 
-        if(noOfConfigurations>1)
-            addInput("config_no",configurationSignalWordsize);
+                if(noOfConfigurations>1)
+                addInput("config_no",configurationSignalWordsize);
 
         ConstMultPAG_TYPES::ConstMultPAG_BASE::target_ID = target->getID();
         ConstMultPAG_TYPES::ConstMultPAG_BASE::noOfConfigurations = noOfConfigurations;
@@ -185,11 +190,11 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
         //IDENTIFY NODE
         REPORT(INFO,"identifiing nodes..")
 
-        map<adder_graph_base_node_t*,ConstMultPAG_TYPES::ConstMultPAG_BASE*> additionalNodeInfoMap;
+                map<adder_graph_base_node_t*,ConstMultPAG_TYPES::ConstMultPAG_BASE*> additionalNodeInfoMap;
         map<int,list<adder_graph_base_node_t*> > stageNodesMap;
         for (std::list<adder_graph_base_node_t*>::iterator iter = pipelined_adder_graph.nodes_list.begin();
-            iter != pipelined_adder_graph.nodes_list.end();
-            ++iter)
+             iter != pipelined_adder_graph.nodes_list.end();
+             ++iter)
         {
             if( (*iter)->stage > noOfPipelineStages ) noOfPipelineStages = (*iter)->stage;
 
@@ -200,12 +205,12 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
             t->target = target;
 
             if      (  t->nodeType == ConstMultPAG_TYPES::NODETYPE_ADDSUB2_CONF
-                    || t->nodeType == ConstMultPAG_TYPES::NODETYPE_ADDSUB3_2STATE
-                    || t->nodeType == ConstMultPAG_TYPES::NODETYPE_ADDSUB3_CONF
-                    ){
+                       || t->nodeType == ConstMultPAG_TYPES::NODETYPE_ADDSUB3_2STATE
+                       || t->nodeType == ConstMultPAG_TYPES::NODETYPE_ADDSUB3_CONF
+                       ){
                 REPORT(DEBUG,"has decoder")
 
-                conf_adder_subtractor_node_t* cc = new conf_adder_subtractor_node_t();
+                        conf_adder_subtractor_node_t* cc = new conf_adder_subtractor_node_t();
                 cc->stage = (*iter)->stage-1;
                 stageNodesMap[(*iter)->stage-1].push_back( cc );
                 ((ConstMultPAG_TYPES::ConstMultPAG_BASE_CONF*)t)->decoder->outputSignalName = t->outputSignalName + "_decode";
@@ -215,7 +220,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
             }else if(t->nodeType == ConstMultPAG_TYPES::NODETYPE_MUX){
                 REPORT(DEBUG,"has decoder")
 
-                mux_node_t* cc = new mux_node_t();
+                        mux_node_t* cc = new mux_node_t();
                 cc->stage = (*iter)->stage-1;
                 stageNodesMap[(*iter)->stage-1].push_back( cc );
                 ((ConstMultPAG_TYPES::ConstMultPAG_MUX*)t)->decoder->outputSignalName = t->outputSignalName + "_decode";
@@ -228,17 +233,17 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
             //additionalNodeInfoMap.insert( std::make_pair<adder_graph_base_node_t*,ConstMultPAG_TYPES::ConstMultPAG_BASE*>(*iter,t) );
             additionalNodeInfoMap.insert( {*iter,t} );
         }
-            //IDENTIFY CONNECTIONS
+        //IDENTIFY CONNECTIONS
         REPORT(INFO,"identifiing node connections..")
-        for (std::list<adder_graph_base_node_t*>::iterator iter = pipelined_adder_graph.nodes_list.begin();
-            iter != pipelined_adder_graph.nodes_list.end();
-            ++iter)
+                for (std::list<adder_graph_base_node_t*>::iterator iter = pipelined_adder_graph.nodes_list.begin();
+                iter != pipelined_adder_graph.nodes_list.end();
+        ++iter)
         {
             identifyOutputConnections(*iter,additionalNodeInfoMap);
         }
         printAdditionalNodeInfo(additionalNodeInfoMap);
 
-/*
+        /*
             //IDENTIFY STAGE MERGES
         for( int i=1;i<=noOfPipelineStages;i++ )
         {
@@ -309,19 +314,19 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
 
         //START BUILDING NODES
         REPORT(INFO,"building nodes..")
-        int unpiped_stage_count=0;
+                int unpiped_stage_count=0;
         bool isMuxStage = false;
         for(unsigned int currentStage=0;currentStage<=(unsigned int)noOfPipelineStages;currentStage++)
         {
             isMuxStage = false;
             for (std::list<adder_graph_base_node_t*>::iterator operationNode = stageNodesMap[currentStage].begin();
-                operationNode != stageNodesMap[currentStage].end();
-                ++operationNode)
+                 operationNode != stageNodesMap[currentStage].end();
+                 ++operationNode)
             {
                 ConstMultPAG_TYPES::ConstMultPAG_BASE* op_node = additionalNodeInfoMap[(*operationNode)];
                 REPORT( INFO, op_node->outputSignalName << " as " << op_node->get_name())
 
-                if(op_node->nodeType == ConstMultPAG_TYPES::NODETYPE_INPUT)
+                        if(op_node->nodeType == ConstMultPAG_TYPES::NODETYPE_INPUT)
                 {
                     input_node_t* t = (input_node_t*)op_node->base_node;
 
@@ -338,7 +343,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
                     input_signals.push_back(inputSignalName.str());
                 }
                 else
-                    vhdl << op_node->get_realisation( additionalNodeInfoMap );
+                vhdl << op_node->get_realisation( additionalNodeInfoMap );
 
                 if(op_node->nodeType == ConstMultPAG_TYPES::NODETYPE_MUX ||
                         op_node->nodeType == ConstMultPAG_TYPES::NODETYPE_AND)
@@ -386,7 +391,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
             if(doPipe)
             {
                 REPORT( DETAILED, "----pipeline----")
-                nextCycle();
+                        nextCycle();
                 unpiped_stage_count = 0;
             }
 
@@ -400,44 +405,46 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
                  operationNode != stageNodesMap[noOfPipelineStages].end();
                  ++operationNode)
             {
-                ConstMultPAG_TYPES::ConstMultPAG_BASE* op_node = additionalNodeInfoMap[(*operationNode)];
-                stringstream outputSignalName;
-                outputSignalName << "x_out" << realizedOutputNodes;
-                realizedOutputNodes++;
-                for(int j=0; j < noOfConfigurations; j++) {
-                    outputSignalName << "_c";
-                    for(int i=0; i < noOfInputs; i++)
-                    {
-                        if(i>0) outputSignalName << "v" ;
-                        outputSignalName << (((*operationNode)->output_factor[j][i] < 0) ? "m" : "");
-                        outputSignalName << abs((*operationNode)->output_factor[j][i]);
+                if (is_a<output_node_t>(*(*operationNode))){
+                    ConstMultPAG_TYPES::ConstMultPAG_BASE* op_node = additionalNodeInfoMap[(*operationNode)];
+                    stringstream outputSignalName;
+                    outputSignalName << "x_out" << realizedOutputNodes;
+                    realizedOutputNodes++;
+                    for(int j=0; j < noOfConfigurations; j++) {
+                        outputSignalName << "_c";
+                        for(int i=0; i < noOfInputs; i++)
+                        {
+                            if(i>0) outputSignalName << "v" ;
+                            outputSignalName << (((*operationNode)->output_factor[j][i] < 0) ? "m" : "");
+                            outputSignalName << abs((*operationNode)->output_factor[j][i]);
+                        }
                     }
-                }
-                addOutput(outputSignalName.str(), op_node->wordsize);
+                    addOutput(outputSignalName.str(), op_node->wordsize);
 
-                sig_info.output_factors = (*operationNode)->output_factor;
-                sig_info.signal_name = outputSignalName.str();
-                sig_info.wordsize = op_node->wordsize;
-                output_signals.push_back( sig_info );
-                vhdl << "\t" << outputSignalName.str() << " <= " << op_node->outputSignalName << ";" << endl;
+                    sig_info.output_factors = (*operationNode)->output_factor;
+                    sig_info.signal_name = outputSignalName.str();
+                    sig_info.wordsize = op_node->wordsize;
+                    output_signals.push_back( sig_info );
+                    vhdl << "\t" << outputSignalName.str() << " <= " << op_node->outputSignalName << ";" << endl;
+                }
             }
         }
         else
         {
             output_signal_info sig_info;
             REPORT( INFO, "Matching outputs... ")
-            short realizedOutputNodes = 0;
+                    short realizedOutputNodes = 0;
             for(vector<vector<int64_t> >::iterator iter=output_coefficients.begin();iter!=output_coefficients.end();++iter )
             {
                 {
-                std::stringstream o;
-                o << "Searching [";
-                for(int i=0;i<(int)(*iter).size();i++){
-                    if(i>0)o <<",";
-                    o << (*iter)[i];
-                }
-                o << "]... ";
-                REPORT(DETAILED,o.str());
+                    std::stringstream o;
+                    o << "Searching [";
+                    for(int i=0;i<(int)(*iter).size();i++){
+                        if(i>0)o <<",";
+                        o << (*iter)[i];
+                    }
+                    o << "]... ";
+                    REPORT(DETAILED,o.str());
                 }
 
                 vector<int64_t> node_output(*iter);
@@ -448,7 +455,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
                     normalize = true;
                     for(unsigned int i=0;i<node_output.size();i++)
                     {
-                         if( abs(node_output[i]) % 2 == 1) normalize=false;
+                        if( abs(node_output[i]) % 2 == 1) normalize=false;
                     }
                     if(normalize)
                     {
@@ -463,7 +470,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
                     std::stringstream o;
                     o << "Fundamental [";
                     for(int i=0;i<(int)node_output.size();i++){
-                         if(i>0)o <<",";
+                        if(i>0)o <<",";
                         o << node_output[i];
                     }
                     o << "] norm "<< norm_factor;
@@ -488,7 +495,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
                     {
 
                         REPORT(DETAILED, "FOUND!")
-                        found = true;
+                                found = true;
                         ConstMultPAG_TYPES::ConstMultPAG_BASE* op_node = additionalNodeInfoMap[(*operationNode)];
                         addOutput(outputSignalName.str(), op_node->wordsize + norm_factor);
                         vector<vector<int64_t> > outer;
@@ -556,20 +563,20 @@ void ConstMultPAG::emulate(TestCase * tc)
     for(list<output_signal_info>::iterator out_it= output_signals.begin();out_it!=output_signals.end();++out_it  )
     {
         REPORT( INFO, "testing: ")
-        expectedResult = 0;
+                expectedResult = 0;
         stringstream comment;
         for(int i=0; i < noOfInputs; i++)
         {
-          mpz_class output_factor;
-          if ((int)confVal<noOfConfigurations)
-              output_factor= (long signed int) (*out_it).output_factors[confVal][i];
-          else
-              output_factor= (long signed int) (*out_it).output_factors[noOfConfigurations-1][i];
+            mpz_class output_factor;
+            if ((int)confVal<noOfConfigurations)
+                output_factor= (long signed int) (*out_it).output_factors[confVal][i];
+            else
+                output_factor= (long signed int) (*out_it).output_factors[noOfConfigurations-1][i];
 
-          expectedResult += input_vec[i] * output_factor;
-          if(i != 0) comment << " + ";
-          else comment << "\t";
-          comment << input_vec[i] << " * " << output_factor;
+            expectedResult += input_vec[i] * output_factor;
+            if(i != 0) comment << " + ";
+            else comment << "\t";
+            comment << input_vec[i] << " * " << output_factor;
         }
         comment << " == " << expectedResult << endl;
 
@@ -604,12 +611,12 @@ void ConstMultPAG::emulate(TestCase * tc)
         }
         catch(string errorstr)
         {
-          cout << errorstr << endl;
+            cout << errorstr << endl;
         }
     }
 
     if(emu_conf < noOfConfigurations-1 && noOfConfigurations!=1)
-         emu_conf++;
+        emu_conf++;
     else
         emu_conf=0;
 }
@@ -715,6 +722,8 @@ string ConstMultPAG::generateSignalName(adder_graph_base_node_t *node)
         }
     }
     signalName << "_s" << node->stage;
+    if (is_a<output_node_t>(*node))
+        signalName << "_o";
     return signalName.str();
 }
 
@@ -722,44 +731,44 @@ ConstMultPAG_TYPES::ConstMultPAG_BASE* ConstMultPAG::identifyNodeType(adder_grap
 {
     if(is_a<adder_subtractor_node_t>(*node))
     {
-            adder_subtractor_node_t* t = (adder_subtractor_node_t*)node;
-            if( t->inputs.size() == 2)
+        adder_subtractor_node_t* t = (adder_subtractor_node_t*)node;
+        if( t->inputs.size() == 2)
+        {
+            if(t->input_is_negative[0] || t->input_is_negative[1])
             {
-                if(t->input_is_negative[0] || t->input_is_negative[1])
-                {
-                    ConstMultPAG_TYPES::ConstMultPAG_SUB2_1N* new_node = new ConstMultPAG_TYPES::ConstMultPAG_SUB2_1N(this);
-                    return new_node;
-                }
-                else
-                {
-                    ConstMultPAG_TYPES::ConstMultPAG_ADD2* new_node = new ConstMultPAG_TYPES::ConstMultPAG_ADD2(this);
-                    return new_node;
-                }
+                ConstMultPAG_TYPES::ConstMultPAG_SUB2_1N* new_node = new ConstMultPAG_TYPES::ConstMultPAG_SUB2_1N(this);
+                return new_node;
             }
-            else if( t->inputs.size() == 3)
+            else
             {
-                needs_unisim = true;
-                int negative_count=0;
-                if(t->input_is_negative[0]) negative_count++;
-                if(t->input_is_negative[1]) negative_count++;
-                if(t->input_is_negative[2]) negative_count++;
+                ConstMultPAG_TYPES::ConstMultPAG_ADD2* new_node = new ConstMultPAG_TYPES::ConstMultPAG_ADD2(this);
+                return new_node;
+            }
+        }
+        else if( t->inputs.size() == 3)
+        {
+            needs_unisim = true;
+            int negative_count=0;
+            if(t->input_is_negative[0]) negative_count++;
+            if(t->input_is_negative[1]) negative_count++;
+            if(t->input_is_negative[2]) negative_count++;
 
-                if(negative_count == 0)
-                {
-                    ConstMultPAG_TYPES::ConstMultPAG_ADD3* new_node = new ConstMultPAG_TYPES::ConstMultPAG_ADD3(this);
-                    return new_node;
-                }
-                else if(negative_count == 1)
-                {
-                    ConstMultPAG_TYPES::ConstMultPAG_SUB3_1N* new_node = new ConstMultPAG_TYPES::ConstMultPAG_SUB3_1N(this);
-                    return new_node;
-                }
-                else if(negative_count == 2)
-                {
-                    ConstMultPAG_TYPES::ConstMultPAG_SUB3_2N* new_node = new ConstMultPAG_TYPES::ConstMultPAG_SUB3_2N(this);
-                    return new_node;
-                }
+            if(negative_count == 0)
+            {
+                ConstMultPAG_TYPES::ConstMultPAG_ADD3* new_node = new ConstMultPAG_TYPES::ConstMultPAG_ADD3(this);
+                return new_node;
             }
+            else if(negative_count == 1)
+            {
+                ConstMultPAG_TYPES::ConstMultPAG_SUB3_1N* new_node = new ConstMultPAG_TYPES::ConstMultPAG_SUB3_1N(this);
+                return new_node;
+            }
+            else if(negative_count == 2)
+            {
+                ConstMultPAG_TYPES::ConstMultPAG_SUB3_2N* new_node = new ConstMultPAG_TYPES::ConstMultPAG_SUB3_2N(this);
+                return new_node;
+            }
+        }
     }
     else if(is_a<conf_adder_subtractor_node_t>(*node))
     {
@@ -837,7 +846,7 @@ ConstMultPAG_TYPES::ConstMultPAG_BASE* ConstMultPAG::identifyNodeType(adder_grap
             }
         }
     }
-    else if(is_a<register_node_t>(*node))
+    else if(is_a<register_node_t>(*node) || is_a<output_node_t>(*node) )
     {
         ConstMultPAG_TYPES::ConstMultPAG_REG* new_node = new ConstMultPAG_TYPES::ConstMultPAG_REG(this);
         return new_node;
@@ -898,13 +907,13 @@ ConstMultPAG_TYPES::ConstMultPAG_BASE* ConstMultPAG::identifyNodeType(adder_grap
 
         for (unsigned int n=muxInfoMap.size(); n>1; n=n-1){
             for (unsigned int i=0; i<n-1; i=i+1){
-              if (muxInfoMap.at(i).configurations.size() > muxInfoMap.at(i+1).configurations.size()){
-                ConstMultPAG_TYPES::ConstMultPAG_muxInput tmpInfo = muxInfoMap[i];
-                muxInfoMap[i] = muxInfoMap[i+1];
-                muxInfoMap[i+1] = tmpInfo;
-              }
+                if (muxInfoMap.at(i).configurations.size() > muxInfoMap.at(i+1).configurations.size()){
+                    ConstMultPAG_TYPES::ConstMultPAG_muxInput tmpInfo = muxInfoMap[i];
+                    muxInfoMap[i] = muxInfoMap[i+1];
+                    muxInfoMap[i+1] = tmpInfo;
+                }
             }
-          }
+        }
 
         short nonZeroOutputCount=0;
         for( int i=0;i<noOfConfigurations;i++ )
@@ -967,7 +976,7 @@ void ConstMultPAG::identifyOutputConnections(adder_graph_base_node_t *node, map<
             }
         }
     }
-    else if(is_a<register_node_t>(*node))
+    else if(is_a<register_node_t>(*node) || is_a<output_node_t>(*node))
     {
         register_node_t* t = (register_node_t*)node;
         infoMap[t->input]->outputConnectedTo.push_back(node);
@@ -1080,7 +1089,7 @@ bool ConstMultPAG::TryRunRPAG(string realisation, string& out)
     {
         RPAGused = true;
         REPORT( INFO, "INFO: Recognized coefficient input, try running RPAG")
-        string args,cmd;
+                string args,cmd;
         char* env_buf = NULL;
         env_buf = getenv( RPAG_ENV_VAR.c_str() );
         if( env_buf != NULL )
@@ -1096,13 +1105,13 @@ bool ConstMultPAG::TryRunRPAG(string realisation, string& out)
 
         if( cmd_ex == NULL )
         {
-          THROWERROR( "ERROR: Could not run RPAG (PATH set?)" )
+            THROWERROR( "ERROR: Could not run RPAG (PATH set?)" )
         }
         else
         {
             REPORT( INFO, "RPAG running")
-            REPORT( DETAILED, cmd )
-            string output;
+                    REPORT( DETAILED, cmd )
+                    string output;
             char buf[256];
 
             while( fgets(buf,256,cmd_ex) != NULL )
@@ -1116,11 +1125,11 @@ bool ConstMultPAG::TryRunRPAG(string realisation, string& out)
 
             if( output.size() > 0 )
                 REPORT( INFO, "RESULT: " << output)
-            else
-            {
-                THROWERROR("RPAG failed, could not create graph")
-            }
-            out=output;
+                        else
+                {
+                    THROWERROR("RPAG failed, could not create graph")
+                }
+                    out=output;
 
             pclose(cmd_ex);
         }
@@ -1150,13 +1159,13 @@ void flopoco::ConstMultPAG::registerFactory() {
                         "", //seeAlso
                         "wIn(int): Wordsize of pag inputs; \
                         graph(string): Realization string of the pag; \
-                        pipeline(bool)=true: Enable pipelining of the pag; \
-                        sync_inout(bool)=true: Enable pipeline registers for input and output stage; \
-                        sync_muxes(bool)=true: Enable counting mux-only stages as full stage; \
-                        sync_every(int)=1: Count of stages after which will be pipelined",
-                        "Nope.",
-                        ConstMultPAG::parseArguments
-                      ) ;
+            pipeline(bool)=true: Enable pipelining of the pag; \
+    sync_inout(bool)=true: Enable pipeline registers for input and output stage; \
+    sync_muxes(bool)=true: Enable counting mux-only stages as full stage; \
+    sync_every(int)=1: Count of stages after which will be pipelined",
+            "Nope.",
+            ConstMultPAG::parseArguments
+            ) ;
 }
 
 }//namespace

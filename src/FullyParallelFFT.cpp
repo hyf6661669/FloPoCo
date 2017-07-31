@@ -31,21 +31,25 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotatorFileN
     // Parse in rotators
     std::string line;
     vector<string> rotators;
+    vector<pair<int,int> > rotatorVal;
     while (std::getline(rotFile, line))
     {
         std::istringstream newLine(line);
-        int numRot;
+        int numRot,real,imag;
         string rotRealization;
-        newLine >> numRot >> rotRealization;
-        if ((unsigned int) (numRot+1 )> rotators.size())
+        newLine >> numRot >> real >> imag >> rotRealization;
+        if ((unsigned int) (numRot+1 )> rotators.size()){
             rotators.resize(numRot+1,"");
+            rotatorVal.resize(numRot+1,make_pair(0,0));
+        }
         rotators[numRot]=rotRealization;
+        rotatorVal[numRot]=make_pair(real,imag);
     }
 
     if (DEBUG<=UserInterface::verbose){
         REPORT(DEBUG,"rotators which were read in");
         for (unsigned n=0; n<rotators.size(); n++) {
-            REPORT(DEBUG,"rotator "<< n <<" is implemented by "<<rotators.at( n ));
+            REPORT(DEBUG,"rotator "<< n << " " << rotatorVal[n].first << " " << rotatorVal[n].second <<" is implemented by "<<rotators.at( n ));
         }
     }
 
@@ -117,7 +121,7 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotatorFileN
         {stringstream tmpSignal; tmpSignal << "In_"<< r << "_y";
             addInput(tmpSignal.str() , wIn);}
 
-      /*  //declare intermediate signals
+        /*  //declare intermediate signals
         for (unsigned c=0; c<n-1; c++) {
 
             {stringstream tmpSignal; tmpSignal << "post_s"<<c+1<<"_r"<<r<<"_x";
@@ -133,96 +137,158 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, string rotatorFileN
             addOutput(tmpSignal.str() , wIn);}
     }
 
+    vector<vector<bool> > negX, negY;
+    negX.resize(N);
+    negY.resize(N);
+    for (unsigned stage=1; stage<n+1; stage++) {
+        for (unsigned row=0; row<N; row++) {
+            negX[row].resize(n+1,false);
+            negY[row].resize(n+1,false);
+        }
+    }
+
     //Building the FFT
     for (unsigned stage=1; stage<n+1; stage++) {
         for (unsigned row=0; row<N; row++) {
-            if (stage==1){ //first stage requires the input
-                stringstream tmpSignalx; tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
-                stringstream tmpSignaly; tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
-                if(!((row) & (1<<((int)(log2(N)-stage))))){
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row<<"_x)+signed(In_"<<row+N/(pow(2,stage))<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row<<"_y)+signed(In_"<<row+N/(pow(2,stage))<<"_y),"<<wIn+1<<")));"<<endl;
-                }else{
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row-N/(pow(2,stage))<<"_x)-signed(In_"<<row<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(In_"<<row-N/(pow(2,stage))<<"_y)-signed(In_"<<row<<"_y),"<<wIn+1<<")));"<<endl;
-                }
+            bool swap=false;
+            stringstream tmpSignalx,tmpSignaly;
 
-                //put stage 1 rotators here
+            tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
+            tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
+
+            // get output signs and connect rotator
+            if (stage<n) {
+                // get rotator for current row
+                string rotatorString = rotators.at(FFTRealization[row].at(stage-1));
+                //put rotators here
                 stringstream tmpOutSignalx; tmpOutSignalx << "post_s"<<stage<<"_r"<<row<<"_x";
                 stringstream tmpOutSignaly; tmpOutSignaly << "post_s"<<stage<<"_r"<<row<<"_y";
-                string rotatorString = rotators.at(FFTRealization[row].at(stage-1));
-                Operator* cMult = new flopoco::ConstMultPAG(target,wIn+1,rotatorString);
+
+                Operator* cMult = new flopoco::ConstMultPAG(target,wIn+1,rotatorString,false,false,1000,false);
                 cMult->setName("rotator",to_string(FFTRealization[row].at(stage-1)));
-                inPortMap(cMult,"x_in0",tmpSignalx.str());
-                inPortMap(cMult,"x_in1",tmpSignaly.str());
+                inPortMap(cMult,"x_in0",declare(tmpSignalx.str(),wIn+1));
+                inPortMap(cMult,"x_in1",declare(tmpSignaly.str(),wIn+1));
                 list<flopoco::ConstMultPAG::output_signal_info> tmp_output_list = ((flopoco::ConstMultPAG*)(cMult))->GetOutputList();
-                int iteration=0;
-                for (list<flopoco::ConstMultPAG::output_signal_info>::iterator it=tmp_output_list.begin(); it!=tmp_output_list.end(); it++){
-                    iteration++;
-                    if (iteration == 1)
-                        outPortMap(cMult,(*it).signal_name,tmpOutSignalx.str(),true);
-                    else if (iteration == 2)
-                        outPortMap(cMult,(*it).signal_name,tmpOutSignaly.str(),true);
-                    else
-                        THROWERROR("Bad CMM component in Fully Parallel FFT");
+
+                list<flopoco::ConstMultPAG::output_signal_info>::iterator it=tmp_output_list.begin();
+
+                if((*it).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first && (*it).output_factors[0][1]==-rotatorVal[FFTRealization[row].at(stage-1)].second)
+                {
+                    swap=false; negX[row].at(stage)=false;
                 }
+                else if((*it).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].first && (*it).output_factors[0][1]==rotatorVal[FFTRealization[row].at(stage-1)].second)
+                {
+                    swap=false; negX[row].at(stage)=true;
+                }
+                else if((*it).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].second && (*it).output_factors[0][1]==rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    swap=true; negY[row].at(stage)=false;
+                }
+                else if((*it).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].second && (*it).output_factors[0][1]==-rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    swap=true; negY[row].at(stage)=true;
+                }
+
+
+                if (!swap)
+                    outPortMap(cMult,(*it).signal_name,tmpOutSignalx.str(),true);
+                else
+                    outPortMap(cMult,(*it).signal_name,tmpOutSignaly.str(),true);
+
+                it++;
+
+                if((*it).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first && (*it).output_factors[0][1]==-rotatorVal[FFTRealization[row].at(stage-1)].second)
+                {
+                    swap=true; negX[row].at(stage)=false;
+                }
+                else if((*it).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].first && (*it).output_factors[0][1]==rotatorVal[FFTRealization[row].at(stage-1)].second)
+                {
+                    swap=true; negX[row].at(stage)=true;
+                }
+                else if((*it).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].second && (*it).output_factors[0][1]==rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    swap=false; negY[row].at(stage)=false;
+                }
+                else if((*it).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].second && (*it).output_factors[0][1]==-rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    swap=false; negY[row].at(stage)=true;
+                }
+
+                if (swap){
+                    outPortMap(cMult,(*it).signal_name,tmpOutSignalx.str(),true);
+                }
+                else
+                    outPortMap(cMult,(*it).signal_name,tmpOutSignaly.str(),true);
                 addSubComponent(cMult);
                 stringstream rotatorName;
                 rotatorName << "rotator_" << FFTRealization[row].at(stage-1) << "at_s" << stage << "_r" << row;
+                cerr << rotatorName.str() << "\t swap " << swap << " negX " << negX[row].at(stage) <<  " negY " << negY[row].at(stage) << endl;
                 vhdl << instance(cMult, rotatorName.str());
+            }
+//            //put butterflies here
+//            if (stage==1){ //first stage requires the input
+//                if(!((row) & (1<<((int)(log2(N)-stage))))){
+//                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize(signed(In_"<<row<<"_x),"<<wIn+1<<")+resize(signed(In_"<<row+N/(pow(2,stage))<<"_x),"<<wIn+1<<"));"<<endl;
+//                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize(signed(In_"<<row<<"_y),"<<wIn+1<<")+resize(signed(In_"<<row+N/(pow(2,stage))<<"_y),"<<wIn+1<<"));"<<endl;
+//                }else{
+//                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize(signed(In_"<<row-N/(pow(2,stage))<<"_x),"<<wIn+1<<")-resize(signed(In_"<<row<<"_x),"<<wIn+1<<"));"<<endl;
+//                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize(signed(In_"<<row-N/(pow(2,stage))<<"_y),"<<wIn+1<<")-resize(signed(In_"<<row<<"_y),"<<wIn+1<<"));"<<endl;
+//                }
+//            }
+//            else if (stage<n) { // intermediate stages
 
-
+//                if(!((row) & (1<<((int)(log2(N)-stage))))){
+//                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x(post_s"<<stage-1<<"_r"<<row<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_x'length-"<<wIn<<")),"<<wIn+1<<")+resize("<<(negX[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-"<<wIn<<")),"<<wIn+1<<"));"<<endl;
+//                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y(post_s"<<stage-1<<"_r"<<row<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_y'length-"<<wIn<<")),"<<wIn+1<<")+resize("<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-"<<wIn<<")),"<<wIn+1<<"));"<<endl;
+//                }else{
+//                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize("<<(negX[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x'length-"<<wIn<<")),"<<wIn+1<<")-resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x(post_s"<<stage-1<<"_r"<<row<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_x'length-"<<wIn<<")),"<<wIn+1<<"));"<<endl;
+//                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize("<<(negY[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y'length-"<<wIn<<")),"<<wIn+1<<")-resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y(post_s"<<stage-1<<"_r"<<row<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_y'length-"<<wIn<<")),"<<wIn+1<<"));"<<endl;
+//                }
+//            }
+//            else{ //last stage feeds outputs and doesn't include rotations
+//                if(!((row) & (1<<((int)(log2(N)-stage))))){
+//                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x(post_s"<<stage-1<<"_r"<<row<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_x'length-"<<wIn<<")),"<<wIn+1<<")+resize("<<(negX[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-"<<wIn<<")),"<<wIn+1<<"));"<<endl;
+//                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y(post_s"<<stage-1<<"_r"<<row<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_y'length-"<<wIn<<")),"<<wIn+1<<")+resize("<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-"<<wIn<<")),"<<wIn+1<<"));"<<endl;
+//                }else{
+//                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(resize("<<(negX[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x'length-"<<wIn<<")),"<<wIn+1<<")-resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x(post_s"<<stage-1<<"_r"<<row<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_x'length-"<<wIn<<")),"<<wIn+1<<"));"<<endl;
+//                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(resize("<<(negY[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y'length-"<<wIn<<")),"<<wIn+1<<")-resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y(post_s"<<stage-1<<"_r"<<row<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_y'length-"<<wIn<<")),"<<wIn+1<<"));"<<endl;
+//                }
+//                //Assigning the output
+//                vhdl << tab  <<  "Out_"<< getBitReverse(row,log2(N)) << "_x <= " << tmpSignalx.str() << "(" << wIn << " downto 1);" << endl;
+//                vhdl << tab  <<  "Out_"<< getBitReverse(row,log2(N)) << "_y <= " << tmpSignaly.str() << "(" << wIn << " downto 1);" << endl;
+//            }
+            //put butterflies here
+            if (stage==1){ //first stage requires the input
+                if(!((row) & (1<<((int)(log2(N)-stage))))){
+                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize(signed(In_"<<row<<"_x),"<<wIn+1<<")+resize(signed(In_"<<row+N/(pow(2,stage))<<"_x),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize(signed(In_"<<row<<"_y),"<<wIn+1<<")+resize(signed(In_"<<row+N/(pow(2,stage))<<"_y),"<<wIn+1<<"));"<<endl;
+                }else{
+                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize(signed(In_"<<row-N/(pow(2,stage))<<"_x),"<<wIn+1<<")-resize(signed(In_"<<row<<"_x),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize(signed(In_"<<row-N/(pow(2,stage))<<"_y),"<<wIn+1<<")-resize(signed(In_"<<row<<"_y),"<<wIn+1<<"));"<<endl;
+                }
             }
             else if (stage<n) { // intermediate stages
-                stringstream tmpSignalx; tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
-                stringstream tmpSignaly; tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
-                if(!((row) & (1<<((int)(log2(N)-stage))))){
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x)+signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y)+signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y),"<<wIn+1<<")));"<<endl;
-                }else{
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x)-signed(post_s"<<stage-1<<"_r"<<row<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y)-signed(post_s"<<stage-1<<"_r"<<row<<"_y),"<<wIn+1<<")));"<<endl;
-                }
-                 //put other rotators here
-                stringstream tmpOutSignalx; tmpOutSignalx << "post_s"<<stage<<"_r"<<row<<"_x";
-                stringstream tmpOutSignaly; tmpOutSignaly << "post_s"<<stage<<"_r"<<row<<"_y";
-                string rotatorString = rotators.at(FFTRealization[row].at(stage-1));
-                Operator* cMult = new flopoco::ConstMultPAG(target,wIn+1,rotatorString);
-                cMult->setName("rotator",to_string(FFTRealization[row].at(stage-1)));
-                inPortMap(cMult,"x_in0",tmpSignalx.str());
-                inPortMap(cMult,"x_in1",tmpSignaly.str());
-                list<flopoco::ConstMultPAG::output_signal_info> tmp_output_list = ((flopoco::ConstMultPAG*)(cMult))->GetOutputList();
-                int iteration=0;
-                for (list<flopoco::ConstMultPAG::output_signal_info>::iterator it=tmp_output_list.begin(); it!=tmp_output_list.end(); it++){
-                    iteration++;
-                    if (iteration == 1)
-                        outPortMap(cMult,(*it).signal_name,tmpOutSignalx.str(),true);
-                    else if (iteration == 2)
-                        outPortMap(cMult,(*it).signal_name,tmpOutSignaly.str(),true);
-                    else
-                        THROWERROR("Bad CMM component in Fully Parallel FFT");
-                }
-                addSubComponent(cMult);
-                stringstream rotatorName;
-                rotatorName << "rotator_" << FFTRealization[row].at(stage-1) << "at_s" << stage << "_r" << row;
-                vhdl << instance(cMult, rotatorName.str());
 
+                if(!((row) & (1<<((int)(log2(N)-stage))))){
+                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<")+resize("<<(negX[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<")+resize("<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<"));"<<endl;
+                }else{
+                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize("<<(negX[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<")-resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize("<<(negY[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<")-resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<"));"<<endl;
+                }
             }
             else{ //last stage feeds outputs and doesn't include rotations
-                stringstream tmpSignalx; tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
-                stringstream tmpSignaly; tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
                 if(!((row) & (1<<((int)(log2(N)-stage))))){
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x)+signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y)+signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<")+resize("<<(negX[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<")+resize("<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<"));"<<endl;
                 }else{
-                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x)-signed(post_s"<<stage-1<<"_r"<<row<<"_x),"<<wIn+1<<")));"<<endl;
-                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(signed(resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y)-signed(post_s"<<stage-1<<"_r"<<row<<"_y),"<<wIn+1<<")));"<<endl;
+                    vhdl << tab << declare(tmpSignalx.str(),wIn+1) << " <= " << "std_logic_vector(resize("<<(negX[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<")-resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << declare(tmpSignaly.str(),wIn+1) << " <= " << "std_logic_vector(resize("<<(negY[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<")-resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+12-1<<" downto "<<wIn+12-16<<")),"<<wIn+1<<"));"<<endl;
                 }
                 //Assigning the output
                 vhdl << tab  <<  "Out_"<< getBitReverse(row,log2(N)) << "_x <= " << tmpSignalx.str() << "(" << wIn << " downto 1);" << endl;
                 vhdl << tab  <<  "Out_"<< getBitReverse(row,log2(N)) << "_y <= " << tmpSignaly.str() << "(" << wIn << " downto 1);" << endl;
             }
-
         }
     }
 

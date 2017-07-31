@@ -55,6 +55,7 @@ string ConstMultPAG_ADD2::get_realisation(map<adder_graph_base_node_t *, ConstMu
     adder_subtractor_node_t* t = (adder_subtractor_node_t*)(base_node);
 
     GenericAddSub* addsub = new GenericAddSub(target,wordsize);
+    //cerr << "-->" << addsub->getName() << endl;
     base_op->addSubComponent(addsub);
     for(int i=0;i<2;i++){
         ConstMultPAG_BASE* t_in=InfoMap[t->inputs[i]];
@@ -69,7 +70,7 @@ string ConstMultPAG_ADD2::get_realisation(map<adder_graph_base_node_t *, ConstMu
     base_op->vhdl << base_op->instance(addsub,outputSignalName+"_add2") << endl;
     base_op->vhdl << getNegativeShiftString( outputSignalName,wordsize,t ) << endl;
 
-    return "";
+    return "";//base_op->vhdl.str();
 }
 
 string ConstMultPAG_ADD3::get_realisation(map<adder_graph_base_node_t *, ConstMultPAG_BASE *> &InfoMap)
@@ -480,7 +481,6 @@ string ConstMultPAG_BASE::getShiftAndResizeString(ConstMultPAG_BASE *input_node,
                 neg_shift = t->input_shifts[i];
         }
     }
-
 
     stringstream tmp;
     if(!signedConversion) tmp << "std_logic_vector(";

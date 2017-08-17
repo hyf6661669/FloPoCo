@@ -1,5 +1,8 @@
 #ifndef INTCONSTMULTOPT_HPP
 #define INTCONSTMULTOPT_HPP
+
+#ifdef HAVE_PAGLIB
+
 #include <vector>
 #include <sstream>
 #include <gmp.h>
@@ -48,4 +51,6 @@ namespace flopoco{
         stringstream adderGraph;
 	};
 }
+
+#endif //HAVE_PAGLIB
 #endif

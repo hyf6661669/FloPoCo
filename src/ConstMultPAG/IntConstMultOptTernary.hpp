@@ -1,5 +1,8 @@
 #ifndef IntConstMultOptTernary_HPP
 #define IntConstMultOptTernary_HPP
+
+#ifdef HAVE_PAGLIB
+
 #include <vector>
 #include <sstream>
 #include <gmp.h>
@@ -36,4 +39,6 @@ namespace flopoco{
 
 	};
 }
+
+#endif //HAVE_PAGLIB
 #endif

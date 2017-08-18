@@ -117,6 +117,8 @@ int main(int argc, char* argv[] )
         IntPower::registerFactory();
 #ifdef HAVE_PAGLIB
         ConstMultPAG::registerFactory();
+        IntConstMultOpt::registerFactory();
+        IntConstMultOptTernary::registerFactory();
         FullyParallelFFT::registerFactory();
 #endif
 		TargetModel::registerFactory();

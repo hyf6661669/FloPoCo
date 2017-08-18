@@ -19,7 +19,7 @@ namespace flopoco {
         addInput("iL",wIn);
         addInput("iR",wIn);
         if(hasFlags(TERNARY))
-            addInput("IM",wIn);
+            addInput("iM",wIn);
 
         if( hasFlags(CONF_LEFT) )
             addInput("iL_c",1,false);

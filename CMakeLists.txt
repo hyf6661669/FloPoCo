@@ -274,6 +274,11 @@ IF( PAGSUITE_FOUND )
 	SET( PAGSUITE_DEP_SOURCES 
 		src/ConstMultPAG/ConstMultPAG
 		src/ConstMultPAG/ConstMultPAG_types
+		src/ConstMultPAG/IntConstMultOpt
+		src/ConstMultPAG/IntConstMultOptTernary
+		src/ConstMultPAG/scm_solutions
+		src/ConstMultPAG/tscm_solutions
+		src/ConstMultPAG/pagexponents
 		src/FullyParallelFFT
 	)
 ELSE( PAGSUITE_FOUND )

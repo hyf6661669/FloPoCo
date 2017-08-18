@@ -522,7 +522,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
         }
     }
 
-    cout << endl;
+    //cout << endl;
 
     pipelined_adder_graph.clear();
 }

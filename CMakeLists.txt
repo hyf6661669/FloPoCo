@@ -604,6 +604,8 @@ ${PAGSUITE_DEP_SOURCES}
 
 # If you want to add your operator, feel free
 src/UserDefinedOperator
+
+src/NeuralNetworks/ConvolutionalCore
 )
 
 TARGET_LINK_LIBRARIES(

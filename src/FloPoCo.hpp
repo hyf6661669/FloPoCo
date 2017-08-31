@@ -174,6 +174,9 @@
 #include "TestBenches/Wrapper.hpp"
 #include "UserDefinedOperator.hpp"
 
+/* neural networks ------------------------------------------------------ */
+#include "NeuralNetworks/ConvolutionalCore.hpp"
+
 
 
 /* Complex arithmetic */

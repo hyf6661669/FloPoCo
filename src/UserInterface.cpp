@@ -61,6 +61,7 @@ namespace flopoco
 		v.push_back(make_pair("TestBenches", "Test Benches"));
         v.push_back(make_pair("Primitives", "Primitive operators"));
 		v.push_back(make_pair("Miscellaneous", "Miscellaneous"));
+		v.push_back(make_pair("NeuralNetworks", "Neural Networks"));
 		return v;
 	}();
 	

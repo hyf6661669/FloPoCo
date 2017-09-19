@@ -118,19 +118,53 @@ ELSE ( WCPG_FOUND )
 	MESSAGE ( STATUS "Could not find WCPG, this will affect the FixIIR operator" )
 ENDIF ( WCPG_FOUND )
 
+# Detect presence of SCIP
 FIND_PATH(SCIP_H
 	  scip.h
 	  HINTS "/usr/local/include/scip"
 	  DOC "Path of scip.h, the include file for the SCIP library"
 )
-
-# Detect presence of SCIP
 FIND_LIBRARY(SCIP_LIB
 	NAMES scip
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCIP library")
 
-	
+
+FIND_PATH(SCALP_H
+	  ILP/Solver.h
+	  HINTS "/usr/local/include/scip"
+	  DOC "Path of main header of scalp"
+)
+FIND_LIBRARY(SCALP_LIB
+	NAMES libILP.so
+	HINTS "/usr/local/lib64/"
+	DOC "Directory of the SCALP main library")
+
+FIND_LIBRARY(SCALP_DYNAMIC_LIB
+	NAMES libILP-Dynamic.so
+	HINTS "/usr/local/lib64/"
+	DOC "Directory of the SCALP dynamic library")
+
+FIND_LIBRARY(SCALP_CPLEX_LIB
+	NAMES libILP-CPLEX.so
+	HINTS "/usr/local/lib64/"
+	DOC "Directory of the SCALP library for cplex solver backend")
+
+FIND_LIBRARY(SCALP_GUROBI_LIB
+	NAMES libILP-Gurobi.so
+	HINTS "/usr/local/lib64/"
+	DOC "Directory of the SCALP library for Gurobi solver backend")
+
+FIND_LIBRARY(SCALP_SCIP_LIB
+	NAMES libILP-SCIP.so
+	HINTS "/usr/local/lib64/"
+	DOC "Directory of the SCALP library for SCIP solver backend")
+
+FIND_LIBRARY(SCALP_LPSOLVE_LIB
+	NAMES libILP-LPSOLVE.so
+	HINTS "/usr/local/lib64/"
+	DOC "Directory of the SCALP library for LPSOLVE solver backend")
+
 #Detect presence of supporting libraries for SCIP
 FIND_LIBRARY(READLINE_LIB NAMES readline)
 FIND_LIBRARY(Z_LIB NAMES z)
@@ -142,6 +176,11 @@ FIND_LIBRARY(ZIMPL_LIB NAMES zimpl.linux.x86_64.gnu.opt)
 IF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND ZIMPL_LIB)
     SET(SCIP_FOUND TRUE)
 ENDIF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND ZIMPL_LIB)
+
+IF (SCALP_H AND SCALP_LIB AND SCALP_DYNAMIC_LIB AND (SCALP_CPLEX_LIB OR SCALP_GUROBI_LIB OR SCALP_SCIP_LIB OR SCALP_LPSOLVE_LIB))
+    SET(SCALP_FOUND TRUE)
+ENDIF (SCALP_H AND SCALP_LIB AND SCALP_DYNAMIC_LIB AND (SCALP_CPLEX_LIB OR SCALP_GUROBI_LIB OR SCALP_SCIP_LIB OR SCALP_LPSOLVE_LIB))
+
 
 IF (READLINE_LIB)
 	MESSAGE(STATUS "Found readline (supporting library of SCIP): ${READLINE_LIB}")
@@ -188,6 +227,33 @@ ELSE (SCIP_FOUND)
 ENDIF (SCIP_FOUND)
 
 
+IF (SCALP_FOUND)
+	ADD_DEFINITIONS(-DHAVE_SCALP)
+    SET(SCALP_INCLUDE_DIRS ${SCALP_H})
+
+	set(SCALP_LIBS ${SCALP_LIB} ${SCALP_DYNAMIC_LIB})
+	IF (SCALP_CPLEX_LIB)
+		set(SCALP_LIBS ${SCALP_LIBS} ${SCALP_CPLEX_LIB})
+	ENDIF (SCALP_CPLEX_LIB)
+	IF (SCALP_GUROBI_LIB)
+		set(SCALP_LIBS ${SCALP_LIBS} ${SCALP_GUROBI_LIB})
+	ENDIF (SCALP_GUROBI_LIB)
+	
+	IF (SCALP_SCIP_LIB)
+		set(SCALP_LIBS ${SCALP_LIBS} ${SCALP_SCIP_LIB})
+	ENDIF (SCALP_SCIP_LIB)
+	
+	IF (SCALP_LPSOLVE_LIB)
+		set(SCALP_LIBS ${SCALP_LIBS} ${SCALP_LPSOLVE_LIB})
+	ENDIF (SCALP_LPSOLVE_LIB)
+	
+	MESSAGE(STATUS "Found SCALP: ${SCALP_INCLUDE_DIRS} ${SCALP_LIB}")
+	MESSAGE(STATUS "      Using the following ILP Solvers: ${SCALP_LIBS}")  
+ELSE (SCALP_FOUND)
+	MESSAGE(STATUS "Could not find SCALP, no ILP solver available (used for advanced bit heap compression and large multipliers), download and compile from https://digidev.digi.e-technik.uni-kassel.de/scalp/ (${SCALP_INCLUDE_DIRS} ${SCALP_LIB})")
+ENDIF (SCALP_FOUND)
+
+
 # Detect pag_suite
 
 SET(PagSuite_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -216,7 +282,7 @@ ENDIF(FLEXPP_EXECUTABLE)
 
 # necessary to include generated files
 #INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions ${PAGSUITE_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions  ${PAGSUITE_INCLUDE_DIRS} /usr/include/boost148)
+INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions  ${PAGSUITE_INCLUDE_DIRS} /usr/include/boost148 ${SCALP_INCLUDE_DIRS})
 ADD_CUSTOM_COMMAND(
 	OUTPUT VHDLLexer.cpp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/VHDLLexerRule.l
@@ -538,6 +604,8 @@ ${PAGSUITE_DEP_SOURCES}
 
 # If you want to add your operator, feel free
 src/UserDefinedOperator
+
+src/NeuralNetworks/ConvolutionalCore
 )
 
 TARGET_LINK_LIBRARIES(
@@ -566,7 +634,15 @@ TARGET_LINK_LIBRARIES(
   ${SCIP_LIB} ${READLINE_LIB} ${Z_LIB} ${NLPI_LIB} ${LPISPX_LIB} ${SOPLEX_LIB} ${GMP_LIB} ${ZIMPL_LIB}
   )
 ENDIF (SCIP_FOUND)
+
+IF (SCALP_FOUND)
+TARGET_LINK_LIBRARIES(
+  FloPoCoLib
+  ${SCALP_LIBS}
+  )
+ENDIF (SCALP_FOUND)
 #Uni KS stop
+
 
 IF (WCPG_FOUND)
 TARGET_LINK_LIBRARIES(

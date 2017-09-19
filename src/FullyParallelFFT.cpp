@@ -32,7 +32,7 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
     // Parse in rotators
     std::string line;
     vector<string> rotators;
-    vector<pair<int,int> > rotatorVal;
+    vector<pair<int64_t,int64_t> > rotatorVal;
     while (std::getline(rotFile, line))
     {
         std::istringstream newLine(line);
@@ -147,26 +147,29 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
             negY[row].resize(n+1,false);
         }
     }
-    nextCycle();
+    // nextCycle();
     //Building the FFT
+    vector<bool> realized;
+    realized.resize(300,false);
     for (unsigned stage=1; stage<n+1; stage++) {
-        int cC = this->getCurrentCycle();
+        //int cC = this->getCurrentCycle();
         for (unsigned row=0; row<N; row++) {
+            bool swap_outputs = false;
+            bool swap_inputs = false;
 
-            bool swap=false;
             stringstream tmpSignalx,tmpSignaly;
 
             tmpSignalx << "pre_s"<<stage<<"_r"<<row<<"_x";
             tmpSignaly << "pre_s"<<stage<<"_r"<<row<<"_y";
 
 
-            this->setCycle(cC);
+            // this->setCycle(cC);
             declare(tmpSignalx.str(),wIn+1);
             declare(tmpSignaly.str(),wIn+1);
-            this->setCycle(this->getCycleFromSignal(tmpSignalx.str())+1);
+            // this->setCycle(this->getCycleFromSignal(tmpSignalx.str())+1);
 
 
-            // get output signs and connect rotator
+            // get right output signs and connect rotator
             if (stage<n) {
                 // get rotator for current row
                 string rotatorString = rotators.at(FFTRealization[row].at(stage-1));
@@ -174,70 +177,144 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
                 stringstream tmpOutSignalx; tmpOutSignalx << "post_s"<<stage<<"_r"<<row<<"_x";
                 stringstream tmpOutSignaly; tmpOutSignaly << "post_s"<<stage<<"_r"<<row<<"_y";
 
-                Operator* cMult = new flopoco::ConstMultPAG(target,wIn+1,rotatorString,true,false,3,false);
+                Operator* cMult = new flopoco::ConstMultPAG(target,wIn+1,rotatorString,false,false,12,false);
                 cMult->setName("rotator",to_string(FFTRealization[row].at(stage-1)));
                 //cMult->setCycle(cC+1);
-                inPortMap(cMult,"x_in0",tmpSignalx.str());
-                inPortMap(cMult,"x_in1",tmpSignaly.str());
+
 
                 list<flopoco::ConstMultPAG::output_signal_info> tmp_output_list = ((flopoco::ConstMultPAG*)(cMult))->GetOutputList();
 
-                list<flopoco::ConstMultPAG::output_signal_info>::iterator it=tmp_output_list.begin();
-
-                if((*it).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first && (*it).output_factors[0][1]==-rotatorVal[FFTRealization[row].at(stage-1)].second)
-                {
-                    swap=false; negX[row].at(stage)=false;
-                }
-                else if((*it).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].first && (*it).output_factors[0][1]==rotatorVal[FFTRealization[row].at(stage-1)].second)
-                {
-                    swap=false; negX[row].at(stage)=true;
-                }
-                else if((*it).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].second && (*it).output_factors[0][1]==rotatorVal[FFTRealization[row].at(stage-1)].first)
-                {
-                    swap=true; negY[row].at(stage)=false;
-                }
-                else if((*it).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].second && (*it).output_factors[0][1]==-rotatorVal[FFTRealization[row].at(stage-1)].first)
-                {
-                    swap=true; negY[row].at(stage)=true;
-                }
+                list<flopoco::ConstMultPAG::output_signal_info>::iterator first_output=tmp_output_list.begin();
+                list<flopoco::ConstMultPAG::output_signal_info>::iterator second_output= first_output;second_output++;
 
 
-                if (!swap)
-                    outPortMap(cMult,(*it).signal_name,tmpOutSignalx.str(),true);
+                if (    (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].second
+                        &&  (*first_output).output_factors[0][1] == rotatorVal[FFTRealization[row].at(stage-1)].first
+                        &&  (*second_output).output_factors[0][0] == rotatorVal[FFTRealization[row].at(stage-1)].first
+                        &&  (*second_output).output_factors[0][1]== -rotatorVal[FFTRealization[row].at(stage-1)].second)
+                {
+                    swap_outputs = true;
+                    //cerr << "detected swap outputs for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*first_output).output_factors[0][1] == -rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][0] == -rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][1]== -rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    negY[row].at(stage)=true;
+                    //cerr << "detected neg Y outputs for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*first_output).output_factors[0][1] == rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][0] == rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][1]== rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    negX[row].at(stage)=true;
+                    //cerr << "detected neg X outputs for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*first_output).output_factors[0][1] == rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][0] == -rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][1]== -rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    negY[row].at(stage)=true;
+                    negX[row].at(stage)=true;
+                    //cerr << "detected neg X and neg Y outputs for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*first_output).output_factors[0][1] == rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][0] == -rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][1]== rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    swap_inputs = true;
+                    swap_outputs = true;
+                    //cerr << "detected swap inputs and outputs for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*first_output).output_factors[0][1] == rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*second_output).output_factors[0][0] == rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*second_output).output_factors[0][1]== -rotatorVal[FFTRealization[row].at(stage-1)].second)
+                {
+
+                    swap_outputs = true;
+                    negX[row].at(stage)=true;
+                    //cerr << "detected swap outputs and neg X for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*first_output).output_factors[0][1] == -rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][0] == rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][1]== -rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    swap_inputs = true;
+                    swap_outputs = true;
+                    negX[row].at(stage)=true;
+                    negY[row].at(stage)=true;
+                    //cerr << "detected swap inputs and outputs neg X and neg Y for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]== -rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*first_output).output_factors[0][1] == -rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*second_output).output_factors[0][0] == rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*second_output).output_factors[0][1]== -rotatorVal[FFTRealization[row].at(stage-1)].second)
+                {
+                    swap_outputs = true;
+                    negY[row].at(stage)=true;
+                    //cerr << "detected swap outputs neg Y for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]== -rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*first_output).output_factors[0][1] == -rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*second_output).output_factors[0][0] == -rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*second_output).output_factors[0][1]== rotatorVal[FFTRealization[row].at(stage-1)].second)
+                {
+                    swap_outputs = true;
+                    negX[row].at(stage)=true;
+                    negY[row].at(stage)=true;
+                    //cerr << "detected swap outputs negX and neg Y for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else if (    (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first
+                             &&  (*first_output).output_factors[0][1] == -rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][0] == rotatorVal[FFTRealization[row].at(stage-1)].second
+                             &&  (*second_output).output_factors[0][1]== rotatorVal[FFTRealization[row].at(stage-1)].first)
+                {
+                    //cerr << "ok for " << FFTRealization[row].at(stage-1) << endl;
+                }
+                else {
+                    cerr << "!!! no rule to build " << FFTRealization[row].at(stage-1) << endl;}
+                    if (!realized[FFTRealization[row].at(stage-1)]) {
+                        cerr << endl << (*first_output).output_factors[0][0] << "," <<(*first_output).output_factors[0][1] << endl << (*second_output).output_factors[0][0] << "," <<(*second_output).output_factors[0][1] ;
+                        cerr << endl <<" requ. for "<< FFTRealization[row].at(stage-1)<<" is: " << endl << rotatorVal[FFTRealization[row].at(stage-1)].first << "," << -rotatorVal[FFTRealization[row].at(stage-1)].second << endl << rotatorVal[FFTRealization[row].at(stage-1)].second <<  ","<< rotatorVal[FFTRealization[row].at(stage-1)].first  << endl;
+                        realized[FFTRealization[row].at(stage-1)]=true;
+                        cerr << "action is: swap_inputs = " << swap_inputs << " -- swap_outputs = " <<swap_outputs << " -- negX = " << negX[row].at(stage) << " -- negY = " << negY[row].at(stage) << endl;
+                    }
+
+                if (!swap_inputs)
+                {
+                    inPortMap(cMult,"x_in0",tmpSignalx.str());
+                    inPortMap(cMult,"x_in1",tmpSignaly.str());
+                }
                 else
-                    outPortMap(cMult,(*it).signal_name,tmpOutSignaly.str(),true);
-
-                it++;
-
-                if((*it).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first && (*it).output_factors[0][1]==-rotatorVal[FFTRealization[row].at(stage-1)].second)
                 {
-                    swap=true; negX[row].at(stage)=false;
-                }
-                else if((*it).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].first && (*it).output_factors[0][1]==rotatorVal[FFTRealization[row].at(stage-1)].second)
-                {
-                    swap=true; negX[row].at(stage)=true;
-                }
-                else if((*it).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].second && (*it).output_factors[0][1]==rotatorVal[FFTRealization[row].at(stage-1)].first)
-                {
-                    swap=false; negY[row].at(stage)=false;
-                }
-                else if((*it).output_factors[0][0]==-rotatorVal[FFTRealization[row].at(stage-1)].second && (*it).output_factors[0][1]==-rotatorVal[FFTRealization[row].at(stage-1)].first)
-                {
-                    swap=false; negY[row].at(stage)=true;
+                    inPortMap(cMult,"x_in0",tmpSignaly.str());
+                    inPortMap(cMult,"x_in1",tmpSignalx.str());
                 }
 
-                if (swap){
-                    outPortMap(cMult,(*it).signal_name,tmpOutSignalx.str(),true);
+                if (!swap_outputs)
+                {
+                    outPortMap(cMult,(*first_output).signal_name,tmpOutSignalx.str(),true);
+                    outPortMap(cMult,(*second_output).signal_name,tmpOutSignaly.str(),true);
                 }
                 else
-                    outPortMap(cMult,(*it).signal_name,tmpOutSignaly.str(),true);
+                {
+                    outPortMap(cMult,(*first_output).signal_name,tmpOutSignaly.str(),true);
+                    outPortMap(cMult,(*second_output).signal_name,tmpOutSignalx.str(),true);
+                }
+
                 addSubComponent(cMult);
                 stringstream rotatorName;
                 rotatorName << "rotator_" << FFTRealization[row].at(stage-1) << "at_s" << stage << "_r" << row;
-                // cerr << rotatorName.str() << "\t swap " << swap << " negX " << negX[row].at(stage) <<  " negY " << negY[row].at(stage) << endl;
+                //cerr << rotatorName.str() << "\t swap " << swap << " negX " << negX[row].at(stage) <<  " negY " << negY[row].at(stage) << endl;
                 vhdl << instance(cMult, rotatorName.str());
             }
-            this->setCycle(cC);
+            //this->setCycle(cC);
             //put butterflies here
             if (stage==1){ //first stage requires the input
                 if(!((row) & (1<<((int)(log2(N)-stage))))){
@@ -251,22 +328,22 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
             else if (stage<n) { // intermediate stages
 
                 if(!((row) & (1<<((int)(log2(N)-stage))))){
-                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")+resize("<<(negX[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
-                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")+resize("<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector("<<(negX[row].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")"<<(negX[row+N/(pow(2,stage))].at(stage-1)?"-":"+")<<"resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector("<<(negY[row].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")"<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"+")<<"resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
                 }else{
-                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize("<<(negX[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")-resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
-                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize("<<(negY[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")-resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector("<<(negX[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")"<<(negX[row].at(stage-1)?"+":"-")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector("<<(negY[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")"<<(negY[row].at(stage-1)?"+":"-")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
                 }
             }
             else{ //last stage feeds outputs and doesn't include rotations
                 if(!((row) & (1<<((int)(log2(N)-stage))))){
-                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector(resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")+resize("<<(negX[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
-                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")+resize("<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignalx.str() << " <= " << "std_logic_vector("<<(negX[row].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")"<<(negX[row+N/(pow(2,stage))].at(stage-1)?"-":"+")<<"resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector("<<(negY[row].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")"<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"+")<<"resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
                 }else{
-                    vhdl << tab << tmpSignalx.str()<< " <= " << "std_logic_vector(resize("<<(negX[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")-resize("<<(negX[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
-                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector(resize("<<(negY[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")-resize("<<(negY[row].at(stage-1)?"-":"")<<"signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignalx.str()<< " <= " << "std_logic_vector("<<(negX[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")"<<(negX[row].at(stage-1)?"+":"-")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
+                    vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector("<<(negY[row-N/(pow(2,stage))].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row-N/(pow(2,stage))<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<")"<<(negY[row].at(stage-1)?"+":"-")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y("<<wIn+bC-1<<" downto "<<bC<<")),"<<wIn+1<<"));"<<endl;
                 }
-                this->setCycle(cC+1);
+                // this->setCycle(cC+1);
                 //Assigning the output
                 vhdl << tab  <<  "Out_"<< getBitReverse(row,log2(N)) << "_x <= " << tmpSignalx.str() << "(" << wIn << " downto 1);" << endl;
                 vhdl << tab  <<  "Out_"<< getBitReverse(row,log2(N)) << "_y <= " << tmpSignaly.str() << "(" << wIn << " downto 1);" << endl;
@@ -274,11 +351,10 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
         }
         if(stage<n)
         {
-            nextCycle();
-            nextCycle();
-            nextCycle();
-
+            // nextCycle();
+            // nextCycle();
         }
+        //else nextCycle();
     }
 }
 

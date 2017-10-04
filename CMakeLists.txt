@@ -131,37 +131,37 @@ FIND_LIBRARY(SCIP_LIB
 
 
 FIND_PATH(SCALP_H
-	  ILP/Solver.h
+          ScaLP/Solver.h
 	  HINTS "/usr/local/include/scip"
 	  DOC "Path of main header of scalp"
 )
 FIND_LIBRARY(SCALP_LIB
-	NAMES libILP.so
+        NAMES libScaLP.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP main library")
 
 FIND_LIBRARY(SCALP_DYNAMIC_LIB
-	NAMES libILP-Dynamic.so
+        NAMES libScaLP-Dynamic.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP dynamic library")
 
 FIND_LIBRARY(SCALP_CPLEX_LIB
-	NAMES libILP-CPLEX.so
+        NAMES libScaLP-CPLEX.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP library for cplex solver backend")
 
 FIND_LIBRARY(SCALP_GUROBI_LIB
-	NAMES libILP-Gurobi.so
+        NAMES libScaLP-Gurobi.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP library for Gurobi solver backend")
 
 FIND_LIBRARY(SCALP_SCIP_LIB
-	NAMES libILP-SCIP.so
+        NAMES libScaLP-SCIP.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP library for SCIP solver backend")
 
 FIND_LIBRARY(SCALP_LPSOLVE_LIB
-	NAMES libILP-LPSOLVE.so
+        NAMES libScaLP-LPSOLVE.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP library for LPSOLVE solver backend")
 

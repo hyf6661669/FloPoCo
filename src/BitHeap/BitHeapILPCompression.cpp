@@ -3,9 +3,9 @@
 #include "BitHeapILPCompression.hpp"
 
 #ifdef HAVE_SCALP
-#include <ILP/Solver.h>
-#include <ILP/Exception.h>    // ILP::Exception
-#include <ILP/SolverDynamic.h> // ILP::newSolverDynamic
+#include <ScaLP/Solver.h>
+#include <ScaLP/Exception.h>    // ScaLP::Exception
+#include <ScaLP/SolverDynamic.h> // ScaLP::newSolverDynamic
 #endif //HAVE_SCALP
 
 namespace flopoco
@@ -29,25 +29,25 @@ BitHeapILPCompression::BitHeapILPCompression(BitHeap *bh)
         
 #ifdef HAVE_SCALP
         
-		ILP::Solver s = ILP::Solver(ILP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
+        ScaLP::Solver s = ScaLP::Solver(ScaLP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
 		s.quiet=true; // disable solver output
 		
 		// declare the Variables
-		ILP::Variable x = ILP::newIntegerVariable("x"); // x is free
-		// ILP::Variable x = ILP::newIntegerVariable("x",-ILP::INF(),ILP::INF()); // alternate
-		ILP::Variable y = ILP::newRealVariable("y",12.5,26);
+        ScaLP::Variable x = ScaLP::newIntegerVariable("x"); // x is free
+        // ScaLP::Variable x = ScaLP::newIntegerVariable("x",-ScaLP::INF(),ScaLP::INF()); // alternate
+        ScaLP::Variable y = ScaLP::newRealVariable("y",12.5,26);
 		
 		// Set the Objective
-		ILP::Term t = x;
-		ILP::Objective o = ILP::maximize(t);
+        ScaLP::Term t = x;
+        ScaLP::Objective o = ScaLP::maximize(t);
 		s.setObjective(o); // alternate: s<<o;
 		
 		// print objective
 		std::cout << "Objective: " << o << std::endl;
 		
 		// add the Constraints
-		ILP::Constraint c1 = x+y<=30;
-		ILP::Constraint c2 = 5<=x<=30;
+        ScaLP::Constraint c1 = x+y<=30;
+        ScaLP::Constraint c2 = 5<=x<=30;
 		s<<c1<<c2;
 		//s.addConstraint(c1); // alternate
 		
@@ -56,13 +56,13 @@ BitHeapILPCompression::BitHeapILPCompression(BitHeap *bh)
 		s.writeLP("simple_gurobi.lp");
 		
 		// Try to solve
-		ILP::status stat = s.solve();
+        ScaLP::status stat = s.solve();
 		
 		// print results
 		std::cout << "The result is " << stat << std::endl;
-		if(stat==ILP::status::OPTIMAL || stat==ILP::status::FEASIBLE)
+        if(stat==ScaLP::status::OPTIMAL || stat==ScaLP::status::FEASIBLE)
 		{
-		  ILP::Result r = s.getResult();
+          ScaLP::Result r = s.getResult();
 		  std::cout << r << std::endl;
 		}
 		

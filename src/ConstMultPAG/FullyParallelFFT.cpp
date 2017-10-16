@@ -19,17 +19,17 @@ namespace flopoco {
 
 
 
-FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rotatorFileName_, string FFTRealizationFileName_, bool intPip_)
+FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rotatorFileName_, string FFTAlgorithmFileName_, bool intPip_)
     : Operator(target),
       wIn(wIn_),
       bC(bC_),
       rotatorFileName(rotatorFileName_),
-      FFTRealizationFileName(FFTRealizationFileName_),
+      FFTAlgorithmFileName(FFTAlgorithmFileName_),
       intPip(intPip_)
 {
 
     std::ifstream rotFile(rotatorFileName);
-    std::ifstream FFTFile(FFTRealizationFileName);
+    std::ifstream FFTFile(FFTAlgorithmFileName);
 
     // Parse in rotators
     std::string line;
@@ -459,14 +459,14 @@ void FullyParallelFFT::buildStandardTestCases(TestCaseList * tcl) {
 
 OperatorPtr FullyParallelFFT::parseArguments(Target *target, vector<string> &args) {
     int wIn, bC;
-    string rotatorFileName, FFTRealizationFileName;
+    string rotatorFileName, FFTAlgorithmFileName;
     bool intPip;
     UserInterface::parseInt(args, "wIn", &wIn); // param0 has a default value, this method will recover it if it doesnt't find it in args,
     UserInterface::parseInt(args, "bC", &bC);
     UserInterface::parseString(args, "rotatorFileName", &rotatorFileName);
-    UserInterface::parseString(args, "FFTRealizationFileName", &FFTRealizationFileName);
+    UserInterface::parseString(args, "FFTAlgorithmFileName", &FFTAlgorithmFileName);
     UserInterface::parseBoolean(args, "intPip", &intPip);
-    return new FullyParallelFFT(target, wIn, bC, rotatorFileName, FFTRealizationFileName, intPip);
+    return new FullyParallelFFT(target, wIn, bC, rotatorFileName, FFTAlgorithmFileName, intPip);
 }
 
 void FullyParallelFFT::registerFactory(){
@@ -480,8 +480,8 @@ void FullyParallelFFT::registerFactory(){
                        // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                        "wIn(int)=16: input word size; \
                        bC(int)=12: constant word length of rotators; \
-            rotatorFileName(string): full rotator file name; \
-    FFTRealizationFileName(string): full FFT realization file name; \
+            rotatorFileName(string): full rotator file name - see data->FFTRotators; \
+    FFTAlgorithmFileName(string): full FFT algorithm file name - see data->FFTAlgorithms; \
     intPip(bool)=true: activate interal rotator pipelining",
     // More documentation for the HTML pages. If you want to link to your blog, it is here.
     "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",

@@ -472,7 +472,7 @@ OperatorPtr FullyParallelFFT::parseArguments(Target *target, vector<string> &arg
 void FullyParallelFFT::registerFactory(){
     UserInterface::add("FullyParallelFFT", // name
                        "Generator for a fully parallel multiplier-less FFT implementation using shift and add", // description, string
-                       "Filters and FFTs", // category, from the list defined in UserInterface.cpp
+                       "FiltersEtc", // category, from the list defined in UserInterface.cpp
                        "", //seeAlso
                        // Now comes the parameter description string.
                        // Respect its syntax because it will be used to generate the parser and the docs

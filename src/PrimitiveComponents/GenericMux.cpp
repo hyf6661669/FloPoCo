@@ -20,7 +20,7 @@ namespace flopoco {
         for( uint i=0;i<inputCount;++i )
             addInput(getInputName(i),wIn);
 
-        addInput(getSelectName(), intlog2( inputCount ) );
+        addInput(getSelectName(), intlog2( inputCount-1 ) );
         addOutput(getOutputName(),wIn);
 
         if( UserInterface::useTargetSpecificOptimization && target->getVendor() == "Xilinx" )
@@ -47,18 +47,21 @@ namespace flopoco {
     }
 
     void GenericMux::buildCommon(Target* target, const uint32_t &wIn, const uint32_t &inputCount){
-        const uint16_t select_ws = intlog2( inputCount );
+        const uint16_t select_ws = intlog2( inputCount-1 );
 
-        vhdl << "case " << getSelectName() << " is" << std::endl;
+        vhdl << tab << "process" << endl;
+        vhdl << tab << "begin" << endl;
+        vhdl << tab << tab << "case " << getSelectName() << " is" << std::endl;
         for( uint i=0;i<inputCount;++i ){
-            vhdl << "\t" << "when \"";
-            for( uint j=select_ws-1;j>=0;--j )
+            vhdl << tab << tab << tab << "when \"";
+            for( int j=select_ws-1;j>=0;--j )
                 vhdl << (i&(1<<j)?"1":"0");
-            vhdl << "\" => " << getOutputName() << " <= " << getInputName(i);
+            vhdl << "\" => " << getOutputName() << " <= " << getInputName(i) << ";" << endl;
         }
 
-        vhdl << "\t" << "when others => oSum <= (others=>'X');" << std::endl;
-        vhdl << "end case;" << std::endl;
+        vhdl << tab << tab << tab << "when others => " << getOutputName() << " <= (others=>'X');" << std::endl;
+        vhdl << tab << tab << "end case;" << std::endl;
+        vhdl << tab << "end process;" << endl;
 
     }
 

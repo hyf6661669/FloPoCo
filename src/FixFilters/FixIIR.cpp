@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 #include "gmp.h"
 #include "mpfr.h"
@@ -73,7 +74,7 @@ namespace flopoco {
 			mpfr_init2(coeffb_mp[i], 10000);
 			sollya_lib_get_constant(coeffb_mp[i], node);
 			coeffb_d[i] = mpfr_get_d(coeffb_mp[i], GMP_RNDN);
-
+			REPORT(DETAILED, "b[" << i << "]=" << setprecision(15) << scientific  << coeffb_d[i]);			
 		}
 
 		for (int i=0; i< m; i++)		{
@@ -87,8 +88,8 @@ namespace flopoco {
 			mpfr_init2(coeffa_mp[i], 10000);
 			sollya_lib_get_constant(coeffa_mp[i], node);
 			coeffa_d[i] = mpfr_get_d(coeffa_mp[i], GMP_RNDN);
+			REPORT(DETAILED, "a[" << i << "]=" << scientific << setprecision(15) << coeffa_d[i]);			
 		}
-
 
 		
 		// TODO here compute H if it is not provided

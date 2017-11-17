@@ -1,13 +1,13 @@
 #ifdef HAVE_SCIP
 
 #include "BitHeapILPCompression.hpp"
-
+/*
 #ifdef HAVE_SCALP
 #include <ScaLP/Solver.h>
 #include <ScaLP/Exception.h>    // ScaLP::Exception
 #include <ScaLP/SolverDynamic.h> // ScaLP::newSolverDynamic
 #endif //HAVE_SCALP
-
+*/
 namespace flopoco
 {
 
@@ -16,7 +16,11 @@ BitHeapILPCompression::BitHeapILPCompression(BitHeap *bh)
         this->bh_ = bh;
 
         possibleCompressors_ = bh->getPossibleCompressors();
+#ifdef HAVE_SCALP
+        sol = ScaLP::Result();
+#else
         sol = NULL;
+#endif //HAVE_SCALP
         scip = NULL;
         noOfStagesUsed = -1;
         useVariableCompressors = bh->useVariableColumnCompressors;
@@ -26,38 +30,38 @@ BitHeapILPCompression::BitHeapILPCompression(BitHeap *bh)
         useFixedStageCount = false;
 
         uniqueName_ = "BitHeapILPCompression for " + bh->getName();
-        
+
 #ifdef HAVE_SCALP
-        
+
         ScaLP::Solver s = ScaLP::Solver(ScaLP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
 		s.quiet=true; // disable solver output
-		
+
 		// declare the Variables
         ScaLP::Variable x = ScaLP::newIntegerVariable("x"); // x is free
         // ScaLP::Variable x = ScaLP::newIntegerVariable("x",-ScaLP::INF(),ScaLP::INF()); // alternate
         ScaLP::Variable y = ScaLP::newRealVariable("y",12.5,26);
-		
+
 		// Set the Objective
         ScaLP::Term t = x;
         ScaLP::Objective o = ScaLP::maximize(t);
 		s.setObjective(o); // alternate: s<<o;
-		
+
 		// print objective
 		std::cout << "Objective: " << o << std::endl;
-		
+
 		// add the Constraints
         ScaLP::Constraint c1 = x+y<=30;
         ScaLP::Constraint c2 = 5<=x<=30;
 		s<<c1<<c2;
 		//s.addConstraint(c1); // alternate
-		
+
 		// write or print a LP-Format-representation
 		//std::cout << s.showLP() << std::endl;
 		s.writeLP("simple_gurobi.lp");
-		
+
 		// Try to solve
         ScaLP::status stat = s.solve();
-		
+
 		// print results
 		std::cout << "The result is " << stat << std::endl;
         if(stat==ScaLP::status::OPTIMAL || stat==ScaLP::status::FEASIBLE)
@@ -65,9 +69,44 @@ BitHeapILPCompression::BitHeapILPCompression(BitHeap *bh)
           ScaLP::Result r = s.getResult();
 		  std::cout << r << std::endl;
 		}
-		
+/*
+        s.reset();
+
+        ScaLP::Variable u = ScaLP::newIntegerVariable("u"); // u is free
+        // ScaLP::Variable u = ScaLP::newIntegerVariable("u",-ScaLP::INF(),ScaLP::INF()); // alternate
+        ScaLP::Variable v = ScaLP::newRealVariable("v",12.5,26);
+
+		// Set the Objective
+        ScaLP::Term w = u;
+        ScaLP::Objective oo = ScaLP::maximize(w);
+		s.setObjective(oo); // alternate: s<<o;
+
+		// print objective
+		std::cout << "Objective: " << oo << std::endl;
+
+		// add the Constraints
+        ScaLP::Constraint c11 = u+v<=30;
+        ScaLP::Constraint c22 = 5<=u<=30;
+		s<<c11<<c22;
+		//s.addConstraint(c1); // alternate
+
+		// write or print a LP-Format-representation
+		//std::cout << s.showLP() << std::endl;
+		s.writeLP("simple_gurobi.lp");
+
+		// Try to solve
+        ScaLP::status statt = s.solve();
+
+		// print results
+		std::cout << "The result is " << statt << std::endl;
+        if(stat==ScaLP::status::OPTIMAL || stat==ScaLP::status::FEASIBLE)
+		{
+          ScaLP::Result r = s.getResult();
+		  std::cout << r << std::endl;
+		}
+*/
 #endif //HAVE_SCALP
-		
+
 }
 
 BitHeapILPCompression::~BitHeapILPCompression()
@@ -185,11 +224,21 @@ int BitHeapILPCompression::generateProblem(){
 
     if(scip != 0) cleanUp(); //clean up if used before
 
+#ifdef HAVE_SCALP
+    cout << "before setting pointer " << endl;
+    problemSolver = new ScaLP::Solver(ScaLP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
+    solvers.push_back(problemSolver);
+    //problemSolver = solvers[solvers.size() - 1];
+    //problemSolver = ScaLP::Solver(ScaLP::newSolverDynamic({"CPLEX","SCIP","LPSolve"}));
+    //problemSolver.reset();
+
+#else
     /* initialize SCIP */
     SCIP_CALL( SCIPcreate(&scip) );
     SCIP_CALL( SCIPincludeDefaultPlugins(scip) );
     SCIP_CALL( SCIPcreateProbBasic(scip, "example") );
-
+    SCIP_VAR* tmpvar;
+#endif //HAVE_SCALP
 
 
     //create variables:
@@ -200,16 +249,21 @@ int BitHeapILPCompression::generateProblem(){
         compCountVars[s].resize(noOfCompressors);
     }
 
-    SCIP_VAR* tmpvar;
+
 
     stageVars.resize(noOfStages_+1);
     for(unsigned s=0; s < stageVars.size(); s++)
     {
         stringstream varName;
         varName << "D_" << s;
+#ifdef HAVE_SCALP
+        ScaLP::Variable tempD = ScaLP::newBinaryVariable(varName.str());
+        stageVars[s] = tempD;
+#else
         SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), 0, 1, 0, SCIP_VARTYPE_BINARY ) );
         stageVars[s] = tmpvar;
         SCIP_CALL( SCIPaddVar(scip, tmpvar) );
+#endif // HAVE_SCALP
     }
 
 
@@ -223,7 +277,22 @@ int BitHeapILPCompression::generateProblem(){
                 stringstream varName;
 
                 varName << "k_" << s << "_" << e << "_" << c;
-
+#ifdef HAVE_SCALP
+                //in scalp, we put the area (the factor) when setting the objective. therefore the conditions are not necessary.
+                ScaLP::Variable tempK = ScaLP::newIntegerVariable(varName.str(), 0, ScaLP::INF());
+                compCountVars[s][e].push_back(tempK);
+                if(useVariableCompressors){
+                    if(e >= possibleCompressors_->size()){
+                        unsigned offset = possibleCompressors_->size();
+                        if(   ((e - offset) % 3 == 2)   && c == (newBits[0].size()+s*(compOutputWordSizeMax-1)) - 1){
+                            stringstream varName;
+                            varName << "k_" << s << "_" << e << "_" << c+1;
+                            ScaLP::Variable tempK = ScaLP::newIntegerVariable(varName.str(), 0, ScaLP::INF());
+                            compCountVars[s][e].push_back(tempK);
+                        }
+                    }
+                }
+#else
                 if(!useVariableCompressors){
                     SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), 0.0, SCIPinfinity(scip), (*possibleCompressors_)[e]->areaCost, SCIP_VARTYPE_INTEGER) );
                 }
@@ -254,13 +323,13 @@ int BitHeapILPCompression::generateProblem(){
                         }
                     }
                 }
-
+#endif //HAVE_SCALP
 
             }
         }
     }
     //cout << "declaration of k done" << endl;
-
+    cout << "here" << endl;
 
     //start at second stage. bits of first stage are in U
     columnBitCountVars.clear();
@@ -269,9 +338,14 @@ int BitHeapILPCompression::generateProblem(){
         for(unsigned c=0; c < newBits[0].size()+s*(compOutputWordSizeMax-1); c++){
             stringstream varName;
             varName << "N_" << s << "_" << c;
+#ifdef HAVE_SCALP
+            ScaLP::Variable tempN = ScaLP::newIntegerVariable(varName.str(), 0, ScaLP::INF());
+            columnBitCountVars[s - 1].push_back(tempN);
+#else
             SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), 0.0, SCIPinfinity(scip), 0, SCIP_VARTYPE_INTEGER) );
             columnBitCountVars[s - 1].push_back(tmpvar);
             SCIP_CALL( SCIPaddVar(scip, tmpvar) );
+#endif //HAVE_SCALP
         }
     }
     //cout << "declaration of N done" << endl;
@@ -279,26 +353,68 @@ int BitHeapILPCompression::generateProblem(){
     newBitsCountVars.clear();
     newBitsCountVars.resize(noOfStages_+1);
     for(unsigned s=0; s < newBitsCountVars.size(); s++){
+#ifdef HAVE_SCALP
+        vector<ScaLP::Variable> tempVec;
+#else
         vector<SCIP_VAR*> tempVec;
+#endif  //HAVE_SCALP
         for(unsigned c=0; c < (((unsigned)bh_->bits.size())+s*(compOutputWordSizeMax-1)); c++){
             stringstream varName;
             varName << "U_" << s << "_" << c;
+#ifdef HAVE_SCALP
+            ScaLP::Variable tempU = ScaLP::newIntegerVariable(varName.str(), -ScaLP::INF(), ScaLP::INF());
+            tempVec.push_back(tempU);
+#else
             SCIP_CALL( SCIPcreateVarBasic(scip, &tmpvar, varName.str().c_str(), -SCIPinfinity(scip), SCIPinfinity(scip), 0, SCIP_VARTYPE_INTEGER) );
             tempVec.push_back(tmpvar);
             SCIP_CALL( SCIPaddVar(scip, tmpvar) );
+#endif //HAVE_SCALP
         }
         newBitsCountVars[s] = tempVec;
     }
 
     //cout << "declaration of U done" << endl;
     //add constraints:
-    SCIP_CONS* tmpcons;
+#ifdef HAVE_SCALP
+    //defining the objective
+    ScaLP::Term objectiveSum;
+    cout << "possibleCompressors_->size() is " << possibleCompressors_->size() << endl;
+
+    for(unsigned int s = 0; s < compCountVars.size(); s++){
+        for(unsigned int e = 0; e < compCountVars[s].size(); e++){
+            for(unsigned int c = 0; c < compCountVars[s][e].size(); c++){
+                if(!useVariableCompressors){
+                    objectiveSum = objectiveSum + (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
+                }
+                else{
+                    if(e < possibleCompressors_->size()){
+                        objectiveSum = objectiveSum + (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
+                    }
+                    else{
+                        //cout << "e is " << e << " and variableBCompressors[e - possibleCompressors_->size()].areaCost is " << variableBCompressors[e - possibleCompressors_->size()].areaCost << endl;
+                        objectiveSum = objectiveSum + variableBCompressors[e - possibleCompressors_->size()].areaCost * compCountVars[s][e][c];
+                    }
+                }
+            }
+        }
+    }
+    ScaLP::Objective obj = ScaLP::minimize(objectiveSum);
+    problemSolver->setObjective(obj);
+
+#else
+    SCIP_CONS* tmpcons; //needed for scip constraints
+#endif //HAVE_SCALP
+
     //add constraint C0: fill all the U's with values
 
 
     //cout << newBitsCountVars.size() << " " << newBits.size() << endl;
     for(unsigned i = 0; i < newBitsCountVars.size(); i++){
+#ifdef HAVE_SCALP
+        vector<ScaLP::Variable> tempVectorCons = newBitsCountVars.at(i);
+#else
         vector<SCIP_VAR*> tempVectorCons = newBitsCountVars.at(i);
+#endif //HAVE_SCALP
         vector<int> tempVectorValue;
         if(newBits.size() <= i){
             //zero vector
@@ -322,9 +438,17 @@ int BitHeapILPCompression::generateProblem(){
             else{
                 value = tempVectorValue.at(j);
             }
+#ifdef HAVE_SCALP
+            ScaLP::Constraint tempConstraint = tempVectorCons.at(j) - value == 0;
+            //tempConstraint.setName(consName.str());
+            tempConstraint.name = consName.str();
+            problemSolver->addConstraint(tempConstraint);
+
+#else
             SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, value, value) );
             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,tempVectorCons.at(j), 1.0) );
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
+#endif //HAVE_SCALP
         }
 
     }
@@ -359,12 +483,20 @@ int BitHeapILPCompression::generateProblem(){
             stringstream consName;
             consName << "C1_" << s << "_" << c;
             //cout << "s = " << s << " and c = " << c << endl;
+#ifdef HAVE_SCALP
+            ScaLP::Term c1Term;
+#else
             SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, 0, SCIPinfinity(scip)) );
+#endif // HAVE_SCALP
             for(unsigned e=0; e < possibleCompressors_->size(); e++){
                 for(int ce=0; ce < (int) (*possibleCompressors_)[e]->height.size(); ce++){
                     if(c-ce >= 0){
                         //cout << "call s#e#c-ce: " << s << e << c-ce << endl;
+#ifdef HAVE_SCALP
+                        c1Term = c1Term + (*possibleCompressors_)[e]->height[(*possibleCompressors_)[e]->height.size()-ce-1] * compCountVars[s][e][c-ce];
+#else
                         SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c-ce] , (*possibleCompressors_)[e]->height[(*possibleCompressors_)[e]->height.size()-ce-1]) );
+#endif // HAVE_SCALP
                         //cout << "after call" << endl;
                     }
                 }
@@ -374,13 +506,31 @@ int BitHeapILPCompression::generateProblem(){
                     for(int ce=0; ce < (int) variableBCompressors[e - possibleCompressors_->size()].height.size(); ce++){
                         if(c-ce >= 0){
                             //cout << "call s#e#c-ce: " << s << e << c-ce << endl;
+#ifdef HAVE_SCALP
+                            c1Term = c1Term + variableBCompressors[e - possibleCompressors_->size()].height[variableBCompressors[e - possibleCompressors_->size()].height.size()-ce-1] * compCountVars[s][e][c-ce];
+#else
                             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c-ce] , variableBCompressors[e - possibleCompressors_->size()].height[variableBCompressors[e - possibleCompressors_->size()].height.size()-ce-1]) );
+#endif //HAVE_SCALP
                             //cout << "after call" << endl;
                         }
                     }
                 }
             }
             //cout << "after loop" << endl;
+#ifdef HAVE_SCALP
+            if(s != 0){
+                //first stage is in U therefore N starts with s-1
+                c1Term = c1Term - columnBitCountVars[s - 1][c];
+            }
+            c1Term = c1Term - newBitsCountVars[s][c];
+            c1Term = c1Term + LARGE_NUMBER * stageVars[s];
+
+            ScaLP::Constraint c1Constraint = c1Term >= 0;
+            //c1Constraint.setName(consName.str());
+            c1Constraint.name = consName.str();
+            problemSolver->addConstraint(c1Constraint);
+
+#else
             if(s != 0){
                 //first stage is in U therefore N starts with s-1
                 SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, columnBitCountVars[s - 1][c] , -1) );
@@ -389,6 +539,7 @@ int BitHeapILPCompression::generateProblem(){
             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, newBitsCountVars[s][c] , -1) );
             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, stageVars[s] , LARGE_NUMBER) );
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
+#endif //HAVE_SCALP
         }
 
         //cout << "filling of C1 at stage " << s << " done" << endl;
@@ -399,13 +550,19 @@ int BitHeapILPCompression::generateProblem(){
         for(int c=0; c < ((int) (newBits[0].size()+(s+1)*(compOutputWordSizeMax-1))); c++){
             stringstream consName;
             consName << "C2_" << s+1 << "_" << c;
-
+#ifdef HAVE_SCALP
+            ScaLP::Term c2Term;
+#else
             SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, 0, 0) );
-
+#endif
             for(unsigned e=0; e < possibleCompressors_->size(); e++){
                 for(int ce=(int) (*possibleCompressors_)[e]->outputs.size()-1; ce >= 0; ce--){
                     if((c-ce >= 0) && (c-ce < ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))))){
+#ifdef HAVE_SCALP
+                        c2Term = c2Term + (*possibleCompressors_)[e]->outputs[(*possibleCompressors_)[e]->outputs.size()-ce-1] * compCountVars[s][e][c-ce];
+#else
                         SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c-ce] , (*possibleCompressors_)[e]->outputs[(*possibleCompressors_)[e]->outputs.size()-ce-1]) );
+#endif //HAVE_SCALP
                     }
                 }
             }
@@ -414,7 +571,11 @@ int BitHeapILPCompression::generateProblem(){
                 for(unsigned e=offset; e < offset + variableBCompressors.size(); e++){
                     for(int ce=(int) variableBCompressors[e - offset].outputs.size()-1; ce >= 0; ce--){
                         if((c-ce >= 0) && (c-ce < ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))))){
+#ifdef HAVE_SCALP
+                            c2Term = c2Term + variableBCompressors[e - offset].outputs[variableBCompressors[e - offset].outputs.size()-ce-1] * compCountVars[s][e][c-ce];
+#else
                             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c-ce] , variableBCompressors[e - offset].outputs[variableBCompressors[e - offset].outputs.size()-ce-1]) );
+#endif
                             /*
                             if(e == 14){
                                 cout << "added " << e << " " << c-ce << " normal" << endl;
@@ -422,30 +583,42 @@ int BitHeapILPCompression::generateProblem(){
                             */
                         }
                     }
-                    
-                    
+
+
                     //if(e == noOfCompressors - 1 && variableBCompressors[e - offset].height[0] == 0 && c == ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) ){
-                    
+
                     //assume that every complete variable compressor exists of three parts: low middle high. Every high-compressor is at the last position of those three.
                     //therefore high is at offset + 2, + 5, + 8 ... (=> % 3 == 2)
                     if(   ((e - offset) % 3 == 2)     && c == ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) ){
                         for(unsigned tempOutput = 0; tempOutput < variableBCompressors[e - offset].outputs.size(); tempOutput++){
                             //cout << "s = " << s << " and tempOutput = " << tempOutput << endl;
                             //cout << "c = " << c << " and compCountVars[s][e].size() = " << compCountVars[s][e].size() << endl;
+#ifdef HAVE_SCALP
+                            c2Term = c2Term + variableBCompressors[e - offset].outputs[tempOutput] * compCountVars[s][e][c];
+#else
                             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, compCountVars[s][e][c] , variableBCompressors[e - offset].outputs[tempOutput]) );
+#endif //HAVE_SCALP
                         }
-                        
+
                     }
                 }
             }
+#ifdef HAVE_SCALP
+            c2Term = c2Term - columnBitCountVars[s][c];
+            ScaLP::Constraint c2Constraint = c2Term == 0;
+            //c2Constraint.setName(consName.str());
+            c2Constraint.name = consName.str();
+            problemSolver->addConstraint(c2Constraint);
+
+#else
             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, columnBitCountVars[s][c] , -1) );
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
-
+#endif //HAVE_SCALP
 
         }
         //cout << "filling of C2 at stage " << s << " done" << endl;
     }
-    
+
     //cout << "C1 and C2 totally done" << endl;
 
 
@@ -455,7 +628,26 @@ int BitHeapILPCompression::generateProblem(){
     for(unsigned s=0; s < compCountVars.size(); s++){
         for(unsigned c=0; c < newBitsCountVars[s].size(); c++){
             stringstream consName;
-            consName << "C3_" << s;
+            consName << "C3_" << s << "_" << c;
+#ifdef HAVE_SCALP
+            ScaLP::Term c3Term;
+            if(s != 0){
+                c3Term = c3Term + columnBitCountVars[s - 1][c];
+            }
+            c3Term = c3Term + newBitsCountVars[s][c];
+            for(unsigned z = s + 1 ; z < compCountVars.size(); z++){
+                //make sure that that in the follwoing stages all the U's are empty.
+                //this is done by adding all of the U-variables of later stages with the factor of 4. Therefore e.g. if s = 3 -> D_3 = 1 -> in constraint C3_3_c: 1000 + 4 * U_later <= 1002 -> if at least one U_later is >0, then constraint is not met
+                c3Term = c3Term + 4 * newBitsCountVars[z][c];
+            }
+            c3Term = c3Term + LARGE_NUMBER * stageVars[s];
+            ScaLP::Constraint c3Constraint = c3Term <= LARGE_NUMBER + 2;
+            //c3Constraint.setName(consName.str());
+            c3Constraint.name = consName.str();
+            problemSolver->addConstraint(c3Constraint);
+
+
+#else
             SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, -SCIPinfinity(scip), LARGE_NUMBER+2) );
 
             if(s != 0){//in first stage there is no N
@@ -469,6 +661,7 @@ int BitHeapILPCompression::generateProblem(){
             }
             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, stageVars[s] , LARGE_NUMBER) );
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
+#endif //HAVE_SCALP
         }
 
     }
@@ -478,21 +671,42 @@ int BitHeapILPCompression::generateProblem(){
     //-----------------------------------------------------------
 
     //add constraint C4:
+#ifdef HAVE_SCALP
+    ScaLP::Term c4Term;
+    for(unsigned s=0; s < stageVars.size(); s++){
+        c4Term = c4Term + stageVars[s];
+    }
+    ScaLP::Constraint c4Constraint = c4Term - 1 == 0;
+    //c4Constraint.setName("C4");
+    c4Constraint.name = "C4";
+    problemSolver->addConstraint(c4Constraint);
+
+
+#else
     SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, "C4", 0, NULL, NULL, 1, 1) );
     for(unsigned s=0; s < stageVars.size(); s++){
         SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, stageVars[s] , 1) );
     }
     SCIP_CALL( SCIPaddCons(scip, tmpcons) );
-
+#endif
 
     //-----------------------------------------------------------
 
     //add constraint C4_1: setting up the 2-bit-adder stage
 
+
     if(useFixedStageCount){
+#ifdef HAVE_SCALP
+        ScaLP::Constraint c4_1Constraint = stageVars[noOfStages_] - 1 == 0;
+        //c4_1Constraint.setName("C4_1");
+        c4_1Constraint.name = "C4_1";
+        problemSolver->addConstraint(c4_1Constraint);
+
+#else
         SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, "C4_1", 0, NULL, NULL, 1, 1) );
         SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, stageVars[noOfStages_], 1) );
         SCIP_CALL( SCIPaddCons(scip, tmpcons) );
+#endif
     }
 
     //cout << "C4 filling done" << endl;
@@ -508,9 +722,9 @@ int BitHeapILPCompression::generateProblem(){
         unsigned offset = possibleCompressors_->size();
 
         for(unsigned s = 0; s < compCountVars.size() - 1; s++){
-			
+
 			for(unsigned e = 0; e < variableBCompressors.size(); e += 3){	//C5 only needed for every variable Compressor, not every variable Basic Compressor
-				
+
 				for(int c=0; c < ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))); c++){
 					//C5:
 
@@ -519,6 +733,20 @@ int BitHeapILPCompression::generateProblem(){
 
 					stringstream consName;
 					consName << "C5_" << s << "_" << e << "_" << c;
+#ifdef HAVE_SCALP
+                    ScaLP::Term c5Term;
+                    c5Term = c5Term + compCountVars[s][offset + e + 2][c + 1];  //high
+                    if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){
+                        c5Term = c5Term + compCountVars[s][offset + e + 1][c + 1];  //middle
+                    }
+                    c5Term = c5Term - compCountVars[s][offset + e + 0][c];  //low
+                    c5Term = c5Term - compCountVars[s][offset + e + 1][c];  //middle
+                    ScaLP::Constraint c5Constraint = c5Term == 0;
+                    //c5Constraint.setName(consName.str());
+                    c5Constraint.name = consName.str();
+                    problemSolver->addConstraint(c5Constraint);
+
+#else
 					SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, 0, 0) );
 
 					SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 2][c + 1], 1.0) );
@@ -529,17 +757,26 @@ int BitHeapILPCompression::generateProblem(){
 					SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 1][c], -1.0) );            //new: subtract the middle compressors as well
 
 					SCIP_CALL( SCIPaddCons(scip, tmpcons) );
-
+#endif //HAVE_SCALP
 				}
 
 				//make sure that the high compressor and middle compressor are not used in the lowest column.
 
 				stringstream consNameB;
 				consNameB << "C5b_" << e << "_" << s;
+#ifdef HAVE_SCALP
+                ScaLP::Constraint c5bConstraint;
+                c5bConstraint = compCountVars[s][offset + e + 2][0] + compCountVars[s][offset + e + 1][0] == 0;
+                //c5bConstraint.setName(consNameB.str());
+                c5bConstraint.name = consNameB.str();
+                problemSolver->addConstraint(c5bConstraint);
+
+#else
 				SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consNameB.str().c_str(), 0, NULL, NULL, 0, 0) );
 				SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 2][0], 1.0) );
 				SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons,compCountVars[s][offset + e + 1][0], 1.0) );
 				SCIP_CALL( SCIPaddCons(scip, tmpcons) );
+#endif //HAVE_SCALP
 			}
         }
     }
@@ -563,6 +800,9 @@ int BitHeapILPCompression::generateProblem(){
     }
     SCIP_CALL( SCIPaddCons(scip, tmpcons));
 */
+
+/*  //we dont use zero stages any longer?
+
 
     // now set k = 0 if we solved some of the stages with a heuristic
     //C8
@@ -602,6 +842,42 @@ int BitHeapILPCompression::generateProblem(){
         }
     }
 
+*/
+
+#ifdef HAVE_SCALP
+    //set objective     //TODO remove
+    ScaLP::Term objectiveTerm;
+
+    for(unsigned s=0; s < compCountVars.size(); s++)
+    {
+        for(unsigned e=0; e < compCountVars[s].size(); e++)
+        {
+            for(unsigned c=0; c < compCountVars[s][e].size(); c++)
+            {
+                if(!useVariableCompressors){
+                    objectiveTerm = objectiveTerm + (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
+                }
+                else{
+                    if(e < possibleCompressors_->size()){
+                        objectiveTerm = objectiveTerm + (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
+                    }
+                    else{
+                        objectiveTerm = objectiveTerm + variableBCompressors[e - possibleCompressors_->size()].areaCost * compCountVars[s][e][c];
+                    }
+                }
+            }
+        }
+    }
+
+    ScaLP::Objective o = ScaLP::minimize(objectiveTerm);
+    //problemSolver->setObjective(o);
+    cout << "before writeLP" << endl;
+    problemSolver->writeLP("compressorTree.lp");
+    cout << "after writeLP" << endl;
+
+#endif
+
+
     //cout << "end of SCIP problem description" << endl;
     return 0;
 }
@@ -616,8 +892,14 @@ int BitHeapILPCompression::writeProblem(std::string filename){
         fname = filename.c_str();
     }
     //print model in LP format:
+#ifdef HAVE_SCALP
+    cout << "before writeLP" << endl;
+    problemSolver->writeLP(fname);
+    cout << "after writeLP" << endl;
+#else
     SCIP_RESULT result;
     SCIP_CALL(SCIPwriteLp(scip, NULL, fname, FALSE, SCIP_OBJSENSE_MINIMIZE, 1.0, 0.0, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetNBinVars(scip), SCIPgetNIntVars(scip), SCIPgetNImplVars(scip), SCIPgetNContVars(scip), SCIPgetConss(scip), SCIPgetNOrigConss(scip), &result));
+#endif
     return 0;
 }
 
@@ -625,9 +907,14 @@ bool BitHeapILPCompression::solve(){
     //set a time limit:
     float timeout;
     timeout = bh_->getOp()->getTarget()->ilpTimeout();
+#ifdef HAVE_SCALP
+    problemSolver->timeout = (int) timeout;
+    problemSolver->threads = 4;  //not needed with scip because scip uses only one thread
+    problemSolver->quiet = false;
 
+#else
     SCIP_CALL( SCIPsetRealParam(scip,"limits/time",timeout) );
-
+#endif //HAVE_SCALP
     REPORT(INFO, "ILP solver timeout is set to " << timeout);
 
 //  SCIP_CALL ( SCIPsetRealParam(scip, "limits/memory", 10240) );
@@ -642,6 +929,39 @@ bool BitHeapILPCompression::solve(){
     SCIP_CALL ( SCIPsetIntParam(scip, "heuristics/veclendiving/priority", 10000000) );
 */
 
+#ifdef HAVE_SCALP
+
+    cout << "backend is " << problemSolver->getBackendName() << endl;
+    ScaLP::status stat = problemSolver->solve();
+    cout << "after solving in scalp" << endl;
+    cout << "status is " << stat << endl;
+
+    if(stat == ScaLP::status::INFEASIBLE_OR_UNBOUND || stat == ScaLP::status::INFEASIBLE || stat == ScaLP::status::UNBOUND){
+        cout << "in unbound/infeasible - mode" << endl;
+        if(!useFixedStageCount){
+            THROWERROR("No optimal solution found (problem infeasible or unbounded!)");
+        }
+        else{
+            REPORT(INFO, "No optimal solution for current stage count found (problem infeasible or unbound!).\n We will try it again with more stages");
+            infeasible = true;
+        }
+    }
+    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE){
+        infeasible = false;
+    }
+
+    ScaLP::Result result = problemSolver->getResult();
+
+    if(infeasible && !useFixedStageCount){
+        THROWERROR("No feasible solution found within the ILP timeout of " << timeout << " seconds");
+    }
+    else if(!infeasible){
+        double area = problemSolver->getResult().objectiveValue;
+        preReductionAreaCost += area;
+        REPORT(DEBUG, "The size of the complete Solution is " << preReductionAreaCost << " LUTs");
+        costOfCurrentSolution = area;
+    }
+#else
     //solve the problem:
     SCIP_CALL( SCIPsolve(scip) );
 
@@ -668,6 +988,8 @@ bool BitHeapILPCompression::solve(){
         infeasible = false;
     }
 
+#endif //HAVE_SCALP
+    cout << "finished setting infeasible" << endl;
     /*
     SCIP_Bool feasible;
     SCIP_CALL( SCIPcheckSol ( scip,sol,true,true,true,true,&feasible) );
@@ -678,6 +1000,34 @@ bool BitHeapILPCompression::solve(){
             exit(-1);
     }
     */
+
+#ifdef HAVE_SCALP
+    if(!infeasible){
+        if(!useHeuristic){
+            solution.resize(compCountVars.size());
+        }
+        cout << "trying to read variables" << endl;
+
+        //first try: go through compCountVars, get the values from each variable
+        for(unsigned int s = 0; s < compCountVars.size(); s++){
+            for(unsigned int e = 0; e < compCountVars[s].size(); e++){
+                for(unsigned int c = 0; c < compCountVars[s][e].size(); c++){
+                    double tempValue = result.values[compCountVars[s][e][c]];
+                    tempValue += 0.00001;   //float to integer: add small value and cast
+                    int integerValue = (int) tempValue;
+                    if(integerValue > 0)
+                    {
+                        for(unsigned int k = 0; k < (unsigned int) integerValue; k++){
+                            solution[s].push_back(pair<int,int>(e,c));
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+    cout << " finished writing scalp solution" << endl;
+#else
 
     SCIP_VAR** allVariables = SCIPgetVars(scip);
     int noOfallVariables = SCIPgetNVars(scip);
@@ -730,6 +1080,7 @@ bool BitHeapILPCompression::solve(){
         }
     }
     REPORT(DEBUG, "SCIP done in BitHeapILPCompression");
+#endif //HAVE_SCALP
     //cout << solution.size() << endl;
     for(unsigned j = 0; j < solution.size(); j++){
         list<pair<int,int> >:: iterator it;
@@ -757,19 +1108,19 @@ bool BitHeapILPCompression::solve(){
 //the scip solver
 int BitHeapILPCompression::passHeuristicSolutions(){
     int successFullPasses = 0;
-
+#ifndef HAVE_SCALP
     SCIP_SOL* heuSol;
 
     //cout << "in passHeuristicSolution" << endl;
 
-    for(unsigned i = 0; i < heuristicSolutions.size(); i++){
+    for(unsigned int i = 0; i < heuristicSolutions.size(); i++){
         REPORT(DEBUG, "passing heuristic solution number " << i);
         SCIP_CALL( SCIPcreateSol(scip, &heuSol, NULL) );
         computeCompressorCount(i);      //computes also heuristicN
 
         //U: is the same for every solution
-        for(unsigned s = 0; s < newBits.size(); s++){
-            for(unsigned c = 0; c < newBits[s].size(); c++){
+        for(unsigned int s = 0; s < newBits.size(); s++){
+            for(unsigned int c = 0; c < newBits[s].size(); c++){
 
                 //check whether we have the SCIP_VAR in newBitsCountVars
                 if(newBitsCountVars.size() > s){
@@ -836,11 +1187,9 @@ int BitHeapILPCompression::passHeuristicSolutions(){
             cout << "pass was not successfull" << endl;
         }
 
-
-
     }
 
-
+#endif //ifndef HAVE_SCALP
 
     return successFullPasses;
 }
@@ -913,6 +1262,7 @@ void BitHeapILPCompression::computeHeuristicN(){
 
     void BitHeapILPCompression::plotSolution()
     {
+#ifndef HAVE_SCALP
         if(sol == NULL) return;
 
         SCIP_Real obj;
@@ -1006,6 +1356,7 @@ void BitHeapILPCompression::computeHeuristicN(){
         cerr << "overhead (total)=" << overheadTotal << endl;
         cerr << "no of compressor stages: " << noOfStagesUsed << endl;
         cerr << "objective value: " << obj << endl;
+#endif //HAVE_SCALP
     }
 
     int BitHeapILPCompression::cleanUp()
@@ -1014,7 +1365,14 @@ void BitHeapILPCompression::computeHeuristicN(){
         //clean up:
         cout << "!!!skipping cleanup for debug reasons!!!" << endl;
         return 0; //!!!
+#ifdef HAVE_SCALP
+        //deleting solvers
+        for(int i = solvers.size() -1; i >= 0; i--){
+            delete solvers[i];
+        }
 
+        return 0;
+#else
         if(compressionType == 6 || compressionType == 7){
             //heuristic only. therefore no variables for ilp has been produces
             //and we don't need to clean up
@@ -1068,6 +1426,8 @@ void BitHeapILPCompression::computeHeuristicN(){
         sol = NULL;
 
         //cout << "cleaning up done " << endl;
+
+#endif //HAVE_SCALP
         return 0;
     }
 

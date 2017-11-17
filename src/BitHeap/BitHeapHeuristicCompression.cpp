@@ -43,7 +43,7 @@ namespace flopoco
         //useHoles = false;
         generateSolution = true;
         //passMultipleSolutions = true;
-        
+
 		passHeuristicSolution = true;
         reduceILPStageCount = true;
         //useMaxHeuristicStageCount = true;
@@ -60,7 +60,7 @@ namespace flopoco
         //useCompleteHeuristic = true;
         //getLowerBoundsFromBitHeap = true;
         usePreReduction = true;
-		
+
 
         //now some dependencies
 
@@ -69,12 +69,12 @@ namespace flopoco
         }
         cout << "mode is " << mode << endl;
         //get the compressiontype from mode
-		
+
 		buildVariableCompressors();
 #ifdef HAVE_SCIP
-		
+
 		bitHeapILPCompression.variableBCompressors = variableBCompressors;
-		
+
         if(mode.compare("heuristic_parandeh-afshar_modified") == 0){
             bitHeapILPCompression.compressionType = 6;
         }
@@ -84,11 +84,11 @@ namespace flopoco
         else if(mode.compare("optimalMinStages") == 0){
             bitHeapILPCompression.compressionType = 5;
         }
-		
+
 #endif //HAVE_SCIP
-		
+
 		vector<BasicCompressor *>* possibleCompressors_ = bh->getPossibleCompressors();
-		compOutputWordSizeMax = 0; 
+		compOutputWordSizeMax = 0;
 		for(unsigned e=0; e < possibleCompressors_->size(); e++){
 			if(compOutputWordSizeMax < (*possibleCompressors_)[e]->getOutputSize()){
 				compOutputWordSizeMax = (*possibleCompressors_)[e]->getOutputSize();
@@ -201,8 +201,8 @@ namespace flopoco
         //now fill lowerBounds with real values
         //the preset value is infinity (a.k.a. 10.0)
 		if(mode.compare("heuristic_parandeh-afshar_modified") != 0){
-            lowerBounds[0] = 0;
-            lowerBounds[1] = 1.75;
+            //lowerBounds[0] = 0;
+            //lowerBounds[1] = 1.75;
 			//lowerBounds[2] = 1.75;
 			//lowerBounds[3] = 1.75;
 			//lowerBounds[4] = 0;
@@ -302,7 +302,7 @@ namespace flopoco
         for(unsigned w = 0; w < bh_->bits.size(); w++){
             unsigned i = 0;
             for(list<WeightedBit*>::iterator it = bh_->bits[w].begin(); it != bh_->bits[w].end(); it++){
-                cout << "bit " << i << " in column " << w << " has the cycle " << (*it)->getCycle() << endl;
+                //cout << "bit " << i << " in column " << w << " has the cycle " << (*it)->getCycle() << endl;
                 i++;
             }
 
@@ -369,7 +369,7 @@ namespace flopoco
                 BasicCompressor * bc;
                 unsigned pos;
                 for(unsigned i = 0; i < compUnsorted->size(); i++){
-                    if(!paSorting){ //our sorting - efficiency                        
+                    if(!paSorting){ //our sorting - efficiency
                         if(computeEfficiency(compUnsorted->at(i)) > efficiency && !used[i]){
                             bc = compUnsorted->at(i);
                             efficiency = computeEfficiency(compUnsorted->at(i));
@@ -662,12 +662,12 @@ namespace flopoco
             cout << "size of solution is " << solution.size() << endl;
             return 0;
         }
-/*		
+/*
         if((mode.compare("heuristic_pa") == 0)){
             cout << "size of solution is " << solution.size() << endl;
             return 0;
         }
-*/		
+*/
         //debug output:: compressors:
         /*
         for(unsigned s=0; s < solution.size(); s++)
@@ -685,7 +685,7 @@ namespace flopoco
 
         //now initialize BitHeapILPCompression
         bitHeapILPCompression.solution = solution;
-        bitHeapILPCompression.newBits = newBits;        
+        bitHeapILPCompression.newBits = newBits;
         bitHeapILPCompression.useHeuristic = true;
         bitHeapILPCompression.zeroStages = 0;               //generally assume that there are none presolved stages
         if(reduceILPStageCount){
@@ -814,11 +814,11 @@ namespace flopoco
     void BitHeapHeuristicCompression::algorithm(){
         cout << "in algorithm__________________" << endl;
         cout << "compresssors.size() = " << compressors.size() << endl;
-		
-		
+
+
 		printLowerBounds();
 		cout << "___________" << endl;
-		
+
         //if debugLoop == true, there are only debugMax steps
         bool debugLoop = false;
         int debugMax = 50;
@@ -847,13 +847,13 @@ namespace flopoco
 			cout << "no compression necessary" << endl;
 			return;
 		}
-		
+
         //find a compressor which fits the best and use it.
         for(unsigned s = 0; s < numberOfStages && !(debugLoop && debugCount >= debugMax); s++){
             debugCount++;
             bool found = true;
 			bool foundVariableCompressor = false;
-			
+
             while(found == true && !(debugLoop && debugCount >= debugMax)){
                 debugCount++;
 
@@ -866,16 +866,16 @@ namespace flopoco
                         printBitHeap();
                     }
                 }
-				
+
                 found = false;
 				foundVariableCompressor = false;
-				
+
                 double achievedEfficiencyBest = -1.0;
                 unsigned compressor = 0;
 				unsigned variableCompressor = 0;
                 unsigned column = 0;
 				unsigned variableCompressorMidLength = 0;
-				
+
 
                 if(useVariableCompressors == true){
 					for(unsigned tempVariableLowCompressor = 0; tempVariableLowCompressor < variableBCompressors.size(); tempVariableLowCompressor += 3){
@@ -883,33 +883,33 @@ namespace flopoco
 						double variableAchievedEfficiency = variableResult.first;
 						unsigned tempColumn = variableResult.second.first;
 						unsigned tempVariableCompressorMidLength = variableResult.second.second;
-						
+
 						//cout << "for s = " << s << " c = " << tempColumn <<  ", lowCompressor = " << tempVariableLowCompressor << " and midLength = " << tempVariableCompressorMidLength << endl;
 						//cout << "variableAchievedEfficiency is " << variableAchievedEfficiency << endl;
-						
+
 						if(variableAchievedEfficiency > achievedEfficiencyBest + 0.0001){
 							bool necessary = variableCompressorNecessary(s, tempColumn, tempVariableCompressorMidLength, tempVariableLowCompressor);
-							
+
 							if(fabs(lowerBounds[s]) < 0.001){
 								necessary = true;
 							}
 							if(necessary && variableAchievedEfficiency > (lowerBounds[s] - 0.0001)){
 								//cout << "    variableAchievedEfficiency = " << variableAchievedEfficiency << "and lowerBounds[s] = " << lowerBounds[s] << endl;
-								
+
 								achievedEfficiencyBest = variableAchievedEfficiency;
 								column = tempColumn;
 								variableCompressorMidLength = tempVariableCompressorMidLength;
 								variableCompressor = tempVariableLowCompressor;
-								
+
 								foundVariableCompressor = true;
 							}
-							
+
 
 						}
 					}
 				}
-				
-				
+
+
                 for(unsigned i = 0; i < compressors.size()  && !(debugLoop && debugCount >= debugMax); i++){
                     debugCount++;
                     //first get maximal efficiency of this compressor.
@@ -990,11 +990,11 @@ namespace flopoco
                     cout << "-- using variable compressor " << variableCompressor / 3 << " in stage " << s << " and in column ";	//the variable "variableCompressor" is the position of the variable basic compressor
                     cout << column << " and midLength " << variableCompressorMidLength << " with efficiency " << achievedEfficiencyBest << endl;
 					useVariableCompressor(s, column, variableCompressorMidLength, variableCompressor);
-					
+
 					//printBitHeap();
 					found = true;
 				}
-				
+
             }
 
 
@@ -1100,7 +1100,7 @@ namespace flopoco
 		else{
 			cout << "paSorting is false" << endl;
 		}
-		
+
 
         //if debugLoop == true, there are only debugMax steps
         bool debugLoop = false;
@@ -1307,7 +1307,7 @@ namespace flopoco
                     solution.resize(newBits.size());
                     noOfStages_++;
 #ifdef HAVE_SCIP
-                    bitHeapILPCompression.solution.resize(newBits.size());                    
+                    bitHeapILPCompression.solution.resize(newBits.size());
                     bitHeapILPCompression.noOfStages_ = noOfStages_;
                     bitHeapILPCompression.getExternalStageCount = true;
 #endif //HAVE_SCIP
@@ -1340,7 +1340,7 @@ namespace flopoco
 
         }
 
-        //the real checking if the conditions are met is done in compEffBitHeap()        
+        //the real checking if the conditions are met is done in compEffBitHeap()
         algorithm();
 
         cout << "preReduction done. The problem is now reduced to the following bitheap:" << endl;
@@ -1505,10 +1505,10 @@ namespace flopoco
         return (double) inputBits / outputBits;
     }
 
-	
+
 	//checks if a variable compressor is necessary. that is the case if in one of its inputcolumns are more than two bits to compress
 	bool BitHeapHeuristicCompression::variableCompressorNecessary(unsigned s, unsigned column, unsigned midLength, unsigned compType){
-		
+
 		//low part
 		unsigned sum = 0;
 		for(unsigned l = s; l < newBits.size(); l++){
@@ -1519,8 +1519,8 @@ namespace flopoco
 		if(sum > 2){
 			return true;
 		}
-		
-		//mid part		
+
+		//mid part
 		for(unsigned m = 0; m < midLength; m++){
 			sum = 0;
 			for(unsigned l = s; l < newBits.size(); l++){
@@ -1532,7 +1532,7 @@ namespace flopoco
 				return true;
 			}
 		}
-		
+
 		//high part
 		//no need to consider that heights of high compressor are reversed
 		for(unsigned highLength = 0; highLength < variableBCompressors[compType + 2].height.size(); highLength++){
@@ -1546,13 +1546,13 @@ namespace flopoco
 				return true;
 			}
 		}
-		
+
 		//compressor not necessery
 		return false;
 	}
-	
-	
-	
+
+
+
 	//returns the efficiency (as double), as well as starting column and length of middle Part of the variable Compressor compPos with the highest efficiency. if efficiency = -10, then we didn't find a suitable compressor
 	pair<double, pair<unsigned, unsigned> > BitHeapHeuristicCompression::variableCompEffBitHeap(unsigned s, unsigned compType){
 		//because we are before the normal compressors, we also have to go through all the starting columns
@@ -1560,17 +1560,17 @@ namespace flopoco
 		unsigned column = 0;
 		unsigned middleLength = 0;
 		double achievedEfficiencyBest = -10.0;
-		
+
 		unsigned maxWidth = newBits[s].size();
 		bool used[maxWidth];
 		for(unsigned k = 0; k < maxWidth; k++){
 			used[k] = false;
 		}
-		
+
 		unsigned columnsAlreadyChecked = 0;
 		//cout << " setup done" << endl;
 		while(columnsAlreadyChecked < maxWidth){
-			
+
 			unsigned currentMaxColumn = 0;
 			int currentSize = 0;
 			for(unsigned c = 0; c < maxWidth; c++){		//searching for max Column
@@ -1580,47 +1580,47 @@ namespace flopoco
 				}
 			}
 			used[currentMaxColumn] = true;
-			
+
 			//cout << "variableBitEfficiency: currentMaxColumn is " << currentMaxColumn << endl;
-			
+
 			for(unsigned tempMiddleLength = 0; currentMaxColumn + tempMiddleLength < newBits[s].size(); tempMiddleLength++){
 				double achievedEfficiencyCurrent = variableCompEffBitHeapBasic(s, currentMaxColumn, tempMiddleLength, compType);
 				//cout << "for middleLength of " << tempMiddleLength << " is the efficiency " << achievedEfficiencyCurrent << endl;
 				if(achievedEfficiencyCurrent > achievedEfficiencyBest + 0.00001){
 					//cout << "updated achievedEfficiency from " << achievedEfficiencyBest << " to " << achievedEfficiencyCurrent << endl;
 					column = currentMaxColumn;
-					middleLength = tempMiddleLength; 
+					middleLength = tempMiddleLength;
 					achievedEfficiencyBest = achievedEfficiencyCurrent;
 				}
 			}
 			columnsAlreadyChecked++;
 		}
-		
-		
+
+
 		pair<unsigned, unsigned> tempResult (column, middleLength);
-		
+
 		pair<double, pair<unsigned, unsigned> > result (achievedEfficiencyBest,tempResult);
-		
+
 		return result;
 	}
-	
-	
+
+
 	double BitHeapHeuristicCompression::variableCompEffBitHeapBasic(unsigned s, unsigned c, unsigned midLength, unsigned compType){
-		int sum = 0; 
+		int sum = 0;
 		//cout << "compType is " << compType << endl;
 		double cost = variableBCompressors[compType].areaCost + midLength * variableBCompressors[compType + 1].areaCost + variableBCompressors[compType + 2].areaCost;
 		int outputSize = variableBCompressors[compType].outputs[0] + midLength * variableBCompressors[compType + 1].outputs[0];
 		for(unsigned i = 0; i < variableBCompressors[compType + 2].outputs.size(); i++){
 			outputSize += variableBCompressors[compType + 2].outputs[i];
 		}
-		
+
 		//cout << "the sum of the outputs is " << outputSize << endl;
-		
+
 		unsigned maxSize = newBits[s].size();
 		//computing sum
 		if(maxSize > c){
 			if(newBits[s][c] > 0){
-				
+
 				if((unsigned) newBits[s][c] >= (unsigned) variableBCompressors[compType].height[0]){
 					sum += variableBCompressors[compType].height[0];
 				}
@@ -1629,7 +1629,7 @@ namespace flopoco
 				}
 			}
 		}
-		
+
 		//middle part
 		for(unsigned m = 0; m < midLength; m++){
 			if(maxSize > c + m + 1){
@@ -1650,7 +1650,7 @@ namespace flopoco
 			//cout << "compPosition is " << compPosition << endl;
 			if(maxSize > bitPosition){
 				if(newBits[s][bitPosition] > 0){
-					
+
 					if((unsigned) newBits[s][bitPosition] >= (unsigned) variableBCompressors[compType + 2].height[compPosition]){
 						sum += variableBCompressors[compType + 2].height[compPosition];
 					}
@@ -1659,11 +1659,11 @@ namespace flopoco
 					}
 				}
 			}
-			
-			
+
+
 			bitPosition++;
 		}
-		
+
 		//cout << "the sum of used inputs is " << sum << endl;
 		int bitsReduced = ((int) sum) - ((int) outputSize);
 		//cout << "bits Reduced is " << bitsReduced << " and the cost is " << cost << endl;
@@ -1671,10 +1671,10 @@ namespace flopoco
 		return eff;
 	}
 
-	
-	
-	
-	
+
+
+
+
     //conditions met disabled!!
 
     //this is the standardEfficiency E you would achieve if the compressor is used in stage s column c
@@ -1717,7 +1717,7 @@ namespace flopoco
 
 
         }
-		
+
 		if(paSorting){
 			double ratio = ((double) sum) / ((double) compressors[compPos].pointer->getOutputSize());
 			return ratio;
@@ -1748,8 +1748,8 @@ namespace flopoco
 
 	//uses variableCompressor at stage s. Note that compType is the low compressor at variableBCompressors. (0, 3, 6,...)
 	void BitHeapHeuristicCompression::useVariableCompressor(unsigned s, unsigned column, unsigned midLength, unsigned compType){
-		
-		
+
+
 		//compType is first compressor in variableBCompressors
 		if(newBits[s].size() > column){
 			newBits[s][column] -= variableBCompressors[compType].height[0];
@@ -1773,7 +1773,7 @@ namespace flopoco
 				}
 			}
 		}
-		
+
 		unsigned bitPosition = column + midLength + 1;
 		//heights of high compressor reversed
 		for(int compPosition = variableBCompressors[compType + 2].height.size() - 1; compPosition >= 0; compPosition--){
@@ -1787,10 +1787,10 @@ namespace flopoco
 			}
 			bitPosition++;
 		}
-		
-		
+
+
 		//adding outputs:
-		
+
 		if(newBits[s + 1].size() > column){
 			newBits[s + 1][column] += variableBCompressors[compType].outputs[0];
 		}
@@ -1799,7 +1799,7 @@ namespace flopoco
 				newBits[s + 1][column + m + 1] += variableBCompressors[compType + 1].outputs[0];
 			}
 		}
-		
+
 		bitPosition = column + midLength + 1;
 		//outputs of high compressor reversed
 		for(int compPosition = variableBCompressors[compType + 2].outputs.size() - 1; compPosition >= 0; compPosition--){
@@ -1808,10 +1808,10 @@ namespace flopoco
 			}
 			bitPosition++;
 		}
-		
-		
+
+
 		//add compressors to solution
-		
+
 		unsigned offset = compressors.size();
 		solution[s].push_back(pair<int,int>(offset + compType + 0, column));	//low
 		for(unsigned m = 0; m < midLength; m++){
@@ -1935,7 +1935,7 @@ namespace flopoco
         else{
             flipFlopCost = 0.01; //nearly 0 for unpipelined designs
         }
-		unsigned offset = compressors.size(); 
+		unsigned offset = compressors.size();
         for(unsigned i = 0; i < solution.size(); i++){
             cout << "i = " << i << endl;
             list<pair<int, int> >:: iterator it;
@@ -1962,9 +1962,9 @@ namespace flopoco
                 //areaSize += compressors[(*it).first].areaCost;
             }
         }
-		
+
 		if(varCompSolution.size() > 0){
-			
+
 			for(unsigned s = 0; s < varCompSolution.size(); s++){
 				list<variableCompressor>::iterator it;
 				for(it = varCompSolution[s].begin(); it != varCompSolution[s].end(); it++){
@@ -1972,11 +1972,11 @@ namespace flopoco
 					areaSize += variableBCompressors[type].areaCost;
 					areaSize += (*it).middleCompressorWidth * variableBCompressors[type + 1].areaCost;
 					areaSize += variableBCompressors[type + 2].areaCost;
-				} 
-				
+				}
+
 			}
 		}
-		
+
         return areaSize;
     }
 
@@ -2053,7 +2053,7 @@ namespace flopoco
             cout << "minFixedStage = " << minFixedStage << " and maxFixedStage = " << maxFixedStage << endl;
             bool takeFirstSolution = false; //we also check the next stages for a better solution
             for(unsigned s = minFixedStage; s <= maxFixedStage && !takeFirstSolution; s++){
-
+                cout << "number of stages for ilp problem is " << s << endl;
                 if(s != minFixedStage){
                     //setting up new bitHeapILPCompressioin
                     //bitHeapILPCompression = BitHeapILPCompression(bh_);
@@ -2218,13 +2218,13 @@ namespace flopoco
     //this function goes through the solution, finds variableBasicCompressors, deletes them and
     //fills the variable compressor solution
     void BitHeapHeuristicCompression::buildVariableCompressorSolution(){
-		
-		
-        
+
+
+
         int offset = compressors.size();
-		
+
 		for(unsigned variableOffset = 0; variableOffset < variableBCompressors.size(); variableOffset += 3){
-			
+
 			//right now only RCA
 			int rcaLow = 0;			//change these three if necessary
 			int rcaMid = 1;			//value is the position in ilpCompressions variableBCompressors
@@ -2289,7 +2289,7 @@ namespace flopoco
 						if(highFound){
 							varCompSolution[s].push_back(tVarComp);
 							found = true;
-							
+
 						}
 						else{
 							cout << "=============" << endl;
@@ -2417,7 +2417,7 @@ namespace flopoco
             }
         }
 	}
-	
+
     void BitHeapHeuristicCompression::setLowerBounds(string s){
         //parses the string efficiencyPerStage and writes the values to lowerBounds
         unsigned int sizeOfLowerBounds = (sizeof(lowerBounds) / sizeof(lowerBounds[0]));

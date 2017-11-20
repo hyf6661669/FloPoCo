@@ -20,7 +20,7 @@ namespace flopoco {
         // definition of some function for the operator
 
         // constructor, defined there with two parameters (default value 0 for each)
-        CoreTE(Target* target, int input_bit_width_, int Const_bit_width_, int No_of_Products_);
+        CoreTE(Target* target, int input_bit_width_, int Const_bit_width_, int No_of_Products_, int method_);
 
         // destructor
         ~CoreTE() {};

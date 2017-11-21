@@ -605,7 +605,12 @@ ${PAGSUITE_DEP_SOURCES}
 # If you want to add your operator, feel free
 src/UserDefinedOperator
 
+src/NeuralNetworks/ConfigurationController
 src/NeuralNetworks/ConvolutionalCore
+src/NeuralNetworks/SOP_KCM
+src/NeuralNetworks/CoreTE
+src/NeuralNetworks/LUTMult
+src/PrimitiveComponents/Xilinx/Xilinx_CFGLUT5
 )
 
 TARGET_LINK_LIBRARIES(

@@ -18,15 +18,17 @@ namespace flopoco {
 	public:
 		/* operatorInfo is a user defined parameter (not a part of Operator class) for
 		   stocking information about the operator. The user is able to defined any number of parameter in this class, as soon as it does not affect Operator parameters undeliberatly*/
-		int param0; 
-		int param1;
+        int input_bit_width;
+        int Const_bit_width;
+        int No_of_Products;
+        int output_bit_width;
 
 
 	public:
 		// definition of some function for the operator    
 
 		// constructor, defined there with two parameters (default value 0 for each)
-		ConvolutionalCore(Target* target,int param0 = 0, int param1 = 0);
+        ConvolutionalCore(Target* target, int input_bit_width_, int Const_bit_width_, int No_of_Products_);
 
 		// destructor
 		~ConvolutionalCore() {};

@@ -112,6 +112,7 @@ int main(int argc, char* argv[] )
         Xilinx_Comparator::registerFactory();
         Xilinx_GenericAddSub::registerFactory();
         Xilinx_TernaryAdd_2State::registerFactory();
+	Xilinx_CFGLUT5::registerFactory();
         GenericLut_Test::registerFactory();
         SAD::registerFactory();
         IntPower::registerFactory();
@@ -121,10 +122,15 @@ int main(int argc, char* argv[] )
         IntConstMultOptTernary::registerFactory();
         FullyParallelFFT::registerFactory();
 #endif
-		TargetModel::registerFactory();
-		// Uncomment me to play within FloPoCo operator development
-	  UserDefinedOperator::registerFactory();
-	  ConvolutionalCore::registerFactory();
+	TargetModel::registerFactory();
+	// Uncomment me to play within FloPoCo operator development
+    SOP_KCM::registerFactory();
+	ConvolutionalCore::registerFactory();
+    CoreTE::registerFactory();
+
+	UserDefinedOperator::registerFactory();
+
+	  
 	}
 	catch (const std::exception &e) {
 		cerr << "Error while registering factories: " << e.what() <<endl;

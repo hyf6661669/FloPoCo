@@ -44,7 +44,9 @@ namespace flopoco {
 
         // abgeleitete variablen... MH Debug
         int LUT_per_stage = Const_bit_width+LUT_bit_width;
-        int No_of_stages = ceil((float)Const_bit_width / (float)LUT_bit_width);
+        //int No_of_stages = ceil((float)Const_bit_width / (float)LUT_bit_width);// Version mit der die ergebnisse produziert wurrden
+	int No_of_stages = ceil((float)input_bit_width / (float)LUT_bit_width);
+	
 
         //to prevent a overvlow, caused by mutiple additions.
         int additionalBitWidth = floor(log2((float)No_of_Products))+1;
@@ -131,9 +133,17 @@ namespace flopoco {
                         for(int i = 0; i <= LUT_bit_width; ++i)
                         {
                             if(i == LUT_bit_width)
+			    {
                              inPortMapCst(myCFGLUT, join("I", to_string(i)),"'1'");// the highest bit is true to use the 5 input LUT as two 4 input Luts
+			    }
+			    else if((i+stage*LUT_bit_width) < input_bit_width)
+			    {
+			     inPortMap(myCFGLUT, join("I", to_string(i)),join(inputSignalName,to_string(i+stage*LUT_bit_width),")"));
+			    }
                             else
-                             inPortMap(myCFGLUT, join("I", to_string(i)),join(inputSignalName,to_string(i+stage*LUT_bit_width),")"));
+			    {
+                             inPortMapCst(myCFGLUT, join("I", to_string(i)),"'0'");
+			    }
                         }
 
                         string outputSignalNameLUT = outputSignalName + "(" + to_string(LUT_No-Lut_start_Counter) +")";

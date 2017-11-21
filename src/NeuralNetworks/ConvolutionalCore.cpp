@@ -10,6 +10,8 @@
 
 // include the header of the Operator
 #include "ConvolutionalCore.hpp"
+//#include "../PrimitiveComponents/Xilinx/Xilinx_CFGLUT5.hpp"
+#include "../IntAddSubCmp/IntAdderTree.hpp"
 
 using namespace std;
 namespace flopoco {
@@ -17,33 +19,17 @@ namespace flopoco {
 
 
 
-	ConvolutionalCore::ConvolutionalCore(Target* target, int param0_, int param1_) : Operator(target), param0(param0_), param1(param1_) {
-		/* constructor of the ConvolutionalCore
-		   Target is the targeted FPGA : Stratix, Virtex ... (see Target.hpp for more informations)
-		   param0 and param1 are some parameters declared by this Operator developpers, 
-		   any number can be declared, you will have to modify 
-		   -> this function,  
-		   -> the prototype of this function (available in ConvolutionalCore.hpp)
-		   ->  main.cpp to uncomment the RegisterFactory line
-		*/
-		/* In this constructor we are going to generate an operator that 
-			 - takes as input three bit vectors X,Y,Z of lenght param0, 
-			 - treats them as unsigned integers, 
-			 - sums them 
-			 - and finally outputs the concatenation of the the most significant bit of the sum and its last param1 bits.
-			 Don't ask why
-
-			 All the vhdl code needed by this operator has to be generated in this constructor */
-
-		// definition of the source file name, used for info and error reporting using REPORT 
-		srcFileName="ConvolutionalCore";
-
+    ConvolutionalCore::ConvolutionalCore(Target* target, int input_bit_width_, int Const_bit_width_, int No_of_Products_) : Operator(target), input_bit_width(input_bit_width_), Const_bit_width(Const_bit_width_),No_of_Products(No_of_Products_)
+    {
+        srcFileName="ConvolutionalCore";
 		// definition of the name of the operator
 		ostringstream name;
-		name << "ConvolutionalCore_" << param0 << "_" << param1;
-		setName(name.str());
-		// Copyright 
-		setCopyrightString("ACME and Co 2010");
+        name << "ConvolutionalCore_" << input_bit_width_ << "_" << Const_bit_width_ << "_" << No_of_Products_;
+        setName(name.str());
+        // Copyright
+        setCopyrightString("UNIVERSITY of Kassel 2017");
+
+
 
 		/* SET UP THE IO SIGNALS
 		   Each IO signal is declared by addInput(name,n) or addOutput(name,n) 
@@ -52,72 +38,69 @@ namespace flopoco {
 		   input/output */
 
 		// declaring inputs
-		addInput ("X" , param0);
-		addInput ("Y" , param0);
-		addInput ("Z" , param0);
-		addFullComment(" addFullComment for a large comment ");
-		addComment("addComment for small left-aligned comment");
+
+        for(int i =0; i< No_of_Products;++i)
+        {
+            addInput (join("X",i) , input_bit_width);
+        }
+        for(int i =0; i< No_of_Products;++i)
+        {
+            addInput (join("Coef_X",i) , Const_bit_width);
+        }
+
+
 
 		// declaring output
-		addOutput("S" , param1);
+        addOutput("result", input_bit_width);
+        int calculating_output_wordsize = input_bit_width+Const_bit_width + floor(log2((float)No_of_Products)); // not +1 because of ther is no overflow for one number...
 
 
-		/* Some piece of information can be delivered to the flopoco user if  the -verbose option is set
-		   [eg: flopoco -verbose=0 ConvolutionalCore 10 5 ]
-		   , by using the REPORT function.
-		   There is three level of details
-		   -> INFO for basic information ( -verbose=1 )
-		   -> DETAILED for complete information, includes the INFO level ( -verbose=2 )
-		   -> DEBUG for complete and debug information, to be used for getting information 
-		   during the debug step of operator development, includes the INFO and DETAILED levels ( -verbose=3 )
-		*/
-		// basic message
-		REPORT(INFO,"Declaration of ConvolutionalCore \n");
-
-		// more detailed message
-		REPORT(DETAILED, "this operator has received two parameters " << param0 << " and " << param1);
-  
-		// debug message for developper
-		REPORT(DEBUG,"debug of ConvolutionalCore");
+        vhdl << std::endl;
+        IntAdderTree *myIntAdderTree = new IntAdderTree(target,input_bit_width+Const_bit_width,No_of_Products,"add2",false);
+        addToGlobalOpList(myIntAdderTree);
 
 
-		/* vhdl is the stream which receives all the vhdl code, some special functions are
-		   available to smooth variable declaration and use ... 
-		   -> when first using a variable (Eg: T), declare("T",64) will create a vhdl
-		   definition of the variable : signal T and includes it it the header of the architecture definition of the operator
+        nextCycle();
+        for(int i=0; i < No_of_Products;++i)
+        {
+            vhdl << declare(join("product_x",i),input_bit_width+Const_bit_width) << " <= " << join("X",i) << " * " << join("Coef_X",i) << ";" << std::endl;
+            //MH add trunkation...
+        }
+        nextCycle();
 
-		   Each code transmited to vhdl will be parsed and the variables previously declared in a previous cycle will be delayed automatically by a pipelined register.
-		*/
-		vhdl << tab << declare("T", param0+1) << " <= ('0' & X) + ('0' & Y);" << endl;
+        for(int i=1; i <= No_of_Products;++i)
+        {
+            inPortMap(myIntAdderTree,join("X",i),join("product_x",i-1));
+        }
+        outPortMap(myIntAdderTree,"Y","result_s");
+
+        vhdl << instance(myIntAdderTree,"adderTree_inst");
 
 
-		vhdl << tab << declare("R",param0+2) << " <=  ('0' & T) + (\"00\" & Z);" << endl;
-
-		// we first put the most significant bit of the result into R
-		vhdl << tab << "S <= (R" << of(param0 +1) << " & ";
-		// and then we place the last param1 bits
-		vhdl << "R" << range(param1 - 1,0) << ");" << endl;
-	};
+        vhdl << declare("rounding",input_bit_width) << " <= (0 => result_s(" << to_string(calculating_output_wordsize-input_bit_width) << "), others => '0' );" << std::endl;
+        // declaring output
+        vhdl << "result <= result_s(" << to_string(calculating_output_wordsize) << " downto " <<  to_string(calculating_output_wordsize-input_bit_width+1) <<  ") + rounding;" << std::endl ;
+    }
 
 	
 	void ConvolutionalCore::emulate(TestCase * tc) {
 		/* This function will be used when the TestBench command is used in the command line
 		   we have to provide a complete and correct emulation of the operator, in order to compare correct output generated by this function with the test input generated by the vhdl code */
 		/* first we are going to format the entries */
-		mpz_class sx = tc->getInputValue("X");
-		mpz_class sy = tc->getInputValue("Y");
-		mpz_class sz = tc->getInputValue("Z");
+//		mpz_class sx = tc->getInputValue("X");
+//		mpz_class sy = tc->getInputValue("Y");
+//		mpz_class sz = tc->getInputValue("Z");
 
 		/* then we are going to manipulate our bit vectors in order to get the correct output*/
-		mpz_class sr;
-		mpz_class stmp;
-		stmp = sx + sy + sz;
-		sr = (stmp % mpzpow2(param1)); // we delete all the bits that do not fit in the range (param1 - 1 downto 0);
-		sr += (stmp / mpzpow2 (param0+1)); // we add the first bit
+//		mpz_class sr;
+//		mpz_class stmp;
+//		stmp = sx + sy + sz;
+//		sr = (stmp % mpzpow2(param1)); // we delete all the bits that do not fit in the range (param1 - 1 downto 0);
+//		sr += (stmp / mpzpow2 (param0+1)); // we add the first bit
 
 		/* at the end, we indicate to the TestCase object what is the expected
 		   output corresponding to the inputs */
-		tc->addExpectedOutput("R",sr);
+//		tc->addExpectedOutput("R",sr);
 	}
 
 
@@ -130,10 +113,17 @@ namespace flopoco {
 
 
 	OperatorPtr ConvolutionalCore::parseArguments(Target *target, vector<string> &args) {
-		int param0, param1;
-		UserInterface::parseInt(args, "param0", &param0); // param0 has a default value, this method will recover it if it doesnt't find it in args, 
-		UserInterface::parseInt(args, "param1", &param1); 
-		return new ConvolutionalCore(target, param0, param1);
+        int param0, param1, param2;
+        UserInterface::parseInt(args, "input_bit_width", &param0); // param0 has a default value, this method will recover it if it doesnt't find it in args,
+        UserInterface::parseInt(args, "const_bit_width", &param1);
+        UserInterface::parseInt(args, "no_of_products", &param2);
+        if(param1 == -1)
+        {
+            param1 = param0;
+        }
+
+
+        return new ConvolutionalCore(target, param0, param1, param2);
 	}
 	
 	void ConvolutionalCore::registerFactory(){
@@ -145,8 +135,9 @@ namespace flopoco {
 											 // Respect its syntax because it will be used to generate the parser and the docs
 											 // Syntax is: a semicolon-separated list of parameterDescription;
 											 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString 
-											 "param0(int)=16: A first parameter, here used as the input size; \
-                        param1(int): A second parameter, here used as the output size",
+                                             "input_bit_width(int)=16: input word size; \
+                                             const_bit_width(int)=-1: coefficient word size, per default the same as the input bit width;\
+                                             no_of_products(int)=1: the nomber of products to accumulate",
 											 // More documentation for the HTML pages. If you want to link to your blog, it is here.
 											 "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",
 											 ConvolutionalCore::parseArguments

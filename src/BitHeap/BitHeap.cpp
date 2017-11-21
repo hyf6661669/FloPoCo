@@ -1082,7 +1082,7 @@ namespace flopoco
 
 		stringstream signal[bc->getNumberOfColumns()];
 
-
+#if 0
 		WeightedBit* b =  latestInputBitToCompressor(i, bc) ;
 
 		if(b)
@@ -1099,6 +1099,8 @@ namespace flopoco
             REPORT(DEBUG, "compressor is " << bc->getName() << "in column " << i);
             THROWERROR("elemReduceFixedCycle: No latest bit?");
 		}
+#endif
+
 		//declare inputs of the compressor
 		for(unsigned c=0; c < bc->getNumberOfColumns(); c++)
 		{

@@ -11,6 +11,12 @@
 #include <vector>
 #include <list>
 
+#ifdef HAVE_SCALP
+#include <ScaLP/Solver.h>
+#include <ScaLP/Exception.h>    // ScaLP::Exception
+#include <ScaLP/SolverDynamic.h> // ScaLP::newSolverDynamic
+#endif //HAVE_SCALP
+
 //#define LARGE_NUMBER 10000; //number which has to be larger than any column in the bit heap (used in ILP)
 
 struct variableBasicCompressor {
@@ -56,10 +62,11 @@ namespace flopoco
         bool useVariableCompressors;
         int compressionType;
         vector<variableBasicCompressor> variableBCompressors;
-        
+
 
 	protected:
 		BitHeap* bh_;
+
 		SCIP* scip;
 
 
@@ -73,14 +80,28 @@ namespace flopoco
 
         void buildVariableCompressors();
 	private:
+#ifdef HAVE_SCALP
+                vector<vector<vector<ScaLP::Variable> > > compCountVars;
+                vector<vector<ScaLP::Variable> > columnBitCountVars;
+                vector<ScaLP::Variable> stageVars;
+                vector<vector<ScaLP::Variable> > newBitsCountVars;
+
+                ScaLP::Result sol;
+                //ScaLP::Solver *problemSolver;
+                vector<ScaLP::Solver*> solvers;
+                ScaLP::Solver *problemSolver;
+                //ScaLP::Solver problemSolver = ScaLP::Solver(ScaLP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
+                //ScaLP::Solver(ScaLP::newSolverDynamic({"CPLEX","SCIP","LPSolve"}));
+#else
 		//containers for ILP variables:
 		vector<vector<vector<SCIP_VAR*> > > compCountVars; //k_s_e_c: counts the number of compression elements for stage (1st index), compressing element (2nd index) and column (3rd index)
 		vector<vector<SCIP_VAR*> > columnBitCountVars; //N_s_c: counts the number of bits in stage s (1st index) and column (2nd index)
 		vector<SCIP_VAR*> stageVars; //D_s: true if stage is output stage
 
         vector<vector<SCIP_VAR*> > newBitsCountVars; //U_s_c: counts the number of bits which are added in stage s (1st index) and column (2nd index)
+        SCIP_SOL* sol;
+#endif  //HAVE_SCALP
 
-		SCIP_SOL* sol;
 		int noOfStagesUsed;
 
 		string srcFileName; //for debug outputs
@@ -91,8 +112,8 @@ namespace flopoco
         void computeCompressorCount(int pos);
         void computeHeuristicN();
         void printNewBits();
-        
-		string uniqueName_; /**< useful only to enable same kind of reporting as for FloPoCo operators. */        
+
+		string uniqueName_; /**< useful only to enable same kind of reporting as for FloPoCo operators. */
 
 	};
 }

@@ -168,8 +168,7 @@
 #include "ConstMultPAG/ConstMultPAG.hpp"
 #include "ConstMultPAG/IntConstMultOpt.hpp"
 #include "ConstMultPAG/IntConstMultOptTernary.hpp"
-
-#include "FullyParallelFFT.hpp"
+#include "ConstMultPAG/FullyParallelFFT.hpp"
 
 /* misc ------------------------------------------------------ */
 #include "TestBenches/Wrapper.hpp"

@@ -131,37 +131,32 @@ FIND_LIBRARY(SCIP_LIB
 
 
 FIND_PATH(SCALP_H
-	  ILP/Solver.h
-	  HINTS "/usr/local/include/scip"
+          ScaLP/Solver.h
+	  HINTS "/opt/scalp/include"
 	  DOC "Path of main header of scalp"
 )
 FIND_LIBRARY(SCALP_LIB
-	NAMES libILP.so
+        NAMES libScaLP.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP main library")
 
-FIND_LIBRARY(SCALP_DYNAMIC_LIB
-	NAMES libILP-Dynamic.so
-	HINTS "/usr/local/lib64/"
-	DOC "Directory of the SCALP dynamic library")
-
 FIND_LIBRARY(SCALP_CPLEX_LIB
-	NAMES libILP-CPLEX.so
+        NAMES libScaLP-CPLEX.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP library for cplex solver backend")
 
 FIND_LIBRARY(SCALP_GUROBI_LIB
-	NAMES libILP-Gurobi.so
+        NAMES libScaLP-Gurobi.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP library for Gurobi solver backend")
 
 FIND_LIBRARY(SCALP_SCIP_LIB
-	NAMES libILP-SCIP.so
+        NAMES libScaLP-SCIP.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP library for SCIP solver backend")
 
 FIND_LIBRARY(SCALP_LPSOLVE_LIB
-	NAMES libILP-LPSOLVE.so
+        NAMES libScaLP-LPSOLVE.so
 	HINTS "/usr/local/lib64/"
 	DOC "Directory of the SCALP library for LPSOLVE solver backend")
 
@@ -177,9 +172,9 @@ IF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB A
     SET(SCIP_FOUND TRUE)
 ENDIF (SCIP_H AND SCIP_LIB AND READLINE_LIB AND Z_LIB AND NLPI_LIB AND LPISPX_LIB AND SOPLEX_LIB AND ZIMPL_LIB)
 
-IF (SCALP_H AND SCALP_LIB AND SCALP_DYNAMIC_LIB AND (SCALP_CPLEX_LIB OR SCALP_GUROBI_LIB OR SCALP_SCIP_LIB OR SCALP_LPSOLVE_LIB))
+IF (SCALP_H AND SCALP_LIB AND (SCALP_CPLEX_LIB OR SCALP_GUROBI_LIB OR SCALP_SCIP_LIB OR SCALP_LPSOLVE_LIB))
     SET(SCALP_FOUND TRUE)
-ENDIF (SCALP_H AND SCALP_LIB AND SCALP_DYNAMIC_LIB AND (SCALP_CPLEX_LIB OR SCALP_GUROBI_LIB OR SCALP_SCIP_LIB OR SCALP_LPSOLVE_LIB))
+ENDIF (SCALP_H AND SCALP_LIB AND (SCALP_CPLEX_LIB OR SCALP_GUROBI_LIB OR SCALP_SCIP_LIB OR SCALP_LPSOLVE_LIB))
 
 
 IF (READLINE_LIB)
@@ -226,12 +221,10 @@ ELSE (SCIP_FOUND)
 	MESSAGE(STATUS "SCIP MILP optimizer not found (or supporting libraries missing), no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
 ENDIF (SCIP_FOUND)
 
-
+SET(SCALP_INCLUDE_DIRS ${SCALP_H})
 IF (SCALP_FOUND)
 	ADD_DEFINITIONS(-DHAVE_SCALP)
-    SET(SCALP_INCLUDE_DIRS ${SCALP_H})
-
-	set(SCALP_LIBS ${SCALP_LIB} ${SCALP_DYNAMIC_LIB})
+    set(SCALP_LIBS ${SCALP_LIBS} ${SCALP_LIB}) 
 	IF (SCALP_CPLEX_LIB)
 		set(SCALP_LIBS ${SCALP_LIBS} ${SCALP_CPLEX_LIB})
 	ENDIF (SCALP_CPLEX_LIB)
@@ -345,7 +338,7 @@ IF( PAGSUITE_FOUND )
 		src/ConstMultPAG/scm_solutions
 		src/ConstMultPAG/tscm_solutions
 		src/ConstMultPAG/pagexponents
-		src/FullyParallelFFT
+		src/ConstMultPAG/FullyParallelFFT
 	)
 ELSE( PAGSUITE_FOUND )
 	SET( PAGSUITE_DEP_SOURCES 

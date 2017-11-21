@@ -165,7 +165,7 @@ namespace flopoco {
             if( i == 0 ) {
                 inPortMapCst( slice_i, "carry_in", "'0'" );
             } else {
-                inPortMap( slice_i, "carry_in" , "carry" + range(i-1, i - 1 ) );
+                inPortMap( slice_i, "carry_in" , "carry" + of( i-1 ) );
             }
 
             outPortMap( slice_i, "carry_out", "carry" + of( i ), false );
@@ -188,7 +188,7 @@ namespace flopoco {
             if( i == 0 ) {
                 inPortMapCst( slice_i, "carry_in", "'0'" );
             } else {
-                inPortMap( slice_i, "carry_in" , "carry" + range(i-1, i - 1 ) );
+                inPortMap( slice_i, "carry_in" , "carry" + of( i-1 ) );
             }
 
             if( i == 0 ) {

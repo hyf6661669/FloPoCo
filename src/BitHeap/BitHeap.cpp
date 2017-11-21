@@ -119,6 +119,10 @@ namespace flopoco
                 THROWERROR("compression " << UserInterface::compression << " unknown!");
                         }
 		}
+        else
+        {
+            this->compressionType = compressionType;    //compression type is set when instantiating BitHeap
+        }
 		/* Uni KS stop */
 	}
 

@@ -575,15 +575,18 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 		o<<"--------------------------------------------------------------------------------"<<endl;
 		// centering the unique name
 		int s, i;
-		if(uniqueName_.size()<76) s = (76-uniqueName_.size())/2; else s=0;
+		if(uniqueName_.size()<76)
+			s = (76-uniqueName_.size())/2;
+		else
+			s=0;
 		o<<"--"; for(i=0; i<s; i++) o<<" "; o  << uniqueName_ << endl;
-
 		// if this operator was renamed from the command line, show the original name
 		if(commentedName_!="") {
 			if(commentedName_.size()<74) s = (74-commentedName_.size())/2; else s=0;
 			o<<"--"; for(i=0; i<s; i++) o<<" "; o << "(" << commentedName_ << ")" << endl;
 		}
 		o<< headerComment_;
+		o << "-- VHDL generated for " << getTarget()->getID() << " @ " << getTarget()->frequencyMHz() <<"MHz"  <<endl;
 		o<<"-- This operator is part of the Infinite Virtual Library FloPoCoLib"<<endl;
 		o<<"-- All rights reserved "<<endl;
 		o<<"-- Authors: " << authorsyears <<endl;
@@ -678,28 +681,29 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 		}
 
 		else{ // Hard operator
-			if (! getSubComponents().empty())
+			if (! getSubComponents().empty()) {
 				for (auto i: getSubComponents())
 					i->outputFinalReport(s,level+1);
-
-				ostringstream tabs, ctabs;
-				for (int i=0;i<level-1;i++){
-					tabs << "|" << tab;
-					ctabs << "|" << tab;
-				}
-
-				if (level>0){
-					tabs << "|" << "---";
-					ctabs << "|" << tab;
-				}
-
-				s << tabs.str() << "Entity " << uniqueName_ << endl;
-				if(this->getPipelineDepth()!=0)
-					s << ctabs.str() << tab << "Pipeline depth = " << getPipelineDepth() << endl;
-				else
-					s << ctabs.str() << tab << "Not pipelined"<< endl;
 			}
+			
+			ostringstream tabs, ctabs;
+			for (int i=0;i<level-1;i++){
+				tabs << "|" << tab;
+				ctabs << "|" << tab;
+			}
+			
+			if (level>0){
+				tabs << "|" << "---";
+				ctabs << "|" << tab;
+			}
+			
+			s << tabs.str() << "Entity " << uniqueName_ << endl;
+			if(this->getPipelineDepth()!=0)
+				s << ctabs.str() << tab << "Pipeline depth = " << getPipelineDepth() << endl;
+			else
+				s << ctabs.str() << tab << "Not pipelined"<< endl;
 		}
+	}
 
 
 		void Operator::setCycle(int cycle, bool report) {
@@ -1647,13 +1651,14 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 							}
 							file.close();
 
-							// For quartus prime
-							
-							file.open("/tmp/"+getName()+".sdc", ios::out);
-							file << "# This file was created by FloPoCo to be used by the quartus_runsyn utility. Sorry to clutter your tmp." << endl;
-							file << "create_clock -name clk -period "  << (1.0e9/target_->frequency()) << "  [get_ports clk]"
-							<< endl;
-							file.close();
+#if 0
+		// For quartus prime	-- no longer needed as quartus_runsyn reads the frequency from the comments in the VHDL and create this file.
+		file.open("/tmp/"+getName()+".sdc", ios::out);
+		file << "# This file was created by FloPoCo to be used by the quartus_runsyn utility. Sorry to clutter your tmp." << endl;
+		file << "create_clock -name clk -period "  << (1.0e9/target_->frequency()) << "  [get_ports clk]"
+				 << endl;
+		file.close();
+#endif
 	}
 
 	

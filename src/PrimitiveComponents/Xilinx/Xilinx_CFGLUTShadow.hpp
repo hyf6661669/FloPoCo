@@ -1,8 +1,7 @@
-#ifndef Xilinx_CFGLUT5_H
-#define Xilinx_CFGLUT5_H
+#ifndef Xilinx_CFGLUTShadow_H
+#define Xilinx_CFGLUTShadow_H
 
-#include "PrimitiveComponents/Primitive.hpp"
-#include "PrimitiveComponents/Xilinx/Xilinx_Primitive.hpp"
+#include "Operator.hpp"
 
 namespace flopoco {
 	// new operator class declaration

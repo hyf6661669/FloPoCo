@@ -111,16 +111,19 @@ public:
 	 * @param width the number of bits of the signal.
 	 * @param isBus describes if this signal is a bus, that is, an instance of std_logic_vector
 	 */
-	void addInput  (const std::string name, const int width=1, const bool isBus=true);
+    void addInput  (const std::string name, const int width=1, const bool isBus=false);
 	
 	/** Adds an input wire (of type std_logic) to the operator.
 	 * Adds a signal of type Signal::in to the the I/O signal list.
 	 * @param name  the name of the signal
 	 */
+/*
+ *  This does not make any sense as addInput has default values!
+ *
 	void addInput  (const std::string name) {
 		addInput (name, 1, false);
 	}
-
+*/
 	void addInput (const char* name) {
 		addInput (name, 1, false);
 	}

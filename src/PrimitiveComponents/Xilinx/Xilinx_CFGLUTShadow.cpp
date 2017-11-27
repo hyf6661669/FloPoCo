@@ -12,8 +12,16 @@
 // include the header of the Operator
 #include "PrimitiveComponents/Xilinx/Xilinx_CFGLUTShadow.hpp"
 
+#include "PrimitiveComponents/Primitive.hpp"
+#include "PrimitiveComponents/Xilinx/Xilinx_Primitive.hpp"
+#include "PrimitiveComponents/Xilinx/Xilinx_CFGLUT5.hpp"
+#include "PrimitiveComponents/Xilinx/Xilinx_LUT_compute.h"
+#include "PrimitiveComponents/Xilinx/Xilinx_LUT6.hpp"
+
+
 using namespace std;
 namespace flopoco {
+
     Xilinx_CFGLUTShadow::Xilinx_CFGLUTShadow(Target* target, bool cfgLutCompatibleInterface) : Operator(target)
 	{
         srcFileName="Xilinx_CFGLUTShadow";
@@ -98,10 +106,14 @@ namespace flopoco {
         outPortMap(cfglut1,"cdo","cdo1", false);
         outPortMap(cfglut2,"cdo","cdo2", false);
 
+        vhdl << cfglut1->primitiveInstance("cfglut1",this);
+        vhdl << cfglut2->primitiveInstance("cfglut2",this);
+
+
         //construct the multiplexer:
         //LUT content of the LUTs:
-        lut_op lutop_o5 = !lut_in(0) & lut_in(1) | lut_in(0) & lut_in(2); //2:1 MUX between in1 and in2 (select input is in0)
-        lut_op lutop_o6 = !lut_in(0) & lut_in(3) | lut_in(0) & lut_in(4); //2:1 MUX between in3 and in4 (select input is in0)
+        lut_op lutop_o5 = (~lut_in(0) & lut_in(1)) | (lut_in(0) & lut_in(2)); //2:1 MUX between in1 and in2 (select input is in0)
+        lut_op lutop_o6 = (~lut_in(0) & lut_in(3)) | (lut_in(0) & lut_in(4)); //2:1 MUX between in3 and in4 (select input is in0)
         lut_init lutop( lutop_o5, lutop_o6 );
 
         Xilinx_LUT6_2 *muxlut = new Xilinx_LUT6_2( target );
@@ -113,10 +125,12 @@ namespace flopoco {
         inPortMap(muxlut,"i2","cfglut2_o5");
         inPortMap(muxlut,"i3","cfglut1_o6");
         inPortMap(muxlut,"i4","cfglut2_o6");
-        inPortMap(muxlut,"i5","1");
+        inPortMapCst(muxlut,"i5","'1'");
 
-        outPortMap(cfglut1,"o5","o5", false);
-        outPortMap(cfglut1,"o6","o6", false);
+        outPortMap(muxlut,"o5","o5", false);
+        outPortMap(muxlut,"o6","o6", false);
+
+        vhdl << muxlut->primitiveInstance("muxlut",this);
     }
 
 

@@ -25,21 +25,21 @@ namespace flopoco {
 
 
 		// declaring inputs
-        addInput("CLK");//clk
-        addInput("CE"); //clk enable
-        addInput("CDI");//configuration data in
+        addInput("clk");//clk
+        addInput("ce"); //clk enable
+        addInput("cdi");//configuration data in
 		
 		//selector inputs
-        addInput("I0");
-        addInput("I1");
-        addInput("I2");
-        addInput("I3");
-        addInput("I4");
+        addInput("i0");
+        addInput("i1");
+        addInput("i2");
+        addInput("i3");
+        addInput("i4");
 		
 		// declaring output
-        addOutput( "O5"); //4 LUT output
-        addOutput( "O6"); //5 LUT output
-        addOutput( "CDO"); //configuration data out
+        addOutput("o5"); //4 LUT output
+        addOutput("o6"); //5 LUT output
+        addOutput("cdo"); //configuration data out
 
         ///addComment(" This is a primitive and will directly be maped to a LUT without any logic description ");
 

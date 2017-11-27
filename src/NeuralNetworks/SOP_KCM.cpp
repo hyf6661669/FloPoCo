@@ -11,6 +11,7 @@
 // include the header of the Operator
 #include "SOP_KCM.hpp"
 #include "../PrimitiveComponents/Xilinx/Xilinx_CFGLUT5.hpp"
+#include "../PrimitiveComponents/Xilinx/Xilinx_CFGLUTShadow.hpp"
 #include "../BitHeap/BitHeap.hpp"
 #include <math.h>
 
@@ -121,51 +122,67 @@ namespace flopoco {
                     {
 
                         vhdl << std::endl;
-                        Xilinx_CFGLUT5 *myCFGLUT = new Xilinx_CFGLUT5(target);
+
+                        bool useShadowLUTs=true;
+                        Operator *myCFGLUT;
+                        if(useShadowLUTs)
+                        {
+                            myCFGLUT = new Xilinx_CFGLUTShadow(target);
+                        }
+                        else
+                        {
+                            myCFGLUT = new Xilinx_CFGLUT5(target);
+                            ((Xilinx_CFGLUT5*) myCFGLUT)->setGeneric( "init", generateInitStringFor(defaultConstant,LUT_No) );
+                            inPortMapCst(myCFGLUT, "clk","clk");
+                        }
                         addToGlobalOpList(myCFGLUT);
 
-                        myCFGLUT->setGeneric( "init", generateInitStringFor(defaultConstant,LUT_No) );
-
-                        inPortMapCst(myCFGLUT, "CLK","clk");
-                        inPortMap(myCFGLUT, "CE","LUT_Config_clk_enable");
-                        inPortMap(myCFGLUT, "CDI",join(configurationStreamSignalName,to_string((int)(floor(LUT_No/2) + ceil(((float)LUT_per_stage)/2)*stage)),")"));
+                        inPortMap(myCFGLUT, "ce","LUT_Config_clk_enable");
+                        inPortMap(myCFGLUT, "cdi",join(configurationStreamSignalName,to_string((int)(floor(LUT_No/2) + ceil(((float)LUT_per_stage)/2)*stage)),")"));
 
                         for(int i = 0; i <= LUT_bit_width; ++i)
                         {
                             if(i == LUT_bit_width)
-			    {
-                             inPortMapCst(myCFGLUT, join("I", to_string(i)),"'1'");// the highest bit is true to use the 5 input LUT as two 4 input Luts
-			    }
-			    else if((i+stage*LUT_bit_width) < input_bit_width)
-			    {
-			     inPortMap(myCFGLUT, join("I", to_string(i)),join(inputSignalName,to_string(i+stage*LUT_bit_width),")"));
-			    }
+                            {
+                                inPortMapCst(myCFGLUT, join("i", to_string(i)),"'1'");// the highest bit is true to use the 5 input LUT as two 4 input Luts
+                            }
+                            else if((i+stage*LUT_bit_width) < input_bit_width)
+                            {
+                                inPortMap(myCFGLUT, join("i", to_string(i)),join(inputSignalName,to_string(i+stage*LUT_bit_width),")"));
+                            }
                             else
-			    {
-                             inPortMapCst(myCFGLUT, join("I", to_string(i)),"'0'");
-			    }
+                            {
+                                inPortMapCst(myCFGLUT, join("i", to_string(i)),"'0'");
+                            }
                         }
 
                         string outputSignalNameLUT = outputSignalName + "(" + to_string(LUT_No-Lut_start_Counter) +")";
-                        outPortMap(myCFGLUT, "O6",outputSignalNameLUT,false);// MH switch 5 6
+                        outPortMap(myCFGLUT, "o6",outputSignalNameLUT,false);// MH switch 5 6
 			
 			
                         if(LUT_No+1 < LUT_per_stage)// if the nomber of LUts are odd
                         {
                             outputSignalNameLUT = outputSignalName + "(" + to_string(LUT_No+1-Lut_start_Counter) +")";
-                            outPortMap(myCFGLUT, "O5",outputSignalNameLUT,false);// MH switch 5 6
+                            outPortMap(myCFGLUT, "o5",outputSignalNameLUT,false);// MH switch 5 6
                         }
                         else
                         {
-                            outPortMap(myCFGLUT, "O5","open",false);// MH switch 5 6
+                            outPortMap(myCFGLUT, "o5","open",false);// MH switch 5 6
                         }
-                        //outPortMap(myCFGLUT, "CDO", "open",false);
+                        //outPortMap(myCFGLUT, "cdo", "open",false);
 
-			string debug_signalName = "CFGLUT_ProductNo_"+ to_string(prNo) + "_LUTstage_" + to_string(stage) + "_LUT_No_" +to_string(LUT_No)+ "_and_" + to_string(LUT_No+1);
-			outPortMap(myCFGLUT, "CDO", debug_signalName,true);
+                        string debug_signalName = "CFGLUT_ProductNo_"+ to_string(prNo) + "_LUTstage_" + to_string(stage) + "_LUT_No_" +to_string(LUT_No)+ "_and_" + to_string(LUT_No+1);
+                        outPortMap(myCFGLUT, "cdo", debug_signalName,true);
 			
                         string instanceName = "CFGLUT_inst_ProductNo_"+ to_string(prNo) + "_LUTstage_" + to_string(stage) + "_LUT_No_" +to_string(LUT_No)+ "_and_" + to_string(LUT_No+1);
-                        vhdl << myCFGLUT->primitiveInstance(instanceName,this);
+                        if(useShadowLUTs)
+                        {
+                            vhdl << instance(myCFGLUT,instanceName);
+                        }
+                        else
+                        {
+                            vhdl << ((Xilinx_CFGLUT5*) myCFGLUT)->primitiveInstance(instanceName,this);
+                        }
 
                     }
                 }

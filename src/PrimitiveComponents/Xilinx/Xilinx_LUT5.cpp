@@ -35,6 +35,17 @@ namespace flopoco {
         base_init();
     }
 
+    Xilinx_CFGLUT5::Xilinx_CFGLUT5( Target *target ) : Xilinx_LUT5_base( target ) {
+        setName( "CFGLUT5" );
+        addInput("clk");
+        addInput("ce"); //clk enable
+        addInput("cdi");//configuration data in
+        addOutput( "o5", 1 ); //4 LUT output
+        addOutput( "o6", 1 ); //5 LUT output
+        addOutput( "cdo", 1 ); //configuration data out
+        base_init();
+    }
+
     void Xilinx_LUT5_base::base_init() {
         // definition of the source file name, used for info and error reporting using REPORT
         srcFileName = "Xilinx_LUT5";

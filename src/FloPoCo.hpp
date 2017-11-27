@@ -163,6 +163,7 @@
 #include "PrimitiveComponents/Xilinx/Xilinx_Comparator.hpp"
 #include "PrimitiveComponents/Xilinx/Xilinx_GenericAddSub.hpp"
 #include "PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State.hpp"
+#include "PrimitiveComponents/Xilinx/Xilinx_CFGLUT5.hpp"
 #include "SAD/SAD.hpp"
 #include "ConstMultPAG/ConstMultPAG.hpp"
 #include "ConstMultPAG/IntConstMultOpt.hpp"
@@ -174,7 +175,10 @@
 #include "UserDefinedOperator.hpp"
 
 /* neural networks ------------------------------------------------------ */
+#include "NeuralNetworks/ConfigurationController.hpp"
 #include "NeuralNetworks/ConvolutionalCore.hpp"
+#include "NeuralNetworks/SOP_KCM.hpp"
+#include "NeuralNetworks/CoreTE.hpp"
 
 
 

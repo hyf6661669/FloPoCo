@@ -13,6 +13,7 @@ namespace flopoco {
         void base_init();
     };
 
+
     class Xilinx_LUT5 : public Xilinx_LUT5_base {
       public:
         Xilinx_LUT5( Target *target );
@@ -30,6 +31,13 @@ namespace flopoco {
         Xilinx_LUT5_D( Target *target );
         ~Xilinx_LUT5_D() {};
     };
+
+    class Xilinx_CFGLUT5 : public Xilinx_LUT5_base {
+      public:
+        Xilinx_CFGLUT5( Target *target );
+        ~Xilinx_CFGLUT5() {};
+    };
+
 }//namespace
 
 #endif

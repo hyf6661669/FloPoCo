@@ -202,7 +202,7 @@ namespace flopoco
         //the preset value is infinity (a.k.a. 10.0)
 		if(mode.compare("heuristic_parandeh-afshar_modified") != 0){
             //lowerBounds[0] = 0;
-            //lowerBounds[1] = 1.75;
+            //lowerBounds[1] = 0;
 			//lowerBounds[2] = 1.75;
 			//lowerBounds[3] = 1.75;
 			//lowerBounds[4] = 0;
@@ -857,16 +857,6 @@ namespace flopoco
             while(found == true && !(debugLoop && debugCount >= debugMax)){
                 debugCount++;
 
-                if(useSmootherCompressorPlacing){
-                    bool smootherUsed;
-                    smootherUsed = smootherCompressorPlacing(s, 1.75);
-
-                    if(smootherUsed){   //show bitheap only if it is used to see changes
-                        cout << "BitHeap after using a smoother compressor placing in stage " << s << endl;
-                        printBitHeap();
-                    }
-                }
-
                 found = false;
 				foundVariableCompressor = false;
 
@@ -947,8 +937,6 @@ namespace flopoco
 
                         //check if it is necessary
                         bool necessary = true;
-                        //BUG: if we build a solution, then the last "2-x" bits are allways covered with flipflops
-                        //if(i != compressors.size() - 1){        //if i is the last one than it is a flipflop and we need it to build a solution
                         if(!fabs(lowerBounds[s]) < 0.001){
                             necessary = false;
                             for(unsigned k = 0; k < currentMaxColumn + compressors[i].pointer->getNumberOfColumns(); k++){
@@ -962,7 +950,6 @@ namespace flopoco
                                 }
                             }
                         }
-
                         if(achievedEfficiencyCurrent > (achievedEfficiencyBest + 0.0001) && achievedEfficiencyCurrent > (lowerBounds[s] - 0.0001) && necessary){       //accuracy !!
                             achievedEfficiencyBest = achievedEfficiencyCurrent;
                             compressor = i;
@@ -1002,7 +989,7 @@ namespace flopoco
             //have to put the remaining bits into the next stage.
             //if we reached the stage were we can use the two-bit-adder, we are done
             if(fabs(lowerBounds[s]) < 0.0001 ){
-                /*
+/*              //not needed because in the compressorlist is already a flipflop at the back.
                 cout << "generate solution - therefore put remaining bits into the next stage" << endl;
                 for(unsigned j = 0; j < newBits[s].size(); j++){
                     if(newBits[s][j] > 0){
@@ -1010,17 +997,15 @@ namespace flopoco
                         newBits[s + 1][j] += newBits[s][j];
                         newBits[s][j] = 0;
 
-                        //assuming: flip-flop is not in compressors, but after that at the back of bh_->possibleCompressors
-                        //which is compressors.size
                         for(int k = 0; k < temp; k++){
-                            solution[s].push_back(pair<int,int>((compressors.size()),j));
+                            solution[s].push_back(pair<int,int>((compressors.size() - 1),j));
 
                         }
 
                     }
                 }
+*/
 
-                */
                 //check exit-condition
 
                 bool twoBitAdderReached = true;
@@ -1089,6 +1074,63 @@ namespace flopoco
 
     }
 
+    pair<int,int> BitHeapHeuristicCompression::parandehAfsharSearch(int stage, int column){
+
+        int compressor = -1;
+        int resultColumn = -1;
+        double achievedEfficiencyBest = -1;
+        bool found = false;
+
+
+
+        for(unsigned i = 0; i < compressors.size(); i++){
+            double achievedEfficiencyCurrentLeft = compEffBitHeap(stage, column, i);
+
+            double achievedEfficiencyCurrentRight = -1;
+            int rightStartPoint = column - (compressors[i].pointer->getNumberOfColumns() - 1);
+            //cout << "rightStartPoint is " << rightStartPoint << " and length of compressorColumns -1 is " << (compressors[i].pointer->getNumberOfColumns() - 1) << endl;
+            if(rightStartPoint >= 0){
+                achievedEfficiencyCurrentRight = compEffBitHeap(stage, (unsigned) rightStartPoint, i);
+            }
+            //cout << "column is " << currentMaxColumn << " and compressor is " << i << endl;
+            //cout << " right Eff = " << achievedEfficiencyCurrentRight << " and left Eff = " << achievedEfficiencyCurrentLeft << endl;
+
+            if(achievedEfficiencyCurrentLeft > 0.0001 && achievedEfficiencyCurrentRight <= achievedEfficiencyCurrentLeft + 0.0001){
+                //normal (left) search is successful - prefer it if left and right search has equal efficiency
+
+                if(achievedEfficiencyBest + 0.0001 < achievedEfficiencyCurrentLeft){
+                    achievedEfficiencyBest = achievedEfficiencyCurrentLeft;
+                    compressor = i;
+                    resultColumn = column;
+                }
+                found = true;
+            }
+            else if(achievedEfficiencyCurrentRight > 0.0001){
+                //right search is successful
+
+                if(achievedEfficiencyBest + 0.0001 < achievedEfficiencyCurrentRight){
+                    achievedEfficiencyBest = achievedEfficiencyCurrentRight;
+                    compressor = i;
+                    resultColumn = rightStartPoint;
+                }
+                found = true;
+            }
+            //cout << "current best compressor = " << compressor << " and column  = " << column <<  " with efficiency " << achievedEfficiencyBest << endl;
+        }
+        //cout << "after pa search achievedEfficiencyBest is " << achievedEfficiencyBest << " and column " << resultColumn << " and compressor is " << compressor << endl;
+
+        pair<int, int> result;
+        if(found == true){
+            result.first = resultColumn;
+            result.second = compressor;
+        }
+        else{
+            result.first = -1;
+            result.second = -1;
+        }
+        return result;
+    }
+
     void BitHeapHeuristicCompression::parandehAfshar(){
 
         cout << "in parandeh-Afshar" << endl;
@@ -1101,119 +1143,74 @@ namespace flopoco
 			cout << "paSorting is false" << endl;
 		}
 
-
-        //if debugLoop == true, there are only debugMax steps
-        bool debugLoop = false;
         bool exit = false;
-        int debugMax = 100;
-        int debugCount = 0;
 
-
-        for(unsigned s = 0; s < (newBits.size() - 1) && !exit && !(debugLoop && debugCount >= debugMax); s++){
+        for(unsigned s = 0; s < (newBits.size() - 1); s++){
             //cout << "stage = " << s << endl;
-            debugCount++;
             bool found = true;
-            while(found && !(debugLoop && debugCount >= debugMax)){
-                debugCount++;
+            while(found){
                 found = false;
-                double achievedEfficiencyBest = -1.0;
                 unsigned compressor = 0;
                 unsigned column = 0;
-
-                bool used[newBits[s].size()];        //used to check whether we already tried the compressor in this column
-                for(unsigned k = 0; k < newBits[s].size(); k++){
-                    used[k] = false;
+                pair<int,int> result;
+                //cout << "now find compressor" << endl;
+                unsigned currentMaxColumn = 0;
+                int maxSize = 0;
+#if 0
+                for(unsigned c = 0; c < newBits[s].size(); c++){
+                    //cout << "s = " << s << " c = " << c << " and newBits = " << newBits[s][c] << "  ---old- maxWidth = " << maxSize << " currentMaxColumn = " << currentMaxColumn<< endl;
+                    if(newBits[s][c] > maxSize){
+                        currentMaxColumn = c;
+                        maxSize = newBits[s][c];
+                    }
                 }
+                //cout << "maxColumn is " << currentMaxColumn << " and maxSize is " << maxSize << endl;
+                if(maxSize > 0){ //otherwise there are no bits left in this stage
+                    result = parandehAfsharSearch(s, currentMaxColumn);
+                    if(result.first >= 0){
+                        found = true;
+                    }
+                }
+#endif
 
-                unsigned columnsAlreadyChecked = 0;
-
-                while((columnsAlreadyChecked < newBits[s].size()) && !found ){ //if we found a compressor in the current column, then we dont search the next column
-
-                    //cout << "now find compressor" << endl;
-                    unsigned currentMaxColumn = 0;
-                    int currentSize = 0;
+                bool used[newBits[s].size()];
+                for(unsigned k = 0; k < newBits[s].size(); k++){
+                    used[k] = 0;
+                }
+                for(unsigned a = 0; a < newBits[s].size(); a++){
+                    //find maxColumn
                     for(unsigned c = 0; c < newBits[s].size(); c++){
-                        //cout << "s = " << s << " c = " << c << " and newBits = " << newBits[s][c] << "  ---old- maxWidth = " << currentSize << " currentMaxColumn = " << currentMaxColumn<< endl;
-                        if(!used[c] && newBits[s][c] > currentSize){
+                        if(used[c] == false && newBits[s][c] > maxSize){
                             currentMaxColumn = c;
-                            currentSize = newBits[s][c];
+                            maxSize = newBits[s][c];
                         }
                     }
                     used[currentMaxColumn] = true;
-                    columnsAlreadyChecked++;
 
-                    for(unsigned i = 0; i < compressors.size() && !(debugLoop && debugCount >= debugMax); i++){
-                        double achievedEfficiencyCurrentLeft = compEffBitHeap(s, currentMaxColumn, i);
-
-                        double achievedEfficiencyCurrentRight = -1;
-                        int rightStartPoint = currentMaxColumn - (compressors[i].pointer->getNumberOfColumns() - 1);
-
-                        if(rightStartPoint > 0){
-                            achievedEfficiencyCurrentRight = compEffBitHeap(s, (unsigned) rightStartPoint, i);
-                        }
-                        //cout << "column is " << currentMaxColumn << " and compressor is " << i << endl;
-                        //cout << " right Eff = " << achievedEfficiencyCurrentRight << " and left Eff = " << achievedEfficiencyCurrentLeft << endl;
-
-                        if(achievedEfficiencyCurrentLeft > (0.0001 + threshold) && achievedEfficiencyCurrentRight <= achievedEfficiencyCurrentLeft + 0.0001){
-                            //normal (left) search is successful - prefer it if left and right search has equal efficiency
-
-                            if(achievedEfficiencyBest + 0.0001 < achievedEfficiencyCurrentLeft){
-                                achievedEfficiencyBest = achievedEfficiencyCurrentLeft;
-                                compressor = i;
-                                column = currentMaxColumn;
-                            }
+                    //check found column
+                    if(maxSize > 0){
+                        result = parandehAfsharSearch(s, currentMaxColumn);
+                        if(result.first >= 0){
                             found = true;
                         }
-                        else if(achievedEfficiencyCurrentRight > (0.0001 + threshold) && achievedEfficiencyCurrentRight > achievedEfficiencyCurrentLeft + 0.0001){
-                            //right search is successful
-
-                            if(achievedEfficiencyBest + 0.0001 < achievedEfficiencyCurrentRight){
-                                achievedEfficiencyBest = achievedEfficiencyCurrentRight;
-                                compressor = i;
-                                column = rightStartPoint;
-                            }
-                            found = true;
-                        }
-                        //cout << "current best compressor = " << compressor << " and column  = " << column <<  " with efficiency " << achievedEfficiencyBest << endl;
                     }
-
-                }
-
-                //now use the compressor
-
-                if(found){
-                    useCompressor(s, column, compressor);
-                    cout << "used compressor "<< compressor<< " in column "<<column<< " and stage " << s << " with efficiency " << achievedEfficiencyBest << endl;
-                    //printBitHeap();
-                    //cout << endl;
-                }
-                //check if we got the exit condition
-                exit = true;
-                for(unsigned k = 0; k < newBits[newBits.size() - 1].size(); k++){       //go through all columns
-                    unsigned sum = 0;
-                    for(unsigned t = s; t < newBits.size(); t++){                       //go through all stages starting with s
-                        if(newBits[t].size() > k){
-                            //cout << "checking " << t << " and " << k << " with value " << newBits[t][k] << endl;
-                            if(newBits[t][k] > 0){
-                               sum += newBits[t][k];
-                            }
-                        }
-                    }
-
-                    if(sum > 2){
-                        exit = false;
+                    if(found){
                         break;
                     }
                 }
 
-                if(exit){
-                    //cout << endl << "we reached the end___________________________________" << endl;
-                    break;
+
+                //now use the compressor
+                if(found){
+                    column = result.first;
+                    compressor = result.second;
+                    useCompressor(s, column, compressor);
+                    cout << "used compressor "<< compressor << " in column " << column << " and stage " << s << endl;
+                    //printBitHeap();
+                    //cout << "new iteration" << endl;
+                    //cout << endl;
                 }
-
-
             }
-
 
             //now we are done with this stage. if we need to generate a solution, then we
             //have to put the remaining bits into the next stage.
@@ -1274,7 +1271,7 @@ namespace flopoco
                     zeroVector.resize(newBits[s].size() + compOutputWordSizeMax);
                     newBits.push_back(zeroVector);
 
-                    cout << "added a new stage because the parandeh-afshar algorithm wasn't able to find a solution" << endl;
+                    cout << "added a new stage because compression tree generation isn't finished yet" << endl;
                 }
 
 
@@ -1726,6 +1723,9 @@ namespace flopoco
         //now in sum are the bits which are covered with this compressor
         sum -= compressors[compPos].pointer->getOutputSize();
 
+        if(compressors[compPos].pointer->areaCost < 0.00001){
+            cout << " compressor " << compPos << " has areaCost of " << compressors[compPos].pointer->areaCost << endl;
+        }
 
         double eff = ((double) sum) / compressors[compPos].pointer->areaCost;
 
@@ -1922,7 +1922,7 @@ namespace flopoco
 
         vector<BasicCompressor *> * comps = bh_->getPossibleCompressors();
         double areaSize = 0.0;
-        double flipFlopCost = 0.0;
+        double flipFlopCost = 1.0;
         if(bh_->getOp()->getTarget()->isPipelined())        {
             std::string targetID = bh_->getOp()->getTarget()->getID();
             if((targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6")){
@@ -1937,17 +1937,17 @@ namespace flopoco
         }
 		unsigned offset = compressors.size();
         for(unsigned i = 0; i < solution.size(); i++){
-            cout << "i = " << i << endl;
             list<pair<int, int> >:: iterator it;
 
             for(it = solution[i].begin(); it != solution[i].end(); it++){
+                double areaOfCurrentCompressor = 0.0;
                 if((*it).first == (int) compressors.size()){
-                    areaSize += flipFlopCost; //cost of flipflop
+                    areaOfCurrentCompressor = flipFlopCost; //cost of flipflop
                 }
 				else if((unsigned) (*it).first > compressors.size()){
 					//variable basic Compressor
 					if(((*it).first) - offset < variableBCompressors.size()){
-						areaSize += variableBCompressors[(*it).first - offset].areaCost;
+						areaOfCurrentCompressor = variableBCompressors[(*it).first - offset].areaCost;
 					}
 					else{
 						cout << "warning: non specified compressor number " << (*it).first << endl;
@@ -1956,10 +1956,11 @@ namespace flopoco
 					}
 				}
                 else{
-                    areaSize += comps->at((*it).first)->areaCost;
+                    areaOfCurrentCompressor = comps->at((*it).first)->areaCost;
                 }
+                //cout << "found compressor " << (*it).first << " with cost " << areaOfCurrentCompressor << " in stage " << i << endl;
+                areaSize += areaOfCurrentCompressor;
 
-                //areaSize += compressors[(*it).first].areaCost;
             }
         }
 
@@ -1969,9 +1970,12 @@ namespace flopoco
 				list<variableCompressor>::iterator it;
 				for(it = varCompSolution[s].begin(); it != varCompSolution[s].end(); it++){
 					unsigned type = (*it).type * 3;
-					areaSize += variableBCompressors[type].areaCost;
-					areaSize += (*it).middleCompressorWidth * variableBCompressors[type + 1].areaCost;
-					areaSize += variableBCompressors[type + 2].areaCost;
+                    double areaOfCurrentCompressor = 0;
+					areaOfCurrentCompressor += variableBCompressors[type].areaCost;
+					areaOfCurrentCompressor += (*it).middleCompressorWidth * variableBCompressors[type + 1].areaCost;
+					areaOfCurrentCompressor += variableBCompressors[type + 2].areaCost;
+                    //cout << " found variable compressor " << (*it).type << " with cost " << areaOfCurrentCompressor << " in stage " << s << endl;
+                    areaSize += areaOfCurrentCompressor;
 				}
 
 			}
@@ -2082,7 +2086,7 @@ namespace flopoco
                     setUpILPForMoreStages(s, false);
                     bitHeapILPCompression.generateProblem();
                 }
-
+                bitHeapILPCompression.writeProblem();
                 bitHeapILPCompression.solve();
                 cout << "solving done" << endl;
                 if(!bitHeapILPCompression.infeasible){

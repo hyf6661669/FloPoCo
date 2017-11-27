@@ -38,15 +38,15 @@ namespace flopoco
 {
 
 	BitHeap::BitHeap(
-			Operator* op, 
-			int maxWeight, 
-			bool enableSuperTiles, 
-			string name, 
+			Operator* op,
+			int maxWeight,
+			bool enableSuperTiles,
+			string name,
 			int compressionType,
 			string efficiencyPerStage
 		) :
-			op(op), 
-			maxWeight(maxWeight), 
+			op(op),
+			maxWeight(maxWeight),
 			enableSuperTiles(enableSuperTiles),
 			efficiencyPerStage(efficiencyPerStage)
 	{
@@ -90,7 +90,7 @@ namespace flopoco
 
 		bitheapCompressed = false;
 		//bitheapRounded = false;
-		
+
 		/* Uni KS start */
 		if(compressionType < 0)
 		{
@@ -820,8 +820,8 @@ namespace flopoco
 			cycle = op->getCurrentCycle();
 
 		WeightedBit* bit= new WeightedBit(getGUid(), newUid(w), w, type, cycle, op->getCriticalPath()) ;
-		/* Uni KS stop */			
-		
+		/* Uni KS stop */
+
 		// created at (op->getCycle(), opt-getCriticalPath())
 
 		int bitStage = bit->computeStage(stagesPerCycle, elementaryTime);
@@ -1391,7 +1391,7 @@ namespace flopoco
 #endif
 		/* Uni KS start */
 		//as the FloPoCo heuristic has problems with >2 columns, the TargetOptCompressors are only generated when compressionType is right:
-		if(compressionType >= 3) 
+		if(compressionType >= 3)
 		{
 			std::string targetID = op->getTarget()->getID();
 			if((targetID == "Virtex5") || (targetID == "Virtex6") || (targetID == "Virtex7") || (targetID == "Spartan6"))
@@ -1673,7 +1673,7 @@ namespace flopoco
                 if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
 				ilp.solve();
 //				if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
-					
+
 				for(unsigned s=0; s < ilp.solution.size(); s++)
 				{
 					list<pair<int,int> >::iterator it;
@@ -1739,25 +1739,25 @@ namespace flopoco
 
 /*
                 BitHeapHeuristicCompression ilp2(this, mode, false);
-				ilp2.useVariableCompressors = false;				
+				ilp2.useVariableCompressors = false;
 				ilp2.setLowerBounds(efficiencyPerStage);
 
 				ilp2.generateProblem();
 				ilp2.solve();
-				
+
 				double area2 = ilp2.computeAreaofSolution();
-				
+
 				cout << "______________" << endl << endl << endl;
-				
+
 				cout << "area1 with variable compressors is " << area1 << " and area2 without variable compressors is " << area2 << endl << endl << endl;
 				cout << "______________" << endl;
-				
+
 				if(area2 < area1 + 0.0001){
 					ilp = ilp2;
 					cout << "using version without variable compressors" << endl;
 				}
 */
-				
+
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 
                 //copying solution from heuristic to ILPCompression:
@@ -1875,29 +1875,29 @@ namespace flopoco
 
 				ilp.generateProblem();
 				ilp.solve();
-				
+
 				double area1 = ilp.computeAreaofSolution();
-				
-				
+
+
                 BitHeapHeuristicCompression ilp2(this, mode, false);
-				ilp2.useVariableCompressors = false;				
+				ilp2.useVariableCompressors = false;
 				ilp2.setLowerBounds(efficiencyPerStage);
 
 				ilp2.generateProblem();
 				ilp2.solve();
-				
+
 				double area2 = ilp2.computeAreaofSolution();
-				
+
 				cout << "______________" << endl << endl << endl;
-				
+
 				cout << "area1 with variable compressors is " << area1 << " and area2 without variable compressors is " << area2 << endl << endl << endl;
 				cout << "______________" << endl;
-				
+
 				if(area2 < area1 + 0.0001){
 					ilp = ilp2;
 					cout << "using version without variable compressors" << endl;
 				}
-				
+
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 
 				//copying solution from heuristic to ILPCompression:
@@ -1977,7 +1977,7 @@ namespace flopoco
                 }
 				REPORT(DEBUG, "pipeline depth in compression: " << op->getPipelineDepth());
             }
-/* Uni KS stop */            
+/* Uni KS stop */
 			else
 			{
 				//lutCompressionLevel=2 - compression using a mix of compressors and adder tree for the last lines
@@ -2206,7 +2206,7 @@ namespace flopoco
 			REPORT(INFO, "compressor " << i << " used " << compressorUsage[i] << " times (cost contribution: " << compressorUsage[i]*possibleCompressors[i]->areaCost << ")");
 			compressorCost += compressorUsage[i]*possibleCompressors[i]->areaCost;
 		}
-        REPORT(INFO, "total cost for compressors: " << compressorCost); 
+        REPORT(INFO, "total cost for compressors: " << compressorCost);
         //cout << "done with code generation, guid is " << guid << endl;
 
 		bitheapCompressed = true;
@@ -3853,4 +3853,3 @@ namespace flopoco
         bool BitHeap::getSignedIO() {return signedIO;}
 
 }
-

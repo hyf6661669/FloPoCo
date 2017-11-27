@@ -267,7 +267,7 @@ int BitHeapILPCompression::generateProblem(){
     }
 
 
-    for(unsigned s=0; s < compCountVars.size(); s++)
+    for(unsigned s=0; s < compCountVars.size() - 1; s++)
     {
         for(unsigned e=0; e < compCountVars[s].size(); e++)
         {
@@ -380,7 +380,7 @@ int BitHeapILPCompression::generateProblem(){
     ScaLP::Term objectiveSum;
     cout << "possibleCompressors_->size() is " << possibleCompressors_->size() << endl;
 
-    for(unsigned int s = 0; s < compCountVars.size(); s++){
+    for(unsigned int s = 0; s < compCountVars.size() - 1; s++){
         for(unsigned int e = 0; e < compCountVars[s].size(); e++){
             for(unsigned int c = 0; c < compCountVars[s][e].size(); c++){
                 if(!useVariableCompressors){
@@ -400,6 +400,7 @@ int BitHeapILPCompression::generateProblem(){
     }
     ScaLP::Objective obj = ScaLP::minimize(objectiveSum);
     problemSolver->setObjective(obj);
+    //problemSolver->writeLP("compressorTree.lp");
 
 #else
     SCIP_CONS* tmpcons; //needed for scip constraints
@@ -529,6 +530,8 @@ int BitHeapILPCompression::generateProblem(){
             //c1Constraint.setName(consName.str());
             c1Constraint.name = consName.str();
             problemSolver->addConstraint(c1Constraint);
+            //problemSolver->writeLP("compressorTreec1.lp");
+            //cout << "wrote c1Constraint" << endl;
 
 #else
             if(s != 0){
@@ -609,7 +612,7 @@ int BitHeapILPCompression::generateProblem(){
             //c2Constraint.setName(consName.str());
             c2Constraint.name = consName.str();
             problemSolver->addConstraint(c2Constraint);
-
+            //problemSolver->writeLP("compressorTreec2.lp");
 #else
             SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, columnBitCountVars[s][c] , -1) );
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
@@ -645,7 +648,7 @@ int BitHeapILPCompression::generateProblem(){
             //c3Constraint.setName(consName.str());
             c3Constraint.name = consName.str();
             problemSolver->addConstraint(c3Constraint);
-
+            //problemSolver->writeLP("compressorTreec3.lp");
 
 #else
             SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, -SCIPinfinity(scip), LARGE_NUMBER+2) );
@@ -701,7 +704,7 @@ int BitHeapILPCompression::generateProblem(){
         //c4_1Constraint.setName("C4_1");
         c4_1Constraint.name = "C4_1";
         problemSolver->addConstraint(c4_1Constraint);
-
+        //problemSolver->writeLP("compressorTreec4_1.lp");
 #else
         SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, "C4_1", 0, NULL, NULL, 1, 1) );
         SCIP_CALL( SCIPaddCoefLinear(scip, tmpcons, stageVars[noOfStages_], 1) );
@@ -745,7 +748,7 @@ int BitHeapILPCompression::generateProblem(){
                     //c5Constraint.setName(consName.str());
                     c5Constraint.name = consName.str();
                     problemSolver->addConstraint(c5Constraint);
-
+                    //problemSolver->writeLP("compressorTreec5.lp");
 #else
 					SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consName.str().c_str(), 0, NULL, NULL, 0, 0) );
 
@@ -770,6 +773,7 @@ int BitHeapILPCompression::generateProblem(){
                 //c5bConstraint.setName(consNameB.str());
                 c5bConstraint.name = consNameB.str();
                 problemSolver->addConstraint(c5bConstraint);
+                //problemSolver->writeLP("compressorTreec5_b.lp");
 
 #else
 				SCIP_CALL( SCIPcreateConsBasicLinear(scip, &tmpcons, consNameB.str().c_str(), 0, NULL, NULL, 0, 0) );
@@ -894,7 +898,8 @@ int BitHeapILPCompression::writeProblem(std::string filename){
     //print model in LP format:
 #ifdef HAVE_SCALP
     cout << "before writeLP" << endl;
-    problemSolver->writeLP(fname);
+    //problemSolver->writeLP(fname);
+    //problemSolver->showLP();
     cout << "after writeLP" << endl;
 #else
     SCIP_RESULT result;

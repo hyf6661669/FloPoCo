@@ -41,9 +41,14 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
         int LUT_bit_width=4;
         int LUT_per_stage = const_bit_width+LUT_bit_width;
         int No_of_stages = ceil((float)const_bit_width / (float)LUT_bit_width);
+
+        SOP_KCM *my_SOP_KCM = new SOP_KCM(target,input_bit_width, const_bit_width,no_of_products,32);
+        addToGlobalOpList(my_SOP_KCM);
+
+
         {
             int max_delay=no_of_products;
-            int delay_bit_width = ceil(((float)LUT_per_stage)/2)*No_of_stages;
+            int delay_bit_width = my_SOP_KCM->get_cdi_bit_with()*2;
 
             ShiftReg* my_ShiftReg = new ShiftReg(target,delay_bit_width,max_delay);
             addToGlobalOpList(my_ShiftReg);
@@ -74,8 +79,6 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
             //vhdl << my_ShiftReg->instance(this,"ShiftReg_X_inst") << std::endl;
         }
 
-        SOP_KCM *my_SOP_KCM = new SOP_KCM(target,input_bit_width, const_bit_width,no_of_products,1);
-        addToGlobalOpList(my_SOP_KCM);
         inPortMap(my_SOP_KCM,"LUT_Config_clk_enable","LUT_Config_clk_enable");
         for(int i=0; i < no_of_products; ++i)
         {
@@ -83,7 +86,11 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
         }
         for(int i=0; i < no_of_products; ++i)
         {
-            inPortMap(my_SOP_KCM,join("cdi_no_",i),join("cdi_no_",i));
+
+            string MSBSignalName = "cdi_no_" + to_string(i) + "(" + to_string(my_SOP_KCM->get_cdi_bit_with()*2-1) + " downto " + to_string(my_SOP_KCM->get_cdi_bit_with()) + ")";
+            string LSBSignalName = "cdi_no_" + to_string(i) + "(" + to_string(my_SOP_KCM->get_cdi_bit_with()-1) + " downto 0)";
+            inPortMap(my_SOP_KCM,join("cdi_MSB_no_",i),MSBSignalName);
+            inPortMap(my_SOP_KCM,join("cdi_LSB_no_",i),LSBSignalName);
         }
 
         outPortMap(my_SOP_KCM, "result","result");

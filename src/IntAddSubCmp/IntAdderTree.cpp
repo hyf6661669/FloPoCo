@@ -23,15 +23,15 @@ namespace flopoco {
     IntAdderTree::IntAdderTree(Target* target, int wIn, int noOfInputs, string method, bool redundantOutput, bool useVariableColumnCompressors) : Operator(target), wIn_(wIn), noOfInputs_(noOfInputs) {
 		/* constructor of the IntAdderTree
 		   Target is the targeted FPGA : Stratix, Virtex ... (see Target.hpp for more informations)
-		   param0 and param1 are some parameters declared by this Operator developpers, 
-		   any number can be declared, you will have to modify 
-		   -> this function,  
+		   param0 and param1 are some parameters declared by this Operator developpers,
+		   any number can be declared, you will have to modify
+		   -> this function,
 		   -> the prototype of this function (available in IntAdderTree.hpp)
 		   -> the lines in main.cpp where the command line arguments are parsed in order to generate this IntAdderTree
 		*/
 		/* In this constructor we are going to generate an operator that takes as input three bit vectors X,Y,Z of lenght param0, treats them as unsigned integers, sums them and then output the last param1 bit of the sum adding the first bit of the sum (most significant) in front of this output, all the vhdl code needed by this operator has to be generated in this function */
 
-		// definition of the source file name, used for info and error reporting using REPORT 
+		// definition of the source file name, used for info and error reporting using REPORT
 		srcFileName="IntAdderTree";
 
 //		addHeaderVHDL("use work.xxxx.all");
@@ -41,16 +41,16 @@ namespace flopoco {
 		ostringstream name;
         name << "IntAdderTree_" << method << "_" << wIn_ << "_" << noOfInputs_;
 		setName(name.str());
-		// Copyright 
+		// Copyright
         setCopyrightString("Marco Kleinlein, Martin Kumm");
 
 		setSequential();
 		useNumericStd();
 
 		/* SET UP THE IO SIGNALS
-		   Each IO signal is declared by addInput(name,n) or addOutput(name,n) 
-		   where name is a string that stands for the name of the variable and 
-		   n is an integer (int)   that stands for the length of the corresponding 
+		   Each IO signal is declared by addInput(name,n) or addOutput(name,n)
+		   where name is a string that stands for the name of the variable and
+		   n is an integer (int)   that stands for the length of the corresponding
 		   input/output */
 
 		ostringstream bitHeapName;
@@ -94,8 +94,9 @@ namespace flopoco {
             }
             else
             {
-                addOutput("Y" , bitheap->getMaxWeight()+1);
-                vhdl << tab << "Y <= " << bitheap->getSumName() << ";" << endl;
+                vhdl << tab << declare("Y_raw", bitheap->getMaxWeight() + 1) << " <= " << bitheap->getSumName() << ";" << endl;
+                //addOutput("Y" , bitheap->getMaxWeight()+1);
+                //vhdl << tab << "Y <= " << bitheap->getSumName() << ";" << endl;
             }
 
 		}
@@ -115,8 +116,8 @@ namespace flopoco {
 				{
 					if(i < inputsAtStage-1)
 					{
-						vhdl 	<< tab << declare(join("X_",s+1,"_",j++),wIn+s+1) 
-							<< " <= std_logic_vector(unsigned('0' & " << join("X_",s,"_",i+1) 
+						vhdl 	<< tab << declare(join("X_",s+1,"_",j++),wIn+s+1)
+							<< " <= std_logic_vector(unsigned('0' & " << join("X_",s,"_",i+1)
 							<< ") + unsigned('0' & " << join("X_",s,"_",i+2) << "));" << endl;
 					}
 					else
@@ -128,9 +129,9 @@ namespace flopoco {
 				s++;
 				nextCycle();
 			}
-			addOutput("Y" , wIn+s);
-
-			vhdl << tab << "Y <= X_" << s << "_1;" << endl;
+			//addOutput("Y" , wIn+s);
+            vhdl << tab << declare("Y_raw", wIn+s) << " <= X_" << s << "_1;" << endl;
+			//vhdl << tab << "Y <= X_" << s << "_1;" << endl;
 		}
         else if(method.compare("add3") == 0 )
         {
@@ -183,14 +184,34 @@ namespace flopoco {
                 nextCycle();
             }
 
-            addOutput("Y" , wIn+2*s); //currently, this is a worst-case estimate, so some of the MSBs are optimized during synthesis as they are zero
-
-            vhdl << tab << "Y <= X_" << s << "_1;" << endl;
+            vhdl << declare("Y_raw", wIn + 2*s) << " <= X_" << s << "_1;" << endl;
+            //addOutput("Y" , wIn+2*s); //currently, this is a worst-case estimate, so some of the MSBs are optimized during synthesis as they are zero
+            //vhdl << tab << "Y <= X_" << s << "_1;" << endl;
         }
 		else
 		{
 			THROWERROR("method " << method << " unknown!");
 		}
+
+        if(method.compare("add3") == 0 || method.compare("add2") == 0 || method.compare("bitheap") == 0)
+        {
+            //compute wordsize of output
+            mpz_t singleVectorMaxValue;
+            mpz_t totalMaxValue;
+            mpz_inits(singleVectorMaxValue, totalMaxValue, NULL);
+
+            mpz_pow_ui(singleVectorMaxValue, mpz_class(2).get_mpz_t(), (unsigned) wIn);
+            mpz_sub_ui(singleVectorMaxValue, singleVectorMaxValue, 1);  //max value of single input = (2^wIn) - 1
+            mpz_mul_ui(totalMaxValue, singleVectorMaxValue, (unsigned) noOfInputs); // totalmaxValue = noOfInputs * ((2^wIn) - 1)
+            unsigned int outputLength = mpz_sizeinbase(totalMaxValue, 2);
+            //cout << "outputLength is " << outputLength << " and totalMaxValue is " << totalMaxValue << endl;
+            mpz_clears(singleVectorMaxValue, totalMaxValue, NULL);
+            
+            //get the totalMaxValue lowest bits
+            addOutput("Y", outputLength);
+            vhdl << tab << "Y <= Y_raw(" << outputLength - 1 << " downto 0);" << endl;
+        }
+
 		//nextCycle(); //sync output (for timing analysis)
 
 	};
@@ -226,8 +247,8 @@ namespace flopoco {
                                              "",
 											 IntAdderTree::parseArguments
 											 ) ;
-	}	
-	
+	}
+
 	void IntAdderTree::emulate(TestCase * tc) {
 		/* This function will be used when the TestBench command is used in the command line
 		   we have to provide a complete and correct emulation of the operator, in order to compare correct output generated by this function with the test input generated by the vhdl code */
@@ -268,13 +289,22 @@ namespace flopoco {
         tc = new TestCase(this);
         for(int i=0; i < noOfInputs_; i++)
         {
-            tc->addInput(join("X",i+1), (mpz_class(1) << wIn_ - 1));
+            tc->addInput(join("X",i+1), ((mpz_class(1) << wIn_) - 1));
         }
         emulate(tc);
-        tc->addComment("Addition of max positive value");
+        tc->addComment("Addition of max positive value (unsigned)");   //???
+        tcl->add(tc);
+
+        tc = new TestCase(this);
+        for(int i=0; i < noOfInputs_; i++)
+        {
+            tc->addInput(join("X",i+1), (mpz_class(1) << (wIn_ - 1)));
+        }
+        emulate(tc);
+        tc->addComment("Addition of min negative value (signed)");   //???
         tcl->add(tc);
     }
-	
-	
-	
+
+
+
 }//namespace

@@ -25,6 +25,9 @@ namespace flopoco {
 
         bool signed_calculation; // if false there are just positive constnats and inputs
         bool faithful_rounding; // if false there are just positive constnats and inputs
+        bool allow_half_start_LUT;
+
+        int cdi_bit_width;
 
 	public:
 
@@ -38,10 +41,13 @@ namespace flopoco {
 		static OperatorPtr parseArguments(Target *target , vector<string> &args);
 		/** Factory register method */ 
 		static void registerFactory();
+        int get_cdi_bit_with();
+        int get_input_bit_with();
+        int get_output_bit_with();
 
     private:
         int LUT_bit_width;
-        string generateInitStringFor(int weight, unsigned int LUTNo);
+        string generateInitStringFor(int weight, unsigned int LUTNo, bool MSBLUT = false);
 
 
 	};

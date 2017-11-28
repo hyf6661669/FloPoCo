@@ -11,6 +11,7 @@
 // include the header of the Operator
 #include "SOP_KCM.hpp"
 #include "../PrimitiveComponents/Xilinx/Xilinx_CFGLUT5.hpp"
+#include "../PrimitiveComponents/Xilinx/Xilinx_CFGLUTShadow.hpp"
 #include "../BitHeap/BitHeap.hpp"
 #include <math.h>
 
@@ -170,8 +171,6 @@ namespace flopoco {
                     {
                         bool switch_O5_and_O6 = false;
                         vhdl << std::endl;
-                        Xilinx_CFGLUT5 *myCFGLUT = new Xilinx_CFGLUT5(target);
-                        addToGlobalOpList(myCFGLUT);
 
                         if(stage == No_of_stages-1)// if it is the MSB Lut stage
                         {
@@ -250,7 +249,7 @@ namespace flopoco {
                             halfLUTusage_justO6 = true;
                             outPortMap(myCFGLUT, "O5","open",false);
                         }
-                        //outPortMap(myCFGLUT, "CDO", "open",false);
+                        //outPortMap(myCFGLUT, "cdo", "open",false);
 
                         if(switch_O5_and_O6) // if the output Ports are switched a also modyfied configuration stream is nacessary to compute te correct output.
                         {

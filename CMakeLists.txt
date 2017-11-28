@@ -604,6 +604,7 @@ src/NeuralNetworks/SOP_KCM
 src/NeuralNetworks/CoreTE
 src/NeuralNetworks/LUTMult
 src/PrimitiveComponents/Xilinx/Xilinx_CFGLUT5
+src/PrimitiveComponents/Xilinx/Xilinx_CFGLUTShadow
 )
 
 TARGET_LINK_LIBRARIES(

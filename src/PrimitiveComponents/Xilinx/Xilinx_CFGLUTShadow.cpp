@@ -29,7 +29,6 @@ namespace flopoco {
         setCopyrightString("Martin Kumm");
 
 		// declaring inputs
-        addInput("clk");//clk
 
         if(cfgLutCompatibleInterface)
         {

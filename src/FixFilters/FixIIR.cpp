@@ -40,7 +40,7 @@ namespace flopoco {
 		Operator(target), lsbIn(lsbIn_), lsbOut(lsbOut_), coeffb(coeffb_), coeffa(coeffa_), H(H_), Heps(Heps_)
 	{
 		srcFileName="FixIIR";
-		setCopyrightString ( "Florent de Dinechin, Louis Beseme (2014)" );
+		setCopyrightString ( "Florent de Dinechin, Louis Beseme, Matei Istoan (2014-2017)" );
 		useNumericStd_Unsigned();
 
 
@@ -63,7 +63,7 @@ namespace flopoco {
 		yHistory  = (mpfr_t*) malloc((m+2) * sizeof(mpfr_t)); // We need to memorize the m previous y, and the current output. Plus one because it helps debugging
 
 
-		for (int i=0; i< n; i++)		{
+		for (uint32_t i=0; i< n; i++)		{
 			// parse the coeffs from the string, with Sollya parsing
 			sollya_obj_t node;
 
@@ -77,7 +77,7 @@ namespace flopoco {
 			REPORT(DETAILED, "b[" << i << "]=" << setprecision(15) << scientific  << coeffb_d[i]);			
 		}
 
-		for (int i=0; i< m; i++)		{
+		for (uint32_t i=0; i< m; i++)		{
 			// parse the coeffs from the string, with Sollya parsing
 			sollya_obj_t node;
 
@@ -100,26 +100,26 @@ namespace flopoco {
 
 			if (!WCPG_tf(&H, coeffb_d, coeffa_d, n, m, (int)0))
 				THROWERROR("Could not compute WCPG");
-			REPORT(INFO, "Worst-case peak gain is H=" << H);
+			REPORT(INFO, "Computed filter worst-case peak gain: H=" << H);
 
 			double one_d[1] = {1.0}; 
 			if (!WCPG_tf(&Heps, one_d, coeffa_d, 1, m, (int)0))
 				THROWERROR("Could not compute WCPG");
-			REPORT(INFO, "Error amplification worst-case peak gain is Heps=" << Heps);
+			REPORT(INFO, "Computed error amplification worst-case peak gain: Heps=" << Heps);
 			
 #else 
 			THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Either provide H, or compile FloPoCo with WCPG");
 #endif
 		}
 		else {
-			REPORT(INFO, "H=" << H);
+			REPORT(INFO, "Filter worst-case peak gain: H=" << H);
+			REPORT(INFO, "Error amplification worst-case peak gain: Heps=" << Heps);
 		}
 		
 		// guard bits for a faithful result
-		g= intlog2(2*Heps*(n+m)); // see the paper
-		int lsbExt = lsbOut-g;
+		int lsbExt = lsbOut-1-intlog2(Heps);
 		msbOut = ceil(log2(H)); // see the paper
-		REPORT(INFO, "g=" << g << " so we ask for a SOPC faithful to lsbExt=" << lsbExt);
+		REPORT(INFO, "We ask for a SOPC faithful to lsbExt=" << lsbExt);
 		REPORT(INFO, "msbOut=" << msbOut);
 
 
@@ -127,12 +127,12 @@ namespace flopoco {
 		hugePrec = 10*(1+msbOut+-lsbOut+g);
 		currentIndex=0x0FFFFFFFFFFFFFFFUL; // it will be decremented, let's start from high
 
-		for (int i = 0; i<m+2; i++)
+		for (uint32_t i = 0; i<m+2; i++)
 		{
 			mpfr_init2 (yHistory[i], hugePrec);
 			mpfr_set_d(yHistory[i], 0.0, GMP_RNDN);
 		}
-		for(int i=0; i<n; i++) {
+		for (uint32_t i=0; i<n; i++) {
 			mpfr_init2 (xHistory[i], hugePrec);
 			mpfr_set_d(xHistory[i], 0.0, GMP_RNDN);
 		}
@@ -143,7 +143,7 @@ namespace flopoco {
 		ShiftReg *inputShiftReg = new ShiftReg(getTarget(), 1-lsbIn, n);
 		addSubComponent(inputShiftReg);
 		inPortMap(inputShiftReg, "X", "X");
-		for(int i = 0; i<n; i++) {
+		for (uint32_t i = 0; i<n; i++) {
 			outPortMap(inputShiftReg, join("Xd", i), join("U", i));
 		}
 		vhdl << instance(inputShiftReg, "inputShiftReg");
@@ -153,7 +153,7 @@ namespace flopoco {
 		ShiftReg *outputShiftReg = new ShiftReg(getTarget(), msbOut-lsbExt+1, m+1);
 		addSubComponent(outputShiftReg);
 		inPortMap(outputShiftReg, "X", "YinternalLoopback");
-		for(int i = 0; i<m; i++) {
+		for (uint32_t i = 0; i<m; i++) {
 			outPortMap(outputShiftReg, join("Xd", i+1), join("Y", i));
 		}
 		vhdl << instance(outputShiftReg, "outputShiftReg");
@@ -170,12 +170,12 @@ namespace flopoco {
 		vector<double> maxInSOPC;
 		vector<int> lsbInSOPC;
 		vector<string> coeffSOPC;
-		for(int i=0; i<n; i++) {
+		for (uint32_t i=0; i<n; i++) {
 			maxInSOPC.push_back(1.0); // max(u) = 1.
 			lsbInSOPC.push_back(lsbIn); // for u
 			coeffSOPC.push_back(coeffb[i]);
 		}
-		for (int i = 0; i<m; i++)	{
+		for (uint32_t i = 0; i<m; i++)	{
 			maxInSOPC.push_back(H); // max (y) = H. 
 			lsbInSOPC.push_back(lsbExt); // for y
 			coeffSOPC.push_back("-("+coeffa[i]+")");
@@ -183,10 +183,10 @@ namespace flopoco {
 		
 		FixSOPC* fixSOPC = new FixSOPC(getTarget(), maxInSOPC, lsbInSOPC, msbOut, lsbExt, coeffSOPC, -1); // -1 means: faithful
 		addSubComponent(fixSOPC);
-		for(int i=0; i<n; i++) {
+		for (uint32_t i=0; i<n; i++) {
 			inPortMap(fixSOPC, join("X",i), join("U", i));
 		}
-		for (int i = 0; i<m; i++)	{
+		for (uint32_t i = 0; i<m; i++)	{
 			inPortMap(fixSOPC, join("X",i+n), join("Y", i));
 		}
 		outPortMap(fixSOPC, "R", "Yinternal");
@@ -199,10 +199,11 @@ namespace flopoco {
 		setCycle(0);
 
 		//The final rounding must be computed with an addition, no escaping it
+		int sizeYinternal = msbOut - lsbExt + 1;
+		int sizeYfinal = msbOut - lsbOut + 1;
+		vhdl << tab << declare("Yrounded", sizeYfinal+1) <<  " <= (Yinternal" << range(sizeYinternal-1,  sizeYinternal-sizeYfinal-1) << ")  +  (" << zg(sizeYfinal)  << " & \"1\" );" << endl;
 
-		vhdl << tab << declare("Yrounded", msbOut-lsbOut+2) <<  " <= (Yinternal" << range(msbOut-lsbOut+g, g-1) << ")  +  (" << zg(msbOut-lsbOut+1)  << " & \"1\" );" << endl;
-
-		addOutput("R", msbOut - lsbOut + 1,   true);
+		addOutput("R", sizeYfinal,   true);
 		vhdl << "R <= Yrounded" << range(msbOut-lsbOut+1, 1) << ";" << endl;
 
 
@@ -214,11 +215,11 @@ namespace flopoco {
 	FixIIR::~FixIIR(){
 		free(coeffb_d);
 		free(coeffa_d);
-		for (int i=0; i<n; i++) {
+		for (uint32_t i=0; i<n; i++) {
 			mpfr_clear(coeffb_mp[i]);
 			mpfr_clear(xHistory[i]);
 		}
-		for (int i=0; i<m; i++) {
+		for (uint32_t i=0; i<m; i++) {
 			mpfr_clear(coeffa_mp[i]);
 			mpfr_clear(xHistory[i]);
 		}
@@ -249,26 +250,26 @@ namespace flopoco {
 
 
 		// TODO CHECK HERE
-		for (int i=0; i< n; i++)		{
+		for (uint32_t i=0; i< n; i++)		{
 			mpfr_mul(t, xHistory[(currentIndex+i)%n], coeffb_mp[i], GMP_RNDZ); 					// Here rounding possible, but precision used is ridiculously high so it won't matter
 			mpfr_add(s, s, t, GMP_RNDN); 							// same comment as above
 		}
 
-		for (int i=0; i<m; i++)		{
+		for (uint32_t i=0; i<m; i++)		{
 			mpfr_mul(t, yHistory[(currentIndex +i+1)%(m+2)], coeffa_mp[i], GMP_RNDZ); 					// Here rounding possible, but precision used is ridiculously high so it won't matter
 			mpfr_sub(s, s, t, GMP_RNDZ); 							// same comment as above
 		}
 		mpfr_set(yHistory[(currentIndex  +0)%(m+2)], s, GMP_RNDN);
 
-#if 1 // debugging the emulate
+#if 0 // debugging the emulate
 		cout << "x=" << 	mpfr_get_d(xHistory[currentIndex % n], GMP_RNDN);
 		cout << " //// y=" << 	mpfr_get_d(s,GMP_RNDN) << "  ////// ";
-		for (int i=0; i< n; i++)		{
+		for (uint32_t i=0; i< n; i++)		{
 			cout << "  x" << i<< "c" << i<<  "=" <<
 				mpfr_get_d(xHistory[(currentIndex+i)%n],GMP_RNDN) << "*" << mpfr_get_d(coeffb_mp[i],GMP_RNDN);
 		}
 		cout << "  // ";
-		for (int i=0; i<m; i++) {
+		for (uint32_t i=0; i<m; i++) {
 			cout <<"  ya" << i+1 << "=" <<
 				mpfr_get_d(yHistory[(currentIndex +i+1)%(m+2)],GMP_RNDN) << "*" << mpfr_get_d(coeffa_mp[i],GMP_RNDN);
 		}
@@ -288,7 +289,6 @@ namespace flopoco {
 
 		// We are waiting until the first meaningful value comes out of the IIR
 
-		int wO = msbOut-lsbOut+1;
 		mpz_class rdz, ruz;
 		mpfr_get_z (rdz.get_mpz_t(), s, GMP_RNDD); 					// there can be a real rounding here
 #if 0 // to unplug the conversion that fails to see if it diverges further
@@ -316,14 +316,14 @@ namespace flopoco {
 		TestCase *tc;
 
 		
-		for (int i=0; i<3; i++) {
+		for (uint32_t i=0; i<3; i++) {
 			tc = new TestCase(this);
 			tc->addInput("X", mpz_class(1)<<(-lsbIn-1)); // 0.5
 			emulate(tc);
 			tcl->add(tc);
 		}
 		
-		for (int i=0; i<3; i++) {
+		for (uint32_t i=0; i<3; i++) {
 			tc = new TestCase(this);
 			tc->addInput("X", mpz_class(0)); // 0
 			emulate(tc);

@@ -95,8 +95,6 @@ namespace flopoco {
             else
             {
                 vhdl << tab << declare("Y_raw", bitheap->getMaxWeight() + 1) << " <= " << bitheap->getSumName() << ";" << endl;
-                //addOutput("Y" , bitheap->getMaxWeight()+1);
-                //vhdl << tab << "Y <= " << bitheap->getSumName() << ";" << endl;
             }
 
 		}
@@ -129,9 +127,7 @@ namespace flopoco {
 				s++;
 				nextCycle();
 			}
-			//addOutput("Y" , wIn+s);
             vhdl << tab << declare("Y_raw", wIn+s) << " <= X_" << s << "_1;" << endl;
-			//vhdl << tab << "Y <= X_" << s << "_1;" << endl;
 		}
         else if(method.compare("add3") == 0 )
         {
@@ -184,9 +180,7 @@ namespace flopoco {
                 nextCycle();
             }
 
-            vhdl << declare("Y_raw", wIn + 2*s) << " <= X_" << s << "_1;" << endl;
-            //addOutput("Y" , wIn+2*s); //currently, this is a worst-case estimate, so some of the MSBs are optimized during synthesis as they are zero
-            //vhdl << tab << "Y <= X_" << s << "_1;" << endl;
+            vhdl << declare("Y_raw", wIn + 2*s) << " <= X_" << s << "_1;" << endl; //currently, this is a worst-case estimate, so some of the MSBs are optimized during synthesis as they are zero
         }
 		else
 		{
@@ -206,7 +200,7 @@ namespace flopoco {
             unsigned int outputLength = mpz_sizeinbase(totalMaxValue, 2);
             //cout << "outputLength is " << outputLength << " and totalMaxValue is " << totalMaxValue << endl;
             mpz_clears(singleVectorMaxValue, totalMaxValue, NULL);
-            
+
             //get the totalMaxValue lowest bits
             addOutput("Y", outputLength);
             vhdl << tab << "Y <= Y_raw(" << outputLength - 1 << " downto 0);" << endl;

@@ -229,7 +229,7 @@ namespace flopoco {
 		srcFileName="IntMultiplier";
 		setCopyrightString ( "Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012" );
 
-		
+
 		// the addition operators need the ieee_std_signed/unsigned libraries
 		useNumericStd();
 
@@ -267,7 +267,7 @@ namespace flopoco {
 			REPORT(DEBUG, "Building " << name.str() );
 		}
 
-		
+
 		multiplierUid=parentOp->getNewUId();
 		xname="X";
 		yname="Y";
@@ -312,9 +312,9 @@ namespace flopoco {
 			// initialize the critical path
 			setCriticalPath(getMaxInputDelays ( inputDelays_ ));
 
-            placeMultipliers();
+            //placeMultipliers();	//enable placeMultipliers() and disable fillBitHeap if reading a solution from ilp-Solution file. 
 
-            //fillBitHeap();
+            fillBitHeap();
 
 			// For a stand-alone operator, we add the rounding-by-truncation bit,
 			// The following turns truncation into rounding, except that the overhead is large for small multipliers.
@@ -942,7 +942,7 @@ namespace flopoco {
 	{
 //        MultiplierSolutionParser *multiplierSolutionParser = new MultiplierSolutionParser("m32x32_1dsp.sol");
 //        multiplierSolutionParser->readSolution();
-		
+
 //		BaseMultiplierCollection *baseMultiplierCollection = new BaseMultiplierCollection(parentOp->getTarget());
 
 		REPORT(DETAILED,"buildHeapLogicOnly called for " << lsbX << " " << lsbY << " " << msbX << " " << msbY);
@@ -1905,7 +1905,7 @@ namespace flopoco {
     /* currently reads solution from solutionfile. Initialises needed Multipliers. Wires them correctly and adds Bits to bitheap */
     void IntMultiplier::placeMultipliers(){
 
-        
+
         MultiplierSolutionParser *multiplierSolutionParser;
         if(!solutionFile.compare("\"\"")){
             multiplierSolutionParser = new MultiplierSolutionParser("m10x10_test.sol");
@@ -1931,7 +1931,7 @@ namespace flopoco {
             unsigned int type = (*it).first;
             unsigned int xPos = (*it).second.first;
             unsigned int yPos = (*it).second.second;
-			
+
             BaseMultiplier *baseMultiplier = baseMultiplierCollection->getBaseMultiplier(type);
 
             if(!baseMultiplier) THROWERROR("Multiplier of type " << type << " does not exist");
@@ -1955,7 +1955,7 @@ namespace flopoco {
             unsigned int xInputNonZeros = xInputLength;
             unsigned int yInputNonZeros = yInputLength;
 			unsigned int realBitHeapPosOffset = getLSBZeros(baseMultiplier, xPos, yPos, totalOffset, 2);
-			
+
             unsigned int outputLengthNonZeros = xInputNonZeros + yInputNonZeros;
 
             outputLengthNonZeros = getOutputLengthNonZeros(baseMultiplier, xPos, yPos, totalOffset);
@@ -1967,8 +1967,8 @@ namespace flopoco {
             nextCycle(); //add register after each multiplier
 
             addToGlobalOpList(op);
-			
-			
+
+
 
             string outputVectorName = placeSingleMultiplier(op, xPos, yPos, xInputLength, yInputLength, outputLength, xInputNonZeros, yInputNonZeros, totalOffset, posInList);
 
@@ -2005,7 +2005,7 @@ namespace flopoco {
                     ostringstream s;
                     s << outputVectorName << of(i);
                     bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str());
-					
+
                     //bitHeap->addBit(startWeight + (i - resultVectorOffset), s.str(), "", 1, getCycleFromSignal(outputVectorName));
                 }
             }
@@ -2015,7 +2015,7 @@ namespace flopoco {
 
     }
 
-	//totalOffset is normally zero or twelve. The whole big multiplier is moved by totalOffset-Bits in x and y direction to support hard multiplier which protude the right and lower borders. 
+	//totalOffset is normally zero or twelve. The whole big multiplier is moved by totalOffset-Bits in x and y direction to support hard multiplier which protude the right and lower borders.
     string IntMultiplier::placeSingleMultiplier(Operator* op, unsigned int xPos, unsigned int yPos, unsigned int xInputLength, unsigned int yInputLength, unsigned int outputLength, unsigned int xInputNonZeros, unsigned int yInputNonZeros, unsigned int totalOffset, unsigned int id){
 
         //xPos, yPos is the lower right corner of the multiplier
@@ -2087,7 +2087,7 @@ namespace flopoco {
         outPortMap(op, "R", join(addUID("r",blockUid),"_",id));
         vhdl << instance(op, join(addUID("Mult",blockUid),"_", id));
         useSoftRAM(op);
-		
+
         cout << join(addUID("r",blockUid),"_",id) << ":" << getSignalByName(join(addUID("r",blockUid),"_",id))->width() << endl;
 
         return join(addUID("r",blockUid),"_",id);
@@ -2095,12 +2095,12 @@ namespace flopoco {
         /*
         vhdl << tab << declare(join(addUID("input_x_y", blockUid), "_", id), xInputLength + yInputLength) << " <= ";
 		vhdl << join(addUID("y",blockUid),"_",id) << " & " << join(addUID("x",blockUid),"_",id) << ";" << endl;
-		
+
 		inPortMap(op, "X",join(addUID("input_x_y", blockUid), "_", id));
 		outPortMap(op, "Y", join(addUID("r",blockUid),"_",id));
         vhdl << instance(op, join(addUID("Mult",blockUid),"_", id));
         useSoftRAM(op);
-		
+
 		return join(addUID("r",blockUid),"_",id);
         */
     }
@@ -2153,7 +2153,7 @@ namespace flopoco {
                 }
             }
         }
-        
+
         mpfr_t length;
         mpfr_inits(length, NULL);
         mpfr_log2(length, sum, GMP_RNDU);
@@ -2181,7 +2181,7 @@ namespace flopoco {
 
             for(unsigned int j = 0; j < steps; j++){
 				bool bmHasInput = false;
-				bool intMultiplierHasBit = false;				
+				bool intMultiplierHasBit = false;
                 if(bm->shapeValid(j, steps - (j + 1))){
                     bmHasInput = true;
                 }
@@ -2207,10 +2207,10 @@ namespace flopoco {
 					else{	//doesnt matter if startCountingMode2 is true or not. mode2Zeros are being incremented at the end of the diagonal
 						return mode2Zeros;
 					}
-                    
+
                 }
             }
-			
+
             zeros++;
 			if(startCountingMode2 == true){
 				mode2Zeros++;
@@ -2413,8 +2413,8 @@ namespace flopoco {
 		tc->addInput("Y", y);
 		emulate(tc);
 		tcl->add(tc);
-		
-		//check ever position 
+
+		//check ever position
 		for(unsigned tempX = 0; tempX < wXdecl; tempX++){
 			for(unsigned tempY = 0; tempY < wYdecl; tempY++){
 				x = (mpz_class(1) << tempX);
@@ -2481,7 +2481,7 @@ namespace flopoco {
 
 
 
-	
+
 	OperatorPtr IntMultiplier::parseArguments(Target *target, std::vector<std::string> &args) {
 		int wX,wY, wOut ;
 		bool signedIO,superTile;
@@ -2498,7 +2498,7 @@ namespace flopoco {
 	}
 
 
-	
+
 	void IntMultiplier::registerFactory(){
 		UserInterface::add("IntMultiplier", // name
 											 "A pipelined integer multiplier.",
@@ -2515,4 +2515,3 @@ namespace flopoco {
 											 ) ;
 	}
 }
-

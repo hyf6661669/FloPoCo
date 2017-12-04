@@ -18,17 +18,52 @@ namespace flopoco
 
 
 
-    ConfigurationController::ConfigurationController(Target* target, int input_bit_width_, int Const_bit_width_, int No_of_Products_) : Operator(target), input_bit_width(input_bit_width_), Const_bit_width(Const_bit_width_),No_of_Products(No_of_Products_)
+    ConfigurationController::ConfigurationController(Target* target) : Operator(target)
     {
         srcFileName="ConfigurationController";
+        this->useNumericStd();
 		// definition of the name of the operator
 		ostringstream name;
-        name << "ConfigurationController_" << Const_bit_width_ << "_" << No_of_Products_;
+        name << "ConfigurationController";
         setName(name.str());
         // Copyright
         setCopyrightString("UNIVERSITY of Kassel 2017");
 
 
+				addInput("init_conv");
+				addOutput("ce_o");
+				addOutput("ctrl:int",3,true);
+				
+				addType("states","idle,count");
+
+				addType("rom","array ( 0 to 31) of std_logic_vector(2 downto 0)");
+				addConstant("ctrl_lut","rom","(\"001\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"010\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"101\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"110\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\");\nsignal state : states");
+   // Attention, the line above contains a really dirty hack to use an own type for the state machine, which should be fix in Operator and Signal
+				vhdl << "coeff_switch: process(clk_i,init_conv_i) -- state machine to replace coefficients  " << endl;
+				vhdl << "  variable counter: integer range 0 to 31;                                         " << endl;
+				vhdl << "begin                                                                              " << endl;
+				vhdl << "  if clk_i'event and clk_i = '1' then                                              " << endl;
+				vhdl << "      case state is                                                                " << endl;
+				vhdl << "      when idle =>                                                                 " << endl;
+				vhdl << "        if init_conv_i = '1' then                                                  " << endl;
+				vhdl << "          state <= count;                                                          " << endl;
+				vhdl << "          counter := 0;                                                            " << endl;
+				vhdl << "          ce_o <= '1';                                                             " << endl;
+				vhdl << "        end if;                                                                    " << endl;
+				vhdl << "      when count =>                                                                " << endl;
+				vhdl << "        if counter = 31 then                                                       " << endl;
+				vhdl << "          state <= idle;                                                           " << endl;
+				vhdl << "          ce_o <= '0';                                                             " << endl;
+				vhdl << "        else                                                                       " << endl;
+				vhdl << "          counter := counter + 1;                                                  " << endl;
+				vhdl << "          state <= count;                                                          " << endl;
+				vhdl << "          ce_o <= '1';                                                             " << endl;
+				vhdl << "        end if;                                                                    " << endl;
+				vhdl << "      end case;                                                                    " << endl;
+				vhdl << "  end if;                                                                          " << endl;
+				vhdl << "  ctrl_int <= ctrl_lut(counter);                                                   " << endl;
+				vhdl << "                                                                                   " << endl;
+				vhdl << "end process;                                                                       " << endl;
     }
 
     void ConfigurationController::emulate(TestCase * tc)
@@ -42,34 +77,23 @@ namespace flopoco
 
     OperatorPtr ConfigurationController::parseArguments(Target *target, vector<string> &args)
     {
-        int param0, param1, param2;
-        UserInterface::parseInt(args, "input_bit_width", &param0); // param0 has a default value, this method will recover it if it doesnt't find it in args,
-        UserInterface::parseInt(args, "const_bit_width", &param1);
-        UserInterface::parseInt(args, "no_of_products", &param2);
-        if(param1 == -1)
-        {
-            param1 = param0;
-        }
-
-        return new ConfigurationController(target, param0, param1, param2);
+        return new ConfigurationController(target);
 	}
 	
     void ConfigurationController::registerFactory()
     {
         UserInterface::add("ConfigurationController", // name
-                                             "My first ConfigurationController.", // description, string
+                       "ConfigurationController for NN reconfiguration in 32 clock cycles", // description, string
 											 "NeuralNetworks", // category, from the list defined in UserInterface.cpp
 											 "", //seeAlso
 											 // Now comes the parameter description string.
 											 // Respect its syntax because it will be used to generate the parser and the docs
 											 // Syntax is: a semicolon-separated list of parameterDescription;
 											 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString 
-                                             "input_bit_width(int)=16: input word size; \
-                                             const_bit_width(int)=-1: coefficient word size, per default the same as the input bit width;\
-                                             no_of_products(int)=1: the nomber of products to accumulate",
+                      "",
+                      "",                  
 											 // More documentation for the HTML pages. If you want to link to your blog, it is here.
-											 "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",
-                                             ConfigurationController::parseArguments
+                      ConfigurationController::parseArguments
 											 ) ;
 	}
 

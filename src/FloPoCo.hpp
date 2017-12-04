@@ -176,6 +176,7 @@
 
 /* neural networks ------------------------------------------------------ */
 #include "NeuralNetworks/ConfigurationController.hpp"
+#include "NeuralNetworks/ConfigurationGenerator.hpp"
 #include "NeuralNetworks/ConvolutionalCore.hpp"
 #include "NeuralNetworks/SOP_KCM.hpp"
 #include "NeuralNetworks/CoreTE.hpp"

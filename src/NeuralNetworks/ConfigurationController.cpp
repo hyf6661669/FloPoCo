@@ -30,19 +30,19 @@ namespace flopoco
         setCopyrightString("UNIVERSITY of Kassel 2017");
 
 
-				addInput("init_conv");
+				addInput("init_conv_i");
 				addOutput("ce_o");
-				addOutput("ctrl:int",3,true);
+				addOutput("ctrl_int",3,true);
 				
-				addType("states","idle,count");
+				addType("states","(idle,count)");
 
 				addType("rom","array ( 0 to 31) of std_logic_vector(2 downto 0)");
 				addConstant("ctrl_lut","rom","(\"001\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"010\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"101\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"110\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\");\nsignal state : states");
    // Attention, the line above contains a really dirty hack to use an own type for the state machine, which should be fix in Operator and Signal
-				vhdl << "coeff_switch: process(clk_i,init_conv_i) -- state machine to replace coefficients  " << endl;
+				vhdl << "coeff_switch: process(clk,init_conv_i) -- state machine to replace coefficients  " << endl;
 				vhdl << "  variable counter: integer range 0 to 31;                                         " << endl;
 				vhdl << "begin                                                                              " << endl;
-				vhdl << "  if clk_i'event and clk_i = '1' then                                              " << endl;
+				vhdl << "  if clk'event and clk = '1' then                                              " << endl;
 				vhdl << "      case state is                                                                " << endl;
 				vhdl << "      when idle =>                                                                 " << endl;
 				vhdl << "        if init_conv_i = '1' then                                                  " << endl;

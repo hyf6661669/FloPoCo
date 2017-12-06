@@ -1,10 +1,12 @@
 #ifndef BITHEAPILPCOMPRESSION_H
 #define BITHEAPILPCOMPRESSION_H
 
+#include <vector>
+#include <list>
 
 struct variableBasicCompressor {
-    vector<int> height;
-    vector<int> outputs;
+    std::vector<int> height;
+    std::vector<int> outputs;
     double areaCost;
 };
 
@@ -15,8 +17,7 @@ struct variableBasicCompressor {
 #include <scip/scip.h>
 #include <scip/scipdefplugins.h>
 
-#include <vector>
-#include <list>
+
 
 #ifdef HAVE_SCALP
 #include <ScaLP/Solver.h>

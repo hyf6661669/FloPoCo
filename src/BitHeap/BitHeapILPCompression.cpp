@@ -32,8 +32,12 @@ BitHeapILPCompression::BitHeapILPCompression(BitHeap *bh)
         uniqueName_ = "BitHeapILPCompression for " + bh->getName();
 
 #ifdef HAVE_SCALP
-
-        ScaLP::Solver s = ScaLP::Solver(ScaLP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
+        string usedILPSolver = UserInterface::ilpSolver;
+        if(usedILPSolver.compare("Gurobi") == 0 && usedILPSolver.compare("CPLEX") == 0 && usedILPSolver.compare("SCIP") == 0 && usedILPSolver.compare("LPSolve") == 0){
+            THROWERROR("ilpSolver " << usedILPSolver << " unknown!");
+        }
+        ScaLP::Solver s = ScaLP::Solver(ScaLP::newSolverDynamic({usedILPSolver}));
+        //ScaLP::Solver s = ScaLP::Solver(ScaLP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
 		s.quiet=true; // disable solver output
 
 		// declare the Variables
@@ -226,7 +230,12 @@ int BitHeapILPCompression::generateProblem(){
 
 #ifdef HAVE_SCALP
     cout << "before setting pointer " << endl;
-    problemSolver = new ScaLP::Solver(ScaLP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
+    string usedILPSolver = UserInterface::ilpSolver;
+    if(usedILPSolver.compare("Gurobi") == 0 && usedILPSolver.compare("CPLEX") == 0 && usedILPSolver.compare("SCIP") == 0 && usedILPSolver.compare("LPSolve") == 0){
+        THROWERROR("ilpSolver " << usedILPSolver << " unknown!");
+    }
+    problemSolver = new ScaLP::Solver(ScaLP::newSolverDynamic({usedILPSolver}));
+    //problemSolver = new ScaLP::Solver(ScaLP::newSolverDynamic({"Gurobi","CPLEX","SCIP","LPSolve"}));
     solvers.push_back(problemSolver);
     //problemSolver = solvers[solvers.size() - 1];
     //problemSolver = ScaLP::Solver(ScaLP::newSolverDynamic({"CPLEX","SCIP","LPSolve"}));

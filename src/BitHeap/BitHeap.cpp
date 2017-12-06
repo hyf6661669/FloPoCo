@@ -1759,9 +1759,9 @@ namespace flopoco
                     if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
                 }
                 ilp.solve();
-				double area1 = ilp.computeAreaofSolution();
 
 /*
+                double area1 = ilp.computeAreaofSolution();
                 BitHeapHeuristicCompression ilp2(this, mode, false);
 				ilp2.useVariableCompressors = false;
 				ilp2.setLowerBounds(efficiencyPerStage);
@@ -1914,13 +1914,18 @@ namespace flopoco
 
 				cout << "______________" << endl << endl << endl;
 
-				cout << "area1 with variable compressors is " << area1 << " and area2 without variable compressors is " << area2 << endl << endl << endl;
+                cout << "cost with variable compressors is " << area1 << " and cost without variable compressors is " << area2 << endl << endl << endl;
 				cout << "______________" << endl;
 
 				if(area2 < area1 + 0.0001){
 					ilp = ilp2;
 					cout << "using version without variable compressors" << endl;
+                    cout << "final cost is " << area2 << endl;
 				}
+                else
+                {
+                    cout << "final cost is " << area1 << endl;
+                }
 
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 

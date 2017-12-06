@@ -11,6 +11,7 @@
 // include the header of the Operator
 #include "SOP_KCM.hpp"
 #include "../PrimitiveComponents/Xilinx/Xilinx_CFGLUT5.hpp"
+#include "../PrimitiveComponents/Xilinx/Xilinx_CFGLUTShadow.hpp"
 #include "../BitHeap/BitHeap.hpp"
 #include <math.h>
 
@@ -20,7 +21,7 @@ namespace flopoco {
 
 
 
-    SOP_KCM::SOP_KCM(Target* target,int inputWordSize,int constantWordSize, int parameterNo, int _defaultConstant) : Operator(target), input_bit_width(inputWordSize), Const_bit_width(constantWordSize), No_of_Products(parameterNo)
+    SOP_KCM::SOP_KCM(Target* target,int inputWordSize,int constantWordSize, int parameterNo, int _defaultConstant, bool useShadowLUTs, bool useFaithfulRounding) : Operator(target), input_bit_width(inputWordSize), Const_bit_width(constantWordSize), No_of_Products(parameterNo)
     {
         srcFileName="SOP_KCM";
 
@@ -38,7 +39,7 @@ namespace flopoco {
 
 
         signed_calculation = true;
-        faithful_rounding = true;
+        faithful_rounding = useFaithfulRounding;
         allow_half_start_LUT = false;
 
         int defaultConstant = _defaultConstant;
@@ -57,12 +58,20 @@ namespace flopoco {
         // gard bits for faithful rounding
         g =  floor(log2((float)(No_of_stages * No_of_Products)));
 
-        output_bit_width = inputWordSize;
-
         bool halfLUTusage_justO5 =false;// will be set wen a half used Lut is generated
         bool halfLUTusage_justO6 =false;// will be set wen a half used Lut is generated
 
 
+        int outputBits = Const_bit_width + input_bit_width + additionalBitWidth;
+
+        if(faithful_rounding)
+        {
+            output_bit_width = inputWordSize;
+        }
+        else
+        {
+            output_bit_width = outputBits;
+        }
 
         addInput ("LUT_Config_clk_enable");
 
@@ -73,8 +82,10 @@ namespace flopoco {
         bitHeapStack.clear();
         bitHeapStackSize.clear();
 
-        int outputBits = Const_bit_width + input_bit_width + additionalBitWidth;
-        int border =  outputBits - output_bit_width - g;
+
+
+        int border =  outputBits - output_bit_width - g;;
+
 
 
 
@@ -84,6 +95,8 @@ namespace flopoco {
         vector<int> differentLUTContent_counterMSB;
 
         addFullComment("Parameter:");
+        addComment(join("useFaithfulRounding=",useFaithfulRounding));
+        addComment(join("useShadowLUTs=",useShadowLUTs));
         addComment(join("input_bit_width=",input_bit_width));
         addComment(join("Const_bit_width=",Const_bit_width));
         addComment(join("output_bit_width=",output_bit_width));
@@ -170,33 +183,42 @@ namespace flopoco {
                     {
                         bool switch_O5_and_O6 = false;
                         vhdl << std::endl;
-                        Xilinx_CFGLUT5 *myCFGLUT = new Xilinx_CFGLUT5(target);
-                        addToGlobalOpList(myCFGLUT);
 
-                        if(stage == No_of_stages-1)// if it is the MSB Lut stage
+                        Operator *myCFGLUT;
+                        if(useShadowLUTs)
                         {
-                            myCFGLUT->setGeneric( "init", generateInitStringFor(defaultConstant,LUT_No,1) );
+                            myCFGLUT = new Xilinx_CFGLUTShadow(target);
                         }
                         else
                         {
-                            myCFGLUT->setGeneric( "init", generateInitStringFor(defaultConstant,LUT_No,0) );
+                            myCFGLUT = new Xilinx_CFGLUT5(target);
+                            inPortMapCst(myCFGLUT, "clk","clk");
+                            if(stage == No_of_stages-1)// if it is the MSB Lut stage
+                            {
+                                ((Xilinx_CFGLUT5*) myCFGLUT)->setGeneric( "init", generateInitStringFor(defaultConstant,LUT_No,1) );
+                            }
+                            else
+                            {
+                                ((Xilinx_CFGLUT5*) myCFGLUT)->setGeneric( "init", generateInitStringFor(defaultConstant,LUT_No,0) );
+                            }
                         }
+                        addToGlobalOpList(myCFGLUT);
 
-                        inPortMapCst(myCFGLUT, "CLK","clk");
-                        inPortMap(myCFGLUT, "CE","LUT_Config_clk_enable");
+
+                        inPortMap(myCFGLUT, "ce","LUT_Config_clk_enable");
                         for(int i = 0; i <= LUT_bit_width; ++i)
                         {
                             if(i == LUT_bit_width)
                             {
-                                inPortMapCst(myCFGLUT, join("I", to_string(i)),"'1'");// the highest bit is true to use the 5 input LUT as two 4 input Luts
+                                inPortMapCst(myCFGLUT, join("i", to_string(i)),"'1'");// the highest bit is true to use the 5 input LUT as two 4 input Luts
                             }
                             else if((i+stage*LUT_bit_width) < input_bit_width)
                             {
-                                inPortMap(myCFGLUT, join("I", to_string(i)),join(inputSignalName,to_string(i+stage*LUT_bit_width),")"));
+                                inPortMap(myCFGLUT, join("i", to_string(i)),join(inputSignalName,to_string(i+stage*LUT_bit_width),")"));
                             }
                             else
                             {
-                                inPortMapCst(myCFGLUT, join("I", to_string(i)),"'0'");
+                                inPortMapCst(myCFGLUT, join("i", to_string(i)),"'0'");
                             }
                         }
 
@@ -204,7 +226,7 @@ namespace flopoco {
                         if((Lut_start_Counter_correction_Value == 0) || (LUT_No > Lut_start_Counter))
                         {
                             outputSignalNameLUT = outputSignalName + "(" + to_string(LUT_No-Lut_start_Counter) +")";
-                            outPortMap(myCFGLUT, "O6",outputSignalNameLUT,false);// MH switch 5 6
+                            outPortMap(myCFGLUT, "o6",outputSignalNameLUT,false);// MH switch 5 6
                             if(stage < (No_of_stages-1))
                             {
                                 differentLUTContent_counterLSB[LUT_No]++;
@@ -220,7 +242,7 @@ namespace flopoco {
                             //halfLUTusage_justO5 = true;
 
                             outputSignalNameLUT = outputSignalName + "(" + to_string(LUT_No+1-Lut_start_Counter) +")";
-                            outPortMap(myCFGLUT, "O6",outputSignalNameLUT,false);
+                            outPortMap(myCFGLUT, "o6",outputSignalNameLUT,false);
                             if(stage < (No_of_stages-1))
                             {
                                 differentLUTContent_counterLSB[(LUT_No)]++;
@@ -235,7 +257,7 @@ namespace flopoco {
                         if((switch_O5_and_O6 == false) && (LUT_No+1 < LUT_per_stage))//if the lut content wasnt switched and the Lut is realy used
                         {
                             outputSignalNameLUT = outputSignalName + "(" + to_string(LUT_No+1-Lut_start_Counter) +")";
-                            outPortMap(myCFGLUT, "O5",outputSignalNameLUT,false);
+                            outPortMap(myCFGLUT, "o5",outputSignalNameLUT,false);
                             if(stage < (No_of_stages-1))
                             {
                                 differentLUTContent_counterLSB[(LUT_No+1)]++;
@@ -248,24 +270,32 @@ namespace flopoco {
                         else
                         {
                             halfLUTusage_justO6 = true;
-                            outPortMap(myCFGLUT, "O5","open",false);
+                            outPortMap(myCFGLUT, "o5","open",false);
                         }
                         //outPortMap(myCFGLUT, "CDO", "open",false);
 
                         if(switch_O5_and_O6) // if the output Ports are switched a also modyfied configuration stream is nacessary to compute te correct output.
                         {
-                            inPortMap(myCFGLUT, "CDI",join(configurationStreamSignalName,to_string(LUT_No),")"));
+                            inPortMap(myCFGLUT, "cdi",join(configurationStreamSignalName,to_string(LUT_No),")"));
                         }
                         else
                         {
-                            inPortMap(myCFGLUT, "CDI",join(configurationStreamSignalName,to_string(LUT_No+1),")"));
+                            inPortMap(myCFGLUT, "cdi",join(configurationStreamSignalName,to_string(LUT_No+1),")"));
                         }
 
                         string debug_signalName = "CFGLUT_ProductNo_"+ to_string(prNo) + "_LUTstage_" + to_string(stage) + "_LUT_No_" +to_string(LUT_No)+ "_and_" + to_string(LUT_No+1);
-                        outPortMap(myCFGLUT, "CDO", debug_signalName,true);
+                        outPortMap(myCFGLUT, "cdo", debug_signalName,true);
 			
                         string instanceName = "CFGLUT_inst_ProductNo_"+ to_string(prNo) + "_LUTstage_" + to_string(stage) + "_LUT_No_" +to_string(LUT_No)+ "_and_" + to_string(LUT_No+1);
-                        vhdl << myCFGLUT->primitiveInstance(instanceName,this);
+
+                        if(useShadowLUTs)
+                        {
+                            vhdl << instance(myCFGLUT,instanceName);
+                        }
+                        else
+                        {
+                            vhdl << ((Xilinx_CFGLUT5*) myCFGLUT)->primitiveInstance(instanceName,this);
+                        }
                     }
                 }
             }
@@ -285,7 +315,7 @@ namespace flopoco {
                     differentLUTContent_output += "| ";
             }
 
-            for(int i=0; i < differentLUTContent_counterMSB.size(); i += 2)
+            for(unsigned int i=0; i < differentLUTContent_counterMSB.size(); i += 2)
             {
                 if ((differentLUTContent_counterLSB[i] != 0) || (differentLUTContent_counterLSB[i+1] != 0))
                 {
@@ -305,7 +335,12 @@ namespace flopoco {
 
         unsigned int maxWeight = Const_bit_width+input_bit_width+additionalBitWidth;
         BitHeap *myBitHeap = new BitHeap(this,maxWeight-1);
-        myBitHeap->addConstantOneBit(border+g-1);
+
+        if(faithful_rounding)
+        {
+            myBitHeap->addConstantOneBit(border+g-1);
+        }
+
         for(unsigned int i=0; i < bitHeapStack.size(); ++i)
         {
             if(bitHeapStackSize[i] > 0)
@@ -326,7 +361,7 @@ namespace flopoco {
         addOutput("result",output_bit_width);
 
         nextCycle();
-        vhdl << tab << "result <= " << myBitHeap->getSumName() << "(" <<  myBitHeap->getMaxWeight() << " downto "  << (myBitHeap->getMaxWeight() - output_bit_width+1) <<  ");" << std::endl;
+        vhdl << tab << "result <= " << myBitHeap->getSumName() << "(" <<  myBitHeap->getMaxWeight() << " downto "  << ((myBitHeap->getMaxWeight() - output_bit_width) + 1) <<  ");" << std::endl;
 
         vhdl << differentLUTContent_output <<std::endl;
         vhdl << "--" << name.str() << " differentLUTContentCounter:" << differentLUTContentCounter << " halfLUTusageO5:" << halfLUTusage_justO5 << " halfLUTusageO6:" << halfLUTusage_justO6 << std::endl;
@@ -340,7 +375,6 @@ namespace flopoco {
 
     string SOP_KCM::generateInitStringFor(int weight, unsigned int LUTNo, bool MSBLUT)
     {
-        MSBLUT;
         int LutLImit = 1 << this->LUT_bit_width; //this calculates 2^LUT_bit_width usaly (LUT_bit_width = 4) it is 16.
         vector<int>ProductList;
         string initString;
@@ -385,7 +419,7 @@ namespace flopoco {
             ProductList[15]=(  -1 * weight);
         }
 
-        for(int i=0; i < ProductList.size(); i++)
+        for(unsigned int i=0; i < ProductList.size(); i++)
         {
             std::cout << "MH: ProductList[" << i << "]: "<< ProductList[i] << std::endl;
         }
@@ -430,31 +464,37 @@ namespace flopoco {
     OperatorPtr SOP_KCM::parseArguments(Target *target, vector<string> &args)
     {
         int param0, param1, param2, param3;
+        bool param4, param5;
         UserInterface::parseInt(args, "inputWordSize", &param0); // param0 has a default value, this method will recover it if it doesnt't find it in args,
         UserInterface::parseInt(args, "constantWordSize", &param1);
         UserInterface::parseInt(args, "no_of_products", &param2);
         UserInterface::parseInt(args, "defaultProduct", &param3);
-        return new SOP_KCM(target, param0, param1, param2, param3);
+        UserInterface::parseBoolean(args, "useShadowLUTs", &param4);
+        UserInterface::parseBoolean(args, "useFaithfulRounding", &param5);
+        //useShadowLUTs(bool)=false Switch to choose the CFGLUT implementation with ore without Shadow LUTs"
+        return new SOP_KCM(target, param0, param1, param2, param3, param4, param5);
 	}
 	
     void SOP_KCM::registerFactory()
     {
         UserInterface::add("SOP_KCM", // name
-                                             "My first SOP_KCM.", // description, string
-											 "NeuralNetworks", // category, from the list defined in UserInterface.cpp
-											 "", //seeAlso
-											 // Now comes the parameter description string.
-											 // Respect its syntax because it will be used to generate the parser and the docs
-											 // Syntax is: a semicolon-separated list of parameterDescription;
-											 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString 
-                                             "inputWordSize(int): Defined the input word size; \
-                                             constantWordSize(int): Defined the Constant word size; \
-                                             no_of_products(int)=1: Nombre of products; \
-                                             defaultProduct(int)=32: the intial product for all inputs",
-											 // More documentation for the HTML pages. If you want to link to your blog, it is here.
-											 "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",
-                                             SOP_KCM::parseArguments
-                                                     ) ;
+                                     "My first SOP_KCM.", // description, string
+                                     "NeuralNetworks", // category, from the list defined in UserInterface.cpp
+                                     "", //seeAlso
+                                     // Now comes the parameter description string.
+                                     // Respect its syntax because it will be used to generate the parser and the docs
+                                     // Syntax is: a semicolon-separated list of parameterDescription;
+                                     // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
+                                     "inputWordSize(int): Defined the input word size; \
+                                     constantWordSize(int): Defined the Constant word size; \
+                                     no_of_products(int)=1: Number of products; \
+                                     useShadowLUTs(bool)=false: Using two different LUts to configure one while using the other. The used one on the other can switched in one cycle; \
+                                     useFaithfulRounding(bool)=true: reduce the output wordsize with facefoul rounding to the input wordsize; \
+                                     defaultProduct(int)=32: the intial product for all inputs;",
+                                     // More documentation for the HTML pages. If you want to link to your blog, it is here.
+                                     "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",
+                                     SOP_KCM::parseArguments
+                                             ) ;
     }
 
     int SOP_KCM::get_cdi_bit_with()

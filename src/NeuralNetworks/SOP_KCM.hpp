@@ -27,11 +27,12 @@ namespace flopoco {
         bool faithful_rounding; // if false there are just positive constnats and inputs
         bool allow_half_start_LUT;
 
+
         int cdi_bit_width;
 
 	public:
 
-        SOP_KCM(Target* target,int inputWordSize,int constantWordSize, int parameterNo, int _defaultConstant);
+        SOP_KCM(Target* target,int inputWordSize,int constantWordSize, int parameterNo, int _defaultConstant, bool useShadowLUTs=false, bool useFaithfulRounding=true);
         ~SOP_KCM() {};
 
         //void emulate(TestCase * tc);

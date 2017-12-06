@@ -29,20 +29,27 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
     setName(name.str());
     // Copyright
     setCopyrightString("UNIVERSITY of Kassel 2017");
-    int method= method_; // 1=SOPKCM, 2 = ConvolutionalCore
+    int method= method_; // 1=SOPKCM, 11= SOPKCMwithShadowLUTS  2 = ConvolutionalCore
 
     addInput("X",input_bit_width);
 
 
-    if(method == 1)
+    if((method == 1)||(method=11))
     {
         addInput("LUT_Config_clk_enable");
 
-        int LUT_bit_width=4;
-        int LUT_per_stage = const_bit_width+LUT_bit_width;
-        int No_of_stages = ceil((float)const_bit_width / (float)LUT_bit_width);
+        //int LUT_bit_width=4;
+        //int LUT_per_stage = const_bit_width+LUT_bit_width;
+        //int No_of_stages = ceil((float)const_bit_width / (float)LUT_bit_width);
 
-        SOP_KCM *my_SOP_KCM = new SOP_KCM(target,input_bit_width, const_bit_width,no_of_products,32);
+        bool useShadowLUTs = false;
+        if(method == 11)
+        {
+            useShadowLUTs = true;
+        }
+
+
+        SOP_KCM *my_SOP_KCM = new SOP_KCM(target,input_bit_width, const_bit_width,no_of_products,32,useShadowLUTs);
         addToGlobalOpList(my_SOP_KCM);
 
 
@@ -190,7 +197,7 @@ void CoreTE::registerFactory()
                                          "input_bit_width(int)=16: input word size; \
                                          const_bit_width(int)=-1: coefficient word size, per default the same as the input bit width;\
                                          no_of_products(int)=1: the nomber of products to accumulate;\
-                                         method(int)=1:  1 = SOPKCM, 2 = ConvolutionalCore",
+                                         method(int)=1:  1 = SOPKCM, 11 = SOPKCM with ShadowLUTS , 2 = ConvolutionalCore",
                                          // More documentation for the HTML pages. If you want to link to your blog, it is here.
                                          "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",
                                          CoreTE::parseArguments

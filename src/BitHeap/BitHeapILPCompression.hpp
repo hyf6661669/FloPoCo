@@ -1,6 +1,13 @@
 #ifndef BITHEAPILPCOMPRESSION_H
 #define BITHEAPILPCOMPRESSION_H
 
+
+struct variableBasicCompressor {
+    vector<int> height;
+    vector<int> outputs;
+    double areaCost;
+};
+
 #ifdef HAVE_SCIP
 
 #include "BitHeap.hpp"
@@ -19,12 +26,6 @@
 
 //#define LARGE_NUMBER 10000; //number which has to be larger than any column in the bit heap (used in ILP)
 
-struct variableBasicCompressor {
-    vector<int> height;
-    vector<int> outputs;
-    double areaCost;
-};
-
 namespace flopoco
 {
     //class BitHeapHeuristicCompression;
@@ -33,9 +34,6 @@ namespace flopoco
 	class BitHeapILPCompression
 	{
 	public:
-
-
-
 
         BitHeapILPCompression(BitHeap* bh);
 		~BitHeapILPCompression();

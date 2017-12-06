@@ -1412,6 +1412,26 @@ namespace flopoco
 				toc->areaCost = 4.0;
 				possibleCompressors.push_back(toc);
 
+/*
+*/
+                //(6,1,5;5) GPC:
+                inputs.clear();
+                inputs.push_back(5);
+                inputs.push_back(1);
+                inputs.push_back(6);
+                toc = new TargetOptCompressor(op->getTarget(),inputs);
+                toc->areaCost = 4.0;
+                possibleCompressors.push_back(toc);
+
+                //(6,2,3;5) GPC:
+                inputs.clear();
+                inputs.push_back(3);
+                inputs.push_back(2);
+                inputs.push_back(6);
+                toc = new TargetOptCompressor(op->getTarget(),inputs);
+                toc->areaCost = 4.0;
+                possibleCompressors.push_back(toc);
+
 				//(1,4,1,5;5) GPC:
 				inputs.clear();
 				inputs.push_back(5);
@@ -1432,7 +1452,8 @@ namespace flopoco
 				toc->areaCost = 4.0;
 				possibleCompressors.push_back(toc);
 
-				//(2,0,4,5;5) GPC:
+/* This is a slow one !!!
+                //(2,0,4,5;5) GPC:
 				inputs.clear();
 				inputs.push_back(5);
 				inputs.push_back(4);
@@ -1441,6 +1462,7 @@ namespace flopoco
 				toc = new TargetOptCompressor(op->getTarget(),inputs);
 				toc->areaCost = 4.0;
 				possibleCompressors.push_back(toc);
+*/
 
                 //(1,3,2,5;5) GPC:
                 inputs.clear();
@@ -2205,7 +2227,7 @@ namespace flopoco
 		double compressorCost=0.0;
 		for(unsigned i=0; i < compressorUsage.size(); i++)
 		{
-			REPORT(INFO, "compressor " << i << " used " << compressorUsage[i] << " times (cost contribution: " << compressorUsage[i]*possibleCompressors[i]->areaCost << ")");
+            REPORT(INFO, "compressor " << i << " (" << possibleCompressors[i]->getName() << ")" << " used " << compressorUsage[i] << " times (cost contribution: " << compressorUsage[i]*possibleCompressors[i]->areaCost << ")");
 			compressorCost += compressorUsage[i]*possibleCompressors[i]->areaCost;
 		}
         REPORT(INFO, "total cost for compressors: " << compressorCost);

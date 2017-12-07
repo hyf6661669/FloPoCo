@@ -122,7 +122,7 @@ int BitHeapILPCompression::getMaxStageCount(int maxHeight)
 {
         int height=2;
         int stageCount=0;
-
+        cout << "maxHeight is " << maxHeight << endl;
         //the following loop computes the Dadda sequence [Dadda 1965] which is used as max. no of stages
         //(typically less are selected by the optimization using higher order compressors)
         while(height < maxHeight)
@@ -189,11 +189,12 @@ int BitHeapILPCompression::generateProblem(){
     if(!dontAddFlipFlop || !useHeuristic){
         possibleCompressors_->push_back(flipflop);
     }
+    cout << "getExternalStageCount is " << getExternalStageCount << endl;
     if(!getExternalStageCount){
         REPORT(DEBUG, "we set up the stages as bh_->getMaxHeight()");
         noOfStages_=getMaxStageCount(bh_->getMaxHeight());
     }
-            unsigned noOfCompressors=possibleCompressors_->size();
+    unsigned noOfCompressors=possibleCompressors_->size();
     if(useVariableCompressors){
         noOfCompressors += variableBCompressors.size();
     }
@@ -253,6 +254,7 @@ int BitHeapILPCompression::generateProblem(){
     //create variables:
     compCountVars.clear();
     compCountVars.resize(noOfStages_+1);
+    cout << "noOfStages_ is " << noOfStages_ << endl << endl << endl;
     for(unsigned s=0; s < compCountVars.size(); s++)
     {
         compCountVars[s].resize(noOfCompressors);
@@ -338,7 +340,6 @@ int BitHeapILPCompression::generateProblem(){
         }
     }
     //cout << "declaration of k done" << endl;
-    cout << "here" << endl;
 
     //start at second stage. bits of first stage are in U
     columnBitCountVars.clear();
@@ -387,8 +388,7 @@ int BitHeapILPCompression::generateProblem(){
 #ifdef HAVE_SCALP
     //defining the objective
     ScaLP::Term objectiveSum;
-    cout << "possibleCompressors_->size() is " << possibleCompressors_->size() << endl;
-
+    cout << compCountVars.size() << endl;
     for(unsigned int s = 0; s < compCountVars.size() - 1; s++){
         for(unsigned int e = 0; e < compCountVars[s].size(); e++){
             for(unsigned int c = 0; c < compCountVars[s][e].size(); c++){
@@ -407,10 +407,10 @@ int BitHeapILPCompression::generateProblem(){
             }
         }
     }
+    cout << "after setting objective" << endl;
     ScaLP::Objective obj = ScaLP::minimize(objectiveSum);
     problemSolver->setObjective(obj);
     //problemSolver->writeLP("compressorTree.lp");
-
 #else
     SCIP_CONS* tmpcons; //needed for scip constraints
 #endif //HAVE_SCALP
@@ -469,7 +469,7 @@ int BitHeapILPCompression::generateProblem(){
     else{
         //cout << "0-0-0 is not full" << endl;
     }
-    //cout << "declaration of C0 done" << endl;
+    cout << "declaration of C0 done" << endl;
     const int LARGE_NUMBER = 10000;
 //  int LARGE_NUMBER = bh_->getMaxHeight()+1; //!!!
 
@@ -540,7 +540,7 @@ int BitHeapILPCompression::generateProblem(){
             c1Constraint.name = consName.str();
             problemSolver->addConstraint(c1Constraint);
             //problemSolver->writeLP("compressorTreec1.lp");
-            //cout << "wrote c1Constraint" << endl;
+
 
 #else
             if(s != 0){
@@ -553,7 +553,7 @@ int BitHeapILPCompression::generateProblem(){
             SCIP_CALL( SCIPaddCons(scip, tmpcons) );
 #endif //HAVE_SCALP
         }
-
+        cout << "wrote c1Constraint" << endl;
         //cout << "filling of C1 at stage " << s << " done" << endl;
 
         //-----------------------------------------------------------------------
@@ -631,7 +631,7 @@ int BitHeapILPCompression::generateProblem(){
         //cout << "filling of C2 at stage " << s << " done" << endl;
     }
 
-    //cout << "C1 and C2 totally done" << endl;
+    cout << "C1 and C2 totally done" << endl;
 
 
     //------------------------------------------------------------

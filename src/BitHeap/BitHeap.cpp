@@ -1573,7 +1573,7 @@ namespace flopoco
 		if (getMaxHeight()==0)
 			return ;
 
-		op->setCycle(0); // TODO FIXME for the virtual multiplier case where inputs can arrive later
+        op->setCycle(0); // TODO FIXME for the virtual multiplier case where inputs can arrive later
 
 		REPORT(DEBUG, "Adding the constant bits");
 		op->vhdl << endl << tab << "-- Adding the constant bits" << endl;
@@ -1659,6 +1659,8 @@ namespace flopoco
 			//compressing until the maximum height of the columns is 3
 			//EXPERIMENTAL------------------------------------------------------
 
+            unsigned int stageMax=0; //maximum stage count (for output)
+
 			if(compressionType == 0)
 			{
 				//lutCompressionLevel=0 - compression using only compressors
@@ -1705,6 +1707,7 @@ namespace flopoco
 					{
 						REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
                         //elemReduce(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+                        if(s > stageMax) stageMax = s;
                         elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
 						if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
 						{
@@ -1820,6 +1823,7 @@ namespace flopoco
 //                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
                             }
 
+                            if(s > stageMax) stageMax = s;
                             elemReduceFixedCycle(vc.column, vcc, 0, s);
 
                             //...
@@ -1832,6 +1836,7 @@ namespace flopoco
                         {
                             REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
                             if(((unsigned) (*it).second) < maxWeight){
+                                if(s > stageMax) stageMax = s;
                                 elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
 
                                 if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
@@ -1966,6 +1971,7 @@ namespace flopoco
 //                                THROWERROR("VariableColumnCompressor with type " << vc.type << " unknown");
                             }
 
+                            if(s > stageMax) stageMax = s;
                             elemReduceFixedCycle(vc.column, vcc, 0, s);
 
                             //...
@@ -1978,6 +1984,7 @@ namespace flopoco
                         {
                             REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
                             if(((unsigned) (*it).second) < maxWeight){
+                                if(s > stageMax) stageMax = s;
                                 elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
 
                                 if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
@@ -2032,6 +2039,8 @@ namespace flopoco
 					applyAdderTreeCompression();
 				}
 			}
+
+            cout << "The final pipeline stage count is " << stageMax << endl;
 
             //EXPERIMENTAL -----------------------------------------------------
             //only three levels left

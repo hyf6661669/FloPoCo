@@ -50,7 +50,7 @@ namespace flopoco
         //optimalAndPreReduction = true;
         differentStages = true;
         dontUsePA = false;
-        minFixedStage = 0;
+        minFixedStage = 1;
         maxFixedStage = 8;
         //paSorting = true;
         //buildSingleStages = true;
@@ -132,11 +132,11 @@ namespace flopoco
             tempVector[w] = ceil((((float)newBits[0][w]) *  (2.0/3.0)) - 0.00001);
         }
 
-        cout << "stage " << stages << endl;
+        //cout << "stage " << stages << endl;
         for(unsigned j = 0; j < tempVector.size(); j++){
-            cout << tempVector[j] << " ";
+            //cout << tempVector[j] << " ";
         }
-        cout << endl << endl;
+        //cout << endl << endl;
 
 
         while(!maximalTwoBitsInCurrentStage(tempVector) || (stages + 1) < newBits.size()){
@@ -265,6 +265,36 @@ namespace flopoco
             newBits.push_back(cycleVector);
             originalNewBits.push_back(cycleVector);
         }
+
+        //delete stages, where in that stage and all stages before no bits are being added
+
+        unsigned int delStages = 0;
+        bool foundInput = false;
+        for(unsigned int s = 0; s <= newBits.size(); s++){
+            for(unsigned c = 0; c < newBits[s].size(); c++){
+                if(newBits[s][c] > 0){
+                    foundInput = true;
+                    break;
+                }
+            }
+            if(foundInput){
+                break;
+            }
+            delStages++;    //else: new zerostage found
+        }
+
+        //if(delStages > 0){  //deleting the zervectors
+        if(0){
+            newBits.erase(newBits.begin(), newBits.begin() + delStages);
+            originalNewBits.erase(originalNewBits.begin(), originalNewBits.begin() + delStages);
+            //resize the other vectors
+            for(unsigned int s = 0; s < newBits.size(); s++){
+                newBits[s].resize(bh_->bits.size() + compOutputWordSizeMax * s);
+                originalNewBits[s].resize(bh_->bits.size() + compOutputWordSizeMax * s);
+            }
+        }
+
+
 
 /*
         //debug output:: newBits
@@ -722,6 +752,9 @@ namespace flopoco
                         if(newBits[s][c] > 2){
                             //break
                             minFixedStage = s;
+                            if(minFixedStage == 0){
+                                minFixedStage++;
+                            }
                             finished = false;
                             break;
                         }
@@ -749,6 +782,7 @@ namespace flopoco
                         }
                     }
                 }
+                cout << "minFixedStage is now " << minFixedStage << endl;
 
                 if(finished){
                     //heuristic found complete solution therefore set flag useCompleteHeuristic
@@ -774,10 +808,8 @@ namespace flopoco
                 maxFixedStage = stagesUsedByHeuristic;
                 cout << "set minFixedStage and maxFixedStage equal" << endl;
                 bitHeapILPCompression.zeroStages = 0; //trivial - therefore problemreduction is not necessary (1 second)
-
                 setUpILPForMoreStages(minFixedStage, true);
             }
-
             setUpILPForMoreStages(minFixedStage, true);
 
 
@@ -1904,8 +1936,7 @@ namespace flopoco
         //setting up noOfStages in ILP
 
         bitHeapILPCompression.getExternalStageCount = true;
-        bitHeapILPCompression.noOfStages_ = (maxS + 2); //two - 1 because inthe next stage(the last stage) is no compressor and one because we start at counting with 0
-
+        bitHeapILPCompression.noOfStages_ = (maxS + 2); //two - 1 because in the next stage(the last stage) is no compressor and one because we start at counting with 0
 
         cout << "new numberOfStages_ is " << (maxS + 2) << endl;
         if(useMaxHeuristicStageCount){
@@ -1995,7 +2026,7 @@ namespace flopoco
 
     void BitHeapHeuristicCompression::setUpILPForMoreStages(unsigned stages, bool firstOne){
 #ifdef HAVE_SCIP
-        cout << "in setupILPForMoreStages with stages = " << stages << endl;
+        cout  << "in setupILPForMoreStages with stages = " << stages << endl;
         bitHeapILPCompression.solution.clear();
         bitHeapILPCompression.solution.resize(stages);
         if(!firstOne){
@@ -2056,6 +2087,7 @@ namespace flopoco
             printBitHeap();
             cout << "minFixedStage = " << minFixedStage << " and maxFixedStage = " << maxFixedStage << endl;
             bool takeFirstSolution = false; //we also check the next stages for a better solution
+
             for(unsigned s = minFixedStage; s <= maxFixedStage && !takeFirstSolution; s++){
                 cout << "number of stages for ilp problem is " << s << endl;
                 if(s != minFixedStage){
@@ -2083,6 +2115,7 @@ namespace flopoco
                     bitHeapILPCompression.generateProblem();
 
 */
+                    cout << "in loop" << endl;
                     setUpILPForMoreStages(s, false);
                     bitHeapILPCompression.generateProblem();
                 }

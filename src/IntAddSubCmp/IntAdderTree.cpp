@@ -61,7 +61,7 @@ namespace flopoco {
 			addInput(join("X",i+1),wIn);
 		}
 
-		nextCycle(); //sync inputs (for timing analysis)
+        nextCycle(); //sync inputs (for timing analysis)
 
 		REPORT(DEBUG, "Using compression method: " << method);
 		if(method.compare("bitheap") == 0)

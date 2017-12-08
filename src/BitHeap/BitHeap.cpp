@@ -1693,12 +1693,17 @@ namespace flopoco
 				}
 
 				BitHeapILPCompression ilp(this);
-                ilp.useVariableCompressors = useVariableColumnCompressors;
+                //ilp.useVariableCompressors = useVariableColumnCompressors; doesn't make any sense
                 ilp.useHeuristic = false;
 				ilp.generateProblem();
                 if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
 				ilp.solve();
 //				if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
+
+				//fix: push empty stage to front
+				list<pair<int,int> > tempList;
+				ilp.solution.insert(ilp.solution.begin(), tempList);
+
 
 				for(unsigned s=0; s < ilp.solution.size(); s++)
 				{

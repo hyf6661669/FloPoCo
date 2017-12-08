@@ -2115,7 +2115,7 @@ namespace flopoco
                     bitHeapILPCompression.generateProblem();
 
 */
-                    cout << "in loop" << endl;
+                    //cout << "in loop" << endl;
                     setUpILPForMoreStages(s, false);
                     bitHeapILPCompression.generateProblem();
                 }

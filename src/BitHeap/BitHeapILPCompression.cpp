@@ -1032,6 +1032,7 @@ bool BitHeapILPCompression::solve(){
                     if(integerValue > 0)
                     {
                         for(unsigned int k = 0; k < (unsigned int) integerValue; k++){
+                            //cout << "in stages " << s << " and column " << c << " is compressor " << e << endl;
                             solution[s].push_back(pair<int,int>(e,c));
                         }
                     }

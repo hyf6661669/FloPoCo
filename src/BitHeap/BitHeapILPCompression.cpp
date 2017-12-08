@@ -923,7 +923,7 @@ bool BitHeapILPCompression::solve(){
     timeout = bh_->getOp()->getTarget()->ilpTimeout();
 #ifdef HAVE_SCALP
     problemSolver->timeout = (int) timeout;
-    problemSolver->threads = 4;  //not needed with scip because scip uses only one thread
+    problemSolver->threads = 1;  //not needed with scip because scip uses only one thread
     problemSolver->quiet = false;
 
 #else

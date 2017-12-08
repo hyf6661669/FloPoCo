@@ -22,6 +22,7 @@
 #include "BitHeap/BitHeap.hpp"
 #include "FixFunction.hpp"
 #include "FixConstant.hpp"
+#include "E-method/SimpleSelectionFunction.hpp"
 
 namespace flopoco {
 

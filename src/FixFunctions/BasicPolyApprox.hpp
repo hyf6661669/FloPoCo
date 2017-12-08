@@ -27,8 +27,8 @@ namespace flopoco{
 			The first is useful in standalone, or to evaluate degree/MSBs etc.
 			The second is needed in the typical case of a domain split, where the degree is determined when determining the split.
 
-			Sketch of te algo for  buildApproxFromTargetAccuracy:
-		  guessDegree gives a tentative degree.
+			Sketch of the algo for  buildApproxFromTargetAccuracy:
+		  	guessDegree gives a tentative degree.
 			target_accuracy defines the best-case LSB of the constant part of the polynomial.
 			if  addGuardBitsToConstant, we add g=ceil(log2(degree+1)) bits to the LSB of the constant:
 			this provides a bit of freedom to fpminimax, for free in terms of evaluation.
@@ -40,7 +40,7 @@ namespace flopoco{
 			No good handling of functions with zero coefficients for now.
 			- a function with zero constant should be transformed into a "proper" one outside this class.
 			   Example: sin, log(1+x)
-		  - a function with odd or even Taylor should be transformed as per the Muller book.
+		  	- a function with odd or even Taylor should be transformed as per the Muller book.
 
 			To implement a generic approximator we will need to lift these restrictions, but it is unclear that it needs to be in this class.
 			A short term TODO is to detect such cases.
@@ -62,9 +62,17 @@ namespace flopoco{
 				@param addGuardBits:
 				if >=0, add this number of bits to the LSB of each coeff
 				if -1, add to each coeff a number of LSB bits that corresponds to the bits needed for a faithful Horner evaluation based on faithful (truncated) multipliers
-				@param signedx:  if true, we consider an approximation on [-1,1]. If false, it will be on [0,1]
+				@param signedInput:  if true, we consider an approximation on [-1,1]. If false, it will be on [0,1]
 		 */
 		BasicPolyApprox(sollya_obj_t fS, double targetAccuracy, int addGuardBits=-1, bool signedInput =false);
+
+		/** A minimal constructor that parses a sollya string, inputting target accuracy
+				@param addGuardBits:
+				if >=0, add this number of bits to the LSB of each coeff
+				if -1, add to each coeff a number of LSB bits that corresponds to the bits needed for a faithful Horner evaluation based on faithful (truncated) multipliers
+				@param signedInput:  if true, we consider an approximation on [-1,1]. If false, it will be on [0,1]
+		 */
+		BasicPolyApprox(string sollyaString, double targetAccuracy, int addGuardBits=-1, bool signedInput=false);
 
 
 		/** A minimal constructor that inputs a sollya_obj_t function, a degree and the weight of the LSBs.
@@ -74,15 +82,8 @@ namespace flopoco{
 		 */
 		BasicPolyApprox(sollya_obj_t fS, int degree, int LSB, bool signedInput =false);
 
-		/** A minimal constructor that parses a sollya string, inputting target accuracy
-				@param addGuardBits:
-				if >=0, add this number of bits to the LSB of each coeff
-				if -1, add to each coeff a number of LSB bits that corresponds to the bits needed for a faithful Horner evaluation based on faithful (truncated) multipliers
-				@param signedx:  if true, we consider an approximation on [-1,1]. If false, it will be on [0,1]
-		 */
-		BasicPolyApprox(string sollyaString, double targetAccuracy, int addGuardBits=-1, bool signedInput=false);
 
-		/** A constructor for the case you already have the coefficients, e.g. you read them from a file. Beware, f is un-initialized in this case
+		/** A constructor for the case where you already have the coefficients, e.g. you read them from a file. Beware, f is un-initialized in this case
 		 */
 		BasicPolyApprox(int degree, vector<int> MSB, int LSB, vector<mpz_class> coeff);
 
@@ -115,7 +116,7 @@ namespace flopoco{
 		bool needToFreeF;     /**< in an ideal world, this should not exist */
 		void initialize();    /**< initialization of various constant objects for Sollya */
 		void buildApproxFromTargetAccuracy(double targetAccuracy, int addGuardBitsToConstant); /**< constructor code for the general case factored out. */
-		void buildFixFormatVector(); /**< Build coeff, the vector of coefficients, out of pS, the sollya polynomial. Constructor code, factored out */
+		void buildFixFormatVector(); /**< Build coeff, the vector of coefficients, out of polynomialS, the sollya polynomial. Constructor code, factored out */
 
 
 		sollya_obj_t fixedS;        /**< a constant sollya_obj_t */

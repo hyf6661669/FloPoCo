@@ -15,15 +15,11 @@
 #include <iostream>
 
 #include "FixHornerEvaluator.hpp"
-#include "IntMult/FixMultAdd.hpp"
 
 using namespace std;
 
 
 	/*
-
-
-
 		 This is a simplified version of the computation in the ASAP 2010 paper, simplified because x is in [-1,1)
 
 		 WRT the ASAP paper,
@@ -33,7 +29,7 @@ using namespace std;
 		 p(y)      =  \sigma_0
 
 
-		 2/  each Horner step may entail up to two errors: one when truncating X to Xtrunc, one when rounding/truncating the product. 
+		 2/  each Horner step may entail up to two errors: one when truncating X to Xtrunc, one when rounding/truncating the product.
 		 step i rounds to lsbMult[i], such that lsbMult[i] <=  polyApprox->LSB
 		 Heuristic to determine lsbMult[i] is as follows:
 		 - set them all to polyApprox->LSB.
@@ -44,9 +40,9 @@ using namespace std;
 		 The error of one step is the sum of two terms: the truncation of X, and the truncation of the product.
 		 The first is sometimes only present in lower-degree steps (for later steps, X may be used untruncated
 		 For the second, two cases:
-		 * If plainVHDL is true, we 
-		   - get the full product, 
-			 - truncate it to lsbMult[i]-1, 
+		 * If plainVHDL is true, we
+		   - get the full product,
+			 - truncate it to lsbMult[i]-1,
 			 - add it to the coefficient, appended with a rounding bit in position lsbMult[i]-1
 			 - truncate the result to lsbMult[i], so we have effectively performed a rounding to nearest to lsbMult[i]:
 			 epsilonMult = exp2(lsbMult[i]-1)
@@ -69,7 +65,7 @@ using namespace std;
 		 * size of the truncated result:
 		 * weight of the LSB of a_{d-j}
 		 * weight of the MSB of a_{d-j}
-		 */
+	*/
 
 
 #define LARGE_PREC 1000 // 1000 bits should be enough for everybody
@@ -98,11 +94,11 @@ namespace flopoco{
 				if(lsbXTrunc[i]!=lsbIn) // there has been some truncation
 					error += exp2(lsbSigma[i]);
 				// otherwise no truncation, no error...
-				
+
 				// P is the full product of sigma_i+1 by xtrunc: sum the MSBs+1, and sum the LSBs
 				// Again TODO this +1 is most of the time overkill (only for the case -1*-1. Can sigma reach -1?)
-				lsbP[i] = lsbSigma[i+1] + lsbXTrunc[i]; 
-				if(getTarget()->plainVHDL()) 	// we will be able to round the product to lsbSigma[i] 
+				lsbP[i] = lsbSigma[i+1] + lsbXTrunc[i];
+				if(getTarget()->plainVHDL()) 	// we will be able to round the product to lsbSigma[i]
 					error += exp2(lsbSigma[i]-1);
 				else // we will truncate the product to lsbSigma[i]
 					error += exp2(lsbSigma[i]);
@@ -120,18 +116,18 @@ namespace flopoco{
 			}
 		} // while
 
-		
+
 		// A bit of reporting
 		for(int i=degree-1; i>=0; i--) {
 			REPORT(INFO, "  level " << i << " requires a signed " << 0-lsbXTrunc[i]+1 << "x" <<  msbSigma[i+1] - lsbSigma[i+1] +1 << " multiplier");
 		}
-	} 
+	}
 
 
 
-	
+
 	void FixHornerEvaluator::initialize(){
-		setNameWithFreqAndUID("FixHornerEvaluator");		
+		setNameWithFreqAndUID("FixHornerEvaluator");
 		setCopyrightString("F. de Dinechin (2014)");
 		srcFileName="FixHornerEvaluator";
 
@@ -165,7 +161,7 @@ namespace flopoco{
 
 
 
-	
+
 	void FixHornerEvaluator::generateVHDL(){
 
 		// Split the coeff table output into various coefficients
@@ -216,7 +212,7 @@ namespace flopoco{
 			resizeFixPoint("Ys", "Sigma0",  msbOut, lsbOut);
 
 		vhdl << tab << "R <= " << "std_logic_vector(Ys);" << endl;
-		
+
 	}
 
 

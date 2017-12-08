@@ -38,6 +38,36 @@ namespace flopoco {
 	 * Format of the input X is given as a parameter.
 	 * Format of the coefficients is given as a parameter.
 	 * Checks can, and should, be made to insure that all parameters are in ranges where the method converges.
+	 *
+	 * The main iteration is:
+	 *		w[j] = r * [w[j-1] - A*d[j-1]]
+	 * , where:
+	 * 		the x[j] notation represents the value of x at computation step j
+	 * 		r is the radix
+	 * 		w is the remainder vector
+	 * 		d is the digit vector
+	 * 		A is the parameter matrix
+	 *
+	 * 	For the case of rational polynomials, matrix A is of the form:
+	 * 		(1    -x    0    0    ...    0)
+	 * 		(q_1   1    -x   0    ...    0)
+	 * 		(q_2   0    1    -x   ...    0)
+	 * 		...
+	 * 		(q_N   0    0    0    ...    1)
+	 * 	and w is initialized to:
+	 * 		(p_0 p_1 ... p_N)
+	 * 	and d is initialized to:
+	 * 		(0 0 ... 0)
+	 * 	, where N is the maximum between n and m. If P and Q are of different lengths,
+	 * 	then the missing coefficients are set to zero.
+	 *
+	 * 	The specific iteration step for evaluating rational polynomials is:
+	 *		w_i[j] = r * (w_i[j-1] - d_0[j-1]*q_i - d_i[j-1] + d_{i+1}[j-1]*x)
+	 *	The iterations steps are simpler for i=0 and i=n.
+	 *	For i=0, the iteration is:
+	 *		w_0[j] = r * (w_0[j-1] - d_0[j-1] + d_1[j-1]*x)
+	 *	For i=n, the iteration step is:
+	 *		w_n[j] = r * (w_n[j-1] - d_0[j-1]*q_n - d_n[j-1])
 	*/
 
   class FixEMethodEvaluator : public Operator

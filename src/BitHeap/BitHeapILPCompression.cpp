@@ -919,10 +919,12 @@ int BitHeapILPCompression::writeProblem(std::string filename){
 
 bool BitHeapILPCompression::solve(){
     //set a time limit:
-    float timeout;
-    timeout = bh_->getOp()->getTarget()->ilpTimeout();
+    int timeout;
+    timeout = UserInterface::ilpTimeout;
+    //timeout = bh_->getOp()->getTarget()->ilpTimeout();
 #ifdef HAVE_SCALP
     problemSolver->timeout = (int) timeout;
+    cout << " timeout is set to " << timeout;
     problemSolver->threads = 1;  //not needed with scip because scip uses only one thread
     problemSolver->quiet = false;
 
@@ -960,7 +962,7 @@ bool BitHeapILPCompression::solve(){
             infeasible = true;
         }
     }
-    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE){
+    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE || (stat == ScaLP::status::TIMEOUT && problemSolver->getResult().objectiveValue > 0)){
         infeasible = false;
     }
 

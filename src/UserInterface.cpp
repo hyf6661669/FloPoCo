@@ -30,6 +30,7 @@ namespace flopoco
 	/* Uni KS start */
 	string UserInterface::compression;
 	string UserInterface::ilpSolver;
+    int UserInterface::ilpTimeout;
 	/* Uni KS stop */
 	bool   UserInterface::clockEnable;
 	bool   UserInterface::useHardMult;
@@ -149,6 +150,7 @@ namespace flopoco
 		/* Uni KS start */
 		parseString(args, "compression", &compression, true);
 		parseString(args, "ilpSolver", &ilpSolver, true);
+        parsePositiveInt(args, "ilpTimeout", &ilpTimeout, true);
 		/* Uni KS stop */
 		parseFloat(args, "frequency", &targetFrequencyMHz, true); // sticky option
 		parseFloat(args, "hardMultThreshold", &unusedHardMultThreshold, true); // sticky option
@@ -299,6 +301,7 @@ namespace flopoco
 		unusedHardMultThreshold=0.7;
 		compression = "heuristic3";
 		ilpSolver = "Gurobi";
+        ilpTimeout = 7200;
 	}
 
 	void UserInterface::buildAll(int argc, char* argv[]) {
@@ -635,6 +638,7 @@ namespace flopoco
 		s << "  " << COLOR_BOLD << "compression" << COLOR_NORMAL << "=<heuristic1,heuristic2,heuristic3,optimal,optimalMinStages>:        compression method (default=heuristic3)" << COLOR_RED_NORMAL << "(sticky option?)" << COLOR_NORMAL<<endl;
 		s << "     heuristic1:Original FloPoCo heuristic, heuristic2:Heuristic of Parandeh-Afshar, heuristic3:Improved heuristic, optimal:Optimal ILP-based, optimalMinStages:Optimal ILP with minimal number of stages"<<endl;
 		s << "  " << COLOR_BOLD << "ilpSolver" << COLOR_NORMAL << "=<string>: specifies the ILP solver which is being used. (possible solvers: Gurobi,CPLEX,SCIP,LPSolve; default Gurobi)" <<endl;
+        s << "  " << COLOR_BOLD << "ilpTimeout" << COLOR_NORMAL << "=<int>: specifices the timouot of the ILP solver in seconds." <<endl;
 		s << "Sticky options apply to the rest of the command line, unless changed again" <<endl;
 		s <<endl;
 		s <<  COLOR_BOLD << "List of operators with command-line interface"<< COLOR_NORMAL << " (a few more are hidden inside FloPoCo)" <<endl;

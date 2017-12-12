@@ -201,14 +201,13 @@ namespace flopoco
         //now fill lowerBounds with real values
         //the preset value is infinity (a.k.a. 10.0)
 		if(mode.compare("heuristic_parandeh-afshar_modified") != 0){
-            //lowerBounds[0] = 0;
-            //lowerBounds[1] = 0;
-			//lowerBounds[2] = 1.75;
-			//lowerBounds[3] = 1.75;
-			//lowerBounds[4] = 0;
-			//lowerBounds[5] = 0;
-			//lowerBounds[6] = 0;
-			//lowerBounds[7] = 0;
+            //uncomment the following to get the (0,1.75,inf) mode:
+            //ToDo: Add this to user interface
+            /*
+            lowerBounds[0] = 0;
+            lowerBounds[1] = 0;
+            lowerBounds[2] = 1.75;
+            */
 		}
         printLowerBounds();
 
@@ -915,7 +914,6 @@ namespace flopoco
 							if(fabs(lowerBounds[s]) < 0.001){
 								necessary = true;
 							}
-                            necessary = true;   //doesn't make sense for current tests
 							if(necessary && variableAchievedEfficiency > (lowerBounds[s] - 0.0001)){
 								//cout << "    variableAchievedEfficiency = " << variableAchievedEfficiency << "and lowerBounds[s] = " << lowerBounds[s] << endl;
 
@@ -983,7 +981,6 @@ namespace flopoco
                                 }
                             }
                         }
-                        necessary = true;   //doesn't make sense for current tests
                         if(achievedEfficiencyCurrent > (achievedEfficiencyBest + 0.0001) && achievedEfficiencyCurrent > (lowerBounds[s] - 0.0001) && necessary){       //accuracy !!
                             achievedEfficiencyBest = achievedEfficiencyCurrent;
                             compressor = i;

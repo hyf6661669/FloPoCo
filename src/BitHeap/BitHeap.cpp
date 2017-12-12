@@ -1252,7 +1252,6 @@ namespace flopoco
  	/* Uni KS start */
  	void BitHeap::removeCompressedBits(int c, int red, int cycle)
 	{
-        cout << "!! removeCompressedBits(" << c << "," << red << "," << cycle << ")" << endl;
 		while(red>0)
 		{
             removeBit(c,0,cycle);
@@ -1853,7 +1852,6 @@ namespace flopoco
                         }
                     }
 
-                    cout << "!! remaining bits in stage " << s << " are: ";
                     for(unsigned i=0; i<maxWeight; i++)
                     {
                         cout << bits[i].size() << " ";
@@ -2001,7 +1999,6 @@ namespace flopoco
                         }
                     }
 
-                    cout << "!! remaining bits in stage " << s << " are: ";
                     for(unsigned i=0; i<maxWeight; i++)
                     {
                         cout << bits[i].size() << " ";

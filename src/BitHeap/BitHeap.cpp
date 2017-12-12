@@ -1930,11 +1930,11 @@ namespace flopoco
 				if(area2 < area1 + 0.0001){
 					ilp = ilp2;
 					cout << "using version without variable compressors" << endl;
-                    cout << "final cost is " << area2 << endl;
+                    cout << "the compressors have a cost of " << area2 << endl;
 				}
                 else
                 {
-                    cout << "final cost is " << area1 << endl;
+                    cout << "the compressors have a cost of " << area1 << endl;
                 }
 
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();

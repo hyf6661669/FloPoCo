@@ -915,6 +915,7 @@ namespace flopoco
 							if(fabs(lowerBounds[s]) < 0.001){
 								necessary = true;
 							}
+                            necessary = true;   //doesn't make sense for current tests
 							if(necessary && variableAchievedEfficiency > (lowerBounds[s] - 0.0001)){
 								//cout << "    variableAchievedEfficiency = " << variableAchievedEfficiency << "and lowerBounds[s] = " << lowerBounds[s] << endl;
 
@@ -982,6 +983,7 @@ namespace flopoco
                                 }
                             }
                         }
+                        necessary = true;   //doesn't make sense for current tests
                         if(achievedEfficiencyCurrent > (achievedEfficiencyBest + 0.0001) && achievedEfficiencyCurrent > (lowerBounds[s] - 0.0001) && necessary){       //accuracy !!
                             achievedEfficiencyBest = achievedEfficiencyCurrent;
                             compressor = i;

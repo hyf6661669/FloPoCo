@@ -605,6 +605,25 @@ src/NeuralNetworks/CoreTE
 src/NeuralNetworks/LUTMult
 src/PrimitiveComponents/Xilinx/Xilinx_CFGLUT5
 src/PrimitiveComponents/Xilinx/Xilinx_CFGLUTShadow
+
+src/NeuralNetworks/ConvolutionalLayer
+src/NeuralNetworks/ConvolutionalCoreSimple
+src/NeuralNetworks/WindowShiftRegister
+src/NeuralNetworks/H5ToNeuralNetwork
+src/NeuralNetworks/FullConnectedLayer
+src/NeuralNetworks/ReLU
+src/NeuralNetworks/BlockRam
+src/NeuralNetworks/NeuralNetwork
+src/NeuralNetworks/LayerArguments
+src/NeuralNetworks/PoolingLayer
+src/NeuralNetworks/PoolingCore
+src/NeuralNetworks/Max2Input
+src/NeuralNetworks/PaddingGenerator
+src/NeuralNetworks/ControlledMemory
+src/NeuralNetworks/MemoryController
+src/NeuralNetworks/GlobalController
+src/NeuralNetworks/Register
+src/NeuralNetworks/ModuloCounter
 )
 
 TARGET_LINK_LIBRARIES(

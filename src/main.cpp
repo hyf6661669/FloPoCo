@@ -132,6 +132,7 @@ int main(int argc, char* argv[] )
 
 	UserDefinedOperator::registerFactory();
 
+    H5ToNeuralNetwork::registerFactory();
 	  
 	}
 	catch (const std::exception &e) {

@@ -78,6 +78,7 @@ namespace flopoco
         bool getLowerBoundsFromBitHeap;
 
 
+
         unsigned minimumHeightReduction;
         //double minimumEffReduction;
         unsigned minFixedStage;

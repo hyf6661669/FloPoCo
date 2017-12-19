@@ -37,6 +37,7 @@ namespace flopoco
         useCompleteHeuristic = false;
         getLowerBoundsFromBitHeap = false;
 
+
         //modified values
 
         //lowerBound = 0.0;
@@ -830,7 +831,12 @@ namespace flopoco
 
 
         cout << "initialisation of bitHeapILPCompression finished" << endl;
-        bitHeapILPCompression.generateProblem();
+
+
+
+
+        bitHeapILPCompression.generateProblem(); //Segmentation fault if there is nothing more to do
+
 
         if(passHeuristicSolution){
             int count = bitHeapILPCompression.passHeuristicSolutions();
@@ -2063,6 +2069,8 @@ namespace flopoco
     }
 
     int BitHeapHeuristicCompression::solve(){
+
+
         cout << "in solve()" << endl;
         if((mode.compare("heuristic_parandeh-afshar_modified") == 0) || (mode.compare("heuristic_pa") == 0)) {
 			if(useVariableCompressors){
@@ -2137,29 +2145,7 @@ namespace flopoco
             if(bitHeapILPCompression.infeasible){       //if we have no solution after we went all the stages, exit
                 exit(-1);
             }
-            /*
-            cout << endl << "before merging, solution" << endl;
-            for(int j = 0; j < solution.size(); j++){
-                list<pair<int,int> >:: iterator it;
-                for(it = solution[j].begin(); it != solution[j].end(); it++){
-                    cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
-                }
 
-            }
-
-            cout << endl << endl;
-
-            cout << endl << "before merging, presolution" << endl;
-            for(int j = 0; j < preSolution.size(); j++){
-                list<pair<int,int> >:: iterator it;
-                for(it = preSolution[j].begin(); it != preSolution[j].end(); it++){
-                    cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
-                }
-
-            }
-
-            cout << endl << endl;
-            */
 
             if(preSolution.size() > solution.size()){
                 solution.resize(preSolution.size());
@@ -2168,18 +2154,6 @@ namespace flopoco
 
                 solution[s].splice(solution[s].end(), preSolution[s]);
             }
-
-
-            /*
-            cout << "after SCIP" << endl;
-            for(int j = 0; j < solution.size(); j++){
-                list<pair<int,int> >:: iterator it;
-                for(it = solution[j].begin(); it != solution[j].end(); it++){
-                    cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
-                }
-
-            }
-            */
         }
         else{
             bitHeapILPCompression.solve();

@@ -1709,16 +1709,18 @@ namespace flopoco
 					list<pair<int,int> >::iterator it;
 					for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
 					{
-						REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
-                        //elemReduce(((unsigned) (*it).second), possibleCompressors[(*it).first]);
-                        if(s > stageMax) stageMax = s;
-                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
-						if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
-						{
-                            compressorUsage[(*it).first]++;
-                            usedCompressors[(*it).first]=true;
-                        }
-
+						if(((unsigned) (*it).second) < maxWeight){
+							REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
+	                        //elemReduce(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+	                        if(s > stageMax) stageMax = s;
+	                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
+							if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
+							{
+								REPORT(DEBUG, "added, not a 1_1-compressor");
+	                            compressorUsage[(*it).first]++;
+	                            usedCompressors[(*it).first]=true;
+	                        }
+						}
 					}
                     plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
                     if(this->getOp()->getTarget()->isPipelined())

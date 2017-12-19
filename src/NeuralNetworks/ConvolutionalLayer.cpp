@@ -17,7 +17,7 @@
 #include "WindowShiftRegister.hpp"
 #include "PaddingGenerator.hpp"
 #include "ReLU.hpp"
-#include "IntAddSubCmp/IntAdderTree.hpp"
+//#include "IntAddSubCmp/IntAdderTree.hpp"
 #include "Register.hpp"
 
 
@@ -51,7 +51,7 @@ namespace flopoco {
 
         this->useNumericStd();
 
-		// definition of the source file name, used for info and error reporting using REPORT 
+		// definition of the source file name, used for info and error reporting using REPORT
         srcFileName="ConvolutionalLayer";
 
         // author
@@ -66,7 +66,7 @@ namespace flopoco {
         cout << "###   Adding Inputs (newStep and finished) \n";
         addInput("newStep",1);
         addOutput("finished",1);
-		
+
         // build one convolutional chain for each INPUT feature!
         cout << "###   Building shift and pad \n";
         buildShiftAndPad(target);

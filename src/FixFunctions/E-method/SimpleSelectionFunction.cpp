@@ -13,8 +13,10 @@ namespace flopoco {
 		: Operator(target), radix(_radix), maxDigit(maxDigit_), msbIn(_msbIn), lsbIn(_lsbIn)
 		{
 			ostringstream name;
+			mpz_class iterLimit;
 
-			name << "SimpleSelectionFunction";
+			srcFileName = "SimpleSelectionFunction";
+			name << "SimpleSelectionFunction_radix" << radix << "_msbIn_" << vhdlize(msbIn) << "_lsbIn_" << vhdlize(lsbIn);
 			setName(name.str());
 
 			//safety checks
@@ -27,9 +29,6 @@ namespace flopoco {
 			if(intlog2(abs(maxDigit)) >= (1<<msbIn))
 				THROWERROR("maximum digit not representable on the given input format!");
 
-			name << "SimpleSelectionFunction_radix" << radix << "_msbIn_" << vhdlize(msbIn) << "_lsbIn_" << vhdlize(lsbIn);
-			setName(name.str());
-			//setNameWithFreqAndUID(name.str());
 			setCopyrightString("Matei Istoan, 2017");
 
 			wHatSize = -1;
@@ -42,16 +41,16 @@ namespace flopoco {
 			//create W^, an estimation of W, made out of only a few MSBs of W
 			if(radix == 2)
 			{
-				//only the 3 top msbs are needed
-				wHatSize = 3;
-			}else if(radix == 4)
-			{
 				//only the 4 top msbs are needed
 				wHatSize = 4;
-			}else if(radix == 8)
+			}else if(radix == 5)
 			{
 				//only the 5 top msbs are needed
 				wHatSize = 5;
+			}else if(radix == 8)
+			{
+				//only the 6 top msbs are needed
+				wHatSize = 6;
 			}else
 			{
 				THROWERROR("SimpleSelectionFunction: radixes higher than 8 currently not supported!");
@@ -60,7 +59,11 @@ namespace flopoco {
 					<< range(msbIn-lsbIn+1-1, msbIn-lsbIn+1-1-wHatSize+1) << ";" << endl;
 
 			vhdl << tab << "with WHat select D <= \n";
-			for(mpz_class i = mpz_class(-(1 << (wHatSize-1))); i < (1 << (wHatSize-1)); i++)
+			if((1 << (wHatSize-1)) > maxDigit)
+				iterLimit = maxDigit << 1;
+			else
+				iterLimit = 1 << (wHatSize-1);
+			for(mpz_class i=-iterLimit; i<=iterLimit; i++)
 			{
 				mpz_class digitValue = (i+1) >> 1;
 				mpz_class iAbs = i;

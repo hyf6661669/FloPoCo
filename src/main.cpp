@@ -77,6 +77,9 @@ int main(int argc, char* argv[] )
 		FixFunctionByMultipartiteTable::registerFactory();
 		BasicPolyApprox::registerFactory();
 		PiecewisePolyApprox::registerFactory();
+
+		SimpleSelectionFunction::registerFactory();
+
 		FixRealKCM::registerFactory();
 		FixComplexKCM::registerFactory();
 		TestBench::registerFactory();
@@ -97,7 +100,7 @@ int main(int argc, char* argv[] )
 		FPLargeAcc::registerFactory();
 		LargeAccToFP::registerFactory();
 		FPDotProduct::registerFactory();
-		
+
 		FPExp::registerFactory();
 		FPLog::registerFactory();
 		FPPow::registerFactory();

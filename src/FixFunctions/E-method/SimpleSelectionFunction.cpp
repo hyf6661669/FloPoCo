@@ -13,14 +13,16 @@ namespace flopoco {
 		: Operator(target), radix(_radix), maxDigit(maxDigit_), msbIn(_msbIn), lsbIn(_lsbIn)
 		{
 			ostringstream name;
-			size_t wHatSize = -1;
+
+			name << "SimpleSelectionFunction";
+			setName(name.str());
 
 			//safety checks
 			if(maxDigit < 0)
 				THROWERROR("maximum digit of the redundant digit set is negative!");
 			if(maxDigit < (radix-1))
 				REPORT(INFO, "WARNING: used digit set is not maximal!");
-			if(intlog2(abs(maxDigit)) >= radix-1)
+			if(intlog2(abs(maxDigit)) > radix-1)
 				THROWERROR("maximum digit larger than the maximum digit in the redundant digit set!");
 			if(intlog2(abs(maxDigit)) >= (1<<msbIn))
 				THROWERROR("maximum digit not representable on the given input format!");
@@ -29,6 +31,8 @@ namespace flopoco {
 			setName(name.str());
 			//setNameWithFreqAndUID(name.str());
 			setCopyrightString("Matei Istoan, 2017");
+
+			wHatSize = -1;
 
 			//add the inputs
 			addInput("W", msbIn-lsbIn+1);
@@ -39,31 +43,43 @@ namespace flopoco {
 			if(radix == 2)
 			{
 				//only the 3 top msbs are needed
-				vhdl << tab << declare("WHat", 3) << " <= W" << range(msbIn-1, msbIn-3) << ";" << endl;
 				wHatSize = 3;
 			}else if(radix == 4)
 			{
 				//only the 4 top msbs are needed
-				vhdl << tab << declare("WHat", 4) << " <= W" << range(msbIn-1, msbIn-4) << ";" << endl;
 				wHatSize = 4;
 			}else if(radix == 8)
 			{
 				//only the 5 top msbs are needed
-				vhdl << tab << declare("WHat", 5) << " <= W" << range(msbIn-1, msbIn-5) << ";" << endl;
 				wHatSize = 5;
 			}else
 			{
 				THROWERROR("SimpleSelectionFunction: radixes higher than 8 currently not supported!");
 			}
+			vhdl << tab << declare("WHat", wHatSize) << " <= W"
+					<< range(msbIn-lsbIn+1-1, msbIn-lsbIn+1-1-wHatSize+1) << ";" << endl;
 
 			vhdl << tab << "with WHat select D <= \n";
-			for(mpz_class i = mpz_class(-(1 << wHatSize)); i < (1 << wHatSize); i++)
+			for(mpz_class i = mpz_class(-(1 << (wHatSize-1))); i < (1 << (wHatSize-1)); i++)
 			{
-				int digitValue = (i+1) >> 1;
+				mpz_class digitValue = (i+1) >> 1;
+				mpz_class iAbs = i;
+
+				//corner cases at the end of the intervals
+				//	in order to keep the resulting digit in the allowed digit set
+				if(digitValue == -(1 << (wHatSize-2)))
+					digitValue++;
+				if(digitValue == (1 << (wHatSize-2)))
+					digitValue--;
+				//handle negative digits at the output
 				if(digitValue < 0)
-					digitValue = (1<<wHatSize) + digitValue;
+					digitValue = mpz_class(1<<radix) + digitValue;
+				//handle negative indices
+				if(i < 0)
+					iAbs = mpz_class(1<<wHatSize) + i;
+				//create the corresponding output line
 				vhdl << tab << tab << "\"" << unsignedBinary(digitValue, radix) << "\" when \""
-						<< unsignedBinary(i, wHatSize) << "\", \n";
+						<< unsignedBinary(iAbs, wHatSize) << "\", \n";
 			}
 			vhdl << tab << tab << "\"" << std::string(radix, '-') << "\" when others;\n" << endl;
 
@@ -81,18 +97,40 @@ namespace flopoco {
 			mpz_class svW = tc->getInputValue("W");
 
 			// manage signed digits
-			mpz_class big1 = (mpz_class(1) << radix);
-			mpz_class big1P = (mpz_class(1) << (radix-1));
+			mpz_class big1int = (mpz_class(1) << wHatSize);
+			mpz_class big1intP = (mpz_class(1) << (wHatSize-1));
+			mpz_class big1out = (mpz_class(1) << radix);
 
-			if(svW >= big1P)
-				svW -= big1;
+			if((msbIn-(int)wHatSize+1) > lsbIn)
+			{
+				if((msbIn-wHatSize) < 0)
+					svW = svW >> abs((long int)((msbIn-wHatSize+1)-lsbIn));
+				else
+					svW = svW << abs((long int)((msbIn-wHatSize+1)-lsbIn));
+			}
+
+			if(svW >= big1intP)
+				svW -= big1int;
 
 			// compute the multiple-precision output
-			mpz_class svD = (svW + mpz_class(1)) >> 1;
+			mpz_class svD;
+			/*
+			if(abs(svW) <= ((radix-1)<<1))
+				svD = sgn(svW)*(abs(svW) + mpz_class(1)) >> 1;
+			else
+				svD = sgn(svW)*abs(svW) >> 1;
+			*/
+			if(abs(svW) <= ((radix-1)<<1))
+				svD = (svW + mpz_class(1)) >> 1;
+			else
+				svD = sgn(svW)*abs(radix-1);
 
-			// manage two's complement at output
+			// manage two's complement at the output
 			if(svD < 0)
-				svD += big1;
+				//svD += big1out;
+				svD += big1int;
+			//only use radix bits at the output
+			svD = svD & ((1<<radix)-1);
 
 			// complete the TestCase with this expected output
 			tc->addExpectedOutput("D", svD);
@@ -110,14 +148,64 @@ namespace flopoco {
 		}
 
 		void SimpleSelectionFunction::registerFactory(){
-			UserInterface::add("BasicCompressor", // name
+			UserInterface::add("SimpleSelectionFunction", // name
+					"Selection function for the E-method.", //description
+					"FunctionApproximation", // category
 					"",
-					"operator; floating point; floating-point adders", // categories
+					"radix(int): the radix of the digit set being used;\
+						maxDigit(int): the maximum digit in the redundant digit set;\
+						msbIn(int): MSB of the input;\
+						lsbIn(int): LSB of the input"
 					"",
 					"",
-					SimpleSelectionFunction::parseArguments
+					SimpleSelectionFunction::parseArguments,
+					SimpleSelectionFunction::unitTest
 			) ;
 
+		}
+
+		TestList SimpleSelectionFunction::unitTest(int index)
+		{
+			// the static list of mandatory tests
+			TestList testStateList;
+			vector<pair<string,string>> paramList;
+
+			if(index==-1)
+			{ // The unit tests
+				paramList.push_back(make_pair("radix", to_string(2)));
+				paramList.push_back(make_pair("maxDigit", to_string(1)));
+				paramList.push_back(make_pair("msbIn", to_string(1)));
+				paramList.push_back(make_pair("lsbIn", to_string(-1)));
+				testStateList.push_back(paramList);
+				paramList.clear();
+
+				paramList.push_back(make_pair("radix", to_string(4)));
+				paramList.push_back(make_pair("maxDigit", to_string(2)));
+				paramList.push_back(make_pair("msbIn", to_string(2)));
+				paramList.push_back(make_pair("lsbIn", to_string(-1)));
+				testStateList.push_back(paramList);
+				paramList.clear();
+
+				paramList.push_back(make_pair("radix", to_string(4)));
+				paramList.push_back(make_pair("maxDigit", to_string(3)));
+				paramList.push_back(make_pair("msbIn", to_string(2)));
+				paramList.push_back(make_pair("lsbIn", to_string(-1)));
+				testStateList.push_back(paramList);
+				paramList.clear();
+
+				paramList.push_back(make_pair("radix", to_string(8)));
+				paramList.push_back(make_pair("maxDigit", to_string(7)));
+				paramList.push_back(make_pair("msbIn", to_string(3)));
+				paramList.push_back(make_pair("lsbIn", to_string(-1)));
+				testStateList.push_back(paramList);
+				paramList.clear();
+			}
+			else
+			{
+				// finite number of random test computed out of index
+			}
+
+			return testStateList;
 		}
 
 } /* namespace flopoco */

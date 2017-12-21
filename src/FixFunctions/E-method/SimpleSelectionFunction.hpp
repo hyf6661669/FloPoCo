@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <sstream>
+#include <iostream>
 #include <string>
 
 #include <sollya.h>
@@ -57,11 +58,15 @@ namespace flopoco {
 
 		static void registerFactory();
 
+		static TestList unitTest(int index);
+
 	private:
-		int radix;                            /**< the radix being used */
+		int radix;                            /**< the radix of the digit set being used */
 		int maxDigit;                         /**< the maximum digit in the redundant digit set */
 		int msbIn;                            /**< MSB of the input */
 		int lsbIn;                            /**< LSB of the input */
+
+		size_t wHatSize;                      /**< size of the W^Hat signal */
 
 	};
 

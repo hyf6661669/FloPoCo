@@ -14,6 +14,7 @@ namespace flopoco {
 		{
 			ostringstream name;
 			mpz_class iterLimit;
+			int inputSize, outputSize;
 
 			srcFileName = "SimpleSelectionFunction";
 			name << "SimpleSelectionFunction_radix" << radix << "_msbIn_" << vhdlize(msbIn) << "_lsbIn_" << vhdlize(lsbIn);
@@ -33,36 +34,46 @@ namespace flopoco {
 
 			wHatSize = -1;
 
-			//add the inputs
-			addInput("W", msbIn-lsbIn+1);
-			//add the outputs
-			addOutput("D", radix);
-
 			//create W^, an estimation of W, made out of only a few MSBs of W
 			if(radix == 2)
 			{
-				//only the 4 top msbs are needed
+				//only the 4 top MSBs are needed
 				wHatSize = 4;
-			}else if(radix == 5)
+			}else if(radix == 4)
 			{
-				//only the 5 top msbs are needed
+				//only the 5 top MSBs are needed
 				wHatSize = 5;
 			}else if(radix == 8)
 			{
-				//only the 6 top msbs are needed
+				//only the 6 top MSBs are needed
 				wHatSize = 6;
 			}else
 			{
 				THROWERROR("SimpleSelectionFunction: radixes higher than 8 currently not supported!");
 			}
-			vhdl << tab << declare("WHat", wHatSize) << " <= W"
-					<< range(msbIn-lsbIn+1-1, msbIn-lsbIn+1-1-wHatSize+1) << ";" << endl;
+
+			inputSize = ((int)wHatSize>(msbIn-lsbIn+1) ? wHatSize : (msbIn-lsbIn+1));
+			outputSize = radix;
+
+			//add the inputs
+			addInput("W", inputSize);
+			//add the outputs
+			addOutput("D", outputSize);
+
+			vhdl << tab << declare("WHat", wHatSize) << " <= W";
+			if((msbIn-lsbIn+1) < (int)wHatSize)
+				vhdl << range(wHatSize-1, 0);
+			else
+				vhdl << range(msbIn-lsbIn, msbIn-lsbIn-wHatSize+1);
+			vhdl << ";" << endl;
 
 			vhdl << tab << "with WHat select D <= \n";
-			if((1 << (wHatSize-1)) > maxDigit)
-				iterLimit = maxDigit << 1;
+			if(((1<<wHatSize)-1) > (maxDigit+1))
+				// maxDigit+1 so as to avoid possible overflows
+				iterLimit = (maxDigit+1) << 1;
 			else
-				iterLimit = 1 << (wHatSize-1);
+				// maximum allowed number in this radix
+				iterLimit = (1 << wHatSize) - 1;
 			for(mpz_class i=-iterLimit; i<=iterLimit; i++)
 			{
 				mpz_class digitValue = (i+1) >> 1;
@@ -70,10 +81,10 @@ namespace flopoco {
 
 				//corner cases at the end of the intervals
 				//	in order to keep the resulting digit in the allowed digit set
-				if(digitValue == -(1 << (wHatSize-2)))
-					digitValue++;
-				if(digitValue == (1 << (wHatSize-2)))
-					digitValue--;
+				if(digitValue > maxDigit)
+					digitValue = maxDigit;
+				else if(digitValue < -maxDigit)
+					digitValue = -maxDigit;
 				//handle negative digits at the output
 				if(digitValue < 0)
 					digitValue = mpz_class(1<<radix) + digitValue;
@@ -117,16 +128,22 @@ namespace flopoco {
 
 			// compute the multiple-precision output
 			mpz_class svD;
+			// round down
 			/*
 			if(abs(svW) <= ((radix-1)<<1))
 				svD = sgn(svW)*(abs(svW) + mpz_class(1)) >> 1;
 			else
 				svD = sgn(svW)*abs(svW) >> 1;
 			*/
+			// round to nearest
 			if(abs(svW) <= ((radix-1)<<1))
 				svD = (svW + mpz_class(1)) >> 1;
 			else
 				svD = sgn(svW)*abs(radix-1);
+
+			// limit the output digit to the allowed digit set
+			if(abs(svW) > maxDigit)
+				svD = sgn(svW) * mpz_class(maxDigit);
 
 			// manage two's complement at the output
 			if(svD < 0)

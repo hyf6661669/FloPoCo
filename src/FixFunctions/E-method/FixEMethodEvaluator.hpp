@@ -81,8 +81,6 @@ namespace flopoco {
     /**
      * A constructor that exposes all options.
      * @param   radix          the radix used for the implementation
-     * @param   n              degree of the polynomial P
-     * @param   m              degree of the polynomial Q
      * @param   msbIn          MSB of the input
      * @param   lsbIn          LSB of the input
      * @param   msbOut         MSB of the output
@@ -92,8 +90,6 @@ namespace flopoco {
      */
 	FixEMethodEvaluator(Target* target,
 			size_t radix,
-			size_t n,
-			size_t m,
 			int msbIn,
 			int lsbIn,
 			int msbOut,

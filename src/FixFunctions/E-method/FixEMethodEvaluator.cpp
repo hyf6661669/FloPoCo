@@ -90,22 +90,22 @@ namespace flopoco {
 		nbIter += g;
 
 		//add the inputs
-		addInput("X", msbIn-lsbIn+1);
+		addFixInput("X", true, msbIn, lsbIn);
 		//add the outputs
-		addOutput("D", msbOut-lsbOut+1);
+		addFixOutput("D", true, msbOut, lsbOut);
 
 		//iteration 0
 		addComment("iteration 0", ""+tab);
 		for(size_t i=0; i<maxDegree; i++)
 		{
-			vhdl << tab << declare(join("W_0_", i), msbOut-lsbOut+1+g) << " <= "
+			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbOut, lsbOut-g) << " <= "
 					<< signedFixPointNumber(coeffsP[i], msbIn, lsbIn, 0) << ";" << endl;
-			vhdl << tab << declare(join("D_0_", i), radix) << " <= "
+			vhdl << tab << declareFixPoint(join("D_0_", i), true, radix-1, 0) << " <= "
 					<< zg(radix, 0) << ";" << endl;
 		}
 
 		//iterations 1 to nbIter-1
-		for(size_t iter=1; i<nbIter; i++)
+		for(size_t iter=1; iter<nbIter; iter++)
 		{
 			addComment(join("iteration ", iter), ""+tab);
 

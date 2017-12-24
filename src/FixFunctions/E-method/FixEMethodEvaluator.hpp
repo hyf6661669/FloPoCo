@@ -18,11 +18,15 @@
 
 #include "Operator.hpp"
 #include "Table.hpp"
+
 #include "IntMult/FixMultAdd.hpp"
 #include "BitHeap/BitHeap.hpp"
+
 #include "FixFunction.hpp"
 #include "FixConstant.hpp"
 #include "E-method/SimpleSelectionFunction.hpp"
+
+#include "utils.hpp"
 
 namespace flopoco {
 
@@ -76,6 +80,7 @@ namespace flopoco {
   public:
     /**
      * A constructor that exposes all options.
+     * @param   radix          the radix used for the implementation
      * @param   n              degree of the polynomial P
      * @param   m              degree of the polynomial Q
      * @param   msbIn          MSB of the input
@@ -86,15 +91,16 @@ namespace flopoco {
      * @param   coeffsQ        vector holding the coefficients of polynomial Q
      */
 	FixEMethodEvaluator(Target* target,
-			  int n,
-			  int m,
-			  int msbIn,
-			  int lsbIn,
-			  int msbOut,
-			  int lsbOut,
-			  vector<mpfr_t> coeffsP,
-			  vector<mpfr_t> coeffsQ,
-			  map<string, double> inputDelays = emptyDelayMap);
+			size_t radix,
+			size_t n,
+			size_t m,
+			int msbIn,
+			int lsbIn,
+			int msbOut,
+			int lsbOut,
+			vector<mpfr_t> coeffsP,
+			vector<mpfr_t> coeffsQ,
+			map<string, double> inputDelays = emptyDelayMap);
 
 	/**
 	 * Class destructor
@@ -103,8 +109,9 @@ namespace flopoco {
 
 
   private:
-    int n;                            /**< degree of the polynomial P */
-    int m;                            /**< degree of the polynomial Q */
+    size_t radix;                     /**< the radix used for the implementation */
+    size_t n;                         /**< degree of the polynomial P */
+    size_t m;                         /**< degree of the polynomial Q */
     int msbIn;                        /**< MSB of the input */
     int lsbIn;                        /**< LSB of the input */
     int msbOut;                       /**< MSB of the output  */
@@ -112,9 +119,11 @@ namespace flopoco {
     vector<mpfr_t> coeffsP;           /**< vector of the coefficients of P */
     vector<mpfr_t> coeffsQ;           /**< vector of the coefficients of Q */
 
-    int maxDegree;                    /**< the maximum between the degrees of the polynomials P and Q */
+    size_t maxDegree;                 /**< the maximum between the degrees of the polynomials P and Q */
     int nbIter;                       /**< the number of iterations */
     int g;                            /**< number of guard bits */
+
+    size_t wHatSize;                  /**< size of the W^Hat signal */
   };
 
 } /* namespace flopoco */

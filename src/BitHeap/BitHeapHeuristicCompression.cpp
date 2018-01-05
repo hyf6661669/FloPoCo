@@ -1183,38 +1183,24 @@ namespace flopoco
         bool exit = false;
 
         for(unsigned s = 0; s < (newBits.size() - 1); s++){
-            //cout << "stage = " << s << endl;
+            cout << "stage = " << s << endl;
             bool found = true;
             while(found){
                 found = false;
                 unsigned compressor = 0;
                 unsigned column = 0;
                 pair<int,int> result;
-                //cout << "now find compressor" << endl;
-                unsigned currentMaxColumn = 0;
-                int maxSize = 0;
-#if 0
-                for(unsigned c = 0; c < newBits[s].size(); c++){
-                    //cout << "s = " << s << " c = " << c << " and newBits = " << newBits[s][c] << "  ---old- maxWidth = " << maxSize << " currentMaxColumn = " << currentMaxColumn<< endl;
-                    if(newBits[s][c] > maxSize){
-                        currentMaxColumn = c;
-                        maxSize = newBits[s][c];
-                    }
-                }
-                //cout << "maxColumn is " << currentMaxColumn << " and maxSize is " << maxSize << endl;
-                if(maxSize > 0){ //otherwise there are no bits left in this stage
-                    result = parandehAfsharSearch(s, currentMaxColumn);
-                    if(result.first >= 0){
-                        found = true;
-                    }
-                }
-#endif
 
                 bool used[newBits[s].size()];
                 for(unsigned k = 0; k < newBits[s].size(); k++){
                     used[k] = 0;
                 }
                 for(unsigned a = 0; a < newBits[s].size(); a++){
+
+                    //cout << "now find compressor" << endl;
+                    unsigned currentMaxColumn = 0;
+                    int maxSize = 0;
+
                     //find maxColumn
                     for(unsigned c = 0; c < newBits[s].size(); c++){
                         if(used[c] == false && newBits[s][c] > maxSize){
@@ -1223,7 +1209,7 @@ namespace flopoco
                         }
                     }
                     used[currentMaxColumn] = true;
-
+                    //cout << "currentMaxColumn is " << currentMaxColumn << " with maxSize " << maxSize << " and a is " << a << endl;
                     //check found column
                     if(maxSize > 0){
                         result = parandehAfsharSearch(s, currentMaxColumn);

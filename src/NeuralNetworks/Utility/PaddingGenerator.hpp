@@ -20,7 +20,7 @@ namespace flopoco {
 	class PaddingGenerator : public Operator {
 
     public:
-        PaddingGenerator(Target* target, unsigned int wordSize_, unsigned int windowSize_, unsigned int horizontalSize_, unsigned int verticalSize_, int padTop_=1, unsigned int stride_=1, string padType_="Zero", int padBot_=-1, int padLeft_=-1, int padRight_=-1, bool genValidFinished_=true);
+        PaddingGenerator(Target* target, unsigned int wordSize_, unsigned int windowSize_, unsigned int horizontalSize_, unsigned int verticalSize_, int padTop_=1, int strideH_=1, string padType_="Zero", bool genValidFinished_=true, int padBot_=-1, int padLeft_=-1, int padRight_=-1, int strideV_=-1);
 
 		// destructor
         ~PaddingGenerator() {}
@@ -36,7 +36,8 @@ namespace flopoco {
         unsigned int windowSize;
         unsigned int horizontalSize;
         unsigned int verticalSize;
-        unsigned int stride;
+        int strideH;
+        int strideV;
         int padTop;
         int padBot;
         int padLeft;

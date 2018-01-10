@@ -11,8 +11,8 @@
 // include the header of the Operator
 #include "Max2Input.hpp"
 
-#include "../IntAddSubCmp/IntComparator.hpp"
-#include "../PrimitiveComponents/GenericMux.hpp"
+#include "IntAddSubCmp/IntComparator.hpp"
+#include "PrimitiveComponents/GenericMux.hpp"
 
 using namespace std;
 namespace flopoco {

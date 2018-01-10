@@ -49,20 +49,19 @@ namespace flopoco {
     void GenericMux::buildCommon(Target* target, const uint32_t &wIn, const uint32_t &inputCount){
         const uint16_t select_ws = intlog2( inputCount-1 );
 
-        vhdl << tab << "process" << endl;
-        vhdl << tab << "begin" << endl;
-        vhdl << tab << tab << "case " << getSelectName() << " is" << std::endl;
-        for( uint i=0;i<inputCount;++i ){
-            vhdl << tab << tab << tab << "when \"";
-            for( int j=select_ws-1;j>=0;--j )
+        vhdl << tab << "with " << getSelectName() << " select" << endl
+             << tab << tab << getOutputName() << " <= " << endl;
+        for(unsigned int i=0; i< inputCount; i++)
+        {
+            vhdl << tab << tab << tab << getInputName(i) << " when \"";
+            cout << "GenericMux: getInputName(" << i << ")=" << getInputName(i) << endl;
+            for(int j=select_ws-1; j>=0; --j)
+            {
                 vhdl << (i&(1<<j)?"1":"0");
-            vhdl << "\" => " << getOutputName() << " <= " << getInputName(i) << ";" << endl;
+            }
+            vhdl << "\"," << endl;
         }
-
-        vhdl << tab << tab << tab << "when others => " << getOutputName() << " <= (others=>'X');" << std::endl;
-        vhdl << tab << tab << "end case;" << std::endl;
-        vhdl << tab << "end process;" << endl;
-
+        vhdl << "(others=>'X') when others;" << endl;
     }
 
     std::string GenericMux::getSelectName() const{

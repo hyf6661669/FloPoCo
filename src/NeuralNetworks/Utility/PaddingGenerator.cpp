@@ -19,11 +19,17 @@ namespace flopoco {
 
 
 
-    PaddingGenerator::PaddingGenerator(Target* target, unsigned int wordSize_, unsigned int windowSize_, unsigned int horizontalSize_, unsigned int verticalSize_, int padTop_, unsigned int stride_, string padType_, int padBot_, int padLeft_, int padRight_, bool genValidFinished_) :
-        Operator(target), wordSize(wordSize_), windowSize(windowSize_), horizontalSize(horizontalSize_), verticalSize(verticalSize_), stride(stride_), padTop(padTop_), padBot(padBot_), padLeft(padLeft_), padRight(padRight_), padType(padType_), genValidFinished(genValidFinished_) {
+    PaddingGenerator::PaddingGenerator(Target* target, unsigned int wordSize_, unsigned int windowSize_, unsigned int horizontalSize_, unsigned int verticalSize_, int padTop_, int strideH_, string padType_, bool genValidFinished_, int padBot_, int padLeft_, int padRight_, int strideV_) :
+        Operator(target), wordSize(wordSize_), windowSize(windowSize_), horizontalSize(horizontalSize_), verticalSize(verticalSize_), padTop(padTop_), strideH(strideH_), padType(padType_), genValidFinished(genValidFinished_), padBot(padBot_), padLeft(padLeft_), padRight(padRight_), strideV(strideV_) {
 
         cout << "### Padding Generator Constructor!" << endl;
         // throw errors
+        if(strideH<0)
+        {
+            stringstream e;
+            e << "stride < 0 is not supported!";
+            THROWERROR(e);
+        }
         if(padTop<0)
         {
             stringstream e;
@@ -40,9 +46,13 @@ namespace flopoco {
         cout << "### 2" << endl;
 
         // default values
+        if(strideV<0)
+        {
+            strideV = strideH;
+        }
         if(padBot<0)
         {
-            padBot=padTop;
+            padBot=((windowSize%2)==1?padTop:padTop-1);
         }
         cout << "### 3" << endl;
         if(padLeft<0)
@@ -52,7 +62,7 @@ namespace flopoco {
         cout << "### 4" << endl;
         if(padRight<0)
         {
-            padRight=padTop;
+            padRight=((windowSize%2)==1?padTop:padTop-1);
         }
 
         cout << "### 5" << endl;
@@ -84,7 +94,7 @@ namespace flopoco {
         cout << "### 7" << endl;
         // definition of the name of the operator
         ostringstream name;
-        name << "PaddingGenerator_wordSize_" << wordSize << "_windowSize_" << windowSize << "_horizontalSize_" << horizontalSize << "_verticalSize_" << verticalSize << "_stride_" << stride << "_padTop_" << padTop << "_padBot_" << padBot << "_padLeft_" << padLeft << "_padRight_" << padRight << "_padType_" << padType << "_finishedSignal_" << (genValidFinished==true?"true":"false");
+        name << "PaddingGenerator_wordSize_" << wordSize << "_windowSize_" << windowSize << "_horizontalSize_" << horizontalSize << "_verticalSize_" << verticalSize << "_strideH_" << strideH << "_strideV_" << strideV << "_padTop_" << padTop << "_padBot_" << padBot << "_padLeft_" << padLeft << "_padRight_" << padRight << "_padType_" << padType << "_finishedSignal_" << (genValidFinished==true?"true":"false");
         setName(name.str());
 
         cout << "### Before adding in/out" << endl;
@@ -121,7 +131,7 @@ namespace flopoco {
 
         // counters for horizontal and vertical position
         addConstant("hmax","integer",horizontalSize-1);
-        addConstant("vmax","integer",verticalSize+padBot);
+        addConstant("vmax","integer",verticalSize+padBot-(padRight>0?0:1));
 
 
         // calculate first and last valid output
@@ -173,14 +183,58 @@ namespace flopoco {
 
         if(genValidFinished==true)
         {
-            vhdl << "process(hcount)" << endl
-                 << "begin" << endl
-                 << tab << "if(unsigned(hcount)=hmax) then" << endl
-                 << tab << tab << declare("modCounterReset",1) << " <= \"1\";" << endl
-                 << tab << "else" << endl
-                 << tab << tab << "modCounterReset <= \"0\";" << endl
-                 << tab << "end if;" << endl
-                 << "end process;" << endl;
+            if(strideH>1)
+            {
+                vhdl << "process(hcount)" << endl
+                     << "begin" << endl
+                     << tab << "if(unsigned(hcount)=" << firstValidOutputH << ") then" << endl
+                     << tab << tab << declare("modCounterHReset",1) << " <= \"1\";" << endl
+                     << tab << "else" << endl
+                     << tab << tab << "modCounterHReset <= \"0\";" << endl
+                     << tab << "end if;" << endl
+                     << "end process;" << endl;
+
+                vhdl << declare("modCounterHTotalReset",1) << " <= modCounterHReset or newStep;" << endl;
+
+                ModuloCounter* modCH = new ModuloCounter(target,strideH);
+                this->addSubComponent(modCH);
+                this->inPortMap(modCH,"enable","validData_i");
+                this->inPortMap(modCH,"manualReset","modCounterHTotalReset");
+                this->outPortMap(modCH,"counter","strideCounterH",true);
+                vhdl << instance(modCH,"horizontalStrideCounter");
+            }
+
+            if(strideV>1)
+            {
+
+                vhdl << "process(vcount)" << endl
+                     << "begin" << endl
+                     << tab << "if(unsigned(vcount)=" << firstValidOutputV << ") then" << endl
+                     << tab << tab << declare("modCounterVReset",1) << " <= \"1\";" << endl
+                     << tab << "else" << endl
+                     << tab << tab << "modCounterVReset <= \"0\";" << endl
+                     << tab << "end if;" << endl
+                     << "end process;" << endl;
+
+                vhdl << "process(hcount)" << endl
+                     << "begin" << endl
+                     << tab << "if(unsigned(hcount)=" << firstValidOutputH << ") then" << endl
+                     << tab << tab << declare("strideCounterVEnable",1) << " <= \"1\";" << endl
+                     << tab << "else" << endl
+                     << tab << tab << "strideCounterVEnable <= \"0\";" << endl
+                     << tab << "end if;" << endl
+                     << "end process;" << endl;
+
+                vhdl << declare("modCounterVTotalReset",1) << " <= modCounterVReset or newStep;" << endl;
+
+                ModuloCounter* modCV = new ModuloCounter(target,strideV);
+                this->addSubComponent(modCV);
+                this->inPortMap(modCV,"enable","strideCounterVEnable");
+                this->inPortMap(modCV,"manualReset","modCounterVTotalReset");
+                this->outPortMap(modCV,"counter","strideCounterV",true);
+                vhdl << instance(modCV,"verticalStrideCounter");
+            }
+
 
             vhdl << "process(vcount,hcount)" << endl
                  << "begin" << endl
@@ -191,17 +245,9 @@ namespace flopoco {
                  << tab << "end if;" << endl
                  << "end process;" << endl;
 
-            vhdl << declare("modCounterTotalReset",1) << " <= modCounterReset or newStep;" << endl;
-
-            ModuloCounter* modC = new ModuloCounter(target,stride);
-            this->inPortMap(modC,"enable","validData_i");
-            this->inPortMap(modC,"manualReset","modCounterTotalReset");
-            this->outPortMap(modC,"counter","strideCounter",true);
-
-
-            vhdl << "process(vcount,hcount,strideCounter)" << endl
+            vhdl << "process(vcount,hcount,strideCounterH,strideCounterV)" << endl
                  << "begin" << endl
-                 << tab << "if(((unsigned(vcount)=" << firstValidOutputV << " and unsigned(hcount)>=" << firstValidOutputH << ") or (unsigned(vcount)>" << firstValidOutputV << " and " << "unsigned(vcount)<" << lastValidOutputV << " and (unsigned(hcount)>=" << firstValidOutputH << " or unsigned(hcount)<=" << lastValidOutputH << ")) or (unsigned(vcount)=" << lastValidOutputV << " and unsigned(hcount)<=" << lastValidOutputH << ")) and unsigned(strideCounter)=0) then" << endl
+                 << tab << "if(((unsigned(vcount)=" << firstValidOutputV << " and unsigned(hcount)>=" << firstValidOutputH << ") or (unsigned(vcount)>" << firstValidOutputV << " and " << "unsigned(vcount)<" << lastValidOutputV << " and (unsigned(hcount)>=" << firstValidOutputH << " or unsigned(hcount)<=" << lastValidOutputH << ")) or (unsigned(vcount)=" << lastValidOutputV << " and unsigned(hcount)<=" << lastValidOutputH << "))" << (strideH>1?" and unsigned(strideCounterH)=0":"") << (strideV>1?" and unsigned(strideCounterV)=0":"") << ") then" << endl
                  << tab << tab << "validData_o <= \"1\";" << endl
                  << tab << "else" << endl
                  << tab << tab << "validData_o <= \"0\";" << endl
@@ -354,45 +400,57 @@ namespace flopoco {
             // bot padding
             if(padBot>0)
             {
+                cout << "###    1" << endl;
                 for(int vpadC=0; vpadC<(padRight>0?padBot+1:padBot);vpadC++)
                 {
+                    cout << "###    vpadC=" << vpadC << endl;
                     if(padLeft>0 || vpadC>0)
                     {
                         vhdl << tab << tab << "when " << lastValidOutputV-vpadC << " => " << endl; //vpad=0 => maximum vpadding
                     }
+                    cout << "###        2" << endl;
                     if(hpad==true)
                     {
+                        cout << "###        hpad==true" << endl;
                         vhdl << tab << tab << tab << "case to_integer(unsigned(hcount)) is" << endl;
                         if(vpadC>0 && padLeft>0)
                         {
                             // bot left padding
+                            cout << "###            3" << endl;
                             unsigned int howMuchVPad=padBot+1-vpadC;
                             for(int hpadC=0; hpadC<padLeft;hpadC++)
                             {
+                                cout << "###            hpadC=" << hpadC << endl;
                                 vhdl << tab << tab << tab << tab << "when " << firstValidOutputH+hpadC << " => " << endl;
                                 unsigned int howMuchHPad=padLeft-hpadC;
                                 for(unsigned int y=0; y<windowSize; y++)
                                 {
+                                    cout << "###            y=" << y << endl;
                                     for(unsigned int x=0; x<windowSize; x++)
                                     {
+                                        cout << "###            x=" << x << endl;
                                         vhdl << tab << tab << tab << tab << tab << outputNames[y][x] << " <= ";
                                         if(y>=windowSize-howMuchVPad && x<howMuchHPad)
                                         {
+                                            cout << "###                if" << endl;
                                             string botLeftValidPixel = inputNames[windowSize-1-howMuchVPad][howMuchHPad];
                                             vhdl << this->getPaddingValue(botLeftValidPixel);
                                         }
                                         else if(y>=windowSize-howMuchVPad)
                                         {
+                                            cout << "###                else if 1" << endl;
                                             string botValidPixel = inputNames[windowSize-1-howMuchVPad][x];
                                             vhdl << this->getPaddingValue(botValidPixel);
                                         }
                                         else if(x<howMuchHPad)
                                         {
+                                            cout << "###                else if 2" << endl;
                                             string leftValidPixel = inputNames[y][howMuchHPad];
                                             vhdl << this->getPaddingValue(leftValidPixel);
                                         }
                                         else
                                         {
+                                            cout << "###                else" << endl;
                                             vhdl << inputNames[y][x];
                                         }
                                         vhdl << ";" << endl;
@@ -402,34 +460,42 @@ namespace flopoco {
                         }
                         if(vpadC<padBot && padRight>0)
                         {
+                            cout << "###            4" << endl;
                             // bot right padding
                             unsigned int howMuchVPad=padBot-vpadC;
                             for(int hpadC=0; hpadC<padRight;hpadC++)
                             {
+                                cout << "###            hpadC=" << hpadC << endl;
                                 vhdl << tab << tab << tab << tab << "when " << padLeft-hpadC-1 << " => " << endl;
                                 unsigned int howMuchHPad=padRight-hpadC;
                                 for(unsigned int y=0; y<windowSize; y++)
                                 {
+                                    cout << "###            y=" << y << endl;
                                     for(unsigned int x=0; x<windowSize; x++)
                                     {
+                                        cout << "###            x=" << x << endl;
                                         vhdl << tab << tab << tab << tab << tab << outputNames[y][x] << " <= ";
                                         if(y>=windowSize-howMuchVPad && x>=windowSize-howMuchHPad)
                                         {
+                                            cout << "###                if" << endl;
                                             string botRightValidPixel = inputNames[windowSize-1-howMuchVPad][windowSize-1-howMuchHPad];
                                             vhdl << this->getPaddingValue(botRightValidPixel);
                                         }
                                         else if(y>=windowSize-howMuchVPad)
                                         {
+                                            cout << "###                else if 1" << endl;
                                             string botValidPixel = inputNames[windowSize-1-howMuchVPad][x];
                                             vhdl << this->getPaddingValue(botValidPixel);
                                         }
                                         else if(x>=windowSize-howMuchHPad)
                                         {
+                                            cout << "###                else if 2" << endl;
                                             string rightValidPixel = inputNames[y][windowSize-1-howMuchHPad];
                                             vhdl << this->getPaddingValue(rightValidPixel);
                                         }
                                         else
                                         {
+                                            cout << "###                else" << endl;
                                             vhdl << inputNames[y][x];
                                         }
                                         vhdl << ";" << endl;
@@ -441,20 +507,26 @@ namespace flopoco {
                         vhdl << tab << tab << tab << tab << "when others =>" << endl;
                     }
 
+                    cout << "###    purely bot" << endl;
                     // purely bot padding
                     unsigned int howMuchVPad=padBot-vpadC+1; ///////
+                    cout << "###    howMuchVPad=" << howMuchVPad << endl;
                     for(unsigned int y=0; y<windowSize; y++)
                     {
+                        cout << "###        y=" << y << endl;
                         for(unsigned int x=0; x<windowSize; x++)
                         {
+                            cout << "###        x=" << x << endl;
                             string botValidPixel = inputNames[windowSize-1-howMuchVPad][x];
                             vhdl << tab << tab << tab << tab << tab << outputNames[y][x] << " <= ";
                             if(y>=windowSize-howMuchVPad)
                             {
+                                cout << "###            if" << endl;
                                 vhdl << this->getPaddingValue(botValidPixel);
                             }
                             else
                             {
+                                cout << "###            else" << endl;
                                 vhdl << inputNames[y][x];
                             }
                             vhdl << ";" << endl;

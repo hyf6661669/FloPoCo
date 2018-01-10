@@ -57,8 +57,8 @@ namespace flopoco{
 		addOutput("R",true);
 
 		switch(criteria){
-			case -2: vhdl << tab << "R <= '1' when (X <  Y) else '0';"<<endl; break;
-			case -1: vhdl << tab << "R <= '1' when (X <= Y) else '0';"<<endl; break;
+            case -2: vhdl << tab << "R <= \"1\" when (X <  Y) else \"0\";"<<endl; break;
+            case -1: vhdl << tab << "R <= \"1\" when (X <= Y) else \"0\";"<<endl; break;
 			case  0:{
 
 				//determine chunk size
@@ -81,11 +81,11 @@ namespace flopoco{
 					REPORT(INFO, "Cp after"<< getCriticalPath());
 
 					for (int i=0; i<k; i++){
-						vhdl <<tab << declare(join("b",i,"l",0))<<" <= '1' when X"<<range(min((i+1)*cs-1,wIn-1),i*cs);
+                        vhdl <<tab << declare(join("b",i,"l",0))<<" <= \"1\" when X"<<range(min((i+1)*cs-1,wIn-1),i*cs);
 						if (!constant)
-							vhdl<<"=Y"<<range(min((i+1)*cs-1,wIn-1),i*cs)<<" else '0';"<<endl;
+                            vhdl<<"=Y"<<range(min((i+1)*cs-1,wIn-1),i*cs)<<" else \"0\";"<<endl;
 						else
-							vhdl<<"=conv_std_logic_vector("<<constValue<<","<< wIn<<") else '0';"<<endl;
+                            vhdl<<"=conv_std_logic_vector("<<constValue<<","<< wIn<<") else \"0\";"<<endl;
 					}
 					//form a new std logic vector of k bits that will be checked against '11...111'
 					int l = 0;
@@ -110,8 +110,8 @@ namespace flopoco{
 						}
 						manageCriticalPath(target->eqConstComparatorDelay(ibits));
 						for (int i=0; i<k; i++){
-							vhdl <<tab << declare(join("b",i,"l",l))<<" <= '1' when lev"<<l<<range(min((i+1)*cs-1,ibits-1),i*cs)
-							<<"="<< og(  min((i+1)*cs-1,ibits-1)+1 -i*cs ,0 )<<" else '0';"<<endl;
+                            vhdl <<tab << declare(join("b",i,"l",l))<<" <= \"1\" when lev"<<l<<range(min((i+1)*cs-1,ibits-1),i*cs)
+                            <<"="<< og(  min((i+1)*cs-1,ibits-1)+1 -i*cs ,0 )<<" else \"0\";"<<endl;
 						}
 
 						if (!target->suggestSlackSubcomparatorSize(cs, k, getCriticalPath() + target->localWireDelay() + getTarget()->ffDelay() , true)){
@@ -129,13 +129,13 @@ namespace flopoco{
 				}else{
 					//if we can do it all in one cycle
 					if (!constant)
-						vhdl << tab << "R <= '1' when X=Y else '0';"<<endl;
+                        vhdl << tab << "R <= \"1\" when X=Y else \"0\";"<<endl;
 					else
-						vhdl << tab << "R <= '1' when X=conv_std_logic_vector("<<constValue<<","<< wIn<<") else '0';"<<endl;
+                        vhdl << tab << "R <= \"1\" when X=conv_std_logic_vector("<<constValue<<","<< wIn<<") else \"0\";"<<endl;
 				}
 			} break;
-			case  1: vhdl << tab << "R <= '1' when (X >=  Y) else '0';"<<endl; break;
-			case  2: vhdl << tab << "R <= '1' when (X > Y) else '0';"<<endl; break;
+            case  1: vhdl << tab << "R <= \"1\" when (X >=  Y) else \"0\";"<<endl; break;
+            case  2: vhdl << tab << "R <= \"1\" when (X > Y) else \"0\";"<<endl; break;
 			default:;
 		}
 

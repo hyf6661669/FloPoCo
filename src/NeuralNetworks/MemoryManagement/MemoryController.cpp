@@ -31,7 +31,7 @@ namespace flopoco {
         // author
         setCopyrightString("Nicolai Fiege, 2017");
 
-        // definition of the name of the operator
+        // name of the operator
         ostringstream name;
         name << "MemoryController_dataWidth_" << dataWidth << "_addressWidth_" << addressWidth;
         setName(name.str());
@@ -72,24 +72,25 @@ namespace flopoco {
              << tab << tab << tab << "addressWriteCounter <= (others => '0');" << endl
              << tab << tab << tab << "read0 <= \"0\";" << endl
              << tab << tab << "else" << endl
-             << tab << tab << tab << "if(validData_i=\"1\") then" << endl
-             << tab << tab << tab << tab << "bramDataWrite <= data_i;" << endl
-             << tab << tab << tab << tab << "bramWriteEnable <= \"1\";" << endl
-             << tab << tab << tab << tab << "addressWriteCounter <= std_logic_vector(unsigned(addressWriteCounter)+1);" << endl
-             << tab << tab << tab << "else" << endl
-             << tab << tab << tab << tab << "bramWriteEnable <= \"1\";" << endl
-             << tab << tab << tab << "end if;" << endl
-             << tab << tab << tab << "if(getNewData=\"1\") then" << endl
-             << tab << tab << tab << tab << "data_o <= bramDataRead;" << endl
-             << tab << tab << tab << tab << "validData_o <= \"1\";" << endl
-             << tab << tab << tab << tab << "addressReadCounter <= std_logic_vector(unsigned(addressReadCounter)+1);" << endl
-             << tab << tab << tab << "else" << endl
-             << tab << tab << tab << tab << "validData_o <= \"0\";" << endl
-             << tab << tab << tab << "end if;" << endl
              << tab << tab << tab << "if(newStep=\"1\") then" << endl
              << tab << tab << tab << tab << "addressReadCounter <= (others => '0');" << endl
              << tab << tab << tab << tab << "addressWriteCounter <= (others => '0');" << endl
              << tab << tab << tab << tab << "read0 <= not read0;" << endl
+			 << tab << tab << tab << "else" << endl
+             << tab << tab << tab << tab << "if(validData_i=\"1\") then" << endl
+             << tab << tab << tab << tab << tab << "bramDataWrite <= data_i;" << endl
+             << tab << tab << tab << tab << tab << "bramWriteEnable <= \"1\";" << endl
+             << tab << tab << tab << tab << tab << "addressWriteCounter <= std_logic_vector(unsigned(addressWriteCounter)+1);" << endl
+             << tab << tab << tab << tab << "else" << endl
+             << tab << tab << tab << tab << tab << "bramWriteEnable <= \"1\";" << endl
+             << tab << tab << tab << tab << "end if;" << endl
+             << tab << tab << tab << tab << "if(getNewData=\"1\") then" << endl
+             << tab << tab << tab << tab << tab << "data_o <= bramDataRead;" << endl
+             << tab << tab << tab << tab << tab << "validData_o <= \"1\";" << endl
+             << tab << tab << tab << tab << tab << "addressReadCounter <= std_logic_vector(unsigned(addressReadCounter)+1);" << endl
+             << tab << tab << tab << tab << "else" << endl
+             << tab << tab << tab << tab << tab << "validData_o <= \"0\";" << endl
+             << tab << tab << tab << tab << "end if;" << endl
              << tab << tab << tab << "end if;" << endl
              << tab << tab << "end if;" << endl
              << tab << "end if;" << endl

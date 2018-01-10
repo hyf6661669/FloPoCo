@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-//for reading the .txt file
+// for reading the .txt file
 #include <fstream>
 
 /* header of libraries to manipulate multiprecision numbers
@@ -13,18 +13,22 @@
 #include "gmp.h"
 #include "mpfr.h"
 
+// for random numbers
+#include <cstdlib>
+#include <ctime>
+
 // include the header of the Operator
 #include "H5ToNeuralNetwork.hpp"
 
 // include the headers of all possible NN-Layers
-#include "FullConnectedLayer.hpp"
-#include "ConvolutionalLayer.hpp"
-#include "ConvolutionalCoreSimple.hpp"
-#include "ReLU.hpp"
-#include "ControlledMemory.hpp"
-#include "PaddingGenerator.hpp"
-#include "GlobalController.hpp"
-#include "PoolingLayer.hpp"
+#include "NeuralNetworks/Layers/FullConnected/FullConnectedLayer.hpp"
+#include "NeuralNetworks/Layers/Convolutional/ConvolutionalLayer.hpp"
+#include "NeuralNetworks/Layers/Convolutional/ConvolutionalCoreSimple.hpp"
+#include "NeuralNetworks/ActivationFunctions/ReLU.hpp"
+#include "NeuralNetworks/MemoryManagement/ControlledMemory.hpp"
+#include "NeuralNetworks/Utility/PaddingGenerator.hpp"
+#include "NeuralNetworks/Utility/GlobalController.hpp"
+#include "NeuralNetworks/Layers/Pooling/PoolingLayer.hpp"
 
 #include <ctime>
 
@@ -40,7 +44,6 @@ namespace flopoco {
         // to calc needed time
         time_t timerStart = std::time(nullptr);
 
-
 		// definition of the source file name, used for info and error reporting using REPORT 
 		srcFileName="H5ToNeuralNetwork";
 
@@ -52,290 +55,125 @@ namespace flopoco {
 		name << "H5ToNeuralNetwork";
         setName(name.str());
 
-        cout << "pathToH5=" << pathToH5 << endl;
+        cout << "### pathToH5=" << pathToH5 << endl;
         ifstream txtfile;
         txtfile.open(pathToH5.c_str());
 
         if(!txtfile)
         {
-            cout << "Could not open the file. Your path may be wrong..." << endl;
+            cout << "### Could not open the file. Your path may be wrong..." << endl;
         }
         else
         {
-            cout << "Yay! The File is open! :)" << endl;
+            cout << "### Yay! The File is open! :)" << endl;
         }
 
-        //parameters for a ConvolutionalCoreSimple
-        unsigned int wordSize=8;
-        int fraction=8;
-        unsigned int weightWordSize=8;
-        int weightFraction=8;
-        unsigned int size=5;
-        vector<double> weights;
-        weights.push_back(1.25);
-        weights.push_back(2.0);
-        weights.push_back(3.5);
-        weights.push_back(4.0);
-        weights.push_back(5.0);
-        weights.push_back(6.125);
-        weights.push_back(7.625);
-        weights.push_back(8.875);
-        weights.push_back(9.0);
-        weights.push_back(1.25);
-        weights.push_back(2.0);
-        weights.push_back(3.5);
-        weights.push_back(4.0);
-        weights.push_back(5.0);
-        weights.push_back(6.125);
-        weights.push_back(7.625);
-        weights.push_back(8.875);
-        weights.push_back(9.0);
-        weights.push_back(1.25);
-        weights.push_back(2.0);
-        weights.push_back(3.5);
-        weights.push_back(4.0);
-        weights.push_back(5.0);
-        weights.push_back(6.125);
-        weights.push_back(7.625);
+        // read Neural Network
+        map <string, LayerArguments*> layers;
+        vector <pair<string, string>> edges;
 
-        //ports and signals in Toplevel
-        for(unsigned int i=0; i<size*size; i++)
-        {
-            this->addInput("i"+to_string(i), wordSize);
-            this->vhdl << tab << declare("i"+to_string(i)+"_out", wordSize) << " <= i" << i << ";" << endl;
-        }
-        this->addOutput("o", wordSize);
+        // Input Layer
+        LayerArguments* lAI = new LayerArguments();
+        lAI->setLayerType("Input");
+        layers["InputLayer"] = lAI;
 
-        //building testOp
-        cout << "ConvCoreSimple \n";
-        Operator* testOp = new ConvolutionalCoreSimple(target, wordSize, fraction, weightWordSize, weightFraction, size, weights,true,"Truncation","testoMesto");
+        // ConvLayer 1
+        LayerArguments* lA1 = new LayerArguments();
+        lA1->setLayerType("Convolutional");
+        lA1->setWordSize(8);
+        lA1->setFraction(4);
+        lA1->setInputDepth(1);
+        lA1->setInputHeight(20);
+        lA1->setInputWidth(40);
+        lA1->setNumberOfOutputFeatures(30);
+        lA1->setWeightWordSize(8);
+        lA1->setWeightFraction(4);
+        lA1->setInputFeaturesParallel(true);
+        lA1->setOutputFeaturesParallel(true);
+        lA1->setCoreSize(5);
+        lA1->setConvWeights(H5ToNeuralNetwork::getRandomWeights(lA1->getInputDepth(),lA1->getNumberOfOutputFeatures(),lA1->getCoreSize()*lA1->getCoreSize(),0,(1<<lA1->getWeightWordSize()),lA1->getWeightFraction()));
+        lA1->setPadding(2);
+        lA1->setPaddingType("Value");
+        lA1->setStride(1);
+        lA1->setId("1");
+        lA1->setActivationFunction("ReLU");
+        layers["ConvLayer1"] = lA1;
+        layers["ConvLayer1"]->printLayerArguments();
 
-        //adding component
-        this->addSubComponent(testOp);
+        // ConvLayer 2
+        LayerArguments* lA2 = new LayerArguments();
+        lA2->setLayerType("Convolutional");
+        lA2->setWordSize(8);
+        lA2->setFraction(4);
+        lA2->setInputDepth(30);
+        lA2->setInputHeight(20);
+        lA2->setInputWidth(40);
+        lA2->setNumberOfOutputFeatures(10);
+        lA2->setWeightWordSize(8);
+        lA2->setWeightFraction(4);
+        lA2->setInputFeaturesParallel(true);
+        lA2->setOutputFeaturesParallel(true);
+        lA2->setCoreSize(3);
+        lA2->setConvWeights(H5ToNeuralNetwork::getRandomWeights(lA2->getInputDepth(),lA2->getNumberOfOutputFeatures(),lA2->getCoreSize()*lA2->getCoreSize(),0,(1<<lA2->getWeightWordSize()),lA2->getWeightFraction()));
+        lA2->setPadding(1);
+        lA2->setPaddingType("Value");
+        lA2->setStride(1);
+        lA2->setId("2");
+        lA2->setActivationFunction("ReLU");
+        layers["ConvLayer2"] = lA2;
+        layers["ConvLayer2"]->printLayerArguments();
 
-        //inPortMap
-        for(unsigned int i=0; i<size*size; i++)
-        {
-            string portInOp, actualSignalName;
-            portInOp = "X" + to_string(i);
-            actualSignalName = "i" + to_string(i) + "_out";
-            inPortMap(testOp, portInOp, actualSignalName);
-        }
-//        addInput("ConvCoreSimple_validData_i",1);
-//        inPortMap(testOp,"validData_i","ConvCoreSimple_validData_i");
-//        addOutput("ConvCoreSimple_validData_o",1);
-//        outPortMap(testOp,"validData_o","ConvCoreSimple_validData_o",false);
+        // Pooling Layer 1
+        LayerArguments* lA3 = new LayerArguments();
+        lA3->setLayerType("Pooling");
+        lA3->setWordSize(8);
+        lA3->setFraction(4);
+        lA3->setInputDepth(10);
+        lA3->setInputHeight(20);
+        lA3->setInputWidth(40);
+        lA3->setNumberOfOutputFeatures(10);
+        //lA3->setWeightWordSize(8);
+        //lA3->setWeightFraction(4);
+        lA3->setInputFeaturesParallel(true);
+        lA3->setOutputFeaturesParallel(true);
+        lA3->setCoreSize(2);
+        //lA3->setConvWeights(H5ToNeuralNetwork::getRandomWeights(lA->getInputDepth(),lA->getNumberOfOutputFeatures(),lA->getCoreSize()*lA->getCoreSize(),0,(1<<lA->getWeightWordSize()),lA->getWeightFraction()));
+        lA3->setPaddingLeft(1);
+        lA3->setPaddingTop(1);
+        lA3->setPaddingType("Value");
+        lA3->setStride(2);
+        lA3->setId("1");
+        layers["PoolingLayer1"] = lA3;
+        layers["PoolingLayer1"]->printLayerArguments();
 
-        //outPortMap
-        declare("ConvCore_Out", wordSize);
-        outPortMap(testOp, "R", "ConvCore_out", false);
+        // Output Layer
+        LayerArguments* lAO = new LayerArguments();
+        lAO->setLayerType("Output");
+        layers["OutputLayer"] = lAO;
 
-        //instance
-        this->vhdl << this->instance(testOp, "ConvCore_instance");
+        // connections
+        pair<string, string> edge;
+        edge.first = "InputLayer";
+        edge.second = "ConvLayer1";
+        edges.push_back(edge);
 
-        //ReLU
-        Operator* testOp2 = new ReLU(target, wordSize);
-        this->addSubComponent(testOp2);
-        inPortMap(testOp2, "X", "ConvCore_Out");
-        declare("ReLU_out", wordSize);
-        outPortMap(testOp2, "R", "ReLU_out", false);
-        vhdl << instance(testOp2, "ReLU_instance");
+        edge.first = edge.second;
+        edge.second = "ConvLayer2";
+        edges.push_back(edge);
 
-        //outport <= ReLU_out
-        vhdl << "o <= ReLU_out;" << endl;
+        edge.first = edge.second;
+        edge.second = "PoolingLayer1";
+        edges.push_back(edge);
 
-        //ControlledMemory
-        unsigned int wAddr=13;
-        unsigned int dataWidth=16;
-        cout << "ControlledMemory \n";
-        Operator* testOp3 = new ControlledMemory(target, dataWidth, wAddr);
-        this->addSubComponent(testOp3);
+        edge.first = edge.second;
+        edge.second = "OutputLayer";
+        edges.push_back(edge);
 
-        addInput("ControlledMemoryNewStep",1);
-        inPortMap(testOp3, "newStep", "ControlledMemoryNewStep");
-        addInput("ControlledMemoryValidData_i",1);
-        inPortMap(testOp3, "validData_i", "ControlledMemoryValidData_i");
-        addInput("ControlledMemoryGetNewData",1);
-        inPortMap(testOp3, "getNewData", "ControlledMemoryGetNewData");
-        addInput("ControlledMemoryData_i",dataWidth);
-        inPortMap(testOp3, "data_i", "ControlledMemoryData_i");
+        cout << "###    GOING INTO NEURAL NETWORK CONSTRUCTOR NOW!" << endl;
+        // Constructor
+        NeuralNetwork* NN = new NeuralNetwork(target,layers,edges,"TestNetwork");
+        this->addSubComponent(NN);
 
-        addOutput("ControlledMemoryValidData_o",1);
-        outPortMap(testOp3, "validData_o", "ControlledMemoryValidData_o", false);
-        addOutput("ControlledMemoryData_o",dataWidth);
-        outPortMap(testOp3, "data_o", "ControlledMemoryData_o", false);
-
-        vhdl << instance(testOp3, "ControlledMemory_instance");
-
-        unsigned int padWordSize=16;
-        unsigned int padWindowSize=7;
-        unsigned int padHSize=30;
-        unsigned int padVSize=23;
-        unsigned int padStride=2;
-        int padTop=2;
-        int padBot=2;
-        int padLeft=2;
-        int padRight=2;
-        string padType="Value";
-        cout << "PaddingGenerator \n";
-        PaddingGenerator* padOp = new PaddingGenerator(target, padWordSize, padWindowSize, padHSize, padVSize, padTop, padStride, padType, padBot, padLeft, padRight, true);
-        this->addSubComponent(padOp);
-
-        for(unsigned int i=0; i<padWindowSize; i++)
-        {
-            for(unsigned int j=0; j<padWindowSize; j++)
-            {
-                cout << "padOp " << "i" << i << "j" << j << endl;
-                this->addInput("padX"+to_string(i)+to_string(j),padWordSize);
-                this->inPortMap(padOp, padOp->inputNames[i][j], "padX"+to_string(i)+to_string(j));
-                this->addOutput("padY"+to_string(i)+to_string(j),padWordSize);
-                this->outPortMap(padOp, padOp->outputNames[i][j], "padY"+to_string(i)+to_string(j), false);
-            }
-        }
-        this->addInput("padNewStep",1);
-        this->addInput("padValidData_i",1);
-        this->addOutput("padValidData_o",1);
-        this->addOutput("padGetNewData",1);
-        this->addOutput("padFinished",1);
-
-        this->inPortMap(padOp,"newStep","padNewStep");
-        this->inPortMap(padOp,"validData_i","padValidData_i");
-        this->outPortMap(padOp,"validData_o","padValidData_o",false);
-        this->outPortMap(padOp,"getNewData","padGetNewData",false);
-        this->outPortMap(padOp,"finished","padFinished",false);
-
-        this->vhdl << instance(padOp, "PaddingGenerator_instance");
-
-        // global controller
-        cout << "GlobalController \n";
-        GlobalController* globalOp = new GlobalController(target, 5);
-        this->addSubComponent(globalOp);
-        for(unsigned int i=0; i<5; i++)
-        {
-            this->addInput("globalOpFinished_"+to_string(i),1);
-            this->inPortMap(globalOp, "finished_"+to_string(i), "globalOpFinished_"+to_string(i));
-        }
-        this->addOutput("globalOpNewStep",1);
-        this->outPortMap(globalOp,"newStep","globalOpNewStep",false);
-        this->vhdl << instance(globalOp,"globalController_instance");
-
-
-        // Convolutional Layer
-        /**
-        cout << "ConvLayer \n";
-        unsigned int convLayerWordSize=16;
-        unsigned int convLayerFraction=8;
-        unsigned int convLayerHSize=30;
-        unsigned int convLayerVSize=20;
-        unsigned int convLayerWindowSize=3;
-        unsigned int convLayerNumberOfFeatures=10;
-        unsigned int convLayerNumberOfInputFeatures=5;
-        vector<vector<vector<double>>> convLayerWeights;
-        for(unsigned int inputFCounter=0;inputFCounter<convLayerNumberOfInputFeatures;inputFCounter++)
-        {
-            vector<vector<double>> tmp1;
-            convLayerWeights.push_back(tmp1);
-            for(unsigned int outputFCounter=0; outputFCounter<convLayerNumberOfFeatures; outputFCounter++)
-            {
-                vector<double>tmp2;
-                for(unsigned int indexCounter=0; indexCounter<convLayerWindowSize*convLayerWindowSize;indexCounter++)
-                {
-                    //fill tmp2
-                    tmp2.push_back(((double)inputFCounter-2)/((double)outputFCounter+1));
-                }
-                convLayerWeights[inputFCounter].push_back(tmp2);
-            }
-        }
-        cout << "   weights (before constructor): " << endl;
-        for(unsigned int inputFCounter=0;inputFCounter<convLayerWeights.size();inputFCounter++)
-        {
-            cout << "inputFeature: " << inputFCounter << endl;
-            for(unsigned int outputFCounter=0;outputFCounter<convLayerWeights[inputFCounter].size();outputFCounter++)
-            {
-                cout << "   outputFeature: " << outputFCounter << endl;
-                for(unsigned int indexCounter=0; indexCounter<convLayerWeights[inputFCounter][outputFCounter].size(); indexCounter++)
-                {
-                    cout << "       " << convLayerWeights[inputFCounter][outputFCounter][indexCounter] << endl;
-                }
-            }
-            cout << endl;
-        }
-        unsigned int convLayerWeightWordSize=16;
-        unsigned int convLayerWeightFraction=8;
-        int convLayerPaddingLeft=1;
-        int convLayerPaddingRight=1;
-        int convLayerPaddingTop=1;
-        int convLayerPaddingBot=1;
-        string convLayerPaddingType="Value";
-        ConvolutionalLayer* convLayer = new ConvolutionalLayer(target,convLayerWordSize,convLayerFraction,convLayerHSize,convLayerVSize,convLayerWindowSize,
-                                                               convLayerNumberOfFeatures,convLayerNumberOfInputFeatures,convLayerWeights,convLayerWeightWordSize,convLayerWeightFraction,
-                                                               convLayerPaddingLeft,convLayerPaddingType,2,true,true,"Truncation","ReLU",
-                                                               convLayerPaddingRight,convLayerPaddingTop,convLayerPaddingBot,"0");
-        this->addSubComponent(convLayer);
-
-        this->addInput("convLayerNewStep",1);
-        this->inPortMap(convLayer,"newStep","convLayerNewStep");
-        for(unsigned int i=0; i<convLayerNumberOfInputFeatures;i++)
-        {
-            this->addInput("convLayerValidData_i_"+to_string(i),1);
-            this->inPortMap(convLayer,"validData_i_"+to_string(i),"convLayerValidData_i_"+to_string(i));
-            this->addInput("convLayerX"+to_string(i),convLayerWordSize);
-            this->inPortMap(convLayer,"X"+to_string(i),"convLayerX"+to_string(i));
-            this->addOutput("convLayerGetNewData"+to_string(i),1);
-            this->outPortMap(convLayer,"getNewData"+to_string(i),"convLayerGetNewData"+to_string(i),false);
-        }
-        this->addOutput("convLayerFinished",1);
-        this->outPortMap(convLayer,"finished","convLayerFinished",false);
-        for(unsigned int i=0; i<convLayerNumberOfFeatures; i++)
-        {
-            this->addOutput("convLayerValidData_o_"+to_string(i),1);
-            this->outPortMap(convLayer,"validData_o_"+to_string(i),"convLayerValidData_o_"+to_string(i),false);
-            this->addOutput("convLayerR"+to_string(i),convLayerWordSize);
-            this->outPortMap(convLayer,"R"+to_string(i),"convLayerR"+to_string(i),false);
-        }
-        this->vhdl << instance(convLayer, "CONVLAYER_SHITYOURPANTS");
-*/
-        // PoolingLayer
-        unsigned int pooWordSize=16;
-        unsigned int pooHSize=15;
-        unsigned int pooVSize=11;
-        unsigned int pooNumberOfFeatures=7;
-        bool pooParallel=true;
-        int pooPaddingTop=1;
-        unsigned int pooWindowSize=2;
-        unsigned int pooStride=2;
-        int pooPaddingBot=0;
-        int pooPaddingLeft=1;
-        int pooPaddingRight=0;
-        string pooPaddingType="Value";
-cout << "### POOLING!" << endl;
-        PoolingLayer* pooOp = new PoolingLayer(target,pooWordSize,pooHSize,pooVSize,pooNumberOfFeatures,pooParallel,pooPaddingTop,pooWindowSize,pooStride,pooPaddingBot,pooPaddingLeft,pooPaddingRight,pooPaddingType);
-        addSubComponent(pooOp);
-cout << "###    1" << endl;
-        this->addInput("pooNewStep",1);
-        inPortMap(pooOp,"newStep","pooNewStep");
-        this->addOutput("pooFinished",1);
-        outPortMap(pooOp,"finished","pooFinished",false);
-cout << "###    2" << endl;
-        for(unsigned int featC=0; featC<pooOp->getNumberOfInstances(); featC++)
-        {
-            cout << "###    3.1: " << featC << endl;
-            addInput("pooX"+to_string(featC),pooWordSize);
-            inPortMap(pooOp,"X_"+to_string(featC),"pooX"+to_string(featC));
-            addOutput("pooR"+to_string(featC),pooWordSize);
-            outPortMap(pooOp,"R_"+to_string(featC),"pooR"+to_string(featC),false);
-
-            addInput("pooValidData_i"+to_string(featC),1);
-            inPortMap(pooOp,"validData_i"+to_string(featC),"pooValidData_i"+to_string(featC));
-
-            addOutput("pooGetNewData"+to_string(featC),1);
-            outPortMap(pooOp,"getNewData"+to_string(featC),"pooGetNewData"+to_string(featC),false);
-            addOutput("pooValidData_o"+to_string(featC),1);
-            outPortMap(pooOp,"validData_o"+to_string(featC),"pooValidData_o"+to_string(featC),false);
-            cout << "###    3.2: " << featC << endl;
-        }
-cout << "###    4" << endl;
-        vhdl << instance(pooOp,"poolingShit") << endl;
 
         cout << "###    TIME NEEDED TO EXECUTE: " << ((float)std::difftime(std::time(nullptr),timerStart))/60 << " MINUTES!" << endl;
 
@@ -362,6 +200,53 @@ cout << "###    4" << endl;
                     "",
                     H5ToNeuralNetwork::parseArguments
                     );
+    }
+
+    vector<vector<vector<double> > > H5ToNeuralNetwork::getRandomWeights(int a, int b, int c, int min, int max, int fractionalPart)
+    {
+        if(max-min<=0)
+        {
+            stringstream e;
+            e << "Max<Min!";
+            THROWERROR(e);
+        }
+        if(fractionalPart>=31)
+        {
+            stringstream e;
+            e << "Fractional Part too big!";
+            THROWERROR(e);
+        }
+        vector<vector<vector<double>>> level3;
+        srand(time(0));
+        for(int h=0;h<a;h++)
+        {
+            vector<vector<double>> level2;
+            for(int w=0;w<b;w++)
+            {
+                vector<double> level1;
+                for(int d=0;d<c;d++)
+                {
+                    int upperBound=rand()%max;
+                    int lowerBound;
+                    if(min>0)
+                    {
+                        lowerBound=rand()%min;
+                    }
+                    else
+                    {
+                        min=0;
+                    }
+                    int randNum=upperBound-lowerBound;
+                    int upperBoundForScalingFactor=(1<<fractionalPart)-1;
+                    int scalingFactor = rand()%upperBoundForScalingFactor+1;
+                    float weight = ((float)randNum)/((float)scalingFactor);
+                    level1.push_back(weight);
+                }
+                level2.push_back(level1);
+            }
+            level3.push_back(level2);
+        }
+        return level3;
     }
 
 }//namespace flopoco

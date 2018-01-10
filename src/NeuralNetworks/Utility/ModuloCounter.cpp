@@ -45,15 +45,15 @@ namespace flopoco {
 
         vhdl << "counter <= " << declare("counter_temp", wordSize) << ";" << endl;
 		
-        vhdl << "process(clk)" << endl
+        vhdl << "process(clk,rst,manualReset)" << endl
              << "begin" << endl
-             << tab << "if(rising_edge(clk)) then" << endl
-             << tab << tab << "if(rst='1' or manualReset=\"1\") then" << endl
-             << tab << tab << tab << "counter_temp <= (others => '0');" << endl
-             << tab << tab << "else" << endl
+             << tab << "if(rst='1' or manualReset=\"1\") then" << endl
+             << tab << tab << "counter_temp <= (others => '0');" << endl
+             << tab << "else" << endl
+             << tab << tab << "if(rising_edge(clk)) then" << endl
              << tab << tab << tab << "if(enable=\"1\") then" << endl
-             << tab << tab << tab << tab << "if(unsigned(counter)<" << mod-1 << ") then" << endl
-             << tab << tab << tab << tab << tab << "counter_temp <= std_logic_vector(unsigned(counter_temp)+1);"
+             << tab << tab << tab << tab << "if(unsigned(counter_temp)<" << mod-1 << ") then" << endl
+             << tab << tab << tab << tab << tab << "counter_temp <= std_logic_vector(unsigned(counter_temp)+1);" << endl
              << tab << tab << tab << tab << "else" << endl
              << tab << tab << tab << tab << tab << "counter_temp <= (others => '0');" << endl
              << tab << tab << tab << tab << "end if;" << endl

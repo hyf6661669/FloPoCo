@@ -2,9 +2,6 @@
 #include <iostream>
 #include <sstream>
 
-//for reading the .txt file
-#include <fstream>
-
 /* header of libraries to manipulate multiprecision numbers
    There will be used in the emulate function to manipulate arbitraly large
    entries */
@@ -35,7 +32,7 @@ namespace flopoco {
         setName(name.str());
 		
         //compute depth of the RAM
-        depth = 1 << addressWidth;
+        depth = mpz_class(1) << addressWidth;
 
         addInput("Address_W_in", addressWidth);
         addInput("Address_R_in", addressWidth);
@@ -45,7 +42,7 @@ namespace flopoco {
 
         //type declaration for the array
         stringstream typeStream;
-        typeStream << "array(0 to " << depth-1 << ") of std_logic_vector(" << dataWidth-1 << " downto 0);" << endl
+        typeStream << "array(0 to " << depth-mpz_class(1) << ") of std_logic_vector(" << dataWidth-1 << " downto 0);" << endl
                            << "signal ram : ram_t";
         addType("ram_t", typeStream.str());
 

@@ -2,9 +2,6 @@
 #include <iostream>
 #include <sstream>
 
-//for reading the .txt file
-#include <fstream>
-
 /* header of libraries to manipulate multiprecision numbers
    There will be used in the emulate function to manipulate arbitraly large
    entries */

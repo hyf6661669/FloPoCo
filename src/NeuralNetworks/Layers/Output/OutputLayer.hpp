@@ -1,5 +1,5 @@
-#ifndef BLOCKRAM_H
-#define BLOCKRAM_H
+#ifndef OUTPUTLAYER_H
+#define OUTPUTLAYER_H
 /* Each Operator declared within the flopoco framework has 
    to inherit the class Operator and overload some functions listed below*/
 #include "Operator.hpp"
@@ -13,22 +13,25 @@
     You have to use flopoco:: or using namespace flopoco in order to access these
     functions.
 */
+#include "NeuralNetworks/Layers/Layer.hpp"
 
 namespace flopoco {
 
 	// new operator class declaration
-	class BlockRam : public Operator {
+    class OutputLayer : public Layer {
 
     public:
-        BlockRam(Target* target, unsigned int dataWidth_, unsigned int addressWidth_);
+        OutputLayer(Target* target, int howMany_, int wordSize_);
 
 		// destructor
-        ~BlockRam() {}
+        ~OutputLayer() {}
 
-	private:
-		unsigned int dataWidth;
-		unsigned int addressWidth;
-		unsigned int depth;
+        virtual string getOutputSignalName(int feature) override;
+        virtual string getInputSignalName(int feature) override;
+
+    private:
+        int howMany;
+        int wordSize;
 	};
 
 

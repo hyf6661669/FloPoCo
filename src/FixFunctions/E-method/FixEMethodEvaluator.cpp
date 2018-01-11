@@ -29,7 +29,7 @@ namespace flopoco {
 			REPORT(INFO, "WARNING: degree of numerator and of denominator are different! This will lead to a less efficient implementation.");
 
 		wHatSize = -1;
-		//create W^, an estimation of W, made out of only a few MSBs of W
+		//W^, an estimation of W, made out of only a few MSBs of W
 		if(radix == 2)
 		{
 			//only the 4 top MSBs are needed

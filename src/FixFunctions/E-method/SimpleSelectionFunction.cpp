@@ -9,12 +9,11 @@
 
 namespace flopoco {
 
-		SimpleSelectionFunction::SimpleSelectionFunction(Target* target, int _radix, int maxDigit_, int _msbIn, int _lsbIn, map<string, double> inputDelays)
-		: Operator(target), radix(_radix), maxDigit(maxDigit_), msbIn(_msbIn), lsbIn(_lsbIn)
+		SimpleSelectionFunction::SimpleSelectionFunction(Target* target, int _radix, int maxDigit_, Signal *_W, map<string, double> inputDelays)
+		: Operator(target), radix(_radix), maxDigit(maxDigit_), msbIn(_W->MSB()), lsbIn(_W->LSB())
 		{
 			ostringstream name;
 			mpz_class iterLimit;
-			int inputSize, outputSize;
 
 			srcFileName = "SimpleSelectionFunction";
 			name << "SimpleSelectionFunction_radix" << radix << "_msbIn_" << vhdlize(msbIn) << "_lsbIn_" << vhdlize(lsbIn);
@@ -32,40 +31,23 @@ namespace flopoco {
 
 			setCopyrightString("Matei Istoan, 2017");
 
-			wHatSize = -1;
+			useNumericStd();
 
-			//create W^, an estimation of W, made out of only a few MSBs of W
-			if(radix == 2)
-			{
-				//only the 4 top MSBs are needed
-				wHatSize = 4;
-			}else if(radix == 4)
-			{
-				//only the 5 top MSBs are needed
-				wHatSize = 5;
-			}else if(radix == 8)
-			{
-				//only the 6 top MSBs are needed
-				wHatSize = 6;
-			}else
-			{
-				THROWERROR("SimpleSelectionFunction: radixes higher than 8 currently not supported!");
-			}
+			//get the format of the W^ signal
+			getWHatFormat(radix, maxDigit, &msbWHat, &lsbWHat);
+			wHatSize = msbWHat-lsbWHat+1;
 
-			inputSize = ((int)wHatSize>(msbIn-lsbIn+1) ? wHatSize : (msbIn-lsbIn+1));
-			outputSize = radix;
+			//safety check
+			if((msbIn-lsbIn+1) < (int)wHatSize)
+				THROWERROR("not enough digits on the given input format!");
 
 			//add the inputs
-			addInput("W", inputSize);
+			addFixInput("W", true, msbIn, lsbIn);
 			//add the outputs
-			addOutput("D", outputSize);
+			addFixOutput("D", true, radix-1, 0);
 
-			vhdl << tab << declare("WHat", wHatSize) << " <= W";
-			if((msbIn-lsbIn+1) < (int)wHatSize)
-				vhdl << range(wHatSize-1, 0);
-			else
-				vhdl << range(msbIn-lsbIn, msbIn-lsbIn-wHatSize+1);
-			vhdl << ";" << endl;
+			vhdl << tab << declareFixPoint("WHat", true, msbWHat, lsbWHat)
+					<< " <= W" << range(msbIn-lsbIn, msbIn-lsbIn-wHatSize+1) << ";" << endl;
 
 			vhdl << tab << "with WHat select D <= \n";
 			if(((1<<wHatSize)-1) > (maxDigit+1))
@@ -104,6 +86,35 @@ namespace flopoco {
 		{
 
 		}
+
+
+		void SimpleSelectionFunction::getWHatFormat(int _radix, int _maxDigit, int *_msb, int *_lsb)
+		{
+			size_t wHSize = 0;
+
+			//W^ is an estimation of W, made out of only a few MSBs of W
+			if(_radix == 2)
+			{
+				//only the 4 top MSBs are needed
+				wHSize = 4;
+			}else if(_radix == 4)
+			{
+				//only the 5 top MSBs are needed
+				wHSize = 5;
+			}else if(_radix == 8)
+			{
+				//only the 6 top MSBs are needed
+				wHSize = 6;
+			}else
+			{
+				cerr << "SimpleSelectionFunction: radixes higher than 8 currently not supported!";
+				exit(1);
+			}
+
+			*(_lsb) = -1;
+			*(_msb) = wHSize - 2;
+		}
+
 
 		void SimpleSelectionFunction::emulate(TestCase * tc)
 		{
@@ -164,7 +175,9 @@ namespace flopoco {
 			UserInterface::parseInt(args, "msbIn", &msbIn);
 			UserInterface::parseInt(args, "lsbIn", &lsbIn);
 
-			return new SimpleSelectionFunction(target, radix, maxDigit, msbIn, lsbIn);
+			Signal *W = new Signal("W", Signal::wire, true, msbIn, lsbIn);
+
+			return new SimpleSelectionFunction(target, radix, maxDigit, W);
 		}
 
 		void SimpleSelectionFunction::registerFactory(){

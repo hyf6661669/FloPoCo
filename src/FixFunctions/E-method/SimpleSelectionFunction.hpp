@@ -17,6 +17,7 @@
 #include <gmpxx.h>
 
 #include "Operator.hpp"
+#include "Signal.hpp"
 #include "utils.hpp"
 
 namespace flopoco {
@@ -30,20 +31,23 @@ namespace flopoco {
 		 * Higher radixes (4, 8 etc.) to come.
 		 * @param   radix          the radix being used
 		 * @param   maxDigit       the maximum digit in the redundant digit set
-		 * @param   msbIn          MSB of the input
-		 * @param   lsbIn          LSB of the input
+		 * @param   W              the input signal
 		 */
 		SimpleSelectionFunction(Target* target,
-				int radix,
-				int maxDigit,
-				int msbIn,
-				int lsbIn,
+				int    radix,
+				int    maxDigit,
+				Signal *W,
 				map<string, double> inputDelays = emptyDelayMap);
 
 		/**
 		 * Class destructor
 		 */
 		~SimpleSelectionFunction();
+
+		/**
+		 * test case generator
+		 */
+		static void getWHatFormat(int radix, int maxDigit, int *msb, int *lsb);
 
 		/**
 		 * test case generator
@@ -65,6 +69,8 @@ namespace flopoco {
 		int maxDigit;                         /**< the maximum digit in the redundant digit set */
 		int msbIn;                            /**< MSB of the input */
 		int lsbIn;                            /**< LSB of the input */
+		int msbWHat;                          /**< MSB of the WHat signal */
+		int lsbWHat;                          /**< LSB of the WHat signal */
 
 		size_t wHatSize;                      /**< size of the W^Hat signal */
 

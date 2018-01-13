@@ -62,7 +62,15 @@ namespace flopoco{
 			if(s->type() == Signal::out)
 				outPortMap (op, s->getName(), s->getName());
 			if(s->type() == Signal::in) {
+				//support for fixed point
+				/*
 				declare(s->getName(), s->width(), s->isBus());
+				*/
+				if(s->isFix())
+					declareFixPoint(s->getName(), s->isFixSigned(), s->MSB(), s->LSB(), Signal::wire);
+				else
+					declare(s->getName(), s->width(), s->isBus());
+
 				inPortMap (op, s->getName(), s->getName());
 			}
 		}
@@ -169,8 +177,33 @@ namespace flopoco{
 			Signal* s = inputSignalVector[i];
 			vhdl << tab << tab << tab << "read(inline ,V_"<< s->getName() << ");" << endl;
 			vhdl << tab << tab << tab << "read(inline,tmpChar);" << endl; // we consume the character between each inputs
-			if ((s->width() == 1) && (!s->isBus())) vhdl << tab << tab << tab << s->getName() << " <= to_stdlogicvector(V_" << s->getName() << ")(0);" << endl;
-			else vhdl << tab << tab << tab << s->getName() << " <= to_stdlogicvector(V_" << s->getName() << ");" << endl;
+			//support for fixed point
+			/*
+			if ((s->width() == 1) && (!s->isBus()))
+				vhdl << tab << tab << tab << s->getName() << " <= to_stdlogicvector(V_" << s->getName() << ")(0);" << endl;
+			else
+				vhdl << tab << tab << tab << s->getName() << " <= to_stdlogicvector(V_" << s->getName() << ");" << endl;
+			*/
+			if(s->isFix())
+			{
+				vhdl << tab << tab << tab << s->getName() << " <= ";
+				if(s->isFixSigned())
+					vhdl << "signed(";
+				else
+					vhdl << "unsigned(";
+				vhdl << "to_stdlogicvector(V_" << s->getName() << ")";
+				if ((s->width() == 1) && (!s->isBus()))
+					vhdl << "(0)";
+				vhdl << ");" << endl;
+			}
+			else
+			{
+				if ((s->width() == 1) && (!s->isBus()))
+					vhdl << tab << tab << tab << s->getName() << " <= to_stdlogicvector(V_" << s->getName() << ")(0);" << endl;
+				else
+					vhdl << tab << tab << tab << s->getName() << " <= to_stdlogicvector(V_" << s->getName() << ");" << endl;
+			}
+
 			// adding the IO to IOorder
 			IOorderInput.push_back(s->getName());
 		}
@@ -241,26 +274,49 @@ namespace flopoco{
 			vhdl << tab << tab << tab << "expected_size_"<< s->getName() << " := inline'Length;"<< endl; // the remainder is the vector of expected outputs: remember how long it is
 			vhdl << tab << tab << tab << "expected_"<< s->getName() << " := inline.all & (expected_size_"<< s->getName() << "+1 to 1000 => ' ');"<< endl; // because we have to pad it to 1000 chars
 			string expectedString = "expected_" +  s->getName() + "(1 to expected_size_" + s->getName() + ")"; //  will be used several times below, so better have a Single Source of Bug
-			vhdl << tab << tab << tab << "if possibilityNumber = 0 then" << endl; 
+			vhdl << tab << tab << tab << "if possibilityNumber = 0 then" << endl;
 			vhdl << tab << tab << tab << tab << "localErrorCounter := 0;" << endl;//read(inline,tmpChar);" << endl; // we consume the character between each outputs
 			vhdl << tab << tab << tab << "elsif possibilityNumber = 1 then " << endl;
 			vhdl << tab << tab << tab << tab << "read(inline ,V_"<< s->getName() << ");" << endl;
 			vhdl << tab << tab << tab << tab << "if ";
-			if (s->isFP()) { 
+			if (s->isFP()) {
  			vhdl << "not fp_equal(fp"<< s->width() << "'(" << s->getName() << ") ,to_stdlogicvector(V_" <<  s->getName() << "))";
-			} else if (s->isIEEE()) {  
+			} else if (s->isIEEE()) {
 			    vhdl << "not fp_equal_ieee(" << s->getName() << " ,to_stdlogicvector(V_" <<  s->getName() << "),"<<s->wE()<<" , "<<s->wF()<<")";
-			} else if ((s->width() == 1) && (!s->isBus())) { 
+			} else if ((s->width() == 1) && (!s->isBus())) {
+				//support for fixed point
+				/*
 				vhdl << "not (" << s->getName() << "= to_stdlogic(V_" << s->getName() << "))";
+				*/
+				if(s->isFix())
+					vhdl << "not std_match(" << s->getName() << ", signed(to_stdlogic(V_" << s->getName() << ")))";
+				else
+					vhdl << "not std_match(" << s->getName() << ", to_stdlogic(V_" << s->getName() << "))";
 			} else {
+				//suport for fixed point
+				/*
 				vhdl << "not (" << s->getName() << "= to_stdlogicvector(V_" << s->getName() << "))";
+				*/
+				if(s->isFixSigned())
+					vhdl << "not std_match(" << s->getName() << ", signed(to_stdlogicvector(V_" << s->getName() << ")))";
+				else if(s->isFixUnsigned())
+					vhdl << "not std_match(" << s->getName() << ", unsigned(to_stdlogicvector(V_" << s->getName() << ")))";
+				else
+					vhdl << "not (" << s->getName() << "= to_stdlogicvector(V_" << s->getName() << "))";
 			}
 			vhdl << " then " << endl;
-			vhdl << tab << tab << tab << tab << tab << "assert false report(\"Line \" & integer'image(counter) & \" of input file, incorrect output for " 
+			vhdl << tab << tab << tab << tab << tab << "assert false report(\"Line \" & integer'image(counter) & \" of input file, incorrect output for "
 					 << s->getName() << ": \" & lf & ";
 			vhdl << "\"  expected value: \" & "  << expectedString;
+			//suport for fixed point
+			/*
 			vhdl << " & lf & \"          result: \" & str(" << s->getName() <<")) ;"<< endl;
-			
+			*/
+			if(s->isFix())
+				vhdl << " & lf & \"          result: \" & str(std_logic_vector(" << s->getName() <<"))) ;"<< endl;
+			else
+				vhdl << " & lf & \"          result: \" & str(" << s->getName() <<")) ;"<< endl;
+
 			vhdl << tab << tab << tab << tab << tab << "errorCounter := errorCounter + 1; -- incrementing global error counter" << endl;
 			vhdl << tab << tab << tab << tab << "end if;" << endl;
 
@@ -273,9 +329,25 @@ namespace flopoco{
 			} else if (s->isIEEE()) {
 				vhdl << tab << tab << tab << tab << tab << "if fp_equal_ieee(" << s->getName() << " ,to_stdlogicvector(V_" <<  s->getName() << "),"<<s->wE()<<" , "<<s->wF()<<")" << " then localErrorCounter := 1; end if;" << endl;
 			} else if ((s->width() == 1) && (!s->isBus())) {
+				//suport for fixed point
+				/*
 				vhdl << tab << tab << tab << tab << tab << "if (" << s->getName() << "= to_stdlogic(V_" << s->getName() << ")) " << " then localErrorCounter := 1; end if;" << endl;
+				*/
+				if(s->isFix())
+					vhdl << tab << tab << tab << tab << tab << "if std_match(" << s->getName() << ", signed(to_stdlogic(V_" << s->getName() << "))) " << " then localErrorCounter := 1; end if;" << endl;
+				else
+					vhdl << tab << tab << tab << tab << tab << "if (" << s->getName() << "= to_stdlogic(V_" << s->getName() << ")) " << " then localErrorCounter := 1; end if;" << endl;
 			} else {
+				//suport for fixed point
+				/*
 				vhdl << tab << tab << tab << tab << tab << "if (" << s->getName() << "= to_stdlogicvector(V_" << s->getName() << ")) " << " then localErrorCounter := 1; end if;" << endl;
+				*/
+				if(s->isFixSigned())
+					vhdl << tab << tab << tab << tab << tab << "if std_match(" << s->getName() << ", signed(to_stdlogicvector(V_" << s->getName() << "))) " << " then localErrorCounter := 1; end if;" << endl;
+				else if(s->isFixUnsigned())
+					vhdl << tab << tab << tab << tab << tab << "if std_match(" << s->getName() << ", unsigned(to_stdlogicvector(V_" << s->getName() << "))) " << " then localErrorCounter := 1; end if;" << endl;
+				else
+					vhdl << tab << tab << tab << tab << tab << "if (" << s->getName() << "= to_stdlogicvector(V_" << s->getName() << ")) " << " then localErrorCounter := 1; end if;" << endl;
 			}
 			vhdl << tab << tab << tab << tab << "end loop;" << endl;
 			vhdl << tab << tab << tab << tab << " if (localErrorCounter = 0) then " << endl;
@@ -285,7 +357,14 @@ namespace flopoco{
 			vhdl << tab << tab << tab << tab << tab << "assert false report(\"Line \" & integer'image(counter) & \" of input file, incorrect output for "
 					 << s->getName() << ": \" & lf & ";
 			vhdl << "\" expected values: \" & "  << expectedString;
-			vhdl << " & lf & \"          result: \" & str(" << s->getName() <<")) ;"<< endl;  
+			//suport for fixed point
+			/*
+			vhdl << " & lf & \"          result: \" & str(" << s->getName() <<")) ;"<< endl;
+			*/
+			if(s->isFix())
+				vhdl << " & lf & \"          result: \" & str(std_logic_vector(" << s->getName() <<"))) ;"<< endl;
+			else
+				vhdl << " & lf & \"          result: \" & str(" << s->getName() <<")) ;"<< endl;
 
 			vhdl << tab << tab << tab << tab << "end if;" << endl;
 			vhdl << tab << tab << tab << "end if;" << endl;
@@ -475,6 +554,19 @@ namespace flopoco{
 
 	void TestBench::outputVHDL(ostream& o, string name) {
 		licence(o,"Florent de Dinechin, Cristian Klein, Nicolas Brunie (2007-2010)");
+
+		//support for fixed point
+		if(op_->getStdLibType() == -1)
+			useStdLogicSigned();
+		else if(op_->getStdLibType() == 0)
+			useStdLogicUnsigned();
+		else if(op_->getStdLibType() == 1)
+			useNumericStd();
+		else if(op_->getStdLibType() == 2)
+			useNumericStd_Signed();
+		else
+			useNumericStd_Unsigned();
+
 		Operator::stdLibs(o);
 
 		outputVHDLEntity(o);
@@ -627,13 +719,13 @@ namespace flopoco{
 
 
 
-	
-	
+
+
 	OperatorPtr TestBench::parseArguments(Target *target, vector<string> &args) {
 		int n;
 		bool file;
 		if(UserInterface::globalOpList.empty()){
-			throw("ERROR: TestBench has no operator to wrap (it should come after the operator it wraps)");		
+			throw("ERROR: TestBench has no operator to wrap (it should come after the operator it wraps)");
 		}
 		UserInterface::parseInt(args, "n", &n);
 		UserInterface::parseBoolean(args, "file", &file);
@@ -651,7 +743,7 @@ namespace flopoco{
 											 "",
 											 TestBench::parseArguments
 											 ) ;
-		
+
 	}
 
 }

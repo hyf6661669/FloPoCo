@@ -131,7 +131,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 			{
 				parameters.push_back(instanceOpParameters);
 				instanceOpParameters.erase();
-			}	
+			}
 		}
 
 		OperatorPtr instance = instanceOpFactory->parseArguments(target_, parameters);
@@ -170,7 +170,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 					else
 					{
 						signal = signalsCst.substr(signalsCst.find(request) + request.size());
-						
+
 					}
 					inPortMapCst(instance, (*itSignal)->getName(), signal);
 				}
@@ -190,7 +190,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 					outPortMap(instance, (*itSignal)->getName(), signal);
 				}
 			}
-			
+
 		}
 		this->vhdl << this->instance(instance, instanceName);
 
@@ -593,14 +593,14 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 		o<<"--------------------------------------------------------------------------------"<<endl;
 	}
 
-	
+
 	void Operator::pipelineInfo(std::ostream& o){
 		if(isSequential()) {
 			o << "-- Pipeline depth: " <<getPipelineDepth() << " cycles"  <<endl <<endl;
 		}
 		else
 			o << "-- combinatorial"  <<endl <<endl;
-		
+
 	}
 
 
@@ -685,18 +685,18 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 				for (auto i: getSubComponents())
 					i->outputFinalReport(s,level+1);
 			}
-			
+
 			ostringstream tabs, ctabs;
 			for (int i=0;i<level-1;i++){
 				tabs << "|" << tab;
 				ctabs << "|" << tab;
 			}
-			
+
 			if (level>0){
 				tabs << "|" << "---";
 				ctabs << "|" << tab;
 			}
-			
+
 			s << tabs.str() << "Entity " << uniqueName_ << endl;
 			if(this->getPipelineDepth()!=0)
 				s << ctabs.str() << tab << "Pipeline depth = " << getPipelineDepth() << endl;
@@ -1333,12 +1333,16 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 			try{
 				//cout << "its = " << (*it).second << "  " << endl;
 				rhs = getDelayedSignalByName((*it).second);
+				//suport for fixed point
+				/*
 				if (rhs->isFix() && !outputSignal){
 					rhsString = std_logic_vector((*it).second);
 				}
 				else {
 					rhsString = (*it).second;
 				}
+				*/
+				rhsString = (*it).second;
 
 			}
 			catch(string e) {
@@ -1369,7 +1373,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 
 
 		// add the operator to the subcomponent list: still explicit in origin/master
-		//		
+		//
 		// subComponents_.push_back(op);
 		return o.str();
 	}
@@ -1636,7 +1640,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 
 						void Operator::outputClock_xdc(){
 							// For Vivado
-							ofstream file; 
+							ofstream file;
 							file.open("/tmp/clock.xdc", ios::out);
 							file << "# This file was created by FloPoCo to be used by the vivado_runsyn utility. Sorry to clutter your tmp." << endl;
 							file << "create_clock -name clk -period "  << (1.0e9/target_->frequency())
@@ -1661,7 +1665,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 #endif
 	}
 
-	
+
 	void Operator::buildStandardTestCases(TestCaseList* tcl) {
 		// Each operator should overload this method. If not, it is mostly harmless but deserves a warning.
 		cerr << "WARNING: No standard test cases implemented for this operator" << endl;
@@ -1934,7 +1938,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 			return false;
 	}
 #endif
-	
+
 	void Operator::addComment(string comment, string align){
 		vhdl << align << "-- " << comment << endl;
 	}

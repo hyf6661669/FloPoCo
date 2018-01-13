@@ -11,6 +11,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 #include <string>
 
 #include <sollya.h>
@@ -22,7 +23,7 @@
 
 namespace flopoco {
 
-	class GenericComputationUnit
+	class GenericComputationUnit : public Operator
 	{
 	public:
 		/**

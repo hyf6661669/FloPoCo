@@ -31,7 +31,7 @@ namespace flopoco {
 
 			setCopyrightString("Matei Istoan, 2017");
 
-			useNumericStd();
+			useNumericStd_Signed();
 
 			//get the format of the W^ signal
 			getWHatFormat(radix, maxDigit, &msbWHat, &lsbWHat);

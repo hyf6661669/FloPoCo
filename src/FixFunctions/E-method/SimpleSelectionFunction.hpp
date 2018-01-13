@@ -45,12 +45,13 @@ namespace flopoco {
 		~SimpleSelectionFunction();
 
 		/**
-		 * test case generator
+		 * Compute the format of the W^ signal, from the used radix
+		 * and the maximum digit in the digit set
 		 */
 		static void getWHatFormat(int radix, int maxDigit, int *msb, int *lsb);
 
 		/**
-		 * test case generator
+		 * Test case generator
 		 */
 		void emulate(TestCase * tc);
 

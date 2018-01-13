@@ -39,8 +39,50 @@ namespace flopoco {
 
 	}
 
+
 	GenericComputationUnit::~GenericComputationUnit() {
 
+	}
+
+
+	void GenericComputationUnit::emulate(TestCase * tc)
+	{
+
+	}
+
+	OperatorPtr GenericComputationUnit::parseArguments(Target *target, std::vector<std::string> &args) {
+		return nullptr;
+	}
+
+	void GenericComputationUnit::registerFactory(){
+		UserInterface::add("GenericComputationUnit", // name
+				"Generic computation unit for the E-method.", //description
+				"FunctionApproximation", // category
+				"",
+				"radix(int): the radix of the digit set being used;\
+				 index(int): the index of the unit;\
+				 msbW(int): MSB of the W input signal;\
+				 lsbW(int): LSB of the W input signal;\
+				 msbX(int): MSB of the X input signal;\
+				 lsbX(int): LSB of the X input signal;\
+				 msbD(int): MSB of the D input signals;\
+				 lsbD(int): LSB of the D input signals;\
+				 qi(string): the q_i constant, given in arbitrary-precision decimal, or as a Sollya expression, e.g \"log(2)\""
+				"",
+				"",
+				GenericComputationUnit::parseArguments,
+				GenericComputationUnit::unitTest
+		) ;
+
+	}
+
+	TestList GenericComputationUnit::unitTest(int index)
+	{
+		// the static list of mandatory tests
+		TestList testStateList;
+		vector<pair<string,string>> paramList;
+
+		return testStateList;
 	}
 
 } /* namespace flopoco */

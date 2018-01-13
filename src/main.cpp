@@ -79,6 +79,7 @@ int main(int argc, char* argv[] )
 		PiecewisePolyApprox::registerFactory();
 
 		SimpleSelectionFunction::registerFactory();
+		GenericComputationUnit::registerFactory();
 
 		FixRealKCM::registerFactory();
 		FixComplexKCM::registerFactory();

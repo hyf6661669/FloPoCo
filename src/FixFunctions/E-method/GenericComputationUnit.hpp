@@ -19,6 +19,8 @@
 
 #include "Operator.hpp"
 #include "Signal.hpp"
+#include "BitHeap/BitHeap.hpp"
+#include "ConstMult/FixRealKCM.hpp"
 #include "utils.hpp"
 
 namespace flopoco {
@@ -41,6 +43,7 @@ namespace flopoco {
 		 * Higher radixes (4, 8 etc.) to come.
 		 * @param   radix          the radix being used
 		 * @param   index          the index of the unit
+		 * @param   maxDigit       the maximum digit in the used digit set
 		 * @param   W              the input signal W
 		 * @param   X              the input signal X
 		 * @param   Di             the input signal Di
@@ -49,10 +52,11 @@ namespace flopoco {
 		GenericComputationUnit(Target* target,
 				int    radix,
 				int    index,
+				int    maxDigit,
 				Signal *W,
 				Signal *X,
 				Signal *Di,
-				mpfr_t qi,
+				string qi,
 				map<string, double> inputDelays = emptyDelayMap);
 
 		/**
@@ -79,6 +83,7 @@ namespace flopoco {
 	private:
 		int radix;                            /**< the radix of the digit set being used */
 		int index;                            /**< the index of the computation unit */
+		int maxDigit;                         /**< the maximum digit in the used digit set */
 
 		int msbW;                             /**< MSB of the W signal */
 		int lsbW;                             /**< LSB of the W signal */
@@ -87,7 +92,12 @@ namespace flopoco {
 		int msbD;                             /**< MSB of the D signals */
 		int lsbD;                             /**< LSB of the D signals */
 
-		mpfr_t qi;                            /**< the q_i coefficient */
+		int msbInt;                           /**< MSB used for the internal computations */
+		int lsbInt;                           /**< LSB used for the internal computations */
+
+		string qi;                            /**< the q_i coefficient */
+
+		BitHeap *bitheap;                     /**< the bitheap used for the computations */
 	};
 
 } /* namespace flopoco */

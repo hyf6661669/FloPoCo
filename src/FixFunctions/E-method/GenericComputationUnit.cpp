@@ -125,7 +125,63 @@ namespace flopoco {
 
 	void GenericComputationUnit::emulate(TestCase * tc)
 	{
+		//get the inputs from the TestCase
+		mpz_class svWi   = tc->getInputValue("Wi");
+		mpz_class svD0   = tc->getInputValue("D0");
+		mpz_class svDi   = tc->getInputValue("Di");
+		mpz_class svDip1 = tc->getInputValue("Dip1");
+		mpz_class svX    = tc->getInputValue("X");
 
+		//manage signed digits
+		mpz_class big1W    = (mpz_class(1) << (msbW-lsbW+1));
+		mpz_class big1Wp   = (mpz_class(1) << (msbW-lsbW));
+		mpz_class big1D    = (mpz_class(1) << radix);
+		mpz_class big1Dp   = (mpz_class(1) << (radix-1));
+		mpz_class big1X    = (mpz_class(1) << (msbX-lsbX+1));
+		mpz_class big1Xp   = (mpz_class(1) << (msbX-lsbX));
+		mpz_class big1out  = (mpz_class(1) << (msbInt-lsbInt+1));
+		mpz_class big1outp = (mpz_class(1) << (msbInt-lsbInt));
+
+		//handle the signed inputs
+		if(svWi >= big1Wp)
+			svWi -= big1W;
+		if(svD0 >= big1Dp)
+			svD0 -= big1D;
+		if(svDi >= big1Dp)
+			svDi -= big1D;
+		if(svDip1 >= big1Dp)
+			svDip1 -= big1D;
+		if(svX >= big1Xp)
+			svX -= big1X;
+
+		// compute the multiple-precision output
+		mpz_class svW_next;
+		// round down
+		/*
+					if(abs(svW) <= ((radix-1)<<1))
+						svD = sgn(svW)*(abs(svW) + mpz_class(1)) >> 1;
+					else
+						svD = sgn(svW)*abs(svW) >> 1;
+		 */
+		// round to nearest
+		if(abs(svW) <= ((radix-1)<<1))
+			svD = (svW + mpz_class(1)) >> 1;
+		else
+			svD = sgn(svW)*abs(radix-1);
+
+		// limit the output digit to the allowed digit set
+		if(abs(svW) > maxDigit)
+			svD = sgn(svW) * mpz_class(maxDigit);
+
+		// manage two's complement at the output
+		if(svD < 0)
+			//svD += big1out;
+			svD += big1int;
+		//only use radix bits at the output
+		svD = svD & ((1<<radix)-1);
+
+		// complete the TestCase with this expected output
+		tc->addExpectedOutput("D", svD);
 	}
 
 	OperatorPtr GenericComputationUnit::parseArguments(Target *target, std::vector<std::string> &args) {

@@ -129,7 +129,26 @@ namespace flopoco {
 	}
 
 	OperatorPtr GenericComputationUnit::parseArguments(Target *target, std::vector<std::string> &args) {
-		return nullptr;
+		int radix, index, maxDigit;
+		int msbW, lsbW, msbX, lsbX, msbD, lsbD;
+		string qi;
+
+		UserInterface::parseInt(args, "radix", &radix);
+		UserInterface::parseInt(args, "index", &index);
+		UserInterface::parseInt(args, "maxDigit", &maxDigit);
+		UserInterface::parseInt(args, "msbW", &msbW);
+		UserInterface::parseInt(args, "lsbW", &lsbW);
+		UserInterface::parseInt(args, "msbX", &msbX);
+		UserInterface::parseInt(args, "lsbX", &lsbX);
+		UserInterface::parseInt(args, "msbD", &msbD);
+		UserInterface::parseInt(args, "lsbD", &lsbD);
+		UserInterface::parseString(args, "qi", &qi);
+
+		Signal *W  = new Signal("W", Signal::wire, true, msbW, lsbW);
+		Signal *X  = new Signal("X", Signal::wire, true, msbX, lsbX);
+		Signal *Di = new Signal("D", Signal::wire, true, msbD, lsbD);
+
+		return new GenericComputationUnit(target, radix, index, maxDigit, W, X, Di, qi);
 	}
 
 	void GenericComputationUnit::registerFactory(){

@@ -90,7 +90,21 @@ namespace flopoco {
         {
             stringstream e;
             e << "The stride must be > 0";
-            THROWERROR(e);
+            cout << "### ERROR: " << e.str() << endl;
+            THROWERROR(e.str());
+        }
+
+        if(this->myArguments->getPaddingBot()<0) // padBot
+        {
+            this->myArguments->setPaddingBot((this->myArguments->getCoreSize()%2)==1?this->myArguments->getPadding():this->myArguments->getPadding()-1); // padBot=((windowSize%2)==1?padTop:padTop-1);
+        }
+        if(this->myArguments->getPaddingLeft()<0) // padLeft
+        {
+            this->myArguments->setPaddingLeft(this->myArguments->getPadding()); // padLeft=padTop;
+        }
+        if(this->myArguments->getPaddingRight()<0) // padRight
+        {
+            this->myArguments->setPaddingRight((this->myArguments->getCoreSize()%2)==1?this->myArguments->getPadding():this->myArguments->getPadding()-1); // padRight=((windowSize%2)==1?padTop:padTop-1);
         }
 
         // definition of the source file name, used for info and error reporting using REPORT
@@ -117,14 +131,14 @@ namespace flopoco {
             addInput("X_"+to_string(outFC),myArguments->getWordSize());
             addOutput("R_"+to_string(outFC),myArguments->getWordSize());
             addOutput("getNewData_"+to_string(outFC),1);
-            addOutput("validData_o"+to_string(outFC),1);
-            addInput("validData_i"+to_string(outFC),1);
+            addOutput("validData_o_"+to_string(outFC),1);
+            addInput("validData_i_"+to_string(outFC),1);
 
             //shift reg
             WindowShiftRegister* winOp = new WindowShiftRegister(target,myArguments->getWordSize(),myArguments->getCoreSize(),myArguments->getInputWidth());
             addSubComponent(winOp);
             inPortMap(winOp,"X","X_"+to_string(outFC));
-            inPortMap(winOp,"enable","validData_i"+to_string(outFC));
+            inPortMap(winOp,"enable","validData_i_"+to_string(outFC));
             inPortMap(winOp,"newStep","newStep");
             for(int i=0; i<myArguments->getCoreSize()*myArguments->getCoreSize(); i++)
             {
@@ -140,7 +154,7 @@ namespace flopoco {
                 inPortMap(padOp,"X"+to_string(i),"winShiftOut_"+to_string(i)+"_"+to_string(outFC));
                 outPortMap(padOp,"R"+to_string(i),"paddingOut_"+to_string(i)+"_"+to_string(outFC),true);
             }
-            inPortMap(padOp,"validData_i","validData_i"+to_string(outFC));
+            inPortMap(padOp,"validData_i","validData_i_"+to_string(outFC));
             inPortMap(padOp,"newStep","newStep");
             outPortMap(padOp,"getNewData","getNewData_"+to_string(outFC),false);
 

@@ -95,19 +95,19 @@ namespace flopoco {
     void ConvolutionalLayer::buildShiftAndPad(Target* target)
     {
 
-        cout << "###   ConvLayer.buildShiftAndPad \n";
+        cout << "      ConvLayer.buildShiftAndPad \n";
         for(int featureCounter=0; featureCounter<myArguments->getInputDepth(); featureCounter++)
         {
-            cout << "###       featureCounter=" << featureCounter << "\n";
+            cout << "          featureCounter=" << featureCounter << "\n";
 
-            cout << "###       declaring inputs \n";
+            cout << "          declaring inputs \n";
             // declare inputs
             addInput("X"+to_string(featureCounter), myArguments->getWordSize());
             addInput("validData_i_"+to_string(featureCounter),1);
             addOutput("getNewData_"+to_string(featureCounter),1);
 
             // shift register
-            cout << "###       building shift register \n";
+            cout << "          building shift register \n";
             WindowShiftRegister* shiftReg = new WindowShiftRegister(target,myArguments->getWordSize(),myArguments->getCoreSize(),myArguments->getInputWidth());
             addSubComponent(shiftReg);
             inPortMap(shiftReg,"X","X"+to_string(featureCounter));
@@ -121,7 +121,7 @@ namespace flopoco {
 
             // padding generator
 
-            cout << "###       building padding generator \n";
+            cout << "          building padding generator \n";
             PaddingGenerator* padGen = new PaddingGenerator(target,myArguments->getWordSize(),myArguments->getCoreSize(),myArguments->getInputWidth(),myArguments->getInputHeight(),myArguments->getPaddingTop(),myArguments->getStride(),myArguments->getPaddingType(),myArguments->getPaddingBot(),myArguments->getPaddingLeft(),myArguments->getPaddingRight(),(featureCounter==0?true:false));
             addSubComponent(padGen);
             for(int portC=0; portC<myArguments->getCoreSize()*myArguments->getCoreSize(); portC++)
@@ -144,11 +144,11 @@ namespace flopoco {
 
     void ConvolutionalLayer::buildConvCores(Target* target)
     {
-        cout << "###   ConvolutionalLayer.buildConvCores \n";
+        cout << "      ConvolutionalLayer.buildConvCores \n";
         int convCoreIdCounter=0;
         for(int featureCounter=0; featureCounter<myArguments->getInputDepth(); featureCounter++)
         {
-            cout << "###       featureCounter=" << featureCounter << "\n";
+            cout << "          featureCounter=" << featureCounter << "\n";
             // one ConvCore for each OUTPUT feature
             // (get pipelinestages from all ConvCores for each OUTPUT-feature and insert additional Delays if needed)
             vector <ConvolutionalCoreSimple*> tempConvCores;
@@ -157,24 +157,24 @@ namespace flopoco {
             int tempOutFraction;
             for(int outFeatureCounter=0; outFeatureCounter<myArguments->getNumberOfOutputFeatures(); outFeatureCounter++)
             {
-                cout << "###       outFeatureCounter=" << outFeatureCounter << "\n";
-                cout << "###       ConvCore \n";
-                cout << "###           wordSize=" << myArguments->getWordSize() << endl;
-                cout << "###           fraction=" << myArguments->getFraction() << endl;
-                cout << "###           weightWordSize=" << myArguments->getWeightWordSize() << endl;
-                cout << "###           weightFraction=" << myArguments->getWeightFraction() << endl;
-                cout << "###           windowSize=" << myArguments->getCoreSize() << endl;
-                cout << "###           useAdderTree=" << useAdderTree << endl;
-                cout << "###           roundAfterConvCore=" << roundAfterConvCore << endl;
-                cout << "###           roundingType=" << roundingType << endl;
-                cout << "###           convCoreIdCounter=" << convCoreIdCounter << endl;
-                cout << "###           weights:" << endl;
-                for(auto it : myArguments->getConvWeights()[featureCounter][outFeatureCounter])
+                cout << "          outFeatureCounter=" << outFeatureCounter << "\n";
+                cout << "          ConvCore \n";
+                cout << "              wordSize=" << myArguments->getWordSize() << endl;
+                cout << "              fraction=" << myArguments->getFraction() << endl;
+                cout << "              weightWordSize=" << myArguments->getWeightWordSize() << endl;
+                cout << "              weightFraction=" << myArguments->getWeightFraction() << endl;
+                cout << "              windowSize=" << myArguments->getCoreSize() << endl;
+                cout << "              useAdderTree=" << useAdderTree << endl;
+                cout << "              roundAfterConvCore=" << roundAfterConvCore << endl;
+                cout << "              roundingType=" << roundingType << endl;
+                cout << "              convCoreIdCounter=" << convCoreIdCounter << endl;
+                cout << "              weights[" << featureCounter << "][" << outFeatureCounter << "]:" << endl;
+                for(int i=0; i<myArguments->getConvWeights()[featureCounter][outFeatureCounter].size(); i++)
                 {
-                    cout << "###               " << it << endl;
+                    cout << "                  " << myArguments->getConvWeights()[featureCounter][outFeatureCounter][i] << endl;
                 }
                 ConvolutionalCoreSimple* convCore = new ConvolutionalCoreSimple(target,myArguments->getWordSize(),myArguments->getFraction(),myArguments->getWeightWordSize(),myArguments->getWeightFraction(),myArguments->getCoreSize(),myArguments->getConvWeights()[featureCounter][outFeatureCounter],useAdderTree,(roundAfterConvCore==true?roundingType:""),to_string(convCoreIdCounter));
-                cout << "###       after ConvCore \n";
+                cout << "          after ConvCore \n";
                 convCoreIdCounter++;
                 this->addSubComponent(convCore);
                 for(int portC=0; portC<myArguments->getCoreSize()*myArguments->getCoreSize(); portC++)
@@ -187,16 +187,16 @@ namespace flopoco {
 
                 if(outFeatureCounter>0)
                 {
-                    cout << "###           tempOutWordSize=" << tempOutWordSize << endl;
-                    cout << "###           convCore->getOutputWordSize()=" << convCore->getOutputWordSize() << endl;
-                    cout << "###           tempOutFraction=" << tempOutFraction << endl;
-                    cout << "###           convCore->getOutputFraction()=" << convCore->getOutputFraction() << endl;
+                    cout << "              tempOutWordSize=" << tempOutWordSize << endl;
+                    cout << "              convCore->getOutputWordSize()=" << convCore->getOutputWordSize() << endl;
+                    cout << "              tempOutFraction=" << tempOutFraction << endl;
+                    cout << "              convCore->getOutputFraction()=" << convCore->getOutputFraction() << endl;
                     if(tempOutWordSize!=convCore->getOutputWordSize() || tempOutFraction!=convCore->getOutputFraction())
                     {
-                        cout << "###       FEHLERMELDUNG!!!!! \n";
+                        cout << "          FEHLERMELDUNG!!!!! \n";
                         stringstream e;
                         e << "The Convolutional Cores have a different outputWordSize!";
-                        THROWERROR(e);
+                        THROWERROR(e.str());
                     }
                 }
                 tempOutWordSize=convCore->getOutputWordSize();
@@ -227,12 +227,12 @@ namespace flopoco {
         //gen adder trees
         for(int outFeatureCounter=0; outFeatureCounter<this->myArguments->getNumberOfOutputFeatures(); outFeatureCounter++)
         {
-            cout << "###       outFeatureCounter=" << outFeatureCounter << "\n";
+            cout << "          outFeatureCounter=" << outFeatureCounter << "\n";
             //validData_o
             addOutput("validData_o_"+to_string(outFeatureCounter),1);
 
             //one adder tree for each output feature
-            cout << "###       IntAdderTree \n";
+            cout << "          IntAdderTree \n";
             IntAdderTree* intAdd = new IntAdderTree(target,this->ConvCores[0][outFeatureCounter]->getOutputWordSize(),this->myArguments->getInputDepth(), "bitheap",false);
             this->AdderTrees.push_back(intAdd);
             addSubComponent(intAdd);
@@ -261,14 +261,14 @@ namespace flopoco {
         //round
         for(int outFeatureCounter=0; outFeatureCounter<this->myArguments->getNumberOfOutputFeatures(); outFeatureCounter++)
         {
-            cout << "###       Rounding back to original word size \n";
+            cout << "          Rounding back to original word size \n";
             roundOutput(this->getSignalByName("AdderTreeOutputFeature_"+to_string(outFeatureCounter)+"_out")->width(),this->ConvCores[0][outFeatureCounter]->getOutputFraction(),"AdderTreeOutputFeature_"+to_string(outFeatureCounter)+"_out","feature"+to_string(outFeatureCounter)+"_rounded",this->roundingType);
         }
     }
 
     void ConvolutionalLayer::roundOutput(int wordSizeFrom, int fractionFrom, string signalNameFrom, string signalNameTo, string round)
     {
-        cout << "###   ConvLayer.roundOutput \n";
+        cout << "      ConvLayer.roundOutput \n";
         if(round=="Truncation")
         {
             int MSBFrom = wordSizeFrom - fractionFrom;
@@ -299,7 +299,7 @@ namespace flopoco {
             {
                 stringstream e;
                 e << "Error while rounding, requested fraction is bigger than actual fraction! This should normally not happen";
-                THROWERROR(e);
+                THROWERROR(e.str());
             }
 
 
@@ -344,7 +344,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "Padding < 0 is not supported!";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
         if(myArguments->getPaddingRight()<0)
         {
@@ -374,26 +374,26 @@ namespace flopoco {
         setName(name.str());
 
         // add a signal to start a new step
-        cout << "###   Adding Inputs (newStep and finished) \n";
+        cout << "      Adding Inputs (newStep and finished) \n";
         addInput("newStep",1);
         addOutput("finished",1);
 
         // build one convolutional chain for each INPUT feature!
-        cout << "###   Building shift and pad \n";
+        cout << "      Building shift and pad \n";
         buildShiftAndPad(target);
 
-        cout << "###   Building ConvCores \n";
+        cout << "      Building ConvCores \n";
         buildConvCores(target);
 
-        cout << "###   FINISHED building ConvCores! \n";
+        cout << "      FINISHED building ConvCores! \n";
 
         // Add all ConvCore-outputs for each OUTPUT-feature up and round back to original word size (while doing that, also create validData_o-signals because we need them anyways)
-        cout << "###   Building Adder Trees for each outFeature \n";
+        cout << "      Building Adder Trees for each outFeature \n";
         this->buildAdderTrees(target);
-        cout << "###   FINISHED building Adder Trees \n";
+        cout << "      FINISHED building Adder Trees \n";
 
         // delay finished-signal and validData-signal for x cycles, with x=maxNumberOfPipelineStages(all AdderTrees) and assign outputs
-        cout << "###   building flag signals \n";
+        cout << "      building flag signals \n";
         vhdl << "finished <= finished_tmp;" << endl;
 
         for(int featureCounter=0; featureCounter<myArguments->getNumberOfOutputFeatures(); featureCounter++)
@@ -402,7 +402,7 @@ namespace flopoco {
         }
 
         // activation function (atm only ReLU is supported)
-        cout << "###   building activation function \n";
+        cout << "      building activation function \n";
         this->buildActivationFunction(target);
     }
 

@@ -45,7 +45,7 @@ namespace flopoco {
         map <string, Layer*> buildAllLayers(Target* target, Operator* globalOp);
         Layer* buildSpecificLayer(Target* target, string nameOfThisLayer);
 
-        void buildAllEdges(Target* target, map<string, Layer*> &layerPtrs);
+        void buildAllEdges(Target* target, map<string, Layer*> *layerPtrs);
         void buildSpecificEdge(Target* target, string from, string to, Layer* fromOp, Layer* toOp);
         void checkEdges();
         void checkConnection(Layer* from, Layer* to);
@@ -59,7 +59,7 @@ namespace flopoco {
         Layer* buildOutput(Target* target, string lastLayerName, Layer* lastLayer);
         Operator* buildGlobalController(Target* target);
 
-        void instEverything(map<string, Layer*> &instMe, Operator* globalOp);
+        void instEverything(map<string, Layer*> *instMe, Operator* globalOp);
 	};
 
 

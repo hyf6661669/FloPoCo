@@ -30,7 +30,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "A fraction can't be smaller than 0";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
         //throw error if the number of weights isn't correct
         unsigned int numberOfNeurons=size*size;
@@ -38,7 +38,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "The number of weights is not equal to the number of neurons in that layer";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
 
         // author
@@ -155,7 +155,7 @@ namespace flopoco {
             {
                 stringstream e;
                 e << "Error while rounding, requested fraction is bigger than actual fraction! This should normally not happen";
-                THROWERROR(e);
+                THROWERROR(e.str());
             }
 
         }

@@ -74,10 +74,11 @@ namespace flopoco {
         Operator* globalOp = buildGlobalController(target);
         cout << "###        GLOBAL CONTROLLER BUILT!" << endl;
         map<string, Layer*> l = buildAllLayers(target,globalOp);
+        map<string, Layer*> * lP = &l;
         cout << "###        LAYERS BUILT!" << endl;
-        buildAllEdges(target,l);
+        buildAllEdges(target,lP);
         cout << "###        CONNECTIONS BUILT!" << endl;
-        instEverything(l,globalOp);
+        instEverything(lP,globalOp);
         cout << "###        VHDL CODE READY!" << endl;
     }
 
@@ -89,16 +90,29 @@ namespace flopoco {
         {
             cout << "###            BUILDING LAYER '" << it.first << "' NOW!" << endl;
             it.second->printLayerArguments();
-            Layer* op=buildSpecificLayer(target, it.first);
-            addSubComponent(op);
+            if(it.second->getLayerType()!="Input" && it.second->getLayerType()!="Output")
+            {
+                Layer* op=buildSpecificLayer(target, it.first);
+                addSubComponent(op);
 
-            inPortMap(op,"newStep","newStep");
-            outPortMap(op,"finished","finished_"+to_string(globalOpPortCounter),true);
+                inPortMap(op,"newStep","newStep");
+                cout << "### Bop1" << endl;
+                string tmp = "finished_"+to_string(globalOpPortCounter);
+                declare(tmp,1);
+                outPortMap(op,"finished",tmp,false);
 
-            inPortMap(globalOp,"finished_"+to_string(globalOpPortCounter),"finished_"+to_string(globalOpPortCounter));
-            globalOpPortCounter++;
+                //////////////////////////////////IS THAT SMART?//////////////////////////////////////
+                //this->syncCycleFromSignal("finished_"+to_string(globalOpPortCounter));
+                //////////////////////////////////////////////////////////////////////////////////////
 
-            returnMe[it.first]=op;
+                cout << "### Bop2" << endl;
+
+                inPortMap(globalOp,tmp,tmp);
+                cout << "### Bop3" << endl;
+                globalOpPortCounter++;
+
+                returnMe[it.first]=op;
+            }
         }
         return returnMe;
     }
@@ -110,7 +124,7 @@ namespace flopoco {
         cout << "###            GOT LAYER ARGUMENTS" << endl;
         string layerT = lA->getLayerType();
         cout << "###            LAYER TYPE: '" << layerT << "'" << endl;
-        Layer* lay;
+        Layer* lay=nullptr;
         if(layerT=="Input" || layerT=="Output")
         {
             cout << "###            Input/Output detected!" << endl;
@@ -136,12 +150,13 @@ namespace flopoco {
             stringstream e;
             e << "Undefined Layer Type '" << layerT << "'!";
             cout << e << endl;
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
+        cout << "###            IN FUNCTION 'buildSpecificLayer', END. RETURNING LAYER NOW" << endl;
         return lay;
     }
 
-    void NeuralNetwork::buildAllEdges(Target* target, map<string, Layer*> &layerPtrs)
+    void NeuralNetwork::buildAllEdges(Target* target, map<string, Layer*> *layerPtrs)
     {
         // check edges for errors
         this->checkEdges();
@@ -151,18 +166,18 @@ namespace flopoco {
             // this only works that way under the assumption that there is no NN, that has input and output directly connected!
             if(this->layerArgs[it.first]->getLayerType()=="Input")
             {
-                Layer* in = this->buildInput(target, it.second, layerPtrs[it.second]);
-                layerPtrs["Input"]=in;
+                Layer* in = this->buildInput(target, it.second, (*layerPtrs)[it.second]);
+                (*layerPtrs)["Input"]=in;
             }
             else if(this->layerArgs[it.second]->getLayerType()=="Output")
             {
-                Layer* out = this->buildOutput(target, it.first, layerPtrs[it.first]);
-                layerPtrs["Output"]=out;
+                Layer* out = this->buildOutput(target, it.first, (*layerPtrs)[it.first]);
+                (*layerPtrs)["Output"]=out;
             }
             else
             {
                 //build a "normal" connection between 2 layers
-                buildSpecificEdge(target,it.first,it.second,layerPtrs[it.first],layerPtrs[it.second]);
+                buildSpecificEdge(target,it.first,it.second,(*layerPtrs)[it.first],(*layerPtrs)[it.second]);
             }
         }
     }
@@ -179,18 +194,36 @@ namespace flopoco {
             this->inPortMap(mem,"newStep","newStep");
 
             //connect fromLayer with memory block
-            this->outPortMap(fromOp,fromOp->getOutputSignalName(numIt),from+"_out_"+to_string(numIt));
-            this->inPortMap(mem,"data_i",from+"_out_"+to_string(numIt));
-            this->outPortMap(fromOp,"validData_o_"+to_string(numIt),from+"_validData_o_"+to_string(numIt));
-            this->inPortMap(mem,"validData_i",from+"_validData_o_"+to_string(numIt));
-            this->outPortMap(fromOp,"getNewData"+to_string(numIt),from+"_getNewData"+to_string(numIt));
-            this->inPortMap(mem,"getNewData",from+"_getNewData"+to_string(numIt));
+            string tmp;
+
+            tmp=from+"_out_"+to_string(numIt);
+            this->declare(tmp,fromOp->getWidthByPortName(fromOp->getOutputSignalName(numIt)));
+            this->outPortMap(fromOp,fromOp->getOutputSignalName(numIt),tmp,false);
+            this->inPortMap(mem,"data_i",tmp);
+
+            tmp=from+"_validData_o_"+to_string(numIt);
+            this->declare(tmp,fromOp->getWidthByPortName("validData_o_"+to_string(numIt)));
+            this->outPortMap(fromOp,"validData_o_"+to_string(numIt),tmp,false);
+            this->inPortMap(mem,"validData_i",tmp);
+
+
+
 
             //connect toLayer with memory block
-            this->outPortMap(mem,"validData_o",to+"_validData_i_"+to_string(numIt));
-            this->inPortMap(toOp,"validData_i_"+to_string(numIt),to+"_validData_i_"+to_string(numIt));
-            this->outPortMap(mem,"data_o",to+"_in_"+to_string(numIt));
-            this->inPortMap(toOp,toOp->getInputSignalName(numIt),to+"_in_"+to_string(numIt));
+            tmp=to+"_getNewData_"+to_string(numIt);
+            this->declare(tmp,toOp->getWidthByPortName("getNewData_"+to_string(numIt)));
+            this->outPortMap(toOp,"getNewData_"+to_string(numIt),tmp,false);
+            this->inPortMap(mem,"getNewData",tmp);
+
+            tmp=to+"_validData_i_"+to_string(numIt);
+            this->declare(tmp,toOp->getWidthByPortName("validData_i_"+to_string(numIt)));
+            this->outPortMap(mem,"validData_o",tmp,false);
+            this->inPortMap(toOp,"validData_i_"+to_string(numIt),tmp);
+
+            tmp=to+"_in_"+to_string(numIt);
+            this->declare(tmp,toOp->getWidthByPortName(toOp->getInputSignalName(numIt)));
+            this->outPortMap(mem,"data_o",tmp,false);
+            this->inPortMap(toOp,toOp->getInputSignalName(numIt),tmp);
 
             this->vhdl << instance(mem,"Memory_from_"+from+"_to_"+to+"_feature_"+to_string(numIt));
         }
@@ -205,13 +238,13 @@ namespace flopoco {
             {
                 stringstream e;
                 e << "Layer '" << edgeIt.first << "' does not exist!";
-                THROWERROR(e);
+                THROWERROR(e.str());
             }
             if(this->checkIfLayerExists(edgeIt.second)==false)
             {
                 stringstream e;
                 e << "Layer '" << edgeIt.second << "' in the edge-vector does not exist!";
-                THROWERROR(e);
+                THROWERROR(e.str());
             }
             ++inputCount[edgeIt.second];
 
@@ -219,7 +252,7 @@ namespace flopoco {
             {
                 stringstream e;
                 e << "Layer '" << edgeIt.second << "' has more than one input, that's not supported yet";
-                THROWERROR(e);
+                THROWERROR(e.str());
             }
         }
     }
@@ -231,7 +264,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "Layer '" << from << "' has " << from->myArguments->getNumberOfOutputFeatures() << " output features and layer '" << to << "' has " << to->myArguments->getInputDepth() << " input features";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
 
         // data width
@@ -239,7 +272,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "Layer '" << from << "' has word size " << from->myArguments->getWordSize() << "  and layer '" << to << "' has word size " << to->myArguments->getWordSize();
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
 
         // fraction
@@ -247,7 +280,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "Layer '" << from << "' has fraction " << from->myArguments->getFraction() << "  and layer '" << to << "' has fraction " << to->myArguments->getFraction();
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
     }
 
@@ -274,7 +307,7 @@ namespace flopoco {
 //                                                           args->getInputDepth(),args->getConvWeights(),args->getWeightWordSize(),args->getWeightFraction(),args->getPadding(),args->getPaddingType(),false,
 //                                                           false,args->getId());
         //this->instMe[convL]=convLayer;
-        cout << "###                LAYER BUILT!" << endl;
+        cout << "###                LAYER '" << convLayer << "' BUILT!" << endl;
 
         return convL;
     }
@@ -300,7 +333,7 @@ namespace flopoco {
     {
         int inputFeatures = nextLayer->myArguments->getInputDepth();
         int wordSize = nextLayer->myArguments->getWordSize();
-        int addressWidth = ceil(nextLayer->myArguments->getInputHeight()*nextLayer->myArguments->getInputWidth());
+        int addressWidth = ceil(log2(nextLayer->myArguments->getInputHeight()*nextLayer->myArguments->getInputWidth()));
         Layer* inputLayer = new InputLayer(target,inputFeatures,wordSize,addressWidth);
         this->addSubComponent(inputLayer);
         this->inPortMap(inputLayer,"newStep","newStep");
@@ -315,18 +348,28 @@ namespace flopoco {
             this->inPortMap(inputLayer,"validData_i_"+to_string(i),"validData_i_"+to_string(i));
             this->inPortMap(inputLayer,"newDataSet_"+to_string(i),"newDataSet_"+to_string(i));
 
-            this->outPortMap(inputLayer,inputLayer->getOutputSignalName(i),nextLayerName+"_"+to_string(i));
-            this->inPortMap(nextLayer,nextLayer->getInputSignalName(i),nextLayerName+"_"+to_string(i));
-            this->outPortMap(inputLayer,"validData_o_"+to_string(i),nextLayerName+"_validData_i_"+to_string(i));
-            this->inPortMap(nextLayer,"validData_i_"+to_string(i),nextLayerName+"_validData_i_"+to_string(i));
-            this->outPortMap(nextLayer,"getNewData_"+to_string(i),nextLayerName+"_getNewData_"+to_string(i));
-            this->inPortMap(inputLayer,"getNewData_"+to_string(i),nextLayerName+"_getNewData_"+to_string(i));
+            string tmp;
+            tmp=nextLayerName+"_"+to_string(i);
+            this->declare(tmp,nextLayer->getWidthByPortName(nextLayer->getInputSignalName(i)));
+            this->outPortMap(inputLayer,inputLayer->getOutputSignalName(i),tmp,false);
+            this->inPortMap(nextLayer,nextLayer->getInputSignalName(i),tmp);
+
+            tmp=nextLayerName+"_validData_i_"+to_string(i);
+            this->declare(tmp,nextLayer->getWidthByPortName("validData_i_"+to_string(i)));
+            this->outPortMap(inputLayer,"validData_o_"+to_string(i),tmp,false);
+            this->inPortMap(nextLayer,"validData_i_"+to_string(i),tmp);
+
+            tmp=nextLayerName+"_getNewData_"+to_string(i);
+            this->declare(tmp,nextLayer->getWidthByPortName("getNewData_"+to_string(i)));
+            this->outPortMap(nextLayer,"getNewData_"+to_string(i),tmp,false);
+            this->inPortMap(inputLayer,"getNewData_"+to_string(i),tmp);
         }
         return inputLayer;
     }
 
     Layer* NeuralNetwork::buildOutput(Target* target, string lastLayerName, Layer* lastLayer)
     {
+        cout << "### BUILDING OUTPUT NOW" << endl;
         int howMany = lastLayer->myArguments->getNumberOfOutputFeatures();
         int wordSize = lastLayer->myArguments->getWordSize();
         Layer* outputLayer = new OutputLayer(target,howMany,wordSize);
@@ -335,12 +378,23 @@ namespace flopoco {
 
         for(int i=0;i<howMany;i++)
         {
-            outPortMap(lastLayer,lastLayer->getOutputSignalName(i),lastLayerName+"_"+to_string(i));
-            inPortMap(outputLayer,outputLayer->getInputSignalName(i),lastLayerName+"_"+to_string(i));
-            addOutput("Data_o_"+to_string(i),wordSize);
-            outPortMap(outputLayer,outputLayer->getOutputSignalName(i),"Data_o_"+to_string(i),false);
-            outPortMap(lastLayer,"validData_o_"+to_string(i),lastLayerName+"_validData_o_"+to_string(i));
-            inPortMap(outputLayer,"validData_i_"+to_string(i),lastLayerName+"_validData_o_"+to_string(i));
+            cout << "### i=" << i << endl;
+            string tmp;
+            tmp=lastLayerName+"_"+to_string(i);
+            this->declare(tmp,lastLayer->getWidthByPortName(lastLayer->getOutputSignalName(i)));
+            outPortMap(lastLayer,lastLayer->getOutputSignalName(i),tmp,false);
+            inPortMap(outputLayer,outputLayer->getInputSignalName(i),tmp);
+
+            tmp="Data_o_"+to_string(i);
+            cout << "### Adding Output '" << tmp << "'" << endl;
+            //this->declare(tmp,outputLayer->getWidthByPortName(outputLayer->getOutputSignalName(i)));
+            addOutput(tmp,outputLayer->getWidthByPortName(outputLayer->getOutputSignalName(i)));
+            outPortMap(outputLayer,outputLayer->getOutputSignalName(i),tmp,false);
+
+            tmp=lastLayerName+"_validData_o_"+to_string(i);
+            this->declare(tmp,lastLayer->getWidthByPortName("validData_o_"+to_string(i)));
+            outPortMap(lastLayer,"validData_o_"+to_string(i),tmp,false);
+            inPortMap(outputLayer,"validData_i_"+to_string(i),tmp);
         }
         return outputLayer;
     }
@@ -358,13 +412,16 @@ namespace flopoco {
         return glob;
     }
 
-    void NeuralNetwork::instEverything(map<string, Layer*> &instMe, Operator* globalOp)
+    void NeuralNetwork::instEverything(map<string, Layer*> *instMe, Operator* globalOp)
     {
-        for(auto it : instMe)
+        for(auto it : (*instMe))
         {
+            cout << "### instantiating '" << it.first << "' now" << endl;
+            if(it.second==nullptr) cout << "### FUCK THAT SHIT" << endl;
             this-> vhdl << instance(it.second, it.first+"_instance");
         }
 
+        cout << "### instantiating 'GlobalController' now"  << endl;
         this->vhdl << instance(globalOp, "GlobalController_instance");
     }
 

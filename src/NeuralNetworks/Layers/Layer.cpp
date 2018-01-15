@@ -59,5 +59,21 @@ void Layer::generateVHDLCode(Target* target)
     cout << "Layer.generateVHDLCode: this should never be called" << endl;
 }
 
+int flopoco::Layer::getWidthByPortName(string name)
+{
+    vector<flopoco::Signal*>* ioL = this->getIOList();
+    for(auto it : (*ioL))
+    {
+        if(it->getName()==name)
+        {
+            return it->width();
+        }
+    }
+    stringstream e;
+    e << "Port with name '" << name << "' does not exist in this Layer!";
+    THROWERROR(e.str());
+    return -1;
+}
+
 	
 }//namespace flopoco

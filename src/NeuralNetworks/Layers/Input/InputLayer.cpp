@@ -54,7 +54,7 @@ namespace flopoco {
             declare("writeFlag_"+to_string(i),1);
 
             // small FSM to wait for a valid input frame
-            typeStream << "signal state" << i << ": state_t;" << endl;
+            typeStream << "signal state" << i << ": state_t" << endl;
 
             // one BRAM
             BlockRam* bram = new BlockRam(target,wordSize,bramAddressWidth);
@@ -63,7 +63,7 @@ namespace flopoco {
             inPortMap(bram,"Address_R_in",declare("ReadAddress_"+to_string(i),bramAddressWidth+1));
             inPortMap(bram,"Data_in","X_"+to_string(i));
             inPortMap(bram,"WriteEnable","validData_i_"+to_string(i));
-            outPortMap(bram,"Data_out",declare("bramRead_"+to_string(i)));
+            outPortMap(bram,"Data_out","bramRead_"+to_string(i));
             vhdl << instance(bram,"BlockRam_"+to_string(i));
         }
         addType("state_t", typeStream.str());

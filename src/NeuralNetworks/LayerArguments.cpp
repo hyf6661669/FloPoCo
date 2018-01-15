@@ -27,7 +27,7 @@ namespace flopoco
         this->paddingBot = -1;
         this->paddingLeft = -1;
         this->paddingRight = -1;
-        this->paddingType = "";
+        this->paddingType = "No Padding";
         this->inputFeaturesParallel = false;
         this->outputFeaturesParallel = false;
         this->activationFunction = "No Activation Function";

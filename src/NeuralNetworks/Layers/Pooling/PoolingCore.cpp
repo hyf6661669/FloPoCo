@@ -27,7 +27,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "Only window sizes of 2 or more are supported";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
 
         // author

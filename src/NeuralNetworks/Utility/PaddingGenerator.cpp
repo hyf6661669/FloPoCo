@@ -28,20 +28,20 @@ namespace flopoco {
         {
             stringstream e;
             e << "stride < 0 is not supported!";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
         if(padTop<0)
         {
             stringstream e;
             e << "Padding < 0 is not supported!";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
         cout << "### 1" << endl;
         if(windowSize==1)
         {
             stringstream e;
             e << "Window size=1 is not supported!";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
         cout << "### 2" << endl;
 
@@ -78,7 +78,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "Can't pad more than windowSize/2!";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
 
         cout << "### 6" << endl;
@@ -650,7 +650,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "Invalid Padding Type!";
-            THROWERROR(e);
+            THROWERROR(e.str());
         }
     }
 

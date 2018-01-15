@@ -40,7 +40,7 @@ namespace flopoco {
 
             //declare("X_temp_"+to_string(i),wordSize);
 
-            this->vhdl << tab << "Feature1 : process(clk)" << endl
+            this->vhdl << tab << "Feature" << i << " : process(clk)" << endl
                        << tab << "begin" << endl
                        << tab << tab << "if(rising_edge(clk)) then" << endl
                        << tab << tab << tab << "if(rst='1' or newStep=\"1\") then" << endl

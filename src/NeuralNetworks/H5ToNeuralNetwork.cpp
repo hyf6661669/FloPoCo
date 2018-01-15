@@ -91,7 +91,7 @@ namespace flopoco {
         lA1->setInputFeaturesParallel(true);
         lA1->setOutputFeaturesParallel(true);
         lA1->setCoreSize(5);
-        lA1->setConvWeights(H5ToNeuralNetwork::getRandomWeights(lA1->getInputDepth(),lA1->getNumberOfOutputFeatures(),lA1->getCoreSize()*lA1->getCoreSize(),0,(1<<lA1->getWeightWordSize()),lA1->getWeightFraction()));
+        lA1->setConvWeights(H5ToNeuralNetwork::getRandomWeights(lA1->getInputDepth(),lA1->getNumberOfOutputFeatures(),lA1->getCoreSize()*lA1->getCoreSize(),lA1->getWeightWordSize(),lA1->getWeightFraction()));
         lA1->setPadding(2);
         lA1->setPaddingType("Value");
         lA1->setStride(1);
@@ -114,7 +114,7 @@ namespace flopoco {
         lA2->setInputFeaturesParallel(true);
         lA2->setOutputFeaturesParallel(true);
         lA2->setCoreSize(3);
-        lA2->setConvWeights(H5ToNeuralNetwork::getRandomWeights(lA2->getInputDepth(),lA2->getNumberOfOutputFeatures(),lA2->getCoreSize()*lA2->getCoreSize(),0,(1<<lA2->getWeightWordSize()),lA2->getWeightFraction()));
+        lA2->setConvWeights(H5ToNeuralNetwork::getRandomWeights(lA2->getInputDepth(),lA2->getNumberOfOutputFeatures(),lA2->getCoreSize()*lA2->getCoreSize(),lA2->getWeightWordSize(),lA2->getWeightFraction()));
         lA2->setPadding(1);
         lA2->setPaddingType("Value");
         lA2->setStride(1);
@@ -202,19 +202,20 @@ namespace flopoco {
                     );
     }
 
-    vector<vector<vector<double> > > H5ToNeuralNetwork::getRandomWeights(int a, int b, int c, int min, int max, int fractionalPart)
+    vector<vector<vector<double> > > H5ToNeuralNetwork::getRandomWeights(int a, int b, int c, int wordSize, int fractionalPart)
     {
-        if(max-min<=0)
+        cout << "### Building Random Weights now: returning vector[" << a << "][" << b << "][" << c << "]" << endl;
+        if(wordSize>=31 || wordSize<0)
         {
             stringstream e;
-            e << "Max<Min!";
-            THROWERROR(e);
+            e << "Invalid Word Size";
+            THROWERROR(e.str());
         }
-        if(fractionalPart>=31)
+        if(fractionalPart>=31 || fractionalPart<0)
         {
             stringstream e;
-            e << "Fractional Part too big!";
-            THROWERROR(e);
+            e << "Invalid Fractional Part!";
+            THROWERROR(e.str());
         }
         vector<vector<vector<double>>> level3;
         srand(time(0));
@@ -226,21 +227,20 @@ namespace flopoco {
                 vector<double> level1;
                 for(int d=0;d<c;d++)
                 {
-                    int upperBound=rand()%max;
-                    int lowerBound;
-                    if(min>0)
-                    {
-                        lowerBound=rand()%min;
-                    }
-                    else
-                    {
-                        min=0;
-                    }
-                    int randNum=upperBound-lowerBound;
-                    int upperBoundForScalingFactor=(1<<fractionalPart)-1;
-                    int scalingFactor = rand()%upperBoundForScalingFactor+1;
-                    float weight = ((float)randNum)/((float)scalingFactor);
+                    //int randNum;
+                    int range=(1<<wordSize);
+                    int randNum=rand()%range; // interval: [0, 2^wordSize)
+                    int splitRange=(1<<(wordSize-1));
+                    randNum=randNum-splitRange; // interval: [2^(wordSize-1), 2^(wordSize-1))
+                    //randNum=randRange-min;
+                    //int upperBoundForScalingFactor=(1<<fractionalPart);
+                    //int scalingFactor = (rand()%upperBoundForScalingFactor)+1; // interval: [1, 2^fractionalPart]
+                    float weight = ((float)randNum)/((float)(1<<fractionalPart)); // interval: [2^(wordSize-1)*2^fractionalPart, 2^(wordSize-1)*2^fractionalPart)
+                    //weight=weight-(float)min; // interval: [min, max)
                     level1.push_back(weight);
+                    float min = -1*((float)(1<<(wordSize-1))/((float)(1<<fractionalPart)));
+                    float max = ((float)((1<<(wordSize-1))-1))/((float)(1<<fractionalPart));
+                    cout << "### range: " << range << ", min: " << min << "; max: " << max << "; weight: " << weight << endl;
                 }
                 level2.push_back(level1);
             }

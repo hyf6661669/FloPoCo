@@ -48,7 +48,7 @@ namespace flopoco {
 
 	private:
 		string pathToH5;
-        vector<vector<vector<double>>> getRandomWeights(int a, int b, int c, int min, int max, int fractionalPart);
+        vector<vector<vector<double>>> getRandomWeights(int a, int b, int c, int wordSize, int fractionalPart);
 	};
 
 

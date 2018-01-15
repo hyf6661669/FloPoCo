@@ -37,6 +37,8 @@ namespace flopoco {
 //        string layerType;
 
         LayerArguments* myArguments;
+
+        int getWidthByPortName(string name);
 		
         virtual string getOutputSignalName(int feature);
         virtual string getInputSignalName(int feature);

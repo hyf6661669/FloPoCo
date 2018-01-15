@@ -35,12 +35,17 @@ namespace flopoco {
 		useNumericStd_Signed();
 
 		//determine the MSB and the LSb for the internal computations
-		msbInt = max(3, msbW, msbX, msbD);
-		lsbInt = min(3, lsbW, lsbX, lsbD);
+		msbInt = maxInt(3, msbW, msbX, msbD);
+		lsbInt = minInt(3, lsbW, lsbX, lsbD);
 
-		//determine the MSB and the LSb for the DiMultX signals
-		msbDiMX = msbX+intlog2(maxDigit);
+		REPORT(DEBUG, "using internal format: msbInt=" << msbInt << ", lsbInt=" << lsbInt);
+
+		//determine the MSB and the LSB for the DiMultX signals
+		msbDiMX = msbX+(int)ceil(log2(maxDigit));
 		lsbDiMX = lsbX;
+
+		REPORT(DEBUG, "using the following format for the DiMultX signals: msbDiMX="
+				<< msbDiMX << ", lsbDiMX=" << lsbDiMX);
 
 		//create the inputs and the output
 		//	the inputs
@@ -52,22 +57,30 @@ namespace flopoco {
 		//	the inputs for D_{i+1}[j-1]*X
 		for(int i=(-maxDigit); i<=maxDigit; i++)
 		{
-			addFixInput(join("X_Mult_", vhdlize(i)), true, msbX+intlog2(maxDigit), lsbX);
+			addFixInput(join("X_Mult_", vhdlize(i)), true, msbDiMX, lsbDiMX);
 		}
 		// the outputs
 		addFixOutput("Wi_next", true, msbInt, lsbInt);
 
 		//create the bitheap
-		bitheap = new BitHeap(this, msbInt-lsbInt, false, join("Bitheap_"+name.str()+"_", getNewUId()));
+		REPORT(DEBUG, "creating the bitheap");
+		bitheap = new BitHeap(
+								this,											// parent operator
+								msbInt-lsbInt+1,								// maximum weight
+								false, 											// enable supertiles
+								join("Bitheap_"+name.str()+"_", getNewUId())	// bitheap name
+								);
 
 		//add W_i[j-1] to the bitheap
+		REPORT(DEBUG, "add W_i[j-1] to the bitheap");
 		bitheap->addSignedBitVector(
-									msbW-msbInt,					//weight
+									lsbW-lsbInt,					//weight
 									"Wi",							//input signal name
 									msbW-lsbW+1						//size
 									);
 
 		//create the multiplication D_0[j-1] * (-1)*q_i
+		REPORT(DEBUG, "create the multiplication D_0[j-1] * (-1)*q_i");
 		FixRealKCM *constMult = new FixRealKCM(
 												this,				//parent operator
 												"D0",				//input signal name
@@ -80,11 +93,13 @@ namespace flopoco {
 												1.0					//target ulp error
 												);
 		//add the result of the multiplication to the bitheap
+		REPORT(DEBUG, "add the result of the multiplication to the bitheap");
 		constMult->addToBitHeap(bitheap, 0);
 
 		//subtract D_i[j-1]
+		REPORT(DEBUG, "subtract D_i[j-1]");
 		bitheap->subtractSignedBitVector(
-										msbD-msbInt,				//weight
+										lsbD-lsbInt,				//weight
 										"Di",						//input signal name
 										msbD-lsbD+1					//size
 										);
@@ -93,6 +108,7 @@ namespace flopoco {
 		//	not actual multiplication is done here, as we're multiplying by a digit
 		//	instead, all the possible products are generated upstream
 		//	and here we only have to choose which one to add
+		REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");
 		vhdl << tab << declareFixPoint("Dip1_Mult_X", true, msbX+intlog2(maxDigit), lsbX) << " <= " << endl;
 		for(int i=(-maxDigit); i<=maxDigit; i++)
 		{
@@ -107,10 +123,11 @@ namespace flopoco {
 		}
 		vhdl << tab << tab << "(others => '-');" << endl;
 		//	add the result of the selection to the bitheap
+		REPORT(DEBUG, "add the result of the selection to the bitheap");
 		bitheap->addSignedBitVector(
-									msbD-msbInt,					//weight
+									lsbDiMX-lsbInt,					//weight
 									"Dip1_Mult_X",					//input signal name
-									msbD-lsbD+1						//size
+									msbDiMX-lsbDiMX+1				//size
 									);
 
 		//compress the bitheap
@@ -245,7 +262,7 @@ namespace flopoco {
 		UserInterface::parseInt(args, "lsbX", &lsbX);
 		UserInterface::parseInt(args, "msbD", &msbD);
 		UserInterface::parseInt(args, "lsbD", &lsbD);
-		UserInterface::parseString(args, "qi", &qi);
+		UserInterface::parseString(args, "q_i", &qi);
 
 		Signal *W  = new Signal("W", Signal::wire, true, msbW, lsbW);
 		Signal *X  = new Signal("X", Signal::wire, true, msbX, lsbX);

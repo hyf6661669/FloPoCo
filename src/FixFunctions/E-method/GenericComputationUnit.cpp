@@ -139,7 +139,9 @@ namespace flopoco {
 				bitheap->getSumName() << range(msbInt-lsbInt, 0) << ");" << endl;
 
 		REPORT(DEBUG, "write to the output");
-		vhdl << tab << "Wi_next <= sum;" << endl;
+		// multiply by radix, a constant shift by radix positions to the left
+		vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt-ceil(log2(radix)), 0)
+				<< " & " << zg(ceil(log2(radix))) << ";" << endl;
 	}
 
 
@@ -238,6 +240,9 @@ namespace flopoco {
 		//	scale XMultDip1 appropriately, by the amount given by lsbDiMX
 		mpfr_mul_2si(mpTmp, mpTmp, lsbDiMX, GMP_RNDN);
 		mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
+
+		//multiply by radix
+		mpfr_mul_si(mpSum, mpSum, radix, GMP_RNDN);
 
 		//scale the result back to an integer
 		mpfr_mul_2si(mpSum, mpSum, -lsbInt, GMP_RNDN);

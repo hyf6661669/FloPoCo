@@ -149,7 +149,7 @@ namespace flopoco {
         {
             stringstream e;
             e << "Undefined Layer Type '" << layerT << "'!";
-            cout << e << endl;
+            cout << e.str() << endl;
             THROWERROR(e.str());
         }
         cout << "###            IN FUNCTION 'buildSpecificLayer', END. RETURNING LAYER NOW" << endl;

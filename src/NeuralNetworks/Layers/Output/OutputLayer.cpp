@@ -46,7 +46,7 @@ namespace flopoco {
                        << tab << tab << tab << "if(rst='1' or newStep=\"1\") then" << endl
                        << tab << tab << tab << tab << "R_" << i << " <= (others => '0');" << endl
                        << tab << tab << tab << "else" << endl
-                       << tab << tab << tab << tab << "if(valid_data_i_" << i << "='1') then" << endl
+                       << tab << tab << tab << tab << "if(validData_i_" << i << "=\"1\") then" << endl
                        << tab << tab << tab << tab << tab << "R_" << i << " <= X_" << i << ";" << endl
                        << tab << tab << tab << tab << "end if;" << endl
                        << tab << tab << tab << "end if;" << endl

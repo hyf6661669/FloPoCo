@@ -199,7 +199,7 @@ namespace flopoco {
                 vhdl << instance(relOp, "reluInstance_"+to_string(outFC));
 
                 vhdl << "R_" << outFC << " <= reluOut_" << outFC << ";" << endl
-                     << "validData_o" << outFC << " <= validData_temp;" << endl;
+                     << "validData_o_" << outFC << " <= validData_temp;" << endl;
             }
         }
         else
@@ -207,7 +207,7 @@ namespace flopoco {
             for(int outFC=0; outFC<forLimit; outFC++)
             {
                 vhdl << "R_" << outFC << " <= poolOut_" << outFC << ";" << endl
-                     << "validData_o" << outFC << " <= validData_temp;" << endl;
+                     << "validData_o_" << outFC << " <= validData_temp;" << endl;
             }
         }
     }

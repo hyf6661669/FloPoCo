@@ -245,7 +245,7 @@ namespace flopoco {
                  << tab << "end if;" << endl
                  << "end process;" << endl;
 
-            vhdl << "process(vcount,hcount,strideCounterH,strideCounterV)" << endl
+            vhdl << "process(vcount,hcount" << ((this->strideH>1)?(",strideCounterH"):"") <<  ((this->strideV>1)?(",strideCounterV"):"") << ")" << endl
                  << "begin" << endl
                  << tab << "if(((unsigned(vcount)=" << firstValidOutputV << " and unsigned(hcount)>=" << firstValidOutputH << ") or (unsigned(vcount)>" << firstValidOutputV << " and " << "unsigned(vcount)<" << lastValidOutputV << " and (unsigned(hcount)>=" << firstValidOutputH << " or unsigned(hcount)<=" << lastValidOutputH << ")) or (unsigned(vcount)=" << lastValidOutputV << " and unsigned(hcount)<=" << lastValidOutputH << "))" << (strideH>1?" and unsigned(strideCounterH)=0":"") << (strideV>1?" and unsigned(strideCounterV)=0":"") << ") then" << endl
                  << tab << tab << "validData_o <= \"1\";" << endl

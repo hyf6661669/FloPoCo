@@ -15,7 +15,7 @@
 #include "ConvolutionalCoreSimple.hpp"
 
 #include "IntAddSubCmp/IntAdderTree.hpp"
-#include "Register.hpp"
+#include "NeuralNetworks/Utility/Register.hpp"
 
 using namespace std;
 namespace flopoco {

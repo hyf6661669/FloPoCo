@@ -54,7 +54,7 @@ namespace flopoco {
             declare("writeFlag_"+to_string(i),1);
 
             // small FSM to wait for a valid input frame
-            typeStream << "signal state" << i << ": state_t" << endl;
+            typeStream << "signal state" << i << ": state_t";
 
             // one BRAM
             BlockRam* bram = new BlockRam(target,wordSize,bramAddressWidth);
@@ -82,6 +82,7 @@ namespace flopoco {
         {
             vhdl << tab << tab << tab << "if(state" << i << "=waiting and newDataSet_" << i << "=\"1\") then" << endl
                  << tab << tab << tab << tab << "state" << i << " <= writing;" << endl
+                 << tab << tab << tab << tab << "writeFlag_" << i << " <= not writeFlag_" << i << ";" << endl
                  << tab << tab << tab << "end if;" << endl;
         }
         vhdl << tab << tab << "end if;" << endl
@@ -115,9 +116,11 @@ namespace flopoco {
         vhdl << tab << tab << tab << "else" << endl;
         for(unsigned int i=0;i<numberOfFeatures;i++)
         {
-            vhdl << tab << tab << tab << tab << "if(getNewData_" << i << "=\"1\") then" << endl
+            vhdl << tab << tab << tab << tab << "if(getNewData_" << i << "=\"1\" and state" << i << "=writing) then" << endl
                  << tab << tab << tab << tab << tab << "addressReadCounter_" << i << " <= std_logic_vector(unsigned(addressReadCounter_" << i << ")+1);" << endl
                  << tab << tab << tab << tab << tab << "validData_o_" << i << " <= \"1\";" << endl
+                 << tab << tab << tab << tab << "else" << endl
+                 << tab << tab << tab << tab << tab << "validData_o_" << i << " <= \"0\";" << endl
                  << tab << tab << tab << tab << "end if;" << endl;
         }
         vhdl << tab << tab << tab << "end if;" << endl;
@@ -126,7 +129,7 @@ namespace flopoco {
             vhdl << tab << tab << tab << "if(newDataSet_" << i << "=\"1\") then" << endl
                  << tab << tab << tab << tab << "addressWriteCounter_" << i << " <= (others => '0');" << endl
                  << tab << tab << tab << "else" << endl
-                 << tab << tab << tab << tab << "if(validData_i_" << i << "=\"1\" and state=writing) then" << endl
+                 << tab << tab << tab << tab << "if(validData_i_" << i << "=\"1\" and state" << i << "=writing) then" << endl
                  << tab << tab << tab << tab << tab << "addressWriteCounter_" << i << " <= std_logic_vector(unsigned(addressWriteCounter_" << i << ")+1);" << endl
                  << tab << tab << tab << tab << "end if;" << endl
                  << tab << tab << tab << "end if;" << endl;
@@ -137,8 +140,8 @@ namespace flopoco {
 
         for(unsigned int i=0;i<numberOfFeatures;i++)
         {
-            vhdl << "WriteAddress_" << i << " <= writeFlag & addressWriteCounter_" << i << ";" << endl;
-            vhdl << "ReadAddress_" << i << " <= (not writeFlag) & addressReadCounter_" << i << ";" << endl;
+            vhdl << "WriteAddress_" << i << " <= writeFlag_" << i << " & addressWriteCounter_" << i << ";" << endl;
+            vhdl << "ReadAddress_" << i << " <= (not writeFlag_" << i << ") & addressReadCounter_" << i << ";" << endl;
         }
 
         // Input/Output

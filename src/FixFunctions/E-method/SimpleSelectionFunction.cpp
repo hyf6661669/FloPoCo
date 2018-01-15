@@ -17,7 +17,7 @@ namespace flopoco {
 
 			srcFileName = "SimpleSelectionFunction";
 			name << "SimpleSelectionFunction_radix" << radix << "_msbIn_" << vhdlize(msbIn) << "_lsbIn_" << vhdlize(lsbIn);
-			setName(name.str());
+			setName(name.str()+"_uid"+vhdlize(getNewUId()));
 
 			//safety checks
 			if(maxDigit < 0)

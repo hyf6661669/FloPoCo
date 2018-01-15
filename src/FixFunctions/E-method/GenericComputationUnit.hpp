@@ -95,6 +95,9 @@ namespace flopoco {
 		int msbInt;                           /**< MSB used for the internal computations */
 		int lsbInt;                           /**< LSB used for the internal computations */
 
+		int msbDiMX;                          /**< MSB used of the DiMultX signals */
+		int lsbDiMX;                          /**< LSB used of the DiMultX signals */
+
 		string qi;                            /**< the q_i coefficient */
 
 		BitHeap *bitheap;                     /**< the bitheap used for the computations */

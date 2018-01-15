@@ -22,7 +22,7 @@ namespace flopoco {
 		srcFileName = "GenericComputationUnit";
 		name << "GenericComputationUnit_radix" << radix << "_index_" << index
 				<< "_qi_" << std::setprecision(5) << qi << "_msbIn_" << vhdlize(msbW) << "_lsbIn_" << vhdlize(lsbW);
-		setName(name.str());
+		setName(name.str()+"_uid"+vhdlize(getNewUId()));
 
 		//safety checks
 		if((radix != 2) && (radix != 4) && (radix != 8))
@@ -38,6 +38,10 @@ namespace flopoco {
 		msbInt = max(3, msbW, msbX, msbD);
 		lsbInt = min(3, lsbW, lsbX, lsbD);
 
+		//determine the MSB and the LSb for the DiMultX signals
+		msbDiMX = msbX+intlog2(maxDigit);
+		lsbDiMX = lsbX;
+
 		//create the inputs and the output
 		//	the inputs
 		addFixInput("Wi", true, msbW, lsbW);
@@ -47,7 +51,9 @@ namespace flopoco {
 		addFixInput("X", true, msbX, lsbX);
 		//	the inputs for D_{i+1}[j-1]*X
 		for(int i=(-maxDigit); i<=maxDigit; i++)
+		{
 			addFixInput(join("X_Mult_", vhdlize(i)), true, msbX+intlog2(maxDigit), lsbX);
+		}
 		// the outputs
 		addFixOutput("Wi_next", true, msbInt, lsbInt);
 
@@ -131,16 +137,23 @@ namespace flopoco {
 		mpz_class svDi   = tc->getInputValue("Di");
 		mpz_class svDip1 = tc->getInputValue("Dip1");
 		mpz_class svX    = tc->getInputValue("X");
+		mpz_class svXMultDip1[2*maxDigit+1];
+		for(int i=(-maxDigit); i<=maxDigit; i++)
+		{
+			svXMultDip1[i+maxDigit] = tc->getInputValue(join("X_Mult_", vhdlize(i)));
+		}
 
 		//manage signed digits
-		mpz_class big1W    = (mpz_class(1) << (msbW-lsbW+1));
-		mpz_class big1Wp   = (mpz_class(1) << (msbW-lsbW));
-		mpz_class big1D    = (mpz_class(1) << radix);
-		mpz_class big1Dp   = (mpz_class(1) << (radix-1));
-		mpz_class big1X    = (mpz_class(1) << (msbX-lsbX+1));
-		mpz_class big1Xp   = (mpz_class(1) << (msbX-lsbX));
-		mpz_class big1out  = (mpz_class(1) << (msbInt-lsbInt+1));
-		mpz_class big1outp = (mpz_class(1) << (msbInt-lsbInt));
+		mpz_class big1W      = (mpz_class(1) << (msbW-lsbW+1));
+		mpz_class big1Wp     = (mpz_class(1) << (msbW-lsbW));
+		mpz_class big1D      = (mpz_class(1) << radix);
+		mpz_class big1Dp     = (mpz_class(1) << (radix-1));
+		mpz_class big1X      = (mpz_class(1) << (msbX-lsbX+1));
+		mpz_class big1Xp     = (mpz_class(1) << (msbX-lsbX));
+		mpz_class big1Xmult  = (mpz_class(1) << (msbDiMX-lsbDiMX+1));
+		mpz_class big1Xmultp = (mpz_class(1) << (msbDiMX-lsbDiMX));
+		mpz_class big1out    = (mpz_class(1) << (msbInt-lsbInt+1));
+		mpz_class big1outp   = (mpz_class(1) << (msbInt-lsbInt));
 
 		//handle the signed inputs
 		if(svWi >= big1Wp)
@@ -153,35 +166,69 @@ namespace flopoco {
 			svDip1 -= big1D;
 		if(svX >= big1Xp)
 			svX -= big1X;
+		for(int i=(-maxDigit); i<=maxDigit; i++)
+		{
+			if(svXMultDip1[i+maxDigit] >= big1Xmultp)
+				svXMultDip1[i+maxDigit] -= big1Xmult;
+		}
 
 		// compute the multiple-precision output
-		mpz_class svW_next;
-		// round down
-		/*
-					if(abs(svW) <= ((radix-1)<<1))
-						svD = sgn(svW)*(abs(svW) + mpz_class(1)) >> 1;
-					else
-						svD = sgn(svW)*abs(svW) >> 1;
-		 */
-		// round to nearest
-		if(abs(svW) <= ((radix-1)<<1))
-			svD = (svW + mpz_class(1)) >> 1;
-		else
-			svD = sgn(svW)*abs(radix-1);
+		mpz_class svW_next, svW_nextRd, svW_nextRu;
+		mpfr_t mpW_next, mpSum, mpQi, mpTmp;
 
-		// limit the output digit to the allowed digit set
-		if(abs(svW) > maxDigit)
-			svD = sgn(svW) * mpz_class(maxDigit);
+		//initialize the variables
+		mpfr_inits2(10000, mpW_next, mpSum, mpQi, mpTmp, (mpfr_t)nullptr);
 
-		// manage two's complement at the output
-		if(svD < 0)
-			//svD += big1out;
-			svD += big1int;
-		//only use radix bits at the output
-		svD = svD & ((1<<radix)-1);
+		//initialize the sum
+		mpfr_set_zero(mpSum, 0);
+
+		//add W_i[j-1]
+		mpfr_set_z(mpTmp, svWi.get_mpz_t(), GMP_RNDN);
+		//	scale W_i appropriately, by the amount given by lsbW
+		mpfr_mul_2si(mpTmp, mpTmp, lsbW, GMP_RNDN);
+		mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
+
+		//subtract D_0[j-1]*q_i
+		//	parse q_i using Sollya
+		sollya_obj_t node;
+		node = sollya_lib_parse_string(qi.c_str());
+		/* If  parse error throw an exception */
+		if (sollya_lib_obj_is_error(node))
+		{
+			THROWERROR("emulate: Unable to parse string "<< qi << " as a numeric constant");
+		}
+		sollya_lib_get_constant(mpQi, node);
+		free(node);
+		// scale D_0 appropriately, by the amount given by lsbD
+		mpfr_set_z(mpTmp, svD0.get_mpz_t(), GMP_RNDN);
+		mpfr_mul_2si(mpTmp, mpTmp, lsbD, GMP_RNDN);
+		//	subtract from the sum
+		mpfr_mul(mpTmp, mpTmp, mpQi, GMP_RNDN);
+		mpfr_sub(mpSum, mpSum, mpTmp, GMP_RNDN);
+
+		//subtract D_i[j-1]
+		// scale D_i appropriately, by the amount given by lsbD
+		mpfr_set_z(mpTmp, svDi.get_mpz_t(), GMP_RNDN);
+		mpfr_mul_2si(mpTmp, mpTmp, lsbD, GMP_RNDN);
+		//	subtract from the sum
+		mpfr_sub(mpSum, mpSum, mpTmp, GMP_RNDN);
+
+		//add D_{i+1}[j-1]*X
+		// select the signal to add, depending on the value of Dip1
+		mpfr_set_z(mpTmp, svXMultDip1[svDip1.get_si()+maxDigit].get_mpz_t(), GMP_RNDN);
+		//	scale XMultDip1 appropriately, by the amount given by lsbDiMX
+		mpfr_mul_2si(mpTmp, mpTmp, lsbDiMX, GMP_RNDN);
+		mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
+
+		//scale the result back to an integer
+		mpfr_mul_2si(mpSum, mpSum, lsbInt, GMP_RNDN);
+
+		//round the result
+		mpfr_get_z(svW_nextRd.get_mpz_t(), mpSum, GMP_RNDD);
+		mpfr_get_z(svW_nextRu.get_mpz_t(), mpSum, GMP_RNDU);
 
 		// complete the TestCase with this expected output
-		tc->addExpectedOutput("D", svD);
+		tc->addExpectedOutput("W_next", svW_next);
 	}
 
 	OperatorPtr GenericComputationUnit::parseArguments(Target *target, std::vector<std::string> &args) {

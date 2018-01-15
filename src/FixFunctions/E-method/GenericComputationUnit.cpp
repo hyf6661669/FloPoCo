@@ -60,7 +60,7 @@ namespace flopoco {
 			addFixInput(join("X_Mult_", vhdlize(i)), true, msbDiMX, lsbDiMX);
 		}
 		// the outputs
-		addFixOutput("Wi_next", true, msbInt, lsbInt);
+		addFixOutput("Wi_next", true, msbInt, lsbInt, 2);
 
 		//create the bitheap
 		REPORT(DEBUG, "creating the bitheap");
@@ -82,15 +82,15 @@ namespace flopoco {
 		//create the multiplication D_0[j-1] * (-1)*q_i
 		REPORT(DEBUG, "create the multiplication D_0[j-1] * (-1)*q_i");
 		FixRealKCM *constMult = new FixRealKCM(
-												this,				//parent operator
-												"D0",				//input signal name
-												true,				//signedness
-												msbD,				//msbIn
-												lsbD,				//lsbIn
-												lsbInt,				//lsbOut
-												"(-1)*"+qi,			//constant
-												false,				//add round bit
-												1.0					//target ulp error
+												this,						//parent operator
+												"std_logic_vector(D0)",		//input signal name
+												true,						//signedness
+												msbD,						//msbIn
+												lsbD,						//lsbIn
+												lsbInt,						//lsbOut
+												"(-1)*"+qi,					//constant
+												false,						//add round bit
+												1.0							//target ulp error
 												);
 		//add the result of the multiplication to the bitheap
 		REPORT(DEBUG, "add the result of the multiplication to the bitheap");
@@ -109,7 +109,7 @@ namespace flopoco {
 		//	instead, all the possible products are generated upstream
 		//	and here we only have to choose which one to add
 		REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");
-		vhdl << tab << declareFixPoint("Dip1_Mult_X", true, msbX+intlog2(maxDigit), lsbX) << " <= " << endl;
+		vhdl << tab << declareFixPoint("Dip1_Mult_X", true, msbDiMX, lsbDiMX) << " <= " << endl;
 		for(int i=(-maxDigit); i<=maxDigit; i++)
 		{
 			mpz_class digitValue = i;
@@ -134,9 +134,11 @@ namespace flopoco {
 		bitheap->generateCompressorVHDL();
 
 		// Retrieve the bits we want from the bit heap
-		vhdl << declareFixPoint("sum", true, msbInt, lsbInt) << " <= " <<
-				bitheap->getSumName() << range(msbInt-lsbInt, 0) << ";" << endl;
+		REPORT(DEBUG, "Retrieve the bits we want from the bit heap");
+		vhdl << tab << declareFixPoint("sum", true, msbInt, lsbInt) << " <= signed(" <<
+				bitheap->getSumName() << range(msbInt-lsbInt, 0) << ");" << endl;
 
+		REPORT(DEBUG, "write to the output");
 		vhdl << tab << "Wi_next <= sum;" << endl;
 	}
 
@@ -244,8 +246,22 @@ namespace flopoco {
 		mpfr_get_z(svW_nextRd.get_mpz_t(), mpSum, GMP_RNDD);
 		mpfr_get_z(svW_nextRu.get_mpz_t(), mpSum, GMP_RNDU);
 
+		//handle the signed outputs
+		if(svW_nextRd < 0)
+			svW_nextRd += big1out;
+		if(svW_nextRu < 0)
+			svW_nextRu += big1out;
+
+		//only use the required bits
+		svW_nextRd &= (big1out-1);
+		svW_nextRu &= (big1out-1);
+
 		// complete the TestCase with this expected output
-		tc->addExpectedOutput("W_next", svW_next);
+		tc->addExpectedOutput("Wi_next", svW_nextRd);
+		tc->addExpectedOutput("Wi_next", svW_nextRu);
+
+		//cleanup
+		mpfr_clears(mpW_next, mpSum, mpQi, mpTmp, (mpfr_ptr)nullptr);
 	}
 
 	OperatorPtr GenericComputationUnit::parseArguments(Target *target, std::vector<std::string> &args) {

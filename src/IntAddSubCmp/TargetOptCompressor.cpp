@@ -66,7 +66,6 @@ namespace flopoco{
 		//this component currently simply wrapps to the GPC library
 		vhdl << endl;
         vhdl << tab << declare("ce_i_const") << " <= \'1\'; --workaround for constants. Vivado does not accept ce_i => \'1\' in portmap" << endl;
-        //vhdl << tab << "ce_i_const <= '1'" << endl; //workaround for constants. Vivado does not accept ce_i => '1' in portmap
 		vhdl << tab << "gpc_inst : entity work." << compname.str() << endl;
 		vhdl << tab << tab << "generic map (use_output_ff => false)" << endl;
 		vhdl << tab << tab << "port map (clk_i => clk, rst_i => rst, ce_i => ce_i_const, ";

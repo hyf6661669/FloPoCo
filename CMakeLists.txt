@@ -606,24 +606,46 @@ src/NeuralNetworks/LUTMult
 src/PrimitiveComponents/Xilinx/Xilinx_CFGLUT5
 src/PrimitiveComponents/Xilinx/Xilinx_CFGLUTShadow
 
-src/NeuralNetworks/ConvolutionalLayer
-src/NeuralNetworks/ConvolutionalCoreSimple
-src/NeuralNetworks/WindowShiftRegister
+# activation functions
+src/NeuralNetworks/ActivationFunctions/ReLU
+
+# layers
+src/NeuralNetworks/Layers/Layer
+#   convolutional
+src/NeuralNetworks/Layers/Convolutional/ConvolutionalLayer
+src/NeuralNetworks/Layers/Convolutional/ConvolutionalCoreSimple
+#   full connected
+src/NeuralNetworks/Layers/FullConnected/FullConnectedLayer
+#   pooling
+src/NeuralNetworks/Layers/Pooling/PoolingLayer
+src/NeuralNetworks/Layers/Pooling/PoolingCore
+src/NeuralNetworks/Layers/Pooling/Max2Input
+#   in/out
+src/NeuralNetworks/Layers/Input/InputLayer
+src/NeuralNetworks/Layers/Output/OutputLayer
+
+
+# memory management
+src/NeuralNetworks/MemoryManagement/BlockRam
+src/NeuralNetworks/MemoryManagement/ControlledMemory
+src/NeuralNetworks/MemoryManagement/MemoryController
+
+# utility
+src/NeuralNetworks/Utility/WindowShiftRegister
+src/NeuralNetworks/Utility/GlobalController
+src/NeuralNetworks/Utility/Register
+src/NeuralNetworks/Utility/ModuloCounter
+src/NeuralNetworks/Utility/PaddingGenerator
+
+# general
 src/NeuralNetworks/H5ToNeuralNetwork
-src/NeuralNetworks/FullConnectedLayer
-src/NeuralNetworks/ReLU
-src/NeuralNetworks/BlockRam
 src/NeuralNetworks/NeuralNetwork
 src/NeuralNetworks/LayerArguments
-src/NeuralNetworks/PoolingLayer
-src/NeuralNetworks/PoolingCore
-src/NeuralNetworks/Max2Input
-src/NeuralNetworks/PaddingGenerator
-src/NeuralNetworks/ControlledMemory
-src/NeuralNetworks/MemoryController
-src/NeuralNetworks/GlobalController
-src/NeuralNetworks/Register
-src/NeuralNetworks/ModuloCounter
+
+
+
+
+
 )
 
 TARGET_LINK_LIBRARIES(

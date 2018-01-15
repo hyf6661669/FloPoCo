@@ -10,12 +10,13 @@
 namespace flopoco {
 
 	GenericComputationUnit::GenericComputationUnit(Target* target, int _radix, int _maxDigit, int _index,
-			Signal *_W, Signal *_X, Signal *_Di, string _qi, map<string, double> inputDelays)
+			Signal *_W, Signal *_X, Signal *_Di, string _qi, int _specialCase, map<string, double> inputDelays)
 	: Operator(target), radix(_radix), index(_index), maxDigit(_maxDigit),
 	  msbW(_W->MSB()), lsbW(_W->LSB()),
 	  msbX(_X->MSB()), lsbX(_X->LSB()),
 	  msbD(_Di->MSB()), lsbD(_Di->LSB()),
-	  qi(_qi)
+	  qi(_qi),
+	  specialCase(_specialCase)
 	{
 		ostringstream name;
 
@@ -55,9 +56,14 @@ namespace flopoco {
 		addFixInput("Dip1", true, msbD, lsbD);
 		addFixInput("X", true, msbX, lsbX);
 		//	the inputs for D_{i+1}[j-1]*X
-		for(int i=(-maxDigit); i<=maxDigit; i++)
+		//		if required
+		if(specialCase != 1)
 		{
-			addFixInput(join("X_Mult_", vhdlize(i)), true, msbDiMX, lsbDiMX);
+			//	the inputs for D_{i+1}[j-1]*X
+			for(int i=(-maxDigit); i<=maxDigit; i++)
+			{
+				addFixInput(join("X_Mult_", vhdlize(i)), true, msbDiMX, lsbDiMX);
+			}
 		}
 		// the outputs
 		addFixOutput("Wi_next", true, msbInt, lsbInt, 2);
@@ -80,21 +86,31 @@ namespace flopoco {
 									);
 
 		//create the multiplication D_0[j-1] * (-1)*q_i
-		REPORT(DEBUG, "create the multiplication D_0[j-1] * (-1)*q_i");
-		FixRealKCM *constMult = new FixRealKCM(
-												this,						//parent operator
-												"std_logic_vector(D0)",		//input signal name
-												true,						//signedness
-												msbD,						//msbIn
-												lsbD,						//lsbIn
-												lsbInt,						//lsbOut
-												"(-1)*"+qi,					//constant
-												false,						//add round bit
-												1.0							//target ulp error
-												);
-		//add the result of the multiplication to the bitheap
-		REPORT(DEBUG, "add the result of the multiplication to the bitheap");
-		constMult->addToBitHeap(bitheap, 0);
+		//	if required
+		if(specialCase != -1)
+		{
+			//create the multiplication D_0[j-1] * (-1)*q_i
+			REPORT(DEBUG, "create the multiplication D_0[j-1] * (-1)*q_i");
+			FixRealKCM *constMult = new FixRealKCM(
+													this,						//parent operator
+													"std_logic_vector(D0)",		//input signal name
+													true,						//signedness
+													msbD,						//msbIn
+													lsbD,						//lsbIn
+													lsbInt,						//lsbOut
+													"(-1)*"+qi,					//constant
+													false,						//add round bit
+													1.0							//target ulp error
+													);
+			//add the result of the multiplication to the bitheap
+			REPORT(DEBUG, "add the result of the multiplication to the bitheap");
+			constMult->addToBitHeap(bitheap, 0);
+		}
+		else
+		{
+			//this term is not required for iteration 0
+			REPORT(DEBUG, "no need to create the multiplication D_0[j-1] * (-1)*q_i for iteration 0");
+		}
 
 		//subtract D_i[j-1]
 		REPORT(DEBUG, "subtract D_i[j-1]");
@@ -105,30 +121,40 @@ namespace flopoco {
 										);
 
 		//create the multiplication D_{i+1}[j-1] * X
-		//	not actual multiplication is done here, as we're multiplying by a digit
-		//	instead, all the possible products are generated upstream
-		//	and here we only have to choose which one to add
-		REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");
-		vhdl << tab << declareFixPoint("Dip1_Mult_X", true, msbDiMX, lsbDiMX) << " <= " << endl;
-		for(int i=(-maxDigit); i<=maxDigit; i++)
+		//	if required
+		if(specialCase != 1)
 		{
-			mpz_class digitValue = i;
+			//create the multiplication D_{i+1}[j-1] * X
+			//	not actual multiplication is done here, as we're multiplying by a digit
+			//	instead, all the possible products are generated upstream
+			//	and here we only have to choose which one to add
+			REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");
+			vhdl << tab << declareFixPoint("Dip1_Mult_X", true, msbDiMX, lsbDiMX) << " <= " << endl;
+			for(int i=(-maxDigit); i<=maxDigit; i++)
+			{
+				mpz_class digitValue = i;
 
-			//handle negative digits
-			if(digitValue < 0)
-				digitValue = mpz_class(1<<radix) + digitValue;
+				//handle negative digits
+				if(digitValue < 0)
+					digitValue = mpz_class(1<<radix) + digitValue;
 
-			vhdl << tab << tab << join("X_Mult_", vhdlize(i)) << " when Dip1="
-					<< "\"" << unsignedBinary(digitValue, radix) << "\" else" << endl;
+				vhdl << tab << tab << join("X_Mult_", vhdlize(i)) << " when Dip1="
+						<< "\"" << unsignedBinary(digitValue, radix) << "\" else" << endl;
+			}
+			vhdl << tab << tab << "(others => '-');" << endl;
+			//	add the result of the selection to the bitheap
+			REPORT(DEBUG, "add the result of the selection to the bitheap");
+			bitheap->addSignedBitVector(
+										lsbDiMX-lsbInt,					//weight
+										"Dip1_Mult_X",					//input signal name
+										msbDiMX-lsbDiMX+1				//size
+										);
 		}
-		vhdl << tab << tab << "(others => '-');" << endl;
-		//	add the result of the selection to the bitheap
-		REPORT(DEBUG, "add the result of the selection to the bitheap");
-		bitheap->addSignedBitVector(
-									lsbDiMX-lsbInt,					//weight
-									"Dip1_Mult_X",					//input signal name
-									msbDiMX-lsbDiMX+1				//size
-									);
+		else
+		{
+			//this term is not required for iteration n
+			REPORT(DEBUG, "no need to create the multiplication D_{i+1}[j-1] * X for iteration n");
+		}
 
 		//compress the bitheap
 		bitheap->generateCompressorVHDL();
@@ -159,9 +185,13 @@ namespace flopoco {
 		mpz_class svDip1 = tc->getInputValue("Dip1");
 		mpz_class svX    = tc->getInputValue("X");
 		mpz_class svXMultDip1[2*maxDigit+1];
-		for(int i=(-maxDigit); i<=maxDigit; i++)
+		// these inputs do not exist for iteration n
+		if(specialCase != 1)
 		{
-			svXMultDip1[i+maxDigit] = tc->getInputValue(join("X_Mult_", vhdlize(i)));
+			for(int i=(-maxDigit); i<=maxDigit; i++)
+			{
+				svXMultDip1[i+maxDigit] = tc->getInputValue(join("X_Mult_", vhdlize(i)));
+			}
 		}
 
 		//manage signed digits
@@ -187,10 +217,14 @@ namespace flopoco {
 			svDip1 -= big1D;
 		if(svX >= big1Xp)
 			svX -= big1X;
-		for(int i=(-maxDigit); i<=maxDigit; i++)
+		// these inputs do not exist for iteration n
+		if(specialCase != 1)
 		{
-			if(svXMultDip1[i+maxDigit] >= big1Xmultp)
-				svXMultDip1[i+maxDigit] -= big1Xmult;
+			for(int i=(-maxDigit); i<=maxDigit; i++)
+			{
+				if(svXMultDip1[i+maxDigit] >= big1Xmultp)
+					svXMultDip1[i+maxDigit] -= big1Xmult;
+			}
 		}
 
 		// compute the multiple-precision output
@@ -210,22 +244,27 @@ namespace flopoco {
 		mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
 
 		//subtract D_0[j-1]*q_i
-		//	parse q_i using Sollya
-		sollya_obj_t node;
-		node = sollya_lib_parse_string(qi.c_str());
-		/* If  parse error throw an exception */
-		if (sollya_lib_obj_is_error(node))
+		//	if required
+		if(specialCase != -1)
 		{
-			THROWERROR("emulate: Unable to parse string "<< qi << " as a numeric constant");
+			//subtract D_0[j-1]*q_i
+			//	parse q_i using Sollya
+			sollya_obj_t node;
+			node = sollya_lib_parse_string(qi.c_str());
+			/* If  parse error throw an exception */
+			if (sollya_lib_obj_is_error(node))
+			{
+				THROWERROR("emulate: Unable to parse string "<< qi << " as a numeric constant");
+			}
+			sollya_lib_get_constant(mpQi, node);
+			free(node);
+			// scale D_0 appropriately, by the amount given by lsbD
+			mpfr_set_z(mpTmp, svD0.get_mpz_t(), GMP_RNDN);
+			mpfr_mul_2si(mpTmp, mpTmp, lsbD, GMP_RNDN);
+			//	subtract from the sum
+			mpfr_mul(mpTmp, mpTmp, mpQi, GMP_RNDN);
+			mpfr_sub(mpSum, mpSum, mpTmp, GMP_RNDN);
 		}
-		sollya_lib_get_constant(mpQi, node);
-		free(node);
-		// scale D_0 appropriately, by the amount given by lsbD
-		mpfr_set_z(mpTmp, svD0.get_mpz_t(), GMP_RNDN);
-		mpfr_mul_2si(mpTmp, mpTmp, lsbD, GMP_RNDN);
-		//	subtract from the sum
-		mpfr_mul(mpTmp, mpTmp, mpQi, GMP_RNDN);
-		mpfr_sub(mpSum, mpSum, mpTmp, GMP_RNDN);
 
 		//subtract D_i[j-1]
 		// scale D_i appropriately, by the amount given by lsbD
@@ -235,11 +274,16 @@ namespace flopoco {
 		mpfr_sub(mpSum, mpSum, mpTmp, GMP_RNDN);
 
 		//add D_{i+1}[j-1]*X
-		// select the signal to add, depending on the value of Dip1
-		mpfr_set_z(mpTmp, svXMultDip1[svDip1.get_si()+maxDigit].get_mpz_t(), GMP_RNDN);
-		//	scale XMultDip1 appropriately, by the amount given by lsbDiMX
-		mpfr_mul_2si(mpTmp, mpTmp, lsbDiMX, GMP_RNDN);
-		mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
+		//	if required
+		if(specialCase != 1)
+		{
+			//add D_{i+1}[j-1]*X
+			// select the signal to add, depending on the value of Dip1
+			mpfr_set_z(mpTmp, svXMultDip1[svDip1.get_si()+maxDigit].get_mpz_t(), GMP_RNDN);
+			//	scale XMultDip1 appropriately, by the amount given by lsbDiMX
+			mpfr_mul_2si(mpTmp, mpTmp, lsbDiMX, GMP_RNDN);
+			mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
+		}
 
 		//multiply by radix
 		mpfr_mul_si(mpSum, mpSum, radix, GMP_RNDN);
@@ -273,6 +317,7 @@ namespace flopoco {
 		int radix, index, maxDigit;
 		int msbW, lsbW, msbX, lsbX, msbD, lsbD;
 		string qi;
+		int specialCase;
 
 		UserInterface::parseInt(args, "radix", &radix);
 		UserInterface::parseInt(args, "index", &index);
@@ -284,12 +329,13 @@ namespace flopoco {
 		UserInterface::parseInt(args, "msbD", &msbD);
 		UserInterface::parseInt(args, "lsbD", &lsbD);
 		UserInterface::parseString(args, "q_i", &qi);
+		UserInterface::parseInt(args, "specialCase", &specialCase);
 
 		Signal *W  = new Signal("W", Signal::wire, true, msbW, lsbW);
 		Signal *X  = new Signal("X", Signal::wire, true, msbX, lsbX);
 		Signal *Di = new Signal("D", Signal::wire, true, msbD, lsbD);
 
-		return new GenericComputationUnit(target, radix, index, maxDigit, W, X, Di, qi);
+		return new GenericComputationUnit(target, radix, index, maxDigit, W, X, Di, qi, specialCase);
 	}
 
 	void GenericComputationUnit::registerFactory(){
@@ -306,7 +352,8 @@ namespace flopoco {
 				 lsbX(int): LSB of the X input signal;\
 				 msbD(int): MSB of the D input signals;\
 				 lsbD(int): LSB of the D input signals;\
-				 q_i(string): the q_i constant, given in arbitrary-precision decimal, or as a Sollya expression, e.g \"log(2)\""
+				 q_i(string): the q_i constant, given in arbitrary-precision decimal, or as a Sollya expression, e.g \"log(2)\";\
+				 specialCase(int): flag indicating special cases"
 				"",
 				"",
 				GenericComputationUnit::parseArguments,

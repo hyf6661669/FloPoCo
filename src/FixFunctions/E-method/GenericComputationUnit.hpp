@@ -48,6 +48,10 @@ namespace flopoco {
 		 * @param   X              the input signal X
 		 * @param   Di             the input signal Di
 		 * @param   qi             the coefficient q_i
+		 * @param   specialCase    the flag indicating special cases:
+		 *                           specialCase = 0  corresponds to indices 1-(n-1)
+		 *                           specialCase =-1  corresponds to index 0
+		 *                           specialCase = 1  corresponds to index n
 		 */
 		GenericComputationUnit(Target* target,
 				int    radix,
@@ -57,6 +61,7 @@ namespace flopoco {
 				Signal *X,
 				Signal *Di,
 				string qi,
+				int specialCase,
 				map<string, double> inputDelays = emptyDelayMap);
 
 		/**
@@ -99,6 +104,8 @@ namespace flopoco {
 		int lsbDiMX;                          /**< LSB used of the DiMultX signals */
 
 		string qi;                            /**< the q_i coefficient */
+
+		int specialCase;                      /**< the flag indicating special cases (iteration 0 and n) */
 
 		BitHeap *bitheap;                     /**< the bitheap used for the computations */
 	};

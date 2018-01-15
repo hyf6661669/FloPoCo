@@ -177,7 +177,7 @@ namespace flopoco {
 		mpfr_t mpW_next, mpSum, mpQi, mpTmp;
 
 		//initialize the variables
-		mpfr_inits2(10000, mpW_next, mpSum, mpQi, mpTmp, (mpfr_t)nullptr);
+		mpfr_inits2(10000, mpW_next, mpSum, mpQi, mpTmp, (mpfr_ptr)nullptr);
 
 		//initialize the sum
 		mpfr_set_zero(mpSum, 0);
@@ -221,7 +221,7 @@ namespace flopoco {
 		mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
 
 		//scale the result back to an integer
-		mpfr_mul_2si(mpSum, mpSum, lsbInt, GMP_RNDN);
+		mpfr_mul_2si(mpSum, mpSum, -lsbInt, GMP_RNDN);
 
 		//round the result
 		mpfr_get_z(svW_nextRd.get_mpz_t(), mpSum, GMP_RNDD);

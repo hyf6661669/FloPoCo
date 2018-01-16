@@ -75,6 +75,8 @@ namespace flopoco {
 
 		size_t wHatSize;                      /**< size of the W^Hat signal */
 
+		int outputSize;                       /**< size of the output */
+
 	};
 
 } /* namespace flopoco */

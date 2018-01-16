@@ -25,7 +25,7 @@ namespace flopoco {
 				THROWERROR("maximum digit of the redundant digit set is negative!");
 			if(maxDigit < (radix-1))
 				REPORT(INFO, "WARNING: used digit set is not maximal!");
-			if(intlog2(abs(maxDigit)) > radix-1)
+			if(abs(maxDigit) > radix-1)
 				THROWERROR("maximum digit larger than the maximum digit in the redundant digit set!");
 			if(intlog2(abs(maxDigit)) >= (1<<msbIn))
 				THROWERROR("maximum digit not representable on the given input format!");
@@ -42,10 +42,12 @@ namespace flopoco {
 			if((msbIn-lsbIn+1) < (int)wHatSize)
 				THROWERROR("not enough digits on the given input format!");
 
+			outputSize = intlog2(radix) + 1;
+
 			//add the inputs
 			addFixInput("W", true, msbIn, lsbIn);
 			//add the outputs
-			addFixOutput("D", true, radix-1, 0);
+			addFixOutput("D", true, intlog2(radix), 0);
 
 			vhdl << tab << declareFixPoint("WHat", true, msbWHat, lsbWHat)
 					<< " <= W" << range(msbIn-lsbIn, msbIn-lsbIn-wHatSize+1) << ";" << endl;
@@ -70,15 +72,15 @@ namespace flopoco {
 					digitValue = -maxDigit;
 				//handle negative digits at the output
 				if(digitValue < 0)
-					digitValue = mpz_class(1<<radix) + digitValue;
+					digitValue = mpz_class(1<<outputSize) + digitValue;
 				//handle negative indices
 				if(i < 0)
 					iAbs = mpz_class(1<<wHatSize) + i;
 				//create the corresponding output line
-				vhdl << tab << tab << "\"" << unsignedBinary(digitValue, radix) << "\" when \""
+				vhdl << tab << tab << "\"" << unsignedBinary(digitValue, outputSize) << "\" when \""
 						<< unsignedBinary(iAbs, wHatSize) << "\", \n";
 			}
-			vhdl << tab << tab << "\"" << std::string(radix, '-') << "\" when others;\n" << endl;
+			vhdl << tab << tab << "\"" << std::string(outputSize, '-') << "\" when others;\n" << endl;
 
 		}
 
@@ -125,7 +127,7 @@ namespace flopoco {
 			// manage signed digits
 			mpz_class big1int = (mpz_class(1) << wHatSize);
 			mpz_class big1intP = (mpz_class(1) << (wHatSize-1));
-			mpz_class big1out = (mpz_class(1) << radix);
+			mpz_class big1out = (mpz_class(1) << outputSize);
 
 			if((msbIn-(int)wHatSize+1) > lsbIn)
 			{
@@ -162,7 +164,7 @@ namespace flopoco {
 				//svD += big1out;
 				svD += big1int;
 			//only use radix bits at the output
-			svD = svD & ((1<<radix)-1);
+			svD = svD & ((1<<outputSize)-1);
 
 			// complete the TestCase with this expected output
 			tc->addExpectedOutput("D", svD);

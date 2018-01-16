@@ -16,8 +16,8 @@ namespace flopoco {
 			ostringstream name;
 			mpz_class iterLimit;
 
-			srcFileName = "SimpleSelectionFunction";
-			name << "SimpleSelectionFunction_radix" << radix << "_msbIn_" << vhdlize(msbIn) << "_lsbIn_" << vhdlize(lsbIn);
+			srcFileName = "GenericSimpleSelectionFunction";
+			name << "GenericSimpleSelectionFunction_radix" << radix << "_msbIn_" << vhdlize(msbIn) << "_lsbIn_" << vhdlize(lsbIn);
 			setName(name.str()+"_uid"+vhdlize(getNewUId()));
 
 			//safety checks
@@ -182,7 +182,7 @@ namespace flopoco {
 		}
 
 		void GenericSimpleSelectionFunction::registerFactory(){
-			UserInterface::add("SimpleSelectionFunction", // name
+			UserInterface::add("GenericSimpleSelectionFunction", // name
 					"Selection function for the E-method.", //description
 					"FunctionApproximation", // category
 					"",

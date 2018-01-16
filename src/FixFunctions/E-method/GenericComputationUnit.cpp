@@ -353,7 +353,7 @@ namespace flopoco {
 				 msbD(int): MSB of the D input signals;\
 				 lsbD(int): LSB of the D input signals;\
 				 q_i(string): the q_i constant, given in arbitrary-precision decimal, or as a Sollya expression, e.g \"log(2)\";\
-				 specialCase(int): flag indicating special cases; 0=indices 1- n-1; -1=index 0; +1=index n"
+				 specialCase(int): flag indicating special cases, 0=indices 1- n-1, -1=index 0, +1=index n"
 				"",
 				"",
 				GenericComputationUnit::parseArguments,

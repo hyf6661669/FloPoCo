@@ -56,7 +56,10 @@ namespace flopoco {
 		addFixInput("Wi", true, msbW, lsbW);
 		addFixInput("D0", true, msbD, lsbD);
 		addFixInput("Di", true, msbD, lsbD);
-		addFixInput("Dip1", true, msbD, lsbD);
+		if(specialCase != 1)
+		{
+			addFixInput("Dip1", true, msbD, lsbD);
+		}
 		addFixInput("X", true, msbX, lsbX);
 		//	the inputs for D_{i+1}[j-1]*X
 		//		if required

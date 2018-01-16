@@ -107,12 +107,12 @@ namespace flopoco {
 		}
 		//multiply by the negative constants
 		addComment(" ---- multiply by the negative constants ----", tab);
-		for(size_t i=1; i<=maxDigit; i++)
+		for(int i=1; i<=(int)maxDigit; i++)
 		{
-			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(-((int)i)), "_int"), true, msbDiMX, lsbDiMX)
+			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(i), "_int"), true, msbDiMX, lsbDiMX)
 					<< " <= X_Mult_" << i << " xor (others => '1');" << endl;
-			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(-((int)i))), true, msbDiMX, lsbDiMX)
-					<< " <= X_Mult_" << vhdlize(-((int)i)) << "_int + (" << zg(msbDiMX-lsbDiMX) << "&\"1\");" << endl;
+			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(i)), true, msbDiMX, lsbDiMX)
+					<< " <= X_Mult_" << vhdlize(i) << "_int + (" << zg(msbDiMX-lsbDiMX) << "&\"1\");" << endl;
 		}
 
 		//iteration 0
@@ -141,6 +141,7 @@ namespace flopoco {
 										dD, 			//signal Di
 										coeffsQ[0]		//constant q_i
 										);
+		addSubComponent(cu0);
 		for(size_t i=1; i<=(maxDegree-2); i++)
 		{
 			//compute unit i
@@ -155,9 +156,10 @@ namespace flopoco {
 												dD, 			//signal Di
 												coeffsQ[i]		//constant q_i
 												);
+			addSubComponent(cuI[i-1]);
 		}
 		//compute unit n
-		cu0 = new GenericComputationUnit(
+		cuN = new GenericComputationUnit(
 										target,			//target
 										radix, 			//radix
 										maxDegree-1,	//index
@@ -168,6 +170,7 @@ namespace flopoco {
 										dD, 			//signal Di
 										coeffsQ[nbIter]	//constant q_i
 										);
+		addSubComponent(cuN);
 
 		//create the selection units
 		GenericSimpleSelectionFunction *sel;
@@ -178,6 +181,7 @@ namespace flopoco {
 												maxDigit, 		//maximum digit
 												dW 				//signal W
 												);
+		addSubComponent(sel);
 
 		//iterations 1 to nbIter
 		for(size_t iter=1; iter<=nbIter; iter++)
@@ -186,16 +190,51 @@ namespace flopoco {
 
 			//create computation unit index 0
 			//	a special case
+			//inputs
+			inPortMap(cu0, "Wi",   join("W_", iter-1, "_0"));
+			inPortMap(cu0, "D0",   join("D_", iter-1, "_0"));
+			inPortMap(cu0, "Di",   join("D_", iter-1, "_0"));
+			inPortMap(cu0, "Dip1", join("W_", iter-1, "_1"));
+			inPortMap(cu0, "X",    "X");
+			for(int i=(-(int)maxDigit); i<=(int)maxDigit; i++)
+			{
+				inPortMap(cu0, join("X_Mult_", vhdlize(i)), join("X_Mult_", vhdlize(i)));
+			}
+			//outputs
+			outPortMap(cu0, "Wi_next", join("W_", iter, "_0"));
+			//the instance
+			vhdl << tab << instance(cu0, join("CU_", iter, "_0"));
 
 			//create computation units index 1 to maxDegree-1
-			for(size_t i=0; i<maxDegree; i++)
+			for(size_t i=1; i<=(maxDegree-2); i++)
 			{
-
+				//inputs
+				inPortMap(cuI[i-1], "Wi",   join("W_", iter-1, "_", i));
+				inPortMap(cuI[i-1], "D0",   join("D_", iter-1, "_0"));
+				inPortMap(cuI[i-1], "Di",   join("D_", iter-1, "_", i));
+				inPortMap(cuI[i-1], "Dip1", join("W_", iter-1, "_", i+1));
+				inPortMap(cuI[i-1], "X",    "X");
+				for(int i=(-(int)maxDigit); i<=(int)maxDigit; i++)
+				{
+					inPortMap(cuI[i-1], join("X_Mult_", vhdlize(i)), join("X_Mult_", vhdlize(i)));
+				}
+				//outputs
+				outPortMap(cuI[i-1], "Wi_next", join("W_", iter, "_", i));
+				//the instance
+				vhdl << tab << instance(cuI[i-1], join("CU_", iter, "_", i));
 			}
 
 			//create computation unit index maxDegree
 			//	a special case
-
+			//inputs
+			inPortMap(cuN, "Wi",   join("W_", iter-1, "_", maxDegree-1));
+			inPortMap(cuN, "D0",   join("D_", iter-1, "_0"));
+			inPortMap(cuN, "Di",   join("D_", iter-1, "_", maxDegree-1));
+			inPortMap(cuN, "X",    "X");
+			//outputs
+			outPortMap(cuN, "Wi_next", join("W_", iter-1, "_", maxDegree-1));
+			//the instance
+			vhdl << tab << instance(cuN, join("CU_", iter-1, "_", maxDegree-1));
 		}
 	}
 

@@ -17,16 +17,19 @@
 #include <gmpxx.h>
 
 #include "Operator.hpp"
-#include "Table.hpp"
+#include "Signal.hpp"
 
 #include "IntMult/FixMultAdd.hpp"
 #include "BitHeap/BitHeap.hpp"
 
 #include "FixFunction.hpp"
 #include "FixConstant.hpp"
-#include "E-method/SimpleSelectionFunction.hpp"
+#include "E-method/GenericSimpleSelectionFunction.hpp"
+#include "E-method/GenericComputationUnit.hpp"
 
 #include "utils.hpp"
+
+#define LARGEPREC 10000
 
 namespace flopoco {
 
@@ -81,21 +84,19 @@ namespace flopoco {
     /**
      * A constructor that exposes all options.
      * @param   radix          the radix used for the implementation
-     * @param   msbIn          MSB of the input
-     * @param   lsbIn          LSB of the input
-     * @param   msbOut         MSB of the output
-     * @param   lsbOut         LSB of the output
+     * @param   maxDigit       the maximum digit in the used digit set
+     * @param   msbInOut       MSB of the input/output
+     * @param   lsbInOut       LSB of the input/output
      * @param   coeffsP        vector holding the coefficients of polynomial P
      * @param   coeffsQ        vector holding the coefficients of polynomial Q
      */
 	FixEMethodEvaluator(Target* target,
 			size_t radix,
-			int msbIn,
-			int lsbIn,
-			int msbOut,
-			int lsbOut,
-			vector<mpfr_t> coeffsP,
-			vector<mpfr_t> coeffsQ,
+			size_t maxDigit,
+			int msbInOut,
+			int lsbInOut,
+			vector<string> coeffsP,
+			vector<string> coeffsQ,
 			map<string, double> inputDelays = emptyDelayMap);
 
 	/**
@@ -103,23 +104,57 @@ namespace flopoco {
 	 */
     ~FixEMethodEvaluator();
 
+    /**
+     * Test case generator
+     */
+    void emulate(TestCase * tc);
+
+    // User-interface stuff
+    /**
+     * Factory method
+     */
+    static OperatorPtr parseArguments(Target *target, std::vector<std::string> &args);
+
+    static void registerFactory();
+
+    static TestList unitTest(int index);
+
+  private:
+    /**
+     * Create a copy of a vector containing constants (given as strings)
+     */
+    void copyVector(vector<string> originalVector, vector<string> *newVectorS, vector<mpfr_t> *newVectorMP, size_t maxIndex);
+
 
   private:
     size_t radix;                     /**< the radix used for the implementation */
+    size_t maxDigit;                  /**< the radix used for the implementation */
     size_t n;                         /**< degree of the polynomial P */
     size_t m;                         /**< degree of the polynomial Q */
-    int msbIn;                        /**< MSB of the input */
-    int lsbIn;                        /**< LSB of the input */
-    int msbOut;                       /**< MSB of the output  */
-    int lsbOut;                       /**< LSB of the output */
-    vector<mpfr_t> coeffsP;           /**< vector of the coefficients of P */
-    vector<mpfr_t> coeffsQ;           /**< vector of the coefficients of Q */
+    int msbInOut;                     /**< MSB of the input/output */
+    int lsbInOut;                     /**< LSB of the input/output */
+    vector<string> coeffsP;           /**< vector of the coefficients of P */
+    vector<string> coeffsQ;           /**< vector of the coefficients of Q */
+    vector<mpfr_t> mpCoeffsP;         /**< vector of the coefficients of P */
+    vector<mpfr_t> mpCoeffsQ;         /**< vector of the coefficients of Q */
 
     size_t maxDegree;                 /**< the maximum between the degrees of the polynomials P and Q */
     int nbIter;                       /**< the number of iterations */
     int g;                            /**< number of guard bits */
 
     size_t wHatSize;                  /**< size of the W^Hat signal */
+    int msbWHat;                      /**< the MSB of the W^Hat signal */
+    int lsbWHat;                      /**< the LSB of the W^Hat signal */
+    Signal *dWHat;                    /**< dummy signal for W^Hat */
+    int msbW;                         /**< the MSB of the W signal */
+    int lsbW;                         /**< the LSB of the W signal */
+    Signal *dW;                       /**< dummy signal for W */
+    int msbD;                         /**< the MSB of the D signals */
+    int lsbD;                         /**< the LSB of the D signals */
+    Signal *dD;                       /**< dummy signal for D */
+    int msbX;                         /**< the MSB of the X signal */
+    int lsbX;                         /**< the LSB of the X signal */
+    Signal *dX;                       /**< dummy signal for X */
   };
 
 } /* namespace flopoco */

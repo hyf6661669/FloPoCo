@@ -42,12 +42,12 @@ namespace flopoco {
 			if((msbIn-lsbIn+1) < (int)wHatSize)
 				THROWERROR("not enough digits on the given input format!");
 
-			outputSize = intlog2(radix) + 1;
+			outputSize = intlog2(radix);
 
 			//add the inputs
 			addFixInput("W", true, msbIn, lsbIn);
 			//add the outputs
-			addFixOutput("D", true, intlog2(radix), 0);
+			addFixOutput("D", true, outputSize-1, 0);
 
 			vhdl << tab << declareFixPoint("WHat", true, msbWHat, lsbWHat)
 					<< " <= W" << range(msbIn-lsbIn, msbIn-lsbIn-wHatSize+1) << ";" << endl;

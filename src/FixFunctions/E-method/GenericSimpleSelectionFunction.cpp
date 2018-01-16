@@ -5,11 +5,12 @@
  *      Author: Matei Istoan
  */
 
-#include "SimpleSelectionFunction.hpp"
+#include "GenericSimpleSelectionFunction.hpp"
 
 namespace flopoco {
 
-		SimpleSelectionFunction::SimpleSelectionFunction(Target* target, int _radix, int maxDigit_, Signal *_W, map<string, double> inputDelays)
+		GenericSimpleSelectionFunction::GenericSimpleSelectionFunction(Target* target, int _radix, int maxDigit_,
+				Signal *_W, map<string, double> inputDelays)
 		: Operator(target), radix(_radix), maxDigit(maxDigit_), msbIn(_W->MSB()), lsbIn(_W->LSB())
 		{
 			ostringstream name;
@@ -82,13 +83,13 @@ namespace flopoco {
 		}
 
 
-		SimpleSelectionFunction::~SimpleSelectionFunction()
+		GenericSimpleSelectionFunction::~GenericSimpleSelectionFunction()
 		{
 
 		}
 
 
-		void SimpleSelectionFunction::getWHatFormat(int _radix, int _maxDigit, int *_msb, int *_lsb)
+		void GenericSimpleSelectionFunction::getWHatFormat(int _radix, int _maxDigit, int *_msb, int *_lsb)
 		{
 			size_t wHSize = 0;
 
@@ -116,7 +117,7 @@ namespace flopoco {
 		}
 
 
-		void SimpleSelectionFunction::emulate(TestCase * tc)
+		void GenericSimpleSelectionFunction::emulate(TestCase * tc)
 		{
 			// get the inputs from the TestCase
 			mpz_class svW = tc->getInputValue("W");
@@ -167,7 +168,7 @@ namespace flopoco {
 			tc->addExpectedOutput("D", svD);
 		}
 
-		OperatorPtr SimpleSelectionFunction::parseArguments(Target *target, std::vector<std::string> &args) {
+		OperatorPtr GenericSimpleSelectionFunction::parseArguments(Target *target, std::vector<std::string> &args) {
 			int radix, maxDigit, msbIn, lsbIn;
 
 			UserInterface::parseInt(args, "radix", &radix);
@@ -177,10 +178,10 @@ namespace flopoco {
 
 			Signal *W = new Signal("W", Signal::wire, true, msbIn, lsbIn);
 
-			return new SimpleSelectionFunction(target, radix, maxDigit, W);
+			return new GenericSimpleSelectionFunction(target, radix, maxDigit, W);
 		}
 
-		void SimpleSelectionFunction::registerFactory(){
+		void GenericSimpleSelectionFunction::registerFactory(){
 			UserInterface::add("SimpleSelectionFunction", // name
 					"Selection function for the E-method.", //description
 					"FunctionApproximation", // category
@@ -191,13 +192,13 @@ namespace flopoco {
 						lsbIn(int): LSB of the input"
 					"",
 					"",
-					SimpleSelectionFunction::parseArguments,
-					SimpleSelectionFunction::unitTest
+					GenericSimpleSelectionFunction::parseArguments,
+					GenericSimpleSelectionFunction::unitTest
 			) ;
 
 		}
 
-		TestList SimpleSelectionFunction::unitTest(int index)
+		TestList GenericSimpleSelectionFunction::unitTest(int index)
 		{
 			// the static list of mandatory tests
 			TestList testStateList;

@@ -138,7 +138,7 @@
 #include "FixFunctions/BipartiteTable.hpp"
 #include "FixFunctions/FixFunctionByMultipartiteTable.hpp"
 
-#include "FixFunctions/E-method/SimpleSelectionFunction.hpp"
+#include "FixFunctions/E-method/GenericSimpleSelectionFunction.hpp"
 #include "FixFunctions/E-method/GenericComputationUnit.hpp"
 
 /*  Various elementary functions in fixed or floating point*/

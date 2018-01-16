@@ -78,7 +78,7 @@ int main(int argc, char* argv[] )
 		BasicPolyApprox::registerFactory();
 		PiecewisePolyApprox::registerFactory();
 
-		SimpleSelectionFunction::registerFactory();
+		GenericSimpleSelectionFunction::registerFactory();
 		GenericComputationUnit::registerFactory();
 
 		FixRealKCM::registerFactory();

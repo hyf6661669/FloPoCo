@@ -358,7 +358,8 @@ src/FPComposite/FP2DNorm
  src/FixFunctions/Multipartite
  src/FixFunctions/FixFunctionByMultipartiteTable
 
- src/FixFunctions/E-method/SimpleSelectionFunction
+ src/FixFunctions/E-method/GenericSimpleSelectionFunction
+ src/FixFunctions/E-method/GenericComputationUnit
 
 # src/FixFunctions/QuineMcCluskey
 

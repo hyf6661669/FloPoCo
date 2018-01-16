@@ -5,8 +5,8 @@
  *      Author: Matei Istoan
  */
 
-#ifndef _SIMPLESELECTIONFUNCTION_HPP_
-#define _SIMPLESELECTIONFUNCTION_HPP_
+#ifndef _GENERICSIMPLESELECTIONFUNCTION_HPP_
+#define _GENERICSIMPLESELECTIONFUNCTION_HPP_
 
 #include <vector>
 #include <sstream>
@@ -22,7 +22,7 @@
 
 namespace flopoco {
 
-	class SimpleSelectionFunction : public Operator
+	class GenericSimpleSelectionFunction : public Operator
 	{
 	public:
 		/**
@@ -33,7 +33,7 @@ namespace flopoco {
 		 * @param   maxDigit       the maximum digit in the redundant digit set
 		 * @param   W              the input signal
 		 */
-		SimpleSelectionFunction(Target* target,
+		GenericSimpleSelectionFunction(Target* target,
 				int    radix,
 				int    maxDigit,
 				Signal *W,
@@ -42,7 +42,7 @@ namespace flopoco {
 		/**
 		 * Class destructor
 		 */
-		~SimpleSelectionFunction();
+		~GenericSimpleSelectionFunction();
 
 		/**
 		 * Compute the format of the W^ signal, from the used radix
@@ -79,4 +79,4 @@ namespace flopoco {
 
 } /* namespace flopoco */
 
-#endif /* _SIMPLESELECTIONFUNCTION_HPP_ */
+#endif /* _GenericSIMPLESELECTIONFUNCTION_HPP_ */

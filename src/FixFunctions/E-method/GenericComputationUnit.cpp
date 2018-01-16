@@ -9,20 +9,23 @@
 
 namespace flopoco {
 
-	GenericComputationUnit::GenericComputationUnit(Target* target, int _radix, int _maxDigit, int _index,
-			Signal *_W, Signal *_X, Signal *_Di, string _qi, int _specialCase, map<string, double> inputDelays)
-	: Operator(target), radix(_radix), index(_index), maxDigit(_maxDigit),
+	GenericComputationUnit::GenericComputationUnit(Target* target, int _radix, int _maxDigit,
+			int _index, int _specialCase,
+			Signal *_W, Signal *_X, Signal *_Di, string _qi, map<string, double> inputDelays)
+	: Operator(target), radix(_radix), maxDigit(_maxDigit),
+	  index(_index), specialCase(_specialCase),
 	  msbW(_W->MSB()), lsbW(_W->LSB()),
 	  msbX(_X->MSB()), lsbX(_X->LSB()),
 	  msbD(_Di->MSB()), lsbD(_Di->LSB()),
-	  qi(_qi),
-	  specialCase(_specialCase)
+	  qi(_qi)
 	{
 		ostringstream name;
 
 		srcFileName = "GenericComputationUnit";
-		name << "GenericComputationUnit_radix" << radix << "_index_" << index
-				<< "_qi_" << std::setprecision(5) << qi << "_msbIn_" << vhdlize(msbW) << "_lsbIn_" << vhdlize(lsbW);
+		name << "GenericComputationUnit_radix" << radix
+				<< "_index_" << index
+				<< "_qi_" << std::setprecision(5) << qi
+				<< "_msbIn_" << vhdlize(msbW) << "_lsbIn_" << vhdlize(lsbW);
 		setName(name.str()+"_uid"+vhdlize(getNewUId()));
 
 		//safety checks
@@ -320,8 +323,9 @@ namespace flopoco {
 		int specialCase;
 
 		UserInterface::parseInt(args, "radix", &radix);
-		UserInterface::parseInt(args, "index", &index);
 		UserInterface::parseInt(args, "maxDigit", &maxDigit);
+		UserInterface::parseInt(args, "index", &index);
+		UserInterface::parseInt(args, "specialCase", &specialCase);
 		UserInterface::parseInt(args, "msbW", &msbW);
 		UserInterface::parseInt(args, "lsbW", &lsbW);
 		UserInterface::parseInt(args, "msbX", &msbX);
@@ -329,13 +333,12 @@ namespace flopoco {
 		UserInterface::parseInt(args, "msbD", &msbD);
 		UserInterface::parseInt(args, "lsbD", &lsbD);
 		UserInterface::parseString(args, "q_i", &qi);
-		UserInterface::parseInt(args, "specialCase", &specialCase);
 
 		Signal *W  = new Signal("W", Signal::wire, true, msbW, lsbW);
 		Signal *X  = new Signal("X", Signal::wire, true, msbX, lsbX);
 		Signal *Di = new Signal("D", Signal::wire, true, msbD, lsbD);
 
-		return new GenericComputationUnit(target, radix, index, maxDigit, W, X, Di, qi, specialCase);
+		return new GenericComputationUnit(target, radix, maxDigit, index, specialCase, W, X, Di, qi);
 	}
 
 	void GenericComputationUnit::registerFactory(){
@@ -344,16 +347,15 @@ namespace flopoco {
 				"FunctionApproximation", // category
 				"",
 				"radix(int): the radix of the digit set being used;\
-				 index(int): the index of the unit;\
 				 maxDigit(int): the maximum digit in the used digit set;\
+				 specialCase(int): flag indicating special cases, 0=indices 1- n-1, -1=index 0, +1=index n;\
 				 msbW(int): MSB of the W input signal;\
 				 lsbW(int): LSB of the W input signal;\
 				 msbX(int): MSB of the X input signal;\
 				 lsbX(int): LSB of the X input signal;\
 				 msbD(int): MSB of the D input signals;\
 				 lsbD(int): LSB of the D input signals;\
-				 q_i(string): the q_i constant, given in arbitrary-precision decimal, or as a Sollya expression, e.g \"log(2)\";\
-				 specialCase(int): flag indicating special cases, 0=indices 1- n-1, -1=index 0, +1=index n"
+				 q_i(string): the q_i constant, given in arbitrary-precision decimal, or as a Sollya expression, e.g \"log(2)\""
 				"",
 				"",
 				GenericComputationUnit::parseArguments,

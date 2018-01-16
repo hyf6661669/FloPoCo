@@ -42,26 +42,26 @@ namespace flopoco {
 		 * Currently only implementing radix 2.
 		 * Higher radixes (4, 8 etc.) to come.
 		 * @param   radix          the radix being used
-		 * @param   index          the index of the unit
 		 * @param   maxDigit       the maximum digit in the used digit set
-		 * @param   W              the input signal W
-		 * @param   X              the input signal X
-		 * @param   Di             the input signal Di
-		 * @param   qi             the coefficient q_i
+		 * @param   index          the index of the unit
 		 * @param   specialCase    the flag indicating special cases:
 		 *                           specialCase = 0  corresponds to indices 1-(n-1)
 		 *                           specialCase =-1  corresponds to index 0
 		 *                           specialCase = 1  corresponds to index n
+		 * @param   W              the input signal W
+		 * @param   X              the input signal X
+		 * @param   Di             the input signal Di
+		 * @param   qi             the coefficient q_i
 		 */
 		GenericComputationUnit(Target* target,
 				int    radix,
-				int    index,
 				int    maxDigit,
+				int    index,
+				int    specialCase,
 				Signal *W,
 				Signal *X,
 				Signal *Di,
 				string qi,
-				int specialCase,
 				map<string, double> inputDelays = emptyDelayMap);
 
 		/**
@@ -87,8 +87,10 @@ namespace flopoco {
 
 	private:
 		int radix;                            /**< the radix of the digit set being used */
-		int index;                            /**< the index of the computation unit */
 		int maxDigit;                         /**< the maximum digit in the used digit set */
+
+		int index;                            /**< the index of the unit */
+		int specialCase;                      /**< the flag indicating special cases (iteration 0 and n) */
 
 		int msbW;                             /**< MSB of the W signal */
 		int lsbW;                             /**< LSB of the W signal */
@@ -104,8 +106,6 @@ namespace flopoco {
 		int lsbDiMX;                          /**< LSB used of the DiMultX signals */
 
 		string qi;                            /**< the q_i coefficient */
-
-		int specialCase;                      /**< the flag indicating special cases (iteration 0 and n) */
 
 		BitHeap *bitheap;                     /**< the bitheap used for the computations */
 	};

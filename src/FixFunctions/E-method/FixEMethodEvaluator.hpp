@@ -19,13 +19,13 @@
 #include "Operator.hpp"
 #include "Signal.hpp"
 
-#include "IntMult/FixMultAdd.hpp"
+#include "ConstMult/IntConstMult.hpp"
 #include "BitHeap/BitHeap.hpp"
 
-#include "FixFunction.hpp"
+#include "FixFunctions/FixFunction.hpp"
 #include "FixConstant.hpp"
-#include "E-method/GenericSimpleSelectionFunction.hpp"
-#include "E-method/GenericComputationUnit.hpp"
+#include "FixFunctions/E-method/GenericSimpleSelectionFunction.hpp"
+#include "FixFunctions/E-method/GenericComputationUnit.hpp"
 
 #include "utils.hpp"
 
@@ -123,7 +123,7 @@ namespace flopoco {
     /**
      * Create a copy of a vector containing constants (given as strings)
      */
-    void copyVector(vector<string> originalVector, vector<string> *newVectorS, vector<mpfr_t> *newVectorMP, size_t maxIndex);
+    void copyVector(vector<string> originalVector, vector<string> *newVectorS, vector<mpfr_t*> *newVectorMP, size_t maxIndex);
 
 
   private:
@@ -135,11 +135,11 @@ namespace flopoco {
     int lsbInOut;                     /**< LSB of the input/output */
     vector<string> coeffsP;           /**< vector of the coefficients of P */
     vector<string> coeffsQ;           /**< vector of the coefficients of Q */
-    vector<mpfr_t> mpCoeffsP;         /**< vector of the coefficients of P */
-    vector<mpfr_t> mpCoeffsQ;         /**< vector of the coefficients of Q */
+    vector<mpfr_t*> mpCoeffsP;         /**< vector of the coefficients of P */
+    vector<mpfr_t*> mpCoeffsQ;         /**< vector of the coefficients of Q */
 
     size_t maxDegree;                 /**< the maximum between the degrees of the polynomials P and Q */
-    int nbIter;                       /**< the number of iterations */
+    size_t nbIter;                    /**< the number of iterations */
     int g;                            /**< number of guard bits */
 
     size_t wHatSize;                  /**< size of the W^Hat signal */
@@ -155,6 +155,9 @@ namespace flopoco {
     int msbX;                         /**< the MSB of the X signal */
     int lsbX;                         /**< the LSB of the X signal */
     Signal *dX;                       /**< dummy signal for X */
+    int msbDiMX;                      /**< the MSB of the DiMultX signals */
+    int lsbDiMX;                      /**< the LSB of the DiMultX signals */
+    Signal *dDiMX;                    /**< dummy signal for DiMultX */
   };
 
 } /* namespace flopoco */

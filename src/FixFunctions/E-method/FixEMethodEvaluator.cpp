@@ -235,7 +235,46 @@ namespace flopoco {
 			outPortMap(cuN, "Wi_next", join("W_", iter-1, "_", maxDegree-1));
 			//the instance
 			vhdl << tab << instance(cuN, join("CU_", iter-1, "_", maxDegree-1));
+
+			//create the selection units index 0 to maxDegree-1
+			for(size_t i=0; i<maxDegree; i++)
+			{
+				//inputs
+				inPortMap(sel,  "W", join("W_", iter, "_", i));
+				//outputs
+				outPortMap(sel, "D", join("D_", iter, "_", i));
+				//the instance
+				vhdl << tab << instance(sel, join("SEL_", iter, "_", i));
+			}
 		}
+
+		//compute the final result
+		BitHeap *bitheap = new BitHeap(
+										this,											// parent operator
+										msbInOut-lsbInOut+1,							// maximum weight
+										false, 											// enable supertiles
+										join("Bitheap_"+name.str()+"_", getNewUId())	// bitheap name
+										);
+		//add the digits of the intermediate computations
+		for(int i=(nbIter-1); i>0; i--)
+		{
+			bitheap->addSignedBitVector(
+										(i-nbIter+1)*ceil(log2(radix)),			//weight
+										join("D_", i, "_", 0),					//input signal name
+										msbD-lsbD+1								//size
+										);
+		}
+		//add the rounding bit
+		bitheap->addConstantOneBit(g-1);
+		//compress the bitheap
+		bitheap->generateCompressorVHDL();
+
+		//retrieve the bits we want from the bit heap
+		vhdl << tab << declareFixPoint("sum", true, msbInOut, lsbInOut) << " <= signed(" <<
+				bitheap->getSumName() << range(msbInOut-lsbInOut, 0) << ");" << endl;
+
+		//write the result to the output
+		vhdl << tab << "Y <= sum" << range(msbInOut-lsbInOut+g, g) << ";" << endl;
 	}
 
 

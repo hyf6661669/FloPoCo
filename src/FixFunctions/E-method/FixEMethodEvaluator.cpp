@@ -347,18 +347,53 @@ namespace flopoco {
 	}
 
 	OperatorPtr FixEMethodEvaluator::parseArguments(Target *target, std::vector<std::string> &args) {
-		return nullptr;
+		int radix;
+		int maxDigit;
+		int msbIn;
+		int lsbIn;
+		vector<string> coeffsP;
+		vector<string> coeffsQ;
+		string in, in2;
+
+		UserInterface::parseStrictlyPositiveInt(args, "radix", &radix);
+		UserInterface::parseStrictlyPositiveInt(args, "maxDigit", &maxDigit);
+		UserInterface::parseInt(args, "msbIn", &msbIn);
+		UserInterface::parseInt(args, "lsbIn", &lsbIn);
+		UserInterface::parseString(args, "coeffsP", &in);
+		UserInterface::parseString(args, "coeffsQ", &in2);
+
+		// tokenize the string in
+		stringstream ss(in);
+		while(ss.good())
+		{
+			string substr;
+			getline( ss, substr, ':' );
+			coeffsP.push_back( substr );
+		}
+
+		// tokenize the string in2
+		stringstream ss2(in2);
+		while(ss2.good())
+		{
+			string substr;
+			getline( ss2, substr, ':' );
+			coeffsQ.push_back( substr );
+		}
+
+		return new FixEMethodEvaluator(target, radix, maxDigit, msbIn, lsbIn, coeffsP, coeffsQ);
 	}
 
 	void FixEMethodEvaluator::registerFactory(){
 		UserInterface::add("FixEMethodEvaluator", // name
-				"Selection function for the E-method.", //description
+				"A hardware implementation of the E-method for the evaluation of polynomials and rational polynomials.", //description
 				"FunctionApproximation", // category
 				"",
 				"radix(int): the radix of the digit set being used;\
-							maxDigit(int): the maximum digit in the redundant digit set;\
-							msbIn(int): MSB of the input;\
-							lsbIn(int): LSB of the input"
+				 maxDigit(int): the maximum digit in the redundant digit set;\
+				 msbIn(int): MSB of the input;\
+				 lsbIn(int): LSB of the input;\
+				 coeffsP(string): colon-separated list of real coefficients of polynomial P, using Sollya syntax. Example: coeff=\"1.234567890123:sin(3*pi/8)\";\
+				 coeffsQ(string): colon-separated list of real coefficients of polynomial Q, using Sollya syntax. Example: coeff=\"1.234567890123:sin(3*pi/8)\""
 				"",
 				"",
 				FixEMethodEvaluator::parseArguments,

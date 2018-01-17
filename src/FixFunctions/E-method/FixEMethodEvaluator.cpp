@@ -12,7 +12,7 @@ namespace flopoco {
 	FixEMethodEvaluator::FixEMethodEvaluator(Target* target, size_t _radix, size_t _maxDigit, int _msbInOut, int _lsbInOut,
 		vector<string> _coeffsP, vector<string> _coeffsQ, map<string, double> inputDelays)
 	: Operator(target), radix(_radix), maxDigit(_maxDigit),
-	  	  n(_coeffsP.size()), m(coeffsQ.size()),
+	  	  n(_coeffsP.size()), m(_coeffsQ.size()),
 	  	  msbInOut(_msbInOut), lsbInOut(_lsbInOut),
 		  maxDegree(n>m ? n : m)
 	{
@@ -35,13 +35,30 @@ namespace flopoco {
 			THROWERROR("FixEMethodEvaluator: radixes higher than 8 currently not supported!");
 		if(maxDigit > radix-1)
 			THROWERROR("maximum digit larger than the maximum digit in the redundant digit set!");
-		if(intlog2(abs((int)maxDigit)) >= (1<<msbInOut))
+		if((int)maxDigit > (1<<msbInOut))
 			THROWERROR("maximum digit not representable on the given input format!");
 
 		//create a copy of the coefficients of P
 		copyVector(_coeffsP, &coeffsP, &mpCoeffsP, maxDegree);
 		//create a copy of the coefficients Q
 		copyVector(_coeffsQ, &coeffsQ, &mpCoeffsQ, maxDegree);
+
+		REPORT(DEBUG, "coefficients of P, as mp numbers:");
+		for(size_t i=0; i<mpCoeffsP.size(); i++)
+		{
+			double tmpD = mpfr_get_d(*mpCoeffsP[i], GMP_RNDN);
+			REPORT(DEBUG, "" << tmpD);
+		}
+		REPORT(DEBUG, "coefficients of Q, as mp numbers:");
+		for(size_t i=0; i<mpCoeffsQ.size(); i++)
+		{
+			double tmpD = mpfr_get_d(*mpCoeffsQ[i], GMP_RNDN);
+			REPORT(DEBUG, "" << tmpD);
+		}
+
+		//safety checks and warnings
+		if(mpfr_cmp_si(*mpCoeffsQ[0], 1) != 0)
+			THROWERROR("element 0 of coeffsQ must be 1!");
 
 		//compute the number of iterations needed
 		nbIter = msbInOut - lsbInOut + 1;
@@ -53,6 +70,7 @@ namespace flopoco {
 		nbIter += g;
 
 		//set the format of the internal signals
+		REPORT(DEBUG, "set the format of the internal signals");
 		//	W^Hat
 		GenericSimpleSelectionFunction::getWHatFormat(radix, maxDigit, &msbWHat, &lsbWHat);
 		dWHat  = new Signal("dWHat", Signal::wire, true, msbWHat, lsbWHat);
@@ -82,15 +100,18 @@ namespace flopoco {
 		vhdl << tab << declare("X_std_lv", msbDiMX-lsbDiMX+1) << " <= std_logic_vector(X);" << endl;
 
 		//create the DiMX signals
+		REPORT(DEBUG, "create the DiMX signals");
 		addComment(" ---- create the DiMX signals ----", tab);
 		//	the multipliers by constants
 		IntConstMult *dimxMult[maxDigit+1];
 
 		//multiply by the positive constants
+		REPORT(DEBUG, "multiply by the positive constants");
 		addComment(" ---- multiply by the positive constants ----", tab);
 		for(size_t i=0; i<=maxDigit; i++)
 		{
 			//create the multiplication between X and the constant given by i
+			REPORT(DEBUG, "create the multiplication between X and the constant " << i);
 			dimxMult[i] = new IntConstMult(
 											target,					//target
 											msbInOut-lsbInOut+1, 	//size of X
@@ -106,27 +127,31 @@ namespace flopoco {
 			resizeFixPoint(join("X_Mult_", i), join("X_Mult_", i, "_int"), msbDiMX, lsbDiMX, 1);
 		}
 		//multiply by the negative constants
+		REPORT(DEBUG, "multiply by the negative constants");
 		addComment(" ---- multiply by the negative constants ----", tab);
 		for(int i=1; i<=(int)maxDigit; i++)
 		{
-			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(i), "_int"), true, msbDiMX, lsbDiMX)
+			REPORT(DEBUG, "create the multiplication between X and the constant " << -i);
+			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(-i), "_int"), true, msbDiMX, lsbDiMX)
 					<< " <= X_Mult_" << i << " xor (others => '1');" << endl;
-			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(i)), true, msbDiMX, lsbDiMX)
-					<< " <= X_Mult_" << vhdlize(i) << "_int + (" << zg(msbDiMX-lsbDiMX) << "&\"1\");" << endl;
+			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(-i)), true, msbDiMX, lsbDiMX)
+					<< " <= X_Mult_" << vhdlize(-i) << "_int + (" << zg(msbDiMX-lsbDiMX) << "&\"1\");" << endl;
 		}
 
 		//iteration 0
 		//	initialize the elements of the residual vector
 		addComment(" ---- iteration 0 ----", tab);
+		REPORT(DEBUG, "iteration 0");
 		for(size_t i=0; i<maxDegree; i++)
 		{
 			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbW, lsbW) << " <= "
-					<< signedFixPointNumber(*mpCoeffsP[i], msbW, lsbW, 0) << ";" << endl;
+					<< signedFixPointNumber(*(mpCoeffsP[i]), msbW, lsbW, 0) << ";" << endl;
 			vhdl << tab << declareFixPoint(join("D_0_", i), true, msbD, lsbD) << " <= "
 					<< zg(msbD-lsbD+1, 0) << ";" << endl;
 		}
 
 		//create the computation units
+		REPORT(DEBUG, "create the computation units");
 		GenericComputationUnit *cu0, *cuI[maxDegree-2], *cuN;
 
 		//compute unit 0
@@ -184,11 +209,14 @@ namespace flopoco {
 		addSubComponent(sel);
 
 		//iterations 1 to nbIter
+		REPORT(DEBUG, "iterations 1 to nbIter");
 		for(size_t iter=1; iter<=nbIter; iter++)
 		{
+			REPORT(DEBUG, "iteration " << iter);
 			addComment(join(" ---- iteration ", iter, " ----"), tab);
 
 			//create computation unit index 0
+			REPORT(DEBUG, "create computation unit index 0");
 			//	a special case
 			//inputs
 			inPortMap(cu0, "Wi",   join("W_", iter-1, "_0"));
@@ -206,6 +234,7 @@ namespace flopoco {
 			vhdl << tab << instance(cu0, join("CU_", iter, "_0"));
 
 			//create computation units index 1 to maxDegree-1
+			REPORT(DEBUG, "create computation units index 1 to maxDegree-1");
 			for(size_t i=1; i<=(maxDegree-2); i++)
 			{
 				//inputs
@@ -225,6 +254,7 @@ namespace flopoco {
 			}
 
 			//create computation unit index maxDegree
+			REPORT(DEBUG, "create computation unit index maxDegree");
 			//	a special case
 			//inputs
 			inPortMap(cuN, "Wi",   join("W_", iter-1, "_", maxDegree-1));
@@ -237,6 +267,7 @@ namespace flopoco {
 			vhdl << tab << instance(cuN, join("CU_", iter-1, "_", maxDegree-1));
 
 			//create the selection units index 0 to maxDegree-1
+			REPORT(DEBUG, "create the selection units index 0 to maxDegree-1");
 			for(size_t i=0; i<maxDegree; i++)
 			{
 				//inputs
@@ -249,6 +280,7 @@ namespace flopoco {
 		}
 
 		//compute the final result
+		REPORT(DEBUG, "compute the final result");
 		BitHeap *bitheap = new BitHeap(
 										this,											// parent operator
 										msbInOut-lsbInOut+1,							// maximum weight
@@ -308,9 +340,9 @@ namespace flopoco {
 			(*newVectorS).push_back(originalVector[i]);
 
 			//create a copy as MPFR
-			mpfr_t tmpMpfr;
+			mpfr_t *tmpMpfr;
 
-			mpfr_init2(tmpMpfr, LARGEPREC);
+			mpfr_init2(*tmpMpfr, LARGEPREC);
 			//	parse the constant using Sollya
 			sollya_obj_t node;
 			node = sollya_lib_parse_string(originalVector[i].c_str());
@@ -319,10 +351,10 @@ namespace flopoco {
 			{
 				THROWERROR("emulate: Unable to parse string "<< originalVector[i] << " as a numeric constant");
 			}
-			sollya_lib_get_constant(tmpMpfr, node);
+			sollya_lib_get_constant(*tmpMpfr, node);
 			free(node);
 
-			(*newVectorMP).push_back(&tmpMpfr);
+			(*newVectorMP).push_back(tmpMpfr);
 		}
 		//fill with zeros, if necessary
 		for(size_t i=iterLimit; i<maxIndex; i++)
@@ -331,12 +363,12 @@ namespace flopoco {
 			(*newVectorS).push_back("0");
 
 			//create a copy as MPFR
-			mpfr_t tmpMpfr;
+			mpfr_t *tmpMpfr;
 
-			mpfr_init2(tmpMpfr, LARGEPREC);
-			mpfr_set_zero(tmpMpfr, 0);
+			mpfr_init2(*tmpMpfr, LARGEPREC);
+			mpfr_set_zero(*tmpMpfr, 0);
 
-			(*newVectorMP).push_back(&tmpMpfr);
+			(*newVectorMP).push_back(tmpMpfr);
 		}
 	}
 

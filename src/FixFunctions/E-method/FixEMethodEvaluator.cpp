@@ -420,6 +420,7 @@ namespace flopoco {
 		// compute the multiple-precision output
 		mpz_class svYd, svYu;
 		mpfr_t mpX, mpP, mpQ, mpTmp, mpY;
+		double dP, dQ, dY, dTmp;
 
 		//initialize the variables
 		mpfr_inits2(LARGEPREC, mpX, mpP, mpQ, mpTmp, mpY, (mpfr_ptr)nullptr);
@@ -430,35 +431,46 @@ namespace flopoco {
 
 		//initialize X
 		mpfr_set_z(mpX, svX.get_mpz_t(), GMP_RNDN);
+		dTmp = mpfr_get_d(mpX, GMP_RNDN);
 		//	scale X appropriately, by the amount given by lsbInOut
-		mpfr_mul_2si(mpTmp, mpTmp, lsbW, GMP_RNDN);
+		mpfr_mul_2si(mpX, mpX, lsbInOut, GMP_RNDN);
+		dTmp = mpfr_get_d(mpX, GMP_RNDN);
 
 		//compute P
-		for(size_t i=0; i<n; i++)
+		for(int i=0; i<(int)n; i++)
 		{
 			//compute X^i
 			mpfr_pow_si(mpTmp, mpX, i, GMP_RNDN);
+			dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 			//multiply by coeffsP[i]
 			mpfr_mul(mpTmp, mpTmp, mpCoeffsP[i], GMP_RNDN);
+			dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 
 			//add the new term to the sum
+			dP = mpfr_get_d(mpP, GMP_RNDN);
 			mpfr_add(mpP, mpP, mpTmp, GMP_RNDN);
+			dP = mpfr_get_d(mpP, GMP_RNDN);
  		}
 
 		//compute Q
-		for(size_t i=0; i<m; i++)
+		for(int i=0; i<(int)m; i++)
 		{
 			//compute X^i
 			mpfr_pow_si(mpTmp, mpX, i, GMP_RNDN);
+			dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 			//multiply by coeffsQ[i]
 			mpfr_mul(mpTmp, mpTmp, mpCoeffsQ[i], GMP_RNDN);
+			dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 
 			//add the new term to the sum
+			dQ = mpfr_get_d(mpQ, GMP_RNDN);
 			mpfr_add(mpQ, mpQ, mpTmp, GMP_RNDN);
+			dQ = mpfr_get_d(mpQ, GMP_RNDN);
 		}
 
 		//compute Y = P/Q
 		mpfr_div(mpY, mpP, mpQ, GMP_RNDN);
+		dY = mpfr_get_d(mpY, GMP_RNDN);
 
 		//scale the result back to an integer
 		mpfr_mul_2si(mpY, mpY, -lsbInOut, GMP_RNDN);

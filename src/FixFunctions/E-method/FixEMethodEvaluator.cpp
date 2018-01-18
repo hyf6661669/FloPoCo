@@ -14,6 +14,7 @@ namespace flopoco {
 	: Operator(target), radix(_radix), maxDigit(_maxDigit),
 	  	  n(_coeffsP.size()), m(_coeffsQ.size()),
 	  	  msbInOut(_msbInOut), lsbInOut(_lsbInOut),
+		  coeffsP(_coeffsP), coeffsQ(_coeffsQ),
 		  maxDegree(n>m ? n : m)
 	{
 		ostringstream name;
@@ -29,35 +30,33 @@ namespace flopoco {
 		if(n != m)
 			REPORT(INFO, "WARNING: degree of numerator and of denominator are different! "
 					<< "This will lead to a less efficient implementation.");
-		if(maxDigit < (radix-1))
-			REPORT(INFO, "WARNING: used digit set is not maximal!");
 		if((radix != 2) && (radix != 4) && (radix != 8))
 			THROWERROR("FixEMethodEvaluator: radixes higher than 8 currently not supported!");
+		if(maxDigit < (radix-1))
+			REPORT(INFO, "WARNING: used digit set is not maximal!");
 		if(maxDigit > radix-1)
 			THROWERROR("maximum digit larger than the maximum digit in the redundant digit set!");
 		if((int)maxDigit > (1<<msbInOut))
 			THROWERROR("maximum digit not representable on the given input format!");
 
-		//create a copy of the coefficients of P
-		copyVector(_coeffsP, &coeffsP, &mpCoeffsP, maxDegree);
-		//create a copy of the coefficients Q
-		copyVector(_coeffsQ, &coeffsQ, &mpCoeffsQ, maxDegree);
+		//create a copy of the coefficients of P and Q
+		copyVectors();
 
 		REPORT(DEBUG, "coefficients of P, as mp numbers:");
-		for(size_t i=0; i<mpCoeffsP.size(); i++)
+		for(size_t i=0; i<n; i++)
 		{
-			double tmpD = mpfr_get_d(*mpCoeffsP[i], GMP_RNDN);
+			double tmpD = mpfr_get_d(mpCoeffsP[i], GMP_RNDN);
 			REPORT(DEBUG, "" << tmpD);
 		}
 		REPORT(DEBUG, "coefficients of Q, as mp numbers:");
-		for(size_t i=0; i<mpCoeffsQ.size(); i++)
+		for(size_t i=0; i<m; i++)
 		{
-			double tmpD = mpfr_get_d(*mpCoeffsQ[i], GMP_RNDN);
+			double tmpD = mpfr_get_d(mpCoeffsQ[i], GMP_RNDN);
 			REPORT(DEBUG, "" << tmpD);
 		}
 
 		//safety checks and warnings
-		if(mpfr_cmp_si(*mpCoeffsQ[0], 1) != 0)
+		if(mpfr_cmp_si(mpCoeffsQ[0], 1) != 0)
 			THROWERROR("element 0 of coeffsQ must be 1!");
 
 		//compute the number of iterations needed
@@ -79,7 +78,7 @@ namespace flopoco {
 		lsbW = lsbInOut - g;
 		dW   = new Signal("dW", Signal::wire, true, msbW, lsbW);
 		//	D
-		msbD = intlog2(radix);
+		msbD = ceil(log2(radix));
 		lsbD = 0;
 		dD   = new Signal("dD", Signal::wire, true, msbD, lsbD);
 		//	X
@@ -145,7 +144,7 @@ namespace flopoco {
 		for(size_t i=0; i<maxDegree; i++)
 		{
 			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbW, lsbW) << " <= "
-					<< signedFixPointNumber(*(mpCoeffsP[i]), msbW, lsbW, 0) << ";" << endl;
+					<< signedFixPointNumber(mpCoeffsP[i], msbW, lsbW, 0) << ";" << endl;
 			vhdl << tab << declareFixPoint(join("D_0_", i), true, msbD, lsbD) << " <= "
 					<< zg(msbD-lsbD+1, 0) << ";" << endl;
 		}
@@ -155,12 +154,13 @@ namespace flopoco {
 		GenericComputationUnit *cu0, *cuI[maxDegree-2], *cuN;
 
 		//compute unit 0
+		REPORT(DEBUG, "create the computation unit 0");
 		cu0 = new GenericComputationUnit(
 										target,			//target
 										radix, 			//radix
+										maxDigit,		//maximum digit
 										0,				//index
 										-1,				//special case
-										maxDigit, 		//maximum digit
 										dW,				//signal W
 										dX,				//signal X
 										dD, 			//signal Di
@@ -170,12 +170,13 @@ namespace flopoco {
 		for(size_t i=1; i<=(maxDegree-2); i++)
 		{
 			//compute unit i
+			REPORT(DEBUG, "create the computation unit " << i);
 			cuI[i-1] = new GenericComputationUnit(
 												target,			//target
 												radix, 			//radix
+												maxDigit, 		//maximum digit
 												i,				//index
 												0,				//special case
-												maxDigit, 		//maximum digit
 												dW,				//signal W
 												dX,				//signal X
 												dD, 			//signal Di
@@ -184,20 +185,22 @@ namespace flopoco {
 			addSubComponent(cuI[i-1]);
 		}
 		//compute unit n
+		REPORT(DEBUG, "create the computation unit n");
 		cuN = new GenericComputationUnit(
-										target,			//target
-										radix, 			//radix
-										maxDegree-1,	//index
-										+1,				//special case
-										maxDigit, 		//maximum digit
-										dW,				//signal W
-										dX,				//signal X
-										dD, 			//signal Di
-										coeffsQ[nbIter]	//constant q_i
+										target,					//target
+										radix, 					//radix
+										maxDigit, 				//maximum digit
+										maxDegree-1,			//index
+										+1,						//special case
+										dW,						//signal W
+										dX,						//signal X
+										dD, 					//signal Di
+										coeffsQ[maxDegree-1]	//constant q_i
 										);
 		addSubComponent(cuN);
 
 		//create the selection units
+		REPORT(DEBUG, "create the selection unit");
 		GenericSimpleSelectionFunction *sel;
 
 		sel = new GenericSimpleSelectionFunction(
@@ -237,15 +240,16 @@ namespace flopoco {
 			REPORT(DEBUG, "create computation units index 1 to maxDegree-1");
 			for(size_t i=1; i<=(maxDegree-2); i++)
 			{
+				REPORT(DEBUG, "create computation unit index " << i);
 				//inputs
 				inPortMap(cuI[i-1], "Wi",   join("W_", iter-1, "_", i));
 				inPortMap(cuI[i-1], "D0",   join("D_", iter-1, "_0"));
 				inPortMap(cuI[i-1], "Di",   join("D_", iter-1, "_", i));
 				inPortMap(cuI[i-1], "Dip1", join("W_", iter-1, "_", i+1));
 				inPortMap(cuI[i-1], "X",    "X");
-				for(int i=(-(int)maxDigit); i<=(int)maxDigit; i++)
+				for(int j=(-(int)maxDigit); j<=(int)maxDigit; j++)
 				{
-					inPortMap(cuI[i-1], join("X_Mult_", vhdlize(i)), join("X_Mult_", vhdlize(i)));
+					inPortMap(cuI[i-1], join("X_Mult_", vhdlize(j)), join("X_Mult_", vhdlize(j)));
 				}
 				//outputs
 				outPortMap(cuI[i-1], "Wi_next", join("W_", iter, "_", i));
@@ -262,7 +266,7 @@ namespace flopoco {
 			inPortMap(cuN, "Di",   join("D_", iter-1, "_", maxDegree-1));
 			inPortMap(cuN, "X",    "X");
 			//outputs
-			outPortMap(cuN, "Wi_next", join("W_", iter-1, "_", maxDegree-1));
+			outPortMap(cuN, "Wi_next", join("W_", iter, "_", maxDegree-1));
 			//the instance
 			vhdl << tab << instance(cuN, join("CU_", iter-1, "_", maxDegree-1));
 
@@ -283,92 +287,111 @@ namespace flopoco {
 		REPORT(DEBUG, "compute the final result");
 		BitHeap *bitheap = new BitHeap(
 										this,											// parent operator
-										msbInOut-lsbInOut+1,							// maximum weight
+										msbW-lsbW+1,									// maximum weight
 										false, 											// enable supertiles
 										join("Bitheap_"+name.str()+"_", getNewUId())	// bitheap name
 										);
 		//add the digits of the intermediate computations
+		REPORT(DEBUG, "add the digits of the intermediate computations");
 		for(int i=(nbIter-1); i>0; i--)
 		{
+			REPORT(DEBUG, "adding D_" << i << "_" << 0 << " at weight " << (nbIter-1-i)*ceil(log2(radix)));
 			bitheap->addSignedBitVector(
-										(i-nbIter+1)*ceil(log2(radix)),			//weight
+										(nbIter-1-i)*ceil(log2(radix)),			//weight
 										join("D_", i, "_", 0),					//input signal name
 										msbD-lsbD+1								//size
 										);
 		}
 		//add the rounding bit
+		REPORT(DEBUG, "add the rounding bit");
 		bitheap->addConstantOneBit(g-1);
 		//compress the bitheap
+		REPORT(DEBUG, "compress the bitheap");
 		bitheap->generateCompressorVHDL();
 
 		//retrieve the bits we want from the bit heap
-		vhdl << tab << declareFixPoint("sum", true, msbInOut, lsbInOut) << " <= signed(" <<
-				bitheap->getSumName() << range(msbInOut-lsbInOut, 0) << ");" << endl;
+		REPORT(DEBUG, "retrieve the bits we want from the bit heap");
+		vhdl << tab << declareFixPoint("sum", true, msbW, lsbW) << " <= signed(" <<
+				bitheap->getSumName() << range(msbW-lsbW, 0) << ");" << endl;
 
 		//write the result to the output
+		REPORT(DEBUG, "write the result to the output");
 		vhdl << tab << "Y <= sum" << range(msbInOut-lsbInOut+g, g) << ";" << endl;
+
+		REPORT(DEBUG, "constructor completed");
 	}
 
 
 	FixEMethodEvaluator::~FixEMethodEvaluator()
 	{
-		for(size_t i=0; i<n; i++)
-		{
-			mpfr_clear(*mpCoeffsP[i]);
-		}
-		for(size_t i=0; i<m; i++)
-		{
-			mpfr_clear(*mpCoeffsQ[i]);
-		}
+//		for(size_t i=0; i<n; i++)
+//		{
+//			mpfr_clear(mpCoeffsP[i]);
+//		}
+//		for(size_t i=0; i<m; i++)
+//		{
+//			mpfr_clear(mpCoeffsQ[i]);
+//		}
 	}
 
 
-	void FixEMethodEvaluator::copyVector(vector<string> originalVector, vector<string> *newVectorS,
-			vector<mpfr_t*> *newVectorMP, size_t maxIndex)
+	void FixEMethodEvaluator::copyVectors()
 	{
-		size_t iterLimit = originalVector.size();
+		size_t iterLimit = coeffsP.size();
 
-		//safety checks
-		if(originalVector.size() > maxIndex)
-		{
-			THROWERROR("copyVector: maxIndex smaller than the size of the original vector");
-		}
-
+		//copy the coefficients of P
 		for(size_t i=0; i<iterLimit; i++)
 		{
-			//create a copy as string
-			(*newVectorS).push_back(originalVector[i]);
-
 			//create a copy as MPFR
-			mpfr_t *tmpMpfr;
-
-			mpfr_init2(*tmpMpfr, LARGEPREC);
+			mpfr_init2(mpCoeffsP[i], LARGEPREC);
 			//	parse the constant using Sollya
 			sollya_obj_t node;
-			node = sollya_lib_parse_string(originalVector[i].c_str());
+			node = sollya_lib_parse_string(coeffsP[i].c_str());
 			/* If  parse error throw an exception */
 			if (sollya_lib_obj_is_error(node))
 			{
-				THROWERROR("emulate: Unable to parse string "<< originalVector[i] << " as a numeric constant");
+				THROWERROR("emulate: Unable to parse string "<< coeffsP[i] << " as a numeric constant");
 			}
-			sollya_lib_get_constant(*tmpMpfr, node);
+			sollya_lib_get_constant(mpCoeffsP[i], node);
 			free(node);
-
-			(*newVectorMP).push_back(tmpMpfr);
 		}
 		//fill with zeros, if necessary
-		for(size_t i=iterLimit; i<maxIndex; i++)
+		for(size_t i=iterLimit; i<maxDegree; i++)
 		{
 			//create a copy as string
-			(*newVectorS).push_back("0");
+			coeffsP.push_back(string("0"));
 
 			//create a copy as MPFR
-			mpfr_t *tmpMpfr;
+			mpfr_init2(mpCoeffsP[i], LARGEPREC);
+			mpfr_set_zero(mpCoeffsP[i], 0);
+		}
 
-			mpfr_init2(*tmpMpfr, LARGEPREC);
-			mpfr_set_zero(*tmpMpfr, 0);
+		iterLimit = coeffsQ.size();
+		//copy the coefficients of Q
+		for(size_t i=0; i<iterLimit; i++)
+		{
+			//create a copy as MPFR
+			mpfr_init2(mpCoeffsQ[i], LARGEPREC);
+			//	parse the constant using Sollya
+			sollya_obj_t node;
+			node = sollya_lib_parse_string(coeffsQ[i].c_str());
+			/* If  parse error throw an exception */
+			if (sollya_lib_obj_is_error(node))
+			{
+				THROWERROR("emulate: Unable to parse string "<< coeffsQ[i] << " as a numeric constant");
+			}
+			sollya_lib_get_constant(mpCoeffsQ[i], node);
+			free(node);
+		}
+		//fill with zeros, if necessary
+		for(size_t i=iterLimit; i<maxDegree; i++)
+		{
+			//create a copy as string
+			coeffsQ.push_back(string("0"));
 
-			(*newVectorMP).push_back(tmpMpfr);
+			//create a copy as MPFR
+			mpfr_init2(mpCoeffsQ[i], LARGEPREC);
+			mpfr_set_zero(mpCoeffsQ[i], 0);
 		}
 	}
 
@@ -394,25 +417,24 @@ namespace flopoco {
 		UserInterface::parseString(args, "coeffsP", &in);
 		UserInterface::parseString(args, "coeffsQ", &in2);
 
-		// tokenize the string in
 		stringstream ss(in);
-		while(ss.good())
+		string substr;
+		while(std::getline(ss, substr, ':'))
 		{
-			string substr;
-			getline( ss, substr, ':' );
-			coeffsP.push_back( substr );
+			coeffsP.insert(coeffsP.begin(), std::string(substr));
+			//coeffsP.push_back(std::string(substr));
 		}
 
-		// tokenize the string in2
 		stringstream ss2(in2);
-		while(ss2.good())
+		while(std::getline(ss2, substr, ':'))
 		{
-			string substr;
-			getline( ss2, substr, ':' );
-			coeffsQ.push_back( substr );
+			coeffsQ.insert(coeffsQ.begin(), std::string(substr));
+			//coeffsQ.push_back(std::string(substr));
 		}
 
-		return new FixEMethodEvaluator(target, radix, maxDigit, msbIn, lsbIn, coeffsP, coeffsQ);
+		OperatorPtr result = new FixEMethodEvaluator(target, radix, maxDigit, msbIn, lsbIn, coeffsP, coeffsQ);
+
+		return result;
 	}
 
 	void FixEMethodEvaluator::registerFactory(){

@@ -9,9 +9,12 @@
 #ifndef FIXEMETHODEVALUATOR_HPP_
 #define FIXEMETHODEVALUATOR_HPP_
 
-#include <vector>
-#include <sstream>
 #include <string>
+#include <vector>
+
+#include <iostream>
+#include <sstream>
+#include <iterator>
 
 #include <sollya.h>
 #include <gmpxx.h>
@@ -123,7 +126,7 @@ namespace flopoco {
     /**
      * Create a copy of a vector containing constants (given as strings)
      */
-    void copyVector(vector<string> originalVector, vector<string> *newVectorS, vector<mpfr_t*> *newVectorMP, size_t maxIndex);
+    void copyVectors();
 
 
   private:
@@ -135,8 +138,8 @@ namespace flopoco {
     int lsbInOut;                     /**< LSB of the input/output */
     vector<string> coeffsP;           /**< vector of the coefficients of P */
     vector<string> coeffsQ;           /**< vector of the coefficients of Q */
-    vector<mpfr_t*> mpCoeffsP;         /**< vector of the coefficients of P */
-    vector<mpfr_t*> mpCoeffsQ;         /**< vector of the coefficients of Q */
+    mpfr_t mpCoeffsP[10000];          /**< vector of the coefficients of P */
+    mpfr_t mpCoeffsQ[10000];          /**< vector of the coefficients of Q */
 
     size_t maxDegree;                 /**< the maximum between the degrees of the polynomials P and Q */
     size_t nbIter;                    /**< the number of iterations */

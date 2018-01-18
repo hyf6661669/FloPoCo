@@ -104,7 +104,7 @@ namespace flopoco {
 													msbD,						//msbIn
 													lsbD,						//lsbIn
 													lsbInt,						//lsbOut
-													"(-1)*"+qi,					//constant
+													join("(-1)*", qi),			//constant
 													false,						//add round bit
 													1.0							//target ulp error
 													);

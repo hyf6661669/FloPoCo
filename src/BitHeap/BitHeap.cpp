@@ -32,15 +32,15 @@ namespace flopoco
 {
 
 	BitHeap::BitHeap(
-			Operator* op, 
-			int maxWeight, 
-			bool enableSuperTiles, 
-			string name, 
+			Operator* op,
+			int maxWeight,
+			bool enableSuperTiles,
+			string name,
 			int compressionType
 		) :
-			op(op), 
-			compressionType(compressionType), 
-			maxWeight(maxWeight), 
+			op(op),
+			compressionType(compressionType),
+			maxWeight(maxWeight),
 			enableSuperTiles(enableSuperTiles)
 	{
 		// Set up the vector of lists of weighted bits, and the vector of uids
@@ -211,9 +211,9 @@ namespace flopoco
 	void BitHeap::subtractUnsignedBitVector(int weight, string x, unsigned size, int msb, int lsb, bool negativeWeight)
 	{
 		if(weight<0 && !negativeWeight)
-			THROWERROR("Negative weight (" << weight << ") in addUnsignedBitVector");
+			THROWERROR("Negative weight (" << weight << ") in subtractUnsignedBitVector");
 		if(negativeWeight)
-			REPORT(INFO, "in addUnsignedBitVector: Warning: using negative weight for signal to add to bitheap");
+			REPORT(INFO, "in subtractUnsignedBitVector: Warning: using negative weight for signal to add to bitheap");
 		if(weight+size>maxWeight) {
 			REPORT(INFO, "in subtractUnsignedBitVector: Size of signal " << x << " is " << size <<
 					", adding it at weight " << weight << " overflows the bit heap (maxWeight=" << maxWeight << ")");
@@ -249,7 +249,7 @@ namespace flopoco
 
 		if(weight+size>maxWeight)
 		{
-			REPORT(INFO, "in subtractUnsignedBitVector: Size of signal " << x << " is " << size <<
+			REPORT(INFO, "in addSignedBitVector: Size of signal " << x << " is " << size <<
 				   ", adding it at weight " << weight << " overflows the bit heap (maxWeight=" << maxWeight << ")");
 		}
 
@@ -283,7 +283,7 @@ namespace flopoco
 		if(weight<0 && !negativeWeight)
 			THROWERROR("Negative weight (" << weight << ") in addUnsignedBitVector");
 		if(negativeWeight)
-			REPORT(INFO, "in addUnsignedBitVector: Warning: using negative weight for signal to add to bitheap");
+			REPORT(INFO, "in addSignedBitVector: Warning: using negative weight for signal to add to bitheap");
 		if(weight+size>maxWeight)
 		{
 			REPORT(INFO, "in addSignedBitVector: Size of signal " << x << " is " << size <<
@@ -2149,7 +2149,7 @@ namespace flopoco
 				op->vhdl <<  " & " << join("tempR_bh", guid, "_", i);
 
 			op->vhdl << ";" << endl;
-			
+
 		}
 		else
 		{

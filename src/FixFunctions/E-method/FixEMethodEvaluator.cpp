@@ -24,6 +24,8 @@ namespace flopoco {
 				<< "_msbInOut_" << vhdlize(msbInOut) << "_lsbInOut_" << vhdlize(lsbInOut);
 		setName(name.str()+"_uid"+vhdlize(getNewUId()));
 
+		useNumericStd_Signed();
+
 		setCopyrightString("Matei Istoan, 2017");
 
 		//safety checks and warnings
@@ -93,7 +95,7 @@ namespace flopoco {
 		//add the inputs
 		addFixInput("X", true, msbInOut, lsbInOut);
 		//add the outputs
-		addFixOutput("Y", true, msbInOut, lsbInOut);
+		addFixOutput("Y", true, msbInOut, lsbInOut, 2);
 
 		//a helper signal
 		vhdl << tab << declare("X_std_lv", msbDiMX-lsbDiMX+1) << " <= std_logic_vector(X);" << endl;
@@ -111,15 +113,23 @@ namespace flopoco {
 		{
 			//create the multiplication between X and the constant given by i
 			REPORT(DEBUG, "create the multiplication between X and the constant " << i);
-			dimxMult[i] = new IntConstMult(
-											target,					//target
-											msbInOut-lsbInOut+1, 	//size of X
-											mpz_class(i)			//the constant
-											);
-			addSubComponent(dimxMult[i]);
-			inPortMap  (dimxMult[i], "X", "X_std_lv");
-			outPortMap (dimxMult[i], "R", join("X_Mult_", i, "_std_lv"));
-			vhdl << tab << instance(dimxMult[i], join("ConstMult_", i));
+			if(i == 0)
+			{
+				vhdl << tab << declareFixPoint(join("X_Mult_", i, "_std_lv"), true, msbDiMX, lsbDiMX)
+						<< " <= " << zg(msbDiMX-lsbDiMX+1) << ";" << endl;
+			}
+			else
+			{
+				dimxMult[i] = new IntConstMult(
+												target,					//target
+												msbInOut-lsbInOut+1, 	//size of X
+												mpz_class(i)			//the constant
+												);
+				addSubComponent(dimxMult[i]);
+				inPortMap  (dimxMult[i], "X", "X_std_lv");
+				outPortMap (dimxMult[i], "R", join("X_Mult_", i, "_std_lv"));
+				vhdl << tab << instance(dimxMult[i], join("ConstMult_", i));
+			}
 
 			vhdl << tab << declareFixPoint(join("X_Mult_", i, "_int"), true, msbDiMX, lsbDiMX)
 					<< " <= signed(X_Mult_" << i << "_std_lv);" << endl;
@@ -131,10 +141,8 @@ namespace flopoco {
 		for(int i=1; i<=(int)maxDigit; i++)
 		{
 			REPORT(DEBUG, "create the multiplication between X and the constant " << -i);
-			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(-i), "_int"), true, msbDiMX, lsbDiMX)
-					<< " <= X_Mult_" << i << " xor (others => '1');" << endl;
 			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(-i)), true, msbDiMX, lsbDiMX)
-					<< " <= X_Mult_" << vhdlize(-i) << "_int + (" << zg(msbDiMX-lsbDiMX) << "&\"1\");" << endl;
+					<< " <= not(X_Mult_" << vhdlize(-i) << ") + (" << zg(msbDiMX-lsbDiMX) << "&\"1\");" << endl;
 		}
 
 		//iteration 0
@@ -225,7 +233,7 @@ namespace flopoco {
 			inPortMap(cu0, "Wi",   join("W_", iter-1, "_0"));
 			inPortMap(cu0, "D0",   join("D_", iter-1, "_0"));
 			inPortMap(cu0, "Di",   join("D_", iter-1, "_0"));
-			inPortMap(cu0, "Dip1", join("W_", iter-1, "_1"));
+			inPortMap(cu0, "Dip1", join("D_", iter-1, "_1"));
 			inPortMap(cu0, "X",    "X");
 			for(int i=(-(int)maxDigit); i<=(int)maxDigit; i++)
 			{
@@ -245,7 +253,7 @@ namespace flopoco {
 				inPortMap(cuI[i-1], "Wi",   join("W_", iter-1, "_", i));
 				inPortMap(cuI[i-1], "D0",   join("D_", iter-1, "_0"));
 				inPortMap(cuI[i-1], "Di",   join("D_", iter-1, "_", i));
-				inPortMap(cuI[i-1], "Dip1", join("W_", iter-1, "_", i+1));
+				inPortMap(cuI[i-1], "Dip1", join("D_", iter-1, "_", i+1));
 				inPortMap(cuI[i-1], "X",    "X");
 				for(int j=(-(int)maxDigit); j<=(int)maxDigit; j++)
 				{
@@ -324,14 +332,14 @@ namespace flopoco {
 
 	FixEMethodEvaluator::~FixEMethodEvaluator()
 	{
-//		for(size_t i=0; i<n; i++)
-//		{
-//			mpfr_clear(mpCoeffsP[i]);
-//		}
-//		for(size_t i=0; i<m; i++)
-//		{
-//			mpfr_clear(mpCoeffsQ[i]);
-//		}
+		for(size_t i=0; i<n; i++)
+		{
+			mpfr_clear(mpCoeffsP[i]);
+		}
+		for(size_t i=0; i<m; i++)
+		{
+			mpfr_clear(mpCoeffsQ[i]);
+		}
 	}
 
 
@@ -398,7 +406,83 @@ namespace flopoco {
 
 	void FixEMethodEvaluator::emulate(TestCase * tc)
 	{
+		//get the inputs from the TestCase
+		mpz_class svX   = tc->getInputValue("X");
 
+		//manage signed digits
+		mpz_class big1X      = (mpz_class(1) << (msbInOut-lsbInOut+1));
+		mpz_class big1Xp     = (mpz_class(1) << (msbInOut-lsbInOut));
+
+		//handle the signed inputs
+		if(svX >= big1Xp)
+			svX -= big1X;
+
+		// compute the multiple-precision output
+		mpz_class svYd, svYu;
+		mpfr_t mpX, mpP, mpQ, mpTmp, mpY;
+
+		//initialize the variables
+		mpfr_inits2(LARGEPREC, mpX, mpP, mpQ, mpTmp, mpY, (mpfr_ptr)nullptr);
+
+		//initialize P and Q
+		mpfr_set_zero(mpP, 0);
+		mpfr_set_zero(mpQ, 0);
+
+		//initialize X
+		mpfr_set_z(mpX, svX.get_mpz_t(), GMP_RNDN);
+		//	scale X appropriately, by the amount given by lsbInOut
+		mpfr_mul_2si(mpTmp, mpTmp, lsbW, GMP_RNDN);
+
+		//compute P
+		for(size_t i=0; i<n; i++)
+		{
+			//compute X^i
+			mpfr_pow_si(mpTmp, mpX, i, GMP_RNDN);
+			//multiply by coeffsP[i]
+			mpfr_mul(mpTmp, mpTmp, mpCoeffsP[i], GMP_RNDN);
+
+			//add the new term to the sum
+			mpfr_add(mpP, mpP, mpTmp, GMP_RNDN);
+ 		}
+
+		//compute Q
+		for(size_t i=0; i<m; i++)
+		{
+			//compute X^i
+			mpfr_pow_si(mpTmp, mpX, i, GMP_RNDN);
+			//multiply by coeffsQ[i]
+			mpfr_mul(mpTmp, mpTmp, mpCoeffsQ[i], GMP_RNDN);
+
+			//add the new term to the sum
+			mpfr_add(mpQ, mpQ, mpTmp, GMP_RNDN);
+		}
+
+		//compute Y = P/Q
+		mpfr_div(mpY, mpP, mpQ, GMP_RNDN);
+
+		//scale the result back to an integer
+		mpfr_mul_2si(mpY, mpY, -lsbInOut, GMP_RNDN);
+
+		//round the result
+		mpfr_get_z(svYd.get_mpz_t(), mpY, GMP_RNDD);
+		mpfr_get_z(svYu.get_mpz_t(), mpY, GMP_RNDU);
+
+		//handle the signed outputs
+		if(svYd < 0)
+			svYd += big1X;
+		if(svYu < 0)
+			svYu += big1X;
+
+		//only use the required bits
+		svYd &= (big1X-1);
+		svYu &= (big1X-1);
+
+		//add this expected output to the TestCase
+		tc->addExpectedOutput("Y", svYd);
+		tc->addExpectedOutput("Y", svYu);
+
+		//cleanup
+		mpfr_clears(mpX, mpP, mpQ, mpTmp, mpY, (mpfr_ptr)nullptr);
 	}
 
 	OperatorPtr FixEMethodEvaluator::parseArguments(Target *target, std::vector<std::string> &args) {

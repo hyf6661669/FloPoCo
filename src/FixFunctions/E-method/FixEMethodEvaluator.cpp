@@ -74,10 +74,6 @@ namespace flopoco {
 		//check the ranges on the input
 		checkX();
 
-		//safety checks and warnings
-		if(mpfr_cmp_si(mpCoeffsQ[0], 1) != 0)
-			THROWERROR("element 0 of coeffsQ must be 1!");
-
 		//compute the number of iterations needed
 		nbIter = msbInOut - lsbInOut + 1;
 		//the number of iterations is reduced when using a higher radix
@@ -114,8 +110,55 @@ namespace flopoco {
 		//add the outputs
 		addFixOutput("Y", true, msbInOut, lsbInOut, 2);
 
+		//scale the input X by the factor delta, if necessary
+		if(scaleInput)
+		{
+			int xScaleSize;
+
+			//scale the input
+			//	multiply by delta
+			FixRealKCM *scaleMult = new FixRealKCM(
+												 	 target,				//target
+													 true,					//signed input
+													 msbX,					//msbIn
+													 lsbX,					//lsbIn
+													 lsbX,					//lsbOut
+													 join("", delta),		//the constant
+													 1.0					//target ulp error
+												 	 );
+			addSubComponent(scaleMult);
+			inPortMap (scaleMult, "X", "X");
+			outPortMap(scaleMult, "R", "X_scaled_int");
+			vhdl << tab << instance(scaleMult, "ScaleConstMult");
+
+			//extend the result of the multiplication to the original signal, if necessary
+			//	delta<1, so the scaled signal's msb <= original signal's msb
+			xScaleSize = getSignalByName("X_scaled_int")->width();
+			if(xScaleSize < (msbX-lsbX+1))
+			{
+				//extension required
+				ostringstream xScaleExtension;
+
+				xScaleExtension << "X_scaled_int(" << xScaleSize-1 << ") &";
+				for(int i=xScaleSize-1; i>(msbX-lsbX+1); i--)
+					xScaleExtension << "X_scaled_int(" << xScaleSize-1 << ") &";
+				vhdl << tab << declare("X_scaled", msbX-lsbX+1) << " <= "
+						<< xScaleExtension.str() << "X_scaled_int;" << endl;
+			}
+			else
+			{
+				vhdl << tab << declare("X_scaled", msbX-lsbX+1) << " <= X_scaled_int;" << endl;
+			}
+		}
+		else
+		{
+			//no scaling required
+			//	just copy the input to an intermediate signal
+			vhdl << tab << declare("X_scaled", msbX-lsbX+1) << " <= std_logic_vector(X);" << endl;
+		}
+
 		//a helper signal
-		vhdl << tab << declare("X_std_lv", msbDiMX-lsbDiMX+1) << " <= std_logic_vector(X);" << endl;
+		vhdl << tab << declare("X_std_lv", msbX-lsbX+1) << " <= X_scaled;" << endl;
 
 		//create the DiMX signals
 		REPORT(DEBUG, "create the DiMX signals");

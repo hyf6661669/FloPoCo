@@ -92,6 +92,11 @@ namespace flopoco {
      * @param   lsbInOut       LSB of the input/output
      * @param   coeffsP        vector holding the coefficients of polynomial P
      * @param   coeffsQ        vector holding the coefficients of polynomial Q
+     * @param   delta          the parameter delta in the E-Method algorithm,
+     *                         showing the overlap between two redundant digits
+     *                         set to 0.5 by default
+     * @param   scaleInput     flag showing if the input is to be scaled by the factor delta, or not
+     *                         set to false by default
      */
 	FixEMethodEvaluator(Target* target,
 			size_t radix,
@@ -100,6 +105,8 @@ namespace flopoco {
 			int lsbInOut,
 			vector<string> coeffsP,
 			vector<string> coeffsQ,
+			double delta = 0.5,
+			bool scaleInput = false,
 			map<string, double> inputDelays = emptyDelayMap);
 
 	/**
@@ -128,6 +135,24 @@ namespace flopoco {
      */
     void copyVectors();
 
+    /**
+     * Ensure that the coefficients of P all satisfy:
+     * 		|p_i| <= xi
+     */
+    void checkPCoeffs();
+
+    /**
+     * Ensure that the coefficients of Q all satisfy:
+     * 		|q_i| <= 1/2 * alpha
+     */
+    void checkQCoeffs();
+
+    /**
+     * Ensure that the input X satisfies:
+     * 		|x| <= 1/2 * alpha
+     */
+    void checkX();
+
 
   private:
     size_t radix;                     /**< the radix used for the implementation */
@@ -140,6 +165,12 @@ namespace flopoco {
     vector<string> coeffsQ;           /**< vector of the coefficients of Q */
     mpfr_t mpCoeffsP[10000];          /**< vector of the coefficients of P */
     mpfr_t mpCoeffsQ[10000];          /**< vector of the coefficients of Q */
+
+    double delta;                     /**< the parameter delta in the E-Method algorithm */
+    double alpha;                     /**< the parameter alpha in the E-Method algorithm */
+    double xi;                        /**< the parameter xi in the E-Method algorithm */
+
+    bool scaleInput;                  /**< flag showing whether the input X to the circuit will be scaled, or not */
 
     size_t maxDegree;                 /**< the maximum between the degrees of the polynomials P and Q */
     size_t nbIter;                    /**< the number of iterations */

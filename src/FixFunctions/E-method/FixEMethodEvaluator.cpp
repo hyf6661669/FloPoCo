@@ -10,11 +10,14 @@
 namespace flopoco {
 
 	FixEMethodEvaluator::FixEMethodEvaluator(Target* target, size_t _radix, size_t _maxDigit, int _msbInOut, int _lsbInOut,
-		vector<string> _coeffsP, vector<string> _coeffsQ, map<string, double> inputDelays)
+		vector<string> _coeffsP, vector<string> _coeffsQ,
+		double _delta, bool _scaleInput,
+		map<string, double> inputDelays)
 	: Operator(target), radix(_radix), maxDigit(_maxDigit),
 	  	  n(_coeffsP.size()), m(_coeffsQ.size()),
 	  	  msbInOut(_msbInOut), lsbInOut(_lsbInOut),
 		  coeffsP(_coeffsP), coeffsQ(_coeffsQ),
+		  delta(_delta), scaleInput(_scaleInput),
 		  maxDegree(n>m ? n : m)
 	{
 		ostringstream name;
@@ -33,13 +36,20 @@ namespace flopoco {
 			REPORT(INFO, "WARNING: degree of numerator and of denominator are different! "
 					<< "This will lead to a less efficient implementation.");
 		if((radix != 2) && (radix != 4) && (radix != 8))
-			THROWERROR("FixEMethodEvaluator: radixes higher than 8 currently not supported!");
+			THROWERROR("radixes higher than 8 currently not supported!");
 		if(maxDigit < (radix-1))
 			REPORT(INFO, "WARNING: used digit set is not maximal!");
 		if(maxDigit > radix-1)
 			THROWERROR("maximum digit larger than the maximum digit in the redundant digit set!");
 		if((int)maxDigit > (1<<msbInOut))
 			THROWERROR("maximum digit not representable on the given input format!");
+		if((delta<0 || delta>1))
+			THROWERROR("delta must be in the interval [0, 1)!");
+
+		//compute the parameters of the algorithm
+		REPORT(DEBUG, "compute the parameters of the algorithm");
+		xi    = 0.5  * (1+delta);
+		alpha = 0.25 * (1-delta);
 
 		//create a copy of the coefficients of P and Q
 		copyVectors();
@@ -56,6 +66,13 @@ namespace flopoco {
 			double tmpD = mpfr_get_d(mpCoeffsQ[i], GMP_RNDN);
 			REPORT(DEBUG, "" << tmpD);
 		}
+
+		//check P's coefficients
+		checkPCoeffs();
+		//check Q's coefficients
+		checkQCoeffs();
+		//check the ranges on the input
+		checkX();
 
 		//safety checks and warnings
 		if(mpfr_cmp_si(mpCoeffsQ[0], 1) != 0)
@@ -131,7 +148,8 @@ namespace flopoco {
 				vhdl << tab << instance(dimxMult[i], join("ConstMult_", i));
 			}
 
-			vhdl << tab << declareFixPoint(join("X_Mult_", i, "_int"), true, msbDiMX, lsbDiMX)
+			vhdl << tab << declareFixPoint(join("X_Mult_", i, "_int"), true,
+					getSignalByName(join("X_Mult_", i, "_std_lv"))->width()+lsbX-1, lsbX)
 					<< " <= signed(X_Mult_" << i << "_std_lv);" << endl;
 			resizeFixPoint(join("X_Mult_", i), join("X_Mult_", i, "_int"), msbDiMX, lsbDiMX, 1);
 		}
@@ -142,7 +160,7 @@ namespace flopoco {
 		{
 			REPORT(DEBUG, "create the multiplication between X and the constant " << -i);
 			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(-i)), true, msbDiMX, lsbDiMX)
-					<< " <= not(X_Mult_" << vhdlize(-i) << ") + (" << zg(msbDiMX-lsbDiMX) << "&\"1\");" << endl;
+					<< " <= -X_Mult_" << i << ";" << endl;
 		}
 
 		//iteration 0
@@ -318,12 +336,12 @@ namespace flopoco {
 		bitheap->generateCompressorVHDL();
 
 		//retrieve the bits we want from the bit heap
-		REPORT(DEBUG, "retrieve the bits we want from the bit heap");
+		REPORT(DEBUG, "retrieve the bits from the bit heap");
 		vhdl << tab << declareFixPoint("sum", true, msbW, lsbW) << " <= signed(" <<
 				bitheap->getSumName() << range(msbW-lsbW, 0) << ");" << endl;
 
 		//write the result to the output
-		REPORT(DEBUG, "write the result to the output");
+		REPORT(DEBUG, "write the result to the output, only the bits that we want");
 		vhdl << tab << "Y <= sum" << range(msbInOut-lsbInOut+g, g) << ";" << endl;
 
 		REPORT(DEBUG, "constructor completed");
@@ -332,12 +350,9 @@ namespace flopoco {
 
 	FixEMethodEvaluator::~FixEMethodEvaluator()
 	{
-		for(size_t i=0; i<n; i++)
+		for(size_t i=0; i<maxDegree; i++)
 		{
 			mpfr_clear(mpCoeffsP[i]);
-		}
-		for(size_t i=0; i<m; i++)
-		{
 			mpfr_clear(mpCoeffsQ[i]);
 		}
 	}
@@ -401,6 +416,71 @@ namespace flopoco {
 			mpfr_init2(mpCoeffsQ[i], LARGEPREC);
 			mpfr_set_zero(mpCoeffsQ[i], 0);
 		}
+	}
+
+
+	void FixEMethodEvaluator::checkPCoeffs()
+	{
+		mpfr_t mpXi;
+
+		mpfr_init2(mpXi, LARGEPREC);
+		mpfr_set_d(mpXi, xi, GMP_RNDN);
+		//check that the coefficients of P are smaller than xi
+		for(size_t i=0; i<maxDegree; i++)
+		{
+			if(mpfr_cmp(mpCoeffsP[i], mpXi) > 0)
+				THROWERROR("checkPCoeff: coefficient coeffsP[" << i << "]=" << coeffsP[i]
+					<< " does not satisfy the constraints");
+		}
+
+		mpfr_clear(mpXi);
+	}
+
+
+	void FixEMethodEvaluator::checkQCoeffs()
+	{
+		mpfr_t mpAlpha;
+
+		mpfr_init2(mpAlpha, LARGEPREC);
+		mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
+		mpfr_div_2ui(mpAlpha, mpAlpha, 1, GMP_RNDN);
+		//check that coeffsQ[0]=1
+		if(mpfr_cmp_ui(mpCoeffsQ[0], 1) != 0)
+			THROWERROR("checkQCoeff: coefficient coeffsQ[0]=" << coeffsQ[0]
+				<< " should be 1");
+		//check that the coefficients of Q are smaller than alpha/2
+		for(size_t i=1; i<maxDegree; i++)
+		{
+			if(mpfr_cmp(mpCoeffsQ[i], mpAlpha) > 0)
+				THROWERROR("checkQCoeff: coefficient coeffsQ[" << i << "]=" << coeffsQ[i]
+					<< " does not satisfy the constraints");
+		}
+
+		mpfr_clear(mpAlpha);
+	}
+
+	void FixEMethodEvaluator::checkX()
+	{
+		mpfr_t mpAlpha, mpX, mpTmp;
+
+		mpfr_inits2(LARGEPREC, mpAlpha, mpX, (mpfr_ptr)nullptr);
+
+		mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
+		mpfr_div_2ui(mpAlpha, mpAlpha, 1, GMP_RNDN);
+
+		//check that the largest value that X can take is smaller than alpha/2
+		//	largest value X can take
+		mpfr_set_ui(mpX, 1, GMP_RNDN);
+		mpfr_mul_2si(mpX, mpX, msbX, GMP_RNDN);
+		//	need to subtract 1 ulp
+		mpfr_set_ui(mpTmp, 1, GMP_RNDN);
+		mpfr_mul_2si(mpTmp, mpTmp, lsbX, GMP_RNDN);
+		//	get the actual largest value X can take
+		mpfr_sub(mpX, mpX, mpTmp, GMP_RNDN);
+		//	now perform the test
+		if(mpfr_cmp(mpX, mpAlpha) > 0)
+			THROWERROR("checkX: input format for X, with msb=" << msbX
+					<< " and lsb=" << lsbX << " does not satisfy the constraints");
 	}
 
 
@@ -473,7 +553,7 @@ namespace flopoco {
 		dY = mpfr_get_d(mpY, GMP_RNDN);
 
 		//scale the result back to an integer
-		mpfr_mul_2si(mpY, mpY, -lsbInOut, GMP_RNDN);
+		mpfr_mul_2si(mpY, mpY, -lsbInOut+msbInOut, GMP_RNDN);
 
 		//round the result
 		mpfr_get_z(svYd.get_mpz_t(), mpY, GMP_RNDD);

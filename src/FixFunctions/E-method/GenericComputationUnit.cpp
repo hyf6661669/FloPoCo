@@ -24,7 +24,7 @@ namespace flopoco {
 		srcFileName = "GenericComputationUnit";
 		name << "GenericComputationUnit_radix" << radix
 				<< "_index_" << index
-				<< "_qi_" << std::setprecision(5) << qi
+				<< "_qi_" << std::setprecision(5) << vhdlize(qi)
 				<< "_msbIn_" << vhdlize(msbW) << "_lsbIn_" << vhdlize(lsbW);
 		setName(name.str()+"_uid"+vhdlize(getNewUId()));
 

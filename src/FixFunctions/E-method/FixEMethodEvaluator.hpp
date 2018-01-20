@@ -86,17 +86,19 @@ namespace flopoco {
   public:
     /**
      * A constructor that exposes all options.
-     * @param   radix          the radix used for the implementation
-     * @param   maxDigit       the maximum digit in the used digit set
-     * @param   msbInOut       MSB of the input/output
-     * @param   lsbInOut       LSB of the input/output
-     * @param   coeffsP        vector holding the coefficients of polynomial P
-     * @param   coeffsQ        vector holding the coefficients of polynomial Q
-     * @param   delta          the parameter delta in the E-Method algorithm,
-     *                         showing the overlap between two redundant digits
-     *                         set to 0.5 by default
-     * @param   scaleInput     flag showing if the input is to be scaled by the factor delta, or not
-     *                         set to false by default
+     * @param   radix                the radix used for the implementation
+     * @param   maxDigit             the maximum digit in the used digit set
+     * @param   msbInOut             MSB of the input/output
+     * @param   lsbInOut             LSB of the input/output
+     * @param   coeffsP              vector holding the coefficients of polynomial P
+     * @param   coeffsQ              vector holding the coefficients of polynomial Q
+     * @param   delta                the parameter delta in the E-Method algorithm,
+     *                               showing the overlap between two redundant digits
+     *                               set to 0.5 by default
+     * @param   scaleInput           flag showing if the input is to be scaled, or not
+     *                               set to false by default
+     * @param   inputScaleFactor     factor by which to scale the input
+     *                               set by default to -1, meaning that the input is scaled by 1/2*alpha
      */
 	FixEMethodEvaluator(Target* target,
 			size_t radix,
@@ -107,6 +109,7 @@ namespace flopoco {
 			vector<string> coeffsQ,
 			double delta = 0.5,
 			bool scaleInput = false,
+			double inputScaleFactor = -1,
 			map<string, double> inputDelays = emptyDelayMap);
 
 	/**
@@ -171,6 +174,7 @@ namespace flopoco {
     double xi;                        /**< the parameter xi in the E-Method algorithm */
 
     bool scaleInput;                  /**< flag showing whether the input X to the circuit will be scaled, or not */
+    double inputScaleFactor;          /**< the factor by which the input is scaled */
 
     size_t maxDegree;                 /**< the maximum between the degrees of the polynomials P and Q */
     size_t nbIter;                    /**< the number of iterations */

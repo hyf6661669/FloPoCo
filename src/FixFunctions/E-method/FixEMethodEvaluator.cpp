@@ -11,13 +11,13 @@ namespace flopoco {
 
 	FixEMethodEvaluator::FixEMethodEvaluator(Target* target, size_t _radix, size_t _maxDigit, int _msbInOut, int _lsbInOut,
 		vector<string> _coeffsP, vector<string> _coeffsQ,
-		double _delta, bool _scaleInput,
+		double _delta, bool _scaleInput, double _inputScaleFactor,
 		map<string, double> inputDelays)
 	: Operator(target), radix(_radix), maxDigit(_maxDigit),
 	  	  n(_coeffsP.size()), m(_coeffsQ.size()),
 	  	  msbInOut(_msbInOut), lsbInOut(_lsbInOut),
 		  coeffsP(_coeffsP), coeffsQ(_coeffsQ),
-		  delta(_delta), scaleInput(_scaleInput),
+		  delta(_delta), scaleInput(_scaleInput), inputScaleFactor(_inputScaleFactor),
 		  maxDegree(n>m ? n : m)
 	{
 		ostringstream name;
@@ -50,6 +50,15 @@ namespace flopoco {
 		REPORT(DEBUG, "compute the parameters of the algorithm");
 		xi    = 0.5  * (1+delta);
 		alpha = 0.25 * (1-delta);
+		if(scaleInput == true)
+		{
+			if(inputScaleFactor == -1)
+				inputScaleFactor = alpha/2.0;
+		}
+		else
+		{
+			inputScaleFactor = 1;
+		}
 
 		//create a copy of the coefficients of P and Q
 		copyVectors();
@@ -115,33 +124,35 @@ namespace flopoco {
 		{
 			int xScaleSize;
 
+			//a helper signal
+			vhdl << tab << declare("X_std_lv", msbX-lsbX+1) << " <= std_logic_vector(X);" << endl;
+
 			//scale the input
-			//	multiply by delta
+			//	multiply by 1/2*alpha
 			FixRealKCM *scaleMult = new FixRealKCM(
-												 	 target,				//target
-													 true,					//signed input
-													 msbX,					//msbIn
-													 lsbX,					//lsbIn
-													 lsbX,					//lsbOut
-													 join("", delta),		//the constant
-													 1.0					//target ulp error
+												 	 target,						//target
+													 true,							//signed input
+													 msbX,							//msbIn
+													 lsbX,							//lsbIn
+													 lsbX,							//lsbOut
+													 join("", inputScaleFactor),	//the constant
+													 1.0							//target ulp error
 												 	 );
 			addSubComponent(scaleMult);
-			inPortMap (scaleMult, "X", "X");
+			inPortMap (scaleMult, "X", "X_std_lv");
 			outPortMap(scaleMult, "R", "X_scaled_int");
 			vhdl << tab << instance(scaleMult, "ScaleConstMult");
 
 			//extend the result of the multiplication to the original signal, if necessary
-			//	delta<1, so the scaled signal's msb <= original signal's msb
+			//	inputScaleFactor<1, so the scaled signal's msb <= original signal's msb
 			xScaleSize = getSignalByName("X_scaled_int")->width();
 			if(xScaleSize < (msbX-lsbX+1))
 			{
 				//extension required
 				ostringstream xScaleExtension;
 
-				xScaleExtension << "X_scaled_int(" << xScaleSize-1 << ") &";
-				for(int i=xScaleSize-1; i>(msbX-lsbX+1); i--)
-					xScaleExtension << "X_scaled_int(" << xScaleSize-1 << ") &";
+				for(int i=xScaleSize; i<(msbX-lsbX+1); i++)
+					xScaleExtension << "X_scaled_int(" << xScaleSize-1 << ") & ";
 				vhdl << tab << declare("X_scaled", msbX-lsbX+1) << " <= "
 						<< xScaleExtension.str() << "X_scaled_int;" << endl;
 			}
@@ -158,7 +169,7 @@ namespace flopoco {
 		}
 
 		//a helper signal
-		vhdl << tab << declare("X_std_lv", msbX-lsbX+1) << " <= X_scaled;" << endl;
+		vhdl << tab << declare("X_scaled_std_lv", msbX-lsbX+1) << " <= X_scaled;" << endl;
 
 		//create the DiMX signals
 		REPORT(DEBUG, "create the DiMX signals");
@@ -186,7 +197,7 @@ namespace flopoco {
 												mpz_class(i)			//the constant
 												);
 				addSubComponent(dimxMult[i]);
-				inPortMap  (dimxMult[i], "X", "X_std_lv");
+				inPortMap  (dimxMult[i], "X", "X_scaled_std_lv");
 				outPortMap (dimxMult[i], "R", join("X_Mult_", i, "_std_lv"));
 				vhdl << tab << instance(dimxMult[i], join("ConstMult_", i));
 			}
@@ -506,7 +517,7 @@ namespace flopoco {
 	{
 		mpfr_t mpAlpha, mpX, mpTmp;
 
-		mpfr_inits2(LARGEPREC, mpAlpha, mpX, (mpfr_ptr)nullptr);
+		mpfr_inits2(LARGEPREC, mpAlpha, mpX, mpTmp, (mpfr_ptr)nullptr);
 
 		mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
 		mpfr_div_2ui(mpAlpha, mpAlpha, 1, GMP_RNDN);
@@ -514,16 +525,23 @@ namespace flopoco {
 		//check that the largest value that X can take is smaller than alpha/2
 		//	largest value X can take
 		mpfr_set_ui(mpX, 1, GMP_RNDN);
-		mpfr_mul_2si(mpX, mpX, msbX, GMP_RNDN);
+		mpfr_mul_2si(mpX, mpX, msbInOut, GMP_RNDN);
 		//	need to subtract 1 ulp
 		mpfr_set_ui(mpTmp, 1, GMP_RNDN);
-		mpfr_mul_2si(mpTmp, mpTmp, lsbX, GMP_RNDN);
+		mpfr_mul_2si(mpTmp, mpTmp, lsbInOut, GMP_RNDN);
 		//	get the actual largest value X can take
 		mpfr_sub(mpX, mpX, mpTmp, GMP_RNDN);
+		//if the input is scaled, then scale the maximum value as well
+		if(scaleInput == true)
+		{
+			mpfr_mul_d(mpX, mpX, inputScaleFactor, GMP_RNDN);
+		}
 		//	now perform the test
 		if(mpfr_cmp(mpX, mpAlpha) > 0)
-			THROWERROR("checkX: input format for X, with msb=" << msbX
-					<< " and lsb=" << lsbX << " does not satisfy the constraints");
+			THROWERROR("checkX: input format for X, with msb=" << msbInOut
+					<< " and lsb=" << lsbInOut << " does not satisfy the constraints");
+
+		mpfr_clears(mpAlpha, mpX, mpTmp, (mpfr_ptr)nullptr);
 	}
 
 
@@ -558,6 +576,10 @@ namespace flopoco {
 		//	scale X appropriately, by the amount given by lsbInOut
 		mpfr_mul_2si(mpX, mpX, lsbInOut, GMP_RNDN);
 		dTmp = mpfr_get_d(mpX, GMP_RNDN);
+
+		//if required, scale the input
+		if(scaleInput == true)
+			mpfr_mul_d(mpX, mpX, inputScaleFactor, GMP_RNDN);
 
 		//compute P
 		for(int i=0; i<(int)n; i++)
@@ -627,6 +649,9 @@ namespace flopoco {
 		int lsbIn;
 		vector<string> coeffsP;
 		vector<string> coeffsQ;
+		double delta;
+		bool scaleInput;
+		double inputScaleFactor;
 		string in, in2;
 
 		UserInterface::parseStrictlyPositiveInt(args, "radix", &radix);
@@ -635,6 +660,9 @@ namespace flopoco {
 		UserInterface::parseInt(args, "lsbIn", &lsbIn);
 		UserInterface::parseString(args, "coeffsP", &in);
 		UserInterface::parseString(args, "coeffsQ", &in2);
+		UserInterface::parseFloat(args, "delta", &delta);
+		UserInterface::parseBoolean(args, "scaleInput", &scaleInput);
+		UserInterface::parseFloat(args, "inputScaleFactor", &inputScaleFactor);
 
 		stringstream ss(in);
 		string substr;
@@ -651,7 +679,8 @@ namespace flopoco {
 			//coeffsQ.push_back(std::string(substr));
 		}
 
-		OperatorPtr result = new FixEMethodEvaluator(target, radix, maxDigit, msbIn, lsbIn, coeffsP, coeffsQ);
+		OperatorPtr result = new FixEMethodEvaluator(target, radix, maxDigit, msbIn, lsbIn,
+				coeffsP, coeffsQ, delta, scaleInput, inputScaleFactor);
 
 		return result;
 	}
@@ -666,7 +695,10 @@ namespace flopoco {
 				 msbIn(int): MSB of the input;\
 				 lsbIn(int): LSB of the input;\
 				 coeffsP(string): colon-separated list of real coefficients of polynomial P, using Sollya syntax. Example: coeff=\"1.234567890123:sin(3*pi/8)\";\
-				 coeffsQ(string): colon-separated list of real coefficients of polynomial Q, using Sollya syntax. Example: coeff=\"1.234567890123:sin(3*pi/8)\""
+				 coeffsQ(string): colon-separated list of real coefficients of polynomial Q, using Sollya syntax. Example: coeff=\"1.234567890123:sin(3*pi/8)\";\
+				 delta(real)=0.5: the value for the delta parameter in the E-method algorithm;\
+				 scaleInput(bool)=false: flag showing if the input is to be scaled by the factor delta;\
+				 inputScaleFactor(real)=-1: the factor by which the input is scaled"
 				"",
 				"",
 				FixEMethodEvaluator::parseArguments,

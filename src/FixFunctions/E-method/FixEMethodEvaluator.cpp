@@ -304,9 +304,36 @@ namespace flopoco {
 												);
 		addSubComponent(sel);
 
+		//iteration 1
+		//	the elements of the residual vector are the ones at the previous iteration
+		//	shifted by log2(radix) positions to the left
+		if(nbIter >= 1)
+		{
+			addComment(" ---- iteration 1 ----", tab);
+			REPORT(DEBUG, "iteration 1");
+			for(size_t i=0; i<maxDegree; i++)
+			{
+				//TODO: this can be more precise
+				//		instead of shifting the previous signal, just generate the signal shifted by two
+
+				//create the residual vector
+				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
+						<< "W_0_" << i << range(msbW-lsbW-ceil(log2(radix)), 0)
+						<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+
+				//create the selection unit
+				//inputs
+				inPortMap(sel,  "W", join("W_1_", i));
+				//outputs
+				outPortMap(sel, "D", join("D_1_", i));
+				//the instance
+				vhdl << tab << instance(sel, join("SEL_1_", i));
+			}
+		}
+
 		//iterations 1 to nbIter
 		REPORT(DEBUG, "iterations 1 to nbIter");
-		for(size_t iter=1; iter<=nbIter; iter++)
+		for(size_t iter=2; iter<=nbIter; iter++)
 		{
 			REPORT(DEBUG, "iteration " << iter);
 			addComment(join(" ---- iteration ", iter, " ----"), tab);

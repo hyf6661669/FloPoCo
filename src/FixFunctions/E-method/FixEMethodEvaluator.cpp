@@ -128,13 +128,14 @@ namespace flopoco {
 			vhdl << tab << declare("X_std_lv", msbX-lsbX+1) << " <= std_logic_vector(X);" << endl;
 
 			//scale the input
-			//	multiply by 1/2*alpha
+			//	multiply by inputScaleFactor
+			//		set by default to 1/2*alpha, if not otherwise specified by the user
 			FixRealKCM *scaleMult = new FixRealKCM(
 												 	 target,						//target
 													 true,							//signed input
 													 msbX,							//msbIn
 													 lsbX,							//lsbIn
-													 lsbX,							//lsbOut
+													 lsbX-g,						//lsbOut
 													 join("", inputScaleFactor),	//the constant
 													 1.0							//target ulp error
 												 	 );
@@ -146,20 +147,30 @@ namespace flopoco {
 			//extend the result of the multiplication to the original signal, if necessary
 			//	inputScaleFactor<1, so the scaled signal's msb <= original signal's msb
 			xScaleSize = getSignalByName("X_scaled_int")->width();
-			if(xScaleSize < (msbX-lsbX+1))
+			if(xScaleSize < (msbX-lsbX+1+g))
 			{
 				//extension required
 				ostringstream xScaleExtension;
 
-				for(int i=xScaleSize; i<(msbX-lsbX+1); i++)
+				for(int i=xScaleSize; i<(msbX-lsbX+1+g); i++)
 					xScaleExtension << "X_scaled_int(" << xScaleSize-1 << ") & ";
-				vhdl << tab << declare("X_scaled", msbX-lsbX+1) << " <= "
+				vhdl << tab << declare("X_scaled", msbX-lsbX+1+g) << " <= "
 						<< xScaleExtension.str() << "X_scaled_int;" << endl;
 			}
 			else
 			{
-				vhdl << tab << declare("X_scaled", msbX-lsbX+1) << " <= X_scaled_int;" << endl;
+				vhdl << tab << declare("X_scaled", msbX-lsbX+g+1) << " <= X_scaled_int;" << endl;
 			}
+
+			//update the size of the signals based on X
+			//	X
+			msbX = msbInOut;
+			lsbX = lsbInOut-g;
+			dX   = new Signal("dX", Signal::wire, true, msbX, lsbX);
+			// DiMultX
+			msbDiMX = msbX + (int)ceil(log2(maxDigit));
+			lsbDiMX = lsbX;
+			dDiMX   = new Signal("dDiMX", Signal::wire, true, msbDiMX, lsbDiMX);
 		}
 		else
 		{
@@ -170,6 +181,8 @@ namespace flopoco {
 
 		//a helper signal
 		vhdl << tab << declare("X_scaled_std_lv", msbX-lsbX+1) << " <= X_scaled;" << endl;
+		//a helper signal
+		vhdl << tab << declareFixPoint("X_scaled_signed", true, msbX, lsbX) << " <= signed(X_scaled);" << endl;
 
 		//create the DiMX signals
 		REPORT(DEBUG, "create the DiMX signals");
@@ -193,7 +206,7 @@ namespace flopoco {
 			{
 				dimxMult[i] = new IntConstMult(
 												target,					//target
-												msbInOut-lsbInOut+1, 	//size of X
+												msbX-lsbX+1,		 	//size of X
 												mpz_class(i)			//the constant
 												);
 				addSubComponent(dimxMult[i]);
@@ -306,7 +319,7 @@ namespace flopoco {
 			inPortMap(cu0, "D0",   join("D_", iter-1, "_0"));
 			inPortMap(cu0, "Di",   join("D_", iter-1, "_0"));
 			inPortMap(cu0, "Dip1", join("D_", iter-1, "_1"));
-			inPortMap(cu0, "X",    "X");
+			inPortMap(cu0, "X",    "X_scaled_signed");
 			for(int i=(-(int)maxDigit); i<=(int)maxDigit; i++)
 			{
 				inPortMap(cu0, join("X_Mult_", vhdlize(i)), join("X_Mult_", vhdlize(i)));
@@ -326,7 +339,7 @@ namespace flopoco {
 				inPortMap(cuI[i-1], "D0",   join("D_", iter-1, "_0"));
 				inPortMap(cuI[i-1], "Di",   join("D_", iter-1, "_", i));
 				inPortMap(cuI[i-1], "Dip1", join("D_", iter-1, "_", i+1));
-				inPortMap(cuI[i-1], "X",    "X");
+				inPortMap(cuI[i-1], "X",    "X_scaled_signed");
 				for(int j=(-(int)maxDigit); j<=(int)maxDigit; j++)
 				{
 					inPortMap(cuI[i-1], join("X_Mult_", vhdlize(j)), join("X_Mult_", vhdlize(j)));
@@ -344,7 +357,7 @@ namespace flopoco {
 			inPortMap(cuN, "Wi",   join("W_", iter-1, "_", maxDegree-1));
 			inPortMap(cuN, "D0",   join("D_", iter-1, "_0"));
 			inPortMap(cuN, "Di",   join("D_", iter-1, "_", maxDegree-1));
-			inPortMap(cuN, "X",    "X");
+			inPortMap(cuN, "X",    "X_scaled_signed");
 			//outputs
 			outPortMap(cuN, "Wi_next", join("W_", iter, "_", maxDegree-1));
 			//the instance

@@ -313,13 +313,25 @@ namespace flopoco {
 			REPORT(DEBUG, "iteration 1");
 			for(size_t i=0; i<maxDegree; i++)
 			{
-				//TODO: this can be more precise
-				//		instead of shifting the previous signal, just generate the signal shifted by two
+				//TODO: this can be more precise than the original algorithm
+				//		instead of shifting the previous signal, just generate
+				//		the signal from the constant multiplied by two
 
 				//create the residual vector
+				/*
 				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
 						<< "W_0_" << i << range(msbW-lsbW-ceil(log2(radix)), 0)
 						<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+				*/
+				mpfr_t mpTmp;
+
+				mpfr_init2(mpTmp, LARGEPREC);
+				mpfr_mul_2ui(mpTmp, mpCoeffsP[i], 1, GMP_RNDN);
+
+				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
+						<< signedFixPointNumber(mpTmp, msbW, lsbW, 0) << ";" << endl;
+
+				mpfr_clear(mpTmp);
 
 				//create the selection unit
 				//inputs

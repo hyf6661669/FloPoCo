@@ -331,15 +331,21 @@ namespace flopoco {
 				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
 						<< signedFixPointNumber(mpTmp, msbW, lsbW, 0) << ";" << endl;
 
-				mpfr_clear(mpTmp);
+				//mpfr_clear(mpTmp);
 
 				//create the selection unit
+				/*
 				//inputs
 				inPortMap(sel,  "W", join("W_1_", i));
 				//outputs
 				outPortMap(sel, "D", join("D_1_", i));
 				//the instance
 				vhdl << tab << instance(sel, join("SEL_1_", i));
+				*/
+				vhdl << tab << declareFixPoint(join("D_1_", i), true, msbD, lsbD) << " <= "
+						<< signedFixPointNumber(mpTmp, msbD, lsbD, 0) << ";" << endl;
+
+				mpfr_clear(mpTmp);
 			}
 		}
 

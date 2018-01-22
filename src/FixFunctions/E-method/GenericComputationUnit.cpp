@@ -97,9 +97,13 @@ namespace flopoco {
 		{
 			//create the multiplication D_0[j-1] * (-1)*q_i
 			REPORT(DEBUG, "create the multiplication D_0[j-1] * (-1)*q_i");
+
+			//a helper signal
+			vhdl << tab << declare("D0_std_lv", msbD-lsbD+1) << " <= std_logic_vector(D0);" << endl;
+
 			FixRealKCM *constMult = new FixRealKCM(
 													this,						//parent operator
-													"std_logic_vector(D0)",		//input signal name
+													"D0_std_lv",				//input signal name
 													true,						//signedness
 													msbD,						//msbIn
 													lsbD,						//lsbIn

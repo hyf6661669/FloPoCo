@@ -131,13 +131,13 @@ namespace flopoco {
 			//	multiply by inputScaleFactor
 			//		set by default to 1/2*alpha, if not otherwise specified by the user
 			FixRealKCM *scaleMult = new FixRealKCM(
-												 	 target,						//target
-													 true,							//signed input
-													 msbX,							//msbIn
-													 lsbX,							//lsbIn
-													 lsbX-g,						//lsbOut
-													 join("", inputScaleFactor),	//the constant
-													 1.0							//target ulp error
+												 	 target,							//target
+													 true,								//signed input
+													 msbX,								//msbIn
+													 lsbX,								//lsbIn
+													 lsbX-g,							//lsbOut
+													 std::to_string(inputScaleFactor),	//the constant
+													 1.0								//target ulp error
 												 	 );
 			addSubComponent(scaleMult);
 			inPortMap (scaleMult, "X", "X_std_lv");
@@ -330,8 +330,6 @@ namespace flopoco {
 
 				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
 						<< signedFixPointNumber(mpTmp, msbW, lsbW, 0) << ";" << endl;
-
-				//mpfr_clear(mpTmp);
 
 				//create the selection unit
 				/*

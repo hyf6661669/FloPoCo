@@ -68,6 +68,7 @@ namespace flopoco{
 		// User-interface stuff
 		/** Factory method */
 		static OperatorPtr parseArguments(Target *target , vector<string> &args);
+		static TestList unitTest(int index);
 		static void registerFactory();
 
 	protected:

@@ -12,6 +12,7 @@
 #include <string.h>
 
 
+// This is an example of overloading the FixFIR class for a classical filter.
 namespace flopoco{
 
 	class FixHalfSine : public FixFIR

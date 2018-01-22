@@ -24,11 +24,11 @@ extern "C"
 
 
 The example with poles close to 1:
-./flopoco generateFigures=1 FixIIR coeffb="0x1.89ff611d6f472p-13:-0x1.2778afe6e1ac0p-11:0x1.89f1af73859fap-12:0x1.89f1af73859fap-12:-0x1.2778afe6e1ac0p-11:0x1.89ff611d6f472p-13" coeffa="-0x1.3f4f52485fe49p+2:0x1.3e9f8e35c8ca8p+3:-0x1.3df0b27610157p+3:0x1.3d42bdb9d2329p+2:-0x1.fa89178710a2bp-1" lsbIn=-12 lsbOut=-12 TestBench n=100
+./flopoco generateFigures=1 FixIIR coeffb="0x1.89ff611d6f472p-13:-0x1.2778afe6e1ac0p-11:0x1.89f1af73859fap-12:0x1.89f1af73859fap-12:-0x1.2778afe6e1ac0p-11:0x1.89ff611d6f472p-13" coeffa="-0x1.3f4f52485fe49p+2:0x1.3e9f8e35c8ca8p+3:-0x1.3df0b27610157p+3:0x1.3d42bdb9d2329p+2:-0x1.fa89178710a2bp-1" lsbIn=-12 lsbOut=-12 TestBench n=10000
 Remarque: H prend du temps à calculer sur cet exemple.
 
 A small Butterworth
- ./flopoco generateFigures=1 FixIIR coeffb="0x1.7bdf4656ab602p-9:0x1.1ce774c100882p-7:0x1.1ce774c100882p-7:0x1.7bdf4656ab602p-9" coeffa="-0x1.2fe25628eb285p+1:0x1.edea40cd1955ep+0:-0x1.106c2ec3d0af8p-1" lsbIn=-12 lsbOut=-12 TestBench n=100
+ ./flopoco generateFigures=1 FixIIR coeffb="0x1.7bdf4656ab602p-9:0x1.1ce774c100882p-7:0x1.1ce774c100882p-7:0x1.7bdf4656ab602p-9" coeffa="-0x1.2fe25628eb285p+1:0x1.edea40cd1955ep+0:-0x1.106c2ec3d0af8p-1" lsbIn=-12 lsbOut=-12 TestBench n=10000
 
 */
 

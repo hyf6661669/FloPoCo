@@ -349,7 +349,8 @@ namespace flopoco{
                         lsbOut(int): output's last significant bit;\
                         coeff(string): colon-separated list of real coefficients using Sollya syntax. Example: coeff=\"1.234567890123:sin(3*pi/8)\"",
 											 "",
-											 FixSOPC::parseArguments
+											 FixSOPC::parseArguments,
+											 FixSOPC::unitTest
 											 ) ;
 	}
 
@@ -387,6 +388,57 @@ namespace flopoco{
 			tcl->add(tc);
 		}
 #endif
+	}
+
+
+		
+	TestList FixSOPC::unitTest(int index)
+	{
+		// the static list of mandatory tests
+		TestList testStateList;
+		vector<pair<string,string>> paramList;
+		
+		if(index==-1) 	{ // The unit tests
+			for(int n=3; n<9; n+=2){
+
+				// build stupid coeff list with positive and negative numbers. I don't think this corresponds to an actual filter.
+				ostringstream c1,c2;
+				c1 << "\"";
+				c2 << "\"";
+				for (int i=1; i<n; i++) {
+					c1 << "sin(pi*" << i << "/" << n << ")"; // only positive numbers
+					c2 << "cos(pi*" << i << "/" << n << ")"; // pos and neg numbers
+					if(i<n-1) {
+						c1 << ":";
+						c2 << ":";
+					}
+				}
+				c1 << "\"";
+				c2 << "\"";
+				
+				for(int lsb=-3; lsb>-16; lsb--) { // test various input widths
+					paramList.clear();
+					paramList.push_back(make_pair("lsbIn",  to_string(lsb)));
+					paramList.push_back(make_pair("lsbOut", to_string(lsb))); // same LSB, this tests enough
+					paramList.push_back(make_pair("coeff",  c1.str() ));
+					paramList.push_back(make_pair("TestBench n=",  "1000"));
+					testStateList.push_back(paramList);
+
+					paramList.clear();
+					paramList.push_back(make_pair("lsbIn",  to_string(lsb)));
+					paramList.push_back(make_pair("lsbOut", to_string(lsb))); // same LSB, this tests enough
+					paramList.push_back(make_pair("coeff",  c2.str() ));
+					paramList.push_back(make_pair("TestBench n=",  "1000"));
+					testStateList.push_back(paramList);
+				}
+			}
+		}
+		else     
+		{
+				// finite number of random test computed out of index
+		}	
+
+		return testStateList;
 	}
 
 }

@@ -80,6 +80,8 @@ namespace flopoco {
 			nbIter = ceil(1.0*nbIter/log2(radix));
 		//add an additional number of iterations to compensate for the errors
 		g = intlog2(nbIter);
+
+		//g *= 4;
 		//nbIter += g;
 
 		//set the format of the internal signals
@@ -429,12 +431,14 @@ namespace flopoco {
 										msbD-lsbD+1								//size
 										);
 			*/
+
 			REPORT(DEBUG, "adding D_" << i << "_" << 0 << " at weight " << (nbIter+g-1-i)*ceil(log2(radix)));
 			bitheap->addSignedBitVector(
 										(nbIter+g-1-i)*ceil(log2(radix)),		//weight
 										join("D_", i, "_", 0),					//input signal name
 										msbD-lsbD+1								//size
 										);
+
 		}
 		//add the rounding bit
 		REPORT(DEBUG, "add the rounding bit");
@@ -543,15 +547,16 @@ namespace flopoco {
 			//	then set if to the maximum admissible limit
 			//	we need to first determine the maximum value of the coefficients of Q,
 			//	and then subtract it from alpha
-			mpfr_t mpTmp, mpAlpha;
+			mpfr_t mpTmp, mpTmp2, mpAlpha;
 
-			mpfr_inits2(LARGEPREC, mpTmp, mpAlpha, (mpfr_ptr)nullptr);
+			mpfr_inits2(LARGEPREC, mpTmp, mpTmp2, mpAlpha, (mpfr_ptr)nullptr);
 
 			mpfr_set_zero(mpTmp, 0);
 			for(size_t i=1; i<m; i++)
 			{
-				if(mpfr_cmp(mpCoeffsQ[i], mpTmp) > 0)
-					mpfr_set(mpTmp, mpCoeffsQ[i], GMP_RNDN);
+				mpfr_abs(mpTmp2, mpTmp, GMP_RNDN);
+				if(mpfr_cmp(mpTmp2, mpTmp) > 0)
+					mpfr_set(mpTmp, mpTmp2, GMP_RNDN);
 			}
 
 			mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
@@ -559,7 +564,7 @@ namespace flopoco {
 			mpfr_sub(mpTmp, mpAlpha, mpTmp, GMP_RNDN);
 			inputScaleFactor = mpfr_get_d(mpTmp, GMP_RNDN);
 
-			mpfr_clears(mpTmp, mpAlpha, (mpfr_ptr)nullptr);
+			mpfr_clears(mpTmp, mpTmp2, mpAlpha, (mpfr_ptr)nullptr);
 		}
 	}
 
@@ -584,9 +589,9 @@ namespace flopoco {
 
 	void FixEMethodEvaluator::checkQCoeffs()
 	{
-		mpfr_t mpAlpha, mpLimit;
+		mpfr_t mpAlpha, mpLimit, mpTmp;
 
-		mpfr_inits2(LARGEPREC, mpAlpha, mpLimit, (mpfr_ptr)nullptr);
+		mpfr_inits2(LARGEPREC, mpAlpha, mpLimit, mpTmp, (mpfr_ptr)nullptr);
 
 		//the value of alpha
 		mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
@@ -599,15 +604,16 @@ namespace flopoco {
 		if(mpfr_cmp_ui(mpCoeffsQ[0], 1) != 0)
 			THROWERROR("checkQCoeff: coefficient coeffsQ[0]=" << coeffsQ[0]
 				<< " should be 1");
-		//check that the coefficients of Q are smaller than alpha/2
+		//check that the coefficients of Q are smaller than the limit
 		for(size_t i=1; i<maxDegree; i++)
 		{
-			if(mpfr_cmp(mpCoeffsQ[i], mpLimit) > 0)
+			mpfr_abs(mpTmp, mpCoeffsQ[i], GMP_RNDN);
+			if(mpfr_cmp(mpTmp, mpLimit) > 0)
 				THROWERROR("checkQCoeff: coefficient coeffsQ[" << i << "]=" << coeffsQ[i]
 					<< " does not satisfy the constraints");
 		}
 
-		mpfr_clears(mpAlpha, mpLimit, (mpfr_ptr)nullptr);
+		mpfr_clears(mpAlpha, mpLimit, mpTmp, (mpfr_ptr)nullptr);
 	}
 
 
@@ -624,8 +630,9 @@ namespace flopoco {
 		mpfr_set_zero(mpLimit, 0);
 		for(size_t i=1; i<m; i++)
 		{
-			if(mpfr_cmp(mpCoeffsQ[i], mpLimit) > 0)
-				mpfr_set(mpLimit, mpCoeffsQ[i], GMP_RNDN);
+			mpfr_abs(mpTmp, mpCoeffsQ[i], GMP_RNDN);
+			if(mpfr_cmp(mpTmp, mpLimit) > 0)
+				mpfr_set(mpLimit, mpTmp, GMP_RNDN);
 		}
 		mpfr_sub(mpLimit, mpAlpha, mpLimit, GMP_RNDN);
 

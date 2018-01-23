@@ -46,20 +46,6 @@ namespace flopoco {
 		if((delta<0 || delta>1))
 			THROWERROR("delta must be in the interval [0, 1)!");
 
-		//compute the parameters of the algorithm
-		REPORT(DEBUG, "compute the parameters of the algorithm");
-		xi    = 0.5  * (1+delta);
-		alpha = 0.25 * (1-delta);
-		if(scaleInput == true)
-		{
-			if(inputScaleFactor == -1)
-				inputScaleFactor = alpha/2.0;
-		}
-		else
-		{
-			inputScaleFactor = 1;
-		}
-
 		//create a copy of the coefficients of P and Q
 		copyVectors();
 
@@ -75,6 +61,10 @@ namespace flopoco {
 			double tmpD = mpfr_get_d(mpCoeffsQ[i], GMP_RNDN);
 			REPORT(DEBUG, "" << tmpD);
 		}
+
+		//compute the parameters of the algorithm
+		REPORT(DEBUG, "compute the parameters of the algorithm");
+		setAlgorithmParameters();
 
 		//check P's coefficients
 		checkPCoeffs();
@@ -529,6 +519,43 @@ namespace flopoco {
 	}
 
 
+	void FixEMethodEvaluator::setAlgorithmParameters()
+	{
+		//set xi
+		xi    = 0.5  * (1+delta);
+		//set alpha
+		alpha = 0.25 * (1-delta);
+		//set the scale factor
+		//	compute the value of the scale factor in two cases:
+		//	1) when scaling is required, and it hasn't been set by the user
+		//	2) when scaling isn't required, for the analysis of the parameters
+		if(((scaleInput == true) && (inputScaleFactor == -1)) || (scaleInput == false))
+		{
+			//if the scale factor needs to be automatically be set,
+			//	then set if to the maximum admissible limit
+			//	we need to first determine the maximum value of the coefficients of Q,
+			//	and then subtract it from alpha
+			mpfr_t mpTmp, mpAlpha;
+
+			mpfr_inits2(LARGEPREC, mpTmp, mpAlpha, (mpfr_ptr)nullptr);
+
+			mpfr_set_zero(mpTmp, 0);
+			for(size_t i=1; i<m; i++)
+			{
+				if(mpfr_cmp(mpCoeffsQ[i], mpTmp) > 0)
+					mpfr_set(mpTmp, mpCoeffsQ[i], GMP_RNDN);
+			}
+
+			mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
+
+			mpfr_sub(mpTmp, mpAlpha, mpTmp, GMP_RNDN);
+			inputScaleFactor = mpfr_get_d(mpTmp, GMP_RNDN);
+
+			mpfr_clears(mpTmp, mpAlpha, (mpfr_ptr)nullptr);
+		}
+	}
+
+
 	void FixEMethodEvaluator::checkPCoeffs()
 	{
 		mpfr_t mpXi;
@@ -549,11 +576,17 @@ namespace flopoco {
 
 	void FixEMethodEvaluator::checkQCoeffs()
 	{
-		mpfr_t mpAlpha;
+		mpfr_t mpAlpha, mpLimit;
 
-		mpfr_init2(mpAlpha, LARGEPREC);
+		mpfr_inits2(LARGEPREC, mpAlpha, mpLimit, (mpfr_ptr)nullptr);
+
+		//the value of alpha
 		mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
-		mpfr_div_2ui(mpAlpha, mpAlpha, 1, GMP_RNDN);
+
+		//the maximum value allowed for the coefficients
+		mpfr_set_d(mpLimit, inputScaleFactor, GMP_RNDN);
+		mpfr_sub(mpLimit, mpAlpha, mpLimit, GMP_RNDN);
+
 		//check that coeffsQ[0]=1
 		if(mpfr_cmp_ui(mpCoeffsQ[0], 1) != 0)
 			THROWERROR("checkQCoeff: coefficient coeffsQ[0]=" << coeffsQ[0]
@@ -561,22 +594,32 @@ namespace flopoco {
 		//check that the coefficients of Q are smaller than alpha/2
 		for(size_t i=1; i<maxDegree; i++)
 		{
-			if(mpfr_cmp(mpCoeffsQ[i], mpAlpha) > 0)
+			if(mpfr_cmp(mpCoeffsQ[i], mpLimit) > 0)
 				THROWERROR("checkQCoeff: coefficient coeffsQ[" << i << "]=" << coeffsQ[i]
 					<< " does not satisfy the constraints");
 		}
 
-		mpfr_clear(mpAlpha);
+		mpfr_clears(mpAlpha, mpLimit, (mpfr_ptr)nullptr);
 	}
+
 
 	void FixEMethodEvaluator::checkX()
 	{
-		mpfr_t mpAlpha, mpX, mpTmp;
+		mpfr_t mpAlpha, mpLimit, mpX, mpTmp;
 
-		mpfr_inits2(LARGEPREC, mpAlpha, mpX, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_inits2(LARGEPREC, mpAlpha, mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
 
+		//the value of alpha
 		mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
-		mpfr_div_2ui(mpAlpha, mpAlpha, 1, GMP_RNDN);
+
+		//compute the maximum value of Q's coefficients
+		mpfr_set_zero(mpLimit, 0);
+		for(size_t i=1; i<m; i++)
+		{
+			if(mpfr_cmp(mpCoeffsQ[i], mpLimit) > 0)
+				mpfr_set(mpLimit, mpCoeffsQ[i], GMP_RNDN);
+		}
+		mpfr_sub(mpLimit, mpAlpha, mpLimit, GMP_RNDN);
 
 		//check that the largest value that X can take is smaller than alpha/2
 		//	largest value X can take
@@ -587,17 +630,15 @@ namespace flopoco {
 		mpfr_mul_2si(mpTmp, mpTmp, lsbInOut, GMP_RNDN);
 		//	get the actual largest value X can take
 		mpfr_sub(mpX, mpX, mpTmp, GMP_RNDN);
-		//if the input is scaled, then scale the maximum value as well
-		if(scaleInput == true)
-		{
-			mpfr_mul_d(mpX, mpX, inputScaleFactor, GMP_RNDN);
-		}
-		//	now perform the test
-		if(mpfr_cmp(mpX, mpAlpha) > 0)
+		//scale the input
+		mpfr_mul_d(mpX, mpX, inputScaleFactor, GMP_RNDN);
+
+		//now perform the test
+		if(mpfr_cmp(mpX, mpLimit) > 0)
 			THROWERROR("checkX: input format for X, with msb=" << msbInOut
 					<< " and lsb=" << lsbInOut << " does not satisfy the constraints");
 
-		mpfr_clears(mpAlpha, mpX, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_clears(mpAlpha, mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
 	}
 
 

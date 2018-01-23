@@ -139,6 +139,11 @@ namespace flopoco {
     void copyVectors();
 
     /**
+     * Set the parameters of the algorithm that depend on delta and Q's coefficients
+     */
+    void setAlgorithmParameters();
+
+    /**
      * Ensure that the coefficients of P all satisfy:
      * 		|p_i| <= xi
      */

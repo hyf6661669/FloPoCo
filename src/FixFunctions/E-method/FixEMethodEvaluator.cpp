@@ -80,7 +80,7 @@ namespace flopoco {
 			nbIter = ceil(1.0*nbIter/log2(radix));
 		//add an additional number of iterations to compensate for the errors
 		g = intlog2(nbIter);
-		nbIter += g;
+		//nbIter += g;
 
 		//set the format of the internal signals
 		REPORT(DEBUG, "set the format of the internal signals");
@@ -421,9 +421,17 @@ namespace flopoco {
 		REPORT(DEBUG, "add the digits of the intermediate computations");
 		for(int i=(nbIter-1); i>0; i--)
 		{
+			/*
 			REPORT(DEBUG, "adding D_" << i << "_" << 0 << " at weight " << (nbIter-1-i)*ceil(log2(radix)));
 			bitheap->addSignedBitVector(
 										(nbIter-1-i)*ceil(log2(radix)),			//weight
+										join("D_", i, "_", 0),					//input signal name
+										msbD-lsbD+1								//size
+										);
+			*/
+			REPORT(DEBUG, "adding D_" << i << "_" << 0 << " at weight " << (nbIter+g-1-i)*ceil(log2(radix)));
+			bitheap->addSignedBitVector(
+										(nbIter+g-1-i)*ceil(log2(radix)),		//weight
 										join("D_", i, "_", 0),					//input signal name
 										msbD-lsbD+1								//size
 										);

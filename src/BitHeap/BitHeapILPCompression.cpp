@@ -389,6 +389,10 @@ int BitHeapILPCompression::generateProblem(){
     //defining the objective
     ScaLP::Term objectiveSum;
     cout << compCountVars.size() << endl;
+
+    time_t timer1,timer2;
+    time(&timer1);
+  
     for(unsigned int s = 0; s < compCountVars.size() - 1; s++){
         for(unsigned int e = 0; e < compCountVars[s].size(); e++){
             for(unsigned int c = 0; c < compCountVars[s][e].size(); c++){
@@ -407,6 +411,11 @@ int BitHeapILPCompression::generateProblem(){
             }
         }
     }
+
+    time(&timer2);
+    double timeDiff = difftime(timer2,timer1);
+    cout << "!!!! delta time: " << timeDiff << " seconds" << endl;
+	
     cout << "after setting objective" << endl;
     ScaLP::Objective obj = ScaLP::minimize(objectiveSum);
     problemSolver->setObjective(obj);

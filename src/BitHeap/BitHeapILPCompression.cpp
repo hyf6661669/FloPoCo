@@ -962,7 +962,8 @@ bool BitHeapILPCompression::solve(){
             infeasible = true;
         }
     }
-    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE || (stat == ScaLP::status::TIMEOUT && problemSolver->getResult().objectiveValue > 0)){
+    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE || (stat == ScaLP::status::TIMEOUT_FEASIBLE)){
+//    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE || (stat == ScaLP::status::TIMEOUT && problemSolver->getResult().objectiveValue > 0)){
         infeasible = false;
     }
 

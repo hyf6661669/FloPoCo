@@ -41,8 +41,6 @@ namespace flopoco {
 			REPORT(INFO, "WARNING: used digit set is not maximal!");
 		if(maxDigit > radix-1)
 			THROWERROR("maximum digit larger than the maximum digit in the redundant digit set!");
-		if((int)maxDigit > (1<<msbInOut))
-			THROWERROR("maximum digit not representable on the given input format!");
 		if((delta<0 || delta>1))
 			THROWERROR("delta must be in the interval [0, 1)!");
 
@@ -79,7 +77,8 @@ namespace flopoco {
 		if(radix > 2)
 			nbIter = ceil(1.0*nbIter/log2(radix));
 		//add an additional number of iterations to compensate for the errors
-		g = intlog2(nbIter);
+		//g = intlog2(nbIter);
+		g = 0;
 
 		//g *= 4;
 		//nbIter += g;
@@ -318,7 +317,8 @@ namespace flopoco {
 				mpfr_t mpTmp;
 
 				mpfr_init2(mpTmp, LARGEPREC);
-				mpfr_mul_2ui(mpTmp, mpCoeffsP[i], 1, GMP_RNDN);
+				//mpfr_mul_2ui(mpTmp, mpCoeffsP[i], 1, GMP_RNDN);
+				mpfr_mul_ui(mpTmp, mpCoeffsP[i], radix, GMP_RNDN);
 
 				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
 						<< signedFixPointNumber(mpTmp, msbW, lsbW, 0) << ";" << endl;
@@ -442,7 +442,7 @@ namespace flopoco {
 		}
 		//add the rounding bit
 		REPORT(DEBUG, "add the rounding bit");
-		bitheap->addConstantOneBit(g-1);
+		//bitheap->addConstantOneBit(g-1);
 		//compress the bitheap
 		REPORT(DEBUG, "compress the bitheap");
 		bitheap->generateCompressorVHDL();

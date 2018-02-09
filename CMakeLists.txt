@@ -64,27 +64,44 @@ FIND_LIBRARY(MPFI_LIB
 	HINTS "C:/Program Files/Microsoft Visual Studio 9.0/VC/lib"
 	DOC "Directory of the MPFI library")
 
+# Detect Python
+FIND_PATH(PYTHON_H
+	  python2.7/Python.h
+	  DOC "Path of Python.h"
+)
+
 FIND_LIBRARY(PYTHON_LIB
-	NAMES libpython2.7.so
+	NAMES libpython2.7.so libpython2.7.dylib
 	HINTS "/usr/lib/x86_64-linux-gnu"
 	DOC "Directory of the Python library"
 )
 
+# Detect Sollya
+FIND_LIBRARY( SOLLYA_LIB
+	NAMES libsollya.so libsollya.dylib
+	HINTS "/usr/lib/x86_64-linux-gnu"
+	)
 
-# Detect Sollya's presence
-FIND_LIBRARY( SOLLYA_LIB sollya REQUIRED )
+FIND_PATH(SOLLYA_H
+	  sollya.h
+)
 
-IF (SOLLYA_LIB)
-	MESSAGE(STATUS "Found Sollya: ${SOLLYA_LIB}")
-ELSE (SOLLYA_LIB)
-        MESSAGE(FATAL_ERROR "Sollya not found")
-ENDIF (SOLLYA_LIB)
+IF (SOLLYA_H AND SOLLYA_H)
+	MESSAGE(STATUS "Found Sollya: ${SOLLYA_LIB},${SOLLYA_H}")
+ELSE (SOLLYA_H AND SOLLYA_H)
+	MESSAGE(FATAL_ERROR "Sollya not found (found: ${SOLLYA_LIB},${SOLLYA_H})")
+ENDIF (SOLLYA_H AND SOLLYA_H)
 
-IF ( PYTHON_LIB )
-	MESSAGE ( STATUS "Found Python : ${PYTHON_LIB}" )
-ELSE ( PYTHON_LIB )
-	MESSAGE ( FATAL_ERROR "Could not find PYTHON_LIB" )
-ENDIF ( PYTHON_LIB )
+
+IF ( PYTHON_H AND PYTHON_LIB )
+    SET(PYTHON_FOUND TRUE)
+ENDIF ( PYTHON_H AND PYTHON_LIB )
+
+IF ( PYTHON_FOUND )
+	MESSAGE ( STATUS "Found Python : ${PYTHON_H},${PYTHON_LIB}" )
+ELSE ( PYTHON_FOUND )
+	MESSAGE ( STATUS "Could not find (found: ${PYTHON_H},${PYTHON_LIB}), no flopoco_soaktest will be available")
+ENDIF ( PYTHON_FOUND )
 
 IF (MPFR_H AND MPFR_LIB)
     SET(MPFR_FOUND TRUE)
@@ -214,6 +231,30 @@ ELSE (LPISPX_LIB)
 	MESSAGE(STATUS "lpispx (supporting library of SCIP) not found, no optimal bit heap compression available (download and compile scipoptsuite from http://scip.zib.de)")
 ENDIF (LPISPX_LIB)
 
+# Detect GMP / GMPXX
+FIND_PATH(GMPXX_H
+	  gmpxx.h
+)
+
+FIND_LIBRARY(GMP_LIB
+	NAMES gmp gmp.lib
+	DOC "Directory of the GMP library")
+
+FIND_PATH(GMP_H
+	  gmp.h
+)
+
+FIND_LIBRARY(GMPXX_LIB
+	NAMES gmpxx gmpxx.lib
+	DOC "Directory of the GMPXX library")
+
+IF (GMPXX_H AND GMPXX_LIB AND GMP_H AND GMP_LIB)
+    MESSAGE(STATUS "Found gmp and gmpxx: ${GMP_H},${GMP_LIB},${GMPXX_H},${GMPXX_LIB}")
+ELSE (GMPXX_H AND GMPXX_LIB AND GMP_H AND GMP_LIB)
+    MESSAGE(FATAL_ERROR "Could not find gmp and/or gmpxx (found: ${GMP_H},${GMP_LIB},${GMPXX_H},${GMPXX_LIB})")
+ENDIF (GMPXX_H AND GMPXX_LIB AND GMP_H AND GMP_LIB)
+
+
 IF (SCIP_FOUND)
 	ADD_DEFINITIONS(-DHAVE_SCIP)
 	MESSAGE(STATUS "Found SCIP: ${SCIP_H} ${SCIP_LIB}")
@@ -275,7 +316,7 @@ ENDIF(FLEXPP_EXECUTABLE)
 
 # necessary to include generated files
 #INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions ${PAGSUITE_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions  ${PAGSUITE_INCLUDE_DIRS} /usr/include/boost148 ${SCALP_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES (${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/FPExpressions  ${PAGSUITE_INCLUDE_DIRS} /usr/include/boost148 ${SCALP_INCLUDE_DIRS} ${GMP_H} ${GMPXX_H} ${MPFI_H} ${MPFR_H} ${SOLLYA_H})
 ADD_CUSTOM_COMMAND(
 	OUTPUT VHDLLexer.cpp
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/VHDLLexerRule.l
@@ -545,10 +586,11 @@ src/FPComposite/FP2DNorm
 src/Trigs/ConstDiv3ForSinPoly
 src/Trigs/FixSinPoly
 src/Trigs/FixSinCos
-src/Trigs/CordicSinCos
 # src/Trigs/CordicSinOrCos
-src/Trigs/FixAtan2
-src/Trigs/FixAtan2ByCORDIC
+#commented out due to strange error in mpfr (object expression of non-scalar type '__mpfr_struct [1]' cannot be used in a pseudo-destructor expression)
+#src/Trigs/CordicSinCos
+#src/Trigs/FixAtan2
+#src/Trigs/FixAtan2ByCORDIC
 src/Trigs/FixAtan2ByRecipMultAtan
 src/Trigs/FixAtan2ByBivariateApprox
 src/Trigs/Atan2Table
@@ -650,7 +692,7 @@ src/NeuralNetworks/LayerArguments
 
 TARGET_LINK_LIBRARIES(
   FloPoCoLib 
-  mpfr gmp gmpxx xml2 mpfi
+  ${GMP_LIB} ${GMPXX_LIB} ${MPFI_LIB} ${MPFR_LIB} #mpfr gmp gmpxx xml2 mpfi
   )
 
 IF (SOLLYA_LIB)
@@ -717,16 +759,15 @@ TARGET_LINK_LIBRARIES(
 #	${FLOPOCO_LIB}
 #)
 
-
-
+ 
 ADD_EXECUTABLE(fp2bin src/Tools/fp2bin  src/utils)
-TARGET_LINK_LIBRARIES(fp2bin  mpfr gmp gmpxx)
+TARGET_LINK_LIBRARIES(fp2bin ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB})
 
 ADD_EXECUTABLE(bin2fp src/Tools/bin2fp  src/utils)
-TARGET_LINK_LIBRARIES(bin2fp  mpfr gmp gmpxx)
+TARGET_LINK_LIBRARIES(bin2fp ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB})
 
 ADD_EXECUTABLE(longacc2fp src/Tools/longacc2fp  src/utils)
-TARGET_LINK_LIBRARIES(longacc2fp  mpfr gmp gmpxx)
+TARGET_LINK_LIBRARIES(longacc2fp ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB})
 
 
 

@@ -1084,7 +1084,7 @@ namespace flopoco
 
         if(s < 0) s = op->getCurrentCycle();
 
-		stringstream signal[bc->getNumberOfColumns()];
+		vector<stringstream> signal(bc->getNumberOfColumns());
 
 #if 0
 		WeightedBit* b =  latestInputBitToCompressor(i, bc) ;

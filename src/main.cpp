@@ -98,8 +98,8 @@ int main(int argc, char* argv[] )
 		IterativeLog::registerFactory();
 		FPPow::registerFactory();
 		FixSinCos::registerFactory();
-		CordicSinCos::registerFactory();
-		FixAtan2::registerFactory();
+//		CordicSinCos::registerFactory();
+//		FixAtan2::registerFactory();
 		//FixedComplexAdder::registerFactory();
 		FixFIR::registerFactory();
 		FixSOPC::registerFactory();

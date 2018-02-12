@@ -201,6 +201,9 @@ namespace flopoco {
     int msbDiMX;                      /**< the MSB of the DiMultX signals */
     int lsbDiMX;                      /**< the LSB of the DiMultX signals */
     Signal *dDiMX;                    /**< dummy signal for DiMultX */
+
+    int currentCycle;                 /**< used for pipelining to store the current cycle */
+    double currentCriticalPath;       /**< used for pipelining to store the current critical path */
   };
 
 } /* namespace flopoco */

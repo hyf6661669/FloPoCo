@@ -21,7 +21,16 @@
 #include "Signal.hpp"
 #include "BitHeap/BitHeap.hpp"
 #include "ConstMult/FixRealKCM.hpp"
+#include "IntMult/IntMultiplier.hpp"
 #include "utils.hpp"
+
+//how will the multiplication X*D_{i+1} be implemented
+//	MULTIMODE = 0 - using a multiplexer, a choice from the inputs
+//	MULTIMODE = 1 - using a multiplier, by multiplying the inputs
+#define MULTMODE_CU 0
+
+//the precision used to parse the constant
+#define LARGEPREC 10000
 
 namespace flopoco {
 
@@ -106,6 +115,7 @@ namespace flopoco {
 		int lsbDiMX;                          /**< LSB used of the DiMultX signals */
 
 		string qi;                            /**< the q_i coefficient */
+		mpfr_t mpQi;                          /**< the q_i coefficient as an MPFR number */
 
 		BitHeap *bitheap;                     /**< the bitheap used for the computations */
 	};

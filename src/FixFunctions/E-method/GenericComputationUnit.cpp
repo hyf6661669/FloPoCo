@@ -31,12 +31,14 @@ namespace flopoco {
 		//safety checks
 		if((radix != 2) && (radix != 4) && (radix != 8))
 		{
-			THROWERROR("GenericComputationUnit: radixes higher than 8 currently not supported!");
+//			THROWERROR("GenericComputationUnit: radixes higher than 8 currently not supported!");
 		}
 
 		setCopyrightString("Matei Istoan, 2017");
 
 		useNumericStd_Signed();
+
+		setCombinatorial();
 
 		//determine the MSB and the LSb for the internal computations
 		msbInt = maxInt(3, msbW, msbX, msbD);
@@ -50,6 +52,10 @@ namespace flopoco {
 
 		REPORT(DEBUG, "using the following format for the DiMultX signals: msbDiMX="
 				<< msbDiMX << ", lsbDiMX=" << lsbDiMX);
+
+		//--------- pipelining
+		setCriticalPath(getMaxInputDelays(inputDelays));
+		//--------- pipelining
 
 		//create the inputs and the output
 		//	the inputs
@@ -74,6 +80,9 @@ namespace flopoco {
 		// the outputs
 		addFixOutput("Wi_next", true, msbInt, lsbInt, 2);
 
+		int currentCycle = getCurrentCycle();
+		double currentCriticalPath = getCriticalPath();
+
 		//create the bitheap
 		REPORT(DEBUG, "creating the bitheap");
 		bitheap = new BitHeap(
@@ -90,6 +99,24 @@ namespace flopoco {
 									"Wi",							//input signal name
 									msbW-lsbW+1						//size
 									);
+
+		//--------- pipelining
+		setCycle(currentCycle, true);
+		setCriticalPath(currentCriticalPath);
+		//--------- pipelining
+
+		//parse the constant using Sollya, for further reference
+		//	parse q_i using Sollya
+		sollya_obj_t node;
+		node = sollya_lib_parse_string(qi.c_str());
+		mpfr_init2(mpQi, LARGEPREC);
+		/* If  parse error throw an exception */
+		if (sollya_lib_obj_is_error(node))
+		{
+			THROWERROR("emulate: Unable to parse string "<< qi << " as a numeric constant");
+		}
+		sollya_lib_get_constant(mpQi, node);
+		free(node);
 
 		//create the multiplication D_0[j-1] * (-1)*q_i
 		//	if required
@@ -122,6 +149,11 @@ namespace flopoco {
 			REPORT(DEBUG, "no need to create the multiplication D_0[j-1] * (-1)*q_i for iteration 0");
 		}
 
+		//--------- pipelining
+		setCycle(currentCycle, true);
+		setCriticalPath(currentCriticalPath);
+		//--------- pipelining
+
 		//subtract D_i[j-1]
 		REPORT(DEBUG, "subtract D_i[j-1]");
 		bitheap->subtractSignedBitVector(
@@ -130,35 +162,76 @@ namespace flopoco {
 										msbD-lsbD+1					//size
 										);
 
+		//--------- pipelining
+		setCycle(currentCycle, true);
+		setCriticalPath(currentCriticalPath);
+		//--------- pipelining
+
 		//create the multiplication D_{i+1}[j-1] * X
 		//	if required
 		if(specialCase != 1)
 		{
 			//create the multiplication D_{i+1}[j-1] * X
-			//	not actual multiplication is done here, as we're multiplying by a digit
-			//	instead, all the possible products are generated upstream
-			//	and here we only have to choose which one to add
-			REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");
-			vhdl << tab << declareFixPoint("Dip1_Mult_X", true, msbDiMX, lsbDiMX) << " <= " << endl;
-			for(int i=(-maxDigit); i<=maxDigit; i++)
+			//	FIXME: temporary. MULTMODE=0 for multiplexers, MULTMODE=1 for multiplier
+			if(MULTMODE_CU == 0)
 			{
-				mpz_class digitValue = i;
+				//	not actual multiplication is done here, as we're multiplying by a digit
+				//	instead, all the possible products are generated upstream
+				//	and here we only have to choose which one to add
+				REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");
 
-				//handle negative digits
-				if(digitValue < 0)
-					digitValue = mpz_class(1<<radix) + digitValue;
+				//--------- pipelining
+				manageCriticalPath(target->lutDelay()+target->localWireDelay(), true);
+				//--------- pipelining
 
-				vhdl << tab << tab << join("X_Mult_", vhdlize(i)) << " when Dip1="
-						<< "\"" << unsignedBinary(digitValue, radix) << "\" else" << endl;
+				vhdl << tab << declareFixPoint("Dip1_Mult_X", true, msbDiMX, lsbDiMX) << " <= " << endl;
+				for(int i=(-maxDigit); i<=maxDigit; i++)
+				{
+					mpz_class digitValue = i;
+
+					//handle negative digits
+					if(digitValue < 0)
+						digitValue = mpz_class(1<<intlog2(radix)) + digitValue;
+
+					vhdl << tab << tab << join("X_Mult_", vhdlize(i)) << " when Dip1="
+							<< "\"" << unsignedBinary(digitValue, intlog2(radix)) << "\" else" << endl;
+				}
+				vhdl << tab << tab << "(others => '-');" << endl;
+				//	add the result of the selection to the bitheap
+				REPORT(DEBUG, "add the result of the selection to the bitheap");
+				bitheap->addSignedBitVector(
+											lsbDiMX-lsbInt,					//weight
+											"Dip1_Mult_X",					//input signal name
+											msbDiMX-lsbDiMX+1				//size
+											);
 			}
-			vhdl << tab << tab << "(others => '-');" << endl;
-			//	add the result of the selection to the bitheap
-			REPORT(DEBUG, "add the result of the selection to the bitheap");
-			bitheap->addSignedBitVector(
-										lsbDiMX-lsbInt,					//weight
-										"Dip1_Mult_X",					//input signal name
-										msbDiMX-lsbDiMX+1				//size
-										);
+			else
+			{
+				//	actual multiplication by a digit
+				REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");
+				//		intermediate signals for easier conversions
+				vhdl << tab << declare("X_std_lv", msbX-lsbX+1) << " <= std_logic_vector(X);" << endl;
+				vhdl << tab << declare("Dip1_std_lv", msbD-lsbD+1) << " <= std_logic_vector(Dip1);" << endl;
+
+				//create the multiplier
+				IntMultiplier *multXDip1 = new IntMultiplier(
+															this,							//parent operator
+															bitheap,						//bitheap
+															getSignalByName("X_std_lv"),	//signal x
+															getSignalByName("Dip1_std_lv"),	//signal y
+															lsbDiMX-lsbInt,					//lsb weight in bitheap
+															false, 							//negate
+															true							//signed
+															);
+				//add a new instance of the multiplier
+				/*
+				addSubComponent(multXDip1);
+				inPortMap  (multXDip1, "X", "X_std_lv");
+				inPortMap  (multXDip1, "Y", "Dip1_std_lv");
+				outPortMap (multXDip1, "R", "Dip1_Mult_X");
+				vhdl << tab << instance(multXDip1, "Mult_X_Dip1");
+				*/
+			}
 		}
 		else
 		{
@@ -169,6 +242,10 @@ namespace flopoco {
 		//compress the bitheap
 		bitheap->generateCompressorVHDL();
 
+		//--------- pipelining
+		syncCycleFromSignal(bitheap->getSumName(), true);
+		//--------- pipelining
+
 		// Retrieve the bits we want from the bit heap
 		REPORT(DEBUG, "Retrieve the bits we want from the bit heap");
 		vhdl << tab << declareFixPoint("sum", true, msbInt, lsbInt) << " <= signed(" <<
@@ -178,11 +255,13 @@ namespace flopoco {
 		// multiply by radix, a constant shift by radix positions to the left
 		vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt-ceil(log2(radix)), 0)
 				<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+
+		outDelayMap["Wi_next"] = getCriticalPath();
 	}
 
 
 	GenericComputationUnit::~GenericComputationUnit() {
-
+		//mpfr_clear(mpQi);
 	}
 
 
@@ -207,8 +286,8 @@ namespace flopoco {
 		//manage signed digits
 		mpz_class big1W      = (mpz_class(1) << (msbW-lsbW+1));
 		mpz_class big1Wp     = (mpz_class(1) << (msbW-lsbW));
-		mpz_class big1D      = (mpz_class(1) << radix);
-		mpz_class big1Dp     = (mpz_class(1) << (radix-1));
+		mpz_class big1D      = (mpz_class(1) << msbD+1);
+		mpz_class big1Dp     = (mpz_class(1) << (msbD));
 		mpz_class big1X      = (mpz_class(1) << (msbX-lsbX+1));
 		mpz_class big1Xp     = (mpz_class(1) << (msbX-lsbX));
 		mpz_class big1Xmult  = (mpz_class(1) << (msbDiMX-lsbDiMX+1));
@@ -239,10 +318,10 @@ namespace flopoco {
 
 		// compute the multiple-precision output
 		mpz_class svW_next, svW_nextRd, svW_nextRu;
-		mpfr_t mpW_next, mpSum, mpQi, mpTmp;
+		mpfr_t mpW_next, mpSum, mpX, mpDip1, mpTmp;
 
 		//initialize the variables
-		mpfr_inits2(10000, mpW_next, mpSum, mpQi, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_inits2(LARGEPREC, mpW_next, mpSum, mpX, mpDip1, mpTmp, (mpfr_ptr)nullptr);
 
 		//initialize the sum
 		mpfr_set_zero(mpSum, 0);
@@ -258,21 +337,12 @@ namespace flopoco {
 		if(specialCase != -1)
 		{
 			//subtract D_0[j-1]*q_i
-			//	parse q_i using Sollya
-			sollya_obj_t node;
-			node = sollya_lib_parse_string(qi.c_str());
-			/* If  parse error throw an exception */
-			if (sollya_lib_obj_is_error(node))
-			{
-				THROWERROR("emulate: Unable to parse string "<< qi << " as a numeric constant");
-			}
-			sollya_lib_get_constant(mpQi, node);
-			free(node);
 			// scale D_0 appropriately, by the amount given by lsbD
 			mpfr_set_z(mpTmp, svD0.get_mpz_t(), GMP_RNDN);
 			mpfr_mul_2si(mpTmp, mpTmp, lsbD, GMP_RNDN);
-			//	subtract from the sum
+			//	multiply by q_i
 			mpfr_mul(mpTmp, mpTmp, mpQi, GMP_RNDN);
+			//	subtract from the sum
 			mpfr_sub(mpSum, mpSum, mpTmp, GMP_RNDN);
 		}
 
@@ -287,12 +357,29 @@ namespace flopoco {
 		//	if required
 		if(specialCase != 1)
 		{
-			//add D_{i+1}[j-1]*X
-			// select the signal to add, depending on the value of Dip1
-			mpfr_set_z(mpTmp, svXMultDip1[svDip1.get_si()+maxDigit].get_mpz_t(), GMP_RNDN);
-			//	scale XMultDip1 appropriately, by the amount given by lsbDiMX
-			mpfr_mul_2si(mpTmp, mpTmp, lsbDiMX, GMP_RNDN);
-			mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
+			if(MULTMODE_CU == 0)
+			{
+				//add D_{i+1}[j-1]*X
+				// select the signal to add, depending on the value of Dip1
+				mpfr_set_z(mpTmp, svXMultDip1[svDip1.get_si()+maxDigit].get_mpz_t(), GMP_RNDN);
+				//	scale XMultDip1 appropriately, by the amount given by lsbDiMX
+				mpfr_mul_2si(mpTmp, mpTmp, lsbDiMX, GMP_RNDN);
+				mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
+			}
+			else
+			{
+				//add D_{i+1}[j-1]*X
+				//	X
+				mpfr_set_z(mpX, svX.get_mpz_t(), GMP_RNDN);
+				mpfr_mul_2si(mpX, mpX, lsbX, GMP_RNDN);
+				//	Dip1
+				mpfr_set_z(mpDip1, svDip1.get_mpz_t(), GMP_RNDN);
+				mpfr_mul_2si(mpDip1, mpDip1, lsbD, GMP_RNDN);
+				//	X*Dip1
+				mpfr_mul(mpTmp, mpX, mpDip1, GMP_RNDN);
+				//	add to the sum
+				mpfr_add(mpSum, mpSum, mpTmp, GMP_RNDN);
+			}
 		}
 
 		//multiply by radix
@@ -320,7 +407,7 @@ namespace flopoco {
 		tc->addExpectedOutput("Wi_next", svW_nextRu);
 
 		//cleanup
-		mpfr_clears(mpW_next, mpSum, mpQi, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_clears(mpW_next, mpSum, mpX, mpDip1, mpTmp, (mpfr_ptr)nullptr);
 	}
 
 	OperatorPtr GenericComputationUnit::parseArguments(Target *target, std::vector<std::string> &args) {
@@ -355,6 +442,7 @@ namespace flopoco {
 				"",
 				"radix(int): the radix of the digit set being used;\
 				 maxDigit(int): the maximum digit in the used digit set;\
+				 index(int): the index of the unit;\
 				 specialCase(int): flag indicating special cases, 0=indices 1- n-1, -1=index 0, +1=index n;\
 				 msbW(int): MSB of the W input signal;\
 				 lsbW(int): LSB of the W input signal;\

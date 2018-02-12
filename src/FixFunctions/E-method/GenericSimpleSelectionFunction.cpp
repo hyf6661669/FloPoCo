@@ -34,6 +34,8 @@ namespace flopoco {
 
 			useNumericStd_Signed();
 
+			setCombinatorial();
+
 			//get the format of the W^ signal
 			getWHatFormat(radix, maxDigit, &msbWHat, &lsbWHat);
 			wHatSize = msbWHat-lsbWHat+1;
@@ -44,6 +46,10 @@ namespace flopoco {
 
 			outputSize = intlog2(radix);
 
+			//--------- pipelining
+			setCriticalPath(getMaxInputDelays(inputDelays));
+			//--------- pipelining
+
 			//add the inputs
 			addFixInput("W", true, msbIn, lsbIn);
 			//add the outputs
@@ -51,6 +57,10 @@ namespace flopoco {
 
 			vhdl << tab << declareFixPoint("WHat", true, msbWHat, lsbWHat)
 					<< " <= W" << range(msbIn-lsbIn, msbIn-lsbIn-wHatSize+1) << ";" << endl;
+
+			//--------- pipelining
+			manageCriticalPath(target->lutDelay()+target->localWireDelay(), true);
+			//--------- pipelining
 
 			vhdl << tab << "with WHat select D <= \n";
 			if(((1<<wHatSize)-1) > (maxDigit+1))
@@ -82,6 +92,7 @@ namespace flopoco {
 			}
 			vhdl << tab << tab << "\"" << std::string(outputSize, '-') << "\" when others;\n" << endl;
 
+			outDelayMap["D"] = getCriticalPath();
 		}
 
 
@@ -108,10 +119,20 @@ namespace flopoco {
 			{
 				//only the 6 top MSBs are needed
 				wHSize = 6;
+			}if(_radix == 16)
+			{
+				//only the 6 top MSBs are needed
+				wHSize = 7;
+			}if(_radix == 32)
+			{
+				//only the 6 top MSBs are needed
+				wHSize = 8;
 			}else
 			{
-				cerr << "SimpleSelectionFunction: radixes higher than 8 currently not supported!";
-				exit(1);
+//				cerr << "SimpleSelectionFunction: radixes higher than 8 currently not supported!";
+//				exit(1);
+				//only the 6 top MSBs are needed
+				wHSize = 7;
 			}
 
 			*(_lsb) = -1;

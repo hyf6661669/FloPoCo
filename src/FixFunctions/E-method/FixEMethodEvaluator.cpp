@@ -35,8 +35,8 @@ namespace flopoco {
 		if(n != m)
 			REPORT(INFO, "WARNING: degree of numerator and of denominator are different! "
 					<< "This will lead to a less efficient implementation.");
-		if((radix != 2) && (radix != 4) && (radix != 8))
-			THROWERROR("radixes higher than 8 currently not supported!");
+//		if((radix != 2) && (radix != 4) && (radix != 8))
+//			THROWERROR("radixes higher than 8 currently not supported!");
 		if(maxDigit < (radix-1))
 			REPORT(INFO, "WARNING: used digit set is not maximal!");
 		if(maxDigit > radix-1)
@@ -105,6 +105,10 @@ namespace flopoco {
 		lsbDiMX = lsbX;
 		dDiMX   = new Signal("dDiMX", Signal::wire, true, msbDiMX, lsbDiMX);
 
+		//--------- pipelining
+		setCriticalPath(getMaxInputDelays(inputDelays));
+		//--------- pipelining
+
 		//add the inputs
 		addFixInput("X", true, msbInOut, lsbInOut);
 		//add the outputs
@@ -135,6 +139,10 @@ namespace flopoco {
 			outPortMap(scaleMult, "R", "X_scaled_int");
 			vhdl << tab << instance(scaleMult, "ScaleConstMult");
 
+			//--------- pipelining
+			syncCycleFromSignal("X_scaled_int", true);
+			//--------- pipelining
+
 			//extend the result of the multiplication to the original signal, if necessary
 			//	inputScaleFactor<1, so the scaled signal's msb <= original signal's msb
 			xScaleSize = getSignalByName("X_scaled_int")->width();
@@ -142,6 +150,11 @@ namespace flopoco {
 			{
 				//extension required
 				ostringstream xScaleExtension;
+
+				//--------- pipelining
+				manageCriticalPath(target->localWireDelay(msbX-lsbX+1), true);
+				syncCycleFromSignal("X_scaled_int", true);
+				//--------- pipelining
 
 				for(int i=xScaleSize; i<(msbX-lsbX+1+g); i++)
 					xScaleExtension << "X_scaled_int(" << xScaleSize-1 << ") & ";
@@ -152,6 +165,10 @@ namespace flopoco {
 			{
 				vhdl << tab << declare("X_scaled", msbX-lsbX+g+1) << " <= X_scaled_int;" << endl;
 			}
+
+			//--------- pipelining
+			syncCycleFromSignal("X_scaled", true);
+			//--------- pipelining
 
 			//update the size of the signals based on X
 			//	X
@@ -181,6 +198,11 @@ namespace flopoco {
 		//	the multipliers by constants
 		IntConstMult *dimxMult[maxDigit+1];
 
+		//--------- pipelining
+		currentCycle = getCurrentCycle();
+		currentCriticalPath = getCriticalPath();
+		//--------- pipelining
+
 		//multiply by the positive constants
 		REPORT(DEBUG, "multiply by the positive constants");
 		addComment(" ---- multiply by the positive constants ----", tab);
@@ -190,11 +212,20 @@ namespace flopoco {
 			REPORT(DEBUG, "create the multiplication between X and the constant " << i);
 			if(i == 0)
 			{
+				//--------- pipelining
+				manageCriticalPath(target->localWireDelay(), true);
+				//--------- pipelining
+
 				vhdl << tab << declareFixPoint(join("X_Mult_", i, "_std_lv"), true, msbDiMX, lsbDiMX)
 						<< " <= " << zg(msbDiMX-lsbDiMX+1) << ";" << endl;
 			}
 			else
 			{
+				//--------- pipelining
+				setCycle(currentCycle);
+				setCriticalPath(currentCriticalPath);
+				//--------- pipelining
+
 				dimxMult[i] = new IntConstMult(
 												target,					//target
 												msbX-lsbX+1,		 	//size of X
@@ -216,10 +247,19 @@ namespace flopoco {
 		addComment(" ---- multiply by the negative constants ----", tab);
 		for(int i=1; i<=(int)maxDigit; i++)
 		{
+			//--------- pipelining
+			setCycleFromSignal(join("X_Mult_", vhdlize(i)), true);
+			manageCriticalPath(target->adderDelay(msbDiMX-lsbDiMX+1)+target->localWireDelay(), true);
+			//--------- pipelining
+
 			REPORT(DEBUG, "create the multiplication between X and the constant " << -i);
 			vhdl << tab << declareFixPoint(join("X_Mult_", vhdlize(-i)), true, msbDiMX, lsbDiMX)
 					<< " <= -X_Mult_" << i << ";" << endl;
 		}
+
+		//--------- pipelining
+		manageCriticalPath(target->localWireDelay(msbW-lsbW+1), true);
+		//--------- pipelining
 
 		//iteration 0
 		//	initialize the elements of the residual vector
@@ -237,6 +277,8 @@ namespace flopoco {
 		REPORT(DEBUG, "create the computation units");
 		GenericComputationUnit *cu0, *cuI[maxDegree-2], *cuN;
 
+		//target->setPipelined(false);
+
 		//compute unit 0
 		REPORT(DEBUG, "create the computation unit 0");
 		cu0 = new GenericComputationUnit(
@@ -251,6 +293,7 @@ namespace flopoco {
 										coeffsQ[0]		//constant q_i
 										);
 		addSubComponent(cu0);
+		//compute units 1 - n-1
 		for(size_t i=1; i<=(maxDegree-2); i++)
 		{
 			//compute unit i
@@ -295,6 +338,8 @@ namespace flopoco {
 												);
 		addSubComponent(sel);
 
+		//target->setPipelined(true);
+
 		//iteration 1
 		//	the elements of the residual vector are the ones at the previous iteration
 		//	shifted by log2(radix) positions to the left
@@ -320,6 +365,10 @@ namespace flopoco {
 				//mpfr_mul_2ui(mpTmp, mpCoeffsP[i], 1, GMP_RNDN);
 				mpfr_mul_ui(mpTmp, mpCoeffsP[i], radix, GMP_RNDN);
 
+				//--------- pipelining
+				manageCriticalPath(target->localWireDelay(msbW-lsbW+1), true);
+				//--------- pipelining
+
 				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
 						<< signedFixPointNumber(mpTmp, msbW, lsbW, 0) << ";" << endl;
 
@@ -339,12 +388,32 @@ namespace flopoco {
 			}
 		}
 
+		//--------- pipelining
+		nextCycle(true);
+		//--------- pipelining
+
 		//iterations 1 to nbIter
 		REPORT(DEBUG, "iterations 1 to nbIter");
 		for(size_t iter=2; iter<=nbIter; iter++)
 		{
 			REPORT(DEBUG, "iteration " << iter);
 			addComment(join(" ---- iteration ", iter, " ----"), tab);
+
+			//--------- pipelining
+			if(iter > 2)
+			{
+				for(size_t i=0; i<maxDegree; i++)
+				{
+					//after iteration nbIter-m, we can stop generating some of the SELs
+					if((i > nbIter-iter) && (iter > nbIter-maxDegree))
+						continue;
+
+					syncCycleFromSignal(join("W_", iter-1, "_0"), true);
+					syncCycleFromSignal(join("D_", iter-1, "_0"), true);
+				}
+				setCriticalPath(sel->getOutDelayMap()["D"]);
+			}
+			//--------- pipelining
 
 			//create computation unit index 0
 			REPORT(DEBUG, "create computation unit index 0");
@@ -368,6 +437,10 @@ namespace flopoco {
 			REPORT(DEBUG, "create computation units index 1 to maxDegree-1");
 			for(size_t i=1; i<=(maxDegree-2); i++)
 			{
+				//after iteration nbIter-m, we can stop generating some of the CUs
+				if((i > nbIter-iter) && (iter > nbIter-maxDegree))
+					break;
+
 				REPORT(DEBUG, "create computation unit index " << i);
 				//inputs
 				inPortMap(cuI[i-1], "Wi",   join("W_", iter-1, "_", i));
@@ -385,23 +458,38 @@ namespace flopoco {
 				vhdl << tab << instance(cuI[i-1], join("CU_", iter, "_", i));
 			}
 
-			//create computation unit index maxDegree
-			REPORT(DEBUG, "create computation unit index maxDegree");
-			//	a special case
-			//inputs
-			inPortMap(cuN, "Wi",   join("W_", iter-1, "_", maxDegree-1));
-			inPortMap(cuN, "D0",   join("D_", iter-1, "_0"));
-			inPortMap(cuN, "Di",   join("D_", iter-1, "_", maxDegree-1));
-			inPortMap(cuN, "X",    "X_scaled_signed");
-			//outputs
-			outPortMap(cuN, "Wi_next", join("W_", iter, "_", maxDegree-1));
-			//the instance
-			vhdl << tab << instance(cuN, join("CU_", iter-1, "_", maxDegree-1));
+			//after iteration nbIter-m, this CU is no longer needed
+			if(iter <= (nbIter-maxDegree+1))
+			{
+				//create computation unit index maxDegree
+				REPORT(DEBUG, "create computation unit index maxDegree");
+				//	a special case
+				//inputs
+				inPortMap(cuN, "Wi",   join("W_", iter-1, "_", maxDegree-1));
+				inPortMap(cuN, "D0",   join("D_", iter-1, "_0"));
+				inPortMap(cuN, "Di",   join("D_", iter-1, "_", maxDegree-1));
+				inPortMap(cuN, "X",    "X_scaled_signed");
+				//outputs
+				outPortMap(cuN, "Wi_next", join("W_", iter, "_", maxDegree-1));
+				//the instance
+				vhdl << tab << instance(cuN, join("CU_", iter-1, "_", maxDegree-1));
+			}
 
 			//create the selection units index 0 to maxDegree-1
 			REPORT(DEBUG, "create the selection units index 0 to maxDegree-1");
 			for(size_t i=0; i<maxDegree; i++)
 			{
+				//after iteration nbIter-m, we can stop generating some of the SELs
+				if((i > nbIter-iter) && (iter > nbIter-maxDegree))
+					continue;
+
+				REPORT(DEBUG, "create the selection unit " << i);
+
+				//--------- pipelining
+				setCycleFromSignal(join("W_", iter, "_", i), true);
+				setCriticalPath(cu0->getOutDelayMap()["Wi_next"]);
+				//--------- pipelining
+
 				//inputs
 				inPortMap(sel,  "W", join("W_", iter, "_", i));
 				//outputs
@@ -409,7 +497,34 @@ namespace flopoco {
 				//the instance
 				vhdl << tab << instance(sel, join("SEL_", iter, "_", i));
 			}
+
+			//--------- pipelining
+			for(size_t i=0; i<maxDegree; i++)
+			{
+				//after iteration nbIter-m, we can stop generating some of the SELs
+				if((i > nbIter-iter) && (iter > nbIter-maxDegree))
+					continue;
+
+				syncCycleFromSignal(join("D_", iter, "_", i), true);
+			}
+			setCriticalPath(sel->getOutDelayMap()["D"]);
+
+			//if((iter > 2) && (iter%2 == 0))
+			//if((iter > 2) && (iter%3 == 0))
+			//if((iter > 2) && (iter%4 == 0))
+				nextCycle(true);
+			//--------- pipelining
 		}
+
+		//--------- pipelining
+		syncCycleFromSignal(join("W_", nbIter, "_0"), true);
+		syncCycleFromSignal(join("D_", nbIter, "_0"), true);
+		setCriticalPath(sel->getOutDelayMap()["D"]);
+		//--------- pipelining
+
+		//--------- pipelining
+		nextCycle(true);
+		//--------- pipelining
 
 		//compute the final result
 		REPORT(DEBUG, "compute the final result");
@@ -446,6 +561,10 @@ namespace flopoco {
 		//compress the bitheap
 		REPORT(DEBUG, "compress the bitheap");
 		bitheap->generateCompressorVHDL();
+
+		//--------- pipelining
+		syncCycleFromSignal(bitheap->getSumName(), true);
+		//--------- pipelining
 
 		//retrieve the bits we want from the bit heap
 		REPORT(DEBUG, "retrieve the bits from the bit heap");

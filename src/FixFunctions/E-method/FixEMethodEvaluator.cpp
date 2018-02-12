@@ -652,9 +652,15 @@ namespace flopoco {
 	void FixEMethodEvaluator::setAlgorithmParameters()
 	{
 		//set xi
-		xi    = 0.5  * (1+delta);
+		//	this is only for radix 2
+		//xi    = 0.5  * (1+delta);
+		//	generic case
+		xi    = 0.5  * (1.0+delta);
 		//set alpha
-		alpha = 0.25 * (1-delta);
+		//	this is only for radix 2
+		//alpha = 0.25 * (1-delta);
+		//	generic case
+		alpha = (1.0/(2*radix)) * (1.0-delta);
 		//set the scale factor
 		//	compute the value of the scale factor in two cases:
 		//	1) when scaling is required, and it hasn't been set by the user

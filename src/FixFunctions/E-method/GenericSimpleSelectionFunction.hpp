@@ -20,6 +20,8 @@
 #include "Signal.hpp"
 #include "utils.hpp"
 
+#define RADIX8plusSUPPORT 1
+
 namespace flopoco {
 
 	class GenericSimpleSelectionFunction : public Operator

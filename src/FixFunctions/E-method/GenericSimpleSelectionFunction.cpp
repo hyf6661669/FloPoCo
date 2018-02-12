@@ -129,10 +129,12 @@ namespace flopoco {
 				wHSize = 8;
 			}else
 			{
-//				cerr << "SimpleSelectionFunction: radixes higher than 8 currently not supported!";
-//				exit(1);
-				//only the 6 top MSBs are needed
-				wHSize = 7;
+#if RADIX8plusSUPPORT==1
+				wHSize = 9;
+#else
+				cerr << "SimpleSelectionFunction: radixes higher than 8 currently not supported!";
+				exit(1);
+#endif
 			}
 
 			*(_lsb) = -1;

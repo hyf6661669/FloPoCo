@@ -34,6 +34,8 @@
 
 #define LARGEPREC 10000
 
+#define RADIX8plusSUPPORT 1
+
 namespace flopoco {
 
 	/**

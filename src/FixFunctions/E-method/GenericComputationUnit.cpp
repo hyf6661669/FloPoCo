@@ -29,10 +29,14 @@ namespace flopoco {
 		setName(name.str()+"_uid"+vhdlize(getNewUId()));
 
 		//safety checks
+#if RADIX8plusSUPPORT==0
 		if((radix != 2) && (radix != 4) && (radix != 8))
 		{
-//			THROWERROR("GenericComputationUnit: radixes higher than 8 currently not supported!");
+			THROWERROR("GenericComputationUnit: radixes higher than 8 currently not supported!");
 		}
+#endif
+		if(maxDigit <= 0)
+			THROWERROR("GenericComputationUnit: maximum digit should be a positive integer larger than zero");
 
 		setCopyrightString("Matei Istoan, 2017");
 
@@ -40,7 +44,7 @@ namespace flopoco {
 
 		setCombinatorial();
 
-		//determine the MSB and the LSb for the internal computations
+		//determine the MSB and the LSB for the internal computations
 		msbInt = maxInt(3, msbW, msbX, msbD);
 		lsbInt = minInt(3, lsbW, lsbX, lsbD);
 

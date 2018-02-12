@@ -32,6 +32,8 @@
 //the precision used to parse the constant
 #define LARGEPREC 10000
 
+#define RADIX8plusSUPPORT 1
+
 namespace flopoco {
 
 	class GenericComputationUnit : public Operator

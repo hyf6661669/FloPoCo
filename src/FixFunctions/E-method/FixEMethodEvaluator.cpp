@@ -35,8 +35,10 @@ namespace flopoco {
 		if(n != m)
 			REPORT(INFO, "WARNING: degree of numerator and of denominator are different! "
 					<< "This will lead to a less efficient implementation.");
-//		if((radix != 2) && (radix != 4) && (radix != 8))
-//			THROWERROR("radixes higher than 8 currently not supported!");
+#if RADIX8plusSUPPORT==0
+		if((radix != 2) && (radix != 4) && (radix != 8))
+			THROWERROR("radixes higher than 8 currently not supported!");
+#endif
 		if(maxDigit < (radix-1))
 			REPORT(INFO, "WARNING: used digit set is not maximal!");
 		if(maxDigit > radix-1)
@@ -79,9 +81,6 @@ namespace flopoco {
 		//add an additional number of iterations to compensate for the errors
 		//g = intlog2(nbIter);
 		g = 0;
-
-		//g *= 4;
-		//nbIter += g;
 
 		//set the format of the internal signals
 		REPORT(DEBUG, "set the format of the internal signals");

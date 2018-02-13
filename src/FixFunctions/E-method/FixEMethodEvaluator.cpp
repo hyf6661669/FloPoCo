@@ -260,18 +260,6 @@ namespace flopoco {
 		manageCriticalPath(target->localWireDelay(msbW-lsbW+1), true);
 		//--------- pipelining
 
-		//iteration 0
-		//	initialize the elements of the residual vector
-		addComment(" ---- iteration 0 ----", tab);
-		REPORT(DEBUG, "iteration 0");
-		for(size_t i=0; i<maxDegree; i++)
-		{
-			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbW, lsbW) << " <= "
-					<< signedFixPointNumber(mpCoeffsP[i], msbW, lsbW, 0) << ";" << endl;
-			vhdl << tab << declareFixPoint(join("D_0_", i), true, msbD, lsbD) << " <= "
-					<< zg(msbD-lsbD+1, 0) << ";" << endl;
-		}
-
 		//create the computation units
 		REPORT(DEBUG, "create the computation units");
 		GenericComputationUnit *cu0, *cuI[maxDegree-2], *cuN;
@@ -339,6 +327,18 @@ namespace flopoco {
 
 		//target->setPipelined(true);
 
+		//iteration 0
+		//	initialize the elements of the residual vector
+		addComment(" ---- iteration 0 ----", tab);
+		REPORT(DEBUG, "iteration 0");
+		for(size_t i=0; i<maxDegree; i++)
+		{
+			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbW, lsbW) << " <= "
+					<< signedFixPointNumber(mpCoeffsP[i], msbW, lsbW, 0) << ";" << endl;
+			vhdl << tab << declareFixPoint(join("D_0_", i), true, msbD, lsbD) << " <= "
+					<< zg(msbD-lsbD+1, 0) << ";" << endl;
+		}
+
 		//iteration 1
 		//	the elements of the residual vector are the ones at the previous iteration
 		//	shifted by log2(radix) positions to the left
@@ -348,15 +348,10 @@ namespace flopoco {
 			REPORT(DEBUG, "iteration 1");
 			for(size_t i=0; i<maxDegree; i++)
 			{
-				//TODO: this can be more precise than the original algorithm
-				//		instead of shifting the previous signal, just generate
-				//		the signal from the constant multiplied by two
-
 				//create the residual vector
 				mpfr_t mpTmp;
 
 				mpfr_init2(mpTmp, LARGEPREC);
-				//mpfr_mul_2ui(mpTmp, mpCoeffsP[i], 1, GMP_RNDN);
 				mpfr_mul_ui(mpTmp, mpCoeffsP[i], radix, GMP_RNDN);
 
 				//--------- pipelining
@@ -374,13 +369,116 @@ namespace flopoco {
 			}
 		}
 
+
+		//iteration 2
+		//	the elements of the residual vector and the select digits can almost be pre-computed
+		//	except for the operations including X
+		if(nbIter >= 2)
+		{
+			addComment(" ---- iteration 2 ----", tab);
+			REPORT(DEBUG, "iteration 2");
+			for(size_t i=0; i<maxDegree; i++)
+			{
+				//create the residual vector
+				mpfr_t mpTmp, mpSum, w_i, d_0, d_i, d_ip1;
+				mpz_class sv_d_0, sv_d_i, sv_d_ip1;
+
+				//initialize the MPFR variables
+				mpfr_inits2(LARGEPREC, mpTmp, mpSum, w_i, d_0, d_i, d_ip1, (mpfr_ptr)nullptr);
+				//create w_i^{j-1}
+				mpfr_mul_ui(w_i, mpCoeffsP[i], radix, GMP_RNDN);
+
+				//create d_0^{j-1}
+				mpfr_mul_ui(d_0, mpCoeffsP[0], radix, GMP_RNDN);
+				//	round to the closest integer
+				mpfr_get_z(sv_d_0.get_mpz_t(), d_0, GMP_RNDN);
+				//	save it back in the MPFR version of the variable
+				mpfr_set_z(d_0, sv_d_0.get_mpz_t(), GMP_RNDN);
+
+				//create d_i^{j-1}
+				//	round to the closest integer
+				mpfr_get_z(sv_d_i.get_mpz_t(), w_i, GMP_RNDN);
+				//	save it back in the MPFR version of the variable
+				mpfr_set_z(d_i, sv_d_i.get_mpz_t(), GMP_RNDN);
+
+				if(i != (maxDegree-1))
+				{
+					//create d_{i+1}^{j-1}
+					mpfr_mul_ui(d_ip1, mpCoeffsP[i+1], radix, GMP_RNDN);
+					//	round to the closest integer
+					mpfr_get_z(sv_d_ip1.get_mpz_t(), d_ip1, GMP_RNDN);
+					//	save it back in the MPFR version of the variable
+					mpfr_set_z(d_ip1, sv_d_ip1.get_mpz_t(), GMP_RNDN);
+				}
+
+				//create the sum
+				//	w_i^{j-1} - d_0^{j-1}*q_i - d_i^{j-1}
+				mpfr_set(mpSum, w_i, GMP_RNDN);
+				if(i > 0)
+				{
+					mpfr_set(mpTmp, d_0, GMP_RNDN);
+					mpfr_mul(mpTmp, mpTmp, mpCoeffsQ[i], GMP_RNDN);
+					mpfr_sub(mpSum, mpSum, mpTmp, GMP_RNDN);
+				}
+				mpfr_sub(mpSum, mpSum, d_i, GMP_RNDN);
+
+				//--------- pipelining
+				manageCriticalPath(target->localWireDelay(msbW-lsbW+1), true);
+				//--------- pipelining
+
+				//create the signal for the sum
+				vhdl << tab << declareFixPoint(join("sum_2_", i), true, msbW, lsbW) << " <= "
+						<< signedFixPointNumber(mpSum, msbW, lsbW, 0) << ";" << endl;
+
+				//create the signal for x*d_{i+1}^{(1)}
+				if(i != (maxDegree-1))
+				{
+					resizeFixPoint(join("sum_2_", i, "_term2"),
+							join("X_Mult_", vhdlize(sv_d_ip1.get_d())), msbW, lsbW, 1);
+				}
+
+				//--------- pipelining
+				manageCriticalPath(target->adderDelay(msbW-lsbW+1), true);
+				//--------- pipelining
+
+				//create w_i^{(2)}
+				if(i != (maxDegree-1))
+				{
+					vhdl << tab << declareFixPoint(join("W_2_", i, "_int"), true, msbW, lsbW) << " <= "
+							<< "sum_2_" << i << " + "
+							<< "sum_2_" << i << "_term2"
+							<< ";" << endl;
+				}
+				vhdl << tab << declareFixPoint(join("W_2_", i), true, msbW, lsbW) << " <= ";
+				if(i != (maxDegree-1))
+				{
+					vhdl << "W_2_" << i << "_int" << range(msbW-lsbW-ceil(log2(radix)), 0)
+								<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+				}
+				else
+				{
+					vhdl << "sum_2_" << i << ";" << endl;
+				}
+
+				//create the selection unit
+				//inputs
+				inPortMap(sel,  "W", join("W_2_", i));
+				//outputs
+				outPortMap(sel, "D", join("D_2_", i));
+				//the instance
+				vhdl << tab << instance(sel, join("SEL_2_", i));
+
+				mpfr_clears(mpTmp, mpSum, w_i, d_0, d_i, d_ip1, (mpfr_ptr)nullptr);
+			}
+		}
+
 		//--------- pipelining
 		nextCycle(true);
 		//--------- pipelining
 
-		//iterations 2 to nbIter
+		//iterations 3 to nbIter
 		REPORT(DEBUG, "iterations 1 to nbIter");
-		for(size_t iter=2; iter<=nbIter; iter++)
+		for(size_t iter=3; iter<=nbIter; iter++)
 		{
 			REPORT(DEBUG, "iteration " << iter);
 			addComment(join(" ---- iteration ", iter, " ----"), tab);

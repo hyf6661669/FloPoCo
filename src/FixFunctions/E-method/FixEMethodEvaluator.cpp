@@ -353,11 +353,6 @@ namespace flopoco {
 				//		the signal from the constant multiplied by two
 
 				//create the residual vector
-				/*
-				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
-						<< "W_0_" << i << range(msbW-lsbW-ceil(log2(radix)), 0)
-						<< " & " << zg(ceil(log2(radix))) << ";" << endl;
-				*/
 				mpfr_t mpTmp;
 
 				mpfr_init2(mpTmp, LARGEPREC);
@@ -372,14 +367,6 @@ namespace flopoco {
 						<< signedFixPointNumber(mpTmp, msbW, lsbW, 0) << ";" << endl;
 
 				//create the selection unit
-				/*
-				//inputs
-				inPortMap(sel,  "W", join("W_1_", i));
-				//outputs
-				outPortMap(sel, "D", join("D_1_", i));
-				//the instance
-				vhdl << tab << instance(sel, join("SEL_1_", i));
-				*/
 				vhdl << tab << declareFixPoint(join("D_1_", i), true, msbD, lsbD) << " <= "
 						<< signedFixPointNumber(mpTmp, msbD, lsbD, 0) << ";" << endl;
 
@@ -391,7 +378,7 @@ namespace flopoco {
 		nextCycle(true);
 		//--------- pipelining
 
-		//iterations 1 to nbIter
+		//iterations 2 to nbIter
 		REPORT(DEBUG, "iterations 1 to nbIter");
 		for(size_t iter=2; iter<=nbIter; iter++)
 		{
@@ -797,7 +784,6 @@ namespace flopoco {
 		// compute the multiple-precision output
 		mpz_class svYd, svYu;
 		mpfr_t mpX, mpP, mpQ, mpTmp, mpY;
-		double dP, dQ, dY, dTmp;
 
 		//initialize the variables
 		mpfr_inits2(LARGEPREC, mpX, mpP, mpQ, mpTmp, mpY, (mpfr_ptr)nullptr);
@@ -808,10 +794,8 @@ namespace flopoco {
 
 		//initialize X
 		mpfr_set_z(mpX, svX.get_mpz_t(), GMP_RNDN);
-		dTmp = mpfr_get_d(mpX, GMP_RNDN);
 		//	scale X appropriately, by the amount given by lsbInOut
 		mpfr_mul_2si(mpX, mpX, lsbInOut, GMP_RNDN);
-		dTmp = mpfr_get_d(mpX, GMP_RNDN);
 
 		//if required, scale the input
 		if(scaleInput == true)
@@ -822,15 +806,11 @@ namespace flopoco {
 		{
 			//compute X^i
 			mpfr_pow_si(mpTmp, mpX, i, GMP_RNDN);
-			dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 			//multiply by coeffsP[i]
 			mpfr_mul(mpTmp, mpTmp, mpCoeffsP[i], GMP_RNDN);
-			dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 
 			//add the new term to the sum
-			dP = mpfr_get_d(mpP, GMP_RNDN);
 			mpfr_add(mpP, mpP, mpTmp, GMP_RNDN);
-			dP = mpfr_get_d(mpP, GMP_RNDN);
  		}
 
 		//compute Q
@@ -838,20 +818,15 @@ namespace flopoco {
 		{
 			//compute X^i
 			mpfr_pow_si(mpTmp, mpX, i, GMP_RNDN);
-			dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 			//multiply by coeffsQ[i]
 			mpfr_mul(mpTmp, mpTmp, mpCoeffsQ[i], GMP_RNDN);
-			dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 
 			//add the new term to the sum
-			dQ = mpfr_get_d(mpQ, GMP_RNDN);
 			mpfr_add(mpQ, mpQ, mpTmp, GMP_RNDN);
-			dQ = mpfr_get_d(mpQ, GMP_RNDN);
 		}
 
 		//compute Y = P/Q
 		mpfr_div(mpY, mpP, mpQ, GMP_RNDN);
-		dY = mpfr_get_d(mpY, GMP_RNDN);
 
 		//scale the result back to an integer
 		mpfr_mul_2si(mpY, mpY, -lsbInOut+msbInOut, GMP_RNDN);

@@ -385,6 +385,7 @@ namespace flopoco {
 
 				//initialize the MPFR variables
 				mpfr_inits2(LARGEPREC, mpTmp, mpSum, w_i, d_0, d_i, d_ip1, (mpfr_ptr)nullptr);
+
 				//create w_i^{j-1}
 				mpfr_mul_ui(w_i, mpCoeffsP[i], radix, GMP_RNDN);
 
@@ -401,7 +402,7 @@ namespace flopoco {
 				//	save it back in the MPFR version of the variable
 				mpfr_set_z(d_i, sv_d_i.get_mpz_t(), GMP_RNDN);
 
-				if(i != (maxDegree-1))
+				if(i < (maxDegree-1))
 				{
 					//create d_{i+1}^{j-1}
 					mpfr_mul_ui(d_ip1, mpCoeffsP[i+1], radix, GMP_RNDN);
@@ -416,8 +417,7 @@ namespace flopoco {
 				mpfr_set(mpSum, w_i, GMP_RNDN);
 				if(i > 0)
 				{
-					mpfr_set(mpTmp, d_0, GMP_RNDN);
-					mpfr_mul(mpTmp, mpTmp, mpCoeffsQ[i], GMP_RNDN);
+					mpfr_mul(mpTmp, d_0, mpCoeffsQ[i], GMP_RNDN);
 					mpfr_sub(mpSum, mpSum, mpTmp, GMP_RNDN);
 				}
 				mpfr_sub(mpSum, mpSum, d_i, GMP_RNDN);
@@ -431,7 +431,7 @@ namespace flopoco {
 						<< signedFixPointNumber(mpSum, msbW, lsbW, 0) << ";" << endl;
 
 				//create the signal for x*d_{i+1}^{(1)}
-				if(i != (maxDegree-1))
+				if(i < (maxDegree-1))
 				{
 					resizeFixPoint(join("sum_2_", i, "_term2"),
 							join("X_Mult_", vhdlize(sv_d_ip1.get_d())), msbW, lsbW, 1);
@@ -442,7 +442,7 @@ namespace flopoco {
 				//--------- pipelining
 
 				//create w_i^{(2)}
-				if(i != (maxDegree-1))
+				if(i < (maxDegree-1))
 				{
 					vhdl << tab << declareFixPoint(join("W_2_", i, "_int"), true, msbW, lsbW) << " <= "
 							<< "sum_2_" << i << " + "
@@ -450,15 +450,15 @@ namespace flopoco {
 							<< ";" << endl;
 				}
 				vhdl << tab << declareFixPoint(join("W_2_", i), true, msbW, lsbW) << " <= ";
-				if(i != (maxDegree-1))
+				if(i < (maxDegree-1))
 				{
-					vhdl << "W_2_" << i << "_int" << range(msbW-lsbW-ceil(log2(radix)), 0)
-								<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+					vhdl << "W_2_" << i << "_int";
 				}
 				else
 				{
-					vhdl << "sum_2_" << i << ";" << endl;
+					vhdl << "sum_2_" << i;
 				}
+				vhdl << range(msbW-lsbW-ceil(log2(radix)), 0) << " & " << zg(ceil(log2(radix))) << ";" << endl;
 
 				//create the selection unit
 				//inputs

@@ -690,6 +690,8 @@ src/NeuralNetworks/LayerArguments
 
 )
 
+set_target_properties(FloPoCoLib PROPERTIES OUTPUT_NAME "FloPoCo")
+
 TARGET_LINK_LIBRARIES(
   FloPoCoLib 
   ${GMP_LIB} ${GMPXX_LIB} ${MPFI_LIB} ${MPFR_LIB} #mpfr gmp gmpxx xml2 mpfi

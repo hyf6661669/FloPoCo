@@ -114,6 +114,8 @@ void UserInterface::registerFactories()
 	  FixFIR::registerFactory();
 		FixIIR::registerFactory();
 
+		FixMonotoneFunction::registerFactory();
+
 		// hidden for now
 		// Fix2DNorm::registerFactory();
 

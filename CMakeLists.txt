@@ -505,6 +505,14 @@ src/FPDivSqrt/FPSqrt
 # src/FixFunctions/FixFunctionByMultipartiteTable
 # src/FixFunctions/QuineMcCluskey
 
+# fixed-point monotone function ------------------------------------
+ src/FixMonotoneFunction/FixMonotoneFunction
+ src/FixMonotoneFunction/FixMonotoneFunctionInterface
+ src/FixMonotoneFunction/MonotoneFunction
+ src/FixMonotoneFunction/MonotoneFunctionDiff
+ src/FixMonotoneFunction/MonotoneFunctionLUT
+ src/FixMonotoneFunction/ComparatorTable
+
 # Trigonometric functions ------------------------------------------
 #src/Trigs/ConstDiv3ForSinPoly
 #src/Trigs/FixSinPoly

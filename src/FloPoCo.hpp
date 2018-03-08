@@ -167,6 +167,7 @@
 //#include "ExpLog/FPExp.hpp"
 //#include "ExpLog/FPPow.hpp"
 
+#include "FixMonotoneFunction/FixMonotoneFunction.hpp"
 
 //#include "Conversions/Fix2FP.hpp"
 //#include "Conversions/FP2Fix.hpp"

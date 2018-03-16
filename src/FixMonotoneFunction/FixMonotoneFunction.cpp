@@ -14,14 +14,14 @@ namespace flopoco {
         UserInterface::parseInt(args, "outputWidth", &param2);
 
         if(param0.compare("diff") == 0) {
-            return new MonotoneFunctionDiff(target, param1, param2);
+            return new MonotoneFunctionDiff(parentOp, target, param1, param2);
         }
 
         if(param0.compare("lut") == 0) {
-            return new MonotoneFunctionLUT(target, param1, param2);
+            return new MonotoneFunctionLUT(parentOp, target, param1, param2);
         }
 
-        return new MonotoneFunction(target, param1, param2);
+        return new MonotoneFunction(parentOp, target, param1, param2);
     }
 
     void FixMonotoneFunction::registerFactory() {

@@ -4,7 +4,8 @@
 
 #include "ComparatorTable.hpp"
 
-flopoco::ComparatorTable::ComparatorTable(OperatorPtr parentOp, flopoco::Target *target, int inputWidth_, int outputWidth_, std::vector<mpz_class> values_) : Table(parentOp, target), inputWidth(inputWidth_), outputWidth(outputWidth_), values(values_)  {
+flopoco::ComparatorTable::ComparatorTable(OperatorPtr parentOp, flopoco::Target *target, int inputWidth_, int outputWidth_, std::vector<mpz_class> values_)
+        : Table(parentOp, target, values_, inputWidth_, outputWidth_), inputWidth(inputWidth_), outputWidth(outputWidth_), values(values_)  {
 
 
     srcFileName="ComparatorTable";
@@ -14,7 +15,7 @@ flopoco::ComparatorTable::ComparatorTable(OperatorPtr parentOp, flopoco::Target 
     name << "ComparatorTable" << inputWidth;
     setName(name.str());
     // Copyright
-    setCopyrightString("Viktor Schmidt 2018");
+    //setCopyrightString("Viktor Schmidt 2018");
 
     REPORT(DEBUG,"Created ComparatorTable with " << inputWidth << " input bits and " << outputWidth << " outputBits.");
 }

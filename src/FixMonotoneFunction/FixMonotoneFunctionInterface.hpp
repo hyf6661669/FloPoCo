@@ -27,10 +27,11 @@ namespace flopoco {
 
         void eval(mpz_class &r, mpz_class x) const;
         bool checkMonotoneIncreasing();
+        void makeTwosComplement(mpz_class &r, int bitCount);
         virtual void build() = 0;
 
     public:
-        FixMonotoneFunctionInterface(Target *target, int inputWidth_, int outputWidth_);
+        FixMonotoneFunctionInterface(OperatorPtr parentOp, Target *target, int inputWidth_, int outputWidth_);
         //~FixMonotoneFunctionInterface() {};
 
         void emulate(TestCase *tc) override;

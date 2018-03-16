@@ -6,8 +6,8 @@
 
 using namespace std;
 namespace flopoco {
-    FixMonotoneFunctionInterface::FixMonotoneFunctionInterface(Target *target, int inputWidth_, int outputWidth_) :
-            Operator(target), inputWidth(inputWidth_), outputWidth(outputWidth_) {
+    FixMonotoneFunctionInterface::FixMonotoneFunctionInterface(OperatorPtr parentOp, Target *target, int inputWidth_, int outputWidth_) :
+            Operator(parentOp, target), inputWidth(inputWidth_), outputWidth(outputWidth_) {
 
         useNumericStd();
 
@@ -17,7 +17,9 @@ namespace flopoco {
         addOutput("o" , outputWidth);
 
         sollya_lib_parse_string("[0;1]");
-        fS= sollya_lib_parse_string("1 - sin(3.14/4*x) - 1/256;");
+        fS= sollya_lib_parse_string("sin(3.14/2*x) * 255/256;");
+        //fS= sollya_lib_parse_string("1 - sin(3.14/4*x) - 1/256;");
+
 
         monotoneIncreasing = checkMonotoneIncreasing();
     }
@@ -68,6 +70,17 @@ namespace flopoco {
         eval(out_max, in_max);
 
         return mpz_cmp(out_max.get_mpz_t(), out_0.get_mpz_t()) >= 0;
+    }
+
+    void FixMonotoneFunctionInterface::makeTwosComplement(mpz_class &r, int bitCount) {
+        if(mpz_cmp_d(r.get_mpz_t(), 0) > 0) {
+            mpz_abs(r.get_mpz_t(), r.get_mpz_t());
+            r -= mpz_class(1) << bitCount;
+            mpz_abs(r.get_mpz_t(), r.get_mpz_t());
+        }
+        else {
+            mpz_abs(r.get_mpz_t(), r.get_mpz_t());
+        }
     }
 
 }

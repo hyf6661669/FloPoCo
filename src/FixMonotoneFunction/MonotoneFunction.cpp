@@ -6,7 +6,8 @@
 
 using namespace std;
 namespace flopoco {
-    MonotoneFunction::MonotoneFunction(Target* target, int inputWidth_, int outputWidth_) : FixMonotoneFunctionInterface(target, inputWidth_, outputWidth_) {
+    MonotoneFunction::MonotoneFunction(OperatorPtr parentOp, Target* target, int inputWidth_, int outputWidth_)
+            : FixMonotoneFunctionInterface(parentOp, target, inputWidth_, outputWidth_) {
         srcFileName="FixMonotoneFunction";
         //useNumericStd();
 
@@ -14,17 +15,7 @@ namespace flopoco {
         ostringstream name;
         name << "FixMonotoneFunction" << inputWidth << "_" << outputWidth;
         setName(name.str());
-        // Copyright
-//        setCopyrightString("Viktor Schmidt 2018");
 
-        // declaring inputs
-//        addInput("i" , inputWidth);
-//        addFullComment(" addFullComment for a large comment ");
-//        addComment("addComment for small left-aligned comment");
-
-        // declaring output
-//        addOutput("o" , outputWidth);
-        // basic message
         REPORT(INFO,"Declaration of FixMonotoneFunction \n");
 
         // more detailed message
@@ -36,54 +27,9 @@ namespace flopoco {
 //        sollya_lib_parse_string("[0;1]");
 //        fS= sollya_lib_parse_string("1 - sin(3.14/4*x) - 1/256;");
 
-//        mpz_class in_0, out_0, in_max, out_max;
-//        in_0 = mpz_class(0);
-//        in_max = pow(2, inputWidth) - 1;
-//        eval(out_0, in_0);
-//        eval(out_max, in_max);
-//
-//        monotoneIncreasing = mpz_cmp(out_max.get_mpz_t(), out_0.get_mpz_t()) >= 0;
-
         build();
     };
 
-
-//    void MonotoneFunction::emulate(TestCase * tc) {
-//        mpz_class sx = tc->getInputValue("i");
-//
-//        mpz_class sr;
-//        eval(sr, sx);
-//
-//        tc->addExpectedOutput("o",sr);
-//    }
-
-
-//    void MonotoneFunction::buildStandardTestCases(TestCaseList * tcl) {
-//        // please fill me with regression tests or corner case tests!
-//    }
-
-
-//    void MonotoneFunction::eval(mpz_class& r, mpz_class x) const
-//    {
-//        mpfr_t mpX, mpR;
-//        mpfr_init2(mpX, inputWidth+2);
-//        mpfr_init2(mpR, outputWidth*3);
-//        sollya_lib_set_prec(sollya_lib_constant_from_int(inputWidth*2));
-//
-//        // scaling to [0, 1]
-//        mpfr_set_z(mpX, x.get_mpz_t(), GMP_RNDN);
-//        mpfr_div_2si(mpX, mpX, inputWidth, GMP_RNDN);
-//
-//        sollya_lib_evaluate_function_at_point(mpR, fS, mpX, NULL);
-//
-//        mpfr_mul_2si(mpR, mpR, outputWidth, GMP_RNDN);
-//        mpfr_get_z(r.get_mpz_t(), mpR, GMP_RNDN);
-//
-//        REPORT(FULL,"f("<< mpfr_get_d(mpX, GMP_RNDN) << ") = " <<mpfr_get_d(mpR, GMP_RNDN));
-//
-//        mpfr_clear(mpX);
-//        mpfr_clear(mpR);
-//    }
 
     mpz_class MonotoneFunction::calculateInverse(int y) {
         REPORT(DEBUG,"calculateInverse looking for x at f(x)=" << y);
@@ -125,7 +71,7 @@ namespace flopoco {
         int param0, param1;
         UserInterface::parseInt(args, "inputWidth", &param0);
         UserInterface::parseInt(args, "outputWidth", &param1);
-        return new MonotoneFunction(target, param0, param1);
+        return new MonotoneFunction(parentOp, target, param0, param1);
     }
 
     void MonotoneFunction::registerFactory(){
@@ -162,7 +108,15 @@ namespace flopoco {
             addSubComponent(ct);
 
             string signal = declare(join("ref", i), inputWidth);
-            vhdl << tab << "ct" << i << " : " << ct->getName() << " port map(X => output(" << outputWidth - 1 << " downto " << outputWidth - i << "), Y => " << signal << ", clk => clk, rst => rst);" << endl;
+
+            ostringstream outputPort;
+            outputPort << "output(" << outputWidth - 1 << " downto " << outputWidth - i << ")";
+            this->inPortMap(ct, "X", outputPort.str());
+            this->outPortMap(ct, "Y", signal);
+
+            vhdl << this->instance(ct, join("ct", i));
+
+            //vhdl << tab << "ct" << i << " : " << ct->getName() << " port map(X => output(" << outputWidth - 1 << " downto " << outputWidth - i << "), Y => " << signal << ", clk => clk, rst => rst);" << endl;
             vhdl << tab << "output(" << outputWidth - i - 1 << ") <= '1' when unsigned(i) " << comparison << " unsigned(" << signal << ") else '0';" << endl << endl;
         }
 

@@ -21,7 +21,7 @@ namespace flopoco {
         // definition of some function for the operator
 
         // constructor, defined there with two parameters (default value 0 for each)
-        MonotoneFunction(Target *target, int inputWidth, int outputWidth);
+        MonotoneFunction(OperatorPtr parentOp, Target *target, int inputWidth, int outputWidth);
 
         // destructor
         ~MonotoneFunction() {};

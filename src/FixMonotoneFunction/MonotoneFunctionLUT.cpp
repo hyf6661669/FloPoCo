@@ -16,7 +16,7 @@
 
 using namespace std;
 namespace flopoco {
-    MonotoneFunctionLUT::MonotoneFunctionLUT(Target* target, int inputWidth_, int outputWidth_) : inputWidth(inputWidth_), outputWidth(outputWidth_), Table(target, inputWidth_, outputWidth_) {
+    MonotoneFunctionLUT::MonotoneFunctionLUT(OperatorPtr parentOp, Target* target, int inputWidth_, int outputWidth_) : inputWidth(inputWidth_), outputWidth(outputWidth_), Table(parentOp, target) {
         /* constructor of the U`serDefinedOperator
            Target is the targeted FPGA : Stratix, Virtex ... (see Target.hpp for more informations)
            param0 and param1 are some parameters declared by this Operator developpers,
@@ -156,7 +156,7 @@ namespace flopoco {
         int param0, param1;
         UserInterface::parseInt(args, "inputWidth", &param0); // param0 has a default value, this method will recover it if it doesnt't find it in args,
         UserInterface::parseInt(args, "outputWidth", &param1);
-        return new MonotoneFunctionLUT(target, param0, param1);
+        return new MonotoneFunctionLUT(parentOp, target, param0, param1);
     }
 
     void MonotoneFunctionLUT::registerFactory(){

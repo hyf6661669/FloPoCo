@@ -19,7 +19,7 @@ namespace flopoco {
 
         //sollya_obj_t fS;
     public:
-        MonotoneFunctionDiff(Target *target, int inputWidth, int outputWidth);
+        MonotoneFunctionDiff(OperatorPtr parentOp, Target *target, int inputWidth, int outputWidth);
 
         //void emulate(TestCase *tc) override;
 

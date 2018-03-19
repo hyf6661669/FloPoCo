@@ -22,6 +22,7 @@ namespace flopoco {
 
         bool monotoneIncreasing;
 
+        string functionString;
         sollya_obj_t fS;
 
 
@@ -31,7 +32,7 @@ namespace flopoco {
         virtual void build() = 0;
 
     public:
-        FixMonotoneFunctionInterface(OperatorPtr parentOp, Target *target, int inputWidth_, int outputWidth_);
+        FixMonotoneFunctionInterface(OperatorPtr parentOp, Target *target, string functionString_, int inputWidth_, int outputWidth_);
         //~FixMonotoneFunctionInterface() {};
 
         void emulate(TestCase *tc) override;

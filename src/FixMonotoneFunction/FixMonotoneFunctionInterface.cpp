@@ -6,8 +6,8 @@
 
 using namespace std;
 namespace flopoco {
-    FixMonotoneFunctionInterface::FixMonotoneFunctionInterface(OperatorPtr parentOp, Target *target, int inputWidth_, int outputWidth_) :
-            Operator(parentOp, target), inputWidth(inputWidth_), outputWidth(outputWidth_) {
+    FixMonotoneFunctionInterface::FixMonotoneFunctionInterface(OperatorPtr parentOp, Target *target, string functionString_, int inputWidth_, int outputWidth_) :
+            Operator(parentOp, target), functionString(functionString_), inputWidth(inputWidth_), outputWidth(outputWidth_) {
 
         useNumericStd();
 
@@ -17,11 +17,18 @@ namespace flopoco {
         addOutput("o" , outputWidth);
 
         sollya_lib_parse_string("[0;1]");
-        fS= sollya_lib_parse_string("sin(3.14/2*x) * 255/256;");
-        //fS= sollya_lib_parse_string("1 - sin(3.14/4*x) - 1/256;");
-
+        //fS= sollya_lib_parse_string("sin(3.14/2*x) * 255/256;");
+        //fS = sollya_lib_parse_string("1 - sin(3.14/4*x) - 1/256;");
+        fS = sollya_lib_parse_string(functionString.c_str());
 
         monotoneIncreasing = checkMonotoneIncreasing();
+
+        if(monotoneIncreasing) {
+            REPORT(DEBUG, "Function is monotone increasing.");
+        }
+        else {
+            REPORT(DEBUG, "Function is monotone decreasing.");
+        }
     }
 
     void FixMonotoneFunctionInterface::emulate(TestCase *tc) {

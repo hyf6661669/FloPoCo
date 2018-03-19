@@ -6,12 +6,10 @@
 
 using namespace std;
 namespace flopoco {
-    MonotoneFunction::MonotoneFunction(OperatorPtr parentOp, Target* target, int inputWidth_, int outputWidth_)
-            : FixMonotoneFunctionInterface(parentOp, target, inputWidth_, outputWidth_) {
+    MonotoneFunction::MonotoneFunction(OperatorPtr parentOp, Target* target, string functionString_, int inputWidth_, int outputWidth_)
+            : FixMonotoneFunctionInterface(parentOp, target, functionString_, inputWidth_, outputWidth_) {
         srcFileName="FixMonotoneFunction";
-        //useNumericStd();
 
-        // definition of the name of the operator
         ostringstream name;
         name << "FixMonotoneFunction" << inputWidth << "_" << outputWidth;
         setName(name.str());
@@ -21,71 +19,79 @@ namespace flopoco {
         // more detailed message
         REPORT(DETAILED, "this operator has received two parameters " << inputWidth << " and " << outputWidth);
 
-        // debug message for developper
-        REPORT(DEBUG,"debug of FixMonotoneFunction");
-        //sollya_lib_set_prec(sollya_lib_constant_from_int(65536));
-//        sollya_lib_parse_string("[0;1]");
-//        fS= sollya_lib_parse_string("1 - sin(3.14/4*x) - 1/256;");
-
         build();
     };
 
 
     mpz_class MonotoneFunction::calculateInverse(int y) {
         REPORT(DEBUG,"calculateInverse looking for x at f(x)=" << y);
-        mpz_class y_real = y;
-        int ref = (int)pow(2, inputWidth) - 1;
-        int nextOffset = (int)pow(2, inputWidth - 1);
+
+        int ref = (int)pow(2, inputWidth - 1) -1;
+        int nextOffset = (int)pow(2, inputWidth - 2);
         mpz_class lut_in(ref), lut_out;
         int sign = monotoneIncreasing ? 1 : -1;
 
-        for(int i = 0; i < inputWidth; i++) {
-            lut_in = mpz_class(ref);
-            eval(lut_out, lut_in);
+        while(nextOffset != 0) {
+            //lut_in = ;
+            eval(lut_out, mpz_class(ref));
 
-            if(mpz_cmp(lut_out.get_mpz_t(), y_real.get_mpz_t()) >= 0) {
+            int cmp = mpz_cmp_si(lut_out.get_mpz_t(), y);
+            if(cmp > 0) {
                 ref -= sign * nextOffset;
             }
             else {
                 ref += sign * nextOffset;
             }
 
+            //ref += mpz_cmp_si(lut_out.get_mpz_t(), y)
+
             nextOffset /= 2;
 
+            REPORT(DEBUG,"nextoffset: " << nextOffset);
         }
 
-        lut_in = mpz_class(ref);
-        eval(lut_out, lut_in);
+        //lut_in = mpz_class(ref);
 
-        if(mpz_cmp(lut_out.get_mpz_t(), y_real.get_mpz_t()) < 0) {
-            ref += sign;
+        eval(lut_out, mpz_class(ref));
+
+        if(mpz_cmp_si(lut_out.get_mpz_t(), y)) {
+            REPORT(DEBUG,"cmp non zero: " << mpz_cmp_si(lut_out.get_mpz_t(), y));
         }
 
-        lut_in = mpz_class(ref);
 
-        return lut_in;
+//        ref += mpz_cmp_si(lut_out.get_mpz_t(), y);
+
+        if(mpz_cmp_si(lut_out.get_mpz_t(), y) != 0) {
+            ref += 1;
+        }
+
+        if(lut_in.get_si() > pow(2, inputWidth) - 1) {
+            REPORT(DEBUG,"inverse too big: f(" << lut_in.get_str(2) << ")=" << y);
+        }
+
+        //lut_in = mpz_class(ref);
+
+        return mpz_class(ref);
     }
 
 
     OperatorPtr MonotoneFunction::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
-        int param0, param1;
-        UserInterface::parseInt(args, "inputWidth", &param0);
-        UserInterface::parseInt(args, "outputWidth", &param1);
-        return new MonotoneFunction(parentOp, target, param0, param1);
+        string func;
+        int inW, outW;
+        UserInterface::parseString(args, "function", &func);
+        UserInterface::parseInt(args, "inputWidth", &inW);
+        UserInterface::parseInt(args, "outputWidth", &outW);
+        return new MonotoneFunction(parentOp, target, func, inW, outW);
     }
 
     void MonotoneFunction::registerFactory(){
         UserInterface::add("MonotoneFunction", // name
                            "Generates a function.", // description, string
                            "Miscellaneous", // category, from the list defined in UserInterface.cpp
-                           "", //seeAlso
-                // Now comes the parameter description string.
-                // Respect its syntax because it will be used to generate the parser and the docs
-                // Syntax is: a semicolon-separated list of parameterDescription;
-                // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
-                           "inputWidth(int)=16: Input bit count; \
-                        outputWidth(int)=8: Output bit count",
-                // More documentation for the HTML pages. If you want to link to your blog, it is here.
+                           "",
+                           "function(string)=x: Algorithm Type: normal, diff, lut;\
+                           inputWidth(int)=16: Input bit count; \
+                           outputWidth(int)=8: Output bit count",
                            "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developer manual in the doc/ directory of FloPoCo.",
                            MonotoneFunction::parseArguments
         ) ;

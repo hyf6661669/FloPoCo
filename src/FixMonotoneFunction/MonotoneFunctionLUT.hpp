@@ -20,12 +20,13 @@ namespace flopoco {
         int inputWidth;
         int outputWidth;
 
+        string functionString;
         sollya_obj_t fS;
     public:
         // definition of some function for the operator
 
         // constructor, defined there with two parameters (default value 0 for each)
-        MonotoneFunctionLUT(OperatorPtr parentOp, Target *target, int inputWidth = 14, int outputWidth = 8);
+        MonotoneFunctionLUT(OperatorPtr parentOp, Target *target, string functionString_, int inputWidth = 14, int outputWidth = 8);
 
         // destructor
         ~MonotoneFunctionLUT() {};

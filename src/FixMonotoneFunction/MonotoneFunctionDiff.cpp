@@ -6,13 +6,11 @@
 
 using namespace std;
 namespace flopoco {
-    MonotoneFunctionDiff::MonotoneFunctionDiff(OperatorPtr parentOp, flopoco::Target *target, int inputWidth_, int outputWidth_)
-            : FixMonotoneFunctionInterface(parentOp, target, inputWidth_, outputWidth_) {
+    MonotoneFunctionDiff::MonotoneFunctionDiff(OperatorPtr parentOp, flopoco::Target *target, string functionString_, int inputWidth_, int outputWidth_)
+            : FixMonotoneFunctionInterface(parentOp, target, functionString_, inputWidth_, outputWidth_) {
 
         srcFileName = "MonotoneFunctionDiff";
-        //useNumericStd();
 
-        // definition of the name of the operator
         ostringstream name;
         name << "MonotoneFunctionDiff" << inputWidth << "_" << outputWidth;
         setName(name.str());
@@ -21,9 +19,6 @@ namespace flopoco {
 
         // more detailed message
         REPORT(DETAILED, "this operator has received two parameters " << inputWidth << " and " << outputWidth);
-
-        // debug message for developper
-        REPORT(DEBUG,"debug of MonotoneFunctionDiff");
 
         build();
     }
@@ -59,6 +54,10 @@ namespace flopoco {
         }
 
         lut_in = mpz_class(ref);
+
+        if(lut_in.get_si() > pow(2, inputWidth) - 1) {
+            REPORT(DEBUG,"inverse too big: f(" << lut_in.get_str(2) << ")=" << y);
+        }
 
         return lut_in;
     }
@@ -97,6 +96,7 @@ namespace flopoco {
             tables[i] = vector<mpz_class>();
             values[i] = vector<mpz_class>();
             REPORT(DEBUG,"calculating LUT " << i);
+
             for(int j = 0; j < pow(2, i); ++j) {
                 int v = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
                 r = calculateInverse(v);
@@ -139,24 +139,22 @@ namespace flopoco {
     }
 
     OperatorPtr flopoco::MonotoneFunctionDiff::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
-        int param0, param1;
-        UserInterface::parseInt(args, "inputWidth", &param0);
-        UserInterface::parseInt(args, "outputWidth", &param1);
-        return new MonotoneFunctionDiff(parentOp, target, param0, param1);
+        string func;
+        int inW, outW;
+        UserInterface::parseString(args, "function", &func);
+        UserInterface::parseInt(args, "inputWidth", &inW);
+        UserInterface::parseInt(args, "outputWidth", &outW);
+        return new MonotoneFunctionDiff(parentOp, target, func, inW, outW);
     }
 
     void MonotoneFunctionDiff::registerFactory() {
         UserInterface::add("MonotoneFunctionDiff", // name
                            "Generates a function.", // description, string
                            "Miscellaneous", // category, from the list defined in UserInterface.cpp
-                           "", //seeAlso
-                // Now comes the parameter description string.
-                // Respect its syntax because it will be used to generate the parser and the docs
-                // Syntax is: a semicolon-separated list of parameterDescription;
-                // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
-                           "inputWidth(int)=16: Input bit count; \
-                        outputWidth(int)=8: Output bit count",
-                // More documentation for the HTML pages. If you want to link to your blog, it is here.
+                           "",
+                           "function(string)=x: Algorithm Type: normal, diff, lut;\
+                            inputWidth(int)=16: Input bit count; \
+                            outputWidth(int)=8: Output bit count",
                            "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developer manual in the doc/ directory of FloPoCo.",
                            MonotoneFunctionDiff::parseArguments
         );

@@ -67,8 +67,8 @@ namespace flopoco {
         string negate = monotoneIncreasing ? "not " : "";
         declare(getTarget()->adderDelay(outputWidth), "output", outputWidth);
         mpz_class r = mpz_class();
-        vector<mpz_class> tables[outputWidth];
-        vector<mpz_class> values[outputWidth];
+		vector<vector<mpz_class> > tables(outputWidth);
+		vector<vector<mpz_class> > values(outputWidth);
 
         tables[0] = vector<mpz_class>();
         values[0] = vector<mpz_class>();
@@ -86,7 +86,7 @@ namespace flopoco {
 
         tables[0].emplace_back(r);
 
-        string diffSignals[outputWidth];
+		vector<string> diffSignals(outputWidth);
         diffSignals[0] = declare(getTarget()->adderDelay(inputWidth + 1), join("diff", 0), inputWidth + 1);
 
         vhdl << tab << diffSignals[0] << " <= std_logic_vector(unsigned(i) + to_unsigned(2#" << r.get_str(2) << "#, " << inputWidth + 1 << "));" << endl;

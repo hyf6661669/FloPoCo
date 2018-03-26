@@ -25,9 +25,11 @@ namespace flopoco {
 
         if(monotoneIncreasing) {
             REPORT(DEBUG, "Function is monotone increasing.");
+            vhdl << endl << "-- Implementing monotone increasing function f(x) = " << functionString << endl << endl;
         }
         else {
             REPORT(DEBUG, "Function is monotone decreasing.");
+            vhdl << endl << "-- Implementing monotone decreasing function f(x) = " << functionString << endl << endl;
         }
     }
 
@@ -48,7 +50,7 @@ namespace flopoco {
 
     void FixMonotoneFunctionInterface::eval(mpz_class &r, mpz_class x) const {
         mpfr_t mpX, mpR;
-        mpfr_init2(mpX, inputWidth + 2);
+        mpfr_init2(mpX, inputWidth * 2);
         mpfr_init2(mpR, outputWidth * 3);
         sollya_lib_set_prec(sollya_lib_constant_from_int(inputWidth * 2));
 
@@ -61,7 +63,7 @@ namespace flopoco {
         mpfr_mul_2si(mpR, mpR, outputWidth, GMP_RNDN);
         mpfr_get_z(r.get_mpz_t(), mpR, GMP_RNDN);
 
-        REPORT(FULL, "f(" << mpfr_get_d(mpX, GMP_RNDN) << ") = " << mpfr_get_d(mpR, GMP_RNDN));
+        //REPORT(FULL, "f(" << mpfr_get_d(mpX, GMP_RNDN) << ") = " << mpfr_get_d(mpR, GMP_RNDN));
 
         mpfr_clear(mpX);
         mpfr_clear(mpR);

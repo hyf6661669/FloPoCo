@@ -99,7 +99,7 @@ namespace flopoco {
 
     void MonotoneFunction::build() {
         string comparison = monotoneIncreasing ? ">=" : "<=";
-        declare("output", outputWidth);
+        declare(getTarget()->eqComparatorDelay(inputWidth), "output", outputWidth);
         vhdl << tab << "output(" << outputWidth - 1 << ") <= '1' when unsigned(i) " << comparison << " B\"" << calculateInverse(1 << (outputWidth - 1)).get_str(2) << "\" else '0';" << endl << endl;
 
         for(int i = 1; i < outputWidth; ++i) {
@@ -113,10 +113,11 @@ namespace flopoco {
             ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, inputWidth, values);
             addSubComponent(ct);
 
-            string signal = declare(join("ref", i), inputWidth);
+            string signal = declare(getTarget()->tableDelay(i, inputWidth, true), join("ref", i), inputWidth);
 
             ostringstream outputPort;
             outputPort << "output(" << outputWidth - 1 << " downto " << outputWidth - i << ")";
+
             this->inPortMap(ct, "X", outputPort.str());
             this->outPortMap(ct, "Y", signal);
 

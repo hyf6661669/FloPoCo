@@ -10,13 +10,7 @@
 
 namespace flopoco {
     class MonotoneFunction : public FixMonotoneFunctionInterface {
-    protected:
-        //int inputWidth;
-        //int outputWidth;
 
-        //bool monotoneIncreasing;
-
-        //sollya_obj_t fS;
     public:
         // definition of some function for the operator
 
@@ -24,13 +18,7 @@ namespace flopoco {
         MonotoneFunction(OperatorPtr parentOp, Target *target, string functionString_, int inputWidth, int outputWidth);
 
         // destructor
-        ~MonotoneFunction() {};
-
-        //void emulate(TestCase *tc) override;
-
-        //void buildStandardTestCases(TestCaseList *tcl) override;
-
-        //void eval(mpz_class& r, mpz_class x) const;
+        //~MonotoneFunction() {};
 
         /** Factory method that parses arguments and calls the constructor */
         static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);

@@ -11,13 +11,7 @@
 
 namespace flopoco {
     class MonotoneFunctionDiff : public FixMonotoneFunctionInterface {
-    protected:
-        //int inputWidth;
-        //int outputWidth;
 
-        //bool monotoneIncreasing;
-
-        //sollya_obj_t fS;
     public:
         MonotoneFunctionDiff(OperatorPtr parentOp, Target *target, string functionString_, int inputWidth, int outputWidth);
 

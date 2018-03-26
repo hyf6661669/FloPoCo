@@ -17,12 +17,14 @@
 namespace flopoco {
     class FixMonotoneFunctionInterface : public Operator {
     protected:
+        string functionString;
+
         int inputWidth;
         int outputWidth;
 
         bool monotoneIncreasing;
 
-        string functionString;
+
         sollya_obj_t fS;
 
 

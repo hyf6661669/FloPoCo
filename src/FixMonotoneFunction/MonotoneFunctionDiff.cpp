@@ -65,10 +65,10 @@ namespace flopoco {
 
     void MonotoneFunctionDiff::build() {
         string negate = monotoneIncreasing ? "not " : "";
-        declare(getTarget()->adderDelay(outputWidth), "output", outputWidth);
+        declare(getTarget()->adderDelay(inputWidth + 1), "output", outputWidth);
         mpz_class r = mpz_class();
-		vector<vector<mpz_class> > tables(outputWidth);
-		vector<vector<mpz_class> > values(outputWidth);
+		vector<vector<mpz_class>> tables(outputWidth);
+		vector<vector<mpz_class>> values(outputWidth);
 
         tables[0] = vector<mpz_class>();
         values[0] = vector<mpz_class>();
@@ -117,7 +117,7 @@ namespace flopoco {
             ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, inputWidth + 1, tables[i]);
             addSubComponent(ct);
 
-            string signal = declare(getTarget()->adderDelay(inputWidth + 1), join("ref", i), inputWidth + 1);
+            string signal = declare(getTarget()->tableDelay(i, inputWidth + 1, true), join("ref", i), inputWidth + 1);
             diffSignals[i] = declare(getTarget()->adderDelay(inputWidth + 1), join("diff", i), inputWidth + 1);
             //string signal = declare(join("ref", i), inputWidth + 1);
             //diffSignals[i] = declare(join("diff", i), inputWidth + 1);
@@ -130,7 +130,6 @@ namespace flopoco {
 
 
             vhdl << this->instance(ct, join("ct", i));
-            //vhdl << tab << "ct" << i << ":" << ct->getName() << " port map(X => output(" << outputWidth - 1 << " downto " << outputWidth - i << "), Y => " << signal << ", clk => clk, rst => rst);" << endl;
             vhdl << tab << diffSignals[i] << " <= std_logic_vector(unsigned(" << diffSignals[i-1] << ") + unsigned(" << signal << "));" << endl;
             vhdl << tab << "output(" << outputWidth - i - 1 << ") <= " << negate << diffSignals[i] << "(" << inputWidth << ");" << endl << endl;
         }

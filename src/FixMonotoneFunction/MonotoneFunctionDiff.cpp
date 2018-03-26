@@ -65,7 +65,14 @@ namespace flopoco {
 
     void MonotoneFunctionDiff::build() {
         string negate = monotoneIncreasing ? "not " : "";
-        declare(getTarget()->adderDelay(inputWidth + 1), "output", outputWidth);
+        double delay = 0;
+
+        for(int x = 0; x < outputWidth; ++x) {
+            delay += getTarget()->adderDelay(inputWidth+1);
+            delay += getTarget()->tableDelay(x, inputWidth+1, true);
+        }
+
+        declare(delay, "output", outputWidth);
         mpz_class r = mpz_class();
 		vector<vector<mpz_class>> tables(outputWidth);
 		vector<vector<mpz_class>> values(outputWidth);

@@ -99,7 +99,15 @@ namespace flopoco {
 
     void MonotoneFunction::build() {
         string comparison = monotoneIncreasing ? ">=" : "<=";
-        declare(getTarget()->eqComparatorDelay(inputWidth), "output", outputWidth);
+        double delay = 0;
+
+        for(int x = 0; x < outputWidth; ++x) {
+            delay += getTarget()->adderDelay(inputWidth);
+            delay += getTarget()->tableDelay(x, inputWidth, true);
+        }
+
+
+        declare(delay, "output", outputWidth);
         vhdl << tab << "output(" << outputWidth - 1 << ") <= '1' when unsigned(i) " << comparison << " B\"" << calculateInverse(1 << (outputWidth - 1)).get_str(2) << "\" else '0';" << endl << endl;
 
         for(int i = 1; i < outputWidth; ++i) {

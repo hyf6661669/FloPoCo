@@ -2,11 +2,11 @@
 // Created by Viktor Schmidt.
 //
 
-#include "MonotoneFunction.hpp"
+#include "MonotoneFunctionComparator.hpp"
 
 using namespace std;
 namespace flopoco {
-    MonotoneFunction::MonotoneFunction(OperatorPtr parentOp, Target* target, string functionString_, int inputWidth_, int outputWidth_)
+    MonotoneFunctionComparator::MonotoneFunctionComparator(OperatorPtr parentOp, Target* target, string functionString_, int inputWidth_, int outputWidth_)
             : FixMonotoneFunctionInterface(parentOp, target, functionString_, inputWidth_, outputWidth_) {
         srcFileName="FixMonotoneFunction";
 
@@ -23,7 +23,7 @@ namespace flopoco {
     };
 
 
-    mpz_class MonotoneFunction::calculateInverse(int y) {
+    mpz_class MonotoneFunctionComparator::calculateInverse(int y) {
         REPORT(DEBUG,"calculateInverse looking for x at f(x)=" << y);
 
         int ref = (int)pow(2, inputWidth - 1) -1;
@@ -75,17 +75,17 @@ namespace flopoco {
     }
 
 
-    OperatorPtr MonotoneFunction::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
+    OperatorPtr MonotoneFunctionComparator::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
         string func;
         int inW, outW;
         UserInterface::parseString(args, "function", &func);
         UserInterface::parseInt(args, "inputWidth", &inW);
         UserInterface::parseInt(args, "outputWidth", &outW);
-        return new MonotoneFunction(parentOp, target, func, inW, outW);
+        return new MonotoneFunctionComparator(parentOp, target, func, inW, outW);
     }
 
-    void MonotoneFunction::registerFactory(){
-        UserInterface::add("MonotoneFunction", // name
+    void MonotoneFunctionComparator::registerFactory(){
+        UserInterface::add("MonotoneFunctionComparator", // name
                            "Generates a function.", // description, string
                            "Miscellaneous", // category, from the list defined in UserInterface.cpp
                            "",
@@ -93,11 +93,11 @@ namespace flopoco {
                            inputWidth(int)=16: Input bit count; \
                            outputWidth(int)=8: Output bit count",
                            "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developer manual in the doc/ directory of FloPoCo.",
-                           MonotoneFunction::parseArguments
+                           MonotoneFunctionComparator::parseArguments
         ) ;
     }
 
-    void MonotoneFunction::build() {
+    void MonotoneFunctionComparator::build() {
         string comparison = monotoneIncreasing ? ">=" : "<=";
         double delay = 0;
 

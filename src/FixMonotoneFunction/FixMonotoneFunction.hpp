@@ -9,9 +9,9 @@
 #include "utils.hpp"
 #include <string>
 #include <sstream>
-#include "MonotoneFunction.hpp"
+#include "MonotoneFunctionComparator.hpp"
 #include "MonotoneFunctionDiff.hpp"
-#include "MonotoneFunctionLUT.hpp"
+#include "MonotoneFunctionROM.hpp"
 
 namespace flopoco {
     class FixMonotoneFunction : public Operator {

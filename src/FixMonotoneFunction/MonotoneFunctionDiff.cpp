@@ -25,7 +25,7 @@ namespace flopoco {
 
 
     mpz_class MonotoneFunctionDiff::calculateInverse(int y) {
-        REPORT(DEBUG,"calculateInverse looking for x at f(x)=" << y);
+        REPORT(FULL,"calculateInverse looking for x at f(x)=" << y);
         mpz_class y_real = y;
         int ref = (int)pow(2, inputWidth) - 1;
         int nextOffset = (int)pow(2, inputWidth - 1);
@@ -56,7 +56,7 @@ namespace flopoco {
         lut_in = mpz_class(ref);
 
         if(lut_in.get_si() > pow(2, inputWidth) - 1) {
-            REPORT(DEBUG,"inverse too big: f(" << lut_in.get_str(2) << ")=" << y);
+            REPORT(FULL,"inverse too big: f(" << lut_in.get_str(2) << ")=" << y);
         }
 
         return lut_in;

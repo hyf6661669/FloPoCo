@@ -24,7 +24,7 @@ namespace flopoco {
 
 
     mpz_class MonotoneFunctionComparator::calculateInverse(int y) {
-        REPORT(DEBUG,"calculateInverse looking for x at f(x)=" << y);
+        REPORT(FULL,"calculateInverse looking for x at f(x)=" << y);
 
         int ref = (int)pow(2, inputWidth - 1);
         int nextOffset = (int)pow(2, inputWidth - 2);
@@ -53,7 +53,7 @@ namespace flopoco {
 
             nextOffset /= 2;
 
-            REPORT(DEBUG,"nextoffset: " << nextOffset);
+            REPORT(FULL,"nextoffset: " << nextOffset);
         }
 
         //lut_in = mpz_class(ref);

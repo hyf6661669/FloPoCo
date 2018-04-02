@@ -8,13 +8,13 @@ using namespace std;
 namespace flopoco {
     MonotoneFunctionComparator::MonotoneFunctionComparator(OperatorPtr parentOp, Target* target, string functionString_, int inputWidth_, int outputWidth_)
             : FixMonotoneFunctionInterface(parentOp, target, functionString_, inputWidth_, outputWidth_) {
-        srcFileName="FixMonotoneFunction";
+        srcFileName="FixMonotoneFunctionComparator";
 
         ostringstream name;
-        name << "FixMonotoneFunction" << inputWidth << "_" << outputWidth;
+        name << "FixMonotoneFunctionComparator" << inputWidth << "_" << outputWidth;
         setName(name.str());
 
-        REPORT(INFO,"Declaration of FixMonotoneFunction \n");
+        REPORT(INFO,"Declaration of FixMonotoneFunctionComparator \n");
 
         // more detailed message
         REPORT(DETAILED, "this operator has received two parameters " << inputWidth << " and " << outputWidth);
@@ -26,17 +26,23 @@ namespace flopoco {
     mpz_class MonotoneFunctionComparator::calculateInverse(int y) {
         REPORT(DEBUG,"calculateInverse looking for x at f(x)=" << y);
 
-        int ref = (int)pow(2, inputWidth - 1) -1;
+        int ref = (int)pow(2, inputWidth - 1);
         int nextOffset = (int)pow(2, inputWidth - 2);
-        mpz_class lut_in(ref), lut_out;
+        mpz_class lut_out;
         int sign = monotoneIncreasing ? 1 : -1;
+
+        if(monotoneIncreasing) {
+            --ref;
+        }
+
 
         while(nextOffset != 0) {
             //lut_in = ;
             eval(lut_out, mpz_class(ref));
 
-            int cmp = mpz_cmp_si(lut_out.get_mpz_t(), y);
-            if(cmp > 0) {
+            //int cmp = mpz_cmp_si(lut_out.get_mpz_t(), y);
+
+            if(lut_out.get_si() >= y) {
                 ref -= sign * nextOffset;
             }
             else {
@@ -54,20 +60,20 @@ namespace flopoco {
 
         eval(lut_out, mpz_class(ref));
 
-        if(mpz_cmp_si(lut_out.get_mpz_t(), y)) {
-            REPORT(DEBUG,"cmp non zero: " << mpz_cmp_si(lut_out.get_mpz_t(), y));
-        }
-
 
 //        ref += mpz_cmp_si(lut_out.get_mpz_t(), y);
 
-        if(mpz_cmp_si(lut_out.get_mpz_t(), y) != 0) {
-            ref += 1;
+//        if(mpz_cmp_si(lut_out.get_mpz_t(), y) != 0) {
+//            ref += 1;
+//        }
+
+        if(lut_out.get_si() < y) {
+            ref += sign;
         }
 
-        if(lut_in.get_si() > pow(2, inputWidth) - 1) {
-            REPORT(DEBUG,"inverse too big: f(" << lut_in.get_str(2) << ")=" << y);
-        }
+//        if(lut_in.get_si() > pow(2, inputWidth) - 1) {
+//            REPORT(DEBUG,"inverse too big: f(" << lut_in.get_str(2) << ")=" << y);
+//        }
 
         //lut_in = mpz_class(ref);
 

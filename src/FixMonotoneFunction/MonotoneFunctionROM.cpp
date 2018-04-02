@@ -20,14 +20,14 @@ namespace flopoco {
     MonotoneFunctionROM::MonotoneFunctionROM(OperatorPtr parentOp, Target* target, string functionString_, int inputWidth_, int outputWidth_) :
             FixMonotoneFunctionInterface(parentOp, target, functionString_, inputWidth_, outputWidth_) {
 
-        srcFileName="MonotoneFunctionROM";
+        srcFileName="FixMonotoneFunctionROM";
 
         // definition of the name of the operator
         ostringstream name;
-        name << "MonotoneFunctionROM" << inputWidth << "_" << outputWidth;
+        name << "FixMonotoneFunctionROM" << inputWidth << "_" << outputWidth;
         setName(name.str());
 
-        REPORT(INFO,"Declaration of MonotoneFunctionROM \n");
+        REPORT(INFO,"Declaration of FixMonotoneFunctionROM \n");
 
         REPORT(DETAILED, "this operator has received two parameters " << inputWidth << " and " << outputWidth);
 
@@ -110,8 +110,8 @@ namespace flopoco {
     }
 
     void MonotoneFunctionROM::build() {
-        addInput("X", inputWidth);
-        addOutput("Y", outputWidth);
+//        addInput("X", inputWidth);
+//        addOutput("Y", outputWidth);
 //        string in = declare("inp", inputWidth);
 //        string out = declare("outp", outputWidth);
 

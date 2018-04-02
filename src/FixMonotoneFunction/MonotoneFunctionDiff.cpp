@@ -9,13 +9,13 @@ namespace flopoco {
     MonotoneFunctionDiff::MonotoneFunctionDiff(OperatorPtr parentOp, flopoco::Target *target, string functionString_, int inputWidth_, int outputWidth_)
             : FixMonotoneFunctionInterface(parentOp, target, functionString_, inputWidth_, outputWidth_) {
 
-        srcFileName = "MonotoneFunctionDiff";
+        srcFileName = "FixMonotoneFunctionDiff";
 
         ostringstream name;
-        name << "MonotoneFunctionDiff" << inputWidth << "_" << outputWidth;
+        name << "FixMonotoneFunctionDiff" << inputWidth << "_" << outputWidth;
         setName(name.str());
 
-        REPORT(INFO,"Declaration of MonotoneFunctionDiff \n");
+        REPORT(INFO,"Declaration of FixMonotoneFunctionDiff \n");
 
         // more detailed message
         REPORT(DETAILED, "this operator has received two parameters " << inputWidth << " and " << outputWidth);

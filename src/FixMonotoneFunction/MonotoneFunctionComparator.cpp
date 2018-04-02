@@ -99,20 +99,23 @@ namespace flopoco {
 
     void MonotoneFunctionComparator::build() {
         string comparison = monotoneIncreasing ? ">=" : "<=";
-        double delay = 0;
+//        double delay = 0;
 
-        for(int x = 0; x < outputWidth; ++x) {
-            delay += getTarget()->adderDelay(inputWidth);
-            delay += getTarget()->tableDelay(x, inputWidth, true);
-        }
+//        for(int x = 0; x < outputWidth; ++x) {
+//            delay += getTarget()->adderDelay(inputWidth);
+//            delay += getTarget()->tableDelay(x, inputWidth, true);
+//        }
 
 
-        declare(delay, "output", outputWidth);
-        vhdl << tab << "output(" << outputWidth - 1 << ") <= '1' when unsigned(i) " << comparison << " B\"" << calculateInverse(1 << (outputWidth - 1)).get_str(2) << "\" else '0';" << endl << endl;
+        //declare(getTarget()->localWireDelay(outputWidth), "output", outputWidth);
+        string signal_comp_res = declare(getTarget()->adderDelay(inputWidth), "comp_res0", 1);
+        //vhdl << tab << "output(" << outputWidth - 1 << ") <= '1' when unsigned(i) " << comparison << " B\"" << calculateInverse(1 << (outputWidth - 1)).get_str(2) << "\" else '0';" << endl << endl;
+        vhdl << tab << signal_comp_res << "(0) <= '1' when unsigned(i) " << comparison << " B\"" << calculateInverse(1 << (outputWidth - 1)).get_str(2) << "\" else '0';" << endl << endl;
 
         for(int i = 1; i < outputWidth; ++i) {
             std::vector<mpz_class> values = std::vector<mpz_class>();
-            REPORT(DEBUG,"calculating LUT " << i);
+            REPORT(DEBUG,"calculating Table " << i);
+
             for(int j = 0; j < pow(2, i); ++j) {
                 int v = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
                 values.push_back(calculateInverse(v));
@@ -121,21 +124,50 @@ namespace flopoco {
             ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, inputWidth, values);
             addSubComponent(ct);
 
-            string signal = declare(getTarget()->tableDelay(i, inputWidth, true), join("ref", i), inputWidth);
+            string signal_ref = declare(getTarget()->tableDelay(i, inputWidth, true), join("ref", i), inputWidth);
+            string signal_comp_res = declare(getTarget()->adderDelay(inputWidth) * i + getTarget()->tableDelay(i, inputWidth, true) * (i-1), join("comp_res", i), 1);
+            string signal_table_in = declare(getTarget()->localWireDelay(i), join("table_in", i - 1), i);
 
-            ostringstream outputPort;
-            outputPort << "output(" << outputWidth - 1 << " downto " << outputWidth - i << ")";
+            //ostringstream outputPort;
+            //outputPort << "output(" << outputWidth - 1 << " downto " << outputWidth - i << ")";
 
-            this->inPortMap(ct, "X", outputPort.str());
-            this->outPortMap(ct, "Y", signal);
+            vhdl << tab << signal_table_in << " <= ";
+
+            for(int k = 0; k < i; ++k) {
+                vhdl << "comp_res" << k;
+
+                if(k < i-1) {
+                    vhdl << " & ";
+                }
+                else {
+                    vhdl << ";" << endl << endl;
+                }
+            }
+
+            this->inPortMap(ct, "X", signal_table_in);
+            this->outPortMap(ct, "Y", signal_ref);
 
             vhdl << this->instance(ct, join("ct", i));
 
-            //vhdl << tab << "ct" << i << " : " << ct->getName() << " port map(X => output(" << outputWidth - 1 << " downto " << outputWidth - i << "), Y => " << signal << ", clk => clk, rst => rst);" << endl;
-            vhdl << tab << "output(" << outputWidth - i - 1 << ") <= '1' when unsigned(i) " << comparison << " unsigned(" << signal << ") else '0';" << endl << endl;
+            //vhdl << tab << "ct" << i << " : " << ct->getName() << " port map(X => output(" << outputWidth - 1 << " downto " << outputWidth - i << "), Y => " << signal_ref << ", clk => clk, rst => rst);" << endl;
+            //vhdl << tab << "output(" << outputWidth - i - 1 << ") <= '1' when unsigned(i) " << comparison << " unsigned(" << signal_ref << ") else '0';" << endl << endl;
+            vhdl << tab << signal_comp_res << "(0) <= '1' when unsigned(i) " << comparison << " unsigned(" << signal_ref << ") else '0';" << endl << endl;
         }
 
-        vhdl << tab << "o <= output;" << endl;
+        vhdl << tab << "o <= ";
+
+        for(int k = 0; k < outputWidth; ++k) {
+            vhdl << "comp_res" << k;
+
+            if(k < outputWidth-1) {
+                vhdl << " & ";
+            }
+            else {
+                vhdl << ";" << endl << endl;
+            }
+        }
+
+        //vhdl << tab << "o <= output;" << endl;
     }
 
 

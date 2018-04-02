@@ -508,9 +508,9 @@ src/FPDivSqrt/FPSqrt
 # fixed-point monotone function ------------------------------------
  src/FixMonotoneFunction/FixMonotoneFunction
  src/FixMonotoneFunction/FixMonotoneFunctionInterface
- src/FixMonotoneFunction/MonotoneFunction
+ src/FixMonotoneFunction/MonotoneFunctionComparator
  src/FixMonotoneFunction/MonotoneFunctionDiff
- src/FixMonotoneFunction/MonotoneFunctionLUT
+ src/FixMonotoneFunction/MonotoneFunctionROM
  src/FixMonotoneFunction/ComparatorTable
 
 # Trigonometric functions ------------------------------------------

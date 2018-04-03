@@ -27,8 +27,8 @@ namespace flopoco {
     mpz_class MonotoneFunctionDiff::calculateInverse(int y) {
         REPORT(FULL,"calculateInverse looking for x at f(x)=" << y);
         mpz_class y_real = y;
-        int ref = (int)pow(2, inputWidth) - 1;
-        int nextOffset = (int)pow(2, inputWidth - 1);
+        long ref = (long)pow(2, inputWidth) - 1;
+        long nextOffset = (long)pow(2, inputWidth - 1);
         mpz_class lut_in(ref), lut_out;
         int sign = monotoneIncreasing ? 1 : -1;
 

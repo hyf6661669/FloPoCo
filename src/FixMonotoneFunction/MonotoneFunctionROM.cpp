@@ -136,7 +136,7 @@ namespace flopoco {
 //        vhdl <<"\" when others;" << endl;
 //        REPORT(DEBUG,"Last LUT value f(" << values.size() << ") = " << values.back().get_str(10) << " max y = " << y);
 
-        ComparatorTable *ct = new ComparatorTable(nullptr, getTarget(), inputWidth, outputWidth, values);
+        ComparatorTable *ct = new ComparatorTable(this, getTarget(), inputWidth, outputWidth, values);
 
         //ct->inPortMap(this, in, "X");
         //ct->outPortMap(this, out, "Y");
@@ -144,7 +144,7 @@ namespace flopoco {
         this->outPortMap(ct, "Y", "o");
         addSubComponent(ct);
 
-        //vhdl << this->newInstance(ct, join("ct", inputWidth),);
+        vhdl << this->instance(ct, join("ct", inputWidth));
         //vhdl << tab << in << " <= i;" << endl;
         //vhdl << tab << "o <= " << out << ";" << endl;
     }

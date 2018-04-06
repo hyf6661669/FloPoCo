@@ -5,6 +5,7 @@
 #include "mpfr.h"
 #include "GenericAddSub.hpp"
 #include "Primitive.hpp"
+#include "Xilinx/Xilinx_TernaryAdd_2State.hpp"
 
 using namespace std;
 namespace flopoco {
@@ -40,9 +41,33 @@ namespace flopoco {
     }
 
     void GenericAddSub::buildXilinx(Target* target, const uint32_t &wIn){
+      if(hasFlags(TERNARY) && !(hasFlags(CONF_LEFT) || hasFlags(CONF_MID) || hasFlags(CONF_RIGHT) || hasFlags(CONF_ALL)))
+      {
+      	short state=0;
+      	
+        if( hasFlags(CONF_LEFT) )
+					state |= 0x1;
+        if( hasFlags(SUB_MID) )
+					state |= 0x2;
+        if( hasFlags(SUB_RIGHT) )
+					state |= 0x4;
+
+        stringstream ternaryAddName;
+        ternaryAddName << "ternaryAdd_s" << state;
+
+				Xilinx_TernaryAdd_2State *ternaryAdd = new Xilinx_TernaryAdd_2State(target, wIn, state);
+        addSubComponent( ternaryAdd );
+        inPortMap( ternaryAdd, "x_i", "iL");
+        inPortMap( ternaryAdd, "y_i", "iM");
+        inPortMap( ternaryAdd, "z_i", "iR");
+        outPortMap( ternaryAdd, "sum_o", "sum_o", false );
+        vhdl << instance( ternaryAdd, ternaryAddName.str() );
+			}
+			else
+			{
         REPORT(LIST,"Xilinx junction not fully implemented, fall back to common.");
         buildCommon(target,wIn);
-
+			}
     }
 
     void GenericAddSub::buildAltera(Target *target, const uint32_t &wIn){
@@ -55,20 +80,28 @@ namespace flopoco {
         const uint16_t c_count = (hasFlags(CONF_LEFT)?1:0) + (hasFlags(CONF_RIGHT)?1:0) + (hasFlags(TERNARY&CONF_MID)?1:0);
         if(c_count >0){
             vhdl << declare( "CONF", c_count ) << " <= ";
-            if( hasFlags(CONF_LEFT) ){
+            if( hasFlags(CONF_LEFT) )
+            {
                 vhdl << "iL_c";
-                if( hasFlags(TERNARY|CONF_MID) ){
+                if( hasFlags(TERNARY&CONF_MID) )
+                {
                     vhdl << "& iM_c";
                 }
-                if( hasFlags(CONF_RIGHT) ){
+                if( hasFlags(CONF_RIGHT) )
+                {
                     vhdl << "& iR_c";
                 }
-            }else if( hasFlags(TERNARY|CONF_MID) ){
+            }
+            else if( hasFlags(TERNARY&CONF_MID) )
+            {
                 vhdl << "iM_c";
-                if( hasFlags(CONF_RIGHT) ){
+                if( hasFlags(CONF_RIGHT) )
+                {
                     vhdl << "& iM_c";
                 }
-            }else if( hasFlags(CONF_RIGHT) ){
+            }
+            else if( hasFlags(CONF_RIGHT) )
+            {
                 vhdl << "& iM_c";
             }
             vhdl << std::endl;
@@ -82,14 +115,14 @@ namespace flopoco {
                 if( hasFlags(CONF_LEFT) ){
                     vhdl << (i&(mask)?"-":"+") << "unsigned(iL)";
                     mask >>= 1;
-                    if( hasFlags(TERNARY|CONF_MID) ){
+                    if( hasFlags(TERNARY&CONF_MID) ){
                         vhdl << (i&mask?"-":"+") << "unsigned(iM)";
                         mask >>= 1;
                     }
                     if( hasFlags(CONF_RIGHT) ){
                         vhdl << (i&mask?"-":"+") << "unsigned(iR)";
                     }
-                }else if( hasFlags(TERNARY|CONF_MID) ){
+                }else if( hasFlags(TERNARY&CONF_MID) ){
                     vhdl << "unsigned(iL)";
                     vhdl << (i&mask?"-":"+") << "unsigned(iM)";
                     mask >>= 1;
@@ -106,22 +139,30 @@ namespace flopoco {
         }
         else
         {
-            vhdl << "\tsum_o <= std_logic_vector(" << (hasFlags(SUB_LEFT)?"-":"");
+            vhdl << "\tsum_o <= std_logic_vector(" << (hasFlags(SUB_LEFT)?"-":"") << "signed(iL)";
             if(hasFlags(TERNARY))
             {
-                vhdl << "signed(iM)" << (hasFlags(SUB_MID)?"-":"+") << " signed(iM)";
+                vhdl << (hasFlags(SUB_MID)?" -":" +") << " signed(iM)";
             }
-            vhdl << "signed(iL)" << (hasFlags(SUB_RIGHT)?"-":"+") << " signed(iR));" << endl;
+            vhdl << (hasFlags(SUB_RIGHT)?" -":" +") << " signed(iR));" << endl;
         }
     }
 
     string GenericAddSub::getInputName(const uint32_t &index, const bool &c_input) const{
+    		string name;
         switch(index){
-        case 0: return "iL" + std::string(c_input?"_c":"");
-        case 1: return std::string(hasFlags(TERNARY|CONF_MID)?"iM":"iR") + std::string(c_input?"_c":"");
-        case 2: return std::string(hasFlags(TERNARY|CONF_MID)?"iR" + std::string(c_input?"_c":""):"");
-        default: return "";
+        case 0: 
+        	name = "iL" + std::string(c_input?"_c":"");
+        	break;
+        case 1: 
+        	name = std::string(hasFlags(TERNARY)?"iM":"iR") + std::string(c_input?"_c":"");
+        	break;
+        case 2: 
+        	name = std::string(hasFlags(TERNARY)?"iR" + std::string(c_input?"_c":""):"");
+        	break;
+        default: name = "";
         }
+        return name;
     }
 
     string GenericAddSub::getOutputName() const{

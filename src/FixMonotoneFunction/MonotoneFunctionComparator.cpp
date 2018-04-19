@@ -22,38 +22,33 @@ namespace flopoco {
         build();
     };
 
-
     mpz_class MonotoneFunctionComparator::calculateInverse(int y) {
         REPORT(FULL,"calculateInverse looking for x at f(x)=" << y);
 
-        long ref = (long)pow(2, inputWidth - 1);
-        long nextOffset = (long)pow(2, inputWidth - 2);
+        mpz_class ref = mpz_class(1) << (inputWidth - 1);
+//        long nextOffset = (long)pow(2, inputWidth - 2);
         mpz_class lut_out;
         int sign = monotoneIncreasing ? 1 : -1;
 
-        if(monotoneIncreasing) {
-            --ref;
-        }
+//        if(monotoneIncreasing) {
+//            --ref;
+//        }
 
 
-        while(nextOffset != 0) {
+        for(int i = inputWidth - 2; i >= 0; --i) {
             //lut_in = ;
             eval(lut_out, mpz_class(ref));
 
             //int cmp = mpz_cmp_si(lut_out.get_mpz_t(), y);
 
             if(lut_out.get_si() >= y) {
-                ref -= sign * nextOffset;
+                ref -= sign * mpz_class(1) << i;
             }
             else {
-                ref += sign * nextOffset;
+                ref += sign * mpz_class(1) << i;
             }
 
-            //ref += mpz_cmp_si(lut_out.get_mpz_t(), y)
-
-            nextOffset /= 2;
-
-            REPORT(FULL,"nextoffset: " << nextOffset);
+            //REPORT(FULL,"nextoffset: " << nextOffset);
         }
 
         //lut_in = mpz_class(ref);
@@ -67,9 +62,17 @@ namespace flopoco {
 //            ref += 1;
 //        }
 
+        if(lut_out.get_si() > y) {
+            ref -= sign;
+        }
+
         if(lut_out.get_si() < y) {
             ref += sign;
         }
+
+//        if(lut_out.get_si() < y) {
+//            ref += sign;
+//        }
 
 //        if(lut_in.get_si() > pow(2, inputWidth) - 1) {
 //            REPORT(DEBUG,"inverse too big: f(" << lut_in.get_str(2) << ")=" << y);
@@ -77,8 +80,18 @@ namespace flopoco {
 
         //lut_in = mpz_class(ref);
 
+        if(ref > (mpz_class(1) << inputWidth) - 1) {
+            ref = (mpz_class(1) << inputWidth) - 1;
+            REPORT(INFO, "Clipping occured.");
+        }
+
+        if(ref < 0) {
+            ref = mpz_class(0);
+        }
+
         return mpz_class(ref);
     }
+
 
 
     OperatorPtr MonotoneFunctionComparator::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {

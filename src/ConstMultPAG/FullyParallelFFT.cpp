@@ -324,22 +324,22 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
 
                     if (cWordsize[row].at(stage-1) > bC+wIn)
                     {
-                        vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_x_l_v"),wIn) << "<= std_logic_vector(signed(post_s"<<stage-1<<"_r"<<row<<"_x(post_s"<<stage-1<<"_r"<<row<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_x'length-16)));" << endl;
+												vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_x_l_v"),wIn) << "<= std_logic_vector(signed(post_s"<<stage-1<<"_r"<<row<<"_x(post_s"<<stage-1<<"_r"<<row<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_x'length-" << wIn << ")));" << endl;
                         vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_x_l"),wIn+1) << "<= std_logic_vector(signed(shift_left(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x_l_v),"<<wIn+1<<"),1))) ;" << endl;
                     }
                     else
                     {
-                        vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_x_l"),wIn+1) << "<= std_logic_vector(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x(post_s"<<stage-1<<"_r"<<row<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_x'length-16)),"<<wIn+1<<"));" << endl;
+												vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_x_l"),wIn+1) << "<= std_logic_vector(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_x(post_s"<<stage-1<<"_r"<<row<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_x'length-" << wIn << ")),"<<wIn+1<<"));" << endl;
                     }
 
                     if (cWordsize[row+N/(pow(2,stage))].at(stage-1) > bC+wIn)
                     {
-                        vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_x_l_v"),wIn) <<"<= std_logic_vector(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-16)));"<<endl;
+												vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_x_l_v"),wIn) <<"<= std_logic_vector(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-" << wIn << ")));"<<endl;
                         vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_x_l"),wIn+1) << "<= std_logic_vector(signed(shift_left(resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x_l_v),"<<wIn+1<<"),1))) ;" << endl;
                     }
                     else
                     {
-                        vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_x_l"),wIn+1) <<"<= std_logic_vector(resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-16)),"<<wIn+1<<"));"<<endl;
+												vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_x_l"),wIn+1) <<"<= std_logic_vector(resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_x'length-" << wIn << ")),"<<wIn+1<<"));"<<endl;
                     }
 
                     if (negX[row].at(stage-1) && negX[row+N/(pow(2,stage))].at(stage-1) && target->getID()=="Virtex6") //sub with 2 neg. inputs
@@ -359,22 +359,22 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
 
                     if (cWordsize[row].at(stage-1) > bC+wIn)
                     {
-                        vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_y_l_v"),wIn) << "<= std_logic_vector(signed(post_s"<<stage-1<<"_r"<<row<<"_y(post_s"<<stage-1<<"_r"<<row<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_y'length-16)));" << endl;
+												vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_y_l_v"),wIn) << "<= std_logic_vector(signed(post_s"<<stage-1<<"_r"<<row<<"_y(post_s"<<stage-1<<"_r"<<row<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_y'length-" << wIn << ")));" << endl;
                         vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_y_l"),wIn+1) << "<= std_logic_vector(signed(shift_left(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y_l_v),"<<wIn+1<<"),1))) ;" << endl;
                     }
                     else
                     {
-                        vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_y_l"),wIn+1) << "<= std_logic_vector(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y(post_s"<<stage-1<<"_r"<<row<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_y'length-16)),"<<wIn+1<<"));" << endl;
+												vhdl << tab<< declare(join("post_s",stage-1,"_r",row,"_y_l"),wIn+1) << "<= std_logic_vector(resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y(post_s"<<stage-1<<"_r"<<row<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row<<"_y'length-" << wIn << ")),"<<wIn+1<<"));" << endl;
                     }
 
                     if (cWordsize[row+N/(pow(2,stage))].at(stage-1) > bC+wIn)
                     {
-                        vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_y_l_v"),wIn) <<"<= std_logic_vector(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-16)));"<<endl;
+												vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_y_l_v"),wIn) <<"<= std_logic_vector(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-" << wIn << ")));"<<endl;
                         vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_y_l"),wIn+1) << "<= std_logic_vector(signed(shift_left(resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y_l_v),"<<wIn+1<<"),1))) ;" << endl;
                     }
                     else
                     {
-                        vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_y_l"),wIn+1) <<"<= std_logic_vector(resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-16)),"<<wIn+1<<"));"<<endl;
+												vhdl << tab<< declare(join("post_s",stage-1,"_r",row+N/(pow(2,stage)),"_y_l"),wIn+1) <<"<= std_logic_vector(resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-1 downto post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y'length-" << wIn << ")),"<<wIn+1<<"));"<<endl;
                     }
 
                     if (negY[row].at(stage-1) && negY[row+N/(pow(2,stage))].at(stage-1) && target->getID()=="Virtex6" ) //sub with 2 neg. inputs

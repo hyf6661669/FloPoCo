@@ -29,7 +29,14 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
 {
 
     std::ifstream rotFile(rotatorFileName);
+
+		if (!rotFile.is_open())
+			THROWERROR("Failed to open rotator file " + rotatorFileName);
+
     std::ifstream FFTFile(FFTAlgorithmFileName);
+
+		if (!FFTFile.is_open())
+			THROWERROR("Failed to FFT algorithm file " + FFTAlgorithmFileName);
 
     // Parse in rotators
     std::string line;

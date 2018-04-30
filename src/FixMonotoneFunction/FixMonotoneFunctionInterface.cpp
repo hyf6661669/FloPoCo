@@ -47,6 +47,49 @@ namespace flopoco {
         // please fill me with regression tests or corner case tests!
     }
 
+    mpz_class FixMonotoneFunctionInterface::calculateInverse(long y) {
+        REPORT(FULL,"calculateInverse looking for x at f(x)=" << y);
+
+        mpz_class ref = mpz_class(1) << (inputWidth - 1);
+        mpz_class lut_out;
+        long sign = monotoneIncreasing ? 1 : -1;
+
+        for(int i = inputWidth - 2; i >= 0; --i) {
+            eval(lut_out, mpz_class(ref));
+
+            if(lut_out.get_si() >= y) {
+                ref -= sign * mpz_class(1) << i;
+            }
+            else {
+                ref += sign * mpz_class(1) << i;
+            }
+        }
+
+        eval(lut_out, ref);
+
+        if(lut_out.get_si() >= y) {
+            ref -= sign;
+        }
+
+        eval(lut_out, ref);
+
+        if(lut_out.get_si() < y) {
+            ref += sign;
+        }
+
+        if(ref > (mpz_class(1) << inputWidth)) {
+            ref = mpz_class(1) << inputWidth;
+            REPORT(INFO, "Clipping occured.");
+        }
+
+        if(ref < 0) {
+            ref = mpz_class(0);
+            REPORT(INFO, "Clipping occured.");
+        }
+
+        return mpz_class(ref);
+    }
+
 
     void FixMonotoneFunctionInterface::eval(mpz_class &r, mpz_class x) const {
         mpfr_t mpX, mpR;

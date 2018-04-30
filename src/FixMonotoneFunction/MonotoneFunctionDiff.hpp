@@ -15,13 +15,6 @@ namespace flopoco {
     public:
         MonotoneFunctionDiff(OperatorPtr parentOp, Target *target, string functionString_, int inputWidth, int outputWidth);
 
-        //void emulate(TestCase *tc) override;
-
-        //void buildStandardTestCases(TestCaseList *tcl) override;
-
-        //void eval(mpz_class& r, mpz_class x) const;
-
-        mpz_class calculateInverse(int y);
         void build();
 
         static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);

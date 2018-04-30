@@ -12,21 +12,12 @@ namespace flopoco {
     class MonotoneFunctionComparator : public FixMonotoneFunctionInterface {
 
     public:
-        // definition of some function for the operator
-
-        // constructor, defined there with two parameters (default value 0 for each)
         MonotoneFunctionComparator(OperatorPtr parentOp, Target *target, string functionString_, int inputWidth, int outputWidth);
 
-        // destructor
-        //~MonotoneFunctionComparator() {};
-
-        /** Factory method that parses arguments and calls the constructor */
         static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);
 
         /** Factory register method */
         static void registerFactory();
-
-        mpz_class calculateInverse(int y);
 
         void build();
     };

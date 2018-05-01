@@ -14,7 +14,9 @@ namespace flopoco {
         UserInterface::parseInt(args, "inputWidth", &inW);
         UserInterface::parseInt(args, "outputWidth", &outW);
 
-        if(type.compare("diff") == 0) {
+        transform(type.begin(), type.end(), type.begin(), ::tolower);
+
+        if(type.compare("diff") == 0 || type.compare("difference") == 0) {
             return new MonotoneFunctionDiff(parentOp, target, func, inW, outW);
         }
 

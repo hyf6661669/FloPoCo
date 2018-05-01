@@ -37,7 +37,7 @@ namespace flopoco {
                            "Generates a function.", // description, string
                            "Miscellaneous", // category, from the list defined in UserInterface.cpp
                            "",
-                           "function(string)=x: Algorithm Type: normal, diff, lut;\
+                           "function(string)=x: Sollya function;\
                            inputWidth(int)=16: Input bit count; \
                            outputWidth(int)=8: Output bit count",
                            "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developer manual in the doc/ directory of FloPoCo.",
@@ -46,29 +46,38 @@ namespace flopoco {
     }
 
     void MonotoneFunctionComparator::build() {
-        string comparison = monotoneIncreasing ? ">=" : "<=";
+        string comparison = monotoneIncreasing ? ">=" : "<";
         mpz_class inputWidth_ref = mpz_class(1) << inputWidth;
-//        double delay = 0;
 
-//        for(int x = 0; x < outputWidth; ++x) {
-//            delay += getTarget()->adderDelay(inputWidth);
-//            delay += getTarget()->tableDelay(x, inputWidth, true);
-//        }
+        mpz_class inverse = calculateInverse(1 << (outputWidth - 1));
+        mpz_class lut_out;
 
+        eval(lut_out, inverse);
 
-        //declare(getTarget()->localWireDelay(outputWidth), "output", outputWidth);
-        string signal_comp_res = declare(getTarget()->adderDelay(inputWidth), "comp_res0", 1);
-        vhdl << tab << signal_comp_res << "(0) <= '1' when unsigned(i) " << comparison << " B\"" << calculateInverse(1 << (outputWidth - 1)).get_str(2) << "\" else '0';" << endl << endl;
+        if(!monotoneIncreasing && lut_out.get_si() == 1 << (outputWidth - 1)) {
+            ++inverse;
+        }
+
+        vhdl << tab << declare(getTarget()->adderDelay(inputWidth), "comp_res0", 1)
+             << "(0) <= '1' when unsigned(i) " << comparison
+             << " B\"" << inverse.get_str(2)
+             << "\" else '0';" << endl << endl;
 
         for(int i = 1; i < outputWidth; ++i) {
             std::vector<mpz_class> values = std::vector<mpz_class>();
             long tableOutputWidth = inputWidth;
             REPORT(DEBUG,"calculating Table " << i);
 
-            for(int j = 0; j < pow(2, i); ++j) {
-                int v = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
+            for(long j = 0; j < pow(2, i); ++j) {
+                long y = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
+                mpz_class inverse = calculateInverse(y);
+                mpz_class lut_out;
+                eval(lut_out, inverse);
+                if(!monotoneIncreasing && lut_out.get_si() == y) {
+                    ++inverse;
+                }
 
-                values.push_back(calculateInverse(v));
+                values.push_back(inverse);
 
                 if(mpz_cmp(values.back().get_mpz_t(), inputWidth_ref.get_mpz_t()) >= 0) {
                     tableOutputWidth = inputWidth + 1;
@@ -78,9 +87,14 @@ namespace flopoco {
             ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, tableOutputWidth, values);
             addSubComponent(ct);
 
-            string signal_ref = declare(getTarget()->tableDelay(i, tableOutputWidth, true), join("ref", i), tableOutputWidth);
-            string signal_comp_res = declare(getTarget()->adderDelay(tableOutputWidth) * i + getTarget()->tableDelay(i, tableOutputWidth, true) * (i-1), join("comp_res", i), 1);
-            string signal_table_in = declare(getTarget()->localWireDelay(i), join("table_in", i - 1), i);
+            string signal_table_out = declare(getTarget()->tableDelay(i, tableOutputWidth, true),
+                                        join("ref", i), tableOutputWidth);
+
+            string signal_comp_res = declare(getTarget()->adderDelay(tableOutputWidth) * i + getTarget()->tableDelay(i, tableOutputWidth, true) * (i-1),
+                                             join("comp_res", i), 1);
+
+            string signal_table_in = declare(getTarget()->localWireDelay(i),
+                                             join("table_in", i - 1), i);
 
 
             vhdl << tab << signal_table_in << " <= ";
@@ -97,11 +111,11 @@ namespace flopoco {
             }
 
             this->inPortMap(ct, "X", signal_table_in);
-            this->outPortMap(ct, "Y", signal_ref);
+            this->outPortMap(ct, "Y", signal_table_out);
 
             vhdl << this->instance(ct, join("ct", i));
 
-            vhdl << tab << signal_comp_res << "(0) <= '1' when unsigned(i) " << comparison << " unsigned(" << signal_ref << ") else '0';" << endl << endl;
+            vhdl << tab << signal_comp_res << "(0) <= '1' when unsigned(i) " << comparison << " unsigned(" << signal_table_out << ") else '0';" << endl << endl;
         }
 
         vhdl << tab << "o <= ";

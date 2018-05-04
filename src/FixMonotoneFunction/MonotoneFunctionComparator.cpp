@@ -93,8 +93,12 @@ namespace flopoco {
             string signal_comp_res = declare(getTarget()->adderDelay(tableOutputWidth) * i + getTarget()->tableDelay(i, tableOutputWidth, true) * (i-1),
                                              join("comp_res", i), 1);
 
-            string signal_table_in = declare(getTarget()->localWireDelay(i),
-                                             join("table_in", i - 1), i);
+            double table_in_delay = 0;
+            if(i > 1) {
+                table_in_delay = getTarget()->logicDelay(i);
+            }
+
+            string signal_table_in = declare(table_in_delay, join("table_input_", i), i);
 
 
             vhdl << tab << signal_table_in << " <= ";

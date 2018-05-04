@@ -45,7 +45,7 @@ namespace flopoco {
         r = calculateInverse(1 << (outputWidth - 1));
 
         if(!monotoneIncreasing) {
-            r += 1;
+//            r += 2;
         }
 
         values[0].emplace_back(r);
@@ -72,7 +72,7 @@ namespace flopoco {
                 r = calculateInverse(v);
 
                 if(!monotoneIncreasing) {
-                    r += 1;
+//                    r += 2;
                 }
 
                 values[i].emplace_back(r);
@@ -87,12 +87,16 @@ namespace flopoco {
             ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, inputWidth + 1, tables[i]);
             addSubComponent(ct);
 
+            double table_in_delay = 0;
+            if(i > 1) {
+                table_in_delay = getTarget()->logicDelay(i);
+            }
+
+            string signal_table_in = declare(table_in_delay, join("table_input_", i), i);
+
             string signal_output = declare(getTarget()->adderDelay(inputWidth) * i + getTarget()->tableDelay(i, inputWidth, true) * (i-1), join("output", i), 1);
-            string signal_table_in = declare(getTarget()->localWireDelay(i), join("table_in", i - 1), i);
             string signal_ref = declare(getTarget()->tableDelay(i, inputWidth + 1, true), join("ref", i), inputWidth + 1);
             diffSignals[i] = declare(getTarget()->adderDelay(inputWidth + 1), join("diff", i), inputWidth + 1);
-            //string signal_ref = declare(join("ref", i), inputWidth + 1);
-            //diffSignals[i] = declare(join("diff", i), inputWidth + 1);
 
             vhdl << tab << signal_table_in << " <= ";
 

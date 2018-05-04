@@ -66,43 +66,19 @@ namespace flopoco {
     }
 
     void MonotoneFunctionROM::build() {
-//        addInput("X", inputWidth);
-//        addOutput("Y", outputWidth);
-//        string in = declare("inp", inputWidth);
-//        string out = declare("outp", outputWidth);
-
         vector<mpz_class> values = vector<mpz_class>();
-
-//        vhdl << tab << "with i select o <=" << endl;
 
         for(int x = 0; x < pow(2, inputWidth); ++x) {
             values.emplace_back(function(x));
-
-//            vhdl << tab << tab << "\"" << unsignedBinary(function(x), outputWidth)
-//                 << "\" when \"" << unsignedBinary(mpz_class(x), inputWidth) << "\"," << endl;
-
         }
-
-//        vhdl << tab << tab << "\"";
-//
-//        for(int x = 0; x < outputWidth; ++x) {
-//            vhdl << "-";
-//        }
-
-//        vhdl <<"\" when others;" << endl;
-//        REPORT(DEBUG,"Last LUT value f(" << values.size() << ") = " << values.back().get_str(10) << " max y = " << y);
 
         ComparatorTable *ct = new ComparatorTable(this, getTarget(), inputWidth, outputWidth, values);
 
-        //ct->inPortMap(this, in, "X");
-        //ct->outPortMap(this, out, "Y");
         this->inPortMap(ct, "X", "i");
         this->outPortMap(ct, "Y", "o");
         addSubComponent(ct);
 
         vhdl << this->instance(ct, join("ct", inputWidth));
-        //vhdl << tab << in << " <= i;" << endl;
-        //vhdl << tab << "o <= " << out << ";" << endl;
     }
 
 }//namespace

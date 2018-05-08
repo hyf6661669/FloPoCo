@@ -25,42 +25,48 @@ namespace flopoco {
 
 
     void MonotoneFunctionDiff::build() {
-        string negate = monotoneIncreasing ? "not " : "";
-//        double delay = 0;
-//
-//        for(int x = 0; x < outputWidth; ++x) {
-//            delay += getTarget()->adderDelay(inputWidth+1);
-//            delay += getTarget()->tableDelay(x, inputWidth+1, true);
-//        }
+        mpz_class inputWidth_ref = mpz_class(1) << (inputWidth + 1);
+        long tableOutputWidth = inputWidth + 1;
 
-        //declare(delay, "output", outputWidth);
-        string signal_output = declare(getTarget()->adderDelay(inputWidth), "output0", 1);
-        mpz_class r = mpz_class();
+        string negate = monotoneIncreasing ? "not " : "";
+//        string negate = "not ";
+        vector<string> diff_signals(outputWidth);
+        vector<string> ref_signals(outputWidth);
+        vector<string> bit_signals(outputWidth);
+
+        mpz_class inverse = mpz_class();
 		vector<vector<mpz_class>> tables(outputWidth);
 		vector<vector<mpz_class>> values(outputWidth);
 
         tables[0] = vector<mpz_class>();
         values[0] = vector<mpz_class>();
 
-        r = calculateInverse(1 << (outputWidth - 1));
+        inverse = calculateInverse(1 << (outputWidth - 1));
+        mpz_class lut_out;
 
-        if(!monotoneIncreasing) {
-//            r += 2;
+        eval(lut_out, inverse);
+
+        if(!monotoneIncreasing && lut_out.get_si() == 1 << (outputWidth - 1)) {
+            inverse += 1;
         }
 
-        values[0].emplace_back(r);
+        values[0].emplace_back(inverse);
 
-        makeTwosComplement(r, inputWidth + 1);
+        makeTwosComplement(inverse, tableOutputWidth);
 
 
-        tables[0].emplace_back(r);
+        tables[0].emplace_back(inverse);
 
-		vector<string> diffSignals(outputWidth);
-        diffSignals[0] = declare(getTarget()->adderDelay(inputWidth + 1), join("diff", 0), inputWidth + 1);
+        bit_signals[0] = declare(monotoneIncreasing ? getTarget()->logicDelay(1) : 0, "output_0", 1);
+        diff_signals[0] = declare(getTarget()->adderDelay(inputWidth + 1), "diff_0", tableOutputWidth);
 
-        vhdl << tab << diffSignals[0] << " <= std_logic_vector(unsigned(i) + to_unsigned(2#" << r.get_str(2) << "#, " << inputWidth + 1 << "));" << endl;
-//        vhdl << tab << "output(" << outputWidth - 1 << ") <= " << negate << diffSignals[0] << "(" << inputWidth<< ");" << endl << endl;
-        vhdl << tab << signal_output << "(0) <= " << negate << diffSignals[0] << "(" << inputWidth<< ");" << endl << endl;
+        vhdl << tab << diff_signals[0]
+             << " <= std_logic_vector(unsigned(i) + to_unsigned(2#" << inverse.get_str(2) << "#, "
+             << tableOutputWidth << "));" << endl;
+
+        vhdl << tab << bit_signals[0]
+             << "(0) <= " << negate << diff_signals[0]
+             << "(" << inputWidth<< ");" << endl << endl;
 
         for(int i = 1; i < outputWidth; ++i) {
             tables[i] = vector<mpz_class>();
@@ -68,76 +74,62 @@ namespace flopoco {
             REPORT(DEBUG,"calculating LUT " << i);
 
             for(int j = 0; j < pow(2, i); ++j) {
-                int v = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
-                r = calculateInverse(v);
+                long y = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
+//                int v = (j << (outputWidth - i));
+                inverse = calculateInverse(y);
 
-                if(!monotoneIncreasing) {
-//                    r += 2;
+                if(!monotoneIncreasing && lut_out.get_si() == y) {
+                    inverse += 1;
                 }
+                if(j == 7) {
+                    REPORT(DEBUG,"calculating LUT " << i);
+                }
+                values[i].emplace_back(inverse);
+                mpz_sub(inverse.get_mpz_t(), inverse.get_mpz_t(), values[i-1].at(j/2).get_mpz_t());
 
-                values[i].emplace_back(r);
-                mpz_sub(r.get_mpz_t(), r.get_mpz_t(), values[i-1].at(j/2).get_mpz_t());
-                REPORT(DEBUG,"sub result: " << values[i].at(j).get_str(2) << " - " << values[i-1].at(j/2).get_str(2) << " = " << r.get_str(2));
+                makeTwosComplement(inverse, inputWidth + 1);
 
-                makeTwosComplement(r, inputWidth + 1);
+                tables[i].emplace_back(inverse);
 
-                tables[i].emplace_back(r);
+                if(mpz_cmp(tables[i].back().get_mpz_t(), inputWidth_ref.get_mpz_t()) >= 0) {
+                    tableOutputWidth = inputWidth + 2;
+                }
             }
 
-            ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, inputWidth + 1, tables[i]);
+            ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, tableOutputWidth, tables[i]);
             addSubComponent(ct);
 
-            double table_in_delay = 0;
-            if(i > 1) {
-                table_in_delay = getTarget()->logicDelay(i);
-            }
+//            double table_in_delay = (i > 1)? getTarget()->logicDelay(i) : 0;
+            string signal_table_in = declare(join("table_input_", i), i);
 
-            string signal_table_in = declare(table_in_delay, join("table_input_", i), i);
 
-            string signal_output = declare(getTarget()->adderDelay(inputWidth) * i + getTarget()->tableDelay(i, inputWidth, true) * (i-1), join("output", i), 1);
-            string signal_ref = declare(getTarget()->tableDelay(i, inputWidth + 1, true), join("ref", i), inputWidth + 1);
-            diffSignals[i] = declare(getTarget()->adderDelay(inputWidth + 1), join("diff", i), inputWidth + 1);
+            double output_delay = monotoneIncreasing ? getTarget()->logicDelay(1) : 0;
+            bit_signals[i] = declare(output_delay, join("output_", i), 1, false);
 
-            vhdl << tab << signal_table_in << " <= ";
+            double ref_delay = getTarget()->tableDelay(i, tableOutputWidth, true);
+            ref_signals[i] = declare(ref_delay, join("ref_", i), tableOutputWidth);
 
-            for(int k = 0; k < i; ++k) {
-                vhdl << "output" << k;
+//            double diff_delay = getTarget()->adderDelay(inputWidth+1) * i;
+//            for (int j = i; j >= 2; --j) {
+//                diff_delay += getTarget()->tableDelay(j, inputWidth+1, true);
+//            }
+            double diff_delay = getTarget()->adderDelay(tableOutputWidth);
+            diff_signals[i] = declare(diff_delay, join("diff_", i), tableOutputWidth);
 
-                if(k < i-1) {
-                    vhdl << " & ";
-                }
-                else {
-                    vhdl << ";" << endl << endl;
-                }
-            }
+            vhdl << tab << signal_table_in << " <= " << connectBits(bit_signals, 0, i-1) << ";" << endl << endl;
 
-//            ostringstream outputPort;
-//            outputPort << "output(" << outputWidth - 1 << " downto " << outputWidth - i << ")";
             this->inPortMap(ct, "X", signal_table_in);
-            this->outPortMap(ct, "Y", signal_ref);
+            this->outPortMap(ct, "Y", ref_signals[i]);
 
 
 
-            vhdl << this->instance(ct, join("ct", i));
-            vhdl << tab << diffSignals[i] << " <= std_logic_vector(unsigned(" << diffSignals[i-1] << ") + unsigned(" << signal_ref << "));" << endl;
-//            vhdl << tab << "output(" << outputWidth - i - 1 << ") <= " << negate << diffSignals[i] << "(" << inputWidth << ");" << endl << endl;
-            vhdl << tab << signal_output << "(0) <= " << negate << diffSignals[i] << "(" << inputWidth << ");" << endl << endl;
+            vhdl << this->instance(ct, join("ct", i)) << endl;
+            vhdl << tab << diff_signals[i] << " <= std_logic_vector(unsigned(" << diff_signals[i-1] << ") + unsigned(" << ref_signals[i] << "));" << endl;
+//            vhdl << tab << "output(" << outputWidth - i - 1 << ") <= " << negate << diff_signals[i] << "(" << inputWidth << ");" << endl << endl;
+            vhdl << tab << bit_signals[i] << " <= " << negate << diff_signals[i] << "(" << tableOutputWidth-1 << ");" << endl;
         }
 
-//        vhdl << tab << "o <= output;" << endl;
-
-        vhdl << tab << "o <= ";
-
-        for(int k = 0; k < outputWidth; ++k) {
-            vhdl << "output" << k;
-
-            if(k < outputWidth-1) {
-                vhdl << " & ";
-            }
-            else {
-                vhdl << ";" << endl << endl;
-            }
-        }
+        vhdl << tab << "o <= " << connectBits(bit_signals, 0, outputWidth-1) << ";" << endl << endl;
     }
 
     OperatorPtr flopoco::MonotoneFunctionDiff::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {

@@ -58,7 +58,7 @@ namespace flopoco {
             ++inverse;
         }
 
-        vhdl << tab << declare(getTarget()->adderDelay(inputWidth), "comp_res0", 1)
+        vhdl << tab << declare(getTarget()->adderDelay(inputWidth), "comp_result_0", 1)
              << "(0) <= '1' when unsigned(i) " << comparison
              << " B\"" << inverse.get_str(2)
              << "\" else '0';" << endl << endl;
@@ -72,7 +72,9 @@ namespace flopoco {
                 long y = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
                 mpz_class inverse = calculateInverse(y);
                 mpz_class lut_out;
+
                 eval(lut_out, inverse);
+
                 if(!monotoneIncreasing && lut_out.get_si() == y) {
                     ++inverse;
                 }
@@ -87,24 +89,30 @@ namespace flopoco {
             ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, tableOutputWidth, values);
             addSubComponent(ct);
 
+
+//            string signal_table_out = declare(join("ref_", i), tableOutputWidth);
             string signal_table_out = declare(getTarget()->tableDelay(i, tableOutputWidth, true),
-                                        join("ref", i), tableOutputWidth);
+                                              join("ref_", i), tableOutputWidth);
 
-            string signal_comp_res = declare(getTarget()->adderDelay(tableOutputWidth) * i + getTarget()->tableDelay(i, tableOutputWidth, true) * (i-1),
-                                             join("comp_res", i), 1);
+//            double comp_res_delay = getTarget()->adderDelay(tableOutputWidth)
+//                                    + getTarget()->tableDelay(i, tableOutputWidth, true);
+            double comp_res_delay = getTarget()->adderDelay(tableOutputWidth);
 
-            double table_in_delay = 0;
-            if(i > 1) {
-                table_in_delay = getTarget()->logicDelay(i);
-            }
+//            double comp_res_delay = getTarget()->adderDelay(inputWidth) * i;
+//            for (int j = i; j >= 1; --j) {
+//                comp_res_delay += getTarget()->tableDelay(j, inputWidth, true);
+//            }
+            string signal_comp_res = declare(comp_res_delay, join("comp_result_", i), 1);
 
-            string signal_table_in = declare(table_in_delay, join("table_input_", i), i);
+
+//            double table_in_delay = (i > 1)? getTarget()->logicDelay(i) : 0;
+            string signal_table_in = declare(0, join("table_input_", i), i);
 
 
             vhdl << tab << signal_table_in << " <= ";
 
             for(int k = 0; k < i; ++k) {
-                vhdl << "comp_res" << k;
+                vhdl << "comp_result_" << k;
 
                 if(k < i-1) {
                     vhdl << " & ";
@@ -117,15 +125,15 @@ namespace flopoco {
             this->inPortMap(ct, "X", signal_table_in);
             this->outPortMap(ct, "Y", signal_table_out);
 
-            vhdl << this->instance(ct, join("ct", i));
+            vhdl << this->instance(ct, join("ct", i)) << endl;
 
-            vhdl << tab << signal_comp_res << "(0) <= '1' when unsigned(i) " << comparison << " unsigned(" << signal_table_out << ") else '0';" << endl << endl;
+            vhdl << tab << signal_comp_res << "(0) <= '1' when unsigned(i) " << comparison << " unsigned(" << signal_table_out << ") else '0';" << endl;
         }
 
         vhdl << tab << "o <= ";
 
         for(int k = 0; k < outputWidth; ++k) {
-            vhdl << "comp_res" << k;
+            vhdl << "comp_result_" << k;
 
             if(k < outputWidth-1) {
                 vhdl << " & ";

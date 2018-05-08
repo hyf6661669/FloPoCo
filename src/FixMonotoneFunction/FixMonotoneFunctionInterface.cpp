@@ -135,4 +135,18 @@ namespace flopoco {
         }
     }
 
+    string FixMonotoneFunctionInterface::connectBits(vector<string> signals, int start, int end) {
+        ostringstream connect;
+
+        for(int i = start; i <= end; ++i) {
+            connect << signals.at(i);
+
+            if(i < end) {
+                connect << " & ";
+            }
+        }
+
+        return connect.str();
+    }
+
 }

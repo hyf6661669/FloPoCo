@@ -32,6 +32,7 @@ namespace flopoco {
         mpz_class calculateInverse(long y);
         bool checkMonotoneIncreasing();
         void makeTwosComplement(mpz_class &r, int bitCount);
+        string connectBits(vector<string> signals, int start, int end);
         virtual void build() = 0;
 
     public:

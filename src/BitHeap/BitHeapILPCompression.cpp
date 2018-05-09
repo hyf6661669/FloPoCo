@@ -902,7 +902,7 @@ int BitHeapILPCompression::generateProblem(){
     cout << "!!!! delta time (constraints): " << timeDiff << " seconds" << endl;
 
     ScaLP::Objective o = ScaLP::minimize(objectiveTerm);
-		}
+
     	
     //problemSolver->setObjective(o);
     cout << "before writeLP" << endl;
@@ -910,7 +910,7 @@ int BitHeapILPCompression::generateProblem(){
     cout << "after writeLP" << endl;
 
 #endif
-
+    }
 
     //cout << "end of SCIP problem description" << endl;
     return 0;

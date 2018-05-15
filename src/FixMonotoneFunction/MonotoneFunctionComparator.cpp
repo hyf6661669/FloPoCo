@@ -68,10 +68,10 @@ namespace flopoco {
             long tableOutputWidth = inputWidth;
             REPORT(DEBUG,"calculating Table " << i);
 
+            // calculating table i
             for(long j = 0; j < pow(2, i); ++j) {
                 long y = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
                 mpz_class inverse = calculateInverse(y);
-                mpz_class lut_out;
 
                 eval(lut_out, inverse);
 
@@ -90,25 +90,14 @@ namespace flopoco {
             addSubComponent(ct);
 
 
-//            string signal_table_out = declare(join("ref_", i), tableOutputWidth);
+            // creating the signals with delays
             string signal_table_out = declare(getTarget()->tableDelay(i, tableOutputWidth, true),
-                                              join("ref_", i), tableOutputWidth);
-
-//            double comp_res_delay = getTarget()->adderDelay(tableOutputWidth)
-//                                    + getTarget()->tableDelay(i, tableOutputWidth, true);
-            double comp_res_delay = getTarget()->adderDelay(tableOutputWidth);
-
-//            double comp_res_delay = getTarget()->adderDelay(inputWidth) * i;
-//            for (int j = i; j >= 1; --j) {
-//                comp_res_delay += getTarget()->tableDelay(j, inputWidth, true);
-//            }
-            string signal_comp_res = declare(comp_res_delay, join("comp_result_", i), 1);
-
-
-//            double table_in_delay = (i > 1)? getTarget()->logicDelay(i) : 0;
+                                              join("ref_ref_", i), tableOutputWidth);
+            string signal_comp_res = declare(getTarget()->adderDelay(tableOutputWidth), join("comp_result_", i), 1);
             string signal_table_in = declare(0, join("table_input_", i), i);
 
 
+            // concatenating result bits
             vhdl << tab << signal_table_in << " <= ";
 
             for(int k = 0; k < i; ++k) {
@@ -122,9 +111,9 @@ namespace flopoco {
                 }
             }
 
+            // connecting table
             this->inPortMap(ct, "X", signal_table_in);
             this->outPortMap(ct, "Y", signal_table_out);
-
             vhdl << this->instance(ct, join("ct", i)) << endl;
 
             vhdl << tab << signal_comp_res << "(0) <= '1' when unsigned(i) " << comparison << " unsigned(" << signal_table_out << ") else '0';" << endl;

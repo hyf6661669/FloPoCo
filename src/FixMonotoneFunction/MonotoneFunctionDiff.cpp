@@ -68,6 +68,7 @@ namespace flopoco {
              << "(0) <= " << negate << diff_signals[0]
              << "(" << inputWidth<< ");" << endl << endl;
 
+        // calculating table i
         for(int i = 1; i < outputWidth; ++i) {
             tables[i] = vector<mpz_class>();
             values[i] = vector<mpz_class>();
@@ -75,15 +76,12 @@ namespace flopoco {
 
             for(int j = 0; j < pow(2, i); ++j) {
                 long y = (j << (outputWidth - i)) + (1 << (outputWidth - i - 1));
-//                int v = (j << (outputWidth - i));
                 inverse = calculateInverse(y);
 
                 if(!monotoneIncreasing && lut_out.get_si() == y) {
                     inverse += 1;
                 }
-                if(j == 7) {
-                    REPORT(DEBUG,"calculating LUT " << i);
-                }
+
                 values[i].emplace_back(inverse);
                 mpz_sub(inverse.get_mpz_t(), inverse.get_mpz_t(), values[i-1].at(j/2).get_mpz_t());
 
@@ -99,33 +97,25 @@ namespace flopoco {
             ComparatorTable *ct = new ComparatorTable(this, getTarget(), i, tableOutputWidth, tables[i]);
             addSubComponent(ct);
 
-//            double table_in_delay = (i > 1)? getTarget()->logicDelay(i) : 0;
             string signal_table_in = declare(join("table_input_", i), i);
 
-
+            // creating the signals with delays
             double output_delay = monotoneIncreasing ? getTarget()->logicDelay(1) : 0;
             bit_signals[i] = declare(output_delay, join("output_", i), 1, false);
 
             double ref_delay = getTarget()->tableDelay(i, tableOutputWidth, true);
             ref_signals[i] = declare(ref_delay, join("ref_", i), tableOutputWidth);
 
-//            double diff_delay = getTarget()->adderDelay(inputWidth+1) * i;
-//            for (int j = i; j >= 2; --j) {
-//                diff_delay += getTarget()->tableDelay(j, inputWidth+1, true);
-//            }
             double diff_delay = getTarget()->adderDelay(tableOutputWidth);
             diff_signals[i] = declare(diff_delay, join("diff_", i), tableOutputWidth);
 
+            // connecting table
             vhdl << tab << signal_table_in << " <= " << connectBits(bit_signals, 0, i-1) << ";" << endl << endl;
-
             this->inPortMap(ct, "X", signal_table_in);
             this->outPortMap(ct, "Y", ref_signals[i]);
 
-
-
             vhdl << this->instance(ct, join("ct", i)) << endl;
             vhdl << tab << diff_signals[i] << " <= std_logic_vector(unsigned(" << diff_signals[i-1] << ") + unsigned(" << ref_signals[i] << "));" << endl;
-//            vhdl << tab << "output(" << outputWidth - i - 1 << ") <= " << negate << diff_signals[i] << "(" << inputWidth << ");" << endl << endl;
             vhdl << tab << bit_signals[i] << " <= " << negate << diff_signals[i] << "(" << tableOutputWidth-1 << ");" << endl;
         }
 

@@ -17,8 +17,6 @@ namespace flopoco {
         addOutput("o" , outputWidth);
 
         sollya_lib_parse_string("[0;1]");
-        //fS= sollya_lib_parse_string("sin(3.14/2*x) * 255/256;");
-        //fS = sollya_lib_parse_string("1 - sin(3.14/4*x) - 1/256;");
         fS = sollya_lib_parse_string(functionString.c_str());
 
         monotoneIncreasing = checkMonotoneIncreasing();
@@ -44,50 +42,90 @@ namespace flopoco {
 
 
     void FixMonotoneFunctionInterface::buildStandardTestCases(TestCaseList *tcl) {
-        // please fill me with regression tests or corner case tests!
+        TestCase *tc;
+        mpz_class max_input = (mpz_class(1) << inputWidth) - 1;
+
+        tc = new TestCase(this);
+        tc->addInput("i", 0);
+        emulate(tc);
+        tcl->add(tc);
+
+        for(long y = 0; y < pow(2, outputWidth); ++y) {
+            mpz_class inverse = calculateInverse(y);
+
+            mpz_class actual_y;
+            eval(actual_y, inverse);
+
+            // only add test case if the actual output matches the input
+            // (not always the case for functions that don't use the full output range)
+            // also don't add 0 or the last value because they are added separately
+            if(actual_y.get_si() == y && inverse.get_si() != 0 && inverse != max_input) {
+                tc = new TestCase(this);
+                tc->addInput("i", inverse);
+                emulate(tc);
+                tcl->add(tc);
+
+                if(monotoneIncreasing) {
+                    --inverse;
+                }
+                else {
+                    ++inverse;
+                }
+
+                tc = new TestCase(this);
+                tc->addInput("i", inverse);
+                emulate(tc);
+                tcl->add(tc);
+            }
+        }
+
+        tc = new TestCase(this);
+        tc->addInput("i", max_input);
+        emulate(tc);
+        tcl->add(tc);
     }
 
     mpz_class FixMonotoneFunctionInterface::calculateInverse(long y) {
         REPORT(FULL,"calculateInverse looking for x at f(x)=" << y);
 
-        mpz_class ref = mpz_class(1) << (inputWidth - 1);
+        mpz_class inverse = mpz_class(1) << (inputWidth - 1);
         mpz_class lut_out;
         long sign = monotoneIncreasing ? 1 : -1;
 
         for(int i = inputWidth - 2; i >= 0; --i) {
-            eval(lut_out, mpz_class(ref));
+            eval(lut_out, inverse);
 
             if(lut_out.get_si() >= y) {
-                ref -= sign * mpz_class(1) << i;
+                inverse -= sign * mpz_class(1) << i;
             }
             else {
-                ref += sign * mpz_class(1) << i;
+                inverse += sign * mpz_class(1) << i;
             }
         }
 
-        eval(lut_out, ref);
+        eval(lut_out, inverse);
 
         if(lut_out.get_si() >= y) {
-            ref -= sign;
+            inverse -= sign;
         }
 
-        eval(lut_out, ref);
+        eval(lut_out, inverse);
 
         if(lut_out.get_si() < y) {
-            ref += sign;
+            inverse += sign;
         }
 
-        if(ref > (mpz_class(1) << inputWidth)) {
-            ref = mpz_class(1) << inputWidth;
+        if(inverse > (mpz_class(1) << inputWidth)) {
+            inverse = mpz_class(1) << inputWidth;
             REPORT(INFO, "Clipping occured.");
         }
 
-        if(ref < 0) {
-            ref = mpz_class(0);
+        if(inverse < 0) {
+            inverse = mpz_class(0);
             REPORT(INFO, "Clipping occured.");
         }
 
-        return mpz_class(ref);
+        return inverse;
     }
 
 
@@ -105,8 +143,6 @@ namespace flopoco {
 
         mpfr_mul_2si(mpR, mpR, outputWidth, GMP_RNDN);
         mpfr_get_z(r.get_mpz_t(), mpR, GMP_RNDN);
-
-        //REPORT(FULL, "f(" << mpfr_get_d(mpX, GMP_RNDN) << ") = " << mpfr_get_d(mpR, GMP_RNDN));
 
         mpfr_clear(mpX);
         mpfr_clear(mpR);

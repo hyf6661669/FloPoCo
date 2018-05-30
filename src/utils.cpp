@@ -753,6 +753,18 @@ namespace flopoco{
 		return result.substr(0, newend - result.begin());
 	}
 
+	string vhdlize(string const & expr, int newLenghtLimit)
+	{
+		string result;
+
+		result = vhdlize(expr);
+
+		if(result.size() > newLenghtLimit)
+			result = result.substr(0, newLenghtLimit);
+
+		return result;
+	}
+
 	string vhdlize(double num)
 	{
 		ostringstream oss;

@@ -308,6 +308,16 @@ namespace flopoco{
 	string vhdlize(string const & expr);
 
 	/**
+	 * Turns an arbitrary string (e.g. Sollya expression or FP number) to
+	 * part of a valid VHDL identifier. May (and usually will) loose information.
+	 * Looks ugly.
+	 * May begin with a digit.
+	 * Length of the output is limited to newLenghtLimit characters
+	 * @param[in] expr		expression to convert
+	 **/
+	string vhdlize(string const & expr, int newLengthLimit);
+
+	/**
 	 * Turns a double to a string that will go in a valid VHDL name
 	 */
 	string  vhdlize(double num);

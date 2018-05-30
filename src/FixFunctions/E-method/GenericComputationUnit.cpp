@@ -24,7 +24,7 @@ namespace flopoco {
 		srcFileName = "GenericComputationUnit";
 		name << "GenericComputationUnit_radix" << radix
 				<< "_index_" << index
-				<< "_qi_" << std::setprecision(5) << vhdlize(qi)
+				<< "_qi_" << std::setprecision(5) << vhdlize(qi, 10)
 				<< "_msbIn_" << vhdlize(msbW) << "_lsbIn_" << vhdlize(lsbW);
 		setName(name.str()+"_uid"+vhdlize(getNewUId()));
 
@@ -93,7 +93,8 @@ namespace flopoco {
 								this,											// parent operator
 								msbInt-lsbInt+1,								// maximum weight
 								false, 											// enable supertiles
-								join("Bitheap_"+name.str()+"_", getNewUId())	// bitheap name
+//								join("Bitheap_"+name.str()+"_", getNewUId())	// bitheap name
+								""
 								);
 
 		//add W_i[j-1] to the bitheap

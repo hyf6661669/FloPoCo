@@ -616,7 +616,8 @@ namespace flopoco {
 										this,											// parent operator
 										msbW-lsbW+1,									// maximum weight
 										false, 											// enable supertiles
-										join("Bitheap_"+name.str()+"_", getNewUId())	// bitheap name
+//										join("Bitheap_"+name.str()+"_", getNewUId())	// bitheap name
+										""
 										);
 		//add the digits of the intermediate computations
 		REPORT(DEBUG, "add the digits of the intermediate computations");

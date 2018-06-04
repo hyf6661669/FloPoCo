@@ -94,7 +94,14 @@ namespace flopoco {
             }
             else
             {
-                vhdl << tab << declare("Y_raw", bitheap->getMaxWeight() + 1) << " <= " << bitheap->getSumName() << ";" << endl;
+                if(bitheap->getMaxHeight() > 1)
+                {
+                    vhdl << tab << declare("Y_raw", bitheap->getMaxWeight() + 1) << " <= " << bitheap->getSumName() << ";" << endl;
+                }
+                else
+                {
+                    vhdl << tab << declare("Y_raw", bitheap->getMaxWeight()) << " <= " << bitheap->getSumName() << ";" << endl;
+                }
             }
 
 		}

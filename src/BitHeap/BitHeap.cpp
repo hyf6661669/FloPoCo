@@ -1084,7 +1084,7 @@ namespace flopoco
 
         if(s < 0) s = op->getCurrentCycle();
 
-		stringstream signal[bc->getNumberOfColumns()];
+		vector<stringstream> signal(bc->getNumberOfColumns());
 
 #if 0
 		WeightedBit* b =  latestInputBitToCompressor(i, bc) ;
@@ -1252,7 +1252,6 @@ namespace flopoco
  	/* Uni KS start */
  	void BitHeap::removeCompressedBits(int c, int red, int cycle)
 	{
-        cout << "!! removeCompressedBits(" << c << "," << red << "," << cycle << ")" << endl;
 		while(red>0)
 		{
             removeBit(c,0,cycle);
@@ -1693,28 +1692,35 @@ namespace flopoco
 				}
 
 				BitHeapILPCompression ilp(this);
-                ilp.useVariableCompressors = useVariableColumnCompressors;
+                //ilp.useVariableCompressors = useVariableColumnCompressors; doesn't make any sense
                 ilp.useHeuristic = false;
 				ilp.generateProblem();
                 if ((DEBUG)<=(UserInterface::verbose)) ilp.writeProblem();
 				ilp.solve();
 //				if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
 
+				//fix: push empty stage to front
+				list<pair<int,int> > tempList;
+				ilp.solution.insert(ilp.solution.begin(), tempList);
+
+
 				for(unsigned s=0; s < ilp.solution.size(); s++)
 				{
 					list<pair<int,int> >::iterator it;
 					for(it = ilp.solution[s].begin(); it != ilp.solution[s].end(); ++it)
 					{
-						REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
-                        //elemReduce(((unsigned) (*it).second), possibleCompressors[(*it).first]);
-                        if(s > stageMax) stageMax = s;
-                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
-						if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
-						{
-                            compressorUsage[(*it).first]++;
-                            usedCompressors[(*it).first]=true;
-                        }
-
+						if(((unsigned) (*it).second) < maxWeight){
+							REPORT(DEBUG, "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << s);
+	                        //elemReduce(((unsigned) (*it).second), possibleCompressors[(*it).first]);
+	                        if(s > stageMax) stageMax = s;
+	                        elemReduceFixedCycle(((unsigned) (*it).second), possibleCompressors[(*it).first], 0, s);
+							if(!((possibleCompressors[(*it).first]->getNumberOfColumns() == 1) && (possibleCompressors[(*it).first]->getColumnSize(0) == 1)))
+							{
+								REPORT(DEBUG, "added, not a 1_1-compressor");
+	                            compressorUsage[(*it).first]++;
+	                            usedCompressors[(*it).first]=true;
+	                        }
+						}
 					}
                     plotter->heapSnapshot(didCompress, s+1, plottingCP); //plottingCycle=1 -> force heapSnapshot to plot ...
                     if(this->getOp()->getTarget()->isPipelined())
@@ -1848,7 +1854,6 @@ namespace flopoco
                         }
                     }
 
-                    cout << "!! remaining bits in stage " << s << " are: ";
                     for(unsigned i=0; i<maxWeight; i++)
                     {
                         cout << bits[i].size() << " ";
@@ -1925,11 +1930,11 @@ namespace flopoco
 				if(area2 < area1 + 0.0001){
 					ilp = ilp2;
 					cout << "using version without variable compressors" << endl;
-                    cout << "final cost is " << area2 << endl;
+                    cout << "the compressors have a cost of " << area2 << endl;
 				}
                 else
                 {
-                    cout << "final cost is " << area1 << endl;
+                    cout << "the compressors have a cost of " << area1 << endl;
                 }
 
 //                if ((DEBUG)<=(UserInterface::verbose)) ilp.plotSolution();
@@ -1996,7 +2001,6 @@ namespace flopoco
                         }
                     }
 
-                    cout << "!! remaining bits in stage " << s << " are: ";
                     for(unsigned i=0; i<maxWeight; i++)
                     {
                         cout << bits[i].size() << " ";

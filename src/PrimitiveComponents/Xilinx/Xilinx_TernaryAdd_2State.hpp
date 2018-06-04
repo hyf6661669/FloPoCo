@@ -36,12 +36,12 @@ namespace flopoco {
 
         static void registerFactory(){
             UserInterface::add( "xilinx_ternary_addsub", // name
-                                "A ternary adder subtractor build of xilinx primitives.", // description, string
+                                "A ternary adder/subtractor build of xilinx primitives. For each configuration (selectable by optional input sel_i) the signs of up to two inputs may be different.", // description, string
                                 "Primitives", // category, from the list defined in UserInterface.cpp
                                 "",
                                 "wIn(int): The wordsize of the adder; \
-                                mode(int)=0: First bitmask for input negation; \
-                                mode2(int)=-1: Second bitmask for configurable input negation;",
+                                mode(int)=0: Input negation bitmask for 1st configuration, x_i is negated when (mode & 1)==1, y_i is negated when (mode & 2)==1, z_i is negated when (mode & 4)==1; \
+                                mode2(int)=-1: Input negation bitmask for 2nd configuration, x_i is negated when (mode2 & 1)==1, y_i is negated when (mode2 & 2)==1, z_i is negated when (mode2 & 4)==1",
                                 "",
                                 Xilinx_TernaryAdd_2State::parseArguments
                               );

@@ -23,6 +23,7 @@
 #include <map>
 #include <sstream>
 #include <vector>
+#include <cmath>        // std::abs
 using namespace std;
 using namespace flopoco;
 

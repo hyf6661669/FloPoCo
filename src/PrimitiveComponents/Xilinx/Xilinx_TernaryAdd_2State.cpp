@@ -23,7 +23,7 @@ namespace flopoco {
         if( state2_ == -1 ) {
             state2_ = state_;
         }
-
+        
         srcFileName = "Xilinx_TernaryAdd_2State";
         stringstream namestr;
         namestr << "Xilinx_TernaryAdd_2State_ws" << wIn << "_s" << ( state_ & 0x7 );
@@ -56,6 +56,11 @@ namespace flopoco {
         declare( "carry_cct" );
         declare( "carry", num_slices );
 
+        if(((state_ & 0x7) == 0x7) || ((state2_ & 0x7) == 0x7))
+        {
+            throw std::runtime_error( "A negation of all three inputs at the same time is not possible." );
+        }
+        
         if( wIn <= 0 ) {
             throw std::runtime_error( "An adder with wordsize 0 is not possible." );
         }

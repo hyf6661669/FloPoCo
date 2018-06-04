@@ -4,7 +4,7 @@
 #include "Operator.hpp"
 #include "utils.hpp"
 //#include "IntMultiAdder.hpp"
-#include <tr1/memory>
+//#include <tr1/memory>
 #include "FormalBinaryProduct.hpp"
 
 namespace flopoco {
@@ -29,7 +29,7 @@ template<typename T> class Option {
 
 	protected:
 		bool empty;
-		std::tr1::shared_ptr<T> value;
+		std::shared_ptr<T> value;
 };
 
 class GenericBinaryPolynomial : public Operator {

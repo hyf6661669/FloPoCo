@@ -124,6 +124,7 @@ namespace flopoco
 		static int    verbose;
         static string compression;
 		static string ilpSolver;
+        static int ilpTimeout;
         static bool   useTargetSpecificOptimization;
     private:
 		static string outputFileName;

@@ -37,6 +37,7 @@ namespace flopoco
         useCompleteHeuristic = false;
         getLowerBoundsFromBitHeap = false;
 
+
         //modified values
 
         //lowerBound = 0.0;
@@ -201,14 +202,13 @@ namespace flopoco
         //now fill lowerBounds with real values
         //the preset value is infinity (a.k.a. 10.0)
 		if(mode.compare("heuristic_parandeh-afshar_modified") != 0){
-            //lowerBounds[0] = 0;
-            //lowerBounds[1] = 0;
-			//lowerBounds[2] = 1.75;
-			//lowerBounds[3] = 1.75;
-			//lowerBounds[4] = 0;
-			//lowerBounds[5] = 0;
-			//lowerBounds[6] = 0;
-			//lowerBounds[7] = 0;
+            //uncomment the following to get the (0,1.75,inf) mode:
+            //ToDo: Add this to user interface
+            /*
+            lowerBounds[0] = 0;
+            lowerBounds[1] = 0;
+            lowerBounds[2] = 1.75;
+            */
 		}
         printLowerBounds();
 
@@ -831,7 +831,12 @@ namespace flopoco
 
 
         cout << "initialisation of bitHeapILPCompression finished" << endl;
-        bitHeapILPCompression.generateProblem();
+
+
+
+
+        bitHeapILPCompression.generateProblem(); //Segmentation fault if there is nothing more to do
+
 
         if(passHeuristicSolution){
             int count = bitHeapILPCompression.passHeuristicSolutions();
@@ -1178,38 +1183,24 @@ namespace flopoco
         bool exit = false;
 
         for(unsigned s = 0; s < (newBits.size() - 1); s++){
-            //cout << "stage = " << s << endl;
+            cout << "stage = " << s << endl;
             bool found = true;
             while(found){
                 found = false;
                 unsigned compressor = 0;
                 unsigned column = 0;
                 pair<int,int> result;
-                //cout << "now find compressor" << endl;
-                unsigned currentMaxColumn = 0;
-                int maxSize = 0;
-#if 0
-                for(unsigned c = 0; c < newBits[s].size(); c++){
-                    //cout << "s = " << s << " c = " << c << " and newBits = " << newBits[s][c] << "  ---old- maxWidth = " << maxSize << " currentMaxColumn = " << currentMaxColumn<< endl;
-                    if(newBits[s][c] > maxSize){
-                        currentMaxColumn = c;
-                        maxSize = newBits[s][c];
-                    }
-                }
-                //cout << "maxColumn is " << currentMaxColumn << " and maxSize is " << maxSize << endl;
-                if(maxSize > 0){ //otherwise there are no bits left in this stage
-                    result = parandehAfsharSearch(s, currentMaxColumn);
-                    if(result.first >= 0){
-                        found = true;
-                    }
-                }
-#endif
 
                 bool used[newBits[s].size()];
                 for(unsigned k = 0; k < newBits[s].size(); k++){
                     used[k] = 0;
                 }
                 for(unsigned a = 0; a < newBits[s].size(); a++){
+
+                    //cout << "now find compressor" << endl;
+                    unsigned currentMaxColumn = 0;
+                    int maxSize = 0;
+
                     //find maxColumn
                     for(unsigned c = 0; c < newBits[s].size(); c++){
                         if(used[c] == false && newBits[s][c] > maxSize){
@@ -1218,7 +1209,7 @@ namespace flopoco
                         }
                     }
                     used[currentMaxColumn] = true;
-
+                    //cout << "currentMaxColumn is " << currentMaxColumn << " with maxSize " << maxSize << " and a is " << a << endl;
                     //check found column
                     if(maxSize > 0){
                         result = parandehAfsharSearch(s, currentMaxColumn);
@@ -2064,6 +2055,8 @@ namespace flopoco
     }
 
     int BitHeapHeuristicCompression::solve(){
+
+
         cout << "in solve()" << endl;
         if((mode.compare("heuristic_parandeh-afshar_modified") == 0) || (mode.compare("heuristic_pa") == 0)) {
 			if(useVariableCompressors){
@@ -2115,7 +2108,7 @@ namespace flopoco
                     bitHeapILPCompression.generateProblem();
 
 */
-                    cout << "in loop" << endl;
+                    //cout << "in loop" << endl;
                     setUpILPForMoreStages(s, false);
                     bitHeapILPCompression.generateProblem();
                 }
@@ -2138,29 +2131,7 @@ namespace flopoco
             if(bitHeapILPCompression.infeasible){       //if we have no solution after we went all the stages, exit
                 exit(-1);
             }
-            /*
-            cout << endl << "before merging, solution" << endl;
-            for(int j = 0; j < solution.size(); j++){
-                list<pair<int,int> >:: iterator it;
-                for(it = solution[j].begin(); it != solution[j].end(); it++){
-                    cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
-                }
 
-            }
-
-            cout << endl << endl;
-
-            cout << endl << "before merging, presolution" << endl;
-            for(int j = 0; j < preSolution.size(); j++){
-                list<pair<int,int> >:: iterator it;
-                for(it = preSolution[j].begin(); it != preSolution[j].end(); it++){
-                    cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
-                }
-
-            }
-
-            cout << endl << endl;
-            */
 
             if(preSolution.size() > solution.size()){
                 solution.resize(preSolution.size());
@@ -2169,18 +2140,6 @@ namespace flopoco
 
                 solution[s].splice(solution[s].end(), preSolution[s]);
             }
-
-
-            /*
-            cout << "after SCIP" << endl;
-            for(int j = 0; j < solution.size(); j++){
-                list<pair<int,int> >:: iterator it;
-                for(it = solution[j].begin(); it != solution[j].end(); it++){
-                    cout << "applying compressor " << (*it).first << " to column " << (*it).second << " in stage " << j << endl;
-                }
-
-            }
-            */
         }
         else{
             bitHeapILPCompression.solve();

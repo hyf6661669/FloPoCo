@@ -389,24 +389,36 @@ int BitHeapILPCompression::generateProblem(){
     //defining the objective
     ScaLP::Term objectiveSum;
     cout << compCountVars.size() << endl;
+
+		{
+    time_t timer1,timer2;
+    time(&timer1);
+  
     for(unsigned int s = 0; s < compCountVars.size() - 1; s++){
         for(unsigned int e = 0; e < compCountVars[s].size(); e++){
             for(unsigned int c = 0; c < compCountVars[s][e].size(); c++){
                 if(!useVariableCompressors){
-                    objectiveSum = objectiveSum + (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
+                    objectiveSum += (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
                 }
                 else{
                     if(e < possibleCompressors_->size()){
-                        objectiveSum = objectiveSum + (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
+                        objectiveSum += (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
                     }
                     else{
                         //cout << "e is " << e << " and variableBCompressors[e - possibleCompressors_->size()].areaCost is " << variableBCompressors[e - possibleCompressors_->size()].areaCost << endl;
-                        objectiveSum = objectiveSum + variableBCompressors[e - possibleCompressors_->size()].areaCost * compCountVars[s][e][c];
+                        objectiveSum += variableBCompressors[e - possibleCompressors_->size()].areaCost * compCountVars[s][e][c];
                     }
                 }
             }
         }
     }
+
+    time(&timer2);
+    double timeDiff = difftime(timer2,timer1);
+    cout << "!!!! delta time (objective): " << timeDiff << " seconds" << endl;
+  	}
+//	std::cout << objectiveSum << std::endl;
+
     cout << "after setting objective" << endl;
     ScaLP::Objective obj = ScaLP::minimize(objectiveSum);
     problemSolver->setObjective(obj);
@@ -725,12 +737,16 @@ int BitHeapILPCompression::generateProblem(){
 
 
     //----------------------------------------------------------
+		{
+    time_t timer1,timer2;
+    time(&timer1);
 
     if(useVariableCompressors){
 
         cout << "in useVariableCompressors " << endl << endl << endl;
         //assume that the order in variableBCompressors is low - middle -high ( (3;1) - (2;1) - (0;1) )
 
+    
         unsigned offset = possibleCompressors_->size();
 
         for(unsigned s = 0; s < compCountVars.size() - 1; s++){
@@ -749,10 +765,10 @@ int BitHeapILPCompression::generateProblem(){
                     ScaLP::Term c5Term;
                     c5Term = c5Term + compCountVars[s][offset + e + 2][c + 1];  //high
                     if(c != ((int) (newBits[0].size()+s*(compOutputWordSizeMax-1))) - 1){
-                        c5Term = c5Term + compCountVars[s][offset + e + 1][c + 1];  //middle
+                        c5Term += compCountVars[s][offset + e + 1][c + 1];  //middle
                     }
-                    c5Term = c5Term - compCountVars[s][offset + e + 0][c];  //low
-                    c5Term = c5Term - compCountVars[s][offset + e + 1][c];  //middle
+                    c5Term -= compCountVars[s][offset + e + 0][c];  //low
+                    c5Term -= compCountVars[s][offset + e + 1][c];  //middle
                     ScaLP::Constraint c5Constraint = c5Term == 0;
                     //c5Constraint.setName(consName.str());
                     c5Constraint.name = consName.str();
@@ -868,28 +884,33 @@ int BitHeapILPCompression::generateProblem(){
             for(unsigned c=0; c < compCountVars[s][e].size(); c++)
             {
                 if(!useVariableCompressors){
-                    objectiveTerm = objectiveTerm + (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
+                    objectiveTerm += (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
                 }
                 else{
                     if(e < possibleCompressors_->size()){
-                        objectiveTerm = objectiveTerm + (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
+                        objectiveTerm += (*possibleCompressors_)[e]->areaCost * compCountVars[s][e][c];
                     }
                     else{
-                        objectiveTerm = objectiveTerm + variableBCompressors[e - possibleCompressors_->size()].areaCost * compCountVars[s][e][c];
+                        objectiveTerm += variableBCompressors[e - possibleCompressors_->size()].areaCost * compCountVars[s][e][c];
                     }
                 }
             }
         }
     }
+    time(&timer2);
+    double timeDiff = difftime(timer2,timer1);
+    cout << "!!!! delta time (constraints): " << timeDiff << " seconds" << endl;
 
     ScaLP::Objective o = ScaLP::minimize(objectiveTerm);
+
+    	
     //problemSolver->setObjective(o);
     cout << "before writeLP" << endl;
     problemSolver->writeLP("compressorTree.lp");
     cout << "after writeLP" << endl;
 
 #endif
-
+    }
 
     //cout << "end of SCIP problem description" << endl;
     return 0;
@@ -919,10 +940,12 @@ int BitHeapILPCompression::writeProblem(std::string filename){
 
 bool BitHeapILPCompression::solve(){
     //set a time limit:
-    float timeout;
-    timeout = bh_->getOp()->getTarget()->ilpTimeout();
+    int timeout;
+    timeout = UserInterface::ilpTimeout;
+    //timeout = bh_->getOp()->getTarget()->ilpTimeout();
 #ifdef HAVE_SCALP
     problemSolver->timeout = (int) timeout;
+    cout << " timeout is set to " << timeout;
     problemSolver->threads = 1;  //not needed with scip because scip uses only one thread
     problemSolver->quiet = false;
 
@@ -946,6 +969,8 @@ bool BitHeapILPCompression::solve(){
 #ifdef HAVE_SCALP
 
     cout << "backend is " << problemSolver->getBackendName() << endl;
+    cout << "writing lp file problem" + to_string(noOfStages_) + string(".lp") << endl;
+    problemSolver->writeLP("problem" + to_string(noOfStages_) + string(".lp"));
     ScaLP::status stat = problemSolver->solve();
     cout << "after solving in scalp" << endl;
     cout << "status is " << stat << endl;
@@ -960,7 +985,8 @@ bool BitHeapILPCompression::solve(){
             infeasible = true;
         }
     }
-    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE){
+    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE || (stat == ScaLP::status::TIMEOUT_FEASIBLE)){
+//    else if(stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE || (stat == ScaLP::status::TIMEOUT && problemSolver->getResult().objectiveValue > 0)){
         infeasible = false;
     }
 
@@ -1032,6 +1058,7 @@ bool BitHeapILPCompression::solve(){
                     if(integerValue > 0)
                     {
                         for(unsigned int k = 0; k < (unsigned int) integerValue; k++){
+                            //cout << "in stages " << s << " and column " << c << " is compressor " << e << endl;
                             solution[s].push_back(pair<int,int>(e,c));
                         }
                     }

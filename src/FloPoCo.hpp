@@ -181,6 +181,7 @@
 #include "NeuralNetworks/SOP_KCM.hpp"
 #include "NeuralNetworks/CoreTE.hpp"
 
+#include "NeuralNetworks/H5ToNeuralNetwork.hpp"
 
 
 /* Complex arithmetic */

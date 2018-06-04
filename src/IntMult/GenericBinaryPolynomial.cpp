@@ -2,7 +2,7 @@
 #include <sstream>
 #include <list>
 #include <vector>
-#include <tr1/memory>
+//#include <tr1/memory>
 
 #include "gmp.h"
 #include "mpfr.h"
@@ -57,6 +57,8 @@ GenericBinaryPolynomial::GenericBinaryPolynomial(Target* target,
 	if (p.data.size() == 0) {
 		return;
 	}
+
+    nextCycle(); //ToDo: hotfix to produce results, remove me later!
 
     //Creating the Bit Heap, Guillaume's compressor trees were removed
 	//	shared_ptr<BitHeap> bh(new BitHeap(this, ));

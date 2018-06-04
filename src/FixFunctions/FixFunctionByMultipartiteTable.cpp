@@ -16,6 +16,7 @@
 #include <string.h>
 #include <sstream>
 #include <vector>
+#include <cmath>        // std::abs
 
 #include <gmp.h>
 #include <gmpxx.h>

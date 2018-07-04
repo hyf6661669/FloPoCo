@@ -22,17 +22,9 @@ namespace flopoco
 		/** constructor **/
         CompressorTypeE(Target * target, int width_, int case3_);// case3: 3 => -A1; 4 => -A2; 5 => -A3; 6=> 0
 
-		/** destructor**/
-        ~CompressorTypeE();
-
-        virtual void setWidth(int width_);
     private:
-        bool useLastColumn;
         int width;
-        int wOut;
         int case3;
-       std::vector<int> outputs;
-       std::vector<int> height;
 	};
 }
  

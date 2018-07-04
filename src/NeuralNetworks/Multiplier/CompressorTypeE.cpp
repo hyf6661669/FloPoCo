@@ -18,7 +18,7 @@ namespace flopoco{
     CompressorTypeE::CompressorTypeE(Target * target, int width_, int case3_) : Operator(target)
 	{
         case3 = case3_;
-        setWidth(width_);
+        width = width_;
 
         ostringstream name;
         name << "CompressorTypeE" << "_width_" << width;
@@ -133,45 +133,6 @@ namespace flopoco{
 //        vhdl << tab << "Y <= cc_co(" << width-1 << ") & cc_o(" << width-1 << " downto 0);" << endl;
         vhdl << tab << "Y <= cc_o(" << width-1 << " downto 0);" << endl;
 
-    }
-	
-    CompressorTypeE::~CompressorTypeE()
-	{
-	}
-	
-    void CompressorTypeE::setWidth(int width_)
-    {
-        width = width_;
-
-        //adjust size of basic compressor to the size of a variable column compressor of this specific size:
-        height.resize(width);
-
-        //no of bits at MSB position
-        if(useLastColumn)
-            height[0] = 2;
-        else
-            height[0] = 0;
-
-        for(int i=1; i < width-1; i++)
-        {
-            height[i] = 4;
-        }
-        height[width-1] = 4;
-
-        wOut=width+1;
-
-        outputs.resize(wOut);
-
-        if(useLastColumn)
-            outputs[0] = 1; //there is one output at MSB
-        else
-            outputs[0] = 0; //there is no output at MSB
-
-        for(int i=1; i < wOut-1; i++)
-        {
-            outputs[i] = 2;
-        }
-        outputs[wOut-1] = 1; //there is one output at LSB
     }
 }
 	

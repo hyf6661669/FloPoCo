@@ -21,14 +21,14 @@ namespace flopoco{
         setWidth(width_);
 
         ostringstream name;
-        name << "CompressorTypeB" << "_width_" << width-1;
+        name << "CompressorTypeB" << "_width_" << width;
         setName(name.str());
 
-        addInput("A1",width-1);
-        addInput("A2",width-1);
-        addInput("A3",width-1);
+        addInput("A1",width);
+        addInput("A2",width);
+        addInput("A3",width);
         addInput("S",2);
-        addInput("B1",width-1);
+        addInput("B1",width);
 
         //addOutput("Y", width+1);
         addOutput("Y", width);
@@ -51,10 +51,10 @@ namespace flopoco{
             vhdl << tab << "cc_s(" << needed_cc*4-1 << " downto " << width << ") <= (others => '0');" << endl;
             vhdl << tab << "cc_di(" << needed_cc*4-1 << " downto " << width-1 << ") <= (others => '0');" << endl;
         }    
-        vhdl << tab << "cc_di(" << width-2 << " downto 0) <= B1;";
+        vhdl << tab << "cc_di(" << width-1 << " downto 0) <= B1;";
         vhdl << endl;
 
-        for(int i=0; i < width-1; i++)
+        for(int i=0; i < width; i++)
         {
             declare( join("X",i), 6 );
             vhdl << tab;
@@ -66,9 +66,9 @@ namespace flopoco{
             vhdl <<                "A2" << of(i) << " & ";
             vhdl <<                "A1" << of(i)  << ";" << std::endl;
         }
-            declare( join("X",width-1), 6 );
+            declare( join("X",width), 6 );
             vhdl << tab;
-            vhdl << join("X",width-1) << " <= " << join("X",width-2) << ";" << std::endl;
+            vhdl << join("X",width) << " <= " << join("X",width-1) << ";" << std::endl;
         vhdl << endl;
 
         //create LUTs, except the last LUT:
@@ -175,7 +175,7 @@ namespace flopoco{
 	
     void CompressorTypeB::setWidth(int width_)
     {
-        width = width_+1;
+        width = width_;
 
         //adjust size of basic compressor to the size of a variable column compressor of this specific size:
         height.resize(width);

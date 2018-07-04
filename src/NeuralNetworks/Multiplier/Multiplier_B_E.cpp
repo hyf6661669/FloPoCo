@@ -23,17 +23,16 @@ namespace flopoco {
     Multiplier_B_E::Multiplier_B_E(Target* target, int inputWordSize) : Operator(target)
     {
         useNumericStd();
-        input_bit_width = inputWordSize;
         int input_1B_witdh=inputWordSize+3;
         int output_1B_witdh=input_1B_witdh+1;
 
         int input_2E_witdh=output_1B_witdh+3;
         int output_2E_witdh=input_2E_witdh+1;
 
-        srcFileName= join("Multiplier_B_E_", input_bit_width);
+        srcFileName= join("Multiplier_B_E_", inputWordSize);
 
         ostringstream name;
-        name << "Multiplier_B_E" + to_string(input_bit_width);
+        name << "Multiplier_B_E" + to_string(inputWordSize);
         setName(name.str());
         // Copyright
         setCopyrightString("UNIVERSITY of Kassel 2018");
@@ -49,16 +48,16 @@ namespace flopoco {
         vhdl << tab << "sel_2 <= " << "conf(3 downto 2);" << std::endl;
         vhdl << std::endl;
 
-        vhdl << tab << declare("B1_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), B1_1'length),2));" << std::endl;
 
         vhdl << std::endl;
 
-        CompressorTypeB *myCompB1 = new CompressorTypeB(target, input_1B_witdh,6);
+        CompressorTypeB *myCompB1 = new CompressorTypeB(target, output_1B_witdh,6);
         addToGlobalOpList(myCompB1);
 
-        vhdl << tab << declare("A1_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A1_1'length),0));"<< std::endl;
-        vhdl << tab << declare("A2_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A2_1'length),1));"<< std::endl;
-        vhdl << tab << declare("A3_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A3_1'length),3));"<< std::endl;
+        vhdl << tab << declare("A1_1",output_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A1_1'length),0));"<< std::endl;
+        vhdl << tab << declare("A2_1",output_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A2_1'length),1));"<< std::endl;
+        vhdl << tab << declare("A3_1",output_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A3_1'length),3));"<< std::endl;
+        vhdl << tab << declare("B1_1",output_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), B1_1'length),2));" << std::endl;
 
         inPortMapCst(myCompB1, "A1","A1_1");
         inPortMapCst(myCompB1, "A2","A2_1");

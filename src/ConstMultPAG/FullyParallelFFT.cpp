@@ -187,26 +187,28 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
                 stringstream tmpOutSignalx; tmpOutSignalx << "post_s"<<stage<<"_r"<<row<<"_x";
                 stringstream tmpOutSignaly; tmpOutSignaly << "post_s"<<stage<<"_r"<<row<<"_y";
 
+				        REPORT(DEBUG,"implementing rotator " << FFTRealization[row].at(stage-1) << " as " << rotatorString);
+
                 Operator* cMult = new flopoco::ConstMultPAG(target,wIn+1,rotatorString,intPip,false,1,false);
-                cMult->setName("rotator",to_string(FFTRealization[row].at(stage-1)));
+								cMult->setName("rotator",to_string(FFTRealization[row].at(stage-1)));
 
                 list<flopoco::ConstMultPAG::output_signal_info> tmp_output_list = ((flopoco::ConstMultPAG*)(cMult))->GetOutputList();
 
                 list<flopoco::ConstMultPAG::output_signal_info>::iterator first_output=tmp_output_list.begin();
                 list<flopoco::ConstMultPAG::output_signal_info>::iterator second_output= first_output;second_output++;
 
-                if ((*first_output).wordsize !=  (*second_output).wordsize) {THROWERROR("Wordsize missmatch at rotator : " + FFTRealization[row].at(stage-1));}
+								if ((*first_output).wordsize !=  (*second_output).wordsize) {THROWERROR("Wordsize missmatch at rotator : " << FFTRealization[row].at(stage-1));}
                 else {cWordsize[row].at(stage)=(*first_output).wordsize;}
 
 
-                if (    (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].second
+								if (        (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].second
                         &&  (*first_output).output_factors[0][1] == rotatorVal[FFTRealization[row].at(stage-1)].first
                         &&  (*second_output).output_factors[0][0] == rotatorVal[FFTRealization[row].at(stage-1)].first
                         &&  (*second_output).output_factors[0][1]== -rotatorVal[FFTRealization[row].at(stage-1)].second)
                 {
                     swap_outputs = true;
                 }
-                else if (    (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first
+								else if (        (*first_output).output_factors[0][0]==rotatorVal[FFTRealization[row].at(stage-1)].first
                              &&  (*first_output).output_factors[0][1] == -rotatorVal[FFTRealization[row].at(stage-1)].second
                              &&  (*second_output).output_factors[0][0] == -rotatorVal[FFTRealization[row].at(stage-1)].second
                              &&  (*second_output).output_factors[0][1]== -rotatorVal[FFTRealization[row].at(stage-1)].first)
@@ -273,7 +275,8 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
                     //cerr << "ok for " << FFTRealization[row].at(stage-1) << endl;
                 }
                 else {
-                    THROWERROR("!!! no rule to build " + FFTRealization[row].at(stage-1));}
+										THROWERROR("!!! no rule to build rotator " << FFTRealization[row].at(stage-1));
+								}
 
 
                 if (!swap_inputs)
@@ -320,7 +323,8 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
             }
             else { // intermediate stages
 
-                if(!((row) & (1<<((int)(log2(N)-stage))))){
+								if(!((row) & (1<<((int)(log2(N)-stage)))))
+								{
 
                     if (cWordsize[row].at(stage-1) > bC+wIn)
                     {
@@ -392,7 +396,8 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rot
                         vhdl << tab << tmpSignaly.str() << " <= " << "std_logic_vector("<<(negY[row].at(stage-1)?"-":"")<<"resize(signed(post_s"<<stage-1<<"_r"<<row<<"_y_l),"<<wIn+1<<")"<<(negY[row+N/(pow(2,stage))].at(stage-1)?"-":"+")<<"resize(signed(post_s"<<stage-1<<"_r"<<row+N/(pow(2,stage))<<"_y_l),"<<wIn+1<<"));"<<endl;
                     }
                 }
-                else{
+								else
+								{
 
                     if (negX[row-N/(pow(2,stage))].at(stage-1) && !negX[row].at(stage-1) && target->getID()=="Virtex6") //sub with 2 neg. inputs
                     {

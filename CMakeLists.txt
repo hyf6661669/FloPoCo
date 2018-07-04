@@ -648,6 +648,13 @@ src/NeuralNetworks/LUTMult
 src/PrimitiveComponents/Xilinx/Xilinx_CFGLUT5
 src/PrimitiveComponents/Xilinx/Xilinx_CFGLUTShadow
 
+#Multiplier
+src/NeuralNetworks/Multiplier/CompressorTypeE
+src/NeuralNetworks/Multiplier/CompressorTypeB
+src/NeuralNetworks/Multiplier/Multiplier_B_B_E
+src/NeuralNetworks/Multiplier/Multiplier_B_E
+
+
 # activation functions
 src/NeuralNetworks/ActivationFunctions/ReLU
 

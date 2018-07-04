@@ -125,7 +125,9 @@ int main(int argc, char* argv[] )
 	TargetModel::registerFactory();
 	// Uncomment me to play within FloPoCo operator development
     SOP_KCM::registerFactory();
-	ConvolutionalCore::registerFactory();
+    Multiplier_B_B_E::registerFactory();
+    Multiplier_B_E::registerFactory();
+    ConvolutionalCore::registerFactory();
     ConfigurationController::registerFactory();
     ConfigurationGenerator::registerFactory();
     CoreTE::registerFactory();

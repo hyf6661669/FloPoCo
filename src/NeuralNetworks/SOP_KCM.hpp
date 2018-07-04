@@ -26,9 +26,29 @@ namespace flopoco {
         bool signed_calculation; // if false there are just positive constnats and inputs
         bool faithful_rounding; // if false there are just positive constnats and inputs
         bool allow_half_start_LUT;
+        bool useShadowLUTs;
 
+        int border;
+        int noOfStages;
+        int additionalBitWidth;
+        int defaultConstant;
+        int LUT_per_stage;
 
         int cdi_bit_width;
+
+        string differentLUTContent_output;
+        int differentLUTContentCounter;
+        vector<int> differentLUTContent_counterLSB;
+        vector<int> differentLUTContent_counterMSB;
+
+        vector<string> bitHeapStack;
+        vector<unsigned int> bitHeapStackShifts;
+        vector<int> bitHeapStackSize;
+
+        int outputBits;
+
+        bool halfLUTusage_justO5;// will be set wen a half used Lut is generated
+        bool halfLUTusage_justO6;// will be set wen a half used Lut is generated
 
 	public:
 
@@ -42,9 +62,18 @@ namespace flopoco {
 		static OperatorPtr parseArguments(Target *target , vector<string> &args);
 		/** Factory register method */ 
 		static void registerFactory();
-        int get_cdi_bit_with();
-        int get_input_bit_with();
-        int get_output_bit_with();
+        int get_cdi_bit_width();
+        int get_input_bit_width();
+        int get_output_bit_width();
+        bool isMSBStage(int stage);
+        void generatePartialProducts(Target* target);
+        void countLUTContent(int stage, int LUTNo);
+        void addCFGLUT(Target* target);
+        void addStandardPorts(Target* target);
+        void addCompressorTree(Target* target);
+        void initMembers();
+
+
 
     private:
         int LUT_bit_width;

@@ -13,6 +13,8 @@
 #include "../ShiftReg.hpp"
 #include "ConvolutionalCore.hpp"
 #include "SOP_KCM.hpp"
+#include "ConfigurationController.hpp"
+#include "ConfigurationGenerator.hpp"
 
 #include <math.h>
 
@@ -29,13 +31,14 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
     setName(name.str());
     // Copyright
     setCopyrightString("UNIVERSITY of Kassel 2017");
-    int method= method_; // 1=SOPKCM, 11= SOPKCMwithShadowLUTS  2 = ConvolutionalCore
-
-    addInput("X",input_bit_width);
+    int method= method_; // 1=SOPKCM, 11= SOPKCMwithShadowLUTS  2 = ConvolutionalCore //101 = SOPKCM with Configuration interface
 
 
-    if((method == 1)||(method=11))
+    output_bit_width = input_bit_width;
+
+    if((method == 1)||(method==11))
     {
+        addInput("X",input_bit_width);
         addInput("LUT_Config_clk_enable");
 
         //int LUT_bit_width=4;
@@ -55,7 +58,7 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
 
         {
             int max_delay=no_of_products;
-            int delay_bit_width = my_SOP_KCM->get_cdi_bit_with()*2;
+            int delay_bit_width = my_SOP_KCM->get_cdi_bit_width()*2;
 
             ShiftReg* my_ShiftReg = new ShiftReg(target,delay_bit_width,max_delay);
             addToGlobalOpList(my_ShiftReg);
@@ -94,8 +97,8 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
         for(int i=0; i < no_of_products; ++i)
         {
 
-            string MSBSignalName = "cdi_no_" + to_string(i) + "(" + to_string(my_SOP_KCM->get_cdi_bit_with()*2-1) + " downto " + to_string(my_SOP_KCM->get_cdi_bit_with()) + ")";
-            string LSBSignalName = "cdi_no_" + to_string(i) + "(" + to_string(my_SOP_KCM->get_cdi_bit_with()-1) + " downto 0)";
+            string MSBSignalName = "cdi_no_" + to_string(i) + "(" + to_string(my_SOP_KCM->get_cdi_bit_width()*2-1) + " downto " + to_string(my_SOP_KCM->get_cdi_bit_width()) + ")";
+            string LSBSignalName = "cdi_no_" + to_string(i) + "(" + to_string(my_SOP_KCM->get_cdi_bit_width()-1) + " downto 0)";
             inPortMap(my_SOP_KCM,join("cdi_MSB_no_",i),MSBSignalName);
             inPortMap(my_SOP_KCM,join("cdi_LSB_no_",i),LSBSignalName);
         }
@@ -109,6 +112,7 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
     }
     else if(method == 2 )
     {
+        addInput("X",input_bit_width);
         {
             int max_delay=no_of_products;
             ShiftReg* my_ShiftReg = new ShiftReg(target,input_bit_width,max_delay);
@@ -157,10 +161,69 @@ CoreTE::CoreTE(Target *target, int input_bit_width_, int const_bit_width_, int n
         outPortMap(myCore, "result","result");
         vhdl << instance(myCore, "Core_inst") << std::endl;
     }
+    else if (method = 101)
+    {
+        bool useShadowLUTs = false;
+        bool useFaithfulRounding = false;// MH Debug test
+
+
+        addInput("init_e");
+        for(unsigned int i=0; i<no_of_products; ++i )
+        {
+            addInput(join("coeff_",i),const_bit_width);
+            addInput(join("X",i),input_bit_width);
+        }
+
+
+        SOP_KCM *my_SOP_KCM = new SOP_KCM(target,input_bit_width, const_bit_width,no_of_products,32,useShadowLUTs,useFaithfulRounding);
+        addToGlobalOpList(my_SOP_KCM);
+
+        ConfigurationController *my_Conf_Contr = new ConfigurationController(target);
+        addToGlobalOpList(my_Conf_Contr);
+        inPortMap (my_Conf_Contr,"init_conv_i","init_e");
+        outPortMap (my_Conf_Contr,"ce_o" , "ce");
+        outPortMap (my_Conf_Contr,"ctrl_int" , "ctrl_int");
+        vhdl << instance(my_Conf_Contr,"ConfigurationController_inst") << std::endl;
+
+        for(unsigned int i=0; i<no_of_products; ++i )
+        {
+            ConfigurationGenerator *my_Conf_Gen = new ConfigurationGenerator(target,const_bit_width);
+            addToGlobalOpList(my_Conf_Gen);
+            inPortMap(my_Conf_Gen,"ce_i","ce");
+            inPortMap(my_Conf_Gen,"ctrl_int","ctrl_int");
+
+            inPortMap(my_Conf_Gen,"coeff_i",join("coeff_",i));
+            outPortMap(my_Conf_Gen,"cdo_lsb_o",join("cd_lsb_",i));
+            outPortMap(my_Conf_Gen,"cdo_msb_o",join("cd_msb_",i));
+
+            inPortMap(my_SOP_KCM,join("cdi_LSB_no_",i),join("cd_lsb_",i));
+            inPortMap(my_SOP_KCM,join("cdi_MSB_no_",i),join("cd_msb_",i));
+
+            vhdl << instance(my_Conf_Gen, join("ConfigurationGenerator_inst_",i)) << std::endl;
+        }
 
 
 
-    addOutput("Y",input_bit_width);
+        inPortMap(my_SOP_KCM,"LUT_Config_clk_enable","ce");
+        for(int i=0; i < no_of_products; ++i)
+        {
+            inPortMap(my_SOP_KCM,join("X",i),join("X", i));
+        }
+        outPortMap(my_SOP_KCM, "result","result");
+
+
+        output_bit_width = my_SOP_KCM->get_output_bit_width();
+
+        //input_No_0_cdi
+        //LUT_Config_clk_enable
+        vhdl << instance(my_SOP_KCM, "Core_inst") << std::endl;
+
+
+    }
+
+
+
+    addOutput("Y",output_bit_width);
     vhdl <<  "Y <= result;" << std::endl;
 
 }
@@ -197,7 +260,7 @@ void CoreTE::registerFactory()
                                          "input_bit_width(int)=16: input word size; \
                                          const_bit_width(int)=-1: coefficient word size, per default the same as the input bit width;\
                                          no_of_products(int)=1: the nomber of products to accumulate;\
-                                         method(int)=1:  1 = SOPKCM, 11 = SOPKCM with ShadowLUTS , 2 = ConvolutionalCore",
+                                         method(int)=1:  1 = SOPKCM, 11 = SOPKCM with ShadowLUTS , 2 = ConvolutionalCore, 101 ",
                                          // More documentation for the HTML pages. If you want to link to your blog, it is here.
                                          "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",
                                          CoreTE::parseArguments

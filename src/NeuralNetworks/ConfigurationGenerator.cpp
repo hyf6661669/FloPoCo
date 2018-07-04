@@ -57,8 +57,8 @@ ConfigurationGenerator::ConfigurationGenerator(Target* target, int coeffWordSize
     addInput ("ctrl_int" , 3);
 
     // declaring output
-    addOutput("cdo_lsb_o" , coeffWordSize+5);
-    addOutput("cdo_msb_o" , coeffWordSize+5);
+    addOutput("cdo_lsb_o" , coeffWordSize+5); // LUTBitWith + 1
+    addOutput("cdo_msb_o" , coeffWordSize+5); // LUTBitWith + 1
     string targetID = target->getID();
     
     // this is a work around unsing existing VHDL files. ToDo use flopoco to generate those files

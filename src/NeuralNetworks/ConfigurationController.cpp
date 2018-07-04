@@ -37,7 +37,9 @@ namespace flopoco
 				addType("states","(idle,count)");
 
 				addType("rom","array ( 0 to 31) of std_logic_vector(2 downto 0)");
-				addConstant("ctrl_lut","rom","(\"001\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"010\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"101\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"110\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\");\nsignal state : states");
+                //the order of the two 4 input LUT configurations has to switch because of the exchange of O5 and O6 (enforced by a mapping Error)
+                //addConstant("ctrl_lut","rom","(\"001\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"010\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"101\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"110\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\");\nsignal state : states");
+                addConstant("ctrl_lut","rom","(\"101\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"110\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"100\",\"001\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"010\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\",\"000\");\nsignal state : states");
    // Attention, the line above contains a really dirty hack to use an own type for the state machine, which should be fix in Operator and Signal
 				vhdl << "coeff_switch: process(clk,init_conv_i) -- state machine to replace coefficients  " << endl;
 				vhdl << "  variable counter: integer range 0 to 31;                                         " << endl;

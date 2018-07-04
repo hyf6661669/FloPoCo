@@ -70,7 +70,7 @@ namespace flopoco {
         inPortMapCst(myCompB1, "A1","X_shifted_1");
         inPortMapCst(myCompB1, "A2","X_shifted_2");
         inPortMapCst(myCompB1, "A3","X_shifted_3");
-        inPortMapCst(myCompB1, "B0","X0");
+        inPortMapCst(myCompB1, "B1","X0");
         inPortMapCst(myCompB1, "S" ,"sel_1");
         outPortMap(myCompB1, "Y", "Y1");
         vhdl << instance(myCompB1,"operation_B_1") << std::endl;
@@ -86,7 +86,7 @@ namespace flopoco {
         inPortMapCst(myCompB2, "A1","Y1_shifted_1");
         inPortMapCst(myCompB2, "A2","Y1_shifted_2");
         inPortMapCst(myCompB2, "A3","Y1_shifted_3");
-        inPortMapCst(myCompB2, "B0","X1");
+        inPortMapCst(myCompB2, "B1","X1");
         inPortMapCst(myCompB2, "S" ,"sel_2");
         outPortMap(myCompB2, "Y", "Y2");
         vhdl << instance(myCompB2,"operation_B_2") << std::endl;
@@ -100,7 +100,7 @@ namespace flopoco {
 
         inPortMapCst(myCompE3, "A1","Y2_shifted_1");
         inPortMapCst(myCompE3, "A2","Y2_shifted_2");
-        inPortMapCst(myCompE3, "B0","X2");
+        inPortMapCst(myCompE3, "B1","X2");
         inPortMapCst(myCompE3, "S" ,"sel_3");
         outPortMap(myCompE3, "Y", "Y",false);
         vhdl << instance(myCompE3,"operation_E_3") << std::endl;

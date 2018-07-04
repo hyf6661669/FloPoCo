@@ -24,10 +24,10 @@ namespace flopoco {
     {
         useNumericStd();
         input_bit_width = inputWordSize;
-        int input_1B_witdh=inputWordSize+2;
+        int input_1B_witdh=inputWordSize+3;
         int output_1B_witdh=input_1B_witdh+1;
 
-        int input_2E_witdh=output_1B_witdh+2;
+        int input_2E_witdh=output_1B_witdh+3;
         int output_2E_witdh=input_2E_witdh+1;
 
         srcFileName= join("Multiplier_B_E_", input_bit_width);
@@ -49,36 +49,36 @@ namespace flopoco {
         vhdl << tab << "sel_2 <= " << "conf(3 downto 2);" << std::endl;
         vhdl << std::endl;
 
-        vhdl << tab << declare("X0",input_1B_witdh) << " <= std_logic_vector(resize(signed(X), X0'length));" << std::endl;
-        vhdl << tab << declare("X1",input_2E_witdh) << " <= std_logic_vector(resize(signed(X), X1'length));"<< std::endl;
+        vhdl << tab << declare("B1_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), B1_1'length),2));" << std::endl;
 
         vhdl << std::endl;
 
-        CompressorTypeB *myCompB1 = new CompressorTypeB(target, input_1B_witdh,3);
+        CompressorTypeB *myCompB1 = new CompressorTypeB(target, input_1B_witdh,6);
         addToGlobalOpList(myCompB1);
 
-        vhdl << tab << declare("X_shifted_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), X_shifted_1'length),0));"<< std::endl;
-        vhdl << tab << declare("X_shifted_2",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), X_shifted_2'length),1));"<< std::endl;
-        vhdl << tab << declare("X_shifted_3",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), X_shifted_3'length),2));"<< std::endl;
+        vhdl << tab << declare("A1_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A1_1'length),0));"<< std::endl;
+        vhdl << tab << declare("A2_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A2_1'length),1));"<< std::endl;
+        vhdl << tab << declare("A3_1",input_1B_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), A3_1'length),3));"<< std::endl;
 
-        inPortMapCst(myCompB1, "A1","X_shifted_1");
-        inPortMapCst(myCompB1, "A2","X_shifted_2");
-        inPortMapCst(myCompB1, "A3","X_shifted_3");
-        inPortMapCst(myCompB1, "B0","X0");
+        inPortMapCst(myCompB1, "A1","A1_1");
+        inPortMapCst(myCompB1, "A2","A2_1");
+        inPortMapCst(myCompB1, "A3","A3_1");
+        inPortMapCst(myCompB1, "B1","B1_1");
         inPortMapCst(myCompB1, "S" ,"sel_1");
         outPortMap(myCompB1, "Y", "Y1");
         vhdl << instance(myCompB1,"operation_B_1") << std::endl;
         nextCycle();
 
-        vhdl << tab << declare("Y1_shifted_1",input_2E_witdh) << " <= std_logic_vector(shift_left(resize(signed(Y1), Y1_shifted_1'length),0));"<< std::endl;
-        vhdl << tab << declare("Y1_shifted_2",input_2E_witdh) << " <= std_logic_vector(shift_left(resize(signed(Y1), Y1_shifted_2'length),1));"<< std::endl;
+        vhdl << tab << declare("A1_2",output_2E_witdh) << " <= std_logic_vector(shift_left(resize(signed(Y1), A1_2'length),0));"<< std::endl;
+        vhdl << tab << declare("A2_2",output_2E_witdh) << " <= std_logic_vector(shift_left(resize(signed(Y1), A2_2'length),3));"<< std::endl;
+        vhdl << tab << declare("B1_2",output_2E_witdh) << " <= std_logic_vector(shift_left(resize(signed(X), B1_2'length),2));"<< std::endl;
 
-        CompressorTypeE *myCompE2 = new CompressorTypeE(target, input_2E_witdh,6);
+        CompressorTypeE *myCompE2 = new CompressorTypeE(target, output_2E_witdh,6);
         addToGlobalOpList(myCompE2);
 
-        inPortMapCst(myCompE2, "A1","Y1_shifted_1");
-        inPortMapCst(myCompE2, "A2","Y1_shifted_2");
-        inPortMapCst(myCompE2, "B0","X1");
+        inPortMapCst(myCompE2, "A1","A1_2");
+        inPortMapCst(myCompE2, "A2","A2_2");
+        inPortMapCst(myCompE2, "B1","B1_2");
         inPortMapCst(myCompE2, "S" ,"sel_2");
         outPortMap(myCompE2, "Y", "Y",false);
         vhdl << instance(myCompE2,"operation_E_2") << std::endl;

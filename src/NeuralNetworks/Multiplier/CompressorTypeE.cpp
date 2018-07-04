@@ -27,9 +27,9 @@ namespace flopoco{
         addInput("A1",width);
         addInput("A2",width);
         addInput("S",2);
-        addInput("B0",width);
+        addInput("B1",width);
 
-        addOutput("Y", width+1);
+        addOutput("Y", width);
 
 
         int needed_cc = ( width / 4 ) + ( width % 4 > 0 ? 1 : 0 ); //no. of required carry chains
@@ -49,7 +49,7 @@ namespace flopoco{
             vhdl << tab << "cc_s(" << needed_cc*4-1 << " downto " << width << ") <= (others => '0');" << endl;
             vhdl << tab << "cc_di(" << needed_cc*4-1 << " downto " << width << ") <= (others => '0');" << endl;
         }    
-        //vhdl << tab << "cc_di(" << width-1 << " downto 0) <= B0;";
+        //vhdl << tab << "cc_di(" << width-1 << " downto 0) <= B1;";
         vhdl << endl;
 
         for(int i=0; i < width; i++)
@@ -59,7 +59,7 @@ namespace flopoco{
             vhdl << join("X",i) << " <= ";
             vhdl <<                "S"  << of(1) << " & ";
             vhdl <<                "S"  << of(0) << " & ";
-            vhdl <<                "B0" << of(i) << " & ";
+            vhdl <<                "B1" << of(i) << " & ";
             vhdl <<                "A2" << of(i) << " & ";
             vhdl <<                "A1" << of(i) << ";" << std::endl;
         }
@@ -70,7 +70,7 @@ namespace flopoco{
 
         //lut_in(0) A1
         //lut_in(1) A2
-        //lut_in(2) B0
+        //lut_in(2) B1
         //lut_in(3) S0
         //lut_in(4) S1
         //lut_in(5) constant '0'
@@ -78,6 +78,7 @@ namespace flopoco{
 
         //LUT content of the LUTs exept the last LUT:
 
+        //(-A1+B1 if S=00) or (-A2+B1 if S=01) or (A1-B1 if S=10) or (A2-B1 if S=11)
         lut_op lutop_o5 = (( lut_in(2) & ~lut_in(4) & ~lut_in(3)) | ( lut_in(2) & ~lut_in(4) & lut_in(3)) | (~lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(2) & lut_in(4) & lut_in(3)));
         lut_op lutop_o6 = ((~lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (~lut_in(1) & ~lut_in(4) & lut_in(3)) | ( lut_in(0) & lut_in(4) & ~lut_in(3)) | ( lut_in(1) & lut_in(4) & lut_in(3)))^lutop_o5;
 
@@ -96,7 +97,7 @@ namespace flopoco{
             inPortMap(cur_lut,"i2",join("X",i) + of(2));
             inPortMap(cur_lut,"i3",join("X",i) + of(3));
             inPortMap(cur_lut,"i4",join("X",i) + of(4));
-            inPortMapCst(cur_lut,"i5","'0'");
+            inPortMapCst(cur_lut,"i5","'1'");
 
             outPortMap(cur_lut,"o6","cc_s"  + of(i),false);
             outPortMap(cur_lut,"o5","cc_di" + of(i),false);
@@ -109,10 +110,9 @@ namespace flopoco{
         {
             Xilinx_CARRY4 *cur_cc = new Xilinx_CARRY4( target );
 
-            inPortMapCst( cur_cc, "cyinit", "'0'" );
             if( i == 0 )
             {
-                inPortMapCst( cur_cc, "ci", "'0'" ); //carry-in can not be used as AX input is blocked!!
+		            inPortMapCst( cur_cc, "cyinit", "'1'" );
             }
             else
             {
@@ -130,7 +130,8 @@ namespace flopoco{
 
         vhdl << endl;
 
-        vhdl << tab << "Y <= cc_co(" << width-1 << ") & cc_o(" << width-1 << " downto 0);" << endl;
+//        vhdl << tab << "Y <= cc_co(" << width-1 << ") & cc_o(" << width-1 << " downto 0);" << endl;
+        vhdl << tab << "Y <= cc_o(" << width-1 << " downto 0);" << endl;
 
     }
 	

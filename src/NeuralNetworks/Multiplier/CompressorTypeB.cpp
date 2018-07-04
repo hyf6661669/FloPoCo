@@ -28,7 +28,7 @@ namespace flopoco{
         addInput("A2",width-1);
         addInput("A3",width-1);
         addInput("S",2);
-        addInput("B0",width-1);
+        addInput("B1",width-1);
 
         //addOutput("Y", width+1);
         addOutput("Y", width);
@@ -51,7 +51,7 @@ namespace flopoco{
             vhdl << tab << "cc_s(" << needed_cc*4-1 << " downto " << width << ") <= (others => '0');" << endl;
             vhdl << tab << "cc_di(" << needed_cc*4-1 << " downto " << width-1 << ") <= (others => '0');" << endl;
         }    
-        vhdl << tab << "cc_di(" << width-2 << " downto 0) <= B0;";
+        vhdl << tab << "cc_di(" << width-2 << " downto 0) <= B1;";
         vhdl << endl;
 
         for(int i=0; i < width-1; i++)
@@ -59,7 +59,7 @@ namespace flopoco{
             declare( join("X",i), 6 );
             vhdl << tab;
             vhdl << join("X",i) << " <= ";
-            vhdl <<                "B0" << of(i) << " & ";
+            vhdl <<                "B1" << of(i) << " & ";
             vhdl <<                "S"  << of(1) << " & ";
             vhdl <<                "S"  << of(0) << " & ";
             vhdl <<                "A3" << of(i) << " & ";
@@ -79,10 +79,9 @@ namespace flopoco{
         //lut_in(2) A3
         //lut_in(3) S0
         //lut_in(4) S1
-        //lut_in(5) B0
+        //lut_in(5) B1
 
         lut_op lutop_o6;
-        string LutContent; // MH debug version
         switch(case3)
         {
             //------------------------------------------------------------------------------------------------------------------------------------------------\ /
@@ -92,20 +91,16 @@ namespace flopoco{
             //case 6: lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3))                                        ) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (  0 if S=11)) + B1
 
             case 3 :
-                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (~lut_in(0) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A1 if S=11)) + B1
-                LutContent =  "x\"AA0F335555F0CCAA\"";
+                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(0) & lut_in(4) & lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A1 if S=11)) + B1
                 break;
             case 4 :
-                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (~lut_in(1) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A2 if S=11)) + B1
-                LutContent =  "x\"AA0F333355F0CCCC\"";
+                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(1) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A2 if S=11)) + B1
                 break;
             case 5 :
-                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (~lut_in(2) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A3 if S=11)) + B1
-                LutContent =  "x\"AA0F330F55F0CCF0\"";
+                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(2) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A3 if S=11)) + B1
                 break;
             case 6 :
-                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3))                                        ) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (  0 if S=11)) + B1
-                LutContent =  "x\"AA0F33FF55F0CC00\"";
+                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3))                                        ) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (  0 if S=11)) + B1
             break;
 
         default: std::cout << "ERROR: no valid case selected!" << std::endl << "valid options are:" << std::endl <<  "3 => -A1" << std::endl << "4 => -A2" <<std::endl << "5 => -A3" << endl << "6 =>   0" << std::endl; exit(-1);
@@ -114,7 +109,6 @@ namespace flopoco{
 
         cout << "case " << case3 << endl;
         cout << "lutop.get_hex():" << lutop.get_hex() << endl;
-        cout << "LutContent:" << LutContent << endl;
         cout << lutop.truth_table();
         cout << endl << endl << endl << endl;
 
@@ -122,12 +116,10 @@ namespace flopoco{
         {
 
             Xilinx_LUT6 *cur_lut = new Xilinx_LUT6( target );
-            //cur_lut->setGeneric( "init", lutop.get_hex() );
-            //cur_lut->setGeneric( "init", 0b0101010100110011000011111010101010101010110011001111000001010101 );
+            cur_lut->setGeneric( "init", lutop.get_hex() );
+            //cur_lut->setGeneric( "init", 0B1101010100110011000011111010101010101010110011001111000001010101 );
             //cur_lut->setGeneric( "init", 0b1010101000001111001100110101010101010101111100001100110010101010 );
             //cur_lut->setGeneric("init", "x\"55330FAAAACCF055\"");
-
-            cur_lut->setGeneric("init", LutContent);
 
             inPortMap(cur_lut,"i0",join("X",i) + of(0));
             inPortMap(cur_lut,"i1",join("X",i) + of(1));

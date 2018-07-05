@@ -112,11 +112,14 @@ namespace flopoco{
 
             if( i == 0 )
             {
+
+                    inPortMapCst( cur_cc, "ci", "'0'" );
 		            inPortMapCst( cur_cc, "cyinit", "'1'" );
             }
             else
             {
                 inPortMap( cur_cc, "ci", "cc_co" + of( i * 4 - 1 ) );
+                inPortMapCst( cur_cc, "cyinit", "'0'" );
             }
             inPortMap( cur_cc, "di", "cc_di" + range( i * 4 + 3, i * 4 ) );
             inPortMap( cur_cc, "s", "cc_s" + range( i * 4 + 3, i * 4 ) );

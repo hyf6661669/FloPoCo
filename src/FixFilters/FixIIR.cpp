@@ -217,9 +217,6 @@ namespace flopoco {
 
 		addOutput("R", sizeYfinal,   true);
 		vhdl << "R <= Yrounded" << range(msbOut-lsbOut+1, 1) << ";" << endl;
-
-		initializeWorstCaseSignal();
-
 	};
 
 
@@ -247,6 +244,7 @@ namespace flopoco {
 	void FixIIR::emulate(TestCase * tc){
 		mpz_class sx;
 		mpfr_t x, s, t;
+		
 		mpfr_init2 (s, hugePrec);
 		mpfr_init2 (t, hugePrec);
 		mpfr_set_d(s, 0.0, GMP_RNDN); // initialize s to 0
@@ -272,7 +270,7 @@ namespace flopoco {
 		}
 		mpfr_set(yHistory[(currentIndex  +0)%(m+2)], s, GMP_RNDN);
 
-#if 1// debugging the emulate
+#if 0// debugging the emulate
 		cout << "x=" << 	mpfr_get_d(xHistory[currentIndex % n], GMP_RNDN);
 		cout << " //// y=" << 	mpfr_get_d(s,GMP_RNDN) << "  ////// ";
 		for (uint32_t i=0; i< n; i++)		{
@@ -295,6 +293,13 @@ namespace flopoco {
 		// now we should have in s the (exact in most cases) sum
 		// round it up and down
 
+		// debug: with this we observe if the simulation diverges
+		double d =  mpfr_get_d(s, GMP_RNDD);
+		miny=min(d,miny);
+		maxy=max(d,maxy);
+		//		cout << "y=" << d <<  "\t  log2(|y|)=" << (ceil(log2(abs(d)))) << endl;
+
+
 		// make s an integer -- no rounding here
 		mpfr_mul_2si (s, s, -lsbOut, GMP_RNDN);
 
@@ -310,20 +315,16 @@ namespace flopoco {
 		ruz=signedToBitVector(ruz, msbOut-lsbOut+1);
 		tc->addExpectedOutput ("R", ruz);
 #endif
-#if 0 // debug: with this we observe if the simulation diverges
-		double d =  mpfr_get_d(s, GMP_RNDD);
-		cout << "log2(|y|)=" << (ceil(log2(abs(d)))) << endl;
-#endif
 		
 		mpfr_clears (x, t, s, NULL);
 
 	};
 
 
-	void FixIIR::initializeWorstCaseSignal() {
+	void FixIIR::computeImpulseResponse() {
 		// simulate the filter on an impulsion for long enough, until
 		// double threshold = 0.5/(1<<-lsbOut);
-		double threshold = 1e-10;
+		double threshold = 0; //soyons fous
 		double epsilon=1e15; // initialize with a large value
 		uint64_t k;
 		//initialize the ui and yi
@@ -355,7 +356,12 @@ namespace flopoco {
 				 
 			epsilon = abs(y);
 			//cout << "k=" << k << " yi=" << y << endl;
+			if(k>=300000){
+				REPORT(0, "computeImpulseResponse: giving up for k=" <<k << " with epsilon still at " << epsilon << ", it seems hopeless");
+				epsilon=0;
+			}
 		}
+		vanishingK=k;
 		REPORT(0, "Impulse response vanishes for k=" << k);
 	}
 
@@ -364,7 +370,7 @@ namespace flopoco {
 		// First fill with a few ones, then a few zeroes
 		TestCase *tc;
 
-#if 1 // Test on the impulse response 
+#if 0 // Test on the impulse response, useful for debugging 
 		tc = new TestCase(this);
 		tc->addInput("X", (mpz_class(1)<<(-lsbIn))-1 ); // 1 (almost)
 		emulate(tc);
@@ -378,17 +384,20 @@ namespace flopoco {
 		}
 		
 #endif
-#if 0
+#if 1
+		// compute the impulse response
+		computeImpulseResponse();
 		// Now fill with a signal that follows the sign alternance of the impulse response: this builds a worst-case signal
+		miny=0; maxy=0;
 		int storageOffset=n+m;
-		uint32_t kmax = yi.size()-storageOffset;
+		uint32_t kmax = vanishingK-storageOffset;
 		for (uint32_t i =0; i<kmax; i++) {
 			mpz_class val;
-			if(yi[kmax-i] >0) {
-				val = mpz_class(1)<<(-lsbIn-1) -1; // 011111
+			if(yi[kmax-i]<0) {
+				val = (mpz_class(1)<<(-lsbIn)) -1; // 011111
 			}
 			else {
-				val = mpz_class(1)<<(-lsbIn-1) +1; // 100001
+				val = (mpz_class(1)<<(-lsbIn)) +1; // 100001
 			}
 			tc = new TestCase(this);
 			tc->addInput("X", val); 
@@ -396,6 +405,8 @@ namespace flopoco {
 			tcl->add(tc);
 			
 		}
+
+		REPORT(0,"Filter output remains in [" << miny << ", " << maxy<<"]");
 #endif
 		
 	};

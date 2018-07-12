@@ -32,7 +32,7 @@ namespace flopoco{
 		static void registerFactory();
 
 	private:
-		void initializeWorstCaseSignal(); // evaluates the filter on an impulsion
+		void computeImpulseResponse(); // evaluates the filter on an impulsion
 
 		
 	private:
@@ -61,7 +61,8 @@ namespace flopoco{
 
 		vector<double> ui;  // inputs in the trace of simulation in double precision
 		vector<double> yi;  // outputs in the trace of simulation in double precision
-
+		uint64_t vanishingK;
+		double miny, maxy;
 	};
 
 }

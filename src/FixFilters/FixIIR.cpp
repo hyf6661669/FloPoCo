@@ -218,7 +218,7 @@ namespace flopoco {
 		addOutput("R", sizeYfinal,   true);
 		vhdl << "R <= Yrounded" << range(msbOut-lsbOut+1, 1) << ";" << endl;
 
-
+		initializeWorstCaseSignal();
 
 	};
 
@@ -245,7 +245,6 @@ namespace flopoco {
 
 
 	void FixIIR::emulate(TestCase * tc){
-
 		mpz_class sx;
 		mpfr_t x, s, t;
 		mpfr_init2 (s, hugePrec);
@@ -273,7 +272,7 @@ namespace flopoco {
 		}
 		mpfr_set(yHistory[(currentIndex  +0)%(m+2)], s, GMP_RNDN);
 
-#if 0 // debugging the emulate
+#if 1// debugging the emulate
 		cout << "x=" << 	mpfr_get_d(xHistory[currentIndex % n], GMP_RNDN);
 		cout << " //// y=" << 	mpfr_get_d(s,GMP_RNDN) << "  ////// ";
 		for (uint32_t i=0; i< n; i++)		{
@@ -303,12 +302,12 @@ namespace flopoco {
 
 		mpz_class rdz, ruz;
 		mpfr_get_z (rdz.get_mpz_t(), s, GMP_RNDD); 					// there can be a real rounding here
-#if 0 // to unplug the conversion that fails to see if it diverges further
-		rdz=signedToBitVector(rdz, wO);
+#if 1 // to unplug the conversion that fails to see if it diverges further
+		rdz=signedToBitVector(rdz, msbOut-lsbOut+1);
 		tc->addExpectedOutput ("R", rdz);
 
 		mpfr_get_z (ruz.get_mpz_t(), s, GMP_RNDU); 					// there can be a real rounding here
-		ruz=signedToBitVector(ruz, wO);
+		ruz=signedToBitVector(ruz, msbOut-lsbOut+1);
 		tc->addExpectedOutput ("R", ruz);
 #endif
 #if 0 // debug: with this we observe if the simulation diverges
@@ -321,27 +320,84 @@ namespace flopoco {
 	};
 
 
+	void FixIIR::initializeWorstCaseSignal() {
+		// simulate the filter on an impulsion for long enough, until
+		// double threshold = 0.5/(1<<-lsbOut);
+		double threshold = 1e-10;
+		double epsilon=1e15; // initialize with a large value
+		uint64_t k;
+		//initialize the ui and yi
+		for(uint32_t i=0; i<n+m; i++) {
+			ui.push_back(0);
+			yi.push_back(0);		
+		}
+		ui.push_back(1); // input impulse
+		yi.push_back(0);		
+
+		k=0;
+		int storageOffset=n+m;
+		
+		while (epsilon>threshold) {
+			// make room
+			ui.push_back(0);			
+			yi.push_back(0);		
+			// compute the new y
+			double y=0;
+			for(uint32_t i=0; i<n; i++) {
+				y += ui[storageOffset+ k-i]*coeffb_d[i] ;
+			}
+			for(uint32_t i=0; i<m; i++) {
+				//		cout << "    k=" << k <<" i=" << i <<  "  yi[storageOffset+ k-i] =" << yi[storageOffset+ k-i] << endl;  
+				y -= yi[storageOffset+ k-i]*coeffa_d[i] ;
+			}
+			k++;
+			yi[storageOffset+k] = y;
+				 
+			epsilon = abs(y);
+			//cout << "k=" << k << " yi=" << y << endl;
+		}
+		REPORT(0, "Impulse response vanishes for k=" << k);
+	}
 
 	
 	void FixIIR::buildStandardTestCases(TestCaseList* tcl){
 		// First fill with a few ones, then a few zeroes
 		TestCase *tc;
 
-		
-		for (uint32_t i=0; i<3; i++) {
+#if 1 // Test on the impulse response 
+		tc = new TestCase(this);
+		tc->addInput("X", (mpz_class(1)<<(-lsbIn))-1 ); // 1 (almost)
+		emulate(tc);
+		tcl->add(tc);
+
+		for (uint32_t i=0; i<100; i++) {
 			tc = new TestCase(this);
-			tc->addInput("X", mpz_class(1)<<(-lsbIn-1)); // 0.5
+			tc->addInput("X", mpz_class(0));
 			emulate(tc);
 			tcl->add(tc);
 		}
 		
-		for (uint32_t i=0; i<3; i++) {
+#endif
+#if 0
+		// Now fill with a signal that follows the sign alternance of the impulse response: this builds a worst-case signal
+		int storageOffset=n+m;
+		uint32_t kmax = yi.size()-storageOffset;
+		for (uint32_t i =0; i<kmax; i++) {
+			mpz_class val;
+			if(yi[kmax-i] >0) {
+				val = mpz_class(1)<<(-lsbIn-1) -1; // 011111
+			}
+			else {
+				val = mpz_class(1)<<(-lsbIn-1) +1; // 100001
+			}
 			tc = new TestCase(this);
-			tc->addInput("X", mpz_class(0)); // 0
+			tc->addInput("X", val); 
 			emulate(tc);
 			tcl->add(tc);
-		}		
-
+			
+		}
+#endif
+		
 	};
 
 

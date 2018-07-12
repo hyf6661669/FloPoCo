@@ -32,6 +32,10 @@ namespace flopoco{
 		static void registerFactory();
 
 	private:
+		void initializeWorstCaseSignal(); // evaluates the filter on an impulsion
+
+		
+	private:
 		int lsbIn;					/**< weight of the LSB in the input, considered as a signed number in (-1,1) */
 		int msbOut;					/**< weight of the MSB in the result */
 		int lsbOut;					/**< weight of the LSB in the result */
@@ -55,6 +59,8 @@ namespace flopoco{
 
 		uint64_t currentIndex;       // used for round-robin access to the history 
 
+		vector<double> ui;  // inputs in the trace of simulation in double precision
+		vector<double> yi;  // outputs in the trace of simulation in double precision
 
 	};
 

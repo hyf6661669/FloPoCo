@@ -31,9 +31,10 @@ A small Butterworth
  ./flopoco generateFigures=1 FixIIR coeffb="0x1.7bdf4656ab602p-9:0x1.1ce774c100882p-7:0x1.1ce774c100882p-7:0x1.7bdf4656ab602p-9" coeffa="-0x1.2fe25628eb285p+1:0x1.edea40cd1955ep+0:-0x1.106c2ec3d0af8p-1" lsbIn=-12 lsbOut=-12 TestBench n=10000
 
 
-
+The easy IIR8
 ./flopoco FixIIR lsbin=-8 lsbout=-8 coeffa="-7.950492486500551e-01:1.316171195258671e+00:-6.348825276850145e-01:4.221584399465901e-01:-1.148028526411250e-01:3.337958526084077e-02:-3.947725765551162e-03:3.076933229437558e-04" coeffb="4.778650621278516e-03:3.822920497022813e-02:1.338022173957985e-01:2.676044347915969e-01:3.345055434894962e-01:2.676044347915969e-01:1.338022173957985e-01:3.822920497022813e-02:4.778650621278516e-03"
 
+The difficult IIR8
 ./flopoco FixIIR lsbin=-8 lsbout=-8 coeffb="1.141178044605012e-02:-2.052394720689188e-02:4.328501070380458e-02:-4.176737791619380e-02:5.542991404945895e-02:-4.176737791619380e-02:4.328501070380458e-02:-2.052394720689188e-02:1.141178044605012e-02" coeffa="-5.081533236401664e+00:1.295349903984737e+01:-2.075814350661222e+01:2.265058884827988e+01:-1.712035157843729e+01:8.753862370563619e+00:-2.776525797340274e+00:4.237548320448786e-01"
 
 */
@@ -127,7 +128,11 @@ namespace flopoco {
 
 
 #if 0 // sabotaging, to test if we overestimate
-	  lsbExt +=2 ;
+		// The example with poles close to 1 still passes with lsbExt+=3, fails with lsbExt+=4
+		// The easy IIR8 still passes with lsbExt+=2, fails with lsbExt+=3 
+		// The trickiest IIR8 (with WCPG~8000) still passes with lsbExt+=3, fails with lsbExt+=4
+		
+	  lsbExt +=3 ;
 #endif
 		
 		msbOut = ceil(log2(H)); // see the paper
@@ -393,12 +398,23 @@ namespace flopoco {
 		uint32_t kmax = vanishingK-storageOffset;
 		for (uint32_t i =0; i<kmax; i++) {
 			mpz_class val;
+#if 0
 			if(yi[kmax-i]<0) {
-				val = (mpz_class(1)<<(-lsbIn)) -1; // 011111
+				val = ((mpz_class(1)<<(-lsbIn)) -1) ; // 011111
 			}
 			else {
-				val = (mpz_class(1)<<(-lsbIn)) +1; // 100001
+				val = ((mpz_class(1)<<(-lsbIn)) +1); // 100001
 			}
+#else // multiplying by 1 and -1 ensures no rounding error in the FIR part
+			// hence the following code
+			// But no observable difference... 
+			val = ((mpz_class(1)<<(-lsbIn)) -1) * 9 / 10; // 011111;  *9/10 to trigger rounding errors
+			if(yi[kmax-i]>=0) {
+				// two's complement
+				val = ((mpz_class(1)<<(-lsbIn+1)) -1) -val +1 ; // 111111 - val + 1
+			}
+
+#endif
 			tc = new TestCase(this);
 			tc->addInput("X", val); 
 			emulate(tc);

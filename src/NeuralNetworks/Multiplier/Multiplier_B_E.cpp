@@ -23,8 +23,8 @@ namespace flopoco {
     Multiplier_B_E::Multiplier_B_E(Target* target, int inputWordSize) : Operator(target)
     {
         useNumericStd();
-        int witdh_1B=inputWordSize+4;   //3 bits for the shift + one bit for the adder
-        int witdh_2E=witdh_1B+4; //3 bits for the shift + one bit for the adder
+        int witdh_1B=inputWordSize+3;   //3 bits for the shift
+        int witdh_2E=witdh_1B+4;        //3 bits for the shift + one bit for the adder
 
         srcFileName= join("Multiplier_B_E_", inputWordSize);
 

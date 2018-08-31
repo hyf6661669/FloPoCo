@@ -653,6 +653,8 @@ src/NeuralNetworks/Multiplier/CompressorTypeE
 src/NeuralNetworks/Multiplier/CompressorTypeB
 src/NeuralNetworks/Multiplier/Multiplier_B_B_E
 src/NeuralNetworks/Multiplier/Multiplier_B_E
+src/NeuralNetworks/Multiplier/Multiplier_BB_E
+src/NeuralNetworks/Multiplier/Multiplier_BB_B_E
 
 
 # activation functions

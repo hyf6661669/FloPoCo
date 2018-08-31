@@ -21,7 +21,7 @@ namespace flopoco{
         width = width_;
 
         ostringstream name;
-        name << "CompressorTypeB" << "_width_" << width;
+        name << "CompressorTypeB_case_" << case3 << "_width_" << width;
         setName(name.str());
 
         addInput("A1",width);
@@ -88,16 +88,16 @@ namespace flopoco{
             //case 3: lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (~lut_in(0) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A1 if S=11)) + B1
             //case 4: lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (~lut_in(1) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A2 if S=11)) + B1
             //case 5: lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (~lut_in(2) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A3 if S=11)) + B1
-            //case 6: lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3))                                        ) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (  0 if S=11)) + B1
+            //case 6: lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3))                                         ) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (  0 if S=11)) + B1
 
             case 3 :
                 lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(0) & lut_in(4) & lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A1 if S=11)) + B1
                 break;
             case 4 :
-                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(1) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A2 if S=11)) + B1
+                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(1) & lut_in(4) & lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A2 if S=11)) + B1
                 break;
             case 5 :
-                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(2) & ~lut_in(4) & ~lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A3 if S=11)) + B1
+                lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3)) | (~lut_in(2) & lut_in(4) & lut_in(3))) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (-A3 if S=11)) + B1
                 break;
             case 6 :
                 lutop_o6 = ((lut_in(0) & ~lut_in(4) & ~lut_in(3)) | (lut_in(1) & ~lut_in(4) & lut_in(3)) | (lut_in(2) & lut_in(4) & ~lut_in(3))                                        ) ^ lut_in(5); break; // ((A1 if S=00) or (A2 if S=01) or (A3 if S=10) or (  0 if S=11)) + B1

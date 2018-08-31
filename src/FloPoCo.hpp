@@ -179,6 +179,8 @@
 #include "NeuralNetworks/ConfigurationGenerator.hpp"
 #include "NeuralNetworks/ConvolutionalCore.hpp"
 #include "NeuralNetworks/SOP_KCM.hpp"
+#include "NeuralNetworks/Multiplier/Multiplier_BB_B_E.hpp"
+#include "NeuralNetworks/Multiplier/Multiplier_BB_E.hpp"
 #include "NeuralNetworks/Multiplier/Multiplier_B_B_E.hpp"
 #include "NeuralNetworks/Multiplier/Multiplier_B_E.hpp"
 #include "NeuralNetworks/CoreTE.hpp"

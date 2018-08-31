@@ -26,7 +26,7 @@ namespace flopoco {
             addInput("iL_c",1,false);
         if( hasFlags(CONF_RIGHT) )
             addInput("iR_c",1,false);
-        if( hasFlags(TERNARY|CONF_MID) )
+        if( hasFlags(CONF_MID) && hasFlags(TERNARY) ) // original line changed by Martin Hardieck (MH BUGFIX) for Bugfix : if( hasFlags(TERNARY|CONF_MID) )
             addInput("iM_c",1,false);
 
         addOutput("sum_o",wIn);

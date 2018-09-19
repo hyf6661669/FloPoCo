@@ -789,10 +789,6 @@ namespace flopoco {
 
 	void FixEMethodEvaluatorTrunc::checkPCoeffs()
 	{
-		mpfr_t mpXi;
-
-		mpfr_init2(mpXi, LARGEPREC);
-		mpfr_set_d(mpXi, xi, GMP_RNDN);
 		//check that the coefficients of P are smaller than xi
 		for(size_t i=0; i<maxDegree; i++)
 		{
@@ -800,8 +796,6 @@ namespace flopoco {
 				THROWERROR("checkPCoeff: coefficient coeffsP[" << i << "]=" << coeffsP[i]
 					<< " does not satisfy the constraints");
 		}
-
-		mpfr_clear(mpXi);
 	}
 
 

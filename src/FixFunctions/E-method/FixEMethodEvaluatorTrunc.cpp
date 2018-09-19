@@ -674,6 +674,8 @@ namespace flopoco {
 			mpfr_clear(mpCoeffsP[i]);
 			mpfr_clear(mpCoeffsQ[i]);
 		}
+
+		mpfr_clears(mpDelta, mpAlpha, mpXi, mpInputScaleFactor, mpWPathError, (mpfr_t)nullptr);
 	}
 
 
@@ -741,19 +743,21 @@ namespace flopoco {
 
 	void FixEMethodEvaluatorTrunc::setAlgorithmParameters()
 	{
-		mpfr_t mpTmp, mpTmp2;
+		mpfr_t mpTmp;
 
-		mpfr_inits2(LARGEPREC, mpTmp, mpTmp2, mpDelta, mpAlpha, mpXi, (mpfr_ptr)nullptr);
+		mpfr_inits2(LARGEPREC, mpTmp, mpDelta, mpAlpha, mpXi, mpInputScaleFactor, (mpfr_ptr)nullptr);
 
 		//set xi
 		//	generic case
 		xi    = 0.5  * (1.0+delta);
+		//	multi-precision version
 		mpfr_set_d(mpXi, delta, GMP_RNDN);
 		mpfr_add_ui(mpXi, mpXi, 1, GMP_RNDN);
 		mpfr_div_ui(mpXi, mpXi, 2, GMP_RNDN);
 		//set alpha
 		//	generic case
 		alpha = (1.0-delta) / (2*radix);
+		//	multi-precision version
 		mpfr_set_ui(mpAlpha, 1, GMP_RNDN);
 		mpfr_sub_d(mpAlpha, mpAlpha, delta, GMP_RNDN);
 		mpfr_div_ui(mpAlpha, mpAlpha, 2, GMP_RNDN);
@@ -763,28 +767,23 @@ namespace flopoco {
 		//	2) when scaling isn't required, but the scale factor is needed for the analysis of the parameters
 		if(((scaleInput == true) && (inputScaleFactor == -1)) || (scaleInput == false))
 		{
-			//if the scale factor needs to be automatically set,
+			//if the scale factor needs to be computed,
 			//	then set if to the maximum admissible limit
 			//	we need to first determine the maximum value of the coefficients of Q,
 			//	and then subtract it from alpha
-			mpfr_t mpTmp, mpTmp2, mpAlpha;
-
-			mpfr_inits2(LARGEPREC, mpTmp, mpTmp2, mpAlpha, (mpfr_ptr)nullptr);
-
-			mpfr_abs(mpTmp, mpCoeffsQ[0], GMP_RNDN);
+			mpfr_abs(mpInputScaleFactor, mpCoeffsQ[0], GMP_RNDN);
 			for(size_t i=1; i<m; i++)
 			{
-				mpfr_abs(mpTmp2, mpCoeffsQ[i], GMP_RNDN);
-				if(mpfr_cmp(mpTmp2, mpTmp) > 0)
-					mpfr_set(mpTmp, mpTmp2, GMP_RNDN);
+				mpfr_abs(mpTmp, mpCoeffsQ[i], GMP_RNDN);
+				if(mpfr_cmp(mpTmp, mpInputScaleFactor) > 0)
+					mpfr_set(mpInputScaleFactor, mpTmp, GMP_RNDN);
 			}
 
-			mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
-			mpfr_sub(mpTmp, mpAlpha, mpTmp, GMP_RNDN);
-			inputScaleFactor = mpfr_get_d(mpTmp, GMP_RNDN);
+			mpfr_sub(mpInputScaleFactor, mpAlpha, mpInputScaleFactor, GMP_RNDN);
+			inputScaleFactor = mpfr_get_d(mpInputScaleFactor, GMP_RNDN);
 		}
 
-		mpfr_clears(mpTmp, mpTmp2, (mpfr_ptr)nullptr);
+		mpfr_clear(mpTmp);
 	}
 
 

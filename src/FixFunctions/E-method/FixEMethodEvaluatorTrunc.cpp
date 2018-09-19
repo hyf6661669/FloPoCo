@@ -771,7 +771,7 @@ namespace flopoco {
 			//	then set if to the maximum admissible limit
 			//	we need to first determine the maximum value of the coefficients of Q,
 			//	and then subtract it from alpha
-			mpfr_abs(mpInputScaleFactor, mpCoeffsQ[0], GMP_RNDN);
+			mpfr_set_zero(mpInputScaleFactor, 0);
 			for(size_t i=1; i<m; i++)
 			{
 				mpfr_abs(mpTmp, mpCoeffsQ[i], GMP_RNDN);
@@ -826,12 +826,9 @@ namespace flopoco {
 
 	void FixEMethodEvaluatorTrunc::checkX()
 	{
-		mpfr_t mpAlpha, mpLimit, mpX, mpTmp;
+		mpfr_t mpLimit, mpX, mpTmp;
 
-		mpfr_inits2(LARGEPREC, mpAlpha, mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
-
-		//the value of alpha
-		mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
+		mpfr_inits2(LARGEPREC, mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
 
 		//compute the maximum value of Q's coefficients
 		mpfr_set_zero(mpLimit, 0);
@@ -860,7 +857,7 @@ namespace flopoco {
 			THROWERROR("checkX: input format for X, with msb=" << msbInOut
 					<< " and lsb=" << lsbInOut << " does not satisfy the constraints");
 
-		mpfr_clears(mpAlpha, mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_clears(mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
 	}
 
 

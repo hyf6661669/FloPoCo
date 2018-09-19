@@ -678,7 +678,7 @@ namespace flopoco {
 			mpfr_clear(mpCoeffsQ[i]);
 		}
 
-		mpfr_clears(mpDelta, mpAlpha, mpXi, mpInputScaleFactor, mpWPathError, (mpfr_t)nullptr);
+		mpfr_clears(mpDelta, mpAlpha, mpXi, mpInputScaleFactor, mpXLimit, mpWPathError, (mpfr_t)nullptr);
 	}
 
 
@@ -829,19 +829,19 @@ namespace flopoco {
 
 	void FixEMethodEvaluatorTrunc::checkX()
 	{
-		mpfr_t mpLimit, mpX, mpTmp;
+		mpfr_t mpX, mpTmp;
 
-		mpfr_inits2(LARGEPREC, mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_inits2(LARGEPREC, mpXLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
 
 		//compute the maximum value of Q's coefficients
-		mpfr_set_zero(mpLimit, 0);
+		mpfr_set_zero(mpXLimit, 0);
 		for(size_t i=1; i<m; i++)
 		{
 			mpfr_abs(mpTmp, mpCoeffsQ[i], GMP_RNDN);
-			if(mpfr_cmp(mpTmp, mpLimit) > 0)
-				mpfr_set(mpLimit, mpTmp, GMP_RNDN);
+			if(mpfr_cmp(mpTmp, mpXLimit) > 0)
+				mpfr_set(mpXLimit, mpTmp, GMP_RNDN);
 		}
-		mpfr_sub(mpLimit, mpAlpha, mpLimit, GMP_RNDN);
+		mpfr_sub(mpXLimit, mpAlpha, mpXLimit, GMP_RNDN);
 
 		//check that the largest value that X can take is smaller than the limit
 		//	largest value X can take
@@ -856,11 +856,11 @@ namespace flopoco {
 		mpfr_mul(mpX, mpX, mpInputScaleFactor, GMP_RNDN);
 
 		//now perform the test
-		if(mpfr_cmp(mpX, mpLimit) > 0)
+		if(mpfr_cmp(mpX, mpXLimit) > 0)
 			THROWERROR("checkX: input format for X, with msb=" << msbInOut
 					<< " and lsb=" << lsbInOut << " does not satisfy the constraints");
 
-		mpfr_clears(mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_clears(mpX, mpTmp, (mpfr_ptr)nullptr);
 	}
 
 
@@ -873,9 +873,29 @@ namespace flopoco {
 
 		//for each of the maxDegree columns, compute the slack and then create
 		//	a new signal which contains the specific details for each of the datapath lengths
-		for(size_t i=0; i<maxDegree; i++)
+		//FIXME: Handle column 0
+		for(size_t i=1; i<maxDegree; i++)
 		{
+			mpfr_t mpTmp, mpErr;
+			size_t err;
 
+			mpfr_inits2(LARGEPREC, mpTmp, mpErr, (mpfr_ptr)nullptr);
+
+			//compute the slack
+			mpfr_set_d(mpErr, 0.5, GMP_RNDN);
+			mpfr_sub(mpErr, mpErr, mpDelta, GMP_RNDN);
+			mpfr_mul_ui(mpTmp, mpCoeffsQ[i], radix, GMP_RNDN);
+			mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
+			mpfr_mul_ui(mpTmp, mpXLimit, radix, GMP_RNDN);
+			mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
+
+			mpfr_log2(mpTmp, mpErr, GMP_RNDN);
+			err = mpfr_get_si(mpTmp, GMP_RNDU);
+
+			//create the w_i dummy signal
+			dWTrunc[i] = new Signal(join("dW_", i), Signal::wire, true, msbW, max(err, lsbW));
+
+			mpfr_clears(mpTmp, mpErr, (mpfr_ptr)nullptr);
 		}
 	}
 

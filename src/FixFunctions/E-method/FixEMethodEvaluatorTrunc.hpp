@@ -193,6 +193,7 @@ namespace flopoco {
     bool scaleInput;                  /**< flag showing whether the input X to the circuit will be scaled, or not */
     double inputScaleFactor;          /**< the factor by which the input is scaled */
     mpfr_t mpInputScaleFactor;        /**< the multi-precision version of the factor by which the input is scaled */
+    mpfr_t mpXLimit;                  /**< the multi-precision version of the maximum bound allowed for the input x */
 
     double wPathError;                /**< the maximum error on the w_i paths, due to using truncated w_hat */
     mpfr_t mpWPathError;              /**< the multi-precision version of wPathError */

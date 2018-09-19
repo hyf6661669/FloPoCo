@@ -801,14 +801,11 @@ namespace flopoco {
 
 	void FixEMethodEvaluatorTrunc::checkQCoeffs()
 	{
-		mpfr_t mpAlpha, mpLimit, mpTmp;
+		mpfr_t mpLimit, mpTmp;
 
-		mpfr_inits2(LARGEPREC, mpAlpha, mpLimit, mpTmp, (mpfr_ptr)nullptr);
-		//set the value of alpha
-		mpfr_set_d(mpAlpha, alpha, GMP_RNDN);
+		mpfr_inits2(LARGEPREC, mpLimit, mpTmp, (mpfr_ptr)nullptr);
 		//set the maximum value allowed for the coefficients
-		mpfr_set_d(mpLimit, inputScaleFactor, GMP_RNDN);
-		mpfr_sub(mpLimit, mpAlpha, mpLimit, GMP_RNDN);
+		mpfr_sub(mpLimit, mpAlpha, mpInputScaleFactor, GMP_RNDN);
 
 		//check that coeffsQ[0]=1
 		if(mpfr_cmp_ui(mpCoeffsQ[0], 1) != 0)
@@ -823,7 +820,7 @@ namespace flopoco {
 					<< " does not satisfy the constraints");
 		}
 
-		mpfr_clears(mpAlpha, mpLimit, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_clears(mpLimit, mpTmp, (mpfr_ptr)nullptr);
 	}
 
 

@@ -840,7 +840,7 @@ namespace flopoco {
 		}
 		mpfr_sub(mpLimit, mpAlpha, mpLimit, GMP_RNDN);
 
-		//check that the largest value that X can take is smaller than alpha/2
+		//check that the largest value that X can take is smaller than the limit
 		//	largest value X can take
 		mpfr_set_ui(mpX, 1, GMP_RNDN);
 		mpfr_mul_2si(mpX, mpX, msbInOut, GMP_RNDN);
@@ -850,7 +850,7 @@ namespace flopoco {
 		//	get the actual largest value X can take
 		mpfr_sub(mpX, mpX, mpTmp, GMP_RNDN);
 		//scale the input
-		mpfr_mul_d(mpX, mpX, inputScaleFactor, GMP_RNDN);
+		mpfr_mul(mpX, mpX, mpInputScaleFactor, GMP_RNDN);
 
 		//now perform the test
 		if(mpfr_cmp(mpX, mpLimit) > 0)

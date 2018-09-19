@@ -53,32 +53,33 @@ namespace flopoco {
 		for(size_t i=0; i<n; i++)
 		{
 			double tmpD = mpfr_get_d(mpCoeffsP[i], GMP_RNDN);
-			REPORT(DEBUG, "" << tmpD);
+			REPORT(DEBUG, "  " << tmpD);
 		}
 		REPORT(DEBUG, "coefficients of Q, as mp numbers:");
 		for(size_t i=0; i<m; i++)
 		{
 			double tmpD = mpfr_get_d(mpCoeffsQ[i], GMP_RNDN);
-			REPORT(DEBUG, "" << tmpD);
+			REPORT(DEBUG, "  " << tmpD);
 		}
 
 		//compute the parameters of the algorithm
 		REPORT(DEBUG, "compute the parameters of the algorithm");
 		setAlgorithmParameters();
 
-		//check P's coefficients
+		//checks to ensure algorithm correctness
+		//	check P's coefficients
 		REPORT(DEBUG, "checking the coefficients of P");
 		checkPCoeffs();
-		//check Q's coefficients
+		//	check Q's coefficients
 		REPORT(DEBUG, "checking the coefficients of Q");
 		checkQCoeffs();
-		//check the ranges on the input
+		//	check the ranges on the input
 		REPORT(DEBUG, "checking X");
 		checkX();
 
 		//compute the number of iterations needed
 		nbIter = msbInOut - lsbInOut + 1;
-		//the number of iterations is reduced when using a higher radix
+		//	adjust the number of iterations according to the radix
 		if(radix > 2)
 			nbIter = ceil(1.0*nbIter/log2(radix));
 		//add an additional number of iterations to compensate for the errors
@@ -94,6 +95,8 @@ namespace flopoco {
 		msbW = msbWHat;
 		lsbW = lsbInOut - g;
 		dW   = new Signal("dW", Signal::wire, true, msbW, lsbW);
+		//	compute the datapath sizes for the truncated W paths
+		setWDatapathLengths();
 		//	D
 		msbD = ceil(log2(radix));
 		lsbD = 0;
@@ -858,6 +861,22 @@ namespace flopoco {
 					<< " and lsb=" << lsbInOut << " does not satisfy the constraints");
 
 		mpfr_clears(mpLimit, mpX, mpTmp, (mpfr_ptr)nullptr);
+	}
+
+
+	void FixEMethodEvaluatorTrunc::setWDatapathLengths()
+	{
+		//	W
+				msbW = msbWHat;
+				lsbW = lsbInOut - g;
+				dW   = new Signal("dW", Signal::wire, true, msbW, lsbW);
+
+		//for each of the maxDegree columns, compute the slack and then create
+		//	a new signal which contains the specific details for each of the datapath lengths
+		for(size_t i=0; i<maxDegree; i++)
+		{
+
+		}
 	}
 
 

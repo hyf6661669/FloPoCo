@@ -164,6 +164,12 @@ namespace flopoco {
      */
     void checkX();
 
+    /**
+     * Compute the lengths of the truncated w datapaths.
+     * This method will update the elements dWTrunc vector.
+     */
+    void setWDatapathLengths();
+
 
   private:
     size_t radix;                     /**< the radix used for the implementation */

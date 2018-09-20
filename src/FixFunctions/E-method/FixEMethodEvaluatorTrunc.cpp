@@ -866,37 +866,91 @@ namespace flopoco {
 
 	void FixEMethodEvaluatorTrunc::setWDatapathLengths()
 	{
-		//	W
-				msbW = msbWHat;
-				lsbW = lsbInOut - g;
-				dW   = new Signal("dW", Signal::wire, true, msbW, lsbW);
+		mpfr_t mpTmp, mpErr;
+		size_t errorBound;
+
+		//initialize the working variables
+		mpfr_inits2(LARGEPREC, mpTmp, mpErr, (mpfr_ptr)nullptr);
 
 		//for each of the maxDegree columns, compute the slack and then create
 		//	a new signal which contains the specific details for each of the datapath lengths
-		//FIXME: Handle column 0
-		for(size_t i=1; i<maxDegree; i++)
-		{
-			mpfr_t mpTmp, mpErr;
-			size_t err;
 
-			mpfr_inits2(LARGEPREC, mpTmp, mpErr, (mpfr_ptr)nullptr);
+		//column 0
+		mpfr_set_zero(mpErr, 0);
+		mpfr_set_zero(mpTmp, 0);
+		//	compute the slack
+		//		slack_i = 1/2 - 2^k(bounded by delta) - radix*x_limit
+		mpfr_set_d(mpErr, 0.5, GMP_RNDN);
+		mpfr_sub(mpErr, mpErr, mpDelta, GMP_RNDN);
+		//		tmp = radix*x_limit
+		mpfr_mul_ui(mpTmp, mpXLimit, radix, GMP_RNDN);
+		mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
+		//	the errorBound_i is ceil(log2(slack))
+		if(mpfr_sgn(mpErr) > 0)
+		{
+			mpfr_log2(mpTmp, mpErr, GMP_RNDN);
+			errorBound = mpfr_get_si(mpTmp, GMP_RNDU);
+		}else{
+			errorBound = lsbW;
+		}
+		//	create the w_0 dummy signal
+		dWTrunc.push_back(new Signal("dW_0", Signal::wire, true, msbW, errorBound));
+
+		//columns 1 to n-1
+		for(size_t i=1; i<maxDegree-1; i++)
+		{
+			mpfr_set_zero(mpErr, 0);
+			mpfr_set_zero(mpTmp, 0);
 
 			//compute the slack
+			//	slack_i = 1/2 - 2^k(bounded by delta) - radix*q_i - radix*x_limit
 			mpfr_set_d(mpErr, 0.5, GMP_RNDN);
 			mpfr_sub(mpErr, mpErr, mpDelta, GMP_RNDN);
+			//	tmp = radix*q_i
 			mpfr_mul_ui(mpTmp, mpCoeffsQ[i], radix, GMP_RNDN);
+			mpfr_abs(mpTmp, mpTmp, GMP_RNDN);
 			mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
+			//	tmp = radix*x_limit
 			mpfr_mul_ui(mpTmp, mpXLimit, radix, GMP_RNDN);
 			mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
 
-			mpfr_log2(mpTmp, mpErr, GMP_RNDN);
-			err = mpfr_get_si(mpTmp, GMP_RNDU);
+			//the errorBound_i is ceil(log2(slack))
+			if(mpfr_sgn(mpErr) > 0)
+			{
+				mpfr_log2(mpTmp, mpErr, GMP_RNDN);
+				errorBound = mpfr_get_si(mpTmp, GMP_RNDU);
+			}else{
+				errorBound = lsbW;
+			}
 
 			//create the w_i dummy signal
-			dWTrunc[i] = new Signal(join("dW_", i), Signal::wire, true, msbW, max(err, lsbW));
-
-			mpfr_clears(mpTmp, mpErr, (mpfr_ptr)nullptr);
+			dWTrunc.push_back(new Signal(join("dW_", i), Signal::wire, true, msbW, errorBound));
 		}
+
+		//column n
+		mpfr_set_zero(mpErr, 0);
+		mpfr_set_zero(mpTmp, 0);
+		//	compute the slack
+		//		slack_i = 1/2 - 2^k(bounded by delta) - radix*q_i
+		mpfr_set_d(mpErr, 0.5, GMP_RNDN);
+		mpfr_sub(mpErr, mpErr, mpDelta, GMP_RNDN);
+		//		tmp = radix*q_n
+		mpfr_mul_ui(mpTmp, mpCoeffsQ[maxDegree-1], radix, GMP_RNDN);
+		mpfr_abs(mpTmp, mpTmp, GMP_RNDN);
+		mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
+		//	the errorBound_i is ceil(log2(slack))
+		if(mpfr_sgn(mpErr) > 0)
+		{
+			mpfr_log2(mpTmp, mpErr, GMP_RNDN);
+			errorBound = mpfr_get_si(mpTmp, GMP_RNDU);
+		}else{
+			errorBound = lsbW;
+		}
+		//	create the w_n dummy signal
+		dWTrunc.push_back(new Signal("dW_n", Signal::wire, true, msbW, errorBound));
+
+		//cleanup
+		mpfr_clears(mpTmp, mpErr, (mpfr_ptr)nullptr);
 	}
 
 

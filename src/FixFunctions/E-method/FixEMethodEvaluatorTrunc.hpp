@@ -209,7 +209,7 @@ namespace flopoco {
     int msbW;                         /**< the MSB of the W signal */
     int lsbW;                         /**< the LSB of the W signal */
     Signal *dW;                       /**< dummy signal for W */
-    vector<Signal> dWTrunc;           /**< dummy signals for the truncated Ws */
+    vector<Signal*> dWTrunc;           /**< dummy signals for the truncated Ws */
     int msbD;                         /**< the MSB of the D signals */
     int lsbD;                         /**< the LSB of the D signals */
     Signal *dD;                       /**< dummy signal for D */

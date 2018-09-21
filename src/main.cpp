@@ -81,6 +81,7 @@ int main(int argc, char* argv[] )
 		GenericSimpleSelectionFunction::registerFactory();
 		GenericComputationUnit::registerFactory();
 		FixEMethodEvaluator::registerFactory();
+		FixEMethodEvaluatorTrunc::registerFactory();
 
 		FixRealKCM::registerFactory();
 		FixComplexKCM::registerFactory();

@@ -141,6 +141,7 @@
 #include "FixFunctions/E-method/GenericSimpleSelectionFunction.hpp"
 #include "FixFunctions/E-method/GenericComputationUnit.hpp"
 #include "FixFunctions/E-method/FixEMethodEvaluator.hpp"
+#include "FixFunctions/E-method/FixEMethodEvaluatorTrunc.hpp"
 
 /*  Various elementary functions in fixed or floating point*/
 #include "Trigs/FixSinCos.hpp"

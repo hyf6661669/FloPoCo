@@ -361,6 +361,7 @@ src/FPComposite/FP2DNorm
  src/FixFunctions/E-method/GenericSimpleSelectionFunction
  src/FixFunctions/E-method/GenericComputationUnit
  src/FixFunctions/E-method/FixEMethodEvaluator
+ src/FixFunctions/E-method/FixEMethodEvaluatorTrunc
 
 # src/FixFunctions/QuineMcCluskey
 

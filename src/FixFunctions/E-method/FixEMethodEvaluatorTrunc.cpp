@@ -344,8 +344,12 @@ namespace flopoco {
 		REPORT(DEBUG, "iteration 0");
 		for(size_t i=0; i<maxDegree; i++)
 		{
-			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbW, lsbW) << " <= "
-					<< signedFixPointNumber(mpCoeffsP[i], msbW, lsbW, 0) << ";" << endl;
+			int msbW_i, lsbW_i;
+
+			msbW_i = dWTrunc[i]->MSB();
+			lsbW_i = dWTrunc[i]->LSB();
+			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbW_i, lsbW_i) << " <= "
+					<< signedFixPointNumber(mpCoeffsP[i], msbW_i, lsbW_i, 0) << ";" << endl;
 			vhdl << tab << declareFixPoint(join("D_0_", i), true, msbD, lsbD) << " <= "
 					<< zg(msbD-lsbD+1, 0) << ";" << endl;
 		}

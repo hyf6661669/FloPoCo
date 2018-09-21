@@ -148,7 +148,7 @@ namespace flopoco {
 //			syncCycleFromSignal("X_scaled_int", true);
 //			//--------- pipelining
 
-			//extend the result of the multiplication to the original signal, if necessary
+			//extend the result of the multiplication to the size of the original signal, if necessary
 			//	inputScaleFactor<1, so the scaled signal's msb <= original signal's msb
 			xScaleSize = getSignalByName("X_scaled_int")->width();
 			if(xScaleSize < (msbX-lsbX+1+g))
@@ -280,7 +280,7 @@ namespace flopoco {
 										maxDigit,		//maximum digit
 										0,				//index
 										-1,				//special case
-										dW,				//signal W
+										dW[0],			//signal W
 										dX,				//signal X
 										dD, 			//signal Di
 										coeffsQ[0]		//constant q_i
@@ -297,7 +297,7 @@ namespace flopoco {
 												maxDigit, 		//maximum digit
 												i,				//index
 												0,				//special case
-												dW,				//signal W
+												dW[i],			//signal W
 												dX,				//signal X
 												dD, 			//signal Di
 												coeffsQ[i]		//constant q_i
@@ -312,7 +312,7 @@ namespace flopoco {
 										maxDigit, 				//maximum digit
 										maxDegree-1,			//index
 										+1,						//special case
-										dW,						//signal W
+										dW[maxDegree-1],		//signal W
 										dX,						//signal X
 										dD, 					//signal Di
 										coeffsQ[maxDegree-1]	//constant q_i
@@ -320,16 +320,21 @@ namespace flopoco {
 		addSubComponent(cuN);
 
 		//create the selection units
-		REPORT(DEBUG, "create the selection unit");
-		GenericSimpleSelectionFunction *sel;
+		REPORT(DEBUG, "create the selection units");
+		GenericSimpleSelectionFunction *sel[maxDegree];
 
-		sel = new GenericSimpleSelectionFunction(
-												target,			//target
-												radix,	 		//radix
-												maxDigit, 		//maximum digit
-												dW 				//signal W
-												);
-		addSubComponent(sel);
+		for(size_t i=0; i<maxDegree; i++)
+		{
+			//selection unit i
+			REPORT(DEBUG, "create selection unit " << i);
+			sel[i] = new GenericSimpleSelectionFunction(
+					target,			//target
+					radix,	 		//radix
+					maxDigit, 		//maximum digit
+					dW[i]			//signal W[i]
+			);
+			addSubComponent(sel[i]);
+		}
 
 		//target->setPipelined(true);
 
@@ -678,7 +683,7 @@ namespace flopoco {
 			mpfr_clear(mpCoeffsQ[i]);
 		}
 
-		mpfr_clears(mpDelta, mpAlpha, mpXi, mpInputScaleFactor, mpXLimit, mpWPathError, (mpfr_t)nullptr);
+		mpfr_clears(mpDelta, mpAlpha, mpXi, mpInputScaleFactor, mpXLimit, mpWPathError, (mpfr_ptr)nullptr);
 	}
 
 

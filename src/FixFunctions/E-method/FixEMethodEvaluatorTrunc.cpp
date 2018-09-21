@@ -365,6 +365,10 @@ namespace flopoco {
 			{
 				//create the residual vector
 				mpfr_t mpTmp;
+				int msbW_i, lsbW_i;
+
+				msbW_i = dWTrunc[i]->MSB();
+				lsbW_i = dWTrunc[i]->LSB();
 
 				mpfr_init2(mpTmp, LARGEPREC);
 				mpfr_mul_ui(mpTmp, mpCoeffsP[i], radix, GMP_RNDN);
@@ -373,8 +377,8 @@ namespace flopoco {
 //				manageCriticalPath(target->localWireDelay(msbW-lsbW+1), true);
 //				//--------- pipelining
 
-				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
-						<< signedFixPointNumber(mpTmp, msbW, lsbW, 0) << ";" << endl;
+				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW_i, lsbW_i) << " <= "
+						<< signedFixPointNumber(mpTmp, msbW_i, lsbW_i, 0) << ";" << endl;
 
 				//create the selection unit
 				vhdl << tab << declareFixPoint(join("D_1_", i), true, msbD, lsbD) << " <= "

@@ -396,34 +396,36 @@ namespace flopoco {
 		{
 			addComment(" ---- iteration 2 ----", tab);
 			REPORT(DEBUG, "iteration 2");
+
+			//create the residual vector
+			mpfr_t mpTmp, mpSum, w_i, d_0, d_i, d_ip1;
+			mpz_class sv_d_0, sv_d_i, sv_d_ip1;
+			int msbW_i, lsbW_i;
+
+			//initialize the MPFR variables
+			mpfr_inits2(LARGEPREC, mpTmp, mpSum, w_i, d_0, d_i, d_ip1, (mpfr_ptr)nullptr);
+
 			for(size_t i=0; i<maxDegree; i++)
 			{
-				//create the residual vector
-				mpfr_t mpTmp, mpSum, w_i, d_0, d_i, d_ip1;
-				mpz_class sv_d_0, sv_d_i, sv_d_ip1;
-
-				//initialize the MPFR variables
-				mpfr_inits2(LARGEPREC, mpTmp, mpSum, w_i, d_0, d_i, d_ip1, (mpfr_ptr)nullptr);
-
-				//create w_i^{j-1}
+				//create w_i^{j-1} = radix*p[i]
 				mpfr_mul_ui(w_i, mpCoeffsP[i], radix, GMP_RNDN);
 
-				//create d_0^{j-1}
+				//create d_i^{j-1} = select(radix*w_i^{j-1}) = select(w_i))
+				//	round to the closest integer
+				mpfr_get_z(sv_d_i.get_mpz_t(), w_i, GMP_RNDN);
+				//	save it back in the MPFR version of the variable
+				mpfr_set_z(d_i, sv_d_i.get_mpz_t(), GMP_RNDN);
+
+				//create d_0^{j-1} = select(radix*d_0^{j-1}) = select(radix*p[0])
 				mpfr_mul_ui(d_0, mpCoeffsP[0], radix, GMP_RNDN);
 				//	round to the closest integer
 				mpfr_get_z(sv_d_0.get_mpz_t(), d_0, GMP_RNDN);
 				//	save it back in the MPFR version of the variable
 				mpfr_set_z(d_0, sv_d_0.get_mpz_t(), GMP_RNDN);
 
-				//create d_i^{j-1}
-				//	round to the closest integer
-				mpfr_get_z(sv_d_i.get_mpz_t(), w_i, GMP_RNDN);
-				//	save it back in the MPFR version of the variable
-				mpfr_set_z(d_i, sv_d_i.get_mpz_t(), GMP_RNDN);
-
 				if(i < (maxDegree-1))
 				{
-					//create d_{i+1}^{j-1}
+					//create d_{i+1}^{j-1} = select(radix*w_{i+1}^{j-1}) = select(w_{i+1}))
 					mpfr_mul_ui(d_ip1, mpCoeffsP[i+1], radix, GMP_RNDN);
 					//	round to the closest integer
 					mpfr_get_z(sv_d_ip1.get_mpz_t(), d_ip1, GMP_RNDN);
@@ -432,7 +434,7 @@ namespace flopoco {
 				}
 
 				//create the sum
-				//	w_i^{j-1} - d_0^{j-1}*q_i - d_i^{j-1}
+				//	w_i^{j-1} - q_i*d_0^{j-1} - d_i^{j-1}
 				mpfr_set(mpSum, w_i, GMP_RNDN);
 				if(i > 0)
 				{
@@ -445,15 +447,18 @@ namespace flopoco {
 //				manageCriticalPath(target->localWireDelay(msbW-lsbW+1), true);
 //				//--------- pipelining
 
+				msbW_i = dWTrunc[i]->MSB();
+				lsbW_i = dWTrunc[i]->LSB();
+
 				//create the signal for the sum
-				vhdl << tab << declareFixPoint(join("sum_2_", i), true, msbW, lsbW) << " <= "
-						<< signedFixPointNumber(mpSum, msbW, lsbW, 0) << ";" << endl;
+				vhdl << tab << declareFixPoint(join("sum_2_", i), true, msbW_i, lsbW_i) << " <= "
+						<< signedFixPointNumber(mpSum, msbW_i, lsbW_i, 0) << ";" << endl;
 
 				//create the signal for x*d_{i+1}^{(1)}
 				if(i < (maxDegree-1))
 				{
 					resizeFixPoint(join("sum_2_", i, "_term2"),
-							join("X_Mult_", vhdlize(sv_d_ip1.get_d())), msbW, lsbW, 1);
+							join("X_Mult_", vhdlize(sv_d_ip1.get_d())), msbW_i, lsbW_i, 1);
 				}
 
 //				//--------- pipelining
@@ -463,12 +468,12 @@ namespace flopoco {
 				//create w_i^{(2)}
 				if(i < (maxDegree-1))
 				{
-					vhdl << tab << declareFixPoint(join("W_2_", i, "_int"), true, msbW, lsbW) << " <= "
+					vhdl << tab << declareFixPoint(join("W_2_", i, "_int"), true, msbW_i, lsbW_i) << " <= "
 							<< "sum_2_" << i << " + "
 							<< "sum_2_" << i << "_term2"
 							<< ";" << endl;
 				}
-				vhdl << tab << declareFixPoint(join("W_2_", i), true, msbW, lsbW) << " <= ";
+				vhdl << tab << declareFixPoint(join("W_2_", i), true, msbW_i, lsbW_i) << " <= ";
 				if(i < (maxDegree-1))
 				{
 					vhdl << "W_2_" << i << "_int";
@@ -477,18 +482,18 @@ namespace flopoco {
 				{
 					vhdl << "sum_2_" << i;
 				}
-				vhdl << range(msbW-lsbW-ceil(log2(radix)), 0) << " & " << zg(ceil(log2(radix))) << ";" << endl;
+				vhdl << range(msbW_i-lsbW_i-ceil(log2(radix)), 0) << " & " << zg(ceil(log2(radix))) << ";" << endl;
 
 				//create the selection unit
 				//inputs
-				inPortMap(sel,  "W", join("W_2_", i));
+				inPortMap(sel[i],  "W", join("W_2_", i));
 				//outputs
-				outPortMap(sel, "D", join("D_2_", i));
+				outPortMap(sel[i], "D", join("D_2_", i));
 				//the instance
-				vhdl << tab << instance(sel, join("SEL_2_", i));
-
-				mpfr_clears(mpTmp, mpSum, w_i, d_0, d_i, d_ip1, (mpfr_ptr)nullptr);
+				vhdl << tab << instance(sel[i], join("SEL_2_", i));
 			}
+
+			mpfr_clears(mpTmp, mpSum, w_i, d_0, d_i, d_ip1, (mpfr_ptr)nullptr);
 		}
 
 //		//--------- pipelining

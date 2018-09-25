@@ -43,20 +43,19 @@ namespace flopoco {
 		 * A simple constructor.
 		 *
 		 * Performs the following computation:
-		 *     w_i[j] = radix * (w_i[j-1] - d_0[j-1]*q_i - d_i[j-1] + d_{i+1}[j-1]*x)
+		 *     w_i[j] = radix * (w_i[j-1] - q_i*d_0[j-1] - d_i[j-1] + x*d_{i+1}[j-1])
 		 * where
 		 *     w_i[j] is the output of the computation unit
 		 *     w_i[j-1], d_0[j-1], d_i[j-1], d_{i+1}[j-1], x are inputs
-		 *     q_i is a constant, also an input
+		 *     q_i is a constant, given as a parameter to the constructor
 		 *     d_0, d_i and d_{i+1} are digits in the input radix
 		 *
-		 * Currently only implementing radix 2.
-		 * Higher radixes (4, 8 etc.) to come.
+		 * Supports radix 2 and higher (4, 8 etc.).
 		 * @param   radix          the radix being used
 		 * @param   maxDigit       the maximum digit in the used digit set
 		 * @param   index          the index of the unit
 		 * @param   specialCase    the flag indicating special cases:
-		 *                           specialCase = 0  corresponds to indices 1-(n-1)
+		 *                           specialCase = 0  corresponds to indices 1 to n-1
 		 *                           specialCase =-1  corresponds to index 0
 		 *                           specialCase = 1  corresponds to index n
 		 * @param   W              the input signal W
@@ -97,10 +96,10 @@ namespace flopoco {
 		static TestList unitTest(int index);
 
 	private:
-		int radix;                            /**< the radix of the digit set being used */
-		int maxDigit;                         /**< the maximum digit in the used digit set */
+		size_t radix;                         /**< the radix of the digit set being used */
+		size_t maxDigit;                      /**< the maximum digit in the used digit set */
 
-		int index;                            /**< the index of the unit */
+		size_t index;                         /**< the index of the unit */
 		int specialCase;                      /**< the flag indicating special cases (iteration 0 and n) */
 
 		int msbW;                             /**< MSB of the W signal */

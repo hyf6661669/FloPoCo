@@ -110,8 +110,7 @@ namespace flopoco {
 //		setCriticalPath(currentCriticalPath);
 //		//--------- pipelining
 
-		//parse the constant using Sollya, for further reference
-		//	parse q_i using Sollya
+		//parse q_i using Sollya
 		sollya_obj_t node;
 		node = sollya_lib_parse_string(qi.c_str());
 		mpfr_init2(mpQi, LARGEPREC);
@@ -180,7 +179,7 @@ namespace flopoco {
 			//	FIXME: temporary. MULTMODE=0 for multiplexers, MULTMODE=1 for multiplier
 			if(MULTMODE_CU == 0)
 			{
-				//	not actual multiplication is done here, as we're multiplying by a digit
+				//no actual multiplication is done here, as we're multiplying by a digit
 				//	instead, all the possible products are generated upstream
 				//	and here we only have to choose which one to add
 				REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");

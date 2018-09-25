@@ -24,7 +24,7 @@ namespace flopoco {
 		srcFileName = "GenericComputationUnit";
 		name << "GenericComputationUnit_radix" << radix
 				<< "_index_" << index
-				<< "_qi_" << std::setprecision(5) << vhdlize(qi, 10)
+				<< "_qi_" << vhdlize(qi, 10)
 				<< "_msbIn_" << vhdlize(msbW) << "_lsbIn_" << vhdlize(lsbW);
 		setName(name.str()+"_uid"+vhdlize(getNewUId()));
 
@@ -36,13 +36,13 @@ namespace flopoco {
 		}
 #endif
 		if(maxDigit <= 0)
-			THROWERROR("GenericComputationUnit: maximum digit should be a positive integer larger than zero");
+			THROWERROR("GenericComputationUnit: maximum digit should be a strictly positive integer");
 
 		setCopyrightString("Matei Istoan, 2017");
 
 		useNumericStd_Signed();
 
-		setCombinatorial();
+//		setCombinatorial();
 
 		//determine the MSB and the LSB for the internal computations
 		msbInt = maxInt(3, msbW, msbX, msbD);
@@ -57,9 +57,9 @@ namespace flopoco {
 		REPORT(DEBUG, "using the following format for the DiMultX signals: msbDiMX="
 				<< msbDiMX << ", lsbDiMX=" << lsbDiMX);
 
-		//--------- pipelining
-		setCriticalPath(getMaxInputDelays(inputDelays));
-		//--------- pipelining
+//		//--------- pipelining
+//		setCriticalPath(getMaxInputDelays(inputDelays));
+//		//--------- pipelining
 
 		//create the inputs and the output
 		//	the inputs
@@ -154,10 +154,10 @@ namespace flopoco {
 			REPORT(DEBUG, "no need to create the multiplication D_0[j-1] * (-1)*q_i for iteration 0");
 		}
 
-		//--------- pipelining
-		setCycle(currentCycle, true);
-		setCriticalPath(currentCriticalPath);
-		//--------- pipelining
+//		//--------- pipelining
+//		setCycle(currentCycle, true);
+//		setCriticalPath(currentCriticalPath);
+//		//--------- pipelining
 
 		//subtract D_i[j-1]
 		REPORT(DEBUG, "subtract D_i[j-1]");
@@ -167,10 +167,10 @@ namespace flopoco {
 										msbD-lsbD+1					//size
 										);
 
-		//--------- pipelining
-		setCycle(currentCycle, true);
-		setCriticalPath(currentCriticalPath);
-		//--------- pipelining
+//		//--------- pipelining
+//		setCycle(currentCycle, true);
+//		setCriticalPath(currentCriticalPath);
+//		//--------- pipelining
 
 		//create the multiplication D_{i+1}[j-1] * X
 		//	if required
@@ -185,9 +185,9 @@ namespace flopoco {
 				//	and here we only have to choose which one to add
 				REPORT(DEBUG, "create the multiplication D_{i+1}[j-1] * X");
 
-				//--------- pipelining
-				manageCriticalPath(target->lutDelay()+target->localWireDelay(), true);
-				//--------- pipelining
+//				//--------- pipelining
+//				manageCriticalPath(target->lutDelay()+target->localWireDelay(), true);
+//				//--------- pipelining
 
 				vhdl << tab << declareFixPoint("Dip1_Mult_X", true, msbDiMX, lsbDiMX) << " <= " << endl;
 				for(int i=(-maxDigit); i<=maxDigit; i++)
@@ -247,9 +247,9 @@ namespace flopoco {
 		//compress the bitheap
 		bitheap->generateCompressorVHDL();
 
-		//--------- pipelining
-		syncCycleFromSignal(bitheap->getSumName(), true);
-		//--------- pipelining
+//		//--------- pipelining
+//		syncCycleFromSignal(bitheap->getSumName(), true);
+//		//--------- pipelining
 
 		// Retrieve the bits we want from the bit heap
 		REPORT(DEBUG, "Retrieve the bits we want from the bit heap");

@@ -84,8 +84,8 @@ namespace flopoco {
 		// the outputs
 		addFixOutput("Wi_next", true, msbInt, lsbInt, 2);
 
-		int currentCycle = getCurrentCycle();
-		double currentCriticalPath = getCriticalPath();
+//		int currentCycle = getCurrentCycle();
+//		double currentCriticalPath = getCriticalPath();
 
 		//create the bitheap
 		REPORT(DEBUG, "creating the bitheap");
@@ -105,10 +105,10 @@ namespace flopoco {
 									msbW-lsbW+1						//size
 									);
 
-		//--------- pipelining
-		setCycle(currentCycle, true);
-		setCriticalPath(currentCriticalPath);
-		//--------- pipelining
+//		//--------- pipelining
+//		setCycle(currentCycle, true);
+//		setCriticalPath(currentCriticalPath);
+//		//--------- pipelining
 
 		//parse the constant using Sollya, for further reference
 		//	parse q_i using Sollya

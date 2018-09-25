@@ -501,7 +501,7 @@ namespace flopoco {
 //		//--------- pipelining
 
 		//iterations 3 to nbIter
-		REPORT(DEBUG, "iterations 1 to nbIter");
+		REPORT(DEBUG, "iterations 3 to nbIter");
 		for(size_t iter=3; iter<=nbIter; iter++)
 		{
 			REPORT(DEBUG, "iteration " << iter);
@@ -599,11 +599,11 @@ namespace flopoco {
 //				//--------- pipelining
 
 				//inputs
-				inPortMap(sel,  "W", join("W_", iter, "_", i));
+				inPortMap(sel[i],  "W", join("W_", iter, "_", i));
 				//outputs
-				outPortMap(sel, "D", join("D_", iter, "_", i));
+				outPortMap(sel[i], "D", join("D_", iter, "_", i));
 				//the instance
-				vhdl << tab << instance(sel, join("SEL_", iter, "_", i));
+				vhdl << tab << instance(sel[i], join("SEL_", iter, "_", i));
 			}
 
 //			//--------- pipelining

@@ -280,7 +280,7 @@ namespace flopoco {
 										maxDigit,		//maximum digit
 										0,				//index
 										-1,				//special case
-										dW[0],			//signal W
+										dWTrunc[0],		//signal W
 										dX,				//signal X
 										dD, 			//signal Di
 										coeffsQ[0]		//constant q_i
@@ -297,7 +297,7 @@ namespace flopoco {
 												maxDigit, 		//maximum digit
 												i,				//index
 												0,				//special case
-												dW[i],			//signal W
+												dWTrunc[i],		//signal W
 												dX,				//signal X
 												dD, 			//signal Di
 												coeffsQ[i]		//constant q_i
@@ -312,7 +312,7 @@ namespace flopoco {
 										maxDigit, 				//maximum digit
 										maxDegree-1,			//index
 										+1,						//special case
-										dW[maxDegree-1],		//signal W
+										dWTrunc[maxDegree-1],	//signal W
 										dX,						//signal X
 										dD, 					//signal Di
 										coeffsQ[maxDegree-1]	//constant q_i
@@ -331,7 +331,7 @@ namespace flopoco {
 					target,			//target
 					radix,	 		//radix
 					maxDigit, 		//maximum digit
-					dW[i]			//signal W[i]
+					dWTrunc[i]		//signal W[i]
 			);
 			addSubComponent(sel[i]);
 		}

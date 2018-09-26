@@ -9,7 +9,7 @@
 
 namespace flopoco {
 
-		GenericSimpleSelectionFunction::GenericSimpleSelectionFunction(Target* target, int _radix, int maxDigit_,
+		GenericSimpleSelectionFunction::GenericSimpleSelectionFunction(Target* target, size_t _radix, int maxDigit_,
 				Signal *_W, map<string, double> inputDelays)
 		: Operator(target), radix(_radix), maxDigit(maxDigit_), msbIn(_W->MSB()), lsbIn(_W->LSB())
 		{
@@ -23,9 +23,9 @@ namespace flopoco {
 			//safety checks
 			if(maxDigit < 0)
 				THROWERROR("maximum digit of the redundant digit set is negative!");
-			if(maxDigit < (radix-1))
+			if(maxDigit < (int)(radix-1))
 				REPORT(INFO, "WARNING: used digit set is not maximal!");
-			if(abs(maxDigit) > radix-1)
+			if(abs(maxDigit) > (int)(radix-1))
 				THROWERROR("maximum digit larger than the maximum digit in the redundant digit set!");
 			if(intlog2(abs(maxDigit)) >= (1<<msbIn))
 				THROWERROR("maximum digit not representable on the given input format!");
@@ -102,7 +102,7 @@ namespace flopoco {
 		}
 
 
-		void GenericSimpleSelectionFunction::getWHatFormat(int _radix, int _maxDigit, int *_msb, int *_lsb)
+		void GenericSimpleSelectionFunction::getWHatFormat(size_t _radix, int _maxDigit, int *_msb, int *_lsb)
 		{
 			size_t wHSize = 0;
 

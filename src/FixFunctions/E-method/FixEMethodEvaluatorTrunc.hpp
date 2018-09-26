@@ -173,7 +173,7 @@ namespace flopoco {
 
   private:
     size_t radix;                     /**< the radix used for the implementation */
-    size_t maxDigit;                  /**< the radix used for the implementation */
+    int maxDigit;                     /**< the radix used for the implementation */
     size_t n;                         /**< degree of the polynomial P */
     size_t m;                         /**< degree of the polynomial Q */
     int msbInOut;                     /**< MSB of the input/output */

@@ -9,8 +9,8 @@
 
 namespace flopoco {
 
-	GenericComputationUnit::GenericComputationUnit(Target* target, int _radix, int _maxDigit,
-			int _index, int _specialCase,
+	GenericComputationUnit::GenericComputationUnit(Target* target, size_t _radix, int _maxDigit,
+			size_t _index, int _specialCase,
 			Signal *_W, Signal *_X, Signal *_Di, string _qi, map<string, double> inputDelays)
 	: Operator(target), radix(_radix), maxDigit(_maxDigit),
 	  index(_index), specialCase(_specialCase),

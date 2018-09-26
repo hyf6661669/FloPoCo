@@ -39,9 +39,9 @@ namespace flopoco {
 		if((radix != 2) && (radix != 4) && (radix != 8))
 			THROWERROR("radixes higher than 8 currently not supported!");
 #endif
-		if(maxDigit < (radix-1))
+		if(maxDigit < (int)(radix-1))
 			REPORT(INFO, "WARNING: used digit set is not maximal!");
-		if(maxDigit > radix-1)
+		if(maxDigit > (int)(radix-1))
 			THROWERROR("maximum digit larger than the maximum digit in the redundant digit set!");
 		if((delta<0 || delta>1))
 			THROWERROR("delta must be in the interval [0, 1)!");
@@ -211,7 +211,7 @@ namespace flopoco {
 		//multiply by the positive constants
 		REPORT(DEBUG, "multiply by the positive constants");
 		addComment(" ---- multiply by the positive constants ----", tab);
-		for(size_t i=0; i<=maxDigit; i++)
+		for(int i=0; i<=maxDigit; i++)
 		{
 			//create the multiplication between X and the constant given by i
 			REPORT(DEBUG, "create the multiplication between X and the constant " << i);
@@ -768,11 +768,13 @@ namespace flopoco {
 
 		mpfr_inits2(LARGEPREC, mpTmp, mpDelta, mpAlpha, mpXi, mpInputScaleFactor, (mpfr_ptr)nullptr);
 
+		//set delta
+		mpfr_set_d(mpDelta, delta, GMP_RNDN);
 		//set xi
 		//	generic case
 		xi    = 0.5  * (1.0+delta);
 		//	multi-precision version
-		mpfr_set_d(mpXi, delta, GMP_RNDN);
+		mpfr_set(mpXi, mpDelta, GMP_RNDN);
 		mpfr_add_ui(mpXi, mpXi, 1, GMP_RNDN);
 		mpfr_div_ui(mpXi, mpXi, 2, GMP_RNDN);
 		//set alpha
@@ -780,7 +782,7 @@ namespace flopoco {
 		alpha = (1.0-delta) / (2*radix);
 		//	multi-precision version
 		mpfr_set_ui(mpAlpha, 1, GMP_RNDN);
-		mpfr_sub_d(mpAlpha, mpAlpha, delta, GMP_RNDN);
+		mpfr_sub(mpAlpha, mpAlpha, mpDelta, GMP_RNDN);
 		mpfr_div_ui(mpAlpha, mpAlpha, 2, GMP_RNDN);
 		mpfr_div_ui(mpAlpha, mpAlpha, radix, GMP_RNDN);
 		//set the scale factor - compute the value of the scale factor in two cases:
@@ -885,7 +887,9 @@ namespace flopoco {
 	void FixEMethodEvaluatorTrunc::setWDatapathLengths()
 	{
 		mpfr_t mpTmp, mpErr;
-		size_t errorBound;
+		int errorBound;
+		double errorBoundD;
+		double dTmp;
 
 		//initialize the working variables
 		mpfr_inits2(LARGEPREC, mpTmp, mpErr, (mpfr_ptr)nullptr);
@@ -899,20 +903,26 @@ namespace flopoco {
 		//	compute the slack
 		//		slack_i = 1/2 - 2^k(bounded by delta) - radix*x_limit
 		mpfr_set_d(mpErr, 0.5, GMP_RNDN);
+		dTmp = mpfr_get_d(mpErr, GMP_RNDN);
 		mpfr_sub(mpErr, mpErr, mpDelta, GMP_RNDN);
+		dTmp = mpfr_get_d(mpDelta, GMP_RNDN);
+		dTmp = mpfr_get_d(mpErr, GMP_RNDN);
 		//		tmp = radix*x_limit
 		mpfr_mul_ui(mpTmp, mpXLimit, radix, GMP_RNDN);
+		dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 		mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
+		dTmp = mpfr_get_d(mpErr, GMP_RNDN);
 		//	the errorBound_i is ceil(log2(slack))
 		if(mpfr_sgn(mpErr) > 0)
 		{
 			mpfr_log2(mpTmp, mpErr, GMP_RNDN);
-			errorBound = mpfr_get_si(mpTmp, GMP_RNDU);
+			errorBoundD = mpfr_get_d(mpTmp, GMP_RNDN);
+			errorBound = mpfr_get_si(mpTmp, GMP_RNDN);
 		}else{
 			errorBound = lsbW;
 		}
 		//	create the w_0 dummy signal
-		dWTrunc.push_back(new Signal("dW_0", Signal::wire, true, msbW, errorBound));
+		dWTrunc.push_back(new Signal("dW_0", Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
 
 		//columns 1 to n-1
 		for(size_t i=1; i<maxDegree-1; i++)
@@ -936,13 +946,13 @@ namespace flopoco {
 			if(mpfr_sgn(mpErr) > 0)
 			{
 				mpfr_log2(mpTmp, mpErr, GMP_RNDN);
-				errorBound = mpfr_get_si(mpTmp, GMP_RNDU);
+				errorBound = mpfr_get_si(mpTmp, GMP_RNDN);
 			}else{
 				errorBound = lsbW;
 			}
 
 			//create the w_i dummy signal
-			dWTrunc.push_back(new Signal(join("dW_", i), Signal::wire, true, msbW, errorBound));
+			dWTrunc.push_back(new Signal(join("dW_", i), Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
 		}
 
 		//column n
@@ -965,7 +975,7 @@ namespace flopoco {
 			errorBound = lsbW;
 		}
 		//	create the w_n dummy signal
-		dWTrunc.push_back(new Signal("dW_n", Signal::wire, true, msbW, errorBound));
+		dWTrunc.push_back(new Signal("dW_n", Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
 
 		//cleanup
 		mpfr_clears(mpTmp, mpErr, (mpfr_ptr)nullptr);
@@ -1101,8 +1111,8 @@ namespace flopoco {
 	}
 
 	void FixEMethodEvaluatorTrunc::registerFactory(){
-		UserInterface::add("FixEMethodEvaluator", // name
-				"A hardware implementation of the E-method for the evaluation of polynomials and rational polynomials.", //description
+		UserInterface::add("FixEMethodEvaluatorTrunc", // name
+				"A truncated hardware implementation of the E-method for the evaluation of polynomials and rational polynomials.", //description
 				"FunctionApproximation", // category
 				"",
 				"radix(int): the radix of the digit set being used;\

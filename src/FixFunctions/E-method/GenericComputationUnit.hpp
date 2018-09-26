@@ -64,9 +64,9 @@ namespace flopoco {
 		 * @param   qi             the coefficient q_i
 		 */
 		GenericComputationUnit(Target* target,
-				int    radix,
+				size_t radix,
 				int    maxDigit,
-				int    index,
+				size_t index,
 				int    specialCase,
 				Signal *W,
 				Signal *X,
@@ -97,7 +97,7 @@ namespace flopoco {
 
 	private:
 		size_t radix;                         /**< the radix of the digit set being used */
-		size_t maxDigit;                      /**< the maximum digit in the used digit set */
+		int maxDigit;                         /**< the maximum digit in the used digit set */
 
 		size_t index;                         /**< the index of the unit */
 		int specialCase;                      /**< the flag indicating special cases (iteration 0 and n) */

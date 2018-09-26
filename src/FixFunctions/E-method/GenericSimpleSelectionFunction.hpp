@@ -36,7 +36,7 @@ namespace flopoco {
 		 * @param   W              the input signal
 		 */
 		GenericSimpleSelectionFunction(Target* target,
-				int    radix,
+				size_t radix,
 				int    maxDigit,
 				Signal *W,
 				map<string, double> inputDelays = emptyDelayMap);
@@ -50,7 +50,7 @@ namespace flopoco {
 		 * Compute the format of the W^ signal, from the used radix
 		 * and the maximum digit in the digit set
 		 */
-		static void getWHatFormat(int radix, int maxDigit, int *msb, int *lsb);
+		static void getWHatFormat(size_t radix, int maxDigit, int *msb, int *lsb);
 
 		/**
 		 * Test case generator
@@ -68,7 +68,7 @@ namespace flopoco {
 		static TestList unitTest(int index);
 
 	private:
-		int radix;                            /**< the radix of the digit set being used */
+		size_t radix;                         /**< the radix of the digit set being used */
 		int maxDigit;                         /**< the maximum digit in the redundant digit set */
 		int msbIn;                            /**< MSB of the input */
 		int lsbIn;                            /**< LSB of the input */

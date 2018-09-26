@@ -119,11 +119,11 @@ namespace flopoco {
 			{
 				//only the 6 top MSBs are needed
 				wHSize = 6;
-			}if(_radix == 16)
+			}else if(_radix == 16)
 			{
 				//only the 6 top MSBs are needed
 				wHSize = 7;
-			}if(_radix == 32)
+			}else if(_radix == 32)
 			{
 				//only the 6 top MSBs are needed
 				wHSize = 8;

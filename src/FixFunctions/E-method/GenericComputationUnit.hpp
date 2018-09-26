@@ -27,7 +27,7 @@
 //how will the multiplication X*D_{i+1} be implemented
 //	MULTIMODE = 0 - using a multiplexer, a choice from the inputs
 //	MULTIMODE = 1 - using a multiplier, by multiplying the inputs
-#define MULTMODE_CU 0
+#define MULTMODE_CU 1
 
 //the precision used to parse the constant
 #define LARGEPREC 10000

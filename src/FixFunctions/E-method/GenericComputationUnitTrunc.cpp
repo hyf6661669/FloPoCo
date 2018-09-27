@@ -82,7 +82,8 @@ namespace flopoco {
 			}
 		}
 		// the outputs
-		addFixOutput("Wi_next", true, msbInt, lsbInt, 2);
+		//addFixOutput("Wi_next", true, msbInt, lsbInt, 2);
+		addFixOutput("Wi_next", true, msbW, lsbW, 2);
 
 //		int currentCycle = getCurrentCycle();
 //		double currentCriticalPath = getCriticalPath();
@@ -257,7 +258,9 @@ namespace flopoco {
 
 		REPORT(DEBUG, "write to the output");
 		// multiply by radix, a constant shift by radix positions to the left
-		vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt-ceil(log2(radix)), 0)
+		//vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt-ceil(log2(radix)), 0)
+		//		<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+		vhdl << tab << "Wi_next <= sum" << range(msbW-lsbW-ceil(log2(radix)), 0)
 				<< " & " << zg(ceil(log2(radix))) << ";" << endl;
 
 		outDelayMap["Wi_next"] = getCriticalPath();

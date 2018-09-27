@@ -268,13 +268,13 @@ namespace flopoco {
 
 		//create the computation units
 		REPORT(DEBUG, "create the computation units");
-		GenericComputationUnit *cu0, *cuI[maxDegree-2], *cuN;
+		GenericComputationUnitTrunc *cu0, *cuI[maxDegree-2], *cuN;
 
 		//target->setPipelined(false);
 
 		//compute unit 0
 		REPORT(DEBUG, "create the computation unit 0");
-		cu0 = new GenericComputationUnit(
+		cu0 = new GenericComputationUnitTrunc(
 										target,			//target
 										radix, 			//radix
 										maxDigit,		//maximum digit
@@ -291,7 +291,7 @@ namespace flopoco {
 		{
 			//compute unit i
 			REPORT(DEBUG, "create the computation unit " << i);
-			cuI[i-1] = new GenericComputationUnit(
+			cuI[i-1] = new GenericComputationUnitTrunc(
 												target,			//target
 												radix, 			//radix
 												maxDigit, 		//maximum digit
@@ -306,7 +306,7 @@ namespace flopoco {
 		}
 		//compute unit n
 		REPORT(DEBUG, "create the computation unit n");
-		cuN = new GenericComputationUnit(
+		cuN = new GenericComputationUnitTrunc(
 										target,					//target
 										radix, 					//radix
 										maxDigit, 				//maximum digit

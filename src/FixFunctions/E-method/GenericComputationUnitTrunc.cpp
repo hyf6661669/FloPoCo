@@ -21,8 +21,8 @@ namespace flopoco {
 	{
 		ostringstream name;
 
-		srcFileName = "GenericComputationUnit";
-		name << "GenericComputationUnit_radix" << radix
+		srcFileName = "GenericComputationUnitTrunc";
+		name << "GenericComputationUnitTrunc_radix" << radix
 				<< "_index_" << index
 				<< "_qi_" << vhdlize(qi, 10)
 				<< "_msbIn_" << vhdlize(msbW) << "_lsbIn_" << vhdlize(lsbW);

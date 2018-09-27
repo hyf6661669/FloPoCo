@@ -29,7 +29,7 @@
 #include "FixFunctions/FixFunction.hpp"
 #include "FixConstant.hpp"
 #include "FixFunctions/E-method/GenericSimpleSelectionFunction.hpp"
-#include "FixFunctions/E-method/GenericComputationUnit.hpp"
+#include "FixFunctions/E-method/GenericComputationUnitTrunc.hpp"
 
 #include "utils.hpp"
 

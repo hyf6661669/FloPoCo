@@ -6,7 +6,7 @@
  */
 
 #ifndef _GENERICCOMPUTATIONUNITTRUNC_HPP_
-#define _GENERICCOMPUTATIONUNITtRUNC_HPP_
+#define _GENERICCOMPUTATIONUNITTRUNC_HPP_
 
 #include <vector>
 #include <sstream>

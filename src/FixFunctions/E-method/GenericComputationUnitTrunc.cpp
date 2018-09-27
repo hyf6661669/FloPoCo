@@ -260,7 +260,7 @@ namespace flopoco {
 		// multiply by radix, a constant shift by radix positions to the left
 		//vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt-ceil(log2(radix)), 0)
 		//		<< " & " << zg(ceil(log2(radix))) << ";" << endl;
-		vhdl << tab << "Wi_next <= sum" << range(msbW-lsbW-ceil(log2(radix)), 0)
+		vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt, msbInt-lsbInt-msbW+lsbW+ceil(log2(radix)))
 				<< " & " << zg(ceil(log2(radix))) << ";" << endl;
 
 		outDelayMap["Wi_next"] = getCriticalPath();

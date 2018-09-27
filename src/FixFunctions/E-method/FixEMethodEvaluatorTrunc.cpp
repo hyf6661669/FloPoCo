@@ -891,6 +891,8 @@ namespace flopoco {
 		double errorBoundD;
 		double dTmp;
 
+		int gW = 27;
+
 		//initialize the working variables
 		mpfr_inits2(LARGEPREC, mpTmp, mpErr, (mpfr_ptr)nullptr);
 
@@ -922,7 +924,9 @@ namespace flopoco {
 			errorBound = lsbW;
 		}
 		//	create the w_0 dummy signal
-		dWTrunc.push_back(new Signal("dW_0", Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
+		//dWTrunc.push_back(new Signal("dW_0", Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
+		dWTrunc.push_back(new Signal("dW_0", Signal::wire, true, msbW, maxInt(2, errorBound-gW, lsbW)));
+		//dWTrunc.push_back(new Signal("dW_0", Signal::wire, true, msbW, lsbW));
 
 		//columns 1 to n-1
 		for(size_t i=1; i<maxDegree-1; i++)
@@ -952,7 +956,9 @@ namespace flopoco {
 			}
 
 			//create the w_i dummy signal
-			dWTrunc.push_back(new Signal(join("dW_", i), Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
+			//dWTrunc.push_back(new Signal(join("dW_", i), Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
+			dWTrunc.push_back(new Signal(join("dW_", i), Signal::wire, true, msbW, maxInt(2, errorBound-gW, lsbW)));
+			//dWTrunc.push_back(new Signal(join("dW_", i), Signal::wire, true, msbW, lsbW));
 		}
 
 		//column n
@@ -975,7 +981,9 @@ namespace flopoco {
 			errorBound = lsbW;
 		}
 		//	create the w_n dummy signal
-		dWTrunc.push_back(new Signal("dW_n", Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
+		//dWTrunc.push_back(new Signal("dW_n", Signal::wire, true, msbW, maxInt(2, errorBound, lsbW)));
+		dWTrunc.push_back(new Signal("dW_n", Signal::wire, true, msbW, maxInt(2, errorBound-gW, lsbW)));
+		//dWTrunc.push_back(new Signal("dW_n", Signal::wire, true, msbW, lsbW));
 
 		//cleanup
 		mpfr_clears(mpTmp, mpErr, (mpfr_ptr)nullptr);

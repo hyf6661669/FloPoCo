@@ -17,7 +17,7 @@ namespace flopoco{
 	Signal::Signal(const string name, const Signal::SignalType type, const bool isSigned, const int MSB, const int LSB) :
 		name_(name), type_(type), width_(MSB-LSB+1), numberOfPossibleValues_(1),
 		lifeSpan_(0), cycle_(0),
-		isFP_(false), isFix_(true), MSB_(MSB), LSB_(LSB), isSigned_(isSigned), isBus_(true), delay_(0.0)
+		isFP_(false), isFix_(true), isIEEE_(false), MSB_(MSB), LSB_(LSB), isSigned_(isSigned), isBus_(true), delay_(0.0)
 	{
 	}
 

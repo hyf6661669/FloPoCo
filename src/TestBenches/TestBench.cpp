@@ -280,7 +280,7 @@ namespace flopoco{
 			vhdl << tab << tab << tab << tab << "read(inline ,V_"<< s->getName() << ");" << endl;
 			vhdl << tab << tab << tab << tab << "if ";
 			if (s->isFP()) {
- 			vhdl << "not fp_equal(fp"<< s->width() << "'(" << s->getName() << ") ,to_stdlogicvector(V_" <<  s->getName() << "))";
+				vhdl << "not fp_equal(fp"<< s->width() << "'(" << s->getName() << ") ,to_stdlogicvector(V_" <<  s->getName() << "))";
 			} else if (s->isIEEE()) {
 			    vhdl << "not fp_equal_ieee(" << s->getName() << " ,to_stdlogicvector(V_" <<  s->getName() << "),"<<s->wE()<<" , "<<s->wF()<<")";
 			} else if ((s->width() == 1) && (!s->isBus())) {

@@ -140,6 +140,7 @@
 
 #include "FixFunctions/E-method/GenericSimpleSelectionFunction.hpp"
 #include "FixFunctions/E-method/GenericComputationUnit.hpp"
+#include "FixFunctions/E-method/GenericComputationUnitTrunc.hpp"
 #include "FixFunctions/E-method/FixEMethodEvaluator.hpp"
 #include "FixFunctions/E-method/FixEMethodEvaluatorTrunc.hpp"
 

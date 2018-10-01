@@ -151,7 +151,7 @@ namespace flopoco {
 		else
 		{
 			//this term is not required for iteration 0
-			REPORT(DEBUG, "no need to create the multiplication D_0[j-1] * (-1)*q_i for iteration 0");
+			REPORT(DEBUG, "no need to create the multiplication D_0[j-1] * (-1)*q_i for component 0");
 		}
 
 //		//--------- pipelining
@@ -260,8 +260,16 @@ namespace flopoco {
 		// multiply by radix, a constant shift by radix positions to the left
 		//vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt-ceil(log2(radix)), 0)
 		//		<< " & " << zg(ceil(log2(radix))) << ";" << endl;
-		vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt, msbInt-lsbInt-msbW+lsbW+ceil(log2(radix)))
-				<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+		//vhdl << tab << "Wi_next <= sum" << range(msbW-lsbInt-ceil(log2(radix)), lsbW-lsbInt)
+		//		<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+		if(lsbW > lsbInt)
+		{
+			vhdl << tab << "Wi_next <= sum"
+					<< range(msbW-lsbInt-ceil(log2(radix)), lsbW-lsbInt-ceil(log2(radix))) << ";" << endl;
+		}else{
+			vhdl << tab << "Wi_next <= sum" << range(msbInt-lsbInt-ceil(log2(radix)), 0)
+							<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+		}
 
 		outDelayMap["Wi_next"] = getCriticalPath();
 	}

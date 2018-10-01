@@ -344,12 +344,8 @@ namespace flopoco {
 		REPORT(DEBUG, "iteration 0");
 		for(size_t i=0; i<maxDegree; i++)
 		{
-			int msbW_i, lsbW_i;
-
-			msbW_i = dWTrunc[i]->MSB();
-			lsbW_i = dWTrunc[i]->LSB();
-			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbW_i, lsbW_i) << " <= "
-					<< signedFixPointNumber(mpCoeffsP[i], msbW_i, lsbW_i, 0) << ";" << endl;
+			vhdl << tab << declareFixPoint(join("W_0_", i), true, msbW, lsbW) << " <= "
+					<< signedFixPointNumber(mpCoeffsP[i], msbW, lsbW, 0) << ";" << endl;
 			vhdl << tab << declareFixPoint(join("D_0_", i), true, msbD, lsbD) << " <= "
 					<< zg(msbD-lsbD+1, 0) << ";" << endl;
 		}
@@ -365,10 +361,6 @@ namespace flopoco {
 			{
 				//create the residual vector
 				mpfr_t mpTmp;
-				int msbW_i, lsbW_i;
-
-				msbW_i = dWTrunc[i]->MSB();
-				lsbW_i = dWTrunc[i]->LSB();
 
 				mpfr_init2(mpTmp, LARGEPREC);
 				mpfr_mul_ui(mpTmp, mpCoeffsP[i], radix, GMP_RNDN);
@@ -377,8 +369,8 @@ namespace flopoco {
 //				manageCriticalPath(target->localWireDelay(msbW-lsbW+1), true);
 //				//--------- pipelining
 
-				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW_i, lsbW_i) << " <= "
-						<< signedFixPointNumber(mpTmp, msbW_i, lsbW_i, 0) << ";" << endl;
+				vhdl << tab << declareFixPoint(join("W_1_", i), true, msbW, lsbW) << " <= "
+						<< signedFixPointNumber(mpTmp, msbW, lsbW, 0) << ";" << endl;
 
 				//create the selection unit
 				vhdl << tab << declareFixPoint(join("D_1_", i), true, msbD, lsbD) << " <= "
@@ -400,7 +392,6 @@ namespace flopoco {
 			//create the residual vector
 			mpfr_t mpTmp, mpSum, w_i, d_0, d_i, d_ip1;
 			mpz_class sv_d_0, sv_d_i, sv_d_ip1;
-			int msbW_i, lsbW_i;
 
 			//initialize the MPFR variables
 			mpfr_inits2(LARGEPREC, mpTmp, mpSum, w_i, d_0, d_i, d_ip1, (mpfr_ptr)nullptr);
@@ -447,18 +438,15 @@ namespace flopoco {
 //				manageCriticalPath(target->localWireDelay(msbW-lsbW+1), true);
 //				//--------- pipelining
 
-				msbW_i = dWTrunc[i]->MSB();
-				lsbW_i = dWTrunc[i]->LSB();
-
 				//create the signal for the sum
-				vhdl << tab << declareFixPoint(join("sum_2_", i), true, msbW_i, lsbW_i) << " <= "
-						<< signedFixPointNumber(mpSum, msbW_i, lsbW_i, 0) << ";" << endl;
+				vhdl << tab << declareFixPoint(join("sum_2_", i), true, msbW, lsbW) << " <= "
+						<< signedFixPointNumber(mpSum, msbW, lsbW, 0) << ";" << endl;
 
 				//create the signal for x*d_{i+1}^{(1)}
 				if(i < (maxDegree-1))
 				{
 					resizeFixPoint(join("sum_2_", i, "_term2"),
-							join("X_Mult_", vhdlize(sv_d_ip1.get_d())), msbW_i, lsbW_i, 1);
+							join("X_Mult_", vhdlize(sv_d_ip1.get_d())), msbW, lsbW, 1);
 				}
 
 //				//--------- pipelining
@@ -468,12 +456,12 @@ namespace flopoco {
 				//create w_i^{(2)}
 				if(i < (maxDegree-1))
 				{
-					vhdl << tab << declareFixPoint(join("W_2_", i, "_int"), true, msbW_i, lsbW_i) << " <= "
+					vhdl << tab << declareFixPoint(join("W_2_", i, "_int"), true, msbW, lsbW) << " <= "
 							<< "sum_2_" << i << " + "
 							<< "sum_2_" << i << "_term2"
 							<< ";" << endl;
 				}
-				vhdl << tab << declareFixPoint(join("W_2_", i), true, msbW_i, lsbW_i) << " <= ";
+				vhdl << tab << declareFixPoint(join("W_2_", i), true, dWTrunc[i]->MSB(), dWTrunc[i]->LSB()) << " <= ";
 				if(i < (maxDegree-1))
 				{
 					vhdl << "W_2_" << i << "_int";
@@ -482,7 +470,14 @@ namespace flopoco {
 				{
 					vhdl << "sum_2_" << i;
 				}
-				vhdl << range(msbW_i-lsbW_i-ceil(log2(radix)), 0) << " & " << zg(ceil(log2(radix))) << ";" << endl;
+				if(dWTrunc[i]->LSB() > lsbW)
+				{
+					vhdl << range(dWTrunc[i]->MSB()-lsbW-ceil(log2(radix)), dWTrunc[i]->LSB()-lsbW-ceil(log2(radix)))
+							<< ";" << endl;
+				}else{
+					vhdl << range(dWTrunc[i]->MSB()-dWTrunc[i]->LSB()-ceil(log2(radix)), 0)
+							<< " & " << zg(ceil(log2(radix))) << ";" << endl;
+				}
 
 				//create the selection unit
 				//inputs
@@ -891,7 +886,8 @@ namespace flopoco {
 		double errorBoundD;
 		double dTmp;
 
-		int gW = 27;
+		int gW = 29;
+		//int gW = 30;
 
 		//initialize the working variables
 		mpfr_inits2(LARGEPREC, mpTmp, mpErr, (mpfr_ptr)nullptr);
@@ -992,6 +988,8 @@ namespace flopoco {
 
 	void FixEMethodEvaluatorTrunc::emulate(TestCase * tc)
 	{
+		double dTmp;
+
 		//get the inputs from the TestCase
 		mpz_class svX   = tc->getInputValue("X");
 
@@ -1016,12 +1014,17 @@ namespace flopoco {
 
 		//initialize X
 		mpfr_set_z(mpX, svX.get_mpz_t(), GMP_RNDN);
+		dTmp = mpfr_get_d(mpX, GMP_RNDN);
 		//	scale X appropriately, by the amount given by lsbInOut
 		mpfr_mul_2si(mpX, mpX, lsbInOut, GMP_RNDN);
+		dTmp = mpfr_get_d(mpX, GMP_RNDN);
 
 		//if required, scale the input
 		if(scaleInput == true)
+		{
 			mpfr_mul_d(mpX, mpX, inputScaleFactor, GMP_RNDN);
+			dTmp = mpfr_get_d(mpX, GMP_RNDN);
+		}
 
 		//compute P
 		for(int i=0; i<(int)n; i++)
@@ -1034,6 +1037,7 @@ namespace flopoco {
 			//add the new term to the sum
 			mpfr_add(mpP, mpP, mpTmp, GMP_RNDN);
  		}
+		dTmp = mpfr_get_d(mpP, GMP_RNDN);
 
 		//compute Q
 		for(int i=0; i<(int)m; i++)
@@ -1046,9 +1050,11 @@ namespace flopoco {
 			//add the new term to the sum
 			mpfr_add(mpQ, mpQ, mpTmp, GMP_RNDN);
 		}
+		dTmp = mpfr_get_d(mpQ, GMP_RNDN);
 
 		//compute Y = P/Q
 		mpfr_div(mpY, mpP, mpQ, GMP_RNDN);
+		dTmp = mpfr_get_d(mpY, GMP_RNDN);
 
 		//scale the result back to an integer
 		mpfr_mul_2si(mpY, mpY, -lsbInOut+msbInOut, GMP_RNDN);

@@ -9,7 +9,6 @@
 #include "rpag/compute_successor_set.h"
 
 using namespace std;
-using namespace rpag;
 
 #if 0
 

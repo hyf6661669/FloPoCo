@@ -35,7 +35,6 @@
 #include <algorithm>
 
 using namespace std;
-using namespace rpag;
 
 namespace flopoco{
 

@@ -12,7 +12,6 @@
 #include "rpag/types.h"
 
 using namespace std;
-using namespace rpag;
 
 bool getExponents(int_t a, int_t b, int_t c, int *eA, int *eB, int *signA, int *signB);
 //bool getExponents(int_t &a, int_t &b, int_t &w, int *eA, int *eB, int *signA, int *signB);

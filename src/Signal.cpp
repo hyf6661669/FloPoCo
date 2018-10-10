@@ -80,12 +80,12 @@ namespace flopoco{
 	string Signal::toVHDLType() {
 		ostringstream o;
 		if ((1==width())&&(!isBus_))
-			o << " std_logic" ;
+			o << "std_logic" ;
 		else
 			if(isFP_)
-				o << " std_logic_vector(" << wE() <<"+"<<wF() << "+2 downto 0)";
+				o << "std_logic_vector(" << wE() <<"+"<<wF() << "+2 downto 0)";
 			else if(isFix_){
-				o << (isSigned_?" signed":" unsigned") << "(" << MSB_;
+				o << (isSigned_?"signed":"unsigned") << "(" << MSB_;
 				if(LSB_<0)
 					o  << "+" << -LSB_;
 				else
@@ -93,7 +93,7 @@ namespace flopoco{
 				o << " downto 0)";
 			}
 			else
-				o << " std_logic_vector(" << width()-1 << " downto 0)";
+				o << "std_logic_vector(" << width()-1 << " downto 0)";
 		return o.str();
 	}
 
@@ -148,7 +148,13 @@ namespace flopoco{
 
 		o << toVHDLType();
 
-		if (type()==Signal::registeredWithZeroInitialiser) {
+		//initialize signals to zero, this allows the simulation of more complex systems with internal states:
+		if(width() == 1)
+		  o << " := '0'";
+		else
+      o << " := (others => '0')";
+
+    if (type()==Signal::registeredWithZeroInitialiser) {
 			if( (1==width()) && (!isBus_) )
 				o << " := '0'";
 			else

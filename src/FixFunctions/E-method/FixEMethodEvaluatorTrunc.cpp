@@ -886,7 +886,9 @@ namespace flopoco {
 		double errorBoundD;
 		double dTmp;
 
-		int gW = 29;
+		//int gW = 0;
+		int gW = 21;
+		//int gW = 21;
 		//int gW = 30;
 
 		//initialize the working variables
@@ -983,6 +985,150 @@ namespace flopoco {
 
 		//cleanup
 		mpfr_clears(mpTmp, mpErr, (mpfr_ptr)nullptr);
+	}
+
+
+	int FixEMethodEvaluatorTrunc::simulateWDatapathLengths(int nbTests)
+	{
+		bool simPass, iterPass;
+		int guardBits;
+		mpz_class a, svY;
+		//manage signed digits
+		mpz_class big1X  = (mpz_class(1) << (msbInOut-lsbInOut+1));
+		mpz_class big1Xp = (mpz_class(1) << (msbInOut-lsbInOut));
+		//manage a multi-precision input
+		mpfr_t mpX, mpP, mpQ, mpY, mpTmp;
+
+		//initialize the internal state of the simulation variables
+		for(size_t i=0; i<maxDegree; i++)
+		{
+			mpfr_inits2(LARGEPREC, wiSim[i], diSim[i], (mpfr_ptr)nullptr);
+		}
+		mpfr_inits2(LARGEPREC, xSim, ySim, (mpfr_ptr)nullptr);
+
+		//initialize the MPFR variables
+		mpfr_inits2(LARGEPREC, mpX, mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
+
+		//initialize the simulation parameters
+		simPass = false;
+		guardBits = 0;
+		//start the iterations
+		while(!simPass)
+		{
+			//set the flag
+			iterPass = true;
+
+			//create nbTests testcases to check if the current number of guard
+			//	bits is sufficient
+			for(size_t i=0; i<nbTests; i++)
+			{
+				//initialize the input to the iterations
+				a = getLargeRandom(dX->width());
+				//manage signed inputs
+				if(a >= big1Xp)
+					a -= big1X;
+				mpfr_init2(mpX, LARGEPREC);
+				//set the input value
+				mpfr_set_z(mpX, a.get_mpz_t(), GMP_RNDN);
+				//scale X appropriately, by the amount given by lsbInOut
+				mpfr_mul_2si(mpX, mpX, lsbInOut, GMP_RNDN);
+				//scale the input, if needed
+				if(scaleInput == true)
+				{
+					mpfr_mul_d(mpX, mpX, inputScaleFactor, GMP_RNDN);
+				}
+
+				//initialize the internal state
+				for(size_t i=0; i<maxDegree; i++)
+				{
+					mpfr_set_zero(diSim[i], GMP_RNDN);
+					mpfr_set(wiSim[i], mpCoeffsP[i], GMP_RNDN);
+				}
+
+				//simulate nbTests iterations of the E-method algorithm
+				for(size_t j=0; j<nbIter; j++)
+				{
+					simulateIteration(guardBits);
+				}
+
+				//create the output
+				mpfr_set_zero(ySim, GMP_RNDN);
+				for(size_t j=0; j<nbIter; j++)
+				{
+					mpfr_mul_2si(mpTmp, diSim[j], -j, GMP_RNDN);
+					mpfr_add(ySim, ySim, mpTmp, GMP_RNDN);
+				}
+
+				//extract the useful bits
+				mpfr_mul_2si(ySim, ySim, -lsbInOut+msbInOut, GMP_RNDN);
+				//	round the result
+				mpfr_get_z(svY.get_mpz_t(), ySim, GMP_RNDD);
+				//	store the result back
+				mpfr_set_z(ySim, svY.get_mpz_t(), GMP_RNDN);
+				//	scale the result back
+				mpfr_div_2si(ySim, ySim, -lsbInOut+msbInOut, GMP_RNDN);
+
+				//create the golden reference
+				//	initialize P and Q
+				mpfr_set_zero(mpP, 0);
+				mpfr_set_zero(mpQ, 0);
+				//	compute P
+				for(int j=0; j<(int)n; j++)
+				{
+					//compute X^i
+					mpfr_pow_si(mpTmp, mpX, j, GMP_RNDN);
+					//multiply by coeffsP[i]
+					mpfr_mul(mpTmp, mpTmp, mpCoeffsP[j], GMP_RNDN);
+					//add the new term to the sum
+					mpfr_add(mpP, mpP, mpTmp, GMP_RNDN);
+				}
+				//	compute Q
+				for(int j=0; j<(int)m; j++)
+				{
+					//compute X^i
+					mpfr_pow_si(mpTmp, mpX, j, GMP_RNDN);
+					//multiply by coeffsQ[i]
+					mpfr_mul(mpTmp, mpTmp, mpCoeffsQ[j], GMP_RNDN);
+					//add the new term to the sum
+					mpfr_add(mpQ, mpQ, mpTmp, GMP_RNDN);
+				}
+				//	compute Y = P/Q
+				mpfr_div(mpY, mpP, mpQ, GMP_RNDN);
+
+				//extract the useful bits
+				mpfr_mul_2si(mpY, mpY, -lsbInOut+msbInOut, GMP_RNDN);
+				//	round the result
+				mpfr_get_z(svY.get_mpz_t(), mpY, GMP_RNDD);
+				//	store the result back
+				mpfr_set_z(mpY, svY.get_mpz_t(), GMP_RNDN);
+				//	scale the result back
+				mpfr_div_2si(mpY, mpY, -lsbInOut+msbInOut, GMP_RNDN);
+
+				//compare the results
+				if(mpfr_cmp(ySim, mpY) != 0)
+				{
+					iterPass = false;
+					break;
+				}
+			}
+
+			//check if all testcases passed
+			if(iterPass == true)
+			{
+				simPass = true;
+			}else
+			{
+				guardBits++;
+			}
+		}
+
+		return guardBits;
+	}
+
+
+	void FixEMethodEvaluatorTrunc::simulateIteration(int guardBits)
+	{
+		return;
 	}
 
 

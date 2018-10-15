@@ -170,6 +170,25 @@ namespace flopoco {
      */
     void setWDatapathLengths();
 
+    /**
+     * Simulate the truncated w iterations, using the datapath
+     * lengths in the internal formats contained in dWTrunc.
+     * @param nbTests the number of tests to use in order to confirm
+     * the validity of the datapath sizes
+     * @return the number of additional bits required, or zero if
+     * no additional bits are required
+     */
+    int simulateWDatapathLengths(int nbTests);
+
+    /**
+     * Simulate one iteration of the E-method algorithm, using
+     * the truncated datapath widths given by dWTrunc.
+     * This method updates a set of internal variables containing the state of
+     * the simulation.
+     * @param the number of additional guard bits to use for the simulation
+     */
+    void simulateIteration(int guardBits);
+
 
   private:
     size_t radix;                     /**< the radix used for the implementation */
@@ -219,6 +238,11 @@ namespace flopoco {
     int msbDiMX;                      /**< the MSB of the DiMultX signals */
     int lsbDiMX;                      /**< the LSB of the DiMultX signals */
     Signal *dDiMX;                    /**< dummy signal for DiMultX */
+
+    mpfr_t wiSim[10000];              /**< state of the internally simulated wi */
+    mpfr_t diSim[10000];              /**< state of the internally simulated di */
+    mpfr_t xSim;                      /**< state of the internally simulated x */
+    mpfr_t ySim;                      /**< state of the internally simulated y */
 
     int currentCycle;                 /**< used for pipelining to store the current cycle */
     double currentCriticalPath;       /**< used for pipelining to store the current critical path */

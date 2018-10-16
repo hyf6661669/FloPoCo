@@ -536,8 +536,8 @@ namespace flopoco {
 			//the instance
 			vhdl << tab << instance(cu0, join("CU_", iter, "_0"));
 
-			//create computation units index 1 to maxDegree-1
-			REPORT(DEBUG, "create computation units index 1 to maxDegree-1");
+			//create computation units index 1 to maxDegree-2
+			REPORT(DEBUG, "create computation units index 1 to maxDegree-2");
 			for(size_t i=1; i<=(maxDegree-2); i++)
 			{
 				//after iteration nbIter-m, we can stop generating some of the CUs
@@ -565,7 +565,7 @@ namespace flopoco {
 			if(iter <= (nbIter-maxDegree+1))
 			{
 				//create computation unit index maxDegree
-				REPORT(DEBUG, "create computation unit index maxDegree");
+				REPORT(DEBUG, "create computation unit index maxDegree-1");
 				//	a special case
 				//inputs
 				inPortMap(cuN, "Wi",   join("W_", iter-1, "_", maxDegree-1));
@@ -1044,6 +1044,7 @@ namespace flopoco {
 					mpfr_set_zero(diSim[i], GMP_RNDN);
 					mpfr_set(wiSim[i], mpCoeffsP[i], GMP_RNDN);
 				}
+				mpfr_set_zero(ySim, GMP_RNDN);
 
 				//simulate nbTests iterations of the E-method algorithm
 				for(size_t j=0; j<nbIter; j++)
@@ -1122,13 +1123,70 @@ namespace flopoco {
 			}
 		}
 
+		//MPFR cleanup
+		mpfr_clears(mpX, mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
+		for(size_t i=0; i<maxDegree; i++)
+		{
+			mpfr_clears(wiSim[i], diSim[i], (mpfr_ptr)nullptr);
+		}
+		mpfr_clears(xSim, ySim, (mpfr_ptr)nullptr);
+
+
 		return guardBits;
 	}
 
 
 	void FixEMethodEvaluatorTrunc::simulateIteration(int guardBits)
 	{
-		return;
+		mpfr_t mpTmp, mpResult, d0;
+		mpz_class svTmp, svResult;
+
+		//initialize the internal variables
+		mpfr_inits2(LARGEPREC, mpTmp, mpResult, d0, (mpfr_ptr)nullptr);
+
+		//save the value of d[0]^{j-1}, as it will be overwritten in the following iterations
+		mpfr_set(d0, diSim[0], GMP_RNDN);
+
+		//component 0
+		//	initialize the working variables
+		mpfr_set_zero(mpTmp, 0);
+		mpfr_set_zero(mpResult, 0);
+		//	create w[0]^{j} = r * [ w[0]^{j-1} - d[0]^{j-1} + d[1]^{j-1}*x ]
+		mpfr_set(mpResult, wiSim[0], GMP_RNDN);
+		mpfr_sub(mpResult, mpResult, d0, GMP_RNDN);
+		mpfr_mul(mpTmp, diSim[1], xSim, GMP_RNDN);
+		mpfr_add(mpResult, mpResult, mpTmp, GMP_RNDN);
+		mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
+		//	save the result in wiSim[0]
+		mpfr_set(wiSim[0], mpResult, GMP_RNDN);
+		//	create d[0]^j = select( w[0]^{j} )
+		mpfr_get_z(svResult.get_mpz_t(), wiSim[0], GMP_RNDN);
+		mpfr_set_z(diSim[0], svResult.get_mpz_t(), GMP_RNDN);
+
+		//component 1 to n-2
+		for(size_t i=0; i<maxDegree; i++)
+		{
+
+		}
+
+		//component n-1
+		//	initialize the working variables
+		mpfr_set_zero(mpTmp, 0);
+		mpfr_set_zero(mpResult, 0);
+		//	create w[n-1]^{j} = r * [ w[n-1]^{j-1} - d[n-1]^{j-1} - q[n-1]^{j-1}*d[0]^{j-1} ]
+		mpfr_set(mpResult, wiSim[maxDegree-1], GMP_RNDN);
+		mpfr_sub(mpResult, mpResult, diSim[maxDegree-1], GMP_RNDN);
+		mpfr_mul(mpTmp, mpCoeffsQ[maxDegree-1], d0, GMP_RNDN);
+		mpfr_sub(mpResult, mpResult, mpTmp, GMP_RNDN);
+		mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
+		//	save the result in wiSim[maxDegree-1]
+		mpfr_set(wiSim[maxDegree-1], mpResult, GMP_RNDN);
+		//	create d[maxDegree-1]^j = select( w[maxDegree-1]^{j} )
+		mpfr_get_z(svResult.get_mpz_t(), wiSim[maxDegree-1], GMP_RNDN);
+		mpfr_set_z(diSim[maxDegree-1], svResult.get_mpz_t(), GMP_RNDN);
+
+		//MPFR cleanup
+		mpfr_inits2(LARGEPREC, mpTmp, mpResult, d0, (mpfr_ptr)nullptr);
 	}
 
 

@@ -1157,6 +1157,11 @@ namespace flopoco {
 		mpfr_mul(mpTmp, diSim[1], xSim, GMP_RNDN);
 		mpfr_add(mpResult, mpResult, mpTmp, GMP_RNDN);
 		mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
+		//	truncate the result to the working precision
+		mpfr_mul_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
+		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
+		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
+		mpfr_div_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
 		//	save the result in wiSim[0]
 		mpfr_set(wiSim[0], mpResult, GMP_RNDN);
 		//	create d[0]^j = select( w[0]^{j} )
@@ -1164,9 +1169,30 @@ namespace flopoco {
 		mpfr_set_z(diSim[0], svResult.get_mpz_t(), GMP_RNDN);
 
 		//component 1 to n-2
-		for(size_t i=0; i<maxDegree; i++)
+		for(size_t i=1; i<maxDegree-1; i++)
 		{
-
+			//component i
+			//	initialize the working variables
+			mpfr_set_zero(mpTmp, 0);
+			mpfr_set_zero(mpResult, 0);
+			//	create w[i]^{j} = r * [ w[i]^{j-1} - d[i]^{j-1} - q[i]^{j-1}*d[0]^{j-1} + d[i+1]^{j-1}*x ]
+			mpfr_set(mpResult, wiSim[i], GMP_RNDN);
+			mpfr_sub(mpResult, mpResult, diSim[i], GMP_RNDN);
+			mpfr_mul(mpTmp, mpCoeffsQ[i], d0, GMP_RNDN);
+			mpfr_sub(mpResult, mpResult, mpTmp, GMP_RNDN);
+			mpfr_mul(mpTmp, diSim[i+1], xSim, GMP_RNDN);
+			mpfr_add(mpResult, mpResult, mpTmp, GMP_RNDN);
+			mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
+			//	truncate the result to the working precision
+			mpfr_mul_2si(mpResult, mpResult, -dWTrunc[i]->LSB()+guardBits, GMP_RNDN);
+			mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
+			mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
+			mpfr_div_2si(mpResult, mpResult, -dWTrunc[i]->LSB()+guardBits, GMP_RNDN);
+			//	save the result in wiSim[i]
+			mpfr_set(wiSim[i], mpResult, GMP_RNDN);
+			//	create d[i]^j = select( w[i]^{j} )
+			mpfr_get_z(svResult.get_mpz_t(), wiSim[i], GMP_RNDN);
+			mpfr_set_z(diSim[i], svResult.get_mpz_t(), GMP_RNDN);
 		}
 
 		//component n-1
@@ -1179,6 +1205,11 @@ namespace flopoco {
 		mpfr_mul(mpTmp, mpCoeffsQ[maxDegree-1], d0, GMP_RNDN);
 		mpfr_sub(mpResult, mpResult, mpTmp, GMP_RNDN);
 		mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
+		//	truncate the result to the working precision
+		mpfr_mul_2si(mpResult, mpResult, -dWTrunc[maxDegree-1]->LSB()+guardBits, GMP_RNDN);
+		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
+		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
+		mpfr_div_2si(mpResult, mpResult, -dWTrunc[maxDegree-1]->LSB()+guardBits, GMP_RNDN);
 		//	save the result in wiSim[maxDegree-1]
 		mpfr_set(wiSim[maxDegree-1], mpResult, GMP_RNDN);
 		//	create d[maxDegree-1]^j = select( w[maxDegree-1]^{j} )

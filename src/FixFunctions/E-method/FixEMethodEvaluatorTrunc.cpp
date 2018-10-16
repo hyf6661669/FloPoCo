@@ -1009,10 +1009,19 @@ namespace flopoco {
 		//initialize the MPFR variables
 		mpfr_inits2(LARGEPREC, mpX, mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
 
+		//print the current datapath lengths
+		cout << endl << "Size of the datapaths, as initially computed:" << endl;
+		for(size_t i=0; i<maxDegree; i++)
+		{
+			cout << tab << "w[" << i << "]: MSB=" << dWTrunc[i]->MSB() << "  LSB=" << dWTrunc[i]->LSB() << endl;
+		}
+
 		//initialize the simulation parameters
 		simPass = false;
 		guardBits = 0;
 		//start the iterations
+		cout << endl << "Starting iterations to determine the required extra guard bits."
+				<< endl << tab << "Current nb. of guard bits: guardBits=" << guardBits << endl;
 		while(!simPass)
 		{
 			//set the flag
@@ -1020,6 +1029,7 @@ namespace flopoco {
 
 			//create nbTests testcases to check if the current number of guard
 			//	bits is sufficient
+			cout << tab << "Trying: guardBits=" << guardBits << endl;
 			for(size_t i=0; i<nbTests; i++)
 			{
 				//initialize the input to the iterations
@@ -1109,8 +1119,20 @@ namespace flopoco {
 				if(mpfr_cmp(ySim, mpY) != 0)
 				{
 					iterPass = false;
+					cout << tab << "Fail. Expected result=" << mpfr_get_d(mpY, GMP_RNDN)
+							<< "  obtained=" << mpfr_get_d(ySim, GMP_RNDN) << endl;
 					break;
 				}
+			}
+
+			cout << endl << "Finished iterations to determine the required extra guard bits."
+					<< endl << tab << "Computed nb. of guard bits: guardBits=" << guardBits << endl;
+
+			cout << endl << "Size of the datapaths, with the required guard bits:" << endl;
+			for(size_t i=0; i<maxDegree; i++)
+			{
+				cout << tab << "w[" << i << "]: MSB=" << dWTrunc[i]->MSB() << "  LSB="
+						<< maxInt(2, dWTrunc[i]->LSB()-guardBits, dW->LSB()) << endl;
 			}
 
 			//check if all testcases passed
@@ -1158,10 +1180,12 @@ namespace flopoco {
 		mpfr_add(mpResult, mpResult, mpTmp, GMP_RNDN);
 		mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
 		//	truncate the result to the working precision
-		mpfr_mul_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
+		//mpfr_mul_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
+		mpfr_mul_2si(mpResult, mpResult, maxInt(2, dWTrunc[0]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
 		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
-		mpfr_div_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
+		//mpfr_div_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
+		mpfr_div_2si(mpResult, mpResult, maxInt(2, dWTrunc[0]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
 		//	save the result in wiSim[0]
 		mpfr_set(wiSim[0], mpResult, GMP_RNDN);
 		//	create d[0]^j = select( w[0]^{j} )
@@ -1184,10 +1208,12 @@ namespace flopoco {
 			mpfr_add(mpResult, mpResult, mpTmp, GMP_RNDN);
 			mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
 			//	truncate the result to the working precision
-			mpfr_mul_2si(mpResult, mpResult, -dWTrunc[i]->LSB()+guardBits, GMP_RNDN);
+			//mpfr_mul_2si(mpResult, mpResult, -dWTrunc[i]->LSB()+guardBits, GMP_RNDN);
+			mpfr_mul_2si(mpResult, mpResult, maxInt(2, dWTrunc[i]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
 			mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 			mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
-			mpfr_div_2si(mpResult, mpResult, -dWTrunc[i]->LSB()+guardBits, GMP_RNDN);
+			//mpfr_div_2si(mpResult, mpResult, -dWTrunc[i]->LSB()+guardBits, GMP_RNDN);
+			mpfr_div_2si(mpResult, mpResult, maxInt(2, dWTrunc[i]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
 			//	save the result in wiSim[i]
 			mpfr_set(wiSim[i], mpResult, GMP_RNDN);
 			//	create d[i]^j = select( w[i]^{j} )
@@ -1206,10 +1232,12 @@ namespace flopoco {
 		mpfr_sub(mpResult, mpResult, mpTmp, GMP_RNDN);
 		mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
 		//	truncate the result to the working precision
-		mpfr_mul_2si(mpResult, mpResult, -dWTrunc[maxDegree-1]->LSB()+guardBits, GMP_RNDN);
+		//mpfr_mul_2si(mpResult, mpResult, -dWTrunc[maxDegree-1]->LSB()+guardBits, GMP_RNDN);
+		mpfr_mul_2si(mpResult, mpResult, maxInt(2, dWTrunc[maxDegree-1]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
 		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
-		mpfr_div_2si(mpResult, mpResult, -dWTrunc[maxDegree-1]->LSB()+guardBits, GMP_RNDN);
+		//mpfr_div_2si(mpResult, mpResult, -dWTrunc[maxDegree-1]->LSB()+guardBits, GMP_RNDN);
+		mpfr_div_2si(mpResult, mpResult, maxInt(2, dWTrunc[maxDegree-1]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
 		//	save the result in wiSim[maxDegree-1]
 		mpfr_set(wiSim[maxDegree-1], mpResult, GMP_RNDN);
 		//	create d[maxDegree-1]^j = select( w[maxDegree-1]^{j} )

@@ -97,6 +97,7 @@ namespace flopoco {
 		dW   = new Signal("dW", Signal::wire, true, msbW, lsbW);
 		//	compute the datapath sizes for the truncated W paths
 		setWDatapathLengths();
+		simulateWDatapathLengths(100);
 		//	D
 		msbD = ceil(log2(radix));
 		lsbD = 0;
@@ -1004,6 +1005,10 @@ namespace flopoco {
 		{
 			mpfr_inits2(LARGEPREC, wiSim[i], diSim[i], (mpfr_ptr)nullptr);
 		}
+		for(size_t i=0; i<=nbIter; i++)
+		{
+			mpfr_init2(d0Sim[i], LARGEPREC);
+		}
 		mpfr_inits2(LARGEPREC, xSim, ySim, (mpfr_ptr)nullptr);
 
 		//initialize the MPFR variables
@@ -1016,6 +1021,8 @@ namespace flopoco {
 			cout << tab << "w[" << i << "]: MSB=" << dWTrunc[i]->MSB() << "  LSB=" << dWTrunc[i]->LSB() << endl;
 		}
 
+		//initialize the random number generator
+		FloPoCoRandomState::init(n);
 		//initialize the simulation parameters
 		simPass = false;
 		guardBits = 0;
@@ -1033,7 +1040,7 @@ namespace flopoco {
 			for(size_t i=0; i<nbTests; i++)
 			{
 				//initialize the input to the iterations
-				a = getLargeRandom(dX->width());
+				a = getLargeRandom(msbInOut-lsbInOut+1);
 				//manage signed inputs
 				if(a >= big1Xp)
 					a -= big1X;
@@ -1049,24 +1056,28 @@ namespace flopoco {
 				}
 
 				//initialize the internal state
-				for(size_t i=0; i<maxDegree; i++)
+				for(size_t j=0; j<maxDegree; j++)
 				{
-					mpfr_set_zero(diSim[i], GMP_RNDN);
-					mpfr_set(wiSim[i], mpCoeffsP[i], GMP_RNDN);
+					mpfr_set_zero(diSim[j], GMP_RNDN);
+					mpfr_set(wiSim[j], mpCoeffsP[j], GMP_RNDN);
 				}
+				mpfr_set(d0Sim[0], diSim[0], GMP_RNDN);
 				mpfr_set_zero(ySim, GMP_RNDN);
 
 				//simulate nbTests iterations of the E-method algorithm
-				for(size_t j=0; j<nbIter; j++)
+				//	iterations start at 1, since the first one is the initialization stage
+				for(size_t j=1; j<=nbIter; j++)
 				{
 					simulateIteration(guardBits);
+					//save the newly produced digit
+					mpfr_set(d0Sim[j], diSim[0], GMP_RNDN);
 				}
 
 				//create the output
 				mpfr_set_zero(ySim, GMP_RNDN);
-				for(size_t j=0; j<nbIter; j++)
+				for(size_t j=0; j<=nbIter; j++)
 				{
-					mpfr_mul_2si(mpTmp, diSim[j], -j, GMP_RNDN);
+					mpfr_mul_2si(mpTmp, d0Sim[j], -j, GMP_RNDN);
 					mpfr_add(ySim, ySim, mpTmp, GMP_RNDN);
 				}
 
@@ -1125,16 +1136,6 @@ namespace flopoco {
 				}
 			}
 
-			cout << endl << "Finished iterations to determine the required extra guard bits."
-					<< endl << tab << "Computed nb. of guard bits: guardBits=" << guardBits << endl;
-
-			cout << endl << "Size of the datapaths, with the required guard bits:" << endl;
-			for(size_t i=0; i<maxDegree; i++)
-			{
-				cout << tab << "w[" << i << "]: MSB=" << dWTrunc[i]->MSB() << "  LSB="
-						<< maxInt(2, dWTrunc[i]->LSB()-guardBits, dW->LSB()) << endl;
-			}
-
 			//check if all testcases passed
 			if(iterPass == true)
 			{
@@ -1145,11 +1146,25 @@ namespace flopoco {
 			}
 		}
 
+		cout << endl << "Finished iterations to determine the required extra guard bits." << endl
+				<< tab << "Computed nb. of guard bits: guardBits=" << guardBits << endl;
+
+		cout << endl << "Size of the datapaths, with the required guard bits:" << endl;
+		for(size_t i=0; i<maxDegree; i++)
+		{
+			cout << tab << "w[" << i << "]: MSB=" << dWTrunc[i]->MSB() << "  LSB="
+					<< maxInt(2, dWTrunc[i]->LSB()-guardBits, dW->LSB()) << endl;
+		}
+
 		//MPFR cleanup
 		mpfr_clears(mpX, mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
 		for(size_t i=0; i<maxDegree; i++)
 		{
 			mpfr_clears(wiSim[i], diSim[i], (mpfr_ptr)nullptr);
+		}
+		for(size_t i=0; i<=nbIter; i++)
+		{
+			mpfr_clear(d0Sim[i]);
 		}
 		mpfr_clears(xSim, ySim, (mpfr_ptr)nullptr);
 

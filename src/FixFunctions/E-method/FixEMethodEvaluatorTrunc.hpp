@@ -241,6 +241,7 @@ namespace flopoco {
 
     mpfr_t wiSim[10000];              /**< state of the internally simulated wi */
     mpfr_t diSim[10000];              /**< state of the internally simulated di */
+    mpfr_t d0Sim[10000];              /**< state of the internally simulated d0's */
     mpfr_t xSim;                      /**< state of the internally simulated x */
     mpfr_t ySim;                      /**< state of the internally simulated y */
 

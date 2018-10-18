@@ -998,7 +998,8 @@ namespace flopoco {
 		mpz_class big1X  = (mpz_class(1) << (msbInOut-lsbInOut+1));
 		mpz_class big1Xp = (mpz_class(1) << (msbInOut-lsbInOut));
 		//manage a multi-precision input
-		mpfr_t mpX, mpP, mpQ, mpY, mpTmp;
+		mpfr_t mpP, mpQ, mpY, mpTmp;
+		double dTmp;
 
 		//initialize the internal state of the simulation variables
 		for(size_t i=0; i<maxDegree; i++)
@@ -1012,7 +1013,7 @@ namespace flopoco {
 		mpfr_inits2(LARGEPREC, xSim, ySim, (mpfr_ptr)nullptr);
 
 		//initialize the MPFR variables
-		mpfr_inits2(LARGEPREC, mpX, mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_inits2(LARGEPREC, mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
 
 		//print the current datapath lengths
 		cout << endl << "Size of the datapaths, as initially computed:" << endl;
@@ -1037,22 +1038,25 @@ namespace flopoco {
 			//create nbTests testcases to check if the current number of guard
 			//	bits is sufficient
 			cout << tab << "Trying: guardBits=" << guardBits << endl;
-			for(size_t i=0; i<nbTests; i++)
+			for(size_t i=0; i<(size_t)nbTests; i++)
 			{
 				//initialize the input to the iterations
 				a = getLargeRandom(msbInOut-lsbInOut+1);
 				//manage signed inputs
 				if(a >= big1Xp)
 					a -= big1X;
-				mpfr_init2(mpX, LARGEPREC);
+				mpfr_init2(xSim, LARGEPREC);
 				//set the input value
-				mpfr_set_z(mpX, a.get_mpz_t(), GMP_RNDN);
+				mpfr_set_z(xSim, a.get_mpz_t(), GMP_RNDN);
+				dTmp = mpfr_get_d(xSim, GMP_RNDN);
 				//scale X appropriately, by the amount given by lsbInOut
-				mpfr_mul_2si(mpX, mpX, lsbInOut, GMP_RNDN);
+				mpfr_mul_2si(xSim, xSim, lsbInOut, GMP_RNDN);
+				dTmp = mpfr_get_d(xSim, GMP_RNDN);
 				//scale the input, if needed
 				if(scaleInput == true)
 				{
-					mpfr_mul_d(mpX, mpX, inputScaleFactor, GMP_RNDN);
+					mpfr_mul_d(xSim, xSim, inputScaleFactor, GMP_RNDN);
+					dTmp = mpfr_get_d(xSim, GMP_RNDN);
 				}
 
 				//initialize the internal state
@@ -1061,7 +1065,10 @@ namespace flopoco {
 					mpfr_set_zero(diSim[j], GMP_RNDN);
 					mpfr_set(wiSim[j], mpCoeffsP[j], GMP_RNDN);
 				}
-				mpfr_set(d0Sim[0], diSim[0], GMP_RNDN);
+				for(size_t j=0; j<=nbIter; j++)
+				{
+					mpfr_set_zero(d0Sim[j], GMP_RNDN);
+				}
 				mpfr_set_zero(ySim, GMP_RNDN);
 
 				//simulate nbTests iterations of the E-method algorithm
@@ -1082,13 +1089,13 @@ namespace flopoco {
 				}
 
 				//extract the useful bits
-				mpfr_mul_2si(ySim, ySim, -lsbInOut+msbInOut, GMP_RNDN);
+				mpfr_mul_2si(ySim, ySim, -lsbInOut, GMP_RNDN);
 				//	round the result
 				mpfr_get_z(svY.get_mpz_t(), ySim, GMP_RNDD);
 				//	store the result back
 				mpfr_set_z(ySim, svY.get_mpz_t(), GMP_RNDN);
 				//	scale the result back
-				mpfr_div_2si(ySim, ySim, -lsbInOut+msbInOut, GMP_RNDN);
+				mpfr_div_2si(ySim, ySim, -lsbInOut, GMP_RNDN);
 
 				//create the golden reference
 				//	initialize P and Q
@@ -1098,7 +1105,7 @@ namespace flopoco {
 				for(int j=0; j<(int)n; j++)
 				{
 					//compute X^i
-					mpfr_pow_si(mpTmp, mpX, j, GMP_RNDN);
+					mpfr_pow_si(mpTmp, xSim, j, GMP_RNDN);
 					//multiply by coeffsP[i]
 					mpfr_mul(mpTmp, mpTmp, mpCoeffsP[j], GMP_RNDN);
 					//add the new term to the sum
@@ -1108,7 +1115,7 @@ namespace flopoco {
 				for(int j=0; j<(int)m; j++)
 				{
 					//compute X^i
-					mpfr_pow_si(mpTmp, mpX, j, GMP_RNDN);
+					mpfr_pow_si(mpTmp, xSim, j, GMP_RNDN);
 					//multiply by coeffsQ[i]
 					mpfr_mul(mpTmp, mpTmp, mpCoeffsQ[j], GMP_RNDN);
 					//add the new term to the sum
@@ -1118,20 +1125,23 @@ namespace flopoco {
 				mpfr_div(mpY, mpP, mpQ, GMP_RNDN);
 
 				//extract the useful bits
-				mpfr_mul_2si(mpY, mpY, -lsbInOut+msbInOut, GMP_RNDN);
+				mpfr_mul_2si(mpY, mpY, -lsbInOut, GMP_RNDN);
 				//	round the result
 				mpfr_get_z(svY.get_mpz_t(), mpY, GMP_RNDD);
 				//	store the result back
 				mpfr_set_z(mpY, svY.get_mpz_t(), GMP_RNDN);
 				//	scale the result back
-				mpfr_div_2si(mpY, mpY, -lsbInOut+msbInOut, GMP_RNDN);
+				mpfr_div_2si(mpY, mpY, -lsbInOut, GMP_RNDN);
 
 				//compare the results
 				if(mpfr_cmp(ySim, mpY) != 0)
 				{
 					iterPass = false;
+					mpfr_sub(mpTmp, mpY, ySim, GMP_RNDN);
+					mpfr_abs(mpTmp, mpTmp, GMP_RNDN);
 					cout << tab << "Fail. Expected result=" << mpfr_get_d(mpY, GMP_RNDN)
-							<< "  obtained=" << mpfr_get_d(ySim, GMP_RNDN) << endl;
+							<< "  obtained=" << mpfr_get_d(ySim, GMP_RNDN)
+							<< "  error=" << mpfr_get_d(mpTmp, GMP_RNDN) << endl;
 					break;
 				}
 			}
@@ -1157,7 +1167,7 @@ namespace flopoco {
 		}
 
 		//MPFR cleanup
-		mpfr_clears(mpX, mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_clears(mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
 		for(size_t i=0; i<maxDegree; i++)
 		{
 			mpfr_clears(wiSim[i], diSim[i], (mpfr_ptr)nullptr);
@@ -1168,7 +1178,6 @@ namespace flopoco {
 		}
 		mpfr_clears(xSim, ySim, (mpfr_ptr)nullptr);
 
-
 		return guardBits;
 	}
 
@@ -1177,12 +1186,15 @@ namespace flopoco {
 	{
 		mpfr_t mpTmp, mpResult, d0;
 		mpz_class svTmp, svResult;
+		int dwTruncLsb;
+		double dTmp;
 
 		//initialize the internal variables
 		mpfr_inits2(LARGEPREC, mpTmp, mpResult, d0, (mpfr_ptr)nullptr);
 
 		//save the value of d[0]^{j-1}, as it will be overwritten in the following iterations
 		mpfr_set(d0, diSim[0], GMP_RNDN);
+		dTmp = mpfr_get_d(d0, GMP_RNDN);
 
 		//component 0
 		//	initialize the working variables
@@ -1190,22 +1202,33 @@ namespace flopoco {
 		mpfr_set_zero(mpResult, 0);
 		//	create w[0]^{j} = r * [ w[0]^{j-1} - d[0]^{j-1} + d[1]^{j-1}*x ]
 		mpfr_set(mpResult, wiSim[0], GMP_RNDN);
+		dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 		mpfr_sub(mpResult, mpResult, d0, GMP_RNDN);
+		dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 		mpfr_mul(mpTmp, diSim[1], xSim, GMP_RNDN);
+		dTmp = mpfr_get_d(diSim[1], GMP_RNDN);
+		dTmp = mpfr_get_d(xSim, GMP_RNDN);
+		dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 		mpfr_add(mpResult, mpResult, mpTmp, GMP_RNDN);
+		dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 		mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
+		dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 		//	truncate the result to the working precision
 		//mpfr_mul_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
-		mpfr_mul_2si(mpResult, mpResult, maxInt(2, dWTrunc[0]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
+		dwTruncLsb = maxInt(2, dWTrunc[0]->LSB()-guardBits, dW->LSB());
+		mpfr_mul_2si(mpResult, mpResult, -dwTruncLsb, GMP_RNDN);
 		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
 		//mpfr_div_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
-		mpfr_div_2si(mpResult, mpResult, maxInt(2, dWTrunc[0]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
+		mpfr_div_2si(mpResult, mpResult, -dwTruncLsb, GMP_RNDN);
+		dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 		//	save the result in wiSim[0]
 		mpfr_set(wiSim[0], mpResult, GMP_RNDN);
+		dTmp = mpfr_get_d(wiSim[0], GMP_RNDN);
 		//	create d[0]^j = select( w[0]^{j} )
 		mpfr_get_z(svResult.get_mpz_t(), wiSim[0], GMP_RNDN);
 		mpfr_set_z(diSim[0], svResult.get_mpz_t(), GMP_RNDN);
+		dTmp = mpfr_get_d(diSim[0], GMP_RNDN);
 
 		//component 1 to n-2
 		for(size_t i=1; i<maxDegree-1; i++)
@@ -1222,18 +1245,23 @@ namespace flopoco {
 			mpfr_mul(mpTmp, diSim[i+1], xSim, GMP_RNDN);
 			mpfr_add(mpResult, mpResult, mpTmp, GMP_RNDN);
 			mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
+			dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 			//	truncate the result to the working precision
 			//mpfr_mul_2si(mpResult, mpResult, -dWTrunc[i]->LSB()+guardBits, GMP_RNDN);
-			mpfr_mul_2si(mpResult, mpResult, maxInt(2, dWTrunc[i]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
+			dwTruncLsb = maxInt(2, dWTrunc[i]->LSB()-guardBits, dW->LSB());
+			mpfr_mul_2si(mpResult, mpResult, -dwTruncLsb, GMP_RNDN);
 			mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 			mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
 			//mpfr_div_2si(mpResult, mpResult, -dWTrunc[i]->LSB()+guardBits, GMP_RNDN);
-			mpfr_div_2si(mpResult, mpResult, maxInt(2, dWTrunc[i]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
+			mpfr_div_2si(mpResult, mpResult, -dwTruncLsb, GMP_RNDN);
+			dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 			//	save the result in wiSim[i]
 			mpfr_set(wiSim[i], mpResult, GMP_RNDN);
+			dTmp = mpfr_get_d(wiSim[i], GMP_RNDN);
 			//	create d[i]^j = select( w[i]^{j} )
 			mpfr_get_z(svResult.get_mpz_t(), wiSim[i], GMP_RNDN);
 			mpfr_set_z(diSim[i], svResult.get_mpz_t(), GMP_RNDN);
+			dTmp = mpfr_get_d(diSim[i], GMP_RNDN);
 		}
 
 		//component n-1
@@ -1246,21 +1274,26 @@ namespace flopoco {
 		mpfr_mul(mpTmp, mpCoeffsQ[maxDegree-1], d0, GMP_RNDN);
 		mpfr_sub(mpResult, mpResult, mpTmp, GMP_RNDN);
 		mpfr_mul_ui(mpResult, mpResult, radix, GMP_RNDN);
+		dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 		//	truncate the result to the working precision
 		//mpfr_mul_2si(mpResult, mpResult, -dWTrunc[maxDegree-1]->LSB()+guardBits, GMP_RNDN);
-		mpfr_mul_2si(mpResult, mpResult, maxInt(2, dWTrunc[maxDegree-1]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
+		dwTruncLsb = maxInt(2, dWTrunc[maxDegree-1]->LSB()-guardBits, dW->LSB());
+		mpfr_mul_2si(mpResult, mpResult, -dwTruncLsb, GMP_RNDN);
 		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
 		//mpfr_div_2si(mpResult, mpResult, -dWTrunc[maxDegree-1]->LSB()+guardBits, GMP_RNDN);
-		mpfr_div_2si(mpResult, mpResult, maxInt(2, dWTrunc[maxDegree-1]->LSB()-guardBits, dW->LSB()), GMP_RNDN);
+		mpfr_div_2si(mpResult, mpResult, -dwTruncLsb, GMP_RNDN);
+		dTmp = mpfr_get_d(mpResult, GMP_RNDN);
 		//	save the result in wiSim[maxDegree-1]
 		mpfr_set(wiSim[maxDegree-1], mpResult, GMP_RNDN);
+		dTmp = mpfr_get_d(wiSim[maxDegree-1], GMP_RNDN);
 		//	create d[maxDegree-1]^j = select( w[maxDegree-1]^{j} )
 		mpfr_get_z(svResult.get_mpz_t(), wiSim[maxDegree-1], GMP_RNDN);
 		mpfr_set_z(diSim[maxDegree-1], svResult.get_mpz_t(), GMP_RNDN);
+		dTmp = mpfr_get_d(diSim[maxDegree-1], GMP_RNDN);
 
 		//MPFR cleanup
-		mpfr_inits2(LARGEPREC, mpTmp, mpResult, d0, (mpfr_ptr)nullptr);
+		mpfr_clears(mpTmp, mpResult, d0, (mpfr_ptr)nullptr);
 	}
 
 

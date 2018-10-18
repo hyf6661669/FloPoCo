@@ -25,6 +25,7 @@
 #include "../ConstMultPAG/tscm_solutions.hpp"
 #include "../ConstMultPAG/pagexponents.hpp"
 
+#include "rpag/types.h"
 #include "rpag/compute_successor_set.h"
 #include "rpag/log2_64.h"
 #include "fundamental_extended.hpp"
@@ -34,7 +35,10 @@
 
 #include <algorithm>
 
+namespace rpag {} //required for clang to know the namespace
+
 using namespace std;
+using namespace rpag;
 
 namespace flopoco{
 

@@ -97,7 +97,7 @@ namespace flopoco {
 		dW   = new Signal("dW", Signal::wire, true, msbW, lsbW);
 		//	compute the datapath sizes for the truncated W paths
 		setWDatapathLengths();
-		simulateWDatapathLengths(100);
+		simulateWDatapathLengths(10000);
 		//	D
 		msbD = ceil(log2(radix));
 		lsbD = 0;
@@ -887,8 +887,7 @@ namespace flopoco {
 		double errorBoundD;
 		double dTmp;
 
-		//int gW = 0;
-		int gW = 21;
+		int gW = 0;
 		//int gW = 21;
 		//int gW = 30;
 
@@ -998,8 +997,9 @@ namespace flopoco {
 		mpz_class big1X  = (mpz_class(1) << (msbInOut-lsbInOut+1));
 		mpz_class big1Xp = (mpz_class(1) << (msbInOut-lsbInOut));
 		//manage a multi-precision input
-		mpfr_t mpP, mpQ, mpY, mpTmp;
+		mpfr_t mpP, mpQ, mpY, mpErrorBound, mpTmp;
 		double dTmp;
+		long double ldTmp;
 
 		//initialize the internal state of the simulation variables
 		for(size_t i=0; i<maxDegree; i++)
@@ -1013,7 +1013,13 @@ namespace flopoco {
 		mpfr_inits2(LARGEPREC, xSim, ySim, (mpfr_ptr)nullptr);
 
 		//initialize the MPFR variables
-		mpfr_inits2(LARGEPREC, mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_inits2(LARGEPREC, mpP, mpQ, mpY, mpErrorBound, mpTmp, (mpfr_ptr)nullptr);
+
+		//create the error bound, 1ulp on the given precision
+		mpfr_set_ui(mpErrorBound, 1, GMP_RNDN);
+		ldTmp = mpfr_get_ld(mpErrorBound, GMP_RNDN);
+		mpfr_mul_2si(mpErrorBound, mpErrorBound, lsbInOut, GMP_RNDN);
+		ldTmp = mpfr_get_ld(mpErrorBound, GMP_RNDN);
 
 		//print the current datapath lengths
 		cout << endl << "Size of the datapaths, as initially computed:" << endl;
@@ -1133,15 +1139,24 @@ namespace flopoco {
 				//	scale the result back
 				mpfr_div_2si(mpY, mpY, -lsbInOut, GMP_RNDN);
 
+				//compute the error
+				mpfr_sub(mpTmp, mpY, ySim, GMP_RNDN);
+				mpfr_abs(mpTmp, mpTmp, GMP_RNDN);
+
+				dTmp = mpfr_get_d(ySim, GMP_RNDN);
+				dTmp = mpfr_get_d(mpY, GMP_RNDN);
+				dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
+				dTmp = mpfr_get_d(mpErrorBound, GMP_RNDN);
+
 				//compare the results
-				if(mpfr_cmp(ySim, mpY) != 0)
+				if(mpfr_cmp(mpTmp, mpErrorBound) > 0)
 				{
 					iterPass = false;
-					mpfr_sub(mpTmp, mpY, ySim, GMP_RNDN);
-					mpfr_abs(mpTmp, mpTmp, GMP_RNDN);
-					cout << tab << "Fail. Expected result=" << mpfr_get_d(mpY, GMP_RNDN)
-							<< "  obtained=" << mpfr_get_d(ySim, GMP_RNDN)
-							<< "  error=" << mpfr_get_d(mpTmp, GMP_RNDN) << endl;
+
+					cout << tab << "Fail. Expected result=" << mpfr_get_ld(mpY, GMP_RNDN)
+							<< "  obtained=" << mpfr_get_ld(ySim, GMP_RNDN)
+							<< "  error=" << mpfr_get_ld(mpTmp, GMP_RNDN)
+							<< "  error bound=" << mpfr_get_ld(mpErrorBound, GMP_RNDN) << endl;
 					break;
 				}
 			}
@@ -1150,6 +1165,8 @@ namespace flopoco {
 			if(iterPass == true)
 			{
 				simPass = true;
+				cout << tab << "Success. Determined the number of required extra guard bits=" << guardBits
+						<< " for a number of tests=" << nbTests << endl;
 			}else
 			{
 				guardBits++;
@@ -1167,7 +1184,7 @@ namespace flopoco {
 		}
 
 		//MPFR cleanup
-		mpfr_clears(mpP, mpQ, mpY, mpTmp, (mpfr_ptr)nullptr);
+		mpfr_clears(mpP, mpQ, mpY, mpErrorBound, mpTmp, (mpfr_ptr)nullptr);
 		for(size_t i=0; i<maxDegree; i++)
 		{
 			mpfr_clears(wiSim[i], diSim[i], (mpfr_ptr)nullptr);

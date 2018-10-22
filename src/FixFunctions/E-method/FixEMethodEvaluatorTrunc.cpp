@@ -902,10 +902,11 @@ namespace flopoco {
 		mpfr_set_zero(mpErr, 0);
 		mpfr_set_zero(mpTmp, 0);
 		//	compute the slack
-		//		slack_i = 1/2 - 2^k(bounded by delta) - radix*x_limit
+		//		slack_i = 1/2 - 2^k(bounded by delta/2) - radix*x_limit
 		mpfr_set_d(mpErr, 0.5, GMP_RNDN);
 		dTmp = mpfr_get_d(mpErr, GMP_RNDN);
-		mpfr_sub(mpErr, mpErr, mpDelta, GMP_RNDN);
+		mpfr_div_ui(mpTmp, mpDelta, 2, GMP_RNDN);
+		mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
 		dTmp = mpfr_get_d(mpDelta, GMP_RNDN);
 		dTmp = mpfr_get_d(mpErr, GMP_RNDN);
 		//		tmp = radix*x_limit
@@ -934,9 +935,10 @@ namespace flopoco {
 			mpfr_set_zero(mpTmp, 0);
 
 			//compute the slack
-			//	slack_i = 1/2 - 2^k(bounded by delta) - radix*q_i - radix*x_limit
+			//	slack_i = 1/2 - 2^k(bounded by delta/2) - radix*q_i - radix*x_limit
 			mpfr_set_d(mpErr, 0.5, GMP_RNDN);
-			mpfr_sub(mpErr, mpErr, mpDelta, GMP_RNDN);
+			mpfr_div_ui(mpTmp, mpDelta, 2, GMP_RNDN);
+			mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
 			//	tmp = radix*q_i
 			mpfr_mul_ui(mpTmp, mpCoeffsQ[i], radix, GMP_RNDN);
 			mpfr_abs(mpTmp, mpTmp, GMP_RNDN);
@@ -964,13 +966,19 @@ namespace flopoco {
 		mpfr_set_zero(mpErr, 0);
 		mpfr_set_zero(mpTmp, 0);
 		//	compute the slack
-		//		slack_i = 1/2 - 2^k(bounded by delta) - radix*q_i
+		//		slack_i = 1/2 - 2^k(bounded by delta/2) - radix*q_i
 		mpfr_set_d(mpErr, 0.5, GMP_RNDN);
-		mpfr_sub(mpErr, mpErr, mpDelta, GMP_RNDN);
+		dTmp = mpfr_get_d(mpErr, GMP_RNDN);
+		mpfr_div_ui(mpTmp, mpDelta, 2, GMP_RNDN);
+		mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
+		dTmp = mpfr_get_d(mpErr, GMP_RNDN);
 		//		tmp = radix*q_n
 		mpfr_mul_ui(mpTmp, mpCoeffsQ[maxDegree-1], radix, GMP_RNDN);
+		dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 		mpfr_abs(mpTmp, mpTmp, GMP_RNDN);
+		dTmp = mpfr_get_d(mpTmp, GMP_RNDN);
 		mpfr_sub(mpErr, mpErr, mpTmp, GMP_RNDN);
+		dTmp = mpfr_get_d(mpErr, GMP_RNDN);
 		//	the errorBound_i is ceil(log2(slack))
 		if(mpfr_sgn(mpErr) > 0)
 		{

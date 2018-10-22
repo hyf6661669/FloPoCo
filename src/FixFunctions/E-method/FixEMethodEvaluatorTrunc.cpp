@@ -889,6 +889,7 @@ namespace flopoco {
 
 		int gW = 0;
 		//int gW = 21;
+		//int gW = 22;
 		//int gW = 30;
 
 		//initialize the working variables
@@ -1234,7 +1235,7 @@ namespace flopoco {
 		//mpfr_mul_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
 		dwTruncLsb = maxInt(2, dWTrunc[0]->LSB()-guardBits, dW->LSB());
 		mpfr_mul_2si(mpResult, mpResult, -dwTruncLsb, GMP_RNDN);
-		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
+		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDD);	//truncation
 		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
 		//mpfr_div_2si(mpResult, mpResult, -dWTrunc[0]->LSB()+guardBits, GMP_RNDN);
 		mpfr_div_2si(mpResult, mpResult, -dwTruncLsb, GMP_RNDN);
@@ -1243,7 +1244,11 @@ namespace flopoco {
 		mpfr_set(wiSim[0], mpResult, GMP_RNDN);
 		dTmp = mpfr_get_d(wiSim[0], GMP_RNDN);
 		//	create d[0]^j = select( w[0]^{j} )
-		mpfr_get_z(svResult.get_mpz_t(), wiSim[0], GMP_RNDN);
+		mpfr_mul_2si(mpResult, mpResult, 1, GMP_RNDN);
+		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDD);	//truncation
+		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
+		mpfr_div_2si(mpResult, mpResult, 1, GMP_RNDN);
+		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 		mpfr_set_z(diSim[0], svResult.get_mpz_t(), GMP_RNDN);
 		dTmp = mpfr_get_d(diSim[0], GMP_RNDN);
 
@@ -1276,7 +1281,11 @@ namespace flopoco {
 			mpfr_set(wiSim[i], mpResult, GMP_RNDN);
 			dTmp = mpfr_get_d(wiSim[i], GMP_RNDN);
 			//	create d[i]^j = select( w[i]^{j} )
-			mpfr_get_z(svResult.get_mpz_t(), wiSim[i], GMP_RNDN);
+			mpfr_mul_2si(mpResult, mpResult, 1, GMP_RNDN);
+			mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDD);	//truncation
+			mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
+			mpfr_div_2si(mpResult, mpResult, 1, GMP_RNDN);
+			mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 			mpfr_set_z(diSim[i], svResult.get_mpz_t(), GMP_RNDN);
 			dTmp = mpfr_get_d(diSim[i], GMP_RNDN);
 		}
@@ -1305,7 +1314,11 @@ namespace flopoco {
 		mpfr_set(wiSim[maxDegree-1], mpResult, GMP_RNDN);
 		dTmp = mpfr_get_d(wiSim[maxDegree-1], GMP_RNDN);
 		//	create d[maxDegree-1]^j = select( w[maxDegree-1]^{j} )
-		mpfr_get_z(svResult.get_mpz_t(), wiSim[maxDegree-1], GMP_RNDN);
+		mpfr_mul_2si(mpResult, mpResult, 1, GMP_RNDN);
+		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDD);	//truncation
+		mpfr_set_z(mpResult, svResult.get_mpz_t(), GMP_RNDN);
+		mpfr_div_2si(mpResult, mpResult, 1, GMP_RNDN);
+		mpfr_get_z(svResult.get_mpz_t(), mpResult, GMP_RNDN);
 		mpfr_set_z(diSim[maxDegree-1], svResult.get_mpz_t(), GMP_RNDN);
 		dTmp = mpfr_get_d(diSim[maxDegree-1], GMP_RNDN);
 

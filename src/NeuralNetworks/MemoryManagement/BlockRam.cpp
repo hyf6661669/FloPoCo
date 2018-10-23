@@ -14,8 +14,8 @@
 using namespace std;
 namespace flopoco {
 	
-    BlockRam::BlockRam(Target* target, unsigned int dataWidth_, unsigned int addressWidth_) :
-        Operator(target), dataWidth(dataWidth_), addressWidth(addressWidth_) {
+    BlockRam::BlockRam(Target* target, unsigned int dataWidth_, unsigned int addressWidth_, bool dualPort_) :
+        Operator(target), dataWidth(dataWidth_), addressWidth(addressWidth_), dualPort(dualPort_) {
 
         // definition of the source file name, used for info and error reporting using REPORT
         srcFileName="BlockRam";
@@ -28,7 +28,7 @@ namespace flopoco {
 
         // definition of the name of the operator
         ostringstream name;
-        name << "BlockRam_dataWidth_" << dataWidth << "_addressWidth_" << addressWidth;
+        name << "BlockRam_dataWidth_" << dataWidth << "_addressWidth_" << addressWidth << ((dualPort==true)?("_dualPort"):("_singlePort"));
         setName(name.str());
 		
         //compute depth of the RAM
@@ -39,6 +39,11 @@ namespace flopoco {
         addInput("Data_in", dataWidth);
         addInput("WriteEnable",1);
         addOutput("Data_out", dataWidth);
+        if(dualPort==true)
+        {
+            addOutput("Data2_out", dataWidth);
+            addInput("Address_R2_in", addressWidth);
+        }
 
         //type declaration for the array
         stringstream typeStream;
@@ -54,9 +59,13 @@ namespace flopoco {
          << tab << tab << tab << "if (WriteEnable=\"1\") then" << endl
          << tab << tab << tab << tab << "ram(to_integer(unsigned(Address_W_in))) <= Data_in;" << endl
          << tab << tab << tab << "end if;" << endl
-         << tab << tab << tab << "Data_out <= ram(to_integer(unsigned(Address_R_in)));" << endl
-         << tab << tab << "end if;" << endl
-         << tab << "end process;" << endl;
+         << tab << tab << tab << "Data_out <= ram(to_integer(unsigned(Address_R_in)));" << endl;
+         if(dualPort==true)
+         {
+             vhdl << tab << tab << tab << "Data2_out <= ram(to_integer(unsigned(Address_R2_in)));" << endl;
+         }
+         vhdl << tab << tab << "end if;" << endl
+              << tab << "end process;" << endl;
 		
     }
 

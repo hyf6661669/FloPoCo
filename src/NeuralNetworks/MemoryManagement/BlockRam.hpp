@@ -20,7 +20,7 @@ namespace flopoco {
 	class BlockRam : public Operator {
 
     public:
-        BlockRam(Target* target, unsigned int dataWidth_, unsigned int addressWidth_);
+        BlockRam(Target* target, unsigned int dataWidth_, unsigned int addressWidth_, bool dualPort_=false);
 
 		// destructor
         ~BlockRam() {}
@@ -29,6 +29,7 @@ namespace flopoco {
 		unsigned int dataWidth;
 		unsigned int addressWidth;
         mpz_class depth;
+        bool dualPort;
 	};
 
 

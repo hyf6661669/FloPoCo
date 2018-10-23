@@ -20,7 +20,7 @@ namespace flopoco {
 	class Register : public Operator {
 
     public:
-        Register(Target* target, unsigned int wordSize_, unsigned int delays_);
+        Register(Target* target, unsigned int wordSize_, unsigned int delays_, bool enabled = false, bool externalReset = false, bool syncReset = true);
 
 		// destructor
         ~Register() {}

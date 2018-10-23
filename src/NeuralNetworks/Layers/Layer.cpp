@@ -15,48 +15,47 @@
 using namespace std;
 namespace flopoco {
 
-Layer::Layer(Target *target, LayerArguments* la) : Operator(target)
+Layer::Layer(Target *target, LayerArguments* la, NeuralNetwork* parent_) : Operator(target), parent(parent_)
 {
-//    this->wordSize=-1;
-//    this->fraction=-1;
-//    this->weightWordSize=-1;
-//    this->weightFraction=-1;
-
-//    this->horizontalSize=-1;
-//    this->verticalSize=-1;
-//    this->numberOfInputFeatures=-1;
-//    this->numberOfOutputFeatures=-1;
-
-//    this->inputFeaturesParallel=false;;
-//    this->outputFeaturesParallel=false;
-
-//    this->activationFunction="No Activation Function";
-
-//    this->layerType="No Type";
-
     this->myArguments=la;
+    this->inputMemoryParallelAccess=false;
+    this->outputMemoryParallelAccess=false;
+    this->addressWidth = 0;
+    this->outputWidth = 0;
+    this->outputHeight = 0;
 }
 
-Layer::Layer(Target *target) : Operator(target)
+Layer::Layer(Target *target, NeuralNetwork* parent_) : Operator(target), parent(parent_)
 {
     this->myArguments = new LayerArguments();
+    this->inputMemoryParallelAccess=false;
+    this->outputMemoryParallelAccess=false;
+    this->addressWidth=0;
+    this->outputHeight=0;
+    this->outputWidth=0;
 }
 
 string Layer::getOutputSignalName(int feature)
 {
-    cout << "Layer.getOutputSignalName: this should never be called" << endl;
+    stringstream e;
+    e << "Layer.getOutputSignalName: this should never be called" << endl;
+    THROWERROR(e.str());
     return "";
 }
 
 string flopoco::Layer::getInputSignalName(int feature)
 {
-    cout << "Layer.getInputSignalName: this should never be called" << endl;
+    stringstream e;
+    e << "Layer.getInputSignalName: this should never be called" << endl;
+    THROWERROR(e.str());
     return "";
 }
 
 void Layer::generateVHDLCode(Target* target)
 {
-    cout << "Layer.generateVHDLCode: this should never be called" << endl;
+    stringstream e;
+    e << "Layer.generateVHDLCode: this should never be called" << endl;
+    THROWERROR(e.str());
 }
 
 int flopoco::Layer::getWidthByPortName(string name)
@@ -75,5 +74,6 @@ int flopoco::Layer::getWidthByPortName(string name)
     return -1;
 }
 
-	
+
+
 }//namespace flopoco

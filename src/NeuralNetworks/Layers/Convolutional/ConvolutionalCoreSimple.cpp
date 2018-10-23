@@ -15,7 +15,9 @@
 #include "ConvolutionalCoreSimple.hpp"
 
 #include "IntAddSubCmp/IntAdderTree.hpp"
+#include "BitHeap/BitHeap.hpp"
 #include "NeuralNetworks/Utility/Register.hpp"
+#include "NeuralNetworks/Utility/Rounding.hpp"
 
 using namespace std;
 namespace flopoco {
@@ -23,8 +25,8 @@ namespace flopoco {
 
 
 
-    ConvolutionalCoreSimple::ConvolutionalCoreSimple(Target* target, unsigned int wordSize_, unsigned int fraction_, unsigned int weightWordSize_, unsigned int weightFraction_, unsigned int size_, vector <double> weights_, bool useAdderTree_, string roundingType_, string id_) :
-        Operator(target), wordSize(wordSize_), fraction(fraction_), weightWordSize(weightWordSize_), weightFraction(weightFraction_), size(size_), weights(weights_), useAdderTree(useAdderTree_), roundingType(roundingType_), id(id_) {
+    ConvolutionalCoreSimple::ConvolutionalCoreSimple(Target* target, unsigned int wordSize_, unsigned int fraction_, unsigned int weightWordSize_, unsigned int weightFraction_, unsigned int size_, vector <double> weights_, bool useBitHeap_, char roundingType_, string id_) :
+        Operator(target), wordSize(wordSize_), fraction(fraction_), weightWordSize(weightWordSize_), weightFraction(weightFraction_), size(size_), weights(weights_), useBitHeap(useBitHeap_), roundingType(roundingType_), id(id_) {
         //throw error if fraction or weightFraction < 0
         if(fraction<0 || weightFraction<0)
         {
@@ -76,94 +78,118 @@ namespace flopoco {
         unsigned int wordSizeTempOutput = wordSize+weightWordSize;
         unsigned int fractionTempOutput = fraction+weightFraction;
 
-        if(useAdderTree==true)
+        if(useBitHeap==true)
         {
-            cout << "pipelinedepth before adder tree: " << this->getPipelineDepth() << endl;
-            IntAdderTree* treeOp = new IntAdderTree(target, (wordSize+weightWordSize), numberOfNeurons, "bitheap",false);
-            cout << "pipelinedepth of the addder tree: " << treeOp->getPipelineDepth() << endl;
-            this->addSubComponent(treeOp);
+            // bit heap
+            int maxWeightBitheap = ceil(log2(numberOfNeurons)) + wordSizeTempOutput + 2;
+            BitHeap* bitH = new BitHeap(this, maxWeightBitheap, true, "AddProducts");
             for(unsigned int i=0; i<numberOfNeurons; i++)
             {
-                this->inPortMap(treeOp, "X"+to_string(i+1), "prod"+to_string(i));
+                bitH->addSignedBitVector(0,"prod"+to_string(i),wordSizeTempOutput);
             }
-            this->outPortMap(treeOp, "Y", "AddResult", true);
-            this->vhdl << this->instance(treeOp, treeOp->getName()+"_instance");
-            wordSizeTempOutput=this->getSignalByName("AddResult")->width();
+            bitH->useVariableColumnCompressors = false;
+            bitH->generateCompressorVHDL(false);
+            nextCycle();
 
-            syncCycleFromSignal("AddResult"); // to set pipeline stages
+            // set wordSizeTempOutput
+            wordSizeTempOutput=bitH->getMaxWeight();
+
+            // don't use MSB of bitheap because it's corrupted!
+            vhdl << tab << declare("AddResult", wordSizeTempOutput) << " <= " << bitH->getSumName() << "(" << wordSizeTempOutput-1 << " downto 0)" << ";" << endl;
+
+
         }
         else
         {
-            this->vhdl << tab << declare("AddResult", wordSizeTempOutput) << " <= std_logic_vector(signed(prod0)";
-            for(unsigned int i=1; i<numberOfNeurons; i++)
+            // calc wordsize of sum
+            int numberOfStages = ceil(log2(numberOfNeurons+1));
+            int wSum = wordSizeTempOutput + numberOfStages;
+            // sign extend products to have needed word size
+            for(int i=0;i<numberOfNeurons;i++)
             {
-                this->vhdl << " + signed(prod" << i << ")";
+                string tmp="prod"+to_string(i)+"_resized";
+                this->vhdl << tab << declare(tmp,wSum) << " <= std_logic_vector(resize(signed(prod" << i << ")," << wSum << "));" << endl;
             }
-            this->vhdl << ");" << endl;
+
+            if(numberOfNeurons==9)
+            {
+                // first stage
+                this->vhdl << tab << declare("sum01",wSum) << " <= std_logic_vector(signed(prod0_resized)+signed(prod1_resized));" << endl;
+                this->vhdl << tab << declare("sum23",wSum) << " <= std_logic_vector(signed(prod2_resized)+signed(prod3_resized));" << endl;
+                this->vhdl << tab << declare("sum45",wSum) << " <= std_logic_vector(signed(prod4_resized)+signed(prod5_resized));" << endl;
+                this->vhdl << tab << declare("sum67",wSum) << " <= std_logic_vector(signed(prod6_resized)+signed(prod7_resized));" << endl;
+                nextCycle();
+                // second stage
+                this->vhdl << tab << declare("sum0123",wSum) << " <= std_logic_vector(signed(sum01)+signed(sum23));" << endl;
+                this->vhdl << tab << declare("sum4567",wSum) << " <= std_logic_vector(signed(sum45)+signed(sum67));" << endl;
+                nextCycle();
+                // third stage
+                this->vhdl << tab << declare("sum01234567",wSum) << " <= std_logic_vector(signed(sum0123)+signed(sum4567));" << endl;
+                nextCycle();
+                // fourth stage
+                this->vhdl << tab << declare("AddResult",wSum) << " <= std_logic_vector(signed(sum01234567)+signed(prod8_resized));" << endl;
+                nextCycle();
+
+            }
+            else
+            {
+                this->vhdl << tab << declare("AddResult", wSum) << " <= std_logic_vector(signed(prod0_resized)";
+                for(unsigned int i=1; i<numberOfNeurons; i++)
+                {
+                    this->vhdl << " + signed(prod" << i << "_resized)";
+                }
+                this->vhdl << ");" << endl;
+                nextCycle();
+            }
 
         }
-        this->outputWordSize=wordSizeTempOutput;
-        this->outputFraction=fractionTempOutput;
 
-        if(roundingType=="Truncation") //or other rounding types when they are implemented
+        if(roundingType==0x00 || roundingType ==0x01) //or other rounding types when they are implemented
         {
-            roundOutput(wordSizeTempOutput, fractionTempOutput, roundingType);
+            this->outputWordSize=this->wordSize;
+            this->outputFraction=this->fraction;
+            roundOutput(target, wordSizeTempOutput, fractionTempOutput, roundingType);
+            addOutput("R",this->outputWordSize);
+            nextCycle();
+            this->vhdl << tab << "R <= R_t;" << endl;
         }
         else
         {
             // don't round
             this->outputWordSize=wordSizeTempOutput;
             this->outputFraction=fractionTempOutput;
-            declare("R_t",this->outputWordSize);
-            this->vhdl << tab << "R_t <= AddResult;" << endl;
+            addOutput("R",this->outputWordSize);
+            nextCycle();
+            this->vhdl << tab << "R <= AddResult;" << endl;
         }
 
-		addOutput("R",this->outputWordSize);
-        this->vhdl << tab << "R <= R_t;" << endl;
 
     }
 
-    void ConvolutionalCoreSimple::roundOutput(unsigned int wordSizeFrom, unsigned int fractionFrom, string round)
+    void ConvolutionalCoreSimple::roundOutput(Target* target,unsigned int wordSizeFrom, unsigned int fractionFrom, char round)
     {
-        if(round=="Truncation")
+        flopoco::roundingTypeEnum rType;
+        if(round==0x00)
         {
-            int MSBFrom = wordSizeFrom - fractionFrom;
-            int MSBTo = wordSize-fraction;
-            int from = wordSizeFrom-(MSBFrom-MSBTo)-1;
-            int downto = fractionFrom-fraction;
-            this->vhdl << tab << declare("roundingNumber",downto) << " <= AddResult(" << downto-1 << ")";
-            if(downto>0)
-            {
-                if(downto>1)
-                {
-                    this->vhdl << " & (" << downto-2 << " downto 0 => '0')";
-                }
-                this->vhdl <<";" << endl;
-                this->vhdl << tab << declare("R_beforeRound",wordSizeFrom) << " <= std_logic_vector(signed(AddResult)+"
-                           << "signed(roundingNumber));" << endl;
-
-                declare("R_t",wordSize);
-                this->outputWordSize=wordSize;
-                this->outputFraction=fraction;
-                this->vhdl << tab << "R_t <= R_beforeRound(" << from << " downto " << downto << ");" << endl;
-            }
-            else if(downto==0)
-            {
-                this->vhdl << tab << "R_t <= AddResult(" << from << " downto " << downto << ");" << endl;
-            }
-            else
-            {
-                stringstream e;
-                e << "Error while rounding, requested fraction is bigger than actual fraction! This should normally not happen";
-                THROWERROR(e.str());
-            }
-
+            rType = flopoco::roundingTypeEnum::truncation;
+        }
+        else if(round==0x01)
+        {
+            rType = flopoco::roundingTypeEnum::saturation;
         }
         else
         {
-            cout << "ConvolutionalCoreSimple.roundOutput: atm only truncation is implemented. FloPoCo is rounding with this mode instead" << endl;
-            roundOutput(wordSizeFrom, fractionFrom, "Truncation");
+            cout << "ConvolutionalCoreSimple.roundOutput: atm only truncation/saturation are implemented. FloPoCo is rounding with truncation instead" << endl;
+            rType = flopoco::roundingTypeEnum::truncation;
         }
+        Rounding* roundOp = new Rounding(target,wordSizeFrom,fractionFrom,this->wordSize,this->fraction,rType);
+        addSubComponent(roundOp);
+        inPortMap(roundOp,"X","AddResult");
+        outPortMap(roundOp,"R","R_t",true);
+        this->vhdl << instance(roundOp,"Rounding_instance");
+
+        this->outputWordSize=this->wordSize;
+        this->outputFraction=this->fraction;
     }
 	
 	

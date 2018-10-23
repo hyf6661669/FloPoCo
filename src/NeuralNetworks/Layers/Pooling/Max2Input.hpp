@@ -20,7 +20,7 @@ namespace flopoco {
 	class Max2Input : public Operator {
 
     public:
-        Max2Input(Target* target, unsigned int wordSize_, bool sign_);
+        Max2Input(Target* target, unsigned int wordSize_, bool sign_, bool alsoReturnIndex=false, unsigned int indexWordSize=1);
 
 		// destructor
         ~Max2Input() {}

@@ -63,7 +63,7 @@ namespace flopoco {
              << tab << tab << "else" << endl
              << tab << tab << tab << "finished_all_last <= finished_all;" << endl
              << tab << tab << tab << "if(finished_all_last=\"0\" and finished_all=\"1\") then" << endl
-             << tab << tab << tab << tab << "newStep <= \"0\";" << endl
+             << tab << tab << tab << tab << "newStep <= \"1\";" << endl
              << tab << tab << tab << "else" << endl
              << tab << tab << tab << tab << "newStep <= \"0\";" << endl
              << tab << tab << tab << "end if;" << endl

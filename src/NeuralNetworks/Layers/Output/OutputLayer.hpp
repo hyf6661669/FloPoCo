@@ -14,6 +14,7 @@
     functions.
 */
 #include "NeuralNetworks/Layers/Layer.hpp"
+#include "FindIndexOfMaximum.hpp"
 
 namespace flopoco {
 
@@ -21,7 +22,7 @@ namespace flopoco {
     class OutputLayer : public Layer {
 
     public:
-        OutputLayer(Target* target, int howMany_, int wordSize_);
+        OutputLayer(Target* target, NeuralNetwork* parent, int numberOfFeatures_, int wordSize_, bool bramOnOutput_=false, int width_=-1, int height_=-1, bool threeBRAMS_=true, bool needIntermediateValue_=false, bool hasSpecificAddressOnResetPort=false, bool onlyOutputClassIndex=false);
 
 		// destructor
         ~OutputLayer() {}
@@ -29,9 +30,19 @@ namespace flopoco {
         virtual string getOutputSignalName(int feature) override;
         virtual string getInputSignalName(int feature) override;
 
+        inline bool hasIntermediateValuePorts() const {return this->needIntermediateValue;}
+		unsigned int getIndexWordSize() const;
+
     private:
-        int howMany;
+        int numberOfFeatures;
         int wordSize;
+        bool bramOnOutput;
+        int width;
+        int height;
+        bool threeBRAMS;
+        bool needIntermediateValue;
+
+		FindIndexOfMaximum* myMaxPtr;
 	};
 
 

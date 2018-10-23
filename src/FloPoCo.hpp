@@ -185,7 +185,8 @@
 #include "NeuralNetworks/Multiplier/Multiplier_B_E.hpp"
 #include "NeuralNetworks/CoreTE.hpp"
 
-#include "NeuralNetworks/H5ToNeuralNetwork.hpp"
+#include "NeuralNetworks/KerasToNeuralNetwork.hpp"
+#include "NeuralNetworks/Layers/Output/FindIndexOfMaximum.hpp"
 
 
 /* Complex arithmetic */

@@ -19,24 +19,52 @@ namespace flopoco {
 
 
 
-FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int bC_, string rotatorFileName_, string FFTAlgorithmFileName_, bool intPip_)
+FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int fftSize_, int bC_, int b_, int wLE_, string alg_, string rotatorFileName_, string FFTAlgorithmFileName_, bool intPip_)
     : Operator(target),
       wIn(wIn_),
+      fftSize(fftSize_),
       bC(bC_),
+      b(b_),
+      wLE(wLE_),
+      alg(alg_),
       rotatorFileName(rotatorFileName_),
       FFTAlgorithmFileName(FFTAlgorithmFileName_),
       intPip(intPip_)
 {
+  cout << "rotatorFileName=" << rotatorFileName << endl;
+  cout << "FFTAlgorithmFileName=" << FFTAlgorithmFileName << endl;
+  cout << "alg=" << alg << endl;
 
+    if(alg == "-" && (FFTAlgorithmFileName == "-" || rotatorFileName == "-"))
+    {
+      THROWERROR("Either alg or rotatorFileName and FFTAlgorithmFileName have to be specified");
+    }
+
+    if(alg != "-")
+    {
+      if((alg != "SR") && (alg != "BT"))
+      {
+        THROWERROR("Parameter alg has to be either SR or BT");
+      }
+    }
+
+    if(rotatorFileName == "-")
+    {
+      rotatorFileName = "data/FFTRotators/rotators_" + alg + "_bestWLe" + to_string(wLE) + "b" + to_string(b) + ".txt";
+    }
     std::ifstream rotFile(rotatorFileName);
 
 		if (!rotFile.is_open())
 			THROWERROR("Failed to open rotator file " + rotatorFileName);
 
+    if(FFTAlgorithmFileName == "-")
+    {
+      FFTAlgorithmFileName = "data/FFTAlgorithms/phi" + to_string(fftSize) + "_" + alg + "_WLe" + to_string(wLE) + "b" + to_string(b) + ".txt";
+    }
     std::ifstream FFTFile(FFTAlgorithmFileName);
 
 		if (!FFTFile.is_open())
-			THROWERROR("Failed to FFT algorithm file " + FFTAlgorithmFileName);
+			THROWERROR("Failed to open FFT algorithm file " + FFTAlgorithmFileName);
 
     // Parse in rotators
     std::string line;
@@ -470,15 +498,19 @@ void FullyParallelFFT::buildStandardTestCases(TestCaseList * tcl) {
 
 
 OperatorPtr FullyParallelFFT::parseArguments(Target *target, vector<string> &args) {
-    int wIn, bC;
-    string rotatorFileName, FFTAlgorithmFileName;
+    int wIn, bC, wLE, b, fftSize;
+    string rotatorFileName, FFTAlgorithmFileName, alg;
     bool intPip;
     UserInterface::parseInt(args, "wIn", &wIn); // param0 has a default value, this method will recover it if it doesnt't find it in args,
+    UserInterface::parseInt(args, "fftSize", &fftSize);
     UserInterface::parseInt(args, "bC", &bC);
+    UserInterface::parseInt(args, "wLE", &wLE);
+    UserInterface::parseInt(args, "b", &b);
+    UserInterface::parseString(args, "alg", &alg);
     UserInterface::parseString(args, "rotatorFileName", &rotatorFileName);
     UserInterface::parseString(args, "FFTAlgorithmFileName", &FFTAlgorithmFileName);
     UserInterface::parseBoolean(args, "intPip", &intPip);
-    return new FullyParallelFFT(target, wIn, bC, rotatorFileName, FFTAlgorithmFileName, intPip);
+    return new FullyParallelFFT(target, wIn, fftSize, bC, b, wLE, alg, rotatorFileName, FFTAlgorithmFileName, intPip);
 }
 
 void FullyParallelFFT::registerFactory(){
@@ -490,14 +522,18 @@ void FullyParallelFFT::registerFactory(){
                        // Respect its syntax because it will be used to generate the parser and the docs
                        // Syntax is: a semicolon-separated list of parameterDescription;
                        // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
-                       "wIn(int)=16: input word size; \
-                       bC(int)=12: constant word length of rotators; \
-            rotatorFileName(string): full rotator file name - see data->FFTRotators; \
-    FFTAlgorithmFileName(string): full FFT algorithm file name - see data->FFTAlgorithms; \
-    intPip(bool)=true: activate interal rotator pipelining",
-    // More documentation for the HTML pages. If you want to link to your blog, it is here.
-    "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developper manual in the doc/ directory of FloPoCo.",
-    FullyParallelFFT::parseArguments
+                       "wIn(int): input word size;  \
+                       alg(string): algorithm, may be BT for binary tree or SR for the split-radix algorithm; \
+                       fftSize(int)=32: size of FFT;\
+                       bC(int)=12: constant word length of rotators;\
+                       wLE(int)=16: Effective word length;\
+                       b(int)=20: coefficient word length;\
+                       rotatorFileName(string)=-: rotator file name (see data/FFTRotators), overwrites the path determined by alg; \
+                       FFTAlgorithmFileName(string)=-: FFT algorithm file name (see data/FFTAlgorithms), overwrites the path determined by alg; \
+                       intPip(bool)=true: activate interal rotator pipelining",
+                       // More documentation for the HTML pages. If you want to link to your blog, it is here.
+                       "A fully parallel multiplierless FFT implementation",
+                       FullyParallelFFT::parseArguments
             ) ;
 }
 

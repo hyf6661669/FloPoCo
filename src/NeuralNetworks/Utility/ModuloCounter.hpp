@@ -20,7 +20,7 @@ namespace flopoco {
 	class ModuloCounter : public Operator {
 
     public:
-        ModuloCounter(Target* target, unsigned int mod_);
+        ModuloCounter(Target* target, unsigned int mod_, bool synchronousReset=false);
 
 		// destructor
         ~ModuloCounter() {}

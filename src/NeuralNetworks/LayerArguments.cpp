@@ -23,17 +23,19 @@ namespace flopoco
         this->weightFraction = -1;
         this->numberOfOutputFeatures = -1;
         //weights-vector is still empty!
+        //bias-vector is still empty!
         this->paddingTop = -1;
         this->paddingBot = -1;
         this->paddingLeft = -1;
         this->paddingRight = -1;
-        this->paddingType = "No Padding";
-        this->inputFeaturesParallel = false;
-        this->outputFeaturesParallel = false;
+        this->paddingType = "No_Padding";
+        this->calcAllParallel = true;
         this->activationFunction = "No Activation Function";
+        this->startAddress = 0x00000000;
         this->id = "0";
+        this->fullConnectedWeightsAndBiasesOrdered = false;
     }
-    LayerArguments::LayerArguments(string layerType_, int coreSize_, int inputHeight_, int inputWidth_, int inputDepth_, int wordSize_, int fraction_, int weightWordSize_, int weightFraction_, int numberOfOutputFeatures_, vector<double> weights_, int padding_, string paddingType_, bool inputFeaturesParallel_, bool outputFeaturesParallel_, string activationFunction_, int stride_, string id_)
+    LayerArguments::LayerArguments(string layerType_, int coreSize_, int inputHeight_, int inputWidth_, int inputDepth_, int wordSize_, int fraction_, int weightWordSize_, int weightFraction_, int numberOfOutputFeatures_, vector<double> weights_, vector<double> biases_, int padding_, string paddingType_, bool calcAllParallel_, string activationFunction_, int stride_, unsigned int startAddress_, string id_)
     {
         this->layerType = layerType_;
         this->coreSize = coreSize_;
@@ -46,16 +48,18 @@ namespace flopoco
         this->weightFraction = weightFraction_;
         this->numberOfOutputFeatures = numberOfOutputFeatures_;
         this->weights = weights_;
+        this->biases = biases_;
         this->paddingTop = padding_;
         this->paddingBot = padding_;
         this->paddingLeft = padding_;
         this->paddingRight = padding_;
         this->paddingType = paddingType_;
-        this->inputFeaturesParallel = inputFeaturesParallel_;
-        this->outputFeaturesParallel = outputFeaturesParallel_;
+        this->calcAllParallel = calcAllParallel_;
         this->activationFunction = activationFunction_;
         this->stride=stride_;
+        this->startAddress=startAddress_;
         this->id = id_;
+        this->fullConnectedWeightsAndBiasesOrdered = false;
     }
 
     void LayerArguments::printLayerArguments()
@@ -72,22 +76,22 @@ namespace flopoco
         cout << "###    weightWordSize: " << this->weightWordSize << endl;
         cout << "###    weightFraction: " << this->weightFraction << endl;
         cout << "###    numberOfOutputFeatures: " << this->numberOfOutputFeatures << endl;
-        cout << "###    Want me to print weights? Nope" << endl;
+        cout << "###    weights.size(): " << this->weights.size() << endl;
+        cout << "###    biases.size(): " << this->biases.size() << endl;
         cout << "###    paddingTop: " << this->paddingTop << endl;
         cout << "###    paddingBot: " << this->paddingBot<< endl;
         cout << "###    paddingLeft: " << this->paddingLeft << endl;
         cout << "###    paddingRight: " << this->paddingRight << endl;
         cout << "###    paddingType: " << this->paddingType << endl;
-        cout << "###    inputFeaturesParallel: " << this->inputFeaturesParallel << endl;
-        cout << "###    outputFeaturesParallel: " << this->outputFeaturesParallel << endl;
+        cout << "###    calcAllParallel: " << this->calcAllParallel << endl;
         cout << "###    activationFunction: " << this->activationFunction << endl;
         cout << "###    stride: " << this->stride << endl;
         cout << "###    id: " << this->id << endl;
+        cout << "###    fullConnectedWeightsAndBiasesOrdered: " << this->fullConnectedWeightsAndBiasesOrdered << endl;
         cout << endl << endl;
     }
     string LayerArguments::getLayerType()
     {
-        cout << this->layerType << endl;
         if(this->layerType=="No Type")
         {
             cout << "LayerArguments.getLayerType, Warning: Requested layerType isn't set" << endl;
@@ -232,6 +236,57 @@ namespace flopoco
         return tmp;
     }
 
+    double LayerArguments::getFullConnectedWeight(unsigned int inputNumber, unsigned int neuronNumber)
+    {
+        if(this->layerType!="FullConnected")
+        {
+            cout << "Requested a FullConnected Weight, but requested LayerType is \"" << this->getLayerType() << "\" instead of \"FullConnected\"" << endl;
+            return 0;
+        }
+        int numberOfInputs = this->getInputDepth() * this->getInputWidth() * this->getInputHeight();
+        if(this->weights.size()<=((numberOfInputs*neuronNumber)+inputNumber))
+        {
+            cout << "LayerArguments.getFullConnectedWeight, Warning: Requested weights-vector is smaller than given variables" << endl;
+            return 0;
+        }
+        return weights[((numberOfInputs*neuronNumber)+inputNumber)];
+    }
+
+    vector<vector<double> > LayerArguments::getFullConnectedWeights()
+    {
+        vector<vector<double>> tmp;
+        for(int i=0;i<this->getInputWidth();i++)
+        {
+            vector<double> tmp2;
+            tmp.push_back(tmp2);
+            for(int j=0;j<this->getNumberOfOutputFeatures();j++)
+            {
+                tmp[i].push_back(this->getFullConnectedWeight(i,j));
+            }
+        }
+        return tmp;
+    }
+
+    unsigned int LayerArguments::getWeightVectorSize()
+    {
+        return this->weights.size();
+    }
+
+    vector<double> LayerArguments::getBiases()
+    {
+        return this->biases;
+    }
+
+    double LayerArguments::getBias(unsigned int index)
+    {
+        if(this->biases.size()>=index)
+        {
+            cout << "Requested Bias doesn't exist, requested index: '" << index << "', size of bias-vector: '" << this->biases.size() << "'" << endl;
+            return 0;
+        }
+        return this->biases[index];
+    }
+
     int LayerArguments::getPaddingTop()
     {
         return this->paddingTop;
@@ -239,16 +294,36 @@ namespace flopoco
 
     int LayerArguments::getPaddingBot()
     {
+        if(this->paddingBot<0)
+        {
+            if(this->coreSize%2==1 || this->paddingTop==0)
+            {
+                return this->paddingTop;
+            }
+            return this->paddingTop-1;
+        }
         return this->paddingBot;
     }
 
     int LayerArguments::getPaddingLeft()
     {
+        if(this->paddingLeft<0)
+        {
+            return this->paddingTop;
+        }
         return this->paddingLeft;
     }
 
     int LayerArguments::getPaddingRight()
     {
+        if(this->paddingRight<0)
+        {
+            if(this->coreSize%2==1 || this->getPaddingLeft()==0)
+            {
+                return this->getPaddingLeft();
+            }
+            return  this->getPaddingLeft()-1;
+        }
         return this->paddingRight;
     }
 
@@ -283,14 +358,9 @@ namespace flopoco
         return this->paddingType;
     }
 
-    bool LayerArguments::getInputFeaturesParallel()
+    bool LayerArguments::getCalcAllParallel()
     {
-        return this->inputFeaturesParallel;
-    }
-
-    bool LayerArguments::getOutputFeaturesParallel()
-    {
-        return this->outputFeaturesParallel;
+        return this->calcAllParallel;
     }
 
     string LayerArguments::getActivationFunction()
@@ -311,6 +381,15 @@ namespace flopoco
         return this->stride;
     }
 
+    unsigned int LayerArguments::getStartAddress()
+    {
+        if(this->layerType!="FullConnected" && this->layerType!="Convolutional")
+        {
+            cout << "LayerArguments.getStartAddress, Warning: StartAddress is irrelevant for this layer type!" << endl;
+        }
+        return this->startAddress;
+    }
+
     string LayerArguments::getId()
     {
         return this->id;
@@ -318,7 +397,6 @@ namespace flopoco
 
     void LayerArguments::setLayerType(string lt)
     {
-        cout << "###    setting layerType to " << lt << endl;
         this->layerType=lt;
     }
     void LayerArguments::setCoreSize(int cs)
@@ -382,19 +460,24 @@ namespace flopoco
         this->weights.push_back(w);
     }
 
+    void LayerArguments::makeWeightsVectorBigger(unsigned int i)
+    {
+        if(this->weights.size()>=i)
+        {
+            cout << "Size of weights vector: '" << this->weights.size() << "'; request to make it bigger to size '" << i << "' doesn't make sense";
+            return;
+        }
+        this->weights.resize(i);
+    }
+
     void LayerArguments::setPaddingType(string p)
     {
         this->paddingType=p;
     }
 
-    void LayerArguments::setInputFeaturesParallel(bool i)
+    void LayerArguments::setCalcAllParallel(bool p)
     {
-        this->inputFeaturesParallel = i;
-    }
-
-    void LayerArguments::setOutputFeaturesParallel(bool o)
-    {
-        this->outputFeaturesParallel = o;
+        this->calcAllParallel = p;
     }
 
     void LayerArguments::setActivationFunction(string a)
@@ -434,9 +517,150 @@ namespace flopoco
     {
         this->paddingRight=p;
     }
+
+    void LayerArguments::setStartAddress(unsigned int a)
+    {
+        this->startAddress=a;
+    }
+
     void LayerArguments::setId(string i)
     {
         this->id=i;
+    }
+
+    void flopoco::LayerArguments::setBiases(vector<double> b)
+    {
+        this->biases=b;
+    }
+
+    void LayerArguments::addBias(double b)
+    {
+        this->biases.push_back(b);
+    }
+
+    void LayerArguments::reorderFullConnectedWeightsAndBiases()
+    {
+        this->reorderFullConnectedWeights();
+        this->reorderFullConnectedBiases();
+        this->fullConnectedWeightsAndBiasesOrdered=true;
+    }
+
+    void LayerArguments::reorderFullConnectedBiases()
+    {
+        // no need to reorder them for tensorflow frontend; maybe do something in this function for another frontend...
+        return;
+    }
+
+    void LayerArguments::reorderFullConnectedWeights()
+    {
+        if(this->fullConnectedWeightsAndBiasesOrdered==true) return;
+
+        unsigned int neuronCounter = 0;
+        unsigned int featureCounter = 0;
+        unsigned int rowCounter = 0;
+        unsigned int columnCounter = 0;
+
+        const unsigned int maxNeuronCounter = this->getNumberOfOutputFeatures();
+        const unsigned int maxFeatureCounter = this->getInputDepth();
+        const unsigned int maxRowCounter = this->getInputHeight();
+        const unsigned int maxColumnCounter = this->getInputWidth();
+
+        vector<vector<vector<vector<double>>>> fullConnectedWeights; // temporary weights vector
+        // read all the lines and put them into the weights-vector
+        for(auto it : this->weights)
+        {
+            // check if we need to alloc more space to the weights-vector
+            if(fullConnectedWeights.size() < neuronCounter+1)
+            {
+                fullConnectedWeights.resize(neuronCounter+1);
+            }
+            if(fullConnectedWeights[neuronCounter].size() < featureCounter+1)
+            {
+                fullConnectedWeights[neuronCounter].resize(featureCounter+1);
+            }
+            if(fullConnectedWeights[neuronCounter][featureCounter].size() < rowCounter+1)
+            {
+                fullConnectedWeights[neuronCounter][featureCounter].resize(rowCounter+1);
+            }
+            if(fullConnectedWeights[neuronCounter][featureCounter][rowCounter].size() < columnCounter+1)
+            {
+                fullConnectedWeights[neuronCounter][featureCounter][rowCounter].resize(columnCounter+1);
+            }
+
+            // insert weight into weights-vector
+            fullConnectedWeights[neuronCounter][featureCounter][rowCounter][columnCounter] = it;
+
+            if(neuronCounter==(maxNeuronCounter-1))
+            {
+                neuronCounter=0;
+                if(columnCounter==(maxColumnCounter-1))
+                {
+                    columnCounter=0;
+                    if(rowCounter==(maxRowCounter-1))
+                    {
+                        rowCounter=0;
+                        if(featureCounter==(maxFeatureCounter-1))
+                        {
+                            featureCounter=0;
+                        }
+                        else
+                        {
+                            featureCounter++;
+                        }
+                    }
+                    else
+                    {
+                        rowCounter++;
+                    }
+                }
+                else
+                {
+                    columnCounter++;
+                }
+            }
+            else
+            {
+                neuronCounter++;
+            }
+
+        }
+
+        vector<double> flatWeights = LayerArguments::flatten4DTensor(fullConnectedWeights);
+        this->setWeights(flatWeights);
+
+        return ;
+    }
+
+    vector<double> LayerArguments::flatten4DTensor(vector<vector<vector<vector<double>>>> t)
+    {
+        vector<double> returnMe;
+        for(auto threeDimIt : t)
+        {
+            for(auto twoDimIt : threeDimIt)
+            {
+                for(auto oneDimIt : twoDimIt)
+                {
+                    for(auto value : oneDimIt)
+                    {
+                        returnMe.push_back(value);
+                    }
+                }
+            }
+        }
+        return returnMe;
+    }
+
+    vector<double> LayerArguments::flatten2DTensor(vector<vector<double>> t)
+    {
+        vector<double> returnMe;
+        for(auto oneDimIt : t)
+        {
+            for(auto value : oneDimIt)
+            {
+                returnMe.push_back(value);
+            }
+        }
+        return returnMe;
     }
 
 }//namespace flopoco

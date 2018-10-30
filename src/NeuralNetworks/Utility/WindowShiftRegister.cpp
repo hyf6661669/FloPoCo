@@ -45,30 +45,29 @@ namespace flopoco {
         }
 
         //calculate buffer length and declare the array
-        numberOfFlipFlops = (windowSize-1)*(rowLength+1);
+        numberOfFlipFlops = ((windowSize-1)*rowLength)+windowSize-1;
         stringstream typeStream;
         typeStream << "array(0 to " << numberOfFlipFlops << ") of std_logic_vector(" << wordSize-1 << " downto 0);" << endl
                    << "signal reg : reg_t";
         addType("reg_t", typeStream.str());
 
+        this->vhdl << tab << "reg(0) <= X;" << endl;
         //process for the array (assign all signals)
         this->vhdl << tab << "process(clk)" << endl
                    << tab << "begin" << endl
                    << tab << tab << "if(rising_edge(clk)) then" << endl
-                   << tab << tab << tab << "if(rst='1') then" << endl
-                   << tab << tab << tab << tab << "reg <= (others => (others => '0'));" << endl
-                   << tab << tab << tab << "else" << endl
-                   << tab << tab << tab << tab << "if(newStep=\"1\") then" << endl
-                   << tab << tab << tab << tab << tab << "reg <= (others => (others => '0'));" << endl
-                   << tab << tab << tab << tab << "else" << endl
-                   << tab << tab << tab << tab << tab << "if(enable=\"1\") then" << endl
-                   << tab << tab << tab << tab << tab << tab << "reg(0) <= X;" << endl;
+                   << tab << tab << tab << "if(rst='1' or newStep=\"1\") then" << endl;
+        for(unsigned int i=0;i<this->numberOfFlipFlops;i++)
+        {
+            this->vhdl << tab << tab << tab << tab << "reg(" << i+1 << ")<= (others => '0');" << endl;
+        }
+        this->vhdl << tab << tab << tab << "else" << endl
+                   << tab << tab << tab << tab << "if(enable=\"1\") then" << endl;
         for(unsigned int i=0; i<numberOfFlipFlops; i++)
         {
-            this->vhdl << tab << tab << tab << tab << tab << tab << "reg(" << i+1 << ") <= reg(" << i << ");" << endl;
+            this->vhdl << tab << tab << tab << tab << tab << "reg(" << i+1 << ") <= reg(" << i << ");" << endl;
         }
-        this->vhdl << tab << tab << tab <<tab << tab << "end if;" << endl
-                   << tab << tab << tab << tab << "end if;" << endl
+        this->vhdl << tab << tab << tab << tab << "end if;" << endl
                    << tab << tab << tab << "end if;" << endl
                    << tab << tab << "end if;" << endl
                    << tab << "end process;" << endl;
@@ -78,7 +77,7 @@ namespace flopoco {
         {
             for(unsigned int x=0; x<windowSize; x++)
             {
-                this->vhdl << tab << "R" << y*windowSize+x << " <= reg(" << y*rowLength+x << ");" << endl;
+                this->vhdl << tab << "R" << (y*windowSize+x) << " <= reg(" << (this->numberOfFlipFlops-(y*rowLength+x)) << ");" << endl;
             }
         }
     }

@@ -9,11 +9,6 @@
 #include <string>
 #include <vector>
 
-/*  All flopoco operators and utility functions are declared within
-    the flopoco namespace.
-    You have to use flopoco:: or using namespace flopoco in order to access these
-    functions.
-*/
 
 namespace flopoco {
 
@@ -21,7 +16,7 @@ namespace flopoco {
 	class ConvolutionalCoreSimple : public Operator {
 
     public:
-        ConvolutionalCoreSimple(Target* target, unsigned int wordSize_, unsigned int fraction_, unsigned int weightWordSize_, unsigned int weightFraction_, unsigned int size_, vector <double> weights_, bool useAdderTree_=true, string roundingType_="Truncation", string id_="0");
+        ConvolutionalCoreSimple(Target* target, unsigned int wordSize_, unsigned int fraction_, unsigned int weightWordSize_, unsigned int weightFraction_, unsigned int size_, vector <double> weights_, bool useBitHeap_=true, char roundingType_=0x00, string id_="0");
 
 		// destructor
         ~ConvolutionalCoreSimple() {}
@@ -37,12 +32,12 @@ namespace flopoco {
         unsigned int weightFraction;
         unsigned int size;
 		vector <double> weights;
-        bool useAdderTree;
+        bool useBitHeap;
 		string id;
         vector <string> inputNames;
 
-        string roundingType;
-        void roundOutput(unsigned int wordSizeFrom, unsigned int fractionFrom, string round="Truncation");
+        char roundingType; // 0x00: Truncation, 0x01: Saturation
+        void roundOutput(Target* target, unsigned int wordSizeFrom, unsigned int fractionFrom, char round = 0x00);
 	};
 
 

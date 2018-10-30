@@ -20,7 +20,7 @@ namespace flopoco {
 
 
 
-    ModuloCounter::ModuloCounter(Target* target, unsigned int mod_) :
+    ModuloCounter::ModuloCounter(Target* target, unsigned int mod_, bool synchronousReset) :
         Operator(target), mod(mod_) {
 
         useNumericStd();
@@ -33,7 +33,7 @@ namespace flopoco {
 
         // definition of the name of the operator
         ostringstream name;
-        name << "ModuloCounter_" << mod;
+        name << "ModuloCounter_" << mod << ((synchronousReset==true)?("_syncReset"):("_asyncReset"));
         setName(name.str());
 		
         unsigned int wordSize=ceil(log2(mod));
@@ -45,22 +45,34 @@ namespace flopoco {
 
         vhdl << "counter <= " << declare("counter_temp", wordSize) << ";" << endl;
 		
-        vhdl << "process(clk,rst,manualReset)" << endl
-             << "begin" << endl
-             << tab << "if(rst='1' or manualReset=\"1\") then" << endl
-             << tab << tab << "counter_temp <= (others => '0');" << endl
-             << tab << "else" << endl
-             << tab << tab << "if(rising_edge(clk)) then" << endl
-             << tab << tab << tab << "if(enable=\"1\") then" << endl
-             << tab << tab << tab << tab << "if(unsigned(counter_temp)<" << mod-1 << ") then" << endl
-             << tab << tab << tab << tab << tab << "counter_temp <= std_logic_vector(unsigned(counter_temp)+1);" << endl
-             << tab << tab << tab << tab << "else" << endl
-             << tab << tab << tab << tab << tab << "counter_temp <= (others => '0');" << endl
-             << tab << tab << tab << tab << "end if;" << endl
-             << tab << tab << tab << "end if;" << endl
-             << tab << tab << "end if;" << endl
-             << tab << "end if;" << endl
-             << "end process;" << endl;
+        vhdl << "process(clk,rst,manualReset)" << endl;
+        vhdl << "begin" << endl;
+        if(synchronousReset==false)
+        {
+                vhdl << tab << "if(rst='1' or manualReset=\"1\") then" << endl;
+                vhdl << tab << tab << "counter_temp <= (others => '0');" << endl;
+                vhdl << tab << "else" << endl;
+                vhdl << tab << tab << "if(rising_edge(clk)) then" << endl;
+        }
+        else
+        {
+                vhdl << tab << "if(rising_edge(clk)) then" << endl;
+                vhdl << tab << tab << "if(rst='1' or manualReset=\"1\") then" << endl;
+                vhdl << tab << tab << tab << "counter_temp <= (others => '0');" << endl;
+                vhdl << tab << tab << "else" << endl;
+        }
+        vhdl << tab << tab << tab << "if(enable=\"1\") then" << endl;
+
+        vhdl << tab << tab << tab << tab << "if(unsigned(counter_temp)<" << mod-1 << ") then" << endl;
+        vhdl << tab << tab << tab << tab << tab << "counter_temp <= std_logic_vector(unsigned(counter_temp)+1);" << endl;
+        vhdl << tab << tab << tab << tab << "else" << endl;
+        vhdl << tab << tab << tab << tab << tab << "counter_temp <= (others => '0');" << endl;
+        vhdl << tab << tab << tab << tab << "end if;" << endl;
+
+        vhdl << tab << tab << tab << "end if;" << endl;
+        vhdl << tab << tab << "end if;" << endl;
+        vhdl << tab << "end if;" << endl;
+        vhdl << "end process;" << endl;
 		
     }
 

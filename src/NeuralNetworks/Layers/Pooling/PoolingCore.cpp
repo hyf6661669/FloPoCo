@@ -21,7 +21,7 @@ namespace flopoco {
 
 
     PoolingCore::PoolingCore(Target* target, unsigned int wordSize_, unsigned int windowSize_) :
-        Operator(target), wordSize(wordSize_), windowSize(windowSize_){
+        Operator(target), wordSize(wordSize_), windowSize(windowSize_), inputNames(){
         // throw error
         if(windowSize<2)
         {
@@ -62,9 +62,9 @@ namespace flopoco {
         {
             if(i>=((unsigned int)1<<(stageCounter+1)))
             {
-                    stageCounter++;
-                    vector < Max2Input* > tmp;
-                    comparators.push_back(tmp);
+                stageCounter++;
+                vector < Max2Input* > tmp;
+                comparators.push_back(tmp);
             }
             Max2Input* op = new Max2Input(target, wordSize, true);
             comparators[stageCounter].push_back(op);
@@ -75,6 +75,7 @@ namespace flopoco {
         unsigned int inputCounter=0;
         unsigned int comparatorCounter=0;
         map < Max2Input*,string > outputSignalNames;
+        map < Max2Input*,string > indexSignalNames;
         for(unsigned int i=0; i<comparators.size(); i++)
         {
             unsigned int i0=comparators.size()-1-i;
@@ -82,8 +83,9 @@ namespace flopoco {
             {
                 unsigned int j0 = j;
                 //outportmap
-                this->outPortMap(comparators[i0][j0],"R","s"+to_string(comparatorCounter),true);
-                outputSignalNames[comparators[i0][j0]]="s"+to_string(comparatorCounter);
+                outputSignalNames[comparators[i0][j0]]=declare("s"+to_string(comparatorCounter),this->wordSize);
+                this->outPortMap(comparators[i0][j0],"R","s"+to_string(comparatorCounter),false);
+
                 //inportmap
                 if(comparators.size()>i0+1)
                 {
@@ -124,6 +126,8 @@ namespace flopoco {
             }
         }
 
+        nextCycle();
         vhdl << "R <= " << outputSignalNames[comparators[0][0]] << ";" << endl;
+        this->setCycle(comparators.size()+1);
     }
 }//namespace flopoco

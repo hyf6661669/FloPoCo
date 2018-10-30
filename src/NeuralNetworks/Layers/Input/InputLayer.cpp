@@ -18,8 +18,8 @@ namespace flopoco {
 
 
 
-    InputLayer::InputLayer(Target* target, int numberOfFeatures_, int wordSize_, int bramAddressWidth_) :
-        Layer(target), numberOfFeatures(numberOfFeatures_), wordSize(wordSize_), bramAddressWidth(bramAddressWidth_) {
+    InputLayer::InputLayer(Target* target, NeuralNetwork* parent, int numberOfFeatures_, int wordSize_, int bramAddressWidth_, bool needGetNewDataReset) :
+        Layer(target,parent), numberOfFeatures(numberOfFeatures_), wordSize(wordSize_), bramAddressWidth(bramAddressWidth_) {
 
         useNumericStd();
 
@@ -36,34 +36,44 @@ namespace flopoco {
 		
         addInput("newStep",1);
         stringstream typeStream;
-        typeStream << "(waiting, writing);" << endl;
+        typeStream << "(waiting, reading);" << endl;
 
         for(int i=0;i<numberOfFeatures;i++)
         {
             // write-side
             addInput("X_"+to_string(i),wordSize);
-            addInput("validData_i_"+to_string(i),1);
+            addInput(Layer::getValidDataName(i)+"_i",1);
             addInput("newDataSet_"+to_string(i),1);
 
             // read-side
             addOutput("R_"+to_string(i),wordSize);
-            addOutput("validData_o_"+to_string(i),1);
-            addInput("getNewData_"+to_string(i),1);
+            addOutput(Layer::getValidDataName(i)+"_o",1);
+            addInput(Layer::getGetNewDataName(i),1);
+
+            if(needGetNewDataReset==true)
+            {
+                addInput(Layer::getGetNewDataName(i)+"_reset",1);
+            }
 
             // flag signal to decide which memory area to read and which to write
             declare("writeFlag_"+to_string(i),1);
 
             // small FSM to wait for a valid input frame
-            typeStream << "signal state" << i << ": state_t";
+            typeStream << "signal state_" << i << ": state_t";
+            if(i<numberOfFeatures-1)
+            {
+                typeStream << ";" << endl;
+            }
 
             // one BRAM
-            BlockRam* bram = new BlockRam(target,wordSize,bramAddressWidth);
+            BlockRam* bram = new BlockRam(target,wordSize,bramAddressWidth+1);
             addSubComponent(bram);
             inPortMap(bram,"Address_W_in",declare("WriteAddress_"+to_string(i),bramAddressWidth+1));
             inPortMap(bram,"Address_R_in",declare("ReadAddress_"+to_string(i),bramAddressWidth+1));
             inPortMap(bram,"Data_in","X_"+to_string(i));
-            inPortMap(bram,"WriteEnable","validData_i_"+to_string(i));
-            outPortMap(bram,"Data_out","bramRead_"+to_string(i));
+            inPortMap(bram,"WriteEnable",Layer::getValidDataName(i)+"_i");
+            outPortMap(bram,"Data_out","R_"+to_string(i),false);
+            //outPortMap(bram,"Data_out","R_temp_"+to_string(i),true);
             vhdl << instance(bram,"BlockRam_"+to_string(i));
         }
         addType("state_t", typeStream.str());
@@ -72,16 +82,22 @@ namespace flopoco {
         vhdl << "process(clk)" << endl
              << "begin" << endl
              << tab << "if(rising_edge(clk)) then" << endl
-             << tab << tab << "if(rst='1' or newStep=\"1\") then" << endl;
+             << tab << tab << "if(rst='1') then" << endl;
         for(int i=0;i<numberOfFeatures;i++)
         {
-            vhdl << tab << tab << tab << "state" << i << " <= waiting;" << endl;
+            vhdl << tab << tab << tab << "state_" << i << " <= waiting;" << endl;
+            vhdl << tab << tab << tab << "writeFlag_" << i << " <= \"0\";" << endl;
+        }
+        vhdl << tab << tab << "elsif(newStep=\"1\") then" << endl;
+        for(int i=0;i<numberOfFeatures;i++)
+        {
+            vhdl << tab << tab << tab << "state_" << i << " <= waiting;" << endl;
         }
         vhdl << tab << tab << "else" << endl;
         for(int i=0;i<numberOfFeatures;i++)
         {
-            vhdl << tab << tab << tab << "if(state" << i << "=waiting and newDataSet_" << i << "=\"1\") then" << endl
-                 << tab << tab << tab << tab << "state" << i << " <= writing;" << endl
+            vhdl << tab << tab << tab << "if(state_" << i << "=waiting and newDataSet_" << i << "=\"1\") then" << endl
+                 << tab << tab << tab << tab << "state_" << i << " <= reading;" << endl
                  << tab << tab << tab << tab << "writeFlag_" << i << " <= not writeFlag_" << i << ";" << endl
                  << tab << tab << tab << "end if;" << endl;
         }
@@ -89,8 +105,9 @@ namespace flopoco {
              << tab << "end if;" << endl
              << "end process;" << endl;
 
+
         // Flag Signal to decide which Addresses to read and which to write
-        for(unsigned int i=0;i<numberOfFeatures;i++)
+        for(int i=0;i<numberOfFeatures;i++)
         {
             declare("addressReadCounter_"+to_string(i),bramAddressWidth);
             declare("addressWriteCounter_"+to_string(i),bramAddressWidth);
@@ -100,36 +117,45 @@ namespace flopoco {
              << "begin" << endl
              << tab << "if(rising_edge(clk)) then" << endl
              << tab << tab << "if(rst='1') then" << endl;
-        for(unsigned int i=0;i<numberOfFeatures;i++)
+        for(int i=0;i<numberOfFeatures;i++)
         {
             vhdl << tab << tab << tab << "addressReadCounter_" << i << " <= (others => '0');" << endl
                  << tab << tab << tab << "addressWriteCounter_" << i << " <= (others => '0');" << endl
-                 << tab << tab << tab << "validData_o_" << i << " <= \"0\";" << endl;
+                 //<< tab << tab << tab << "R_" << i << " <= (others => '0');" << endl
+                 << tab << tab << tab << Layer::getValidDataName(i)+"_o" << " <= \"0\";" << endl;
         }
         vhdl << tab << tab << "else" << endl
              << tab << tab << tab << "if(newStep=\"1\") then" << endl;
-        for(unsigned int i=0;i<numberOfFeatures;i++)
+        for(int i=0;i<numberOfFeatures;i++)
         {
             vhdl << tab << tab << tab << tab << "addressReadCounter_" << i << " <= (others => '0');" << endl
-                 << tab << tab << tab << tab << "validData_o_" << i << " <= \"0\";" << endl;
+                 //<< tab << tab << tab << tab << "R_" << i << " <= (others => '0');" << endl
+                 << tab << tab << tab << tab << Layer::getValidDataName(i)+"_o" << " <= \"0\";" << endl;
         }
         vhdl << tab << tab << tab << "else" << endl;
-        for(unsigned int i=0;i<numberOfFeatures;i++)
+        for(int i=0;i<numberOfFeatures;i++)
         {
-            vhdl << tab << tab << tab << tab << "if(getNewData_" << i << "=\"1\" and state" << i << "=writing) then" << endl
-                 << tab << tab << tab << tab << tab << "addressReadCounter_" << i << " <= std_logic_vector(unsigned(addressReadCounter_" << i << ")+1);" << endl
-                 << tab << tab << tab << tab << tab << "validData_o_" << i << " <= \"1\";" << endl
-                 << tab << tab << tab << tab << "else" << endl
-                 << tab << tab << tab << tab << tab << "validData_o_" << i << " <= \"0\";" << endl
-                 << tab << tab << tab << tab << "end if;" << endl;
+            vhdl << tab << tab << tab << tab << "if(" << Layer::getGetNewDataName(i) << "=\"1\" and state_" << i << "=reading) then" << endl;
+            vhdl << tab << tab << tab << tab << tab << "addressReadCounter_" << i << " <= std_logic_vector(unsigned(addressReadCounter_" << i << ")+1);" << endl;
+            vhdl << tab << tab << tab << tab << tab << Layer::getValidDataName(i)+"_o" << " <= \"1\";" << endl;
+                 //<< tab << tab << tab << tab << tab << "R_" << i << " <= R_temp_" << i << ";" << endl
+            if(needGetNewDataReset==true)
+            {
+                vhdl << tab << tab << tab << tab << "elsif(" << Layer::getGetNewDataName(i) << "_reset=\"1\") then" << endl;
+                vhdl << tab << tab << tab << tab << tab << "addressReadCounter_" << i << " <= (others => '0');" << endl;
+                vhdl << tab << tab << tab << tab << tab << Layer::getValidDataName(i)+"_o" << " <= \"0\";" << endl;
+            }
+            vhdl << tab << tab << tab << tab << "else" << endl;
+            vhdl << tab << tab << tab << tab << tab << Layer::getValidDataName(i)+"_o" << " <= \"0\";" << endl;
+            vhdl << tab << tab << tab << tab << "end if;" << endl;
         }
         vhdl << tab << tab << tab << "end if;" << endl;
-        for(unsigned int i=0;i<numberOfFeatures;i++)
+        for(int i=0;i<numberOfFeatures;i++)
         {
             vhdl << tab << tab << tab << "if(newDataSet_" << i << "=\"1\") then" << endl
                  << tab << tab << tab << tab << "addressWriteCounter_" << i << " <= (others => '0');" << endl
                  << tab << tab << tab << "else" << endl
-                 << tab << tab << tab << tab << "if(validData_i_" << i << "=\"1\" and state" << i << "=writing) then" << endl
+                 << tab << tab << tab << tab << "if(" << Layer::getValidDataName(i)+"_i" << "=\"1\") then" << endl
                  << tab << tab << tab << tab << tab << "addressWriteCounter_" << i << " <= std_logic_vector(unsigned(addressWriteCounter_" << i << ")+1);" << endl
                  << tab << tab << tab << tab << "end if;" << endl
                  << tab << tab << tab << "end if;" << endl;
@@ -138,7 +164,7 @@ namespace flopoco {
              << tab << "end if;" << endl
              << "end process;" << endl;
 
-        for(unsigned int i=0;i<numberOfFeatures;i++)
+        for(int i=0;i<numberOfFeatures;i++)
         {
             vhdl << "WriteAddress_" << i << " <= writeFlag_" << i << " & addressWriteCounter_" << i << ";" << endl;
             vhdl << "ReadAddress_" << i << " <= (not writeFlag_" << i << ") & addressReadCounter_" << i << ";" << endl;

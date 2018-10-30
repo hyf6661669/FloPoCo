@@ -21,7 +21,7 @@ namespace flopoco {
     class InputLayer : public Layer {
 
     public:
-        InputLayer(Target* target, int numberOfFeatures_, int wordSize_, int bramAddressWidth_);
+        InputLayer(Target* target, NeuralNetwork* parent, int numberOfFeatures_, int wordSize_, int bramAddressWidth_, bool needGetNewDataReset);
 
 		// destructor
         ~InputLayer() {}

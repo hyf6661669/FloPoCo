@@ -20,7 +20,7 @@ namespace flopoco {
 	class ControlledMemory : public Operator {
 
     public:
-        ControlledMemory(Target* target, unsigned int dataWidth_, unsigned int addressWidth_);
+        ControlledMemory(Target* target, unsigned int dataWidth_, unsigned int addressWidth_, bool outputOverwriteValue = false, bool needGetNewDataReset=false, bool hasSpecificAddressOnResetPort=false, bool hasSpecificAddressOnGetNewDataResetPort=false);
 
 		// destructor
         ~ControlledMemory() {}

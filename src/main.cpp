@@ -137,7 +137,8 @@ int main(int argc, char* argv[] )
 
 	UserDefinedOperator::registerFactory();
 
-    H5ToNeuralNetwork::registerFactory();
+    KerasToNeuralNetwork::registerFactory();
+	FindIndexOfMaximum::registerFactory();
 	  
 	}
 	catch (const std::exception &e) {

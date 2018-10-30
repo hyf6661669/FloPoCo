@@ -23,8 +23,8 @@ namespace flopoco {
     class PoolingLayer : public Layer {
 
     public:
-        PoolingLayer(Target* target, int wordSize_, int horizontalSize_, int verticalSize_, int numberOfOutputFeatures_, bool outputFeaturesParallel_, int paddingTop_, string paddingType_, int windowSize_, string activationFunction_="ReLU", int stride_=1, int paddingBot_=-1, int paddingLeft_=-1, int paddingRight_=-1);
-        PoolingLayer(Target* target, LayerArguments* args);
+        PoolingLayer(Target* target, NeuralNetwork* parent, int wordSize_, int horizontalSize_, int verticalSize_, int numberOfOutputFeatures_, bool calcAllParallel_, int paddingTop_, string paddingType_, int windowSize_, string activationFunction_="ReLU", int stride_=1, int paddingBot_=-1, int paddingLeft_=-1, int paddingRight_=-1, bool inputMemoryParallelAccess_=true, bool outputMemoryParallelAccess_=true);
+        PoolingLayer(Target* target, NeuralNetwork* parent, LayerArguments* args, bool inputMemoryParallelAccess_=true, bool outputMemoryParallelAccess_=true);
 
 		// destructor
         ~PoolingLayer() {}
@@ -38,19 +38,7 @@ namespace flopoco {
         virtual void generateVHDLCode(Target* target) override;
 
     private:
-        //unsigned int wordSize;
-        //unsigned int horizontalSize;
-        //unsigned int verticalSize;
-        //unsigned int numberOfOutputFeatures;
-        //bool outputFeaturesParallel;
-        //int paddingTop;
-        //string activationFunction;
-        //unsigned int windowSize;
-        //unsigned int stride;
-        //int paddingBot;
-        //int paddingLeft;
-        //int paddingRight;
-        //string paddingType;
+    	void createInputMemoryReset(Target* target);
 	};
 
 

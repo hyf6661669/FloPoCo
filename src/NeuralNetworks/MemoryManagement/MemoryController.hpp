@@ -19,8 +19,8 @@ namespace flopoco {
 	// new operator class declaration
 	class MemoryController : public Operator {
 
-    public:
-        MemoryController(Target* target, unsigned int dataWidth_, unsigned int addressWidth_);
+    public :
+        MemoryController(Target* target, unsigned int dataWidth_, unsigned int addressWidth_, bool outputOverwriteValue=false, bool needReadCounterReset=false, bool hasSpecificAddressOnResetPort=false, bool hasSpecificAddressOnGetNewDataResetPort=false);
 
 		// destructor
         ~MemoryController() {}

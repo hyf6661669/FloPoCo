@@ -16,6 +16,7 @@
 */
 
 #include "ConvolutionalCoreSimple.hpp"
+#include "NeuralNetworks/Layers/Convolutional/ConvolutionalCoreWithWeightInputs.hpp"
 #include "IntAddSubCmp/IntAdderTree.hpp"
 #include "NeuralNetworks/Layers/Layer.hpp"
 
@@ -25,50 +26,55 @@ namespace flopoco {
     class ConvolutionalLayer : public Layer {
 
     public:
-        ConvolutionalLayer(Target* target, int wordSize_, int fraction_, int horizontalSize_, int verticalSize_, int windowSize_, int numberOfOutputFeatures_, int numberOfInputFeatures_, vector <vector <vector <double> > > weights_, int weightWordSize_, int weightFraction_, int paddingLeft_, string paddingType_, bool inputFeaturesParallel_, bool outputFeaturesParallel_, string id_, int stride_=1, bool useAdderTree_=true, bool roundAfterConvCore_=true, string roundingType_="Truncation", string activationFunction_="ReLU", int paddingRight_=-1, int paddingTop_=-1, int paddingBot_=-1);
-        ConvolutionalLayer(Target* target, LayerArguments* la, bool useAdderTree_=true, bool roundAfterConvCore_=true, string roundingType_="Truncation");
+        ConvolutionalLayer(Target* target, NeuralNetwork* parent, int wordSize_, int fraction_, int horizontalSize_, int verticalSize_, int windowSize_, int numberOfOutputFeatures_, int numberOfInputFeatures_, vector <vector <vector <double> > > weights_, vector<double> biases_, int weightWordSize_, int weightFraction_, int paddingLeft_, string paddingType_, bool calcAllParallel_, string id_, int stride_=1, bool useAdderTree_=true, bool roundAfterConvCore_=true, char roundingType_=0x00, string activationFunction_="ReLU", int paddingRight_=-1, int paddingTop_=-1, int paddingBot_=-1, bool inputMemoryParallelAccess_=true, bool outputMemoryParallelAccess_=true);
+        ConvolutionalLayer(Target* target, NeuralNetwork* parent, LayerArguments* la, bool useAdderTree_=true, bool roundAfterConvCore_=true, char roundingType_=0x00, bool inputMemoryParallelAccess_=true, bool outputMemoryParallelAccess_=true);
 
 		// destructor
         ~ConvolutionalLayer() {}
 
-        //unsigned int getNumberOfInputFeatures(){return this->numberOfInputFeatures;}
-        //unsigned int getNumberOfOutputFeatures(){return this->numberOfOutputFeatures;}
-
         virtual string getOutputSignalName(int feature) override;
         virtual string getInputSignalName(int feature) override;
+        virtual string getIntermediateResultName(unsigned int featureNumber) override;
+
+        int getInputCounterWidth() const;
+        int getOutputCounterWidth() const;
+
+        static string getInputFeatureCounterOutputSignalName() {return "InputFeatureCounter_out";}
+        static string getOutputFeatureCounterOutputSignalName() {return "OutputFeatureCounter_out";}
+        static string getConvCoreInputSignalName(unsigned int inputPort) {return "ConvCoreDataIn_"+to_string(inputPort);}
+        static string getConvCoreWeightSignalName(unsigned int inputPort) {return "ConvCoreWeight_"+to_string(inputPort);}
+        static string getConvCoreOutputSignalName() {return "ConvCoreDataOut";}
 
     protected:
         virtual void generateVHDLCode(Target* target) override;
     private:
-        void buildShiftAndPad(Target* target);
-        void buildConvCores(Target* target);
-        void buildAdderTrees(Target* target);
-        void roundOutput(int wordSizeFrom, int fractionFrom, string signalNameFrom, string signalNameTo, string round="Truncation");
-        void buildActivationFunction(Target* target);
+        void buildShiftAndPadParallel(Target* target);
+        void buildConvCoresParallel(Target* target);
+        void buildAdderTreesParallel(Target* target);
+        void roundOutput(Target* target, int wordSizeFrom, int fractionFrom, string signalNameFrom, string signalNameTo, string instanceName, char round=0x00);
+        void buildActivationFunction(Target* target, int outFeatureCounter=0);
 
-        //unsigned int wordSize;
-        //unsigned int fraction;
-        //unsigned int horizontalSize;
-        //unsigned int verticalSize;
-        //unsigned int windowSize;
-        //unsigned int numberOfOutputFeatures;
-        //unsigned int numberOfInputFeatures;
-        //vector <vector <vector <double> > > weights; // format: weights[inputFeatureNo.][outputFeatureNo.][weightNo.]
-        //unsigned int weightWordSize;
-        //unsigned int weightFraction;
-        //int paddingLeft;
-        //int paddingRight;
-        //int paddingTop;
-        //int paddingBot;
-        //string paddingType;
-        //unsigned int stride;
-        //bool inputFeaturesParallel;
-        //bool outputFeaturesParallel;
-        //string id;
+        void buildParallelCalculation(Target* target);
+
+        void buildSerialCalculation(Target* target);
+        void createPortsSerial(Target* target);
+        void declareSignals(Target* target);
+        void createDataGuardsAndMultiplexersSerial(Target* target);
+        ConvolutionalCoreWithWeightInputs* createConvCoreSerial(Target* target);
+        void createBiasesSerial(Target* target);
+        unsigned int createBitHeapSerial(Target* target, unsigned int wIn);
+        void createPipelineRegistersSerial(Target* target, unsigned int pipelineStagesConv, unsigned int pipelineStagesBitH);
+        void createShitAndPadSerial(Target* target);
+        void createDMAControllerSerial(Target* target);
+        void createCountersSerial(Target* target);
+        void createActivationFunctionSerial(Target* target);
+        void createLutForIntermediateReset(Target* target);
+
+        void createGetNewDataAddressLut(Target* target);
+
         bool useAdderTree;
         bool roundAfterConvCore;
-        string roundingType;
-        //string activationFunction;
+        char roundingType;
 
         vector <vector <ConvolutionalCoreSimple*>> ConvCores; // format: ConvCores[inputFeatureNo.][outputFeatureNo.]
         vector <IntAdderTree*> AdderTrees; // format: AdderTrees[outputFeatureNo.]

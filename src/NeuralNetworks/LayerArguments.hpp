@@ -18,7 +18,7 @@ namespace flopoco {
 
     public:
         LayerArguments();
-        LayerArguments(string layerType_, int coreSize_, int inputHeight_, int inputWidth_, int inputDepth_, int wordSize_, int fraction_, int weightWordSize_, int weightFraction_, int numberOfOutputFeatures_, vector<double> weights_, int padding_, string paddingType_, bool inputFeaturesParallel_, bool outputFeaturesParallel_, string activationFunction_, int stride_, string id_);
+        LayerArguments(string layerType_, int coreSize_, int inputHeight_, int inputWidth_, int inputDepth_, int wordSize_, int fraction_, int weightWordSize_, int weightFraction_, int numberOfOutputFeatures_, vector<double> weights_, vector<double> biases_, int padding_, string paddingType_, bool calcAllParallel_, string activationFunction_, int stride_, unsigned int startAddress_, string id_);
 
 
 		// destructor
@@ -40,16 +40,21 @@ namespace flopoco {
         double getSpecificWeight(unsigned int index);
         double getConvWeight(unsigned int inputFeature, unsigned int outputFeature, unsigned int index);
         vector <vector <vector <double>>> getConvWeights();
+        double getFullConnectedWeight(unsigned int inputNumber, unsigned int neuronNumber);
+        vector <vector <double>> getFullConnectedWeights();
+        unsigned int getWeightVectorSize();
+        vector<double> getBiases();
+        double getBias(unsigned int index);
         int getPaddingTop();
         int getPaddingBot();
         int getPaddingLeft();
         int getPaddingRight();
         int getPadding();
         string getPaddingType();
-		bool getInputFeaturesParallel();
-		bool getOutputFeaturesParallel();
+        bool getCalcAllParallel();
 		string getActivationFunction();
         int getStride();
+        unsigned int getStartAddress();
         string getId();
 
         void setLayerType(string lt);
@@ -65,19 +70,30 @@ namespace flopoco {
         void setWeights(vector<double> w);
         void setConvWeights(vector<vector<vector<double>>> w);
         void addWeight(double w);
+        void makeWeightsVectorBigger(unsigned int i);
+        void setBiases(vector<double> b);
+        void addBias(double b);
         void setPadding(int p);
         void setPaddingTop(int p);
         void setPaddingBot(int p);
         void setPaddingLeft(int p);
         void setPaddingRight(int p);
         void setPaddingType(string p);
-        void setInputFeaturesParallel(bool i);
-        void setOutputFeaturesParallel(bool o);
+        void setCalcAllParallel(bool p);
         void setActivationFunction(string a);
         void setStride(int s);
+		void setStartAddress(unsigned int a);
         void setId(string i);
 
+		void reorderFullConnectedWeightsAndBiases();
+
+		static vector<double> flatten4DTensor(vector<vector<vector<vector<double>>>> t);
+		static vector<double> flatten2DTensor(vector<vector<double>> t);
+
     protected:
+		void reorderFullConnectedWeights();
+		void reorderFullConnectedBiases();
+
         string layerType; // can be: Convolutional or FullConnected or Pooling
         int coreSize; // relevant for Convolution and Pooling
 		int inputHeight;
@@ -89,15 +105,17 @@ namespace flopoco {
 		int weightFraction;
         int numberOfOutputFeatures;
         vector<double> weights; // if this layer is a convLayer this vector can be seen to have following structure: weights[inputFeature][outputFeature][weightIndex] (use getter to get specific weights individually)
+        vector<double> biases;
         int paddingTop; // relevant for Convolution and Pooling
         int paddingBot; // relevant for Convolution and Pooling
         int paddingLeft; // relevant for Convolution and Pooling
         int paddingRight; // relevant for Convolution and Pooling
         string paddingType; // relevant for Convolution and Pooling, can be "Zero" or "Value"
-		bool inputFeaturesParallel;
-		bool outputFeaturesParallel;
+        bool calcAllParallel;
 		string activationFunction;
         int stride;
+        unsigned int startAddress; // relevant for Convolution and FullConnected
+		bool fullConnectedWeightsAndBiasesOrdered; // relevant for FullConnected
         string id;
 
 	private:

@@ -666,8 +666,11 @@ src/NeuralNetworks/Layers/Layer
 #   convolutional
 src/NeuralNetworks/Layers/Convolutional/ConvolutionalLayer
 src/NeuralNetworks/Layers/Convolutional/ConvolutionalCoreSimple
+src/NeuralNetworks/Layers/Convolutional/ConvolutionalCoreWithWeightInputs
 #   full connected
 src/NeuralNetworks/Layers/FullConnected/FullConnectedLayer
+src/NeuralNetworks/Layers/FullConnected/FullConnectedCore
+src/NeuralNetworks/Layers/FullConnected/FullConnectedLayerController
 #   pooling
 src/NeuralNetworks/Layers/Pooling/PoolingLayer
 src/NeuralNetworks/Layers/Pooling/PoolingCore
@@ -675,6 +678,7 @@ src/NeuralNetworks/Layers/Pooling/Max2Input
 #   in/out
 src/NeuralNetworks/Layers/Input/InputLayer
 src/NeuralNetworks/Layers/Output/OutputLayer
+src/NeuralNetworks/Layers/Output/FindIndexOfMaximum
 
 
 # memory management
@@ -682,15 +686,26 @@ src/NeuralNetworks/MemoryManagement/BlockRam
 src/NeuralNetworks/MemoryManagement/ControlledMemory
 src/NeuralNetworks/MemoryManagement/MemoryController
 
+#	DMA Access
+src/NeuralNetworks/MemoryManagement/DmaAccess/GlobalDMAController
+src/NeuralNetworks/MemoryManagement/DmaAccess/WeightFetcher
+
 # utility
 src/NeuralNetworks/Utility/WindowShiftRegister
 src/NeuralNetworks/Utility/GlobalController
 src/NeuralNetworks/Utility/Register
 src/NeuralNetworks/Utility/ModuloCounter
 src/NeuralNetworks/Utility/PaddingGenerator
+src/NeuralNetworks/Utility/DataGuard
+src/NeuralNetworks/Utility/BitheapWrapper
+src/NeuralNetworks/Utility/Rounding
+
+# multiplicators
+src/NeuralNetworks/Multiplicators/NeuralNetworkMultiplication
+src/NeuralNetworks/Multiplicators/SimpleMultiplication
 
 # general
-src/NeuralNetworks/H5ToNeuralNetwork
+src/NeuralNetworks/KerasToNeuralNetwork
 src/NeuralNetworks/NeuralNetwork
 src/NeuralNetworks/LayerArguments
 

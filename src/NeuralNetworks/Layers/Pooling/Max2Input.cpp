@@ -18,7 +18,7 @@ using namespace std;
 namespace flopoco {
 
 
-    Max2Input::Max2Input(Target* target, unsigned int wordSize_, bool sign_) :
+    Max2Input::Max2Input(Target* target, unsigned int wordSize_, bool sign_, bool alsoReturnIndex, unsigned int indexWordSize) :
         Operator(target), wordSize(wordSize_), sign(sign_) {
 
         this->useNumericStd();
@@ -31,7 +31,7 @@ namespace flopoco {
 
         // definition of the name of the operator
         ostringstream name;
-        name << "Max2Input_wordSize_" << wordSize << "_sign_" << (sign==true?"true":"false");
+        name << "Max2Input_wordSize_" << wordSize << "_sign_" << (sign==true?"true":"false") << "_alsoReturnIndex_" << alsoReturnIndex << "_wIndex_" << indexWordSize;
         setName(name.str());
 
         // add in/out
@@ -39,14 +39,30 @@ namespace flopoco {
 		addInput("X1", wordSize);
         addOutput("R", wordSize);
 
+        if(alsoReturnIndex==true)
+        {
+            addInput("I0",indexWordSize);
+            addInput("I1",indexWordSize);
+            addOutput("IMax",indexWordSize);
+        }
+        nextCycle(); // input registers
+
         // vhdl code
         if(sign==true)
         {
             this->vhdl << "R <= X0 when (signed(X0) > signed(X1)) else X1;" << endl;
+            if(alsoReturnIndex==true)
+            {
+                this->vhdl << "IMax <= I0 when (signed(X0) > signed(X1)) else I1;" << endl;
+            }
         }
         else
         {
             this->vhdl << "R <= X0 when (unsigned(X0) > unsigned(X1)) else X1;" << endl;
+            if(alsoReturnIndex==true)
+            {
+                this->vhdl << "IMax <= I0 when (unsigned(X0) > unsigned(X1)) else I1;" << endl;
+            }
         }
 
     }

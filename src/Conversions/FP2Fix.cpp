@@ -205,8 +205,13 @@ namespace flopoco{
       vhdl << tab << declare("eTest") << " <= (overFl0 or overFl1);" << endl;
 
       manageCriticalPath(target->localWireDelay() + target->lutDelay());
+      /*
       vhdl << tab << "O <= fA4 when eTest = '0' else" << endl;
       vhdl << tab << tab << "I" << of(wEI+wFI) << " & (" << wFO-2 << " downto 0 => not I" << of(wEI+wFI) << ");"<<endl;
+       */
+       vhdl << tab << "O <= (others => '0') when I(I'length-1 downto I'length-2)=\"00\" else" << endl; // check for special case zero
+       vhdl << tab << tab << "fA4 when eTest = '0' else" << endl; // check for overflow
+       vhdl << tab << tab << "I" << of(wEI+wFI) << " & (" << wFO-2 << " downto 0 => not I" << of(wEI+wFI) << ");"<<endl;
    }
 
 

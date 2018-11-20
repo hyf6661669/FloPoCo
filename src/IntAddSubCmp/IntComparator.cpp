@@ -30,7 +30,7 @@ using namespace std;
 namespace flopoco{
 
 
-	IntComparator::IntComparator(Target* target, int wIn, int criteria, bool constant, int constValue, map<string, double> inputDelays) :
+	IntComparator::IntComparator(Target* target, int wIn, int criteria, bool constant, int constValue, bool sign, map<string, double> inputDelays) :
 		Operator(target, inputDelays), wIn_(wIn), criteria_(criteria) {
 
 		// -------- Parameter set up -----------------
@@ -57,8 +57,31 @@ namespace flopoco{
 		addOutput("R",true);
 
 		switch(criteria){
-            case -2: vhdl << tab << "R <= \"1\" when (X <  Y) else \"0\";"<<endl; break;
-            case -1: vhdl << tab << "R <= \"1\" when (X <= Y) else \"0\";"<<endl; break;
+            case -2:
+            {
+                useNumericStd();
+                if(sign)
+                {
+                    vhdl << tab << "R <= \"1\" when (signed(X) < signed(Y)) else \"0\";"<<endl; break;
+                }
+                else
+                {
+                    vhdl << tab << "R <= \"1\" when (unsigned(X) < unsigned(Y)) else \"0\";"<<endl; break;
+                }
+
+            }
+            case -1:
+            {
+                useNumericStd();
+                if(sign)
+                {
+                    vhdl << tab << "R <= \"1\" when (signed(X) <= signed(Y)) else \"0\";"<<endl; break;
+                }
+                else
+                {
+                    vhdl << tab << "R <= \"1\" when (unsigned(X) <= unsigned(Y)) else \"0\";"<<endl; break;
+                }
+            }
 			case  0:{
 
 				//determine chunk size
@@ -134,8 +157,30 @@ namespace flopoco{
                         vhdl << tab << "R <= \"1\" when X=conv_std_logic_vector("<<constValue<<","<< wIn<<") else \"0\";"<<endl;
 				}
 			} break;
-            case  1: vhdl << tab << "R <= \"1\" when (X >=  Y) else \"0\";"<<endl; break;
-            case  2: vhdl << tab << "R <= \"1\" when (X > Y) else \"0\";"<<endl; break;
+            case  1:
+            {
+                useNumericStd();
+                if(sign)
+                {
+                    vhdl << tab << "R <= \"1\" when (signed(X) >= signed(Y)) else \"0\";"<<endl; break;
+                }
+                else
+                {
+                    vhdl << tab << "R <= \"1\" when (unsigned(X) >= unsigned(Y)) else \"0\";"<<endl; break;
+                }
+            }
+            case  2:
+            {
+                useNumericStd();
+                if(sign)
+                {
+                    vhdl << tab << "R <= \"1\" when (signed(X) > signed(Y)) else \"0\";"<<endl; break;
+                }
+                else
+                {
+                    vhdl << tab << "R <= \"1\" when (unsigned(X) > unsigned(Y)) else \"0\";"<<endl; break;
+                }
+            }
 			default:;
 		}
 
@@ -172,7 +217,7 @@ namespace flopoco{
 		UserInterface::parseBoolean(args, "constant", &constant);
 		int constValue;
 		UserInterface::parseStrictlyPositiveInt(args, "constValue", &constValue);
-		return new IntComparator(target, wIn, criteria, constant, constValue);
+		return new IntComparator(target, wIn, criteria, constant, constValue, false);
 	}
 
 	void IntComparator::registerFactory(){

@@ -106,127 +106,15 @@ namespace flopoco {
             }
             vhdl << "\" when others;" << endl << endl;
 
+            //handle critical path
+            this->manageCriticalPath(target->localWireDelay() + target->lutDelay());
+
             //build output signals
             for( unsigned int i = 0; i < wOut_; ++i ) {
                 vhdl << tab << join( "o", i ) << " <= " << "t_out" << of( i ) << ";" << std::endl;
             }
         }
 
-//        ////////Build Lut using boolean equations//////////
-//        for( unsigned int out = 0; out < wOut_; ++out ) {
-//            const unsigned int mask = ( 1 << out );
-////            cout << endl << "out = " << out << endl;
-////            cout << "mask = " << mask << endl << endl;
-//            bool_eq eq;
-//            for( std::map<unsigned int, unsigned int>::const_iterator it = pairs.begin();
-//                 it != pairs.end(); ++it ) {
-////                cout << "it->second = " << it->second << endl;
-////                cout << "mask = " << mask << endl;
-//                if( it->second & mask ) {
-//                    bool_eq part;
-////                    cout << "it->second & mask (" << it->second << " & " << mask << ")" << endl;
-//                    for( unsigned int in = 0; in < wIn_; ++in ) {
-////                        cout << "it->first = " << it->first << endl;
-////                        cout << "(1 << in) = " << (1 << in) << endl;
-//                        if( it->first & ( 1 << in ) ) {
-////                            cout << "if" << endl;
-//                            part &= bool_eq::in( in );
-//                        } else {
-////                            cout << "else" << endl;
-
-////                            //////START DEBUG///////
-////                            cout << endl << "starting debug of tempEq=";
-////                            bool_eq tempEq;
-////                            tempEq=bool_eq::in( in );
-
-////                            cout << "in(" << in << ")\n";
-////                            vector<bool> temporaryInputVec(this->wIn_);
-////                            for(unsigned int x=0; x<(1<<(this->wIn_)); x++)
-////                            {
-////                                for(unsigned int y=0; y<=in; y++)
-////                                {
-////                                    temporaryInputVec[y]=(1<<y)&x;
-////                                }
-////                                cout << tab << "x=";
-////                                for(unsigned int y=0; y<temporaryInputVec.size(); y++)
-////                                {
-////                                    cout << temporaryInputVec[temporaryInputVec.size()-1-y];
-////                                }
-////                                cout << endl;
-////                                cout << tab << tab << "output=" << tempEq.eval(temporaryInputVec) << endl;
-////                            }
-
-
-////                            cout << endl << "starting debug of tempEq=~tempEq" << endl;
-
-////                            bool_eq tempEqInv=~(tempEq);
-////                            for(unsigned int x=0; x<(1<<(this->wIn_)); x++)
-////                            {
-////                                for(unsigned int y=0; y<(1<<(this->wIn_)); y++)
-////                                {
-////                                    temporaryInputVec[y]=(1<<y)&x;
-////                                }
-////                                cout << tab << "x=";
-////                                for(unsigned int y=0; y<temporaryInputVec.size(); y++)
-////                                {
-////                                    cout << temporaryInputVec[temporaryInputVec.size()-1-y];
-////                                }
-////                                cout << endl;
-////                                cout << tab << tab << "output=" << tempEqInv.eval(temporaryInputVec) << endl;
-////                            }
-
-////                            /////END DEBUG///////
-
-//                            part &= ~bool_eq::in( in ); //part &= ~(bool_eq::in( in ));
-//                        }
-//                    }
-////                    /////START DEBUG///////
-////                    cout << "evaluating part" << endl;
-////                    vector<bool> tempInputVecPart(this->wIn_);
-////                    for(unsigned int i=0; i<(1<<this->wIn_); i++)
-////                    {
-////                        //create temporary input vector
-////                        for(unsigned int j=0; j<this->wIn_; j++)
-////                        {
-////                            tempInputVecPart[j]=((1<<j)&i);
-////                        }
-////                        cout << tab << "input: ";
-////                        for(unsigned int k=0; k<tempInputVecPart.size(); k++)
-////                        {
-////                            cout << tempInputVecPart[tempInputVecPart.size()-1-k];
-////                        }
-////                        cout << "='" << i << "'" << endl;
-////                        cout << tab << "output: " << part.eval(tempInputVecPart) << endl;
-////                    }
-////                    /////END DEBUG///////
-////                    cout << "eq |= part" << endl;
-//                    eq |= part;
-//                }
-//            }
-////            cout << "push back eq in equations_" << endl << endl;
-//            equations_.push_back( eq );
-//            vector<bool> tempInputVec(this->wIn_);
-////            ///////DEBUG START///////
-////            cout << "evaluating eq number " << this->equations_.size()-1 << endl;
-////            for(unsigned int i=0; i<(1<<this->wIn_); i++)
-////            {
-////                //create temporary input vector
-////                for(unsigned int j=0; j<this->wIn_; j++)
-////                {
-////                    tempInputVec[j]=((1<<j)&i);
-////                }
-////                cout << tab << "input: ";
-////                for(unsigned int k=0; k<tempInputVec.size(); k++)
-////                {
-////                    cout << tempInputVec[tempInputVec.size()-1-k];
-////                }
-////                cout << "='" << i << "'" << endl;
-////                cout << tab << "output: " << eq.eval(tempInputVec) << endl;
-////            }
-////            ///////DEBUG END///////
-//        }
-
-//        build();
     }
 
     void GenericLut::build() {

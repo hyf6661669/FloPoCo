@@ -149,12 +149,12 @@ namespace flopoco{
 		o << toVHDLType();
 
 		//initialize signals to zero, this allows the simulation of more complex systems with internal states:
-		if(width() == 1)
+		if((width() == 1) && (!isBus_))
 		  o << " := '0'";
 		else
-      o << " := (others => '0')";
+		  o << " := (others => '0')";
 
-    if (type()==Signal::registeredWithZeroInitialiser) {
+    	if (type()==Signal::registeredWithZeroInitialiser) {
 			if( (1==width()) && (!isBus_) )
 				o << " := '0'";
 			else

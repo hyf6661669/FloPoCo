@@ -19,13 +19,13 @@ namespace flopoco {
 
 
 
-FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int fftSize_, int bC_, int b_, int wLE_, string alg_, string rotatorFileName_, string FFTAlgorithmFileName_, bool intPip_)
+FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int fftSize_, int bC_, int b_, int wE_, string alg_, string rotatorFileName_, string FFTAlgorithmFileName_, bool intPip_)
     : Operator(target),
       wIn(wIn_),
       fftSize(fftSize_),
       bC(bC_),
       b(b_),
-      wLE(wLE_),
+      wE(wE_),
       alg(alg_),
       rotatorFileName(rotatorFileName_),
       FFTAlgorithmFileName(FFTAlgorithmFileName_),
@@ -50,7 +50,7 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int fftSize_, int b
 
     if(rotatorFileName == "-")
     {
-      rotatorFileName = "data/FFTRotators/rotators_" + alg + "_bestWLe" + to_string(wLE) + "b" + to_string(b) + ".txt";
+      rotatorFileName = "data/FFTRotators/rotators_" + alg + "_bestWLe" + to_string(wE) + "b" + to_string(b) + ".txt";
     }
     std::ifstream rotFile(rotatorFileName);
 
@@ -59,7 +59,7 @@ FullyParallelFFT::FullyParallelFFT(Target* target, int wIn_, int fftSize_, int b
 
     if(FFTAlgorithmFileName == "-")
     {
-      FFTAlgorithmFileName = "data/FFTAlgorithms/phi" + to_string(fftSize) + "_" + alg + "_WLe" + to_string(wLE) + "b" + to_string(b) + ".txt";
+      FFTAlgorithmFileName = "data/FFTAlgorithms/phi" + to_string(fftSize) + "_" + alg + "_WLe" + to_string(wE) + "b" + to_string(b) + ".txt";
     }
     std::ifstream FFTFile(FFTAlgorithmFileName);
 
@@ -498,19 +498,19 @@ void FullyParallelFFT::buildStandardTestCases(TestCaseList * tcl) {
 
 
 OperatorPtr FullyParallelFFT::parseArguments(Target *target, vector<string> &args) {
-    int wIn, bC, wLE, b, fftSize;
+    int wIn, bC, wE, b, fftSize;
     string rotatorFileName, FFTAlgorithmFileName, alg;
     bool intPip;
     UserInterface::parseInt(args, "wIn", &wIn); // param0 has a default value, this method will recover it if it doesnt't find it in args,
-    UserInterface::parseInt(args, "fftSize", &fftSize);
+    UserInterface::parseInt(args, "N", &fftSize);
     UserInterface::parseInt(args, "bC", &bC);
-    UserInterface::parseInt(args, "wLE", &wLE);
+    UserInterface::parseInt(args, "wE", &wE);
     UserInterface::parseInt(args, "b", &b);
     UserInterface::parseString(args, "alg", &alg);
     UserInterface::parseString(args, "rotatorFileName", &rotatorFileName);
     UserInterface::parseString(args, "FFTAlgorithmFileName", &FFTAlgorithmFileName);
     UserInterface::parseBoolean(args, "intPip", &intPip);
-    return new FullyParallelFFT(target, wIn, fftSize, bC, b, wLE, alg, rotatorFileName, FFTAlgorithmFileName, intPip);
+    return new FullyParallelFFT(target, wIn, fftSize, bC, b, wE, alg, rotatorFileName, FFTAlgorithmFileName, intPip);
 }
 
 void FullyParallelFFT::registerFactory(){
@@ -524,9 +524,9 @@ void FullyParallelFFT::registerFactory(){
                        // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                        "wIn(int): input word size;  \
                        alg(string): algorithm, may be BT for binary tree or SR for the split-radix algorithm; \
-                       fftSize(int)=32: size of FFT;\
+                       N(int)=32: size of FFT;\
                        bC(int)=12: constant word length of rotators;\
-                       wLE(int)=16: Effective word length;\
+                       wE(int)=16: effective word length;\
                        b(int)=20: coefficient word length;\
                        rotatorFileName(string)=-: rotator file name (see data/FFTRotators), overwrites the path determined by alg; \
                        FFTAlgorithmFileName(string)=-: FFT algorithm file name (see data/FFTAlgorithms), overwrites the path determined by alg; \

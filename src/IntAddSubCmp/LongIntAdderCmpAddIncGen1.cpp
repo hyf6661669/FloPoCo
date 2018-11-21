@@ -210,7 +210,7 @@ exit(1);
 int tp = target->isPipelined();
 target->setPipelined(false);
 IntAdder *addZero = new IntAdder(target, cSize[j]+1);
-IntComparator *compOne = new IntComparator(target, cSize[j], 1, false, 0);
+IntComparator *compOne = new IntComparator(target, cSize[j], 1, false, 0, false);
 
 addSubComponent(addZero);
 addSubComponent(compOne);

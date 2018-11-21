@@ -268,9 +268,9 @@ exit(1);
 #else
 int tp = target->isPipelined();
 target->setPipelined(false);
-IntComparator *compZero = new IntComparator(target, cSize[j], 2, false, 0);
+IntComparator *compZero = new IntComparator(target, cSize[j], 2, false, 0, false);
 addSubComponent(compZero);
-IntComparator *compOne = new IntComparator(target, cSize[j], 1, false, 0);
+IntComparator *compOne = new IntComparator(target, cSize[j], 1, false, 0, false);
 addSubComponent(compOne);
 
 if (tp) target->setPipelined();

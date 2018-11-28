@@ -11,8 +11,8 @@ namespace flopoco {
         int inW, outW;
         UserInterface::parseString(args, "function", &func);
         UserInterface::parseString(args, "type", &type);
-        UserInterface::parseInt(args, "inputWidth", &inW);
-        UserInterface::parseInt(args, "outputWidth", &outW);
+        UserInterface::parseInt(args, "wIn", &inW);
+        UserInterface::parseInt(args, "wOut", &outW);
 
         transform(type.begin(), type.end(), type.begin(), ::tolower);
 
@@ -32,10 +32,10 @@ namespace flopoco {
                            "Generates a function.", // description, string
                            "Miscellaneous", // category, from the list defined in UserInterface.cpp
                            "", //seeAlso
-                           "type(string)=normal: Algorithm Type: comp, diff, rom;\
-                            function(string)=x: Algorithm Type: comp, diff, rom;\
-                        inputWidth(int)=16: Input bit count; \
-                        outputWidth(int)=8: Output bit count",
+                           "type(string)=diff: Algorithm Type: comp, diff, rom;\
+                            function(string): Sollya function;\
+                        wIn(int): Input word size; \
+                        wOut(int): Output word size",
                            "Feel free to experiment with its code, it will not break anything in FloPoCo. <br> Also see the developer manual in the doc/ directory of FloPoCo.",
                            FixMonotoneFunction::parseArguments
         );

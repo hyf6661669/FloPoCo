@@ -1264,7 +1264,7 @@ namespace flopoco{
 			delete level;
 			delete shifts;
 		}
-		REPORT(DETAILED,  "Number of adders: "<<tree_try->saolist.size() );
+		//		REPORT(DETAILED,  "Number of adders: "<<tree_try->saolist.size() );
 		tree_try->result=result;
 		return tree_try;
 	}

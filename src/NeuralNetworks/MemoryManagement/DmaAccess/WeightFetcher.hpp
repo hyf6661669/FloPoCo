@@ -20,7 +20,7 @@ namespace flopoco {
     class WeightFetcher : public Operator {
 
     public:
-        WeightFetcher(Target* target, unsigned int weightsPerAccess_, unsigned int weightWidth, unsigned int startAddress_, unsigned int innerCounterMax, unsigned int outerCounterMax, unsigned int weightsPerOuterCounterStep=0);
+        WeightFetcher(Target* target, unsigned int weightsPerAccess_, unsigned int weightWidth, unsigned int startAddress_, unsigned int innerCounterMax, unsigned int outerCounterMax, unsigned int weightsPerOuterCounterStep=0, bool lutBasedAddressCalculation=true);
 
         // destructor
         ~WeightFetcher() {}

@@ -56,6 +56,7 @@ namespace flopoco {
         int getStride();
         unsigned int getStartAddress();
         string getId();
+        bool getLutBasedAddressCalculation();
 
         void setLayerType(string lt);
         void setCoreSize(int cs);
@@ -84,6 +85,7 @@ namespace flopoco {
         void setStride(int s);
 		void setStartAddress(unsigned int a);
         void setId(string i);
+        void setLutBasedAddressCalculation(bool b);
 
 		void reorderFullConnectedWeightsAndBiases();
 
@@ -117,6 +119,7 @@ namespace flopoco {
         unsigned int startAddress; // relevant for Convolution and FullConnected
 		bool fullConnectedWeightsAndBiasesOrdered; // relevant for FullConnected
         string id;
+        bool lutBasedAddressCalculation; // relevant if calcAllParallel==false
 
 	private:
 			

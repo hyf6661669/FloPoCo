@@ -187,7 +187,7 @@ namespace flopoco {
                 inPortMap(biasLut, "i" + to_string(i), "Bias_Lut_i" + to_string(i));
             }
             // out port map
-            for (unsigned int i = 0; i < this->myArguments->getWeightWordSize(); i++) {
+            for (int i = 0; i < this->myArguments->getWeightWordSize(); i++) {
                 outPortMap(biasLut, "o" + to_string(i), "Bias_" + to_string(i) + "_std", true);
                 this->vhdl << "Bias_temp(" << i << ") <= Bias_" << i << "_std;" << endl;
             }
@@ -380,7 +380,7 @@ namespace flopoco {
     void FullConnectedLayer::buildWeightFetcher(Target* target)
     {
         unsigned int memoryAccessesPerNeuron = (unsigned int)ceil((double)this->weightsPerNeuron / (double)this->weightsPerDMAAccess);
-        WeightFetcher* fetch = new WeightFetcher(target,this->weightsPerDMAAccess,this->myArguments->getWeightWordSize(),this->myArguments->getStartAddress(),memoryAccessesPerNeuron-1,this->myArguments->getNumberOfOutputFeatures()-1,this->weightsPerNeuron);
+        WeightFetcher* fetch = new WeightFetcher(target,this->weightsPerDMAAccess,this->myArguments->getWeightWordSize(),this->myArguments->getStartAddress(),memoryAccessesPerNeuron-1,this->myArguments->getNumberOfOutputFeatures()-1,this->weightsPerNeuron,this->myArguments->getLutBasedAddressCalculation());
         addSubComponent(fetch);
 
         if(this->weightsPerNeuron>32)

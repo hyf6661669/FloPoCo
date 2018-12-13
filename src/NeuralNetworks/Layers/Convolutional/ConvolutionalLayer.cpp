@@ -609,13 +609,13 @@ namespace flopoco {
             GenericLut* biasLut = new GenericLut(target,"Bias_Lut"+this->myArguments->getId(),biasMap,this->getOutputCounterWidth(),this->myArguments->getWeightWordSize());
             addSubComponent(biasLut);
             // in port map
-            for (unsigned int i = 0; i < this->getOutputCounterWidth(); i++) {
+            for (int i = 0; i < this->getOutputCounterWidth(); i++) {
                 this->vhdl << this->declare("Bias_Lut_i" + to_string(i), 1, false) << " <= "
                            << ConvolutionalLayer::getOutputFeatureCounterOutputSignalName() << "(" << i << ");" << endl;
                 inPortMap(biasLut, "i" + to_string(i), "Bias_Lut_i" + to_string(i));
             }
             // out port map
-            for (unsigned int i = 0; i < this->myArguments->getWeightWordSize(); i++)
+            for (int i = 0; i < this->myArguments->getWeightWordSize(); i++)
             {
                 outPortMap(biasLut,"o"+to_string(i),"Bias_"+to_string(i)+"_std",true);
                 this->vhdl << "Bias(" << i << ") <= Bias_" << i << "_std;" << endl;
@@ -820,7 +820,7 @@ namespace flopoco {
     {
         unsigned int weightsPerAccess = this->myArguments->getCoreSize() * this->myArguments->getCoreSize();
         // before: counter width
-        WeightFetcher* fetch = new WeightFetcher(target,weightsPerAccess,this->myArguments->getWeightWordSize(),this->myArguments->getStartAddress(),this->myArguments->getInputDepth()-1,this->myArguments->getNumberOfOutputFeatures()-1);
+        WeightFetcher* fetch = new WeightFetcher(target,weightsPerAccess,this->myArguments->getWeightWordSize(),this->myArguments->getStartAddress(),this->myArguments->getInputDepth()-1,this->myArguments->getNumberOfOutputFeatures()-1,0,this->myArguments->getLutBasedAddressCalculation());
         // add component declaration
         addSubComponent(fetch);
         // connection with global DMA controller
@@ -1008,12 +1008,12 @@ namespace flopoco {
             GenericLut *lut = new GenericLut(target, "Reset_Lut" + this->myArguments->getId(), lutData,
                                              this->getOutputCounterWidth(), this->addressWidth);
             addSubComponent(lut);
-            for (unsigned int i = 0; i < this->getOutputCounterWidth(); i++) {
+            for (int i = 0; i < this->getOutputCounterWidth(); i++) {
                 this->vhdl << this->declare("Reset_Lut_i" + to_string(i), 1, false) << " <= "
                            << ConvolutionalLayer::getOutputFeatureCounterOutputSignalName() << "(" << i << ");" << endl;
                 inPortMap(lut, "i" + to_string(i), "Reset_Lut_i" + to_string(i));
             }
-            for (unsigned int i = 0; i < this->addressWidth; i++) {
+            for (int i = 0; i < this->addressWidth; i++) {
                 outPortMap(lut, "o" + to_string(i), "Reset_Lut_o" + to_string(i), true);
                 this->vhdl << "reset_address(" << i << ") <= Reset_Lut_o" << i << ";" << endl;
             }
@@ -1089,7 +1089,7 @@ namespace flopoco {
         // calculate reset addresses
         map<unsigned int, unsigned int> addressMap;
         int inputSize = this->myArguments->getInputHeight() * this->myArguments->getInputWidth();
-        for(unsigned int i=0; i<this->myArguments->getInputDepth(); i++)
+        for(int i=0; i<this->myArguments->getInputDepth(); i++)
         {
             if(i<(this->myArguments->getInputDepth()-1))
             {

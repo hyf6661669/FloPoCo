@@ -689,6 +689,7 @@ src/NeuralNetworks/MemoryManagement/MemoryController
 #	DMA Access
 src/NeuralNetworks/MemoryManagement/DmaAccess/GlobalDMAController
 src/NeuralNetworks/MemoryManagement/DmaAccess/WeightFetcher
+src/NeuralNetworks/MemoryManagement/DmaAccess/AddressCalculation
 
 # utility
 src/NeuralNetworks/Utility/WindowShiftRegister

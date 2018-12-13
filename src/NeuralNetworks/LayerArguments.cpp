@@ -34,6 +34,7 @@ namespace flopoco
         this->startAddress = 0x00000000;
         this->id = "0";
         this->fullConnectedWeightsAndBiasesOrdered = false;
+        this->lutBasedAddressCalculation = true;
     }
     LayerArguments::LayerArguments(string layerType_, int coreSize_, int inputHeight_, int inputWidth_, int inputDepth_, int wordSize_, int fraction_, int weightWordSize_, int weightFraction_, int numberOfOutputFeatures_, vector<double> weights_, vector<double> biases_, int padding_, string paddingType_, bool calcAllParallel_, string activationFunction_, int stride_, unsigned int startAddress_, string id_)
     {
@@ -395,6 +396,11 @@ namespace flopoco
         return this->id;
     }
 
+
+    bool LayerArguments::getLutBasedAddressCalculation() {
+        return this->lutBasedAddressCalculation;
+    }
+
     void LayerArguments::setLayerType(string lt)
     {
         this->layerType=lt;
@@ -531,6 +537,11 @@ namespace flopoco
     void flopoco::LayerArguments::setBiases(vector<double> b)
     {
         this->biases=b;
+    }
+
+    void LayerArguments::setLutBasedAddressCalculation(bool b)
+    {
+        this->lutBasedAddressCalculation=b;
     }
 
     void LayerArguments::addBias(double b)

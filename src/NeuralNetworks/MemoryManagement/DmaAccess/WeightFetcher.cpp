@@ -14,13 +14,14 @@
 #include "NeuralNetworks/Utility/DataGuard.hpp"
 #include "NeuralNetworks/Utility/Register.hpp"
 #include "NeuralNetworks/Layers/Layer.hpp"
+#include "NeuralNetworks/MemoryManagement/DmaAccess/AddressCalculation.hpp"
 
 #include "PrimitiveComponents/GenericLut.hpp"
 
 using namespace std;
 namespace flopoco {
 
-    WeightFetcher::WeightFetcher(Target* target, unsigned int weightsPerAccess_, unsigned int weightWidth, unsigned int startAddress_, unsigned int innerCounterMax, unsigned int outerCounterMax, unsigned int weightsPerOuterCounterStep) :
+    WeightFetcher::WeightFetcher(Target* target, unsigned int weightsPerAccess_, unsigned int weightWidth, unsigned int startAddress_, unsigned int innerCounterMax, unsigned int outerCounterMax, unsigned int weightsPerOuterCounterStep, bool lutBasedAddressCalculation) :
             Operator(target), weightsPerAccess(weightsPerAccess_), startAddress(startAddress_) {
 
         // definition of the source file name, used for info and error reporting using REPORT
@@ -34,7 +35,7 @@ namespace flopoco {
 
         // definition of the name of the operator
         ostringstream name;
-        name << "WeightFetcher_" << outerCounterMax << "_" << innerCounterMax << "_" << weightsPerOuterCounterStep << "_" << weightsPerAccess << "_" << weightWidth << "_" << hex << startAddress;
+        name << "WeightFetcher_" << outerCounterMax << "_" << innerCounterMax << "_" << weightsPerOuterCounterStep << "_" << weightsPerAccess << "_" << weightWidth << "_" << hex << startAddress << dec << (lutBasedAddressCalculation==true?"_lut":"_arith");
         setName(name.str());
 
         if(weightWidth>32)
@@ -78,11 +79,6 @@ namespace flopoco {
         ///////////////////////////
         // start new read access //
         ///////////////////////////
-        declare(WeightFetcher::getNewReadAccessPortName()+"_temp",1);
-
-
-        this->vhdl << WeightFetcher::getNewReadAccessPortName() << " <= " << WeightFetcher::getNewReadAccessPortName() << "_temp;" << endl;
-
         this->vhdl << "process(clk)" << endl;
         this->vhdl << "begin" << endl;
         this->vhdl << tab << "if(rising_edge(clk)) then" << endl;
@@ -139,40 +135,63 @@ namespace flopoco {
         else
             this->vhdl << WeightFetcher::getNumberOfBytesPortName() << " <= std_logic_vector(to_unsigned(" << dataBeatsPerAccess*4 << ",23));" << endl;
 
-        ///////////////////////////////////////////////////////////////////////
-        // implement LUT to get the start address for the next memory access //
-        ///////////////////////////////////////////////////////////////////////
-        if(outerCounterMax>0 || innerCounterMax>0)
-        {
-            map<unsigned int, unsigned int> LUTMap = this->getLUTData(outerCounterMax, innerCounterMax, dataBeatsPerAccess, dataBeatsPerLastAccess);
-            stringstream lutName;
-            lutName << "Start_Address_Lut_" << this->startAddress;
-            GenericLut* startAddressLut = new GenericLut(target,lutName.str(),LUTMap,innerCounterWidth+outerCounterWidth,32);
-            addSubComponent(startAddressLut);
-            for(unsigned int i=0; i<innerCounterWidth; i++)
-            {
-                string signalForPortName = WeightFetcher::getInnerCounterPortName()+"_"+to_string(i);
-                this->vhdl << declare(signalForPortName,1,false) << " <= " << WeightFetcher::getInnerCounterPortName() << "(" << i << ");" << endl;
-                inPortMap(startAddressLut,join("i",i),signalForPortName);
-            }
-            for(unsigned int i=0; i<outerCounterWidth; i++)
-            {
-                string signalForPortName = WeightFetcher::getOuterCounterPortName()+"_"+to_string(i);
-                this->vhdl << declare(signalForPortName,1,false) << " <= " << WeightFetcher::getOuterCounterPortName() << "(" << i << ");" << endl;
-                inPortMap(startAddressLut,join("i",innerCounterWidth+i),signalForPortName);
-            }
-            for(unsigned int i=0; i<32; i++)
-            {
-                string signalForPortName = "Start_Address_Lut_out_"+to_string(i);
-                outPortMap(startAddressLut,join("o",i),signalForPortName,true);
-                this->vhdl << WeightFetcher::getStartAddressPortName() << "(" << i << ") <= " << signalForPortName << ";" << endl;
-            }
-            this->vhdl << instance(startAddressLut, "Start_Address_Lut_instance");
-        }
-        else
-        {
-            this->vhdl << WeightFetcher::getStartAddressPortName() << " <= std_logic_vector(to_unsigned(" << this->startAddress << ",32));" << endl;
-        }
+        ///////////////////////////////////////////////////////
+        // Determine next memory address (LUT or arithmetic) //
+        ///////////////////////////////////////////////////////
+        int numberOfDelays = 0;
+		if(outerCounterMax>0 || innerCounterMax>0)
+		{
+			if(lutBasedAddressCalculation)
+			{
+
+				map<unsigned int, unsigned int> LUTMap = this->getLUTData(outerCounterMax, innerCounterMax, dataBeatsPerAccess, dataBeatsPerLastAccess);
+				stringstream lutName;
+				lutName << "Start_Address_Lut_" << this->startAddress;
+				GenericLut* startAddressLut = new GenericLut(target,lutName.str(),LUTMap,innerCounterWidth+outerCounterWidth,32);
+				addSubComponent(startAddressLut);
+				for(unsigned int i=0; i<innerCounterWidth; i++)
+				{
+					string signalForPortName = WeightFetcher::getInnerCounterPortName()+"_"+to_string(i);
+					this->vhdl << declare(signalForPortName,1,false) << " <= " << WeightFetcher::getInnerCounterPortName() << "(" << i << ");" << endl;
+					inPortMap(startAddressLut,join("i",i),signalForPortName);
+				}
+				for(unsigned int i=0; i<outerCounterWidth; i++)
+				{
+					string signalForPortName = WeightFetcher::getOuterCounterPortName()+"_"+to_string(i);
+					this->vhdl << declare(signalForPortName,1,false) << " <= " << WeightFetcher::getOuterCounterPortName() << "(" << i << ");" << endl;
+					inPortMap(startAddressLut,join("i",innerCounterWidth+i),signalForPortName);
+				}
+				for(unsigned int i=0; i<32; i++)
+				{
+					string signalForPortName = "Start_Address_Lut_out_"+to_string(i);
+					outPortMap(startAddressLut,join("o",i),signalForPortName,true);
+					this->vhdl << WeightFetcher::getStartAddressPortName() << "(" << i << ") <= " << signalForPortName << ";" << endl;
+				}
+				this->vhdl << instance(startAddressLut, "Start_Address_Lut_instance");
+			}
+        	else
+			{
+				int bytesPerAccess = dataBeatsPerAccess*4;
+				int bytesPerFeature = dataBeatsPerLastAccess*4;
+				if(innerCounterMax > 0)
+				{
+					bytesPerFeature += innerCounterMax*bytesPerAccess;
+				}
+				auto addrCalc = new AddressCalculation(target,this->startAddress,innerCounterWidth,outerCounterWidth,bytesPerAccess,bytesPerFeature);
+				addSubComponent(addrCalc);
+				if(innerCounterWidth>0)
+					inPortMap(addrCalc,"InnerCounter",WeightFetcher::getInnerCounterPortName());
+				if(outerCounterWidth>0)
+					inPortMap(addrCalc,"OuterCounter",WeightFetcher::getOuterCounterPortName());
+				outPortMap(addrCalc,"NextAddress",WeightFetcher::getStartAddressPortName(),false);
+				this->vhdl << instance(addrCalc,"Address_Calc");
+				numberOfDelays = addrCalc->getPipelineDepth();
+			}
+		}
+		else
+		{
+			this->vhdl << WeightFetcher::getStartAddressPortName() << " <= std_logic_vector(to_unsigned(" << this->startAddress << ",32));" << endl;
+		}
 
         //////////////////////////////////////////////////
         // Read the weights and store them in Registers //
@@ -242,6 +261,25 @@ namespace flopoco {
         this->vhdl << tab << tab << "end if;" << endl;
         this->vhdl << tab << "end if;" << endl;
         this->vhdl << "end process;" << endl;
+
+        ///////////////////////////////////////
+		// Set output to request new weights //
+		///////////////////////////////////////
+		declare(WeightFetcher::getNewReadAccessPortName()+"_temp",1);
+		if(lutBasedAddressCalculation)
+		{
+			// lut is not pipelined (obviously...)
+			this->vhdl << WeightFetcher::getNewReadAccessPortName() << " <= " << WeightFetcher::getNewReadAccessPortName() << "_temp;" << endl;
+		}
+		else if(numberOfDelays > 0)
+		{
+			// set output when address calculation finishes
+			auto reg = new Register(target,1,numberOfDelays);
+			addSubComponent(reg);
+			inPortMap(reg,"X",WeightFetcher::getNewReadAccessPortName()+"_temp");
+			outPortMap(reg,"R",WeightFetcher::getNewReadAccessPortName(),false);
+			this->vhdl << instance(reg,"NewWeightRequestRegister");
+		}
     }
 
     string WeightFetcher::getNextWeightsPortName(unsigned int weightNumber) const

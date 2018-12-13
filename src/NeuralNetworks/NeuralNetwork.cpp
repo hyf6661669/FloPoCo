@@ -23,6 +23,7 @@
 #include "NeuralNetworks/MemoryManagement/DmaAccess/GlobalDMAController.hpp"
 
 #define WRITE_WEIGHTS_AS_HEX 0
+#define LUT_BASED_ADDR_CALC_LIMIT 10
 
 using namespace std;
 namespace flopoco {
@@ -159,6 +160,15 @@ namespace flopoco {
         }
         else if(layerType=="Convolutional")
         {
+            // arithmetic-based address determination if lut-based address determination wouldn't work because the lut would turn out too large
+            if((ceil(log2(lA->getNumberOfOutputFeatures())) + ceil(log2(lA->getInputDepth()))) >= LUT_BASED_ADDR_CALC_LIMIT)
+            {
+                lA->setLutBasedAddressCalculation(false);
+            }
+            else
+            {
+                lA->setLutBasedAddressCalculation(true);
+            }
             layerPtr = new ConvolutionalLayer(target, this, lA, true, false, 0x00);
         }
         else if(layerType=="Pooling")
@@ -167,6 +177,15 @@ namespace flopoco {
         }
         else if(layerType=="FullConnected")
         {
+            // arithmetic-based address determination if lut-based address determination wouldn't work because the lut would turn out too large
+            if((ceil(log2(lA->getNumberOfOutputFeatures())) + ceil(log2(lA->getInputDepth()*lA->getInputHeight()*lA->getInputWidth()))) >= LUT_BASED_ADDR_CALC_LIMIT)
+            {
+                lA->setLutBasedAddressCalculation(false);
+            }
+            else
+            {
+                lA->setLutBasedAddressCalculation(true);
+            }
             layerPtr = new FullConnectedLayer(target, this, lA, this->fullConnectedWeightsPerDMAAccess, this->roundingType);
         }
         else
@@ -1003,6 +1022,15 @@ namespace flopoco {
     Layer* NeuralNetwork::buildConvLayer(Target* target, string convLayer)
     {
         LayerArguments* args = this->layerArgs[convLayer];
+		// arithmetic-based address determination if lut-based address determination wouldn't work because the lut would turn out too large
+		if((ceil(log2(args->getNumberOfOutputFeatures())) + ceil(log2(args->getInputDepth()))) >= LUT_BASED_ADDR_CALC_LIMIT)
+		{
+			args->setLutBasedAddressCalculation(false);
+		}
+		else
+		{
+			args->setLutBasedAddressCalculation(true);
+		}
         bool roundAfterConvCore = false;
         bool useBitHeap = true;
         pair <bool, bool> parallelMemoryAccesses = this->getParallelMemoryAccesses(convLayer);
@@ -1013,6 +1041,15 @@ namespace flopoco {
     Layer* NeuralNetwork::buildFullConnectedLayer(Target* target, string FCLayer)
     {
         LayerArguments* args = this->layerArgs[FCLayer];
+        // arithmetic-based address determination if lut-based address determination wouldn't work because the lut would turn out too large
+		if((ceil(log2(args->getNumberOfOutputFeatures())) + ceil(log2(args->getInputDepth()))) >= LUT_BASED_ADDR_CALC_LIMIT)
+		{
+			args->setLutBasedAddressCalculation(false);
+		}
+		else
+		{
+			args->setLutBasedAddressCalculation(true);
+		}
         FullConnectedLayer* fc = new FullConnectedLayer(target,this,args,this->fullConnectedWeightsPerDMAAccess,this->roundingType);
         return fc;
     }

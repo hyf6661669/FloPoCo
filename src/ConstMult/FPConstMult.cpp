@@ -333,7 +333,7 @@ namespace flopoco{
 
 		srcFileName="FPConstMult";
 		/* Convert the input string into a sollya evaluation tree */
-		node = sollya_lib_parse_string(constant.c_str());	
+		node = sollya_lib_parse_string(constant.c_str());
 		/* If  parse error throw an exception */
 		if (sollya_lib_obj_is_error(node))
 			{
@@ -347,8 +347,7 @@ namespace flopoco{
 		mpfr_inits(mpfrC, NULL);
 		sollya_lib_get_constant(mpfrC, node);
 		REPORT(DEBUG, "Constant evaluates to " << mpfr_get_d(mpfrC, GMP_RNDN));
-		
-		
+
 		
 		// Nonperiodic version
 
@@ -356,31 +355,25 @@ namespace flopoco{
 			cstWidth=wF_out+3;
 		else
 			cstWidth=wF_C;
-		
 		mpfr_set_prec(mpfrC, cstWidth);
 		sollya_lib_get_constant(mpfrC, node);
-		
 
 		setupSgnAndExpCases();
 		computeExpSig();
 		computeIntExpSig();
 		normalizeCst();
-		
 		if(!constant_is_zero && !mantissa_is_one) {
 			icm = new IntConstMult(target, wF_in+1, cstIntSig);
 			addSubComponent(icm);
 		}
-			
-		
-		
+
 		// build the name
 		ostringstream name; 
 		name <<"FPConstMult_"<<(cstSgn==0?"":"M") <<cstIntSig<<"b"
 				 <<(cst_exp_when_mantissa_int<0?"M":"")<<abs(cst_exp_when_mantissa_int)
 				 <<"_"<<wE_in<<"_"<<wF_in<<"_"<<wE_out<<"_"<<wF_out;
 		uniqueName_=name.str();
-		
-		
+
 		buildVHDL();
 	}
 
@@ -461,6 +454,10 @@ namespace flopoco{
 
 	void FPConstMult::normalizeCst()
 	{
+		if(cstIntSig==0) {
+			REPORT(DETAILED, "Constant is zero");
+			return;
+		}
 		// Constant normalization
 		while ((cstIntSig % 2) ==0) {
 			REPORT(DETAILED, "Significand is even, normalising");

@@ -490,7 +490,7 @@ namespace flopoco{
 		// clean up memory -- with ifs, because in some cases they have not been init'd
 		if(mpfrC) mpfr_clear(mpfrC);
 		if(cstSig) mpfr_clear(cstSig);
-		if(mpfr_xcut_sig) mpfr_clear(mpfr_xcut_sig);
+		//if(mpfr_xcut_sig) mpfr_clear(mpfr_xcut_sig); // no need to clear it, because it is never initialized...
 	}
 
 

@@ -1836,11 +1836,11 @@ namespace flopoco
 		//add compressors to solution
 
 		unsigned offset = compressors.size();
-		solution[s].push_back(pair<int,int>(offset + compType + 0, column));	//low
+        solution[s].push_back(pair<int,int>(offset + compType + 0, column));	//low
 		for(unsigned m = 0; m < midLength; m++){
-			solution[s].push_back(pair<int,int>(offset + compType + 1, column + m + 1));	//mid
+            solution[s].push_back(pair<int,int>(offset + compType + 1, column + m + 1));	//mid
 		}
-		solution[s].push_back(pair<int,int>(offset + compType + 2, column + midLength + 1));	//high
+        solution[s].push_back(pair<int,int>(offset + compType + 2, column + midLength + 1));	//high
 	}
 
     void BitHeapHeuristicCompression::useCompressor(unsigned s, unsigned column, unsigned newCompPos){

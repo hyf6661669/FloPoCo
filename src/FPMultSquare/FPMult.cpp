@@ -33,12 +33,10 @@ namespace flopoco{
 	FPMult::FPMult(Target* target, int wEX, int wFX, int wEY, int wFY, int wER, int wFR,
 	                           bool norm, bool correctlyRounded, double ratio, map<string, double> inputDelays) :
 		Operator(target), wEX_(wEX), wFX_(wFX), wEY_(wEY), wFY_(wFY), wER_(wER), wFR_(wFR), normalized_(norm), correctlyRounded_(correctlyRounded)  {
-
 		ostringstream name;
 		name << "FPMult_"<<wEX_<<"_"<<wFX_<<"_"<<wEY_<<"_"<<wFY_<<"_"<<wER_<<"_"<<wFR_<<"_uid"<<getNewUId();
 		setName(name.str());
 		setCopyrightString("Bogdan Pasca, Florent de Dinechin 2008-2011");
-
 
 		addFPInput ("X", wEX_, wFX_);
 		addFPInput ("Y", wEY_, wFY_);
@@ -51,9 +49,7 @@ namespace flopoco{
 			addOutput ("ResultException"  , 2      );
 			addOutput("ResultSign"       );
 		}
-
 		setCriticalPath(getMaxInputDelays(inputDelays));
-
 		/* Sign Handling -- no need to count it in the critical path */
 		vhdl << tab << declare("sign") << " <= X" << of(wEX_+wFX) << " xor Y" << of(wEY_+wFY) << ";" << endl;
 
@@ -70,13 +66,11 @@ namespace flopoco{
 		vhdl << tab << declare("expSum",wEX+2) << " <= expSumPreSub - bias;" << endl;
 		double exponentCriticalPath=getCriticalPath();
 
-
 		/* Significand Handling */
 		setCycle(0);
 		setCriticalPath(0.0);
 		vhdl << tab << declare("sigX",1 + wFX_) << " <= \"1\" & X" << range(wFX_-1,0) << ";" << endl;
 		vhdl << tab << declare("sigY",1 + wFY_) << " <= \"1\" & Y" << range(wFY_-1,0) << ";" << endl;
-
 
 		int sigProdSize;
 		int g=3; // number of guard bits needed in case of faithful rounding
@@ -95,7 +89,6 @@ namespace flopoco{
 		                                                     false, /* signed */
 		                                                     false  /* roundCompensate*/);
 #endif
-
 		addSubComponent(intmult_);
 
 		inPortMap( intmult_, "X", "sigX");
@@ -105,7 +98,6 @@ namespace flopoco{
 		syncCycleFromSignal("sigProd");
 		setCriticalPath( intmult_->getOutputDelay("R"));
 		double significandCriticalPath=getCriticalPath();
-
 
 		/* Exception Handling, assumed to be faster than both exponent and significand computations */
 		setCycle(0);
@@ -118,25 +110,20 @@ namespace flopoco{
 		vhdl << tab << "       \"11\" when others;"<<endl;
 
 		//synchronization
-
 		syncCycleFromSignal("expSum", exponentCriticalPath,false);
 		syncCycleFromSignal("sigProd", significandCriticalPath,true);
 
-
 		if (normalized_){
 		/******************************************************************/
-
 			vhdl << tab<< declare("norm") << " <= sigProd" << of(sigProdSize -1) << ";"<<endl;
 
 			manageCriticalPath(target->localWireDelay() + target->adderDelay(wEX+2));
 			double expPostNormCriticalPath=getCriticalPath();
 			vhdl << tab<< "-- exponent update"<<endl;
 			vhdl << tab<< declare("expPostNorm", wEX_+2) << " <= expSum + (" << zg(wEX_+1,0) << " & norm);"<<endl;
-
 			//  exponent update is in parallel to the mantissa shift, so get back there
 			setCycleFromSignal("expSum", exponentCriticalPath, false);
 			syncCycleFromSignal("sigProd", significandCriticalPath, true);
-
 			//check is rounding is needed
 			if (1+wFR_ >= wFX_+wFY_+2) {
 				/* => no rounding needed - possible padding;

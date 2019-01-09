@@ -85,13 +85,13 @@ namespace flopoco{
 		LSB=LSBI;
 				
 		/* Set up the IO signals */
+
+		inputWidth=MSB-LSB+1;
 		
-		addInput ("I", MSB-LSB);
+		addInput ("I", inputWidth);
 		addFPOutput("O", wE,wF);
 	
 		/*	VHDL code description	*/
-	
-		inputWidth=MSB-LSB;
 	
 		vhdl << tab << declare("input",inputWidth) << " <= I;"<<endl;
 	

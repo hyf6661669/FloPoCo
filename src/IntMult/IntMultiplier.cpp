@@ -252,7 +252,6 @@ namespace flopoco {
 			wOut=wXdecl+wYdecl;
 			REPORT(DETAILED, "wOut set to " << wOut);
 		}
-
 		parentOp=this;
 		// set the name of the multiplier operator
 		{
@@ -267,11 +266,9 @@ namespace flopoco {
 			REPORT(DEBUG, "Building " << name.str() );
 		}
 
-
 		multiplierUid=parentOp->getNewUId();
 		xname="X";
 		yname="Y";
-
 		initialize();
 		int g = neededGuardBits(parentOp->getTarget(), wXdecl, wYdecl, wOut);
 		int possibleOutputs=1;
@@ -288,12 +285,10 @@ namespace flopoco {
 		REPORT(DEBUG,"" << tab << "Stand-alone constructor: g=" << g << (g==0 ? " (full multiplier)" : " (truncated multiplier)")
 				<< "  lsbWeightInBitHeap=" << lsbWeightInBitHeap << "   lsbFullMultWeightInBitheap=" << lsbFullMultWeightInBitheap
 				<< "   possibleOutputs=" << possibleOutputs);
-
 		// Set up the IO signals
 		addInput ( xname  , wXdecl, true );
 		addInput ( yname  , wYdecl, true );
 		addOutput ( "R"  , wOut, 2 , true );
-
 		if(target_->plainVHDL()) {
 			vhdl << tab << declareFixPoint("XX",signedIO,-1, -wXdecl) << " <= " << (signedIO?"signed":"unsigned") << "(" << xname <<");" << endl;
 			vhdl << tab << declareFixPoint("YY",signedIO,-1, -wYdecl) << " <= " << (signedIO?"signed":"unsigned") << "(" << yname <<");" << endl;
@@ -301,7 +296,6 @@ namespace flopoco {
 			vhdl << tab << "R <= std_logic_vector(RR" << range(wXdecl+wYdecl-1, wXdecl+wYdecl-wOut) << ");" << endl;
 		}
 		else{
-
 			// The bit heap
 			bitHeap = new BitHeap(this, wOut+g, enableSuperTiles);
 
@@ -313,9 +307,7 @@ namespace flopoco {
 			setCriticalPath(getMaxInputDelays ( inputDelays_ ));
 
             //placeMultipliers();	//enable placeMultipliers() and disable fillBitHeap if reading a solution from ilp-Solution file. 
-
             fillBitHeap();
-
 			// For a stand-alone operator, we add the rounding-by-truncation bit,
 			// The following turns truncation into rounding, except that the overhead is large for small multipliers.
 			// No rounding needed for a tabulated multiplier.
@@ -326,9 +318,7 @@ namespace flopoco {
 
 					bitHeap->addConstantOneBit(weight);
 				}
-
 			bitHeap -> generateCompressorVHDL();
-
 			vhdl << tab << "R" << " <= " << bitHeap-> getSumName() << range(wOut+g-1, g) << ";" << endl;
 		}
 	}
@@ -1907,7 +1897,8 @@ namespace flopoco {
 
 
         MultiplierSolutionParser *multiplierSolutionParser;
-        if(!solutionFile.compare("\"\"")){
+        //if(!solutionFile.compare("\"\"")){
+        if(solutionFile==""){
             multiplierSolutionParser = new MultiplierSolutionParser("m10x10_test.sol");
             cout << "parsed solution from m10x10_test.sol" << endl;
         }

@@ -1,4 +1,6 @@
-/* Each Operator declared within the flopoco framework has 
+#ifndef INTADDERTREE_H
+#define INTADDERTREE_H
+/* Each Operator declared within the flopoco framework has
    to inherit the class Operator and overload some functions listed below*/
 #include "Operator.hpp"
 
@@ -50,3 +52,5 @@ namespace flopoco {
 
 
 }//namespace
+
+#endif

@@ -137,9 +137,6 @@ int main(int argc, char* argv[] )
 
 	UserDefinedOperator::registerFactory();
 
-    KerasToNeuralNetwork::registerFactory();
-	FindIndexOfMaximum::registerFactory();
-	  
 	}
 	catch (const std::exception &e) {
 		cerr << "Error while registering factories: " << e.what() <<endl;

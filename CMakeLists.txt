@@ -657,63 +657,6 @@ src/NeuralNetworks/Multiplier/Multiplier_B_E
 src/NeuralNetworks/Multiplier/Multiplier_BB_E
 src/NeuralNetworks/Multiplier/Multiplier_BB_B_E
 
-
-# activation functions
-src/NeuralNetworks/ActivationFunctions/ReLU
-
-# layers
-src/NeuralNetworks/Layers/Layer
-#   convolutional
-src/NeuralNetworks/Layers/Convolutional/ConvolutionalLayer
-src/NeuralNetworks/Layers/Convolutional/ConvolutionalCoreSimple
-src/NeuralNetworks/Layers/Convolutional/ConvolutionalCoreWithWeightInputs
-#   full connected
-src/NeuralNetworks/Layers/FullConnected/FullConnectedLayer
-src/NeuralNetworks/Layers/FullConnected/FullConnectedCore
-src/NeuralNetworks/Layers/FullConnected/FullConnectedLayerController
-#   pooling
-src/NeuralNetworks/Layers/Pooling/PoolingLayer
-src/NeuralNetworks/Layers/Pooling/PoolingCore
-src/NeuralNetworks/Layers/Pooling/Max2Input
-#   in/out
-src/NeuralNetworks/Layers/Input/InputLayer
-src/NeuralNetworks/Layers/Output/OutputLayer
-src/NeuralNetworks/Layers/Output/FindIndexOfMaximum
-
-
-# memory management
-src/NeuralNetworks/MemoryManagement/BlockRam
-src/NeuralNetworks/MemoryManagement/ControlledMemory
-src/NeuralNetworks/MemoryManagement/MemoryController
-
-#	DMA Access
-src/NeuralNetworks/MemoryManagement/DmaAccess/GlobalDMAController
-src/NeuralNetworks/MemoryManagement/DmaAccess/WeightFetcher
-src/NeuralNetworks/MemoryManagement/DmaAccess/AddressCalculation
-
-# utility
-src/NeuralNetworks/Utility/WindowShiftRegister
-src/NeuralNetworks/Utility/GlobalController
-src/NeuralNetworks/Utility/Register
-src/NeuralNetworks/Utility/ModuloCounter
-src/NeuralNetworks/Utility/PaddingGenerator
-src/NeuralNetworks/Utility/DataGuard
-src/NeuralNetworks/Utility/BitheapWrapper
-src/NeuralNetworks/Utility/Rounding
-
-# multiplicators
-src/NeuralNetworks/Multiplicators/NeuralNetworkMultiplication
-src/NeuralNetworks/Multiplicators/SimpleMultiplication
-
-# general
-src/NeuralNetworks/KerasToNeuralNetwork
-src/NeuralNetworks/NeuralNetwork
-src/NeuralNetworks/LayerArguments
-
-
-
-
-
 )
 
 set_target_properties(FloPoCoLib PROPERTIES OUTPUT_NAME "FloPoCo")

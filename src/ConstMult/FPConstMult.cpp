@@ -544,7 +544,7 @@ namespace flopoco{
 
 		vhdl <<endl << tab << "-- significand processing"<<endl;
 
-		if(mantissa_is_one) {			
+		if(mantissa_is_one) {
 			vhdl << tab << "-- The mantissa of the constant is  1" << endl;
 			if(wF_out == wF_in) {
 				vhdl << tab << declare("r_frac", wF_out) << " <= X("<<wF_in-1 <<" downto 0);"<<endl;
@@ -576,7 +576,7 @@ namespace flopoco{
 			manageCriticalPath(getTarget()->localWireDelay(wF_out+1) + getTarget()->lutDelay());
 			
 			vhdl << tab << declare("shifted_frac",    wF_out+1) << " <= sig_prod("<<icm->rsize -2<<" downto "<<icm->rsize - wF_out-2 <<")  when norm = '1'"<<endl
-			     << tab << "           else sig_prod("<<icm->rsize -3<<" downto "<<icm->rsize - wF_out - 3<<");"<<endl;  
+			     << tab << "           else sig_prod("<<icm->rsize -3<<" downto "<<icm->rsize - wF_out - 3<<");"<<endl;
 		}
 		
 		// Here if mantissa was 1 critical path is 0. Otherwise we want to reset critical path to the norm bit
@@ -595,10 +595,10 @@ namespace flopoco{
 
 
 		vhdl <<endl << tab << "-- final rounding"<<endl;
-		
-		if(mantissa_is_one) {			
+
+		if(mantissa_is_one) {
 			vhdl << tab << declare("expfrac_rnd",   wE_out+1+wF_out) << " <= r_exp_br & r_frac;"<<endl;
-		} 
+		}
 		else {
 			manageCriticalPath(getTarget()->localWireDelay() + getTarget()->adderDelay(wE_out+1+wF_out+1));
 			vhdl << tab << declare("expfrac_br",   wE_out+1+wF_out+1) << " <= r_exp_br & shifted_frac;"<<endl;
@@ -628,7 +628,7 @@ namespace flopoco{
 			vhdl << "'0'; --  underflow never happens for this constant and these (wE_in, wE_out)" << endl;
 		else 
 			vhdl <<  "r_exp_rnd(" << wE_sum << ");" << endl;
-			 
+
 	
 		//		vhdl << tab << declare("r_exp", wE_out) << " <= r_exp_br("<<wE_out-1<<" downto 0) ;"<<endl;
 

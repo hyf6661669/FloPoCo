@@ -149,8 +149,8 @@ namespace flopoco{
 
 			// Compute the LSB of each coefficient. Minimum value is:
 			LSB = floor(log2(targetAccuracy*degree));
-			REPORT(DEBUG, "To obtain target accuracy " << targetAccuracy << " with a degree-"<<degree
-					<<" polynomial, we compute coefficients accurate to LSB="<<LSB);
+			REPORT(DEBUG, "To obtain target accuracy " << targetAccuracy << " with a degree-" << degree
+					<< " polynomial, we compute coefficients accurate to LSB=" << LSB);
 			// It is pretty sure that adding intlog2(degree) bits is enough for FPMinimax.
 
 			// The main loop starts with the almost hopeless LSB defined above, then tries to push it down, a0 first, then all the others.

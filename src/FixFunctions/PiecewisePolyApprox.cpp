@@ -164,8 +164,8 @@ namespace flopoco{
 			bool success=false;
 			while(!success) {
 				// Now fill the vector of polynomials, computing the coefficient parameters along.
-				//		LSB=INT_MAX; // very large
-				// MSB=INT_MIN; // very small
+				//	LSB=INT_MAX; // very large
+				//	MSB=INT_MIN; // very small
 				approxErrorBound = 0.0;
 				BasicPolyApprox *p;
 
@@ -260,6 +260,90 @@ namespace flopoco{
 
 		// A bit of reporting
 		createPolynomialsReport();
+
+	}
+
+
+	void PiecewisePolyApprox::reBuild(int newLSB)
+	{
+		bool success;
+		sollya_obj_t fS = f->fS; // no need to free this one
+
+		//there is nothing to be done when the old LSB is the same as the new LSB
+		if(newLSB == LSB){
+			REPORT(DETAILED, " Old LSB=" << LSB << " is equal to the new one; nothing to be done.");
+			return;
+		}else{
+			REPORT(DETAILED, " Changing the LSB from LSB=" << LSB << " to newLSB=" << newLSB);
+			if(newLSB > LSB)
+				REPORT(DETAILED, " WARNING: newLSB is bigger than the current LSB. This can lead to a loss of accuracy!");
+			LSB = newLSB;
+		}
+
+		//discard the previous polynomial
+		//	it is assumed that the new precision is higher the previous one
+		//	using this function with a lower precision can lead to a decrease in accuracy
+		for (auto i:poly)
+			free(i);
+		while(!poly.empty())
+			poly.pop_back();
+
+		success = false;
+		while(!success) {
+			//now create a new set of polynomials, computing the coefficient parameters along.
+			//	MSB=INT_MIN; // very small
+			approxErrorBound = 0.0;
+			BasicPolyApprox *p;
+
+			REPORT(DETAILED, "Recomputing the actual polynomials");
+			// initialize the vector of MSB weights
+			for(int j=0; j<=degree; j++) {
+				MSB.push_back(INT_MIN);
+			}
+
+			for(int i=0; i<nbIntervals; i++)
+			{
+				REPORT(DETAILED, " ... computing polynomial approx for interval " << i << " / "<< nbIntervals);
+				// Recompute the substitution. No big deal.
+				sollya_obj_t giS = buildSubIntervalFunction(fS, alpha, i);
+
+				p = new BasicPolyApprox(giS, degree, LSB, true);
+				poly.push_back(p);
+				if(p->approxErrorBound > approxErrorBound){
+					REPORT(DEBUG, "   new approxErrorBound=" << p->approxErrorBound );
+					approxErrorBound = p->approxErrorBound;
+				}
+				if(approxErrorBound > targetAccuracy){
+					break;
+				}
+
+				// Now compute the enveloping MSB for each coefficient
+				for (int j=0; j<=degree; j++) {
+					// if the coeff. is zero, we can set its MSB to anything, so we exclude this case
+					if( (!p->coeff[j]->isZero()) && (p->coeff[j]->MSB > MSB[j]) )
+						MSB[j] = p->coeff[j]->MSB;
+				}
+			}
+
+			if (approxErrorBound < targetAccuracy) {
+				REPORT(INFO, " *** Success! Final approxErrorBound=" << approxErrorBound
+						<< "  is smaller than target accuracy: " << targetAccuracy  );
+				success=true;
+			}
+			else
+			{
+				REPORT(INFO, "Measured approx error:" << approxErrorBound << " is larger than target accuracy: "
+						<< targetAccuracy << ". Increasing alpha and starting over.");
+				//empty poly
+				for (auto i:poly)
+					free(i);
+				while(!poly.empty())
+					poly.pop_back();
+
+				alpha++;
+				nbIntervals = 1<<alpha;
+			}
+		} // end of while(!success)
 
 	}
 

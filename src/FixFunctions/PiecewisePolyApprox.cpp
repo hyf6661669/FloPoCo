@@ -344,11 +344,22 @@ namespace flopoco{
 		// TODO? we could also check if one of the coeffs is always positive or negative, and optimize generated code accordingly
 		updateMSBs();
 
-		// Test existence of cache file, create it if necessary
+		// Check if all the coefficients of a given degree are of the same sign
+		checkCoefficientsSign();
+
+		// remove the old cache file if it already existed, then recreate it
+		if(cacheFile.good())
+		{
+			cacheFile.close();
+			std::remove(cacheFileName.c_str());
+		}
 		openCacheFile(cacheFileName);
 
+		// Write the coeffs to the cache file
+		writeToCacheFile(cacheFileName);
 
-
+		// A bit of reporting
+		createPolynomialsReport();
 	}
 
 

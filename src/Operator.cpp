@@ -1038,8 +1038,12 @@ namespace flopoco{
 
 
 
+	void Operator::outPortMap(OperatorPtr op, string componentPortName, string actualSignalName){
+		REPORT(0, "Here is an obsolete version of outPortMap. Ignoring op...");
+		outPortMap(componentPortName, actualSignalName);
+	}
 	
-	void Operator::outPortMap(Operator* op, string componentPortName, string actualSignalName){
+	void Operator::outPortMap(string componentPortName, string actualSignalName){
 
         //declare the signal only if not existing (existing signals may happen when port maps to different ranges are performed, hence we cannot treat this as an error)
         if(!isSignalDeclared(actualSignalName))
@@ -1067,51 +1071,56 @@ namespace flopoco{
     }
 
 
-	void Operator::inPortMap(Operator* op, string componentPortName, string actualSignalName){
-        if(op != nullptr)
-        {
-            REPORT(DEBUG, "InPortMap: " << op->getName() << " : " << componentPortName << " => "  << actualSignalName);
-        }
-        else
-        {
-            REPORT(DEBUG, "InPortMap: (null) : " << componentPortName << " => "  << actualSignalName);
-        }
+	
+	void Operator::inPortMap(OperatorPtr op, string componentPortName, string actualSignalName){
+		REPORT(0, "Here is an obsolete version of inPortMap. Ignoring op...");
+		inPortMap(componentPortName, actualSignalName);
+	}
 
-        //check if the signal already exists
+	
+	void Operator::inPortMap(string componentPortName, string actualSignalName){
+		REPORT(DEBUG, "InPortMaP : " << componentPortName << " => "  << actualSignalName);
+		
+		//check if the signal already exists
 		try{
-            getSignalByName(actualSignalName);
+			getSignalByName(actualSignalName);
 		}
 		catch(string &e2) {
 			THROWERROR("In inPortMap(): " << e2);
 		}
-
+		
 		// add the mapping to the input mapping list of Op
-        tmpInPortMap_[componentPortName] = actualSignalName;
+		tmpInPortMap_[componentPortName] = actualSignalName;
+	}
+
+
+	void Operator::setGeneric( string name, string value, int width, bool isBus ) {
+		REPORT(DEBUG, "setGeneric: "<< getName() << " : " << name << " => "  << value);
+		
+		Signal *s = new Signal(this, name, Signal::constant, width, isBus);
+
+		//add the signal to the signal dictionary
+		signalMap_[name] = s;
+		
+		generics_.insert( std::make_pair( name, value ) );
     }
 
-    void Operator::setGeneric( string name, string value, int width, bool isBus ) {
-        REPORT(DEBUG, "setGeneric: "<< getName() << " : " << name << " => "  << value);
+	void Operator::setGeneric(string name, const long value , int width, bool isBus) {
+		setGeneric( name, std::to_string( value ), width, isBus );
+	}
 
-        Signal *s = new Signal(this, name, Signal::constant, width, isBus);
+	void Operator::inPortMapCst(OperatorPtr op, string componentPortName, string constantValue){
+		REPORT(0, "Here is an obsolete version of inPortMapCst. Ignoring op...");
+		inPortMapCst(componentPortName, constantValue);
+	}
 
-        //add the signal to the signal dictionary
-        signalMap_[name] = s;
-
-        generics_.insert( std::make_pair( name, value ) );
-    }
-
-    void Operator::setGeneric(string name, const long value , int width, bool isBus)
-    {
-        setGeneric( name, std::to_string( value ), width, isBus );
-    }
-
-    void Operator::inPortMapCst(Operator* op, string componentPortName, string constantValue){
+	void Operator::inPortMapCst(string componentPortName, string constantValue){
 		Signal *s;
 		string name;
 		double constValue;
 		sollya_obj_t node;
 
-        REPORT(DEBUG, "InPortMapCst: "<< op->getName() << " : " << componentPortName << " => "  << constantValue);
+        REPORT(DEBUG, "InPortMapCst: "<< " : " << componentPortName << " => "  << constantValue);
 		// TODO: do we need to add the input port mapping to the mapping list of Op?
 		// 		as this is a constant signal
 
@@ -1383,6 +1392,17 @@ namespace flopoco{
 	}
 
 
+	void Operator::newSharedInstance(OperatorPtr op, string instanceName, string inPortMaps, string outPortMaps, string inPortMapsCst){
+		schedule(); // Schedule the parent operator, so the subcomponent may get timing information about its inputs.
+		//parse the input port mappings
+		parsePortMappings(inPortMaps, 0);
+		//parse the constant input port mappings, if there are any
+		parsePortMappings(inPortMapsCst, 1);
+		//parse the input port mappings
+		parsePortMappings(outPortMaps, 2);
+		//create the instance
+		vhdl << this->instance(op, instanceName, false);
+	}
 
 	OperatorPtr Operator::newInstance(string opName, string instanceName, string parameters, string inPortMaps, string outPortMaps, string inPortMapsCst)
 	{
@@ -1408,32 +1428,32 @@ namespace flopoco{
 			}
 		}
 
-        //parse the input port mappings
-        parsePortMappings(instance, inPortMaps, 0);
-        //parse the constant input port mappings, if there are any
-				parsePortMappings(instance, inPortMapsCst, 1);
-				//parse the input port mappings
-				parsePortMappings(instance, outPortMaps, 2);
+		//parse the input port mappings
+		parsePortMappings(inPortMaps, 0);
+		//parse the constant input port mappings, if there are any
+		parsePortMappings(inPortMapsCst, 1);
+		//parse the input port mappings
+		parsePortMappings(outPortMaps, 2);
+		
+		REPORT(DEBUG, "   newInstance("<< opName << ", " << instanceName <<"): after parsePortMapping" );
+		for (auto i: parametersVector){
+			REPORT(DEBUG, i);
+		}
+		//create the operator
+		instance = instanceOpFactory->parseArguments(this, target_, parametersVector);
 
-        REPORT(DEBUG, "   newInstance("<< opName << ", " << instanceName <<"): after parsePortMapping" );
-        for (auto i: parametersVector){
-            REPORT(DEBUG, i);
-        }
-        //create the operator
-        instance = instanceOpFactory->parseArguments(this, target_, parametersVector);
-
-        REPORT(DEBUG, "   newInstance("<< opName << ", " << instanceName <<"): after factory call" );
+		REPORT(DEBUG, "   newInstance("<< opName << ", " << instanceName <<"): after factory call" );
 
 		//create the instance
 		vhdl << this->instance(instance, instanceName, false);
 		// false means: no warning. Eventually the code of instance() should be inlined here, this is a transitionnal measure to support legacy constructor code
 		REPORT(DEBUG, "   newInstance("<< opName << ", " << instanceName <<"): after instance()" );
-
+		
 		return instance;
 	}
 
 
-	void Operator::parsePortMappings(OperatorPtr instance, string portMappings0, int portTypes)
+	void Operator::parsePortMappings(string portMappings0, int portTypes)
 	{
 		string portMappings="";
 		// First remove any space
@@ -1460,11 +1480,11 @@ namespace flopoco{
 				string signalName = mapping.substr(sepPos+2, mapping.size()-sepPos-2);
 				REPORT(4, "port map " << portName << "=>" << signalName << " of type " << portTypes);
                 if(portTypes == 0)
-					inPortMap(instance, portName, signalName);
+					inPortMap(portName, signalName);
 				else if(portTypes == 1)
-					inPortMapCst(instance, portName, signalName);
+					inPortMapCst(portName, signalName);
 				else
-					outPortMap(instance, portName, signalName);
+					outPortMap(portName, signalName);
             }
 		}
 	}

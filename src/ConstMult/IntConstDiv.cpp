@@ -357,10 +357,7 @@ namespace flopoco{
 				vhdl << tab << declare(ini, alpha+rSize) << " <= " << ri << " & " << xi << ";" << endl; // This ri is r_{i+1}
 				outi = join("out", i);
 
-				outPortMap(table, "Y", outi);
-				inPortMap(table, "X", ini);
-
-				vhdl << instance(table, join("table",i));
+				newSharedInstance(table, join("table",i), "X=>"+ini, "Y=>"+ outi);
 
 				ri = join("r", i);
 				qi = join("q", i);
@@ -411,9 +408,8 @@ namespace flopoco{
 					vhdl << tab << declare(xi, alpha, true) << " <= " << "X" << range((i+1)*alpha-1, i*alpha) << ";" << endl;
 				outi = join("out", i);
 
-				outPortMap(table, "Y", outi);
-				inPortMap(table, "X", xi);
-				vhdl << instance(table, join("table",i));
+				newSharedInstance(table, join("table",i), "X=>"+xi, "Y=>"+ outi);
+
 				ri = join("r_l0_", i);
 				qi = join("qs_l0_", i);
 				// The qi out of the table are on rho bits, and we want to pad them to alpha bits
@@ -467,9 +463,7 @@ namespace flopoco{
 					else
 						vhdl << tab << declare(in, 2*rSize) << " <= " << "r_l" << level-1 << "_" << 2*i+1 << " & r_l" << level-1 << "_" << 2*i  << ";"  << endl;
 
-					outPortMap(table, "Y", out);
-					inPortMap(table, "X", in);
-					vhdl << instance(table, "table_"+ tableNumber);
+					newSharedInstance(table, "table_"+ tableNumber, "X=>"+in, "Y=>"+ out);
 
 					/////////// The remainder
 					vhdl << tab << declare(r, rSize) << " <= " << out << range (rSize-1, 0) << ";"  << endl;

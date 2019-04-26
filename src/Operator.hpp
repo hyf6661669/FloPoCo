@@ -613,29 +613,36 @@ namespace flopoco {
 
 		/**
 		 * Declare an output mapping for an instance of a sub-component
-		 * Also declares the local signal implicitly, taking its width from the component
-		 * @param op is a pointer to the subcomponent
 		 * @param componentPortName is the name of the port on the component
 		 * @param actualSignalName is the name of the signal in This mapped to this port
 		 * @return name
 		 */
-		void outPortMap(Operator* op, string componentPortName, string actualSignalName);
+		void outPortMap(string componentPortName, string actualSignalName);
+
+		/** Obsolete method, because refactoring takes ages */
+		void outPortMap(OperatorPtr op, string componentPortName, string actualSignalName);
 
 
 		/**
 		 * Use a signal as input of a subcomponent
-		 * @param op is a pointer to the subcomponent
 		 * @param componentPortName is the name of the port on the component
 		 * @param actualSignalName is the name of the signal (of this) mapped to this port
 		 */
-		void inPortMap(Operator* op, string componentPortName, string actualSignalName);
+		void inPortMap(string componentPortName, string actualSignalName);
+
+		/** Obsolete method, because refactoring takes ages */
+		void inPortMap(OperatorPtr op, string componentPortName, string actualSignalName);
 
 		/**
 		 * Use a constant signal as input of a subcomponent.
 		 * @param componentPortName is the name of the port on the component
 		 * @param constantValue is the constant value to be mapped to this port
 		 */
-		void inPortMapCst(Operator* op, string componentPortName, string constantValue);
+		void inPortMapCst(string componentPortName, string constantValue);
+
+		/** Obsolete method, because refactoring takes ages */
+		void inPortMapCst(OperatorPtr op, string componentPortName, string constantValue);
+
 
 		/**
 		 * Returns the VHDL for an instance of a sub-component.
@@ -647,7 +654,7 @@ namespace flopoco {
 		string instance(Operator* op, string instanceName, bool outputWarning=true);
 
 		/**
-		 * Create a new instance of an operator inside the current containing operator
+		 * Create a new instance of an operator inside the current operator
 		 * @param opName the type of operator being instantiated
 		 * @param instanceName the name of the instance being created (label compulsory in VHDL)
 		 * @param parameters the parameters given to the constructor of the instance's operator
@@ -661,6 +668,18 @@ namespace flopoco {
 		 */
 		OperatorPtr newInstance(string opName, string instanceName, string parameters, string inPortMaps, string outPortMaps, string inPortMapsCst = "");
 
+		/**
+		 * Create a new instance of a shared operator that has been constructed beforehand.inside
+		 * @param op a pointer to the shared operator
+		 * @param instanceName the name of the instance being created (label compulsory in VHDL)
+		 * @param inPortMaps the port mappings for the inputs
+		 * 				specified as a string containing 'portName:signalName' separated by ',' (as on VHDL port maps)
+		 * @param outPortMaps the port mappings for the outputs
+		 * 				specified as a string containing 'portName:signalName' separated by ','(as on VHDL port maps)
+		 * @param inPortMapsCst the constant port mappings for the inputs, if there are any
+		 * 				specified as a string containing 'portName:signalName' separated by ','(as on VHDL port maps)
+		 */
+		void newSharedInstance(OperatorPtr op, string instanceName, string inPortMaps, string outPortMaps, string inPortMapsCst = "");
 
 	private:	
 		/**
@@ -671,7 +690,7 @@ namespace flopoco {
 		 * @portMappings a list of port-connected signal
 		 * @param portTypes the type of port being added (0=input, 1=constant inputs, 2=output)
 		 */
-		void parsePortMappings(OperatorPtr instance, string portMappings, int portTypes);
+		void parsePortMappings(string portMappings, int portTypes);
 
 	public:
 		/**

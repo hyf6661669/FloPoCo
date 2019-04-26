@@ -339,6 +339,10 @@ namespace flopoco{
 			}
 		} // end of while(!success)
 
+		// resize all the coefficients of degree i to the largest one
+		// TODO? we could also check if one of the coeffs is always positive or negative, and optimize generated code accordingly
+		updateMSBs();
+
 	}
 
 

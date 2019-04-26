@@ -1,6 +1,6 @@
 # List of active source files, without extension (CMakeLists-like)
 Operator
-UserInterface 
+UserInterface
 Signal
 Target
 utils
@@ -93,6 +93,7 @@ FixFunctions/PiecewisePolyApprox
 FixFunctions/FixFunctionByPiecewisePoly
 FixFunctions/Multipartite
 FixFunctions/FixFunctionByMultipartiteTable
+FixFunctions/MultiFunctApprox
 Trigs/ConstDiv3ForSinPoly
 Trigs/FixSinPoly
 Trigs/FixSinCos

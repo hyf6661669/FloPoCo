@@ -1,5 +1,5 @@
 # every operator here is present in the interface,
-# iff it has the class method registerFactory 
+# iff it has the class method registerFactory
 
 AutoTest
 Compressor
@@ -22,6 +22,7 @@ FixFunctionBySimplePoly
 FixFunctionByPiecewisePoly
 FixFunctionByMultipartiteTable
 PiecewisePolyApprox
+MultiFunctApprox
 FixRealKCM
 FixRealShiftAdd
 FPAdd

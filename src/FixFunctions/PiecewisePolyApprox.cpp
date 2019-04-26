@@ -292,6 +292,7 @@ namespace flopoco{
 
 			REPORT(DETAILED, "Recomputing the polynomials");
 			// initialize the vector of MSB weights
+			MSB.clear();
 			for(int j=0; j<=degree; j++) {
 				MSB.push_back(INT_MIN);
 			}
@@ -345,6 +346,9 @@ namespace flopoco{
 		updateMSBs();
 
 		// Check if all the coefficients of a given degree are of the same sign
+		for (int i=0; i<=degree; i++) {
+			coeffSigns[i] = 0;
+		}
 		checkCoefficientsSign();
 
 		// remove the old cache file if it already existed, then recreate it

@@ -57,6 +57,7 @@ namespace flopoco{
 		 */
 		void reBuild(int newLSB);
 
+
 		int degree;                        /**< degree of the polynomial approximations */
 		int alpha;                         /**< the input domain [0,1] will be split in 2^alpha subdomains */
 		vector<BasicPolyApprox*> poly;     /**< The vector of polynomials, eventually should all be on the same format */

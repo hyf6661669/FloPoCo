@@ -116,6 +116,7 @@ namespace flopoco{
 
 		fstream cacheFile;                 /**< file storing the cached parameters for the polynomials */
 		int nbIntervals;                   /**< the total number of intervals the domain is split into */
+		string cacheFileName;              /**< the name of the file used for storing the cached polynomial parameters */
 	};
 
 }

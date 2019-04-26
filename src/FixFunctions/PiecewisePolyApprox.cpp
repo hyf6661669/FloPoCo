@@ -91,11 +91,12 @@ namespace flopoco{
 	// split into smaller and smaller intervals until the function can be approximated by a polynomial of degree given by degree.
 	void PiecewisePolyApprox::build()
 	{
-		ostringstream cacheFileName;
-		cacheFileName << "PiecewisePoly_"<<vhdlize(f->description) << "_" << degree << "_" << targetAccuracy << ".cache";
+		ostringstream cacheFileNameStream;
+		cacheFileNameStream << "PiecewisePoly_"<<vhdlize(f->description) << "_" << degree << "_" << targetAccuracy << ".cache";
+		cacheFileName = cacheFileNameStream.str();
 
 		// Test existence of cache file, create it if necessary
-		openCacheFile(cacheFileName.str());
+		openCacheFile(cacheFileName);
 
 		if(!cacheFile.is_open())
 		{
@@ -231,16 +232,16 @@ namespace flopoco{
 			updateMSBs();
 
 			// Write the cache file
-			writeToCacheFile(cacheFileName.str());
+			writeToCacheFile(cacheFileName);
 
 			//cleanup the sollya objects
 			sollya_lib_clear_obj(rangeS);
 		}
 		else
 		{
-			REPORT(INFO, "Polynomial data cache found: " << cacheFileName.str());
+			REPORT(INFO, "Polynomial data cache found: " << cacheFileName);
 			//********************** Just read the cache *********************
-			readFromCacheFile(cacheFileName.str());
+			readFromCacheFile(cacheFileName);
 		} // end if cache
 
 		// Check if all the coefficients of a given degree are of the same sign
@@ -289,7 +290,7 @@ namespace flopoco{
 			approxErrorBound = 0.0;
 			BasicPolyApprox *p;
 
-			REPORT(DETAILED, "Recomputing the actual polynomials");
+			REPORT(DETAILED, "Recomputing the polynomials");
 			// initialize the vector of MSB weights
 			for(int j=0; j<=degree; j++) {
 				MSB.push_back(INT_MIN);
@@ -342,6 +343,11 @@ namespace flopoco{
 		// resize all the coefficients of degree i to the largest one
 		// TODO? we could also check if one of the coeffs is always positive or negative, and optimize generated code accordingly
 		updateMSBs();
+
+		// Test existence of cache file, create it if necessary
+		openCacheFile(cacheFileName);
+
+
 
 	}
 

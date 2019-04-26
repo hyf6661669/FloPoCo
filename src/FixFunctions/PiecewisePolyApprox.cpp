@@ -25,9 +25,6 @@
 
 */
 #include "PiecewisePolyApprox.hpp"
-#include <sstream>
-#include <limits.h>
-#include <float.h>
 
 namespace flopoco{
 

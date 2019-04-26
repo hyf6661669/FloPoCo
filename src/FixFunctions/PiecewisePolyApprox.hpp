@@ -3,6 +3,9 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <limits.h>
+#include <float.h>
 
 #include <sollya.h>
 #include <gmpxx.h>
@@ -35,10 +38,19 @@ namespace flopoco{
 		 */
 		PiecewisePolyApprox(string sollyaString, double targetAccuracy, int degree);
 
+		/**
+		 * class destructor
+		 */
 		virtual ~PiecewisePolyApprox();
 
+		/**
+		 * parse the command line arguments
+		 */
 		static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);
 
+		/**
+		 * register the operator for use on the command line
+		 */
 		static void registerFactory();
 
 		/**
@@ -65,6 +77,7 @@ namespace flopoco{
 		vector<int> MSB;                   /**< vector of MSB weights for each coefficient */
 		double approxErrorBound;           /**< guaranteed upper bound on the approx error of each approximation provided. Should be smaller than targetAccuracy */
 		vector<int> coeffSigns;            /**< If all the coeffs of a given degree i are strictly positive (resp. strictly negative), then coeffSigns[i]=+1 (resp. -1). Otherwise 0 */
+
 	private:
 
 		/**

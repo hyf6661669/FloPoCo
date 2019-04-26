@@ -228,13 +228,7 @@ namespace flopoco{
 
 			// Now we need to resize all the coefficients of degree i to the largest one
 			// TODO? we could also check if one of the coeffs is always positive or negative, and optimize generated code accordingly
-			for (int i=0; i<nbIntervals; i++) {
-				for (int j=0; j<=degree; j++) {
-					// REPORT(DEBUG "Resizing MSB of coeff " << j << " of poly " << i << " : from " << poly[i] -> coeff[j] -> MSB << " to " <<  MSB[j]);
-					poly[i] -> coeff[j] -> changeMSB(MSB[j]);
-					// REPORT(DEBUG, "   Now  " << poly[i] -> coeff[j] -> MSB);
-				}
-			}
+			updateMSBs();
 
 			// Write the cache file
 			writeToCacheFile(cacheFileName.str());
@@ -426,6 +420,20 @@ namespace flopoco{
 			}
 			BasicPolyApprox* p = new BasicPolyApprox(degree,MSB,LSB,coeff);
 			poly.push_back(p);
+		}
+	}
+
+
+	void PiecewisePolyApprox::updateMSBs()
+	{
+		for (int i=0; i<nbIntervals; i++)
+		{
+			for (int j=0; j<=degree; j++)
+			{
+				// REPORT(DEBUG "Resizing MSB of coeff " << j << " of poly " << i << " : from " << poly[i] -> coeff[j] -> MSB << " to " <<  MSB[j]);
+				poly[i] -> coeff[j] -> changeMSB(MSB[j]);
+				// REPORT(DEBUG, "   Now  " << poly[i] -> coeff[j] -> MSB);
+			}
 		}
 	}
 

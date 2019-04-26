@@ -91,6 +91,11 @@ namespace flopoco{
 		void readFromCacheFile(string cacheFileName);
 
 		/**
+		 * function used to resize all the coefficients to the size of the largest one
+		 */
+		void updateMSBs();
+
+		/**
 		 * check whether all the coefficients of a given degree are of the same sign
 		 */
 		void checkCoefficientsSign();

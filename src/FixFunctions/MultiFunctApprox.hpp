@@ -63,12 +63,18 @@ namespace flopoco {
 
 		int degree;                               /**< max degree of the polynomial approximations */
 		int alpha;                                /**< the input domain [0,1] will be split into at most 2^alpha subdomains */
-		vector<BasicPolyApprox*> functApprox;     /**< The vector of polynomial approximations, each with its format */
+		vector<PiecewisePolyApprox*> functApprox; /**< The vector of polynomial approximations, each with its format */
 		int LSB;                                  /**< min weight of the LSBs of the polynomial approximations */
 		vector<int> MSB;                          /**< vector of the max MSB weights for each coefficient */
 		double approxErrorBound;                  /**< guaranteed upper bound on the approx error of each approximation provided. Should be smaller than targetAccuracy */
 
 	private:
+
+		/**
+		 * create a report on all of the approximations
+		 */
+		void createApproximationsReport();
+
 
 		vector<FixFunction*> functs;              /**< The function to be approximated */
 		double targetAccuracy;                    /**< please build an approximation at least as accurate as that */

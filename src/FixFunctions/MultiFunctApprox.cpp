@@ -71,7 +71,87 @@ namespace flopoco {
 
 	void MultiFunctApprox::build()
 	{
+		// initialize the internal variables
+		alpha = INT_MIN;
+		LSB = INT_MAX;
+		for(size_t i=0; i<degree; i++)
+			MSB.push_back(INT_MIN);
+		approxErrorBound = -1;
 
+		// create the initial approximations
+		//	at the same time, the maximum alpha, the minimum LSb and the maximum MSBs for each degree
+		//	no need to determine the maximum degree, as we're trying to force the same one, not getting
+		//	an approximation of that degree is an exception, handled later on
+		for(size_t i=0; i<functs.size(); i++)
+		{
+			PiecewisePolyApprox *approx = PiecewisePolyApprox(functs[i], targetAccuracy, degree);
+			functApprox.push_back(approx);
+
+			//bookkeeping
+			if(approx->alpha > alpha)
+				alpha = approx->alpha;
+			if(approx->LSB < LSB)
+				LSB = approx->LSB;
+			if(approx->MSB.size() > MSB.size())
+			{
+				for(size_t i=MSB.size(); i<approx->MSB.size(); i++)
+					MSB.push_back(INT_MIN);
+			}
+			for(size_t i=0; i<approx->MSB.size(); i++)
+				if(approx->MSB[i] > MSB[i])
+					MSB[i] = approx->MSB[i];
+			if(approx->approxErrorBound > approxErrorBound)
+				approxErrorBound = approx->approxErrorBound;
+		}
+
+		// check if all approximations have the same LSB
+		//	in case they do not, recompute the approximations, and force the minimum global LSB on all of them
+		for(size_t i=0; i<functs.size(); i++)
+		{
+			PiecewisePolyApprox *approx = functApprox[i];
+
+			if(approx->LSB > LSB)
+				approx->reBuild(LSB);
+		}
+
+		// now do some reporting
+		createApproximationsReport();
+	}
+
+
+	void MultiFunctApprox::createApproximationsReport()
+	{
+		vector<int> totalMemorySizes;
+		int totalOutputSize;
+
+		REPORT(INFO,"Parameters and details of the multi-function approximations: ");
+
+		for(size_t i=0; i<functApprox.size(); i++)
+		{
+			REPORT(INFO,"\t Function: " << functApprox[i]->getFunctionDescription());
+			REPORT(INFO,"\t Parameters of the approximation polynomials: ");
+			REPORT(INFO,"\t  Degree=" << degree	<< "\t alpha=" << alpha
+					<< "\t maxApproxErrorBound=" << approxErrorBound << "\t common coeff LSB="  << LSB);
+
+			totalOutputSize=0;
+			for(int j=0; j<=degree; j++)
+			{
+				int size = functApprox[i]->MSB[j]-LSB + (functApprox[i]->coeffSigns[j]==0? 1 : 0);
+				totalOutputSize += size ;
+				REPORT(INFO,"\t  MSB["<<j<<"] = \t" << functApprox[i]->MSB[j] << "\t size=" << size
+						<< (functApprox[i]->coeffSigns[j]==0? "\t variable sign " : "\t constant sign ")
+						<< functApprox[i]->coeffSigns[j]);
+			}
+			totalMemorySizes.push_back(totalOutputSize * (1<<functApprox[i]->alpha));
+
+			REPORT(INFO, "\t  Total size of the table for function" << functApprox[i]->getFunctionDescription()
+					<< " is " << (1<<functApprox[i]->alpha) << " x " << totalOutputSize << " bits");
+		}
+
+		totalOutputSize = 0;
+		for(size_t i=0; i<totalMemorySizes.size(); i++)
+			totalOutputSize += totalMemorySizes[i];
+		REPORT(INFO, "\t Total size of the tables is " << totalOutputSize << " bits");
 	}
 
 

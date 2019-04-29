@@ -28,22 +28,50 @@
 
 namespace flopoco {
 
-	MultiFunctApprox::MultiFunctApprox(vector<FixFunction*> functs, double targetAccuracy, int degree)
+	MultiFunctApprox::MultiFunctApprox(vector<FixFunction*> functs_, double targetAccuracy_, int degree_) :
+			degree(degree_), targetAccuracy(targetAccuracy_)
 	{
-		// TODO Auto-generated constructor stub
+		srcFileName="MultiFunctApprox";
+		uniqueName_=join(srcFileName, "_", Operator::getNewUId());
 
+		functs.insert(functs.begin(), functs_.begin(), functs_.end());
+		needToFreeF = false;
+
+		build();
 	}
 
 
-	MultiFunctApprox::MultiFunctApprox(vector<string> sollyaStringList, double targetAccuracy, int degree)
+	MultiFunctApprox::MultiFunctApprox(vector<string> sollyaStringList_, double targetAccuracy_, int degree_) :
+			degree(degree_), targetAccuracy(targetAccuracy_)
 	{
-		// TODO Auto-generated constructor stub
+		srcFileName="MultiFunctApprox";
+		uniqueName_=join(srcFileName, "_", Operator::getNewUId());
 
+		for(size_t i=0; i<sollyaStringList_.size(); i++)
+		{
+			FixFunction *f;
+			f = new FixFunction(sollyaStringList_[i], false /* on [0,1]*/);
+			functs.push_back(f);
+		}
+		needToFreeF = true;
+
+		build();
 	}
 
 
-	MultiFunctApprox::~MultiFunctApprox() {
-		// TODO Auto-generated destructor stub
+	MultiFunctApprox::~MultiFunctApprox()
+	{
+		if(needToFreeF)
+		{
+			for(size_t i=0; i<functs.size(); i++)
+				free(functs[i]);
+		}
+	}
+
+
+	void MultiFunctApprox::build()
+	{
+
 	}
 
 
@@ -67,7 +95,7 @@ namespace flopoco {
 	void MultiFunctApprox::registerFactory()
 	{
 		UserInterface::add("MultiFunctApprox", // name
-				"Helper/Debug feature, does not generate VHDL. A set of uniformly segmented piecewise polynomial approximations of the functions given by functs,\
+				"Helper/Debug feature, does not generate VHDL. A set of uniformly segmented piecewise polynomial approximations of the functions given by functsList,\
 				accurate to targetAcc on [0,1)",
 				"FunctionApproximation",
 				"",

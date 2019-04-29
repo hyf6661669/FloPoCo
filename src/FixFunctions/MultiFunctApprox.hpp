@@ -73,11 +73,10 @@ namespace flopoco {
 		vector<FixFunction*> functs;              /**< The function to be approximated */
 		double targetAccuracy;                    /**< please build an approximation at least as accurate as that */
 
-		string srcFileName;                       /**< useful only to enable same kind of reporting as for FloPoCo operators. */
-		string uniqueName_;                       /**< useful only to enable same kind of reporting as for FloPoCo operators. */
-		bool needToFreeF;                         /**< in an ideal world, this should not be needed */
+		string srcFileName;                       /**< useful for reporting as for FloPoCo operators. Identifies the operator class. */
+		string uniqueName_;                       /**< useful for reporting as for FloPoCo operators. Identifies the operator instance. */
+		bool needToFreeF;                         /**< flag indicating whether the elements of functs need to be freed */
 
-		fstream cacheFile;                        /**< file storing the cached parameters for the polynomials */
 		vector<int> nbIntervals;                  /**< the total number of intervals the domain is split into */
 		vector<string> cacheFileNames;            /**< the name of the file used for storing the cached polynomial parameters */
 	};

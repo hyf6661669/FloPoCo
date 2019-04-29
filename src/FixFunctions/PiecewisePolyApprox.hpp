@@ -124,8 +124,8 @@ namespace flopoco{
 		FixFunction *f;                    /**< The function to be approximated */
 		double targetAccuracy;             /**< please build an approximation at least as accurate as that */
 
-		string srcFileName;                /**< useful only to enable same kind of reporting as for FloPoCo operators. */
-		string uniqueName_;                /**< useful only to enable same kind of reporting as for FloPoCo operators. */
+		string srcFileName;                /**< useful for reporting as for FloPoCo operators. Identifies the operator class. */
+		string uniqueName_;                /**< useful for reporting as for FloPoCo operators. Identifies the operator instance. */
 		bool needToFreeF;                  /**< in an ideal world, this should not be needed */
 
 		fstream cacheFile;                 /**< file storing the cached parameters for the polynomials */

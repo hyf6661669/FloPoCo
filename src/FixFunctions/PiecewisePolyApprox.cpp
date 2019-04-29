@@ -33,6 +33,7 @@ namespace flopoco{
 	{
 		needToFreeF = false;
 		srcFileName="PiecewisePolyApprox"; // should be somehow static but this is too much to ask me
+		uniqueName_=join(srcFileName, "_", Operator::getNewUId());
 		build();
 	}
 
@@ -44,6 +45,7 @@ namespace flopoco{
 		f = new FixFunction(sollyaString_, false /* on [0,1]*/);
 		needToFreeF = true;
 		srcFileName="PiecewisePolyApprox"; // should be somehow static but this is too much to ask me
+		uniqueName_=join(srcFileName, "_", Operator::getNewUId());
 		build();
 	}
 

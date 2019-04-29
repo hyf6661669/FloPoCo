@@ -74,7 +74,7 @@ namespace flopoco {
 		// initialize the internal variables
 		alpha = INT_MIN;
 		LSB = INT_MAX;
-		for(size_t i=0; i<degree; i++)
+		for(int i=0; i<degree; i++)
 			MSB.push_back(INT_MIN);
 		approxErrorBound = -1;
 
@@ -84,7 +84,7 @@ namespace flopoco {
 		//	an approximation of that degree is an exception, handled later on
 		for(size_t i=0; i<functs.size(); i++)
 		{
-			PiecewisePolyApprox *approx = PiecewisePolyApprox(functs[i], targetAccuracy, degree);
+			PiecewisePolyApprox *approx = new PiecewisePolyApprox(functs[i], targetAccuracy, degree);
 			functApprox.push_back(approx);
 
 			//bookkeeping
@@ -125,6 +125,7 @@ namespace flopoco {
 		int totalOutputSize;
 
 		REPORT(INFO,"Parameters and details of the multi-function approximations: ");
+		REPORT(INFO,"\t ***********");
 
 		for(size_t i=0; i<functApprox.size(); i++)
 		{
@@ -146,6 +147,7 @@ namespace flopoco {
 
 			REPORT(INFO, "\t  Total size of the table for function" << functApprox[i]->getFunctionDescription()
 					<< " is " << (1<<functApprox[i]->alpha) << " x " << totalOutputSize << " bits");
+			REPORT(INFO,"\t ***********");
 		}
 
 		totalOutputSize = 0;

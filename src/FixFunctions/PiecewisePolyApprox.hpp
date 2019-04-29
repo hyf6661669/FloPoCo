@@ -69,6 +69,11 @@ namespace flopoco{
 		 */
 		void reBuild(int newLSB);
 
+		/**
+		 * get the description of the function being approximated
+		 */
+		string getFunctionDescription();
+
 
 		int degree;                        /**< degree of the polynomial approximations */
 		int alpha;                         /**< the input domain [0,1] will be split in 2^alpha subdomains */

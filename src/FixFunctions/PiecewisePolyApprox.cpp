@@ -497,6 +497,12 @@ namespace flopoco{
 	}
 
 
+	string PiecewisePolyApprox::getFunctionDescription()
+	{
+		return f->description;
+	}
+
+
 	OperatorPtr PiecewisePolyApprox::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args)
 	{
 		string f;

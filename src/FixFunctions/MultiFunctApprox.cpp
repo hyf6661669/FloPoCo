@@ -66,6 +66,9 @@ namespace flopoco {
 			for(size_t i=0; i<functs.size(); i++)
 				free(functs[i]);
 		}
+
+		for(size_t i=0; i<functApprox.size(); i++)
+			free(functApprox[i]);
 	}
 
 

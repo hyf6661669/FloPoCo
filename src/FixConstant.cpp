@@ -116,7 +116,7 @@ namespace flopoco{
 		return isZeroP;
 	}
 
-	
+
 	void FixConstant::changeMSB(int newMSB){
 		if(newMSB>=MSB){
 			MSB = newMSB;
@@ -125,11 +125,12 @@ namespace flopoco{
 		}
 		else{
 			// TODO: check that the number fits its new size, and bork otherwise.
-			throw(string("FixConstant::changeMSB: TODO"));
+			//throw(string("FixConstant::changeMSB: TODO"));
+			THROWERROR("FixConstant::changeMSB: oldMSB=" << MSB << " newMSB=" << newMSB << " ...TODO");
 		}
 	}
 
-	
+
 	void FixConstant::changeLSB(int newLSB){
 		//throw("FixConstant::changeLSB: TODO");
 		if(newLSB<=LSB){

@@ -140,7 +140,7 @@ namespace flopoco {
 		{
 			REPORT(INFO,"\t Function: " << functApprox[i]->getFunctionDescription());
 			REPORT(INFO,"\t Parameters of the approximation polynomials: ");
-			REPORT(INFO,"\t  Degree=" << functApprox[i]->degree	<< "\t alpha=" << functApprox[i]->alpha
+			REPORT(INFO,"\t   Degree=" << functApprox[i]->degree	<< "\t alpha=" << functApprox[i]->alpha
 					<< "\t maxApproxErrorBound=" << functApprox[i]->approxErrorBound << "\t common coeff LSB="  << functApprox[i]->LSB);
 
 			totalOutputSize=0;
@@ -148,13 +148,13 @@ namespace flopoco {
 			{
 				int size = functApprox[i]->MSB[j]-functApprox[i]->LSB + (functApprox[i]->coeffSigns[j]==0? 1 : 0);
 				totalOutputSize += size ;
-				REPORT(INFO,"\t  MSB["<<j<<"] = \t" << functApprox[i]->MSB[j] << "\t size=" << size
+				REPORT(INFO,"\t\t  MSB["<<j<<"] = " << std::setw(3) << functApprox[i]->MSB[j] << "\t size=" << std::setw(3) << size
 						<< (functApprox[i]->coeffSigns[j]==0? "\t variable sign " : "\t constant sign ")
-						<< functApprox[i]->coeffSigns[j]);
+						<< std::setw(2) << functApprox[i]->coeffSigns[j]);
 			}
 			totalMemorySizes.push_back(totalOutputSize * (1<<functApprox[i]->alpha));
 
-			REPORT(INFO, "\t  Total size of the table for function " << functApprox[i]->getFunctionDescription()
+			REPORT(INFO, "\t   Total size of the table for function " << functApprox[i]->getFunctionDescription()
 					<< " is " << (1<<functApprox[i]->alpha) << " x " << totalOutputSize << " bits");
 			REPORT(INFO,"\t ***********");
 		}
@@ -162,7 +162,7 @@ namespace flopoco {
 		totalOutputSize = 0;
 		for(size_t i=0; i<totalMemorySizes.size(); i++)
 			totalOutputSize += totalMemorySizes[i];
-		REPORT(INFO, "\t Total size of the tables is " << totalOutputSize << " bits");
+		REPORT(INFO, "Total size of the tables is " << totalOutputSize << " bits");
 	}
 
 

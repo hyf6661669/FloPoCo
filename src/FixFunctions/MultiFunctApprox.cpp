@@ -79,7 +79,7 @@ namespace flopoco {
 		approxErrorBound = -1;
 
 		// create the initial approximations
-		//	at the same time, the maximum alpha, the minimum LSb and the maximum MSBs for each degree
+		//	at the same time, the maximum alpha, the minimum LSB and the maximum MSBs for each degree
 		//	no need to determine the maximum degree, as we're trying to force the same one, not getting
 		//	an approximation of that degree is an exception, handled later on
 		for(size_t i=0; i<functs.size(); i++)
@@ -163,12 +163,12 @@ namespace flopoco {
 		double ta;
 		int d;
 
-		UserInterface::parseColonSeparatedStringList(args, "functs", &functsList);
+		UserInterface::parseColonSeparatedStringList(args, "functsList", &functsList);
 		UserInterface::parseFloat(args, "targetAcc", &ta);
 		UserInterface::parseInt(args, "d", &d);
 
-		MultiFunctApprox *ppa = new MultiFunctApprox(functsList, ta, d);
-		cout << "Accuracy is " << ppa->approxErrorBound << " ("<< log2(ppa->approxErrorBound) << " bits)";
+		MultiFunctApprox *mfa = new MultiFunctApprox(functsList, ta, d);
+		cout << "Accuracy is " << mfa->approxErrorBound << " ("<< log2(mfa->approxErrorBound) << " bits)";
 
 		return NULL;
 	}
@@ -178,15 +178,14 @@ namespace flopoco {
 	{
 		UserInterface::add("MultiFunctApprox", // name
 				"Helper/Debug feature, does not generate VHDL. A set of uniformly segmented piecewise polynomial approximations of the functions given by functsList,\
-				accurate to targetAcc on [0,1)",
+ accurate to targetAcc on [0,1)",
 				"FunctionApproximation",
 				"",
-				"\
-				functsList(string): set of functions to be evaluated, expressed between double-quotes and separated by colons, for instance \"exp(x):sqrt(x):1/x\";\
+				"functsList(string): set of functions to be evaluated, expressed between double-quotes and separated by colons, for instance \"exp(x):sqrt(x):1/x\";\
 				targetAcc(real): the target approximation error of the polynomial WRT the function;\
 				d(int): the degree to use",
 				"",
-				PiecewisePolyApprox::parseArguments
+				MultiFunctApprox::parseArguments
 		);
 	}
 

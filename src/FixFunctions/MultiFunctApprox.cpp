@@ -82,8 +82,11 @@ namespace flopoco {
 		//	at the same time, the maximum alpha, the minimum LSB and the maximum MSBs for each degree
 		//	no need to determine the maximum degree, as we're trying to force the same one, not getting
 		//	an approximation of that degree is an exception, handled later on
+		REPORT(INFO,"Generating the initial approximations");
 		for(size_t i=0; i<functs.size(); i++)
 		{
+			REPORT(INFO,"Current function: " << functs[i]->getDescription());
+
 			PiecewisePolyApprox *approx = new PiecewisePolyApprox(functs[i], targetAccuracy, degree);
 			functApprox.push_back(approx);
 
@@ -103,9 +106,11 @@ namespace flopoco {
 			if(approx->approxErrorBound > approxErrorBound)
 				approxErrorBound = approx->approxErrorBound;
 		}
+		REPORT(INFO,"Initial function generation complete");
 
 		// check if all approximations have the same LSB
 		//	in case they do not, recompute the approximations, and force the minimum global LSB on all of them
+		REPORT(INFO,"Generating the updated approximations");
 		for(size_t i=0; i<functs.size(); i++)
 		{
 			PiecewisePolyApprox *approx = functApprox[i];
@@ -113,6 +118,7 @@ namespace flopoco {
 			if(approx->LSB > LSB)
 				approx->reBuild(LSB);
 		}
+		REPORT(INFO,"Updated functions generation complete");
 
 		// now do some reporting
 		createApproximationsReport();

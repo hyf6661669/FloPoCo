@@ -1,15 +1,15 @@
 /*
   Polynomial Function Evaluator for FloPoCo
 	This version uses piecewise polynomial approximation for a trade-off between tables and multiplier hardware.
-	
+
   Authors: Florent de Dinechin (rewrite from scratch of original code by Mioara Joldes and Bogdan Pasca, see the attic directory)
 
   This file is part of the FloPoCo project
 	launched by the Arénaire/AriC team of Ecole Normale Superieure de Lyon
   currently developed by the Socrate team at CITILab/INSA de Lyon
- 
+
   Initial software.
-  Copyright © ENS-Lyon, INSA-Lyon, INRIA, CNRS, UCBL,  
+  Copyright © ENS-Lyon, INSA-Lyon, INRIA, CNRS, UCBL,
   2008-2014.
   All rights reserved.
 
@@ -48,20 +48,20 @@ namespace flopoco{
 
 	 */
 
-	
+
 	/* Error analysis:
 		 Target error is exp2(lsbOut).
 		 Final rounding may entail up to exp2(lsbOut-1).
 		 So approximation+rounding error budget is  exp2(lsbOut-1).
 		 We call PiecewisePolyApprox with approximation target error bound exp2(lsbOut-2).
-		 It reports polyApprox->LSB: may be lsbOut-2, may be up to lsbOut-2- intlog2(degree) 
+		 It reports polyApprox->LSB: may be lsbOut-2, may be up to lsbOut-2- intlog2(degree)
 		 It also reports polyApprox->approxErrorBound
 		 so rounding error budget is  exp2(lsbOut-1) - polyApprox->approxErrorBound
 		 Staying within this budget is delegated to FixHornerEvaluator: see there for the details
-			 
+
 	 */
 
-	
+
 #define DEBUGVHDL 0
 
 
@@ -73,21 +73,21 @@ namespace flopoco{
 		}
 
 		f=new FixFunction(func, false, lsbIn, msbOut, lsbOut); // this will provide emulate etc.
-		
+
 		srcFileName="FixFunctionByPiecewisePoly";
-		
+
 		ostringstream name;
 
 		name<<"FixFunctionByPiecewisePoly";
-		setNameWithFreqAndUID(name.str()); 
+		setNameWithFreqAndUID(name.str());
 
 
 		setCopyrightString("Florent de Dinechin (2014,2018)");
-		addHeaderComment("-- Evaluator for " +  f-> getDescription() + "\n"); 
+		addHeaderComment("-- Evaluator for " +  f-> getDescription() + "\n");
 		REPORT(DETAILED, "Entering: FixFunctionByPiecewisePoly \"" << func << "\" " << lsbIn << " " << msbOut << " " << lsbOut << " " << degree);
  		int wX=-lsbIn;
 		addInput("X", wX);
-		int outputSize = msbOut-lsbOut+1; 
+		int outputSize = msbOut-lsbOut+1;
 		addOutput("Y" ,outputSize , 2);
 		useNumericStd();
 
@@ -96,30 +96,38 @@ namespace flopoco{
 			ostringstream params;
 			params << "f="<<func
 						 << "signedIn=false" << " lsbIn=" << lsbIn
-						 << " lsbOut=" << lsbOut << " msbOut=" << msbOut; 
+						 << " lsbOut=" << lsbOut << " msbOut=" << msbOut;
 			newInstance("FixFunctionByTable",
 									"simpleTable",
 									params.str(),
 									"X=>X",
 									"Y=>YR" );
 
-			vhdl << tab << "Y <= YR;" << endl; 
+			vhdl << tab << "Y <= YR;" << endl;
 		}
 		else{
 			if(degree==1){ // For degree 1, MultiPartite could work better
 			REPORT(INFO, "Degree 1: You should consider using FixFunctionByMultipartiteTable");
 			}
 
-			
+
 			// Build the polynomial approximation
 			double targetAcc= approxErrorBudget*pow(2, lsbOut);
 			REPORT(INFO, "Computing polynomial approximation for target accuracy "<< targetAcc);
 			polyApprox = new PiecewisePolyApprox(func, targetAcc, degree);
-			alpha =  polyApprox-> alpha; // coeff table input size 
-			
-			// Resize its MSB to the one input by the user. 
+			alpha =  polyApprox-> alpha; // coeff table input size
+
+			// Resize its MSB to the one input by the user.
 			for (int i=0; i<(1<<alpha); i++) {
-				polyApprox -> poly[i] -> coeff[0] -> changeMSB(msbOut);
+				try{
+					polyApprox -> poly[i] -> coeff[0] -> changeMSB(msbOut);
+				}catch(const std::exception& e)
+				{
+					cerr << e.what();
+					THROWERROR("Tried resizing the MSB of the polynomial coefficients to the requested output format msbOut="
+							<< msbOut << " lsbOut=" << lsbOut << ", but the coefficient msb=" << polyApprox->poly[i]->coeff[0]
+							<< " is larger. Please reconsider the used output format!");
+				}
 			}
 			polyApprox -> MSB[0] = msbOut;
 
@@ -141,13 +149,13 @@ namespace flopoco{
 			schedule();
 			inPortMap("X", "A");
 			outPortMap("Y", "Coeffs");
-			Table* coeffTable = new Table(parentOp, target, coeffTableVector, "coeffTable", alpha, polyTableOutputSize); 
+			Table* coeffTable = new Table(parentOp, target, coeffTableVector, "coeffTable", alpha, polyTableOutputSize);
 			vhdl << instance(coeffTable, "coeffTable", false);
 #else
 			Table::newUniqueInstance(this, "A", "Coeffs",
 															 coeffTableVector, "coeffTable", alpha, polyTableOutputSize );
 #endif
-			
+
 			// Split the table output into each coefficient
 			int currentShift=0;
 			for(int i=polyApprox->degree; i>=0; i--) {
@@ -155,16 +163,16 @@ namespace flopoco{
 				vhdl << tab << declare(join("A",i), polyApprox->MSB[i] - polyApprox->LSB +1)
 						 << " <= ";
 				if (polyApprox->coeffSigns[i]!=0) // add constant sign back
-					vhdl << (polyApprox->coeffSigns[i]==1? "\"0\"" :  "\"1\"") << " & " ;				
+					vhdl << (polyApprox->coeffSigns[i]==1? "\"0\"" :  "\"1\"") << " & " ;
 				vhdl << "Coeffs" << range(currentShift + actualSize-1, currentShift) << ";" << endl;
 				currentShift += actualSize;
 			}
 
-			
-			// What follows is related to Horner evaluator
-			// Here I wish I could plug other (more parallel) evaluators. 
 
-			//  compute the size of the intermediate terms sigma_i  (Horner-specific)  
+			// What follows is related to Horner evaluator
+			// Here I wish I could plug other (more parallel) evaluators.
+
+			//  compute the size of the intermediate terms sigma_i  (Horner-specific)
 			computeSigmaSignsAndMSBs(); // TODO make it a method of FixHornerEvaluator?
 
 			// the previous has computed the min value of msbOut.
@@ -177,9 +185,9 @@ namespace flopoco{
 #if 0
 			// This builds an architecture such as eps_finalround < 2^(lsbOut-1) and eps_round<2^(lsbOut-2)
 #if 0 // This constructor computes sigma and msbs only out of the formats
-			FixHornerEvaluator* horner = new FixHornerEvaluator(target, lsbIn+alpha+1, msbOut, lsbOut, degree, polyApprox->MSB, polyApprox->LSB, roundingErrorBudget);		
+			FixHornerEvaluator* horner = new FixHornerEvaluator(target, lsbIn+alpha+1, msbOut, lsbOut, degree, polyApprox->MSB, polyApprox->LSB, roundingErrorBudget);
 #else // This constructor uses the more accurate data computed out of the actual polynomials
-			FixHornerEvaluator* horner = new FixHornerEvaluator(target, lsbIn+alpha+1, msbOut, lsbOut, degree, polyApprox->MSB, polyApprox->LSB, sigmaSign, sigmaMSB, roundingErrorBudget);		
+			FixHornerEvaluator* horner = new FixHornerEvaluator(target, lsbIn+alpha+1, msbOut, lsbOut, degree, polyApprox->MSB, polyApprox->LSB, sigmaSign, sigmaMSB, roundingErrorBudget);
 #endif
 
 			inPortMap("X", "Zs");
@@ -197,16 +205,16 @@ namespace flopoco{
 			inPortMap(join("A",i),  join("A",i));
 		}
 		outPortMap("R", "Ys");
-		OperatorPtr h = new  FixHornerEvaluator(this, target, 
+		OperatorPtr h = new  FixHornerEvaluator(this, target,
 																lsbIn+alpha+1,
 																msbOut,
 																lsbOut,
-																degree, 
-																polyApprox->MSB, 
+																degree,
+																polyApprox->MSB,
 																polyApprox->LSB // it is the smaller LSB
 																);
 		vhdl << instance(h, "horner", false);
-			
+
 		vhdl << tab << "Y <= " << "std_logic_vector(Ys);" << endl;
 		}
 	}
@@ -221,13 +229,13 @@ namespace flopoco{
 
 
 
-	
+
 	void FixFunctionByPiecewisePoly::buildCoeffTable() {
 		// First compute the table output size
 		polyTableOutputSize=0;
 		for (int i=0; i<=degree; i++) {
 			polyTableOutputSize += polyApprox->MSB[i] - polyApprox->LSB + (polyApprox->coeffSigns[i]==0? 1 : 0);
-		} 
+		}
 		REPORT(DETAILED, "Poly table input size  = " << alpha);
 		REPORT(DETAILED, "Poly table output size = " << polyTableOutputSize);
 
@@ -239,7 +247,7 @@ namespace flopoco{
 				mpz_class coeff = polyApprox-> getCoeff(x, i); // coeff of degree i from poly number x
 				if (polyApprox->coeffSigns[i] != 0) {// sign is constant among all the coefficients: remove it from here, it will be added back as a constant in the VHDL
 					mpz_class mask = (mpz_class(1)<<(polyApprox->MSB[i] - polyApprox->LSB) ) - 1; // size is msb-lsb+1
-					coeff = coeff & mask; 
+					coeff = coeff & mask;
 				}
 				z += coeff << currentShift; // coeff of degree i from poly number x
 				// REPORT(DEBUG, "i=" << i << "   z=" << unsignedBinary(z, 64));
@@ -261,15 +269,15 @@ namespace flopoco{
 
 
 
-	
-	
+
+
 
 	void FixFunctionByPiecewisePoly::computeSigmaSignsAndMSBs(){
 		mpfr_t res_left, res_right;
 		sollya_obj_t rangeS;
 		mpfr_init2(res_left, 10000); // should be enough for anybody
 		mpfr_init2(res_right, 10000); // should be enough for anybody
-		rangeS = sollya_lib_parse_string("[-1;1]");		
+		rangeS = sollya_lib_parse_string("[-1;1]");
 
 		REPORT(DEBUG, "Computing sigmas, signs and MSBs");
 
@@ -278,7 +286,7 @@ namespace flopoco{
 			sigmaMSB.push_back(INT_MIN);
 			sigmaSign.push_back(17); // 17 meaning "not initialized yet"
 		}
-		
+
 		for (int i=0; i<(1<<polyApprox -> alpha); i++){
 			// initialize the vectors with sigma_d = a_d
 			FixConstant* sigma = polyApprox -> poly[i] -> coeff[degree];
@@ -287,7 +295,7 @@ namespace flopoco{
 			if (msb>sigmaMSB[degree])
 				sigmaMSB[degree]=msb;
 			sigmaSign[degree] = polyApprox -> coeffSigns[degree];
-			
+
 			for (int j=degree-1; j>=0; j--) {
 				// interval eval of sigma_j
 				// get the output range of sigma
@@ -320,7 +328,7 @@ namespace flopoco{
 				}
 				else
 					sigmaSign[j] = 0;
-				
+
 
 				// now finally the MSB computation
 				int msb;
@@ -341,10 +349,10 @@ namespace flopoco{
 				if (msb > sigmaMSB[j])
 					sigmaMSB[j] = msb;
 			} // for j
-			
-			
+
+
 			sollya_lib_clear_obj(sigmaS);
-		
+
 		} // for i
 		mpfr_clear(res_left);
 		mpfr_clear(res_right);
@@ -352,11 +360,11 @@ namespace flopoco{
 
 		for (int j=degree; j>=0; j--) {
 			REPORT(DETAILED, "Horner step " << j << ":   sigmaSign = " << sigmaSign[j] << " \t sigmaMSB = " << sigmaMSB[j]);
-		}	
+		}
 
 	}
 
- 
+
 
 
 	void FixFunctionByPiecewisePoly::emulate(TestCase* tc){
@@ -366,12 +374,12 @@ namespace flopoco{
 	void FixFunctionByPiecewisePoly::buildStandardTestCases(TestCaseList* tcl){
 		TestCase *tc;
 
-		tc = new TestCase(this); 
+		tc = new TestCase(this);
 		tc->addInput("X", 0);
 		emulate(tc);
 		tcl->add(tc);
 
-		tc = new TestCase(this); 
+		tc = new TestCase(this);
 		tc->addInput("X", (mpz_class(1) << f->wIn) -1);
 		emulate(tc);
 		tcl->add(tc);
@@ -383,10 +391,10 @@ namespace flopoco{
 		// the static list of mandatory tests
 		TestList testStateList;
 		vector<pair<string,string>> paramList;
-		
-		if(index==-1) 
+
+		if(index==-1)
 		{ // The unit tests
-			// A few regression tests, first deg2, exhaustive on 15 bits, then deg 3 for 24 bits 
+			// A few regression tests, first deg2, exhaustive on 15 bits, then deg 3 for 24 bits
 			paramList.push_back(make_pair("f","\"sin(x)\""));
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-15"));
@@ -405,7 +413,7 @@ namespace flopoco{
 			paramList.push_back(make_pair("d","5"));
 			testStateList.push_back(paramList);
 			paramList.clear();
-			
+
 			paramList.push_back(make_pair("f","\"exp(x)\""));
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-16"));
@@ -415,7 +423,7 @@ namespace flopoco{
 			paramList.push_back(make_pair("TestBench n=","-2"));
 			testStateList.push_back(paramList);
 			paramList.clear();
-		 
+
 			paramList.push_back(make_pair("f","\"exp(x)\""));
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-26"));
@@ -425,20 +433,20 @@ namespace flopoco{
 			testStateList.push_back(paramList);
 
 		}
-		else     
+		else
 		{
 				// finite number of random test computed out of index
-		}	
+		}
 
 		return testStateList;
 	}
 
-	
+
 	OperatorPtr FixFunctionByPiecewisePoly::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
 		int lsbIn, msbOut, lsbOut, d;
 		string f;
 		double approxErrorBudget;
-		UserInterface::parseString(args, "f", &f); 
+		UserInterface::parseString(args, "f", &f);
 		UserInterface::parseInt(args, "lsbIn", &lsbIn);
 		UserInterface::parseInt(args, "msbOut", &msbOut);
 		UserInterface::parseInt(args, "lsbOut", &lsbOut);
@@ -457,14 +465,14 @@ namespace flopoco{
                         msbOut(int): weight of output MSB;\
                         lsbOut(int): weight of output LSB;\
                         d(int): degree of the polynomial;\
-                        approxErrorBudget(real)=0.25: error budget in ulp for the approximation, between 0 and 0.5",                        
+                        approxErrorBudget(real)=0.25: error budget in ulp for the approximation, between 0 and 0.5",
 											 "This operator uses a table for coefficients, and Horner evaluation with truncated multipliers sized just right.<br>For more details, see <a href=\"bib/flopoco.html#DinJolPas2010-poly\">this article</a>.",
 											 FixFunctionByPiecewisePoly::parseArguments,
 											 FixFunctionByPiecewisePoly::unitTest
 											 ) ;
-		
+
 	}
 
 }
-	
+
 

@@ -7,7 +7,7 @@
 
 #ifdef HAVE_PAGLIB
 
-#include "pag_lib/adder_graph.h"
+#include "pagsuite/adder_graph.h"
 #include "utils.hpp"
 #include "Target.hpp"
 #include "Operator.hpp"
@@ -20,6 +20,7 @@
 
 using namespace std;
 using namespace flopoco;
+using namespace PAGSuite;
 
 namespace ConstMultPAG_TYPES {
     enum NODETYPE{

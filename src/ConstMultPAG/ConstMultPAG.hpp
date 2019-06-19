@@ -9,7 +9,7 @@
 
 #include "Operator.hpp"
 #include "utils.hpp"
-#include "pag_lib/adder_graph.h"
+#include "pagsuite/adder_graph.h"
 #include "ConstMultPAG_types.hpp"
 
 using namespace std;

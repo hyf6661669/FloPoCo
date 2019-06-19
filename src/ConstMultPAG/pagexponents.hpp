@@ -8,10 +8,11 @@
 //typedef long long int int64_t;
 //typedef long long int int_t;
 
-#include "rpag/compute_successor_set.h"
-#include "rpag/types.h"
+#include "pagsuite/compute_successor_set.h"
+#include "pagsuite/types.h"
 
 using namespace std;
+using namespace PAGSuite;
 
 bool getExponents(int_t a, int_t b, int_t c, int *eA, int *eB, int *signA, int *signB);
 //bool getExponents(int_t &a, int_t &b, int_t &w, int *eA, int *eB, int *signA, int *signB);

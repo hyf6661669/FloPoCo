@@ -166,7 +166,7 @@ void ConstMultPAG::ProcessConstMultPAG(Target* target, string pipelined_realizat
     {
         REPORT( INFO,  "check graph...")
                 pipelined_adder_graph.check_and_correct(pipelined_realization_str);
-        pipelined_adder_graph.drawdot("pag_input_graph.dot",true);
+        pipelined_adder_graph.drawdot("pag_input_graph.dot");
 
         noOfConfigurations = (*pipelined_adder_graph.nodes_list.begin())->output_factor.size();
         noOfInputs = (*pipelined_adder_graph.nodes_list.begin())->output_factor[0].size();

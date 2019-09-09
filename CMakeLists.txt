@@ -426,12 +426,11 @@ TARGET_LINK_LIBRARIES(fp2bin ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB} FloPoCoLib)
 ADD_EXECUTABLE(bin2fp src/Tools/bin2fp  src/utils)
 TARGET_LINK_LIBRARIES(bin2fp ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB} FloPoCoLib)
 
+ADD_EXECUTABLE(posit2ieee src/Tools/posit2ieee.cpp  src/utils)
+TARGET_LINK_LIBRARIES(posit2ieee ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB} FloPoCoLib)
+
 ADD_EXECUTABLE(ieee2bin src/Tools/ieee2bin  src/utils)
 TARGET_LINK_LIBRARIES(ieee2bin ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB} FloPoCoLib )  
-  
-
-ADD_EXECUTABLE(bin2ieee src/Tools/bin2ieee  src/utils)
-TARGET_LINK_LIBRARIES(bin2ieee ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB} FloPoCoLib)
 
 ADD_EXECUTABLE(longacc2fp src/Tools/longacc2fp  src/utils)
 TARGET_LINK_LIBRARIES(longacc2fp ${MPFR_LIB} ${GMP_LIB} ${GMPXX_LIB} FloPoCoLib)

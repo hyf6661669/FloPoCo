@@ -68,5 +68,7 @@ PIF2Fix
 PositExp
 PositFunctionByTable
 Posit2Posit
+PositDecoder
+PositMult
 
 FixFunctionByVaryingPiecewisePoly

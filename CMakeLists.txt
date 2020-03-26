@@ -136,6 +136,7 @@ FIND_LIBRARY(BOOST_RANDOM_LIB
   DOC "Directory of the boost random library"
   )
 
+# Is this header only?
 #IF ( BOOST_RANDOM_H AND BOOST_RANDOM_LIB )
 IF ( BOOST_RANDOM_H )
   SET(BOOST_RANDOM_FOUND TRUE)
@@ -146,7 +147,8 @@ ENDIF ( BOOST_RANDOM_H )
 IF ( BOOST_RANDOM_FOUND )
   MESSAGE ( STATUS "Found boost random : ${BOOST_RANDOM_H},${BOOST_RANDOM_LIB}" )
 ELSE ( BOOST_RANDOM_FOUND )
-  MESSAGE ( STATUS "Could not find boost random (found: ${BOOST_RANDOM_H},${BOOST_RANDOM_LIB})")
+#  MESSAGE ( STATUS "Could not find boost random (found: ${BOOST_RANDOM_H},${BOOST_RANDOM_LIB})")
+  MESSAGE ( FATAL_ERROR "Could not find headers for boost random (found: ${BOOST_RANDOM_H})")
 ENDIF ( BOOST_RANDOM_FOUND )
 
 # Detect Sollya

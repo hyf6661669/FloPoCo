@@ -2835,8 +2835,8 @@ namespace flopoco{
 				out << i->getName() << "@" << i->getCycle() << " ";
 			}
 		}
-		REPORT(DETAILED, "Input timing:  " << in.str());
-		REPORT(DETAILED, "Output timing: " << out.str());
+		REPORT(DEBUG, "Input timing:  " << in.str());
+		REPORT(DEBUG, "Output timing: " << out.str());
 		
 		int maxInputCycle  = -1;
 		int maxOutputCycle = -1;

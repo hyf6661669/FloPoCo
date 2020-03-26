@@ -1,6 +1,7 @@
 #include "IntConstMultShiftAdd.hpp"
 
-#if defined(HAVE_PAGLIB) && defined(HAVE_RPAGLIB) && defined(HAVE_SCALP)
+#if defined(HAVE_PAGLIB)
+//&& defined(HAVE_RPAGLIB) && defined(HAVE_SCALP)
 
 #include <iostream>
 #include <sstream>
@@ -115,8 +116,10 @@ void IntConstMultShiftAdd::ProcessIntConstMultShiftAdd(
 
 			map<pair<mpz_class, int>, vector<int> > wordSizeMap;
 
+#if defined(HAVE_PAGLIB) && defined(HAVE_SCALP)
 			WordLengthCalculator wlc = WordLengthCalculator(pipelined_adder_graph, wIn, epsilon, target);
 			wordSizeMap = wlc.optimizeTruncation();
+
 			REPORT(INFO, "Finished computing word sizes of truncated MCM");
 			if(UserInterface::verbose >= INFO)
 			{
@@ -129,6 +132,9 @@ void IntConstMultShiftAdd::ProcessIntConstMultShiftAdd(
 			}
 
 			truncationReg = IntConstMultShiftAdd_TYPES::TruncationRegister(wordSizeMap);
+#else
+            THROWERROR("The word length's in IntConstMultShiftAdd can not be obtained without ScaLP library, please build with ScaLP library.");
+#endif
 		}
 
 		REPORT( DETAILED, "truncationReg is " << truncationReg.convertToString());

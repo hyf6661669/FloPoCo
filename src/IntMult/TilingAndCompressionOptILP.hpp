@@ -36,7 +36,7 @@ public:
         BitHeap* bitheap);
 
     void solve() override;
-    void compressionAlgorithm();
+	void compressionAlgorithm();
 
 private:
     base_multiplier_id_t small_tile_mult_;
@@ -45,16 +45,17 @@ private:
     float occupation_threshold_;
     int dpX, dpY, dpS, wS, dpK, dpC, dpSt, s_max;
     unsigned prodWidth;
-    vector<BaseMultiplierCategory*> tiles;
-    BasicCompressor* flipflop;
+	vector<BaseMultiplierCategory*> tiles;
+
 #ifdef HAVE_SCALP
+    BasicCompressor* flipflop;
     void constructProblem(int s_max);
     bool addFlipFlop();
 
     ScaLP::Solver *solver;
-#endif
 
-        void resizeBitAmount(unsigned int stages);
+    void resizeBitAmount(unsigned int stages);
+#endif
     };
 
 }

@@ -3,7 +3,8 @@
 
 #include "Operator.hpp"
 
-#if defined(HAVE_PAGLIB) && defined(HAVE_RPAGLIB) && defined(HAVE_SCALP)
+#if defined(HAVE_PAGLIB)
+//&& defined(HAVE_RPAGLIB) && defined(HAVE_SCALP)
 
 #include "utils.hpp"
 #include "pagsuite/adder_graph.h"

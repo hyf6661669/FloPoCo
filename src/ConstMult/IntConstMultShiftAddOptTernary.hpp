@@ -12,7 +12,6 @@
 #ifndef IntConstMultShiftAddOptTernary_HPP
 #define IntConstMultShiftAddOptTernary_HPP
 
-#if defined(HAVE_PAGLIB)
 
 #include <vector>
 #include <sstream>
@@ -27,6 +26,7 @@
 
 namespace flopoco{
 
+#if defined(HAVE_PAGLIB)
     class IntConstMultShiftAddOptTernary : public IntConstMultShiftAdd
 	{
 	public:
@@ -39,7 +39,15 @@ namespace flopoco{
 		int coeff;  /**< The constant */
 
 	};
+#else
+    //the minimal interface:
+	class IntConstMultShiftAddOptTernary
+	{
+	public:
+		static void registerFactory();
+	};
+#endif //HAVE_PAGLIB
+
 }
 
-#endif //HAVE_PAGLIB
 #endif

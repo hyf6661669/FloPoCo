@@ -10,7 +10,7 @@
 #endif // HAVE_PAGLIB
 
 namespace flopoco {
-    #ifdef HAVE_PAGLIB
+#if defined(HAVE_PAGLIB) && defined(HAVE_SCALP)
     class WordLengthCalculator {
 
         public:

@@ -9,7 +9,6 @@
   All rights reserved.
 
 */
-#if defined(HAVE_PAGLIB)
 
 #include <iostream>
 #include <sstream>
@@ -33,6 +32,9 @@
 #include <algorithm>
 
 using namespace std;
+
+#if defined(HAVE_PAGLIB)
+
 using namespace PAGSuite;
 
 namespace flopoco{

@@ -3,7 +3,7 @@
 TODO
 
 */
-#ifdef HAVE_SCALP
+#if defined(HAVE_PAGLIB) && defined(HAVE_SCALP)
 
 #include<ScaLP/Solver.h>
 #include<ScaLP/Exception.h>

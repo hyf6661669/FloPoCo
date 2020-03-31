@@ -101,7 +101,7 @@ namespace flopoco {
 		Bit* bit = new Bit(this, name, weight, BitType::free);
 
 		//insert the new bit so that the vector is sorted by bit (cycle, delay)
-		insertBitInColumn(bit, weight-lsb);
+		insertBitInColumn(bit, weight - lsb);
 
 		REPORT(DEBUG, "added bit named "  << bit->getName() << " on column " << weight
 				<< " at cycle=" << bit->signal->getCycle() << " cp=" << bit->signal->getCriticalPath());
@@ -519,7 +519,7 @@ namespace flopoco {
 				for(int w=sMSB; w<=this->msb-weight; w++) {
 					addConstantOneBit(w+weight);
 				}
-				REPORT(FULL, "addSignal: constant string now " << hex << constantBits); 
+				REPORT(FULL, "addSignal: constant string now " << hex << constantBits);
 			}
 		}
 
@@ -745,7 +745,7 @@ namespace flopoco {
 			cerr << "Exception while generating " << fileName.str() << endl;
 		}
 	}
-	
+
 	void BitHeap::startCompression()
 	{
 		if (op->getTarget()->generateFigures())

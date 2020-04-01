@@ -182,9 +182,9 @@ namespace flopoco{
 
 					p = new BasicPolyApprox(giS, degree, LSB, true);
 					poly.push_back(p);
-					if (approxErrorBound < p->approxErrorBound){
-						REPORT(DEBUG, "   new approxErrorBound=" << p->approxErrorBound );
-						approxErrorBound = p->approxErrorBound;
+					if (approxErrorBound < p->getApproxErrorBound()){
+						REPORT(DEBUG, "   new approxErrorBound=" << p->getApproxErrorBound() );
+						approxErrorBound = p->getApproxErrorBound();
 					}
 					if (approxErrorBound>targetAccuracy){
 						break;
@@ -193,18 +193,18 @@ namespace flopoco{
 					// Now compute the englobing MSB for each coefficient
 					for (int j=0; j<=degree; j++) {
 						// if the coeff is zero, we can set its MSB to anything, so we exclude this case
-						if (  (!p->coeff[j]->isZero())  &&  (p->coeff[j]->MSB > MSB[j])  )
-							MSB[j] = p->coeff[j]->MSB;
+						if (  (!p->getCoeff(j)->isZero())  &&  (p->getCoeff(j)->MSB > MSB[j])  )
+							MSB[j] = p->getCoeff(j)->MSB;
 					}
 					
 					// Now set the MSB and LSB of the zero coefficients, for consistency
 					// This prevents a future crash in this case
 					for (int j=0; j<=degree; j++) {
 						// if the coeff is zero, we can set its MSB to anything, so we exclude this case
-						if (p->coeff[j]->isZero()) {
-							p->coeff[j]->MSB = MSB[j]; // before that it was set arbitrary to 1
-							p->coeff[j]->LSB = LSB; // before that it was set arbitrary to 0
-							p->coeff[j]->width = MSB[j]-LSB+1;
+						if (p->getCoeff(j)->isZero()) {
+							p->getCoeff(j)->MSB = MSB[j]; // before that it was set arbitrary to 1
+							p->getCoeff(j)->LSB = LSB; // before that it was set arbitrary to 0
+							p->getCoeff(j)->width = MSB[j]-LSB+1;
 						}
 					}
 					
@@ -241,9 +241,9 @@ namespace flopoco{
 			// TODO? we could also check if one of the coeffs is always positive or negative, and optimize generated code accordingly
 			for (int i=0; i<nbIntervals; i++) {
 				for (int j=0; j<=degree; j++) {
-					// REPORT(DEBUG "Resizing MSB of coeff " << j << " of poly " << i << " : from " << poly[i] -> coeff[j] -> MSB << " to " <<  MSB[j]);
-					poly[i] -> coeff[j] -> changeMSB(MSB[j]);
-					// REPORT(DEBUG, "   Now  " << poly[i] -> coeff[j] -> MSB);
+					// REPORT(DEBUG "Resizing MSB of coeff " << j << " of poly " << i << " : from " << poly[i] -> getCoeff(j) -> MSB << " to " <<  MSB[j]);
+					poly[i] -> getCoeff(j) -> changeMSB(MSB[j]);
+					// REPORT(DEBUG, "   Now  " << poly[i] -> getCoeff(j) -> MSB);
 				}
 			}
 
@@ -277,7 +277,7 @@ namespace flopoco{
 
 	mpz_class PiecewisePolyApprox::getCoeff(int i, int d){
 		BasicPolyApprox* p = poly[i];
-		FixConstant* c = p->coeff[d];
+		FixConstant* c = p->getCoeff(d);
 		return c->getBitVectorAsMPZ();
 	}
 
@@ -318,7 +318,7 @@ namespace flopoco{
 		{
 			for (int j=0; j<=degree; j++)
 			{
-				cacheFile <<  poly[i] -> coeff[j] -> getBitVectorAsMPZ() << endl;
+				cacheFile <<  poly[i] -> getCoeff(j) -> getBitVectorAsMPZ() << endl;
 			}
 		}
 	}
@@ -360,10 +360,10 @@ namespace flopoco{
 	void PiecewisePolyApprox::checkCoefficientsSign()
 	{
 		for (int j=0; j<=degree; j++) {
-			mpz_class mpzsign = (poly[0]->coeff[j]->getBitVectorAsMPZ()) >> (MSB[j]-LSB);
+			mpz_class mpzsign = (poly[0]->getCoeff(j)->getBitVectorAsMPZ()) >> (MSB[j]-LSB);
 			coeffSigns.push_back((mpzsign==0?+1:-1));
 			for (int i=1; i<(1<<alpha); i++) {
-				mpzsign = (poly[i]->coeff[j]->getBitVectorAsMPZ()) >> (MSB[j]-LSB);
+				mpzsign = (poly[i]->getCoeff(j)->getBitVectorAsMPZ()) >> (MSB[j]-LSB);
 				int sign = (mpzsign==0 ? 1 : -1);
 				if (sign != coeffSigns[j])
 					coeffSigns[j] = 0;

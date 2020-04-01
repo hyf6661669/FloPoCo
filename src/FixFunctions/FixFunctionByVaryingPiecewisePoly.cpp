@@ -105,7 +105,7 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 	      			
 		// Resize its MSB to the one input by the user. 
 		for (int i=0; i<nbIntervals; i++) {
-		  polyApprox -> poly[i] -> coeff[0] -> changeMSB(msbOut);
+		  polyApprox -> poly[i] -> getCoeff(0) -> changeMSB(msbOut);
 		}
 		polyApprox -> MSB[0] = msbOut;
 
@@ -327,7 +327,7 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 		alpha = intlog2(polyApprox -> nbInterval);
 		for (int i=0; i< polyApprox -> nbInterval; i++){
 			// initialize the vectors with sigma_d = a_d
-			FixConstant* sigma = polyApprox -> poly[i] -> coeff[degree];
+			FixConstant* sigma = polyApprox -> poly[i] -> getCoeff(degree);
 			sollya_obj_t sigmaS = sollya_lib_constant(sigma -> fpValue);
 			int msb = sigma -> MSB;
 			if (msb>sigmaMSB[degree])
@@ -339,7 +339,7 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 				// get the output range of sigma
 				sollya_obj_t pi_jS = sollya_lib_mul(rangeS, sigmaS);
 				sollya_lib_clear_obj(sigmaS);
-				sollya_obj_t a_jS = sollya_lib_constant(polyApprox -> poly[i] -> coeff[j] -> fpValue);
+				sollya_obj_t a_jS = sollya_lib_constant(polyApprox -> poly[i] -> getCoeff(j) -> fpValue);
 				sigmaS = sollya_lib_add(a_jS, pi_jS);
 				sollya_lib_clear_obj(pi_jS);
 				sollya_lib_clear_obj(a_jS);

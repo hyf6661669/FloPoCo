@@ -119,7 +119,7 @@ namespace flopoco{
 			
 			// Resize its MSB to the one input by the user. 
 			for (int i=0; i<(1<<alpha); i++) {
-				polyApprox -> poly[i] -> coeff[0] -> changeMSB(msbOut);
+				polyApprox -> poly[i] -> getCoeff(0) -> changeMSB(msbOut);
 			}
 			polyApprox -> MSB[0] = msbOut;
 
@@ -281,7 +281,7 @@ namespace flopoco{
 		
 		for (int i=0; i<(1<<polyApprox -> alpha); i++){
 			// initialize the vectors with sigma_d = a_d
-			FixConstant* sigma = polyApprox -> poly[i] -> coeff[degree];
+			FixConstant* sigma = polyApprox -> poly[i] -> getCoeff(degree);
 			sollya_obj_t sigmaS = sollya_lib_constant(sigma -> fpValue);
 			int msb = sigma -> MSB;
 			if (msb>sigmaMSB[degree])
@@ -293,7 +293,7 @@ namespace flopoco{
 				// get the output range of sigma
 				sollya_obj_t pi_jS = sollya_lib_mul(rangeS, sigmaS);
 				sollya_lib_clear_obj(sigmaS);
-				sollya_obj_t a_jS = sollya_lib_constant(polyApprox -> poly[i] -> coeff[j] -> fpValue);
+				sollya_obj_t a_jS = sollya_lib_constant(polyApprox -> poly[i] -> getCoeff(j) -> fpValue);
 				sigmaS = sollya_lib_add(a_jS, pi_jS);
 				sollya_lib_clear_obj(pi_jS);
 				sollya_lib_clear_obj(a_jS);

@@ -400,4 +400,19 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 		REPORT(DETAILED, debugstring.str());
 	}
 
+	// should be computed by one of the constructors, but never set otherwise
+	int  BasicPolyApprox::getDegree(){
+		return degree;
+	}
+
+	
+	double BasicPolyApprox::getApproxErrorBound(){
+		return approxErrorBound;
+	}
+
+	FixConstant* BasicPolyApprox::getCoeff(int i){
+		return coeff[i];
+	}
+
+	
 } //namespace

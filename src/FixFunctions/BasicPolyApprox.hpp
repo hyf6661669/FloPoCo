@@ -101,23 +101,25 @@ namespace flopoco{
 
 		virtual ~BasicPolyApprox();
 
+		/** the degree of this polynomial approximation */ 
+		int getDegree();
+
+		/** retrieve the bound on approximation error for this polynomial approximation */ 
+		double getApproxErrorBound();
+
+		/** retrieve the i-th coefficient  */ 
+		FixConstant* getCoeff(int i);
+		
+		static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);
+
+		static void registerFactory(); /**< For debug mostly */
+
+
+
 
 		/** A wrapper for Sollya guessdegree
 		 */
 		static	void guessDegree(sollya_obj_t fS, sollya_obj_t rangeS, double targetAccuracy, int* degreeInfP, int* degreeSupP);
-
-
-		static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);
-
-		static void registerFactory();
-
-
-		vector<FixConstant*> coeff;       /**< polynomial coefficients in a hardware-ready form */
-		int degree;                       /**< degree of the polynomial approximation */
-		double approxErrorBound;          /**< guaranteed upper bound on the approx error of the approximation provided. Should be smaller than targetAccuracy */
-		int LSB;                          /**< weight of the LSB of the polynomial approximation. Also weight of the LSB of each constant, since x \in [0,1) */
-		FixFunction *f;                   /**< The function to be approximated */
-
 	private:
 		/** initialization of various constant objects for Sollya
 		 * */
@@ -138,6 +140,11 @@ namespace flopoco{
 		void buildFixFormatVector();
 
 
+		FixFunction *f;                   /**< The function to be approximated */
+		int degree;                       /**< degree of the polynomial approximation */
+		vector<FixConstant*> coeff;       /**< polynomial coefficients in a hardware-ready form */
+		double approxErrorBound;          /**< guaranteed upper bound on the approx error of the approximation provided. Should be smaller than targetAccuracy */
+		int LSB;                          /**< weight of the LSB of the polynomial approximation. Also weight of the LSB of each constant, since x \in [0,1) */
 		sollya_obj_t polynomialS;         /**< The polynomial approximating it */
 
 		string srcFileName;               /**< useful only to enable same kind of reporting as for FloPoCo operators. */

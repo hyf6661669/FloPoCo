@@ -73,38 +73,38 @@ namespace flopoco{
 		// Polynomial approximation
 		double targetApproxError = exp2(lsbOut-2);
 		poly = new BasicPolyApprox(f, targetApproxError, -1);
-		double approxErrorBound = poly->approxErrorBound;
+		double approxErrorBound = poly->getApproxErrorBound();
 
-		int degree = poly->degree;
-		if(msbOut < poly->coeff[0]->MSB) {
+		int degree = poly->getDegree();
+		if(msbOut < poly->getCoeff(0)->MSB) {
 			REPORT(INFO, "user-provided msbO smaller that the MSB of the constant coefficient, I am worried it won't work");
 		}
 		vhdl << tab << "-- With the following polynomial, approx error bound is " << approxErrorBound << " ("<< log2(approxErrorBound) << " bits)" << endl;
 
 		// Adding the round bit to the degree-0 coeff
-		int oldLSB0 = poly->coeff[0]->LSB;
-		poly->coeff[0]->addRoundBit(lsbOut-1);
+		int oldLSB0 = poly->getCoeff(0)->LSB;
+		poly->getCoeff(0)->addRoundBit(lsbOut-1);
 		// The following is probably dead code. It was a fix for cases
 		// where BasicPolyApprox found LSB=lsbOut, hence the round bit is outside of MSB[0]..LSB
 		// In this case recompute the poly, it would give better approx error 
-		if(oldLSB0 != poly->coeff[0]->LSB) {
+		if(oldLSB0 != poly->getCoeff(0)->LSB) {
 			// deliberately at info level, I want to see if it happens
-			REPORT(INFO, "   addRoundBit has changed the LSB to " << poly->coeff[0]->LSB << ", recomputing the coefficients");
+			REPORT(INFO, "   addRoundBit has changed the LSB to " << poly->getCoeff(0)->LSB << ", recomputing the coefficients");
 			for(int i=0; i<=degree; i++) {
-				REPORT(DEBUG, poly->coeff[i]->report());
+				REPORT(DEBUG, poly->getCoeff(i)->report());
 			}
-			poly = new BasicPolyApprox(f->fS, degree, poly->coeff[0]->LSB, signedIn);
+			poly = new BasicPolyApprox(f->fS, degree, poly->getCoeff(0)->LSB, signedIn);
 		}
 
 
 		for(int i=0; i<=degree; i++) {
-			coeffMSB.push_back(poly->coeff[i]->MSB);
-			coeffLSB.push_back(poly->coeff[i]->LSB);
-			coeffSize.push_back(poly->coeff[i]->MSB - poly->coeff[i]->LSB +1);
+			coeffMSB.push_back(poly->getCoeff(i)->MSB);
+			coeffLSB.push_back(poly->getCoeff(i)->LSB);
+			coeffSize.push_back(poly->getCoeff(i)->MSB - poly->getCoeff(i)->LSB +1);
 		}
 
 		for(int i=degree; i>=0; i--) {
-			FixConstant* ai = poly->coeff[i];
+			FixConstant* ai = poly->getCoeff(i);
 			//			REPORT(DEBUG, " a" << i << " = " << ai->getBitVector() << "  " << printMPFR(ai->fpValue)  );
 			//vhdl << tab << "-- " << join("A",i) <<  ": " << ai->report() << endl;
 			vhdl << tab << declareFixPoint(join("A",i), true, coeffMSB[i], coeffLSB[i])
@@ -132,7 +132,7 @@ namespace flopoco{
 																						lsbOut,
 																						degree, 
 																						coeffMSB, 
-																						poly->coeff[0]->LSB // it is the smaller LSB
+																						poly->getCoeff(0)->LSB // it is the smaller LSB
 																						);
 		vhdl << instance(h, "horner", false);
 		

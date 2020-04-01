@@ -26,10 +26,8 @@ using namespace std;
 
 		 This is a simplified version of the computation in the ASAP 2010 paper, simplified because x is in [-1,1)
 
-		 WRT the ASAP paper,
-		 1/we want to use FixMultAdd operations:
-		 \sigma_d  =  a_d
-		 \sigma_i  =  a_i + x^T_i * \sigma_{i+1}     \forall i \in \{ 0...d-1\}
+		 S_d  =  a_d
+		 S_i  =  a_i + x^C_i * S_{i+1}     \forall i \in \{ 0...d-1\}
 		 p(y)      =  \sigma_0
 
 
@@ -57,7 +55,7 @@ using namespace std;
 		 We still should consider the DSP granularity to truncate x to the smallest DSP-friendly size larger than |sigma_{j-1}|
 		 TODO
 
-		 So all that remains is to compute the parameters of the FixMultAdd.
+a 		 So all that remains is to compute the parameters of the FixMultAdd.
 		 We need
 		 * size of \sigma_d: MSB is that of  a_{d-j}, plus 1 for overflows (sign extended).
 							 LSB is lsbMult[i]
@@ -132,7 +130,7 @@ namespace flopoco{
 	
 	void FixHornerEvaluator::initialize(){
 		setNameWithFreqAndUID("FixHornerEvaluator");		
-		setCopyrightString("F. de Dinechin (2014)");
+		setCopyrightString("F. de Dinechin (2014-2019)");
 		srcFileName="FixHornerEvaluator";
 		if(!signedXandCoeffs)
 			REPORT(0,"signedXandCoeffs=false, this code has probably never been tested in this case. If it works, please remove this warning. If it doesn't, we deeply apologize and invite you to fix it.");
@@ -224,7 +222,7 @@ namespace flopoco{
 																				 int degree_, vector<int> msbCoeff_, int lsbCoeff_,
 																				 double roundingErrorBudget_,
 																				 bool signedXandCoeffs_,
-																				 bool finalRounding_, map<string, double> inputDelays)
+																				 bool finalRounding_)
 	: Operator(parentOp, target), degree(degree_), lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_),
 		msbCoeff(msbCoeff_), lsbCoeff(lsbCoeff_),
 		roundingErrorBudget(roundingErrorBudget_) ,signedXandCoeffs(signedXandCoeffs_),
@@ -265,7 +263,7 @@ namespace flopoco{
 																				 vector<int> sigmaSign_, vector<int> sigmaMSB_,
 																				 double roundingErrorBudget_,
 																				 bool signedXandCoeffs_,
-																				 bool finalRounding_, map<string, double> inputDelays)
+																				 bool finalRounding_)
 	: Operator(parentOp, target), degree(degree_), lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_),
 		msbCoeff(msbCoeff_), lsbCoeff(lsbCoeff_),
 		roundingErrorBudget(roundingErrorBudget_) ,

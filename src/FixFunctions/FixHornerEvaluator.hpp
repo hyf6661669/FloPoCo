@@ -53,8 +53,7 @@ namespace flopoco{
 											 int lsbCoeff,
 											 double roundingErrorBudget=-1,
 											 bool signedXandCoeffs=true, 
-											 bool finalRounding=true,
-											 map<string, double> inputDelays = emptyDelayMap);
+											 bool finalRounding=true);
 
 		
 		/** An optimized constructor if the caller has been able to compute the signs and MSBs of the sigma terms */
@@ -68,8 +67,7 @@ namespace flopoco{
 											 vector<int> sigmaSign, vector<int> sigmaMSB,
 											 double roundingErrorBudget=-1,
 											 bool signedXandCoeffs=true, 
-											 bool finalRounding=true,
-											 map<string, double> inputDelays = emptyDelayMap);
+											 bool finalRounding=true);
 
     ~FixHornerEvaluator();
 		

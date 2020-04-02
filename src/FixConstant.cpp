@@ -95,7 +95,7 @@ namespace flopoco{
 				h += (mpz_class(1)) << (width);
 			}
 			else {
-				THROWERROR("In getBitVectorAsMPZ, negative constant " << printMPFR(fpValue) << " cannot be represented as a signed constant");
+				THROWERROR("In getBitVectorAsMPZ, negative constant " << printMPFR(fpValue) << " cannot be represented as an unsigned constant");
 			}
 		}
 		mpfr_clear(x);
@@ -124,8 +124,31 @@ namespace flopoco{
 			// Nothing else to do! the new size includes the old one
 		}
 		else{
-			// TODO: check that the number fits its new size, and bork otherwise.
-			throw(string("FixConstant::changeMSB: sorry Dave, can't do that, it reduces the size thus changing the constant.\n  Debug info: constant before changeMSB is "+report() + "     newMSB=" +to_string(newMSB) ));
+			// check that the number fits its new size, and bork otherwise.
+			mpfr_t minval, maxval; // with the new MSB
+			mpfr_init2(minval, MSB-LSB+1); // the old ones 
+			mpfr_init2(maxval, MSB-LSB+1); // the old ones 
+			if(isSigned){ // newMSB is the sign bit
+				mpfr_set_d(minval, 1.0, MPFR_RNDN);
+				mpfr_mul_2si(minval, minval, LSB, MPFR_RNDN); // 2^LSB
+				mpfr_set_d(maxval, 1.0, MPFR_RNDN);
+				mpfr_mul_2si(maxval, maxval, newMSB, MPFR_RNDN); // 2^newMSB
+				mpfr_sub(maxval, maxval, minval, MPFR_RNDN); // 2^newMSB - 2^LSB
+				mpfr_set_d(minval, -1.0, MPFR_RNDN);
+				mpfr_mul_2si(minval, minval, newMSB, MPFR_RNDN); // -2^newMSB
+			}
+			else{
+				mpfr_set_d(minval, 0.0, MPFR_RNDN);
+				mpfr_set_d(maxval, 1.0, MPFR_RNDN);
+				mpfr_mul_2si(maxval, maxval, newMSB+1, MPFR_RNDN); // 2^(newMSB+1)
+			}
+			if((mpfr_cmp(fpValue,maxval)>0) || (mpfr_cmp(fpValue,minval)<0)) {
+				throw(string("FixConstant::changeMSB: sorry Dave, can't do that, changeMSB would change the constant.\n  Debug info: constant before changeMSB is "+report() + "     newMSB=" +to_string(newMSB) ));
+			}
+			else { // OK, 
+				MSB = newMSB;
+				width = (MSB-LSB+1);
+			}
 		}
 	}
 
@@ -180,7 +203,7 @@ namespace flopoco{
 
 	std::string FixConstant::report(){
 		ostringstream s;
-		s << "(MSB=" << MSB << ", LSB=" << LSB << ")   "<< printMPFR(fpValue);
+		s << "("<< (isSigned?"s":"u") << ", MSB=" << MSB << ", LSB=" << LSB << ")   "<< printMPFR(fpValue);
 		return s.str();
 	}
 

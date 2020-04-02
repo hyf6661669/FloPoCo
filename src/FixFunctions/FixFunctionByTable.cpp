@@ -20,7 +20,7 @@ using namespace std;
 
 namespace flopoco{
 
-	FixFunctionByTable::FixFunctionByTable(OperatorPtr parentOp_, Target* target_, string func_, bool signedIn_, int lsbIn_, int msbOut_, int lsbOut_):
+	FixFunctionByTable::FixFunctionByTable(OperatorPtr parentOp_, Target* target_, string func_, bool signedIn_, int lsbIn_, int lsbOut_):
 		Table(parentOp_, target_)
 	{
 		srcFileName="FixFunctionByTable";
@@ -29,7 +29,7 @@ namespace flopoco{
 		setNameWithFreqAndUID(name.str());
 		setCopyrightString("Florent de Dinechin (2010-2018)");
 
-		f = new FixFunction(func_, signedIn_, lsbIn_, msbOut_, lsbOut_);
+		f = new FixFunction(func_, signedIn_, lsbIn_, lsbOut_);
 		addHeaderComment("-- Evaluator for " +  f-> getDescription() + "\n");
 		wIn = f->wIn;
 		wOut = f->wOut;
@@ -62,14 +62,13 @@ namespace flopoco{
 	OperatorPtr FixFunctionByTable::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args)
 	{
 		bool signedIn;
-		int lsbIn, msbOut, lsbOut;
+		int lsbIn, lsbOut;
 		string f;
 		UserInterface::parseString(args, "f", &f);
 		UserInterface::parseBoolean(args, "signedIn", &signedIn);
 		UserInterface::parseInt(args, "lsbIn", &lsbIn);
-		UserInterface::parseInt(args, "msbOut", &msbOut);
 		UserInterface::parseInt(args, "lsbOut", &lsbOut);
-		return new FixFunctionByTable(parentOp, target, f, signedIn, lsbIn, msbOut, lsbOut);
+		return new FixFunctionByTable(parentOp, target, f, signedIn, lsbIn, lsbOut);
 	}
 
 	void FixFunctionByTable::registerFactory()
@@ -81,7 +80,6 @@ namespace flopoco{
 											 "f(string): function to be evaluated between double-quotes, for instance \"exp(x*x)\";\
 signedIn(bool): if true the function input range is [-1,1), if false it is [0,1);\
 lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
-msbOut(int): weight of output MSB;\
 lsbOut(int): weight of output LSB;",
 											 "This operator uses a table to store function values.",
 											 FixFunctionByTable::parseArguments

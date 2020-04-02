@@ -58,15 +58,14 @@ namespace flopoco
 	 @brief The FixFunctionByMultipartiteTable constructor
 	 @param[string] functionName_		a string representing the function, input range should be [0,1) or [-1,1)
 	 @param[int]    lsbIn_		input LSB weight
-	 @param[int]    msbOut_		output MSB weight, used to determine wOut
 	 @param[int]    lsbOut_		output LSB weight
 	 @param[int]	nbTOi_	number of tables which will be created
 	 @param[bool]	signedIn_	true if the input range is [-1,1)
 	 */
-	FixFunctionByMultipartiteTable::FixFunctionByMultipartiteTable(OperatorPtr parentOp, Target *target, string functionName_, int nbTOi_, bool signedIn_, int lsbIn_, int msbOut_, int lsbOut_, bool compressTIV_):
+	FixFunctionByMultipartiteTable::FixFunctionByMultipartiteTable(OperatorPtr parentOp, Target *target, string functionName_, int nbTOi_, bool signedIn_, int lsbIn_, int lsbOut_, bool compressTIV_):
 		Operator(parentOp, target), nbTOi(nbTOi_), compressTIV(compressTIV_)
 {
-		f = new FixFunction(functionName_, signedIn_, lsbIn_, msbOut_, lsbOut_);
+		f = new FixFunction(functionName_, signedIn_, lsbIn_, lsbOut_);
 		epsilonT = 1.0 / (1<<(f->wOut+1));
 
 		srcFileName="FixFunctionByMultipartiteTable";
@@ -77,10 +76,10 @@ namespace flopoco
 
 		setCopyrightString("Franck Meyer, Florent de Dinechin (2015)");
 		addHeaderComment("-- Evaluator for " +  f->getDescription() + "\n");
-		REPORT(DETAILED, "Entering: FixFunctionByMultipartiteTable \"" << functionName_ << "\" " << nbTOi_ << " " << signedIn_ << " " << lsbIn_ << " " << msbOut_ << " " << lsbOut_ << " ");
+		REPORT(DETAILED, "Entering: FixFunctionByMultipartiteTable \"" << functionName_ << "\" " << nbTOi_ << " " << signedIn_ << " " << lsbIn_  << " " << lsbOut_ << " ");
 		int wX=-lsbIn_;
 		addInput("X", wX);
-		int outputSize = msbOut_-lsbOut_+1; // TODO finalRounding would impact this line
+		int outputSize = f->wOut; // TODO finalRounding would impact this line
 		addOutput("Y" ,outputSize , 2);
 		useNumericStd();
 
@@ -725,7 +724,6 @@ namespace flopoco
 					paramList.push_back(make_pair("signedIn", to_string(signedIn[i]) ) );
 					paramList.push_back(make_pair("lsbIn", to_string(lsbIn)));
 					paramList.push_back(make_pair("lsbOut", to_string(lsbOut)));
-					paramList.push_back(make_pair("msbOut", to_string(msbOut[i])));
 					if(lsbIn>-14)
 						paramList.push_back(make_pair("TestBench n=","-2"));
 					testStateList.push_back(paramList);
@@ -745,15 +743,14 @@ namespace flopoco
 	OperatorPtr FixFunctionByMultipartiteTable::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
 		string f;
 		bool signedIn, compressTIV;
-		int lsbIn, lsbOut, msbOut, nbTO;
+		int lsbIn, lsbOut, nbTO;
 		UserInterface::parseString(args, "f", &f);
 		UserInterface::parsePositiveInt(args, "nbTO", &nbTO);
 		UserInterface::parseInt(args, "lsbIn", &lsbIn);
-		UserInterface::parseInt(args, "msbOut", &msbOut);
 		UserInterface::parseInt(args, "lsbOut", &lsbOut);
 		UserInterface::parseBoolean(args, "signedIn", &signedIn);
 		UserInterface::parseBoolean(args, "compressTIV", &compressTIV);
-		return new FixFunctionByMultipartiteTable(parentOp, target, f, nbTO, signedIn, lsbIn, msbOut, lsbOut, compressTIV);
+		return new FixFunctionByMultipartiteTable(parentOp, target, f, nbTO, signedIn, lsbIn, lsbOut, compressTIV);
 	}
 
 	void FixFunctionByMultipartiteTable::registerFactory(){
@@ -764,7 +761,6 @@ namespace flopoco
 						   "f(string): function to be evaluated between double-quotes, for instance \"exp(x*x)\";\
 signedIn(bool): if true the function input range is [-1,1), if false it is [0,1);\
 lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
-msbOut(int): weight of output MSB;\
 lsbOut(int): weight of output LSB;\
 nbTO(int)=0: number of Tables of Offsets, between 1 (bipartite) to 4 or 5 for large input sizes -- 0: let the tool choose ;\
 compressTIV(bool)=true: use Hsiao TIV compression, or not",

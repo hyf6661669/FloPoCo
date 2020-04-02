@@ -3,6 +3,7 @@
 
 ** FixFunction
     Centralizes Sollya parsing and evaluation to various formats, including an emulate() that works for all FixFunctionBy*
+		Also responsible for computing msbOut
 
 ** FixFunctionByTable: a flopoco operator that is the most basic implementation of a FixFunction
 

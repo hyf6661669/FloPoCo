@@ -24,7 +24,6 @@ namespace flopoco{
 		 * The FixFunctionByVaryingPiecewisePoly constructor
 			 @param[string] func    a string representing the function, input range should be [0,1]
 			 @param[int]    lsbIn   input LSB weight
-			 @param[int]    msbOut  output MSB weight, used to determine wOut
 			 @param[int]    lsbOut  output LSB weight
 			 @param[int]    degree  degree of polynomial approximation used. Controls the trade-off between tables and multipliers.
 			 @param[bool]   finalRounding: if false, the operator outputs its guard bits as well, saving the half-ulp rounding error. 
@@ -35,7 +34,7 @@ namespace flopoco{
 			 This would require quite a lot of work for non-trivial functions (isolating roots of the derivative etc).
 			 So this is currently left to the user.
 		 */
-		FixFunctionByVaryingPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn, int msbOut, int lsbOut, bool finalRounding = true,  double approxErrorBudget=0.25);
+		FixFunctionByVaryingPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn, int lsbOut, bool finalRounding = true,  double approxErrorBudget=0.25);
 
 		/**
 		 * FixFunctionByVaryingPiecewisePoly destructor

@@ -30,22 +30,23 @@
 
 namespace flopoco {
 
-  VaryingPiecewisePolyApprox::VaryingPiecewisePolyApprox(FixFunction *f_, double targetAccuracy_, int lsbIn_, int msbOut_, int lsbOut_):
-                lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_), f(f_), targetAccuracy(targetAccuracy_)
+  VaryingPiecewisePolyApprox::VaryingPiecewisePolyApprox(FixFunction *f_, double targetAccuracy_, int lsbIn_, int lsbOut_):
+		lsbIn(lsbIn_), msbOut(f->msbOut),  lsbOut(lsbOut_), f(f_),  targetAccuracy(targetAccuracy_)
 	{
-	        degree = 0;
+		degree = 0;
 		needToFreeF = false;
 		srcFileName="VaryingPiecewisePolyApprox"; // should be somehow static but this is too much to ask me
 		build();
 	}
 
 
-  VaryingPiecewisePolyApprox::VaryingPiecewisePolyApprox(string sollyaString_, double targetAccuracy_, int lsbIn_, int msbOut_, int lsbOut_):
-                lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_), targetAccuracy(targetAccuracy_)
+  VaryingPiecewisePolyApprox::VaryingPiecewisePolyApprox(string sollyaString_, double targetAccuracy_, int lsbIn_, int lsbOut_):
+                lsbIn(lsbIn_), lsbOut(lsbOut_), targetAccuracy(targetAccuracy_)
 	{
-	        degree = 0;
+		degree = 0;
 		//  parsing delegated to FixFunction
-		f = new FixFunction(sollyaString_, false /* on [0,1]*/);
+		f = new FixFunction(sollyaString_, false, lsbIn, lsbOut /* on [0,1]*/);
+		msbOut = f->msbOut;
 		needToFreeF = true;
 		srcFileName="VaryingPiecewisePolyApprox"; // should be somehow static but this is too much to ask me
 		build();
@@ -94,6 +95,7 @@ namespace flopoco {
 		if(!cacheFile.is_open())
 		{
 			//********************** Do the work, then write the cache *********************
+			msbOut = f->msbOut;
 			sollya_obj_t fS = f->fS; // no need to free this one
 			sollya_obj_t rangeS;
 
@@ -253,7 +255,7 @@ namespace flopoco {
 			    REPORT(INFO, "No function, oupsie");
 			  buf = (char *)malloc(sz + 1);
 			  sollya_lib_snprintf(buf, sz+1,"%b", giS);
-			  FixFunction* g = new FixFunction(buf, true, -5, msbOut, lsbOut);
+			  FixFunction* g = new FixFunction(buf, true, -5, lsbOut);
 			  for (int i=0; i<(1<<6);i++) {
 			    mpz_class rNorD, ru;
 			    g->eval(mpz_class(i), rNorD, ru, true);
@@ -427,16 +429,14 @@ namespace flopoco {
 		string f;
 		double ta;
 		int lsIn;
-		int msOut;
 		int lsOut;
 
 		UserInterface::parseString(args, "f", &f);
 		UserInterface::parseFloat(args, "targetAcc", &ta);
 		UserInterface::parseInt(args, "lsbIn", &lsIn);
-		UserInterface::parseInt(args, "msbOut", &msOut);
 		UserInterface::parseInt(args, "lsbOut", &lsOut);
 
-		VaryingPiecewisePolyApprox *ppa = new VaryingPiecewisePolyApprox(f, ta, lsIn, msOut, lsOut);
+		VaryingPiecewisePolyApprox *ppa = new VaryingPiecewisePolyApprox(f, ta, lsIn, lsOut);
 		cout << "Accuracy is " << ppa->approxErrorBound << " ("<< log2(ppa->approxErrorBound) << " bits)";
 
 		return NULL;
@@ -454,7 +454,6 @@ namespace flopoco {
 f(string): function to be evaluated between double-quotes, for instance \"exp(x*x)\"; \
 targetAcc(real): the target approximation errror of the polynomial WRT the function;\
 lsbIn(int): input of x;\
-msbOut(int): output of f(x);\
 lsbOut(int): output of f(x)",
 				   "",
 				   VaryingPiecewisePolyApprox::parseArguments

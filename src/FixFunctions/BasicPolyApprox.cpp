@@ -112,11 +112,11 @@ namespace flopoco{
 
 
 	// This is a static (class) method.
-	void BasicPolyApprox::guessDegree(sollya_obj_t fS, sollya_obj_t rangeS, double targetAccuracy, int* degreeInfP, int* degreeSupP) {
+	void BasicPolyApprox::guessDegree(sollya_obj_t fS, sollya_obj_t inputRangeS, double targetAccuracy, int* degreeInfP, int* degreeSupP) {
 		// Accuracy has to be converted to sollya objects
 		// a few constant objects
 		if(DETAILED <= UserInterface::verbose)
-			sollya_lib_printf("> BasicPolyApprox::guessDegree() for function %b on range %b at target accuracy %1.5e\n", fS, rangeS, targetAccuracy);
+			sollya_lib_printf("> BasicPolyApprox::guessDegree() for function %b on range %b at target accuracy %1.5e\n", fS, inputRangeS, targetAccuracy);
 		sollya_obj_t targetAccuracyS = sollya_lib_constant_from_double(targetAccuracy);
 
 		// initial evaluation of the required degree
@@ -132,7 +132,7 @@ namespace flopoco{
 		// 	returns an interval: for common cases, this interval is reduced to a single number (i.e. the minimal degree).
 		// 	But in certain cases, guessdegree does not succeed in finding the minimal degree.
 		// 	In such cases the returned interval is of the form [n,p] such that:
-		sollya_obj_t degreeIntervalS = sollya_lib_guessdegree(fS, rangeS, targetAccuracyS, NULL);
+		sollya_obj_t degreeIntervalS = sollya_lib_guessdegree(fS, inputRangeS, targetAccuracyS, NULL);
 
 		sollya_obj_t degreeInfS = sollya_lib_inf(degreeIntervalS);
 		sollya_obj_t degreeSupS = sollya_lib_sup(degreeIntervalS);
@@ -190,11 +190,11 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 	{
 		// a few constant objects
 		sollya_obj_t fS = f->fS; // no need to free this one
-		sollya_obj_t rangeS = f->rangeS; // no need to free this one
+		sollya_obj_t inputRangeS = f->inputRangeS; // no need to free this one
 
 		// calling the class method guessDegree
 		int degreeSup;
-		guessDegree(fS, rangeS, targetAccuracy, &degree, &degreeSup);
+		guessDegree(fS, inputRangeS, targetAccuracy, &degree, &degreeSup);
 
 
 		// This will be the LSB of the constant (unless extended below)
@@ -270,7 +270,7 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 	void BasicPolyApprox::buildApproxFromDegreeAndLSBs()
 	{
 		sollya_obj_t fS = f->fS; // no need to free this one
-		sollya_obj_t rangeS = f->rangeS; // no need to free this one
+		sollya_obj_t inputRangeS = f->inputRangeS; // no need to free this one
 		sollya_obj_t degreeS = sollya_lib_constant_from_int(degree);
 
 		REPORT(DETAILED, "Trying to build coefficients with LSB=" << LSB);
@@ -287,11 +287,11 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 		sollya_obj_t coeffSizeListS = sollya_lib_parse_string(s.str().c_str());
 		if(DETAILED <= UserInterface::verbose) {
 			sollya_lib_printf("> BasicPolyApprox::buildApproxFromDegreeAndLSBs:    fpminimax(%b, %b, %b, %b, %b, %b);\n",
-												fS, degreeS, coeffSizeListS, rangeS, fixedS, absoluteS);
+												fS, degreeS, coeffSizeListS, inputRangeS, fixedS, absoluteS);
 		}
 
 		// Tadaaa! After all this we may launch fpminimax
-		polynomialS = sollya_lib_fpminimax(fS, degreeS, coeffSizeListS, rangeS, fixedS, absoluteS, NULL);
+		polynomialS = sollya_lib_fpminimax(fS, degreeS, coeffSizeListS, inputRangeS, fixedS, absoluteS, NULL);
 		sollya_lib_clear_obj(coeffSizeListS);
 		if(DETAILED <= UserInterface::verbose)
 			sollya_lib_printf("> BasicPolyApprox::buildBasicPolyApprox: obtained polynomial   %b\n", polynomialS);
@@ -301,17 +301,17 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 		sollya_obj_t supNormAccS = sollya_lib_parse_string("1b-10"); // This is the size of the returned interval... 10^-3 should be enough for anybody
 		if(DETAILED <= UserInterface::verbose) {
 			sollya_lib_printf(">   supnorm(%b, %b, %b, %b, %b);\n",
-												polynomialS, fS, rangeS, absoluteS, supNormAccS);
+												polynomialS, fS, inputRangeS, absoluteS, supNormAccS);
 		}
-		sollya_obj_t supNormRangeS = sollya_lib_supnorm(polynomialS, fS, rangeS, absoluteS, supNormAccS);
-		if(sollya_lib_obj_is_error(supNormRangeS)) {
+		sollya_obj_t supNormInputRangeS = sollya_lib_supnorm(polynomialS, fS, inputRangeS, absoluteS, supNormAccS);
+		if(sollya_lib_obj_is_error(supNormInputRangeS)) {
 			cout <<  ">   Sollya infnorm failed, but do not loose all hope yet: launching dirtyinfnorm:" << endl;
 			sollya_obj_t pminusfS = sollya_lib_sub(polynomialS, fS);
 			if(DETAILED <= UserInterface::verbose) {
 				sollya_lib_printf(">   dirtyinfnorm(%b, %b);\n",
-													pminusfS, rangeS);
+													pminusfS, inputRangeS);
 			}
-			supNormS = sollya_lib_dirtyinfnorm(pminusfS, rangeS);
+			supNormS = sollya_lib_dirtyinfnorm(pminusfS, inputRangeS);
 			sollya_lib_clear_obj(pminusfS);
 			if(sollya_lib_obj_is_error(supNormS)) {
 				ostringstream o;
@@ -320,10 +320,10 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 			}
 		}
 		else{ // supnorm succeeded, we are mostly interested in the sup of the interval
-			supNormS = sollya_lib_sup(supNormRangeS);
+			supNormS = sollya_lib_sup(supNormInputRangeS);
 		}
 		sollya_lib_clear_obj(supNormAccS);
-		sollya_lib_clear_obj(supNormRangeS);
+		sollya_lib_clear_obj(supNormInputRangeS);
 
 		sollya_lib_get_constant_as_double(& approxErrorBound, supNormS);
 		sollya_lib_clear_obj(supNormS);

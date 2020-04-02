@@ -15,7 +15,7 @@ namespace flopoco{
 			 The FixFunctionByTable constructor. For the meaning of the parameters, see FixFunction.hpp
 		 */
 
-		FixFunctionByTable(OperatorPtr parentOp, Target* target, string func, bool signedIn, int lsbIn, int msbOut, int lsbOut);
+		FixFunctionByTable(OperatorPtr parentOp, Target* target, string func, bool signedIn, int lsbIn, int lsbOut);
 
 		/**
 		 * FixFunctionByTable destructor

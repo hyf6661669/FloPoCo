@@ -63,8 +63,8 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 #define DEBUGVHDL 0
 
 
-	FixFunctionByVaryingPiecewisePoly::FixFunctionByVaryingPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn_, int msbOut_, int lsbOut_, bool finalRounding_, double approxErrorBudget_):
-		Operator(parentOp, target), lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_), finalRounding(finalRounding_), approxErrorBudget(approxErrorBudget_){
+	FixFunctionByVaryingPiecewisePoly::FixFunctionByVaryingPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn_, int lsbOut_, bool finalRounding_, double approxErrorBudget_):
+		Operator(parentOp, target), lsbIn(lsbIn_), lsbOut(lsbOut_), finalRounding(finalRounding_), approxErrorBudget(approxErrorBudget_){
 
 		if(finalRounding==false){
 			THROWERROR("FinalRounding=false not implemented yet" );
@@ -74,7 +74,8 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 			THROWERROR("Just tabulate it, x is small enough" );
 		}
 
-		f=new FixFunction(func, false, lsbIn, msbOut, lsbOut); // this will provide emulate etc.
+		f=new FixFunction(func, false, lsbIn, lsbOut); // this will provide emulate etc.
+		msbOut=f->msbOut;
 		
 		srcFileName="FixFunctionByVaryingPiecewisePoly";
 		
@@ -97,7 +98,7 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 		// Build the polynomial approximation
 		double targetAcc= approxErrorBudget*pow(2, lsbOut);
 		REPORT(INFO, "Computing polynomial approximation for target accuracy "<< targetAcc);
-		polyApprox = new VaryingPiecewisePolyApprox(func, targetAcc, lsbIn, msbOut, lsbOut);
+		polyApprox = new VaryingPiecewisePolyApprox(func, targetAcc, lsbIn, lsbOut);
 		bool tabulateRest = polyApprox->tabulateRest;
 		degree = polyApprox->degree;
 		nbIntervals = polyApprox-> nbInterval;
@@ -466,7 +467,6 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 			paramList.push_back(make_pair("f","\"sin(x)\""));
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-15"));
-			paramList.push_back(make_pair("msbOut","4"));
 			paramList.push_back(make_pair("lsbOut","-15"));
 			paramList.push_back(make_pair("TestBench n=","-2"));
 			testStateList.push_back(paramList);
@@ -475,7 +475,6 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 			paramList.push_back(make_pair("f","\"sin(x)\""));
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-25"));
-			paramList.push_back(make_pair("msbOut","4"));
 			paramList.push_back(make_pair("lsbOut","-25"));
 			testStateList.push_back(paramList);
 			paramList.clear();
@@ -484,7 +483,6 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-16"));
 			paramList.push_back(make_pair("lsbOut","-16"));
-			paramList.push_back(make_pair("msbOut","4"));
 			paramList.push_back(make_pair("TestBench n=","-2"));
 			testStateList.push_back(paramList);
 			paramList.clear();
@@ -493,7 +491,6 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-26"));
 			paramList.push_back(make_pair("lsbOut","-26"));
-			paramList.push_back(make_pair("msbOut","4"));
 			testStateList.push_back(paramList);
 
 		}
@@ -507,15 +504,14 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 
 	
 	OperatorPtr FixFunctionByVaryingPiecewisePoly::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
-		int lsbIn, msbOut, lsbOut;
+		int lsbIn, lsbOut;
 		string f;
 		double approxErrorBudget;
 		UserInterface::parseString(args, "f", &f); 
 		UserInterface::parseInt(args, "lsbIn", &lsbIn);
-		UserInterface::parseInt(args, "msbOut", &msbOut);
 		UserInterface::parseInt(args, "lsbOut", &lsbOut);
 		UserInterface::parseFloat(args, "approxErrorBudget", &approxErrorBudget);
-		return new FixFunctionByVaryingPiecewisePoly(parentOp, target, f, lsbIn, msbOut, lsbOut, true, approxErrorBudget);
+		return new FixFunctionByVaryingPiecewisePoly(parentOp, target, f, lsbIn, lsbOut, true, approxErrorBudget);
 	}
 
 	void FixFunctionByVaryingPiecewisePoly::registerFactory(){
@@ -525,7 +521,6 @@ rattrapper les erreurs sur guess degree des fonctions très méchantes
 				   "",
 				   "f(string): function to be evaluated between double-quotes, for instance \"exp(x*x)\";\
                         lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
-                        msbOut(int): weight of output MSB;\
                         lsbOut(int): weight of output LSB;\
                         approxErrorBudget(real)=0.25: error budget in ulp for the approximation, between 0 and 0.5",                        
 				   "This operator uses a table for coefficients, and Horner evaluation with truncated multipliers sized just right.<br>For more details, see <a href=\"bib/flopoco.html#DinJolPas2010-poly\">this article</a>.",

@@ -65,15 +65,15 @@ namespace flopoco{
 #define DEBUGVHDL 0
 
 
-	FixFunctionByPiecewisePoly::FixFunctionByPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn_, int msbOut_, int lsbOut_, int degree_, bool finalRounding_, double approxErrorBudget_):
-		Operator(parentOp, target), degree(degree_), lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_), finalRounding(finalRounding_), approxErrorBudget(approxErrorBudget_){
+	FixFunctionByPiecewisePoly::FixFunctionByPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn_, int lsbOut_, int degree_, bool finalRounding_, double approxErrorBudget_):
+		Operator(parentOp, target), degree(degree_), lsbIn(lsbIn_), lsbOut(lsbOut_), finalRounding(finalRounding_), approxErrorBudget(approxErrorBudget_){
 
 		if(finalRounding==false){
 			THROWERROR("FinalRounding=false not implemented yet" );
 		}
 
-		f=new FixFunction(func, false, lsbIn, msbOut, lsbOut); // this will provide emulate etc.
-		
+		f=new FixFunction(func, false, lsbIn, lsbOut); // this will provide emulate etc.
+		msbOut = f->msbOut;
 		srcFileName="FixFunctionByPiecewisePoly";
 		
 		ostringstream name;
@@ -82,11 +82,11 @@ namespace flopoco{
 		setNameWithFreqAndUID(name.str()); 
 
 
-		setCopyrightString("Florent de Dinechin (2014,2018)");
+		setCopyrightString("Florent de Dinechin (2014-2020)");
 		addHeaderComment("-- Evaluator for " +  f-> getDescription() + "\n"); 
-		REPORT(DETAILED, "Entering: FixFunctionByPiecewisePoly \"" << func << "\" " << lsbIn << " " << msbOut << " " << lsbOut << " " << degree);
+		REPORT(DETAILED, "Entering: FixFunctionByPiecewisePoly \"" << func << "\" " << lsbIn << " " << lsbOut << " " << degree);
  		int wX=-lsbIn;
-		addInput("X", wX);
+		addInput("X", wX); // TODO managed signedIn
 		int outputSize = msbOut-lsbOut+1; 
 		addOutput("Y" ,outputSize , 2);
 		useNumericStd();
@@ -96,7 +96,7 @@ namespace flopoco{
 			ostringstream params;
 			params << "f="<<func
 						 << "signedIn=false" << " lsbIn=" << lsbIn
-						 << " lsbOut=" << lsbOut << " msbOut=" << msbOut; 
+						 << " lsbOut=" << lsbOut; 
 			newInstance("FixFunctionByTable",
 									"simpleTable",
 									params.str(),
@@ -136,17 +136,8 @@ namespace flopoco{
 			vhdl << tab << declare("Z", wX-alpha)  << " <= X" << range(wX-alpha-1, 0) << ";" << endl;
 			vhdl << tab << declare("Zs", wX-alpha)  << " <= (not Z(" << wX-alpha-1 << ")) & Z" << range(wX-alpha-2, 0) << "; -- centering the interval" << endl;
 
-#if 0
-			// This is the same order as newInstance() would do, but does not require to write a factory for this Operator
-			schedule();
-			inPortMap("X", "A");
-			outPortMap("Y", "Coeffs");
-			Table* coeffTable = new Table(parentOp, target, coeffTableVector, "coeffTable", alpha, polyTableOutputSize); 
-			vhdl << instance(coeffTable, "coeffTable", false);
-#else
 			Table::newUniqueInstance(this, "A", "Coeffs",
 															 coeffTableVector, "coeffTable", alpha, polyTableOutputSize );
-#endif
 			
 			// Split the table output into each coefficient
 			int currentShift=0;
@@ -164,6 +155,7 @@ namespace flopoco{
 			// What follows is related to Horner evaluator
 			// Here I wish I could plug other (more parallel) evaluators. 
 
+#if 0
 			//  compute the size of the intermediate terms sigma_i  (Horner-specific)  
 			computeSigmaSignsAndMSBs(); // TODO make it a method of FixHornerEvaluator?
 
@@ -174,23 +166,7 @@ namespace flopoco{
 
 			REPORT(INFO, "Now building the Horner evaluator for rounding error budget "<< roundingErrorBudget);
 
-#if 0
-			// This builds an architecture such as eps_finalround < 2^(lsbOut-1) and eps_round<2^(lsbOut-2)
-#if 0 // This constructor computes sigma and msbs only out of the formats
-			FixHornerEvaluator* horner = new FixHornerEvaluator(target, lsbIn+alpha+1, msbOut, lsbOut, degree, polyApprox->MSB, polyApprox->LSB, roundingErrorBudget);		
-#else // This constructor uses the more accurate data computed out of the actual polynomials
-			FixHornerEvaluator* horner = new FixHornerEvaluator(target, lsbIn+alpha+1, msbOut, lsbOut, degree, polyApprox->MSB, polyApprox->LSB, sigmaSign, sigmaMSB, roundingErrorBudget);		
-#endif
-
-			inPortMap("X", "Zs");
-			outPortMap("R", "Ys");
-			for(int i=0; i<=polyApprox->degree; i++) {
-				inPortMap(join("A",i),  join("A",i));
-			}
-			vhdl << instance(horner, "horner") << endl;
-#endif
-
-		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator
+		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator, which wouldn't make sense
 		schedule();
 		inPortMap("X", "Zs");
 		for(int i=0; i<=polyApprox->degree; i++) {
@@ -208,6 +184,8 @@ namespace flopoco{
 		vhdl << instance(h, "horner", false);
 			
 		vhdl << tab << "Y <= " << "std_logic_vector(Ys);" << endl;
+
+		#endif
 		}
 	}
 
@@ -383,15 +361,10 @@ namespace flopoco{
 		// the static list of mandatory tests
 		TestList testStateList;
 		vector<string> functionList;
-		vector<int> msbOutList;
 		functionList.push_back("sin(x)");
-		msbOutList.push_back(1); 
 		functionList.push_back("exp(x)");
-		msbOutList.push_back(3);
 		functionList.push_back("log(x+1)");
-		msbOutList.push_back(2);
 		functionList.push_back("tanh(4*x)");
-		msbOutList.push_back(1);
 
 		vector<pair<string,string>> paramList;
 		if(index==-1) 
@@ -399,10 +372,8 @@ namespace flopoco{
 				for (size_t i=0; i<functionList.size(); i++) {
 					// first deg 2 and 3, 15 bits, exhaustive test, then deg 5 for 25 bits 
 					string f = functionList[i];
-					int msbOut = msbOutList[i];
 					paramList.push_back(make_pair("f","\"" + f + "\""));
 					paramList.push_back(make_pair("plainVHDL","true"));
-					paramList.push_back(make_pair("msbOut",to_string(msbOut)));
 					paramList.push_back(make_pair("lsbOut","-15"));
 					paramList.push_back(make_pair("lsbIn","-15"));
 					paramList.push_back(make_pair("d","2"));
@@ -412,7 +383,6 @@ namespace flopoco{
 
 					paramList.push_back(make_pair("f","\"" + f + "\""));
 					paramList.push_back(make_pair("plainVHDL","true"));
-					paramList.push_back(make_pair("msbOut",to_string(msbOut)));
 					paramList.push_back(make_pair("lsbOut","-15"));
 					paramList.push_back(make_pair("lsbIn","-15"));
 					paramList.push_back(make_pair("d","2"));
@@ -422,7 +392,6 @@ namespace flopoco{
 
 					paramList.push_back(make_pair("f","\"" + f + "\""));
 					paramList.push_back(make_pair("plainVHDL","true"));
-					paramList.push_back(make_pair("msbOut",to_string(msbOut)));
 					paramList.push_back(make_pair("lsbOut","-25"));
 					paramList.push_back(make_pair("lsbIn","-25"));
 					paramList.push_back(make_pair("d","5"));
@@ -440,16 +409,15 @@ namespace flopoco{
 
 	
 	OperatorPtr FixFunctionByPiecewisePoly::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
-		int lsbIn, msbOut, lsbOut, d;
+		int lsbIn, lsbOut, d;
 		string f;
 		double approxErrorBudget;
 		UserInterface::parseString(args, "f", &f); 
 		UserInterface::parseInt(args, "lsbIn", &lsbIn);
-		UserInterface::parseInt(args, "msbOut", &msbOut);
 		UserInterface::parseInt(args, "lsbOut", &lsbOut);
 		UserInterface::parsePositiveInt(args, "d", &d);
 		UserInterface::parseFloat(args, "approxErrorBudget", &approxErrorBudget);
-		return new FixFunctionByPiecewisePoly(parentOp, target, f, lsbIn, msbOut, lsbOut, d, true, approxErrorBudget);
+		return new FixFunctionByPiecewisePoly(parentOp, target, f, lsbIn, lsbOut, d, true, approxErrorBudget);
 	}
 
 	void FixFunctionByPiecewisePoly::registerFactory(){
@@ -459,7 +427,6 @@ namespace flopoco{
 											 "",
 											 "f(string): function to be evaluated between double-quotes, for instance \"exp(x*x)\";\
                         lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
-                        msbOut(int): weight of output MSB;\
                         lsbOut(int): weight of output LSB;\
                         d(int): degree of the polynomial;\
                         approxErrorBudget(real)=0.25: error budget in ulp for the approximation, between 0 and 0.5",                        

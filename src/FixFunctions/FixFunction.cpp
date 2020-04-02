@@ -20,17 +20,17 @@
 namespace flopoco{
 
 
-	FixFunction::FixFunction(string sollyaString_, bool signedIn_, int lsbIn_, int msbOut_, int lsbOut_):
-		sollyaString(sollyaString_), lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_), wOut(msbOut_-lsbOut+1), signedIn(signedIn_)
+	FixFunction::FixFunction(string sollyaString_, bool signedIn_, int lsbIn_, int lsbOut_):
+		sollyaString(sollyaString_), lsbIn(lsbIn_),  lsbOut(lsbOut_),  signedIn(signedIn_)
 	{
 		if(signedIn)
 			wIn=-lsbIn+1; // add the sign bit at position 0
 		else
 			wIn=-lsbIn;
 		if(signedIn)
-			rangeS = sollya_lib_parse_string("[-1;1]");
+			inputRangeS = sollya_lib_parse_string("[-1;1]");
 		else
-			rangeS = sollya_lib_parse_string("[0;1]");
+			inputRangeS = sollya_lib_parse_string("[0;1]");
 		ostringstream completeDescription;
 		completeDescription << sollyaString_;
 		if(signedIn)
@@ -48,6 +48,29 @@ namespace flopoco{
 		if (sollya_lib_obj_is_error(fS) || !sollya_lib_obj_is_function(fS))
 			throw(string("FixFunction: Unable to parse input function: ")+sollyaString);
 
+		// compute msbOut
+		sollya_obj_t supNormIntervalS = sollya_lib_infnorm(fS,inputRangeS,NULL);
+		sollya_obj_t supNormS = sollya_lib_sup(supNormIntervalS);
+		sollya_lib_clear_obj(supNormIntervalS);
+		mpfr_t supNormMP, tmp;
+		mpfr_init2(supNormMP, 1000); // no big deal if we are not accurate here 
+		mpfr_init2(tmp, 1000); // no big deal if we are not accurate here 
+		sollya_lib_get_constant(supNormMP, supNormS);
+		sollya_lib_clear_obj(supNormS);
+
+		//		cerr << "supNorm would be " << mpfr_get_d(supNormMP,MPFR_RNDU);
+
+		// Now recompute the MSB explicitely.
+		mpfr_log2(tmp, supNormMP, GMP_RNDU);
+		mpfr_floor(tmp, tmp);
+		msbOut = 1+ mpfr_get_si(tmp, GMP_RNDU); // +1 because signed: TODO maybe
+
+		cerr << "FixFunction: msbOut="<< msbOut << "  (supNorm ~ " << mpfr_get_d(supNormMP,MPFR_RNDU) << ")" << endl;
+
+ 		mpfr_clear(supNormMP);
+ 		mpfr_clear(tmp);
+
+		wOut=msbOut-lsbOut+1;
 	}
 
 
@@ -57,9 +80,9 @@ namespace flopoco{
 		signedIn(signedIn_), fS(fS_)
 	{
 		if(signedIn)
-			rangeS = sollya_lib_parse_string("[-1;1]");
+			inputRangeS = sollya_lib_parse_string("[-1;1]");
 		else
-			rangeS = sollya_lib_parse_string("[0;1]");
+			inputRangeS = sollya_lib_parse_string("[0;1]");
 	}
 
 
@@ -68,7 +91,8 @@ namespace flopoco{
 	FixFunction::~FixFunction()
 	{
 	  sollya_lib_clear_obj(fS);
-	  sollya_lib_clear_obj(rangeS);
+	  sollya_lib_clear_obj(inputRangeS);
+	  sollya_lib_clear_obj(outputRangeS);
 	}
 
 	string FixFunction::getDescription() const

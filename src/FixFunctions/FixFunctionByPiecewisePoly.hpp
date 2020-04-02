@@ -35,7 +35,7 @@ namespace flopoco{
 			 This would require quite a lot of work for non-trivial functions (isolating roots of the derivative etc).
 			 So this is currently left to the user.
 		 */
-		FixFunctionByPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn, int msbOut, int lsbOut, int degree, bool finalRounding = true,  double approxErrorBudget=0.25);
+		FixFunctionByPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn, int lsbOut, int degree, bool finalRounding = true,  double approxErrorBudget=0.25);
 
 		/**
 		 * FixFunctionByPiecewisePoly destructor

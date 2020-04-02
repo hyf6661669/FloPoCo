@@ -33,13 +33,12 @@ namespace flopoco
 		 * @brief The FixFunctionByMultipartiteTable constructor
 		 * @param[string] functionName_		a string representing the function, input range should be [0,1) or [-1,1)
 		 * @param[int]    lsbIn_		input LSB weight
-		 * @param[int]    msbOut_		output MSB weight, used to determine wOut
 		 * @param[int]    lsbOut_		output LSB weight
 		 * @param[int]	nbTOi_	number of tables which will be created
 		 * @param[bool]	signedIn_	true if the input range is [-1,1)
 		 */
 		FixFunctionByMultipartiteTable(OperatorPtr parentOp, Target* target, string function, int nbTOi, bool signedIn,
-																	 int lsbIn, int msbOut, int lsbOut, bool compressTIV);
+																	 int lsbIn, int lsbOut, bool compressTIV);
 
 		virtual ~FixFunctionByMultipartiteTable();
 

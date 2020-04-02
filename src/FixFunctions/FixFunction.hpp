@@ -32,12 +32,9 @@ namespace flopoco{
 			 @param[int]    lsbOut  output LSB weight
 			 @param[bool]   signedIn: if true, input range is [0,1], else input range is [0,1]
 
-			 One could argue that MSB weight is redundant, as it can be deduced from an analysis of the function. 
-			 This would require quite a lot of work for non-trivial functions (isolating roots of the derivative etc).
-			 So this is currently left to the user.
 			 There are defaults for lsbOut and msbOut for situations when they are computed afterwards.
 		 */
-		FixFunction(string sollyaString, bool signedIn, int lsbIn=0, int msbOut=0, int lsbOut=0);
+		FixFunction(string sollyaString, bool signedIn, int lsbIn=0, int lsbOut=0);
 		FixFunction(sollya_obj_t fS, bool signedIn);
 
 		virtual ~FixFunction();
@@ -60,16 +57,18 @@ namespace flopoco{
 		void emulate(TestCase * tc,	bool correctlyRounded=false /**< if true, correctly rounded RN; if false, faithful function */);
 
 		// All the following public, not good practice I know, but life is complicated enough
+		// All these public attributes are read at some point by Operator classes
 		string sollyaString;
 		int lsbIn;   
 		int wIn;   
-		int msbOut;
+		int msbOut; /*< Now computed by the constructor; assuming signed out */
 		int lsbOut;
 		int wOut;
 		bool signedIn;
 		string description;
 		sollya_obj_t fS;
-		sollya_obj_t rangeS;
+		sollya_obj_t inputRangeS;  /**< computed by the constructor */
+		sollya_obj_t outputRangeS; /**< computed by the constructor */
 	};
 
 }

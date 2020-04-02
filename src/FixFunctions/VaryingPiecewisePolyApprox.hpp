@@ -28,12 +28,12 @@ namespace flopoco{
 		/**
 		 * A minimal constructor
 		 */
-	  VaryingPiecewisePolyApprox(FixFunction* f, double targetAccuracy, int lsbIn, int msbOut, int lsbOut);
+	  VaryingPiecewisePolyApprox(FixFunction* f, double targetAccuracy, int lsbIn, int lsbOut);
 
 		/**
 		 * A minimal constructor that parses a sollya string
 		 */
-	  VaryingPiecewisePolyApprox(string sollyaString, double targetAccuracy, int lsbIn, int msbOut, int lsbOut);
+	  VaryingPiecewisePolyApprox(string sollyaString, double targetAccuracy, int lsbIn, int lsbOut);
 
 		virtual ~VaryingPiecewisePolyApprox();
 

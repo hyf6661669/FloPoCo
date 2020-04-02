@@ -620,31 +620,15 @@ namespace flopoco{
 				// We want the LSB value to be  2^(wF+g)
 				ostringstream function;
 				function << "1b"<<2*k-1<<"*(exp(x*1b-" << k << ")-x*1b-" << k << "-1)";  // e^z-z-1
-#if 0 // to remove when it works
-				FixFunctionByPiecewisePoly *fe;
-				fe = new FixFunctionByPiecewisePoly(target, function.str(), 
-																						-sizeZhigh, // lsbIn,
-																						-1, // msbOut // was -2*k
-																						-wF-g+2*k-1, // lsbOut // was -wF-g 
-																						d, // degree
-																						true, // finalRounding
-																						0.25 // approxErrorBudget, default
-																						);
-				addSubComponent(fe);
-				inPortMap(fe, "X", "Zhigh");
-				outPortMap(fe, "Y", "expZmZm1");
-				vhdl << instance(fe, "poly");
-#else
 		newInstance("FixFunctionByPiecewisePoly",
 								"poly",
 								"f="+function.str()
 								+" lsbIn=" + to_string(-sizeZhigh)
-								+" msbOut=-1"
+								+" msbOut=-1" // now ignored
 								+" lsbOut=" + to_string(-wF-g+2*k-1)
 								+" d=" + to_string(d),
 								"X=>Zhigh",
 								"Y=>expZmZm1");
-#endif
 
 			}// end if magic table/generic
 

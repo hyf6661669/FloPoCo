@@ -27,10 +27,6 @@ namespace flopoco{
 			wIn=-lsbIn+1; // add the sign bit at position 0
 		else
 			wIn=-lsbIn;
-		if(signedIn)
-			inputRangeS = sollya_lib_parse_string("[-1;1]");
-		else
-			inputRangeS = sollya_lib_parse_string("[0;1]");
 		ostringstream completeDescription;
 		completeDescription << sollyaString_;
 		if(signedIn)
@@ -38,9 +34,6 @@ namespace flopoco{
 		else
 			completeDescription << " on [0,1)";
 
-		if(lsbIn!=0) // we have an IO specification
-			completeDescription << " for lsbIn=" << lsbIn << " (wIn=" << wIn << "), msbout=" << msbOut << ", lsbOut=" << lsbOut << " (wOut=" << wOut << ")";
-		description = completeDescription.str();
 
 		// Now do the parsing in Sollya
 		fS = sollya_lib_parse_string(sollyaString.c_str());
@@ -48,30 +41,17 @@ namespace flopoco{
 		if (sollya_lib_obj_is_error(fS) || !sollya_lib_obj_is_function(fS))
 			throw(string("FixFunction: Unable to parse input function: ")+sollyaString);
 
-		// compute msbOut
-		sollya_obj_t supNormIntervalS = sollya_lib_infnorm(fS,inputRangeS,NULL);
-		sollya_obj_t supNormS = sollya_lib_sup(supNormIntervalS);
-		sollya_lib_clear_obj(supNormIntervalS);
-		mpfr_t supNormMP, tmp;
-		mpfr_init2(supNormMP, 1000); // no big deal if we are not accurate here 
-		mpfr_init2(tmp, 1000); // no big deal if we are not accurate here 
-		sollya_lib_get_constant(supNormMP, supNormS);
-		sollya_lib_clear_obj(supNormS);
-
-		//		cerr << "supNorm would be " << mpfr_get_d(supNormMP,MPFR_RNDU);
-
-		// Now recompute the MSB explicitely.
-		mpfr_log2(tmp, supNormMP, GMP_RNDU);
-		mpfr_floor(tmp, tmp);
-		msbOut = 1+ mpfr_get_si(tmp, GMP_RNDU); // +1 because signed: TODO maybe
-
-		cerr << "FixFunction: msbOut="<< msbOut << "  (supNorm ~ " << mpfr_get_d(supNormMP,MPFR_RNDU) << ")" << endl;
-
- 		mpfr_clear(supNormMP);
- 		mpfr_clear(tmp);
+		initialize();
 
 		wOut=msbOut-lsbOut+1;
-	}
+
+		if(lsbIn!=0) {// we have an IO specification
+			completeDescription << " for lsbIn=" << lsbIn << " (wIn=" << wIn << "), msbout=" << msbOut << ", lsbOut="
+													<< lsbOut << " (wOut=" << wOut << "). ";
+		}
+		completeDescription << outputDescription;
+		description = completeDescription.str();
+}
 
 
 
@@ -79,14 +59,67 @@ namespace flopoco{
 	FixFunction::FixFunction(sollya_obj_t fS_, bool signedIn_):
 		signedIn(signedIn_), fS(fS_)
 	{
-		if(signedIn)
-			inputRangeS = sollya_lib_parse_string("[-1;1]");
-		else
-			inputRangeS = sollya_lib_parse_string("[0;1]");
+		initialize();
 	}
 
 
 
+void	FixFunction::initialize()
+	{
+		if(signedIn)
+			inputRangeS = sollya_lib_parse_string("[-1;1]");
+		else
+			inputRangeS = sollya_lib_parse_string("[0;1]");
+
+		
+		sollya_obj_t outIntervalS = sollya_lib_evaluate(fS,inputRangeS);
+		sollya_obj_t supS = sollya_lib_sup(outIntervalS);
+		sollya_obj_t infS = sollya_lib_inf(outIntervalS);
+		mpfr_t supMP, infMP, tmp;
+		mpfr_init2(supMP, 1000); // no big deal if we are not accurate here 
+		mpfr_init2(infMP, 1000); // no big deal if we are not accurate here 
+		mpfr_init2(tmp, 1000); // no big deal if we are not accurate here 
+		sollya_lib_get_constant(supMP, supS);
+		sollya_lib_get_constant(infMP, infS);
+		if(mpfr_get_d(infMP,MPFR_RNDD) >= 0)	{
+			signedOut=false;
+			}
+		else {
+			signedOut=true;
+		}
+#if 0
+		// compute msbOut
+		sollya_obj_t supNormIntervalS = sollya_lib_infnorm(fS,inputRangeS,NULL);
+		sollya_obj_t supNormS = sollya_lib_sup(supNormIntervalS);
+		sollya_lib_clear_obj(supNormIntervalS);
+		mpfr_t supNormMP;
+		mpfr_init2(supNormMP, 1000); // no big deal if we are not accurate here 
+		mpfr_init2(tmp, 1000); // no big deal if we are not accurate here 
+		sollya_lib_get_constant(supNormMP, supNormS);
+		sollya_lib_clear_obj(supNormS);
+		//		cerr << "supNorm would be " << mpfr_get_d(supNormMP,MPFR_RNDU);
+ 		mpfr_clear(supNormMP);
+#endif
+
+		// Now recompute the MSB explicitely.
+		mpfr_abs(supMP, supMP, GMP_RNDU);
+		mpfr_abs(infMP, infMP, GMP_RNDU);
+		mpfr_max(tmp, infMP, supMP, GMP_RNDU);
+		mpfr_log2(tmp, tmp, GMP_RNDU);
+		mpfr_floor(tmp, tmp);
+		msbOut = mpfr_get_si(tmp, GMP_RNDU);
+		if(signedOut)
+			msbOut++;
+
+		ostringstream t;
+		t << "Out interval: [" << mpfr_get_d(infMP,MPFR_RNDD) << "; "<< mpfr_get_d(supMP,MPFR_RNDU) << "]. Output is " << (signedOut?"signed":"unsigned");
+		outputDescription=t.str();
+
+		sollya_lib_clear_obj(outIntervalS);
+		sollya_lib_clear_obj(supS);
+		sollya_lib_clear_obj(infS);
+ 		mpfr_clears(supMP,infMP,tmp, NULL);
+	}
 
 	FixFunction::~FixFunction()
 	{

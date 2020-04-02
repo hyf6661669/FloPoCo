@@ -65,10 +65,14 @@ namespace flopoco{
 		int lsbOut;
 		int wOut;
 		bool signedIn;
+		bool signedOut; /**< computed by the constructor */
 		string description;
 		sollya_obj_t fS;
 		sollya_obj_t inputRangeS;  /**< computed by the constructor */
 		sollya_obj_t outputRangeS; /**< computed by the constructor */
+	private:
+		void initialize();
+		string outputDescription;
 	};
 
 }

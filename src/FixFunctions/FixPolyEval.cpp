@@ -28,40 +28,38 @@ using namespace std;
 namespace flopoco{
 
     FixPolyEval::FixPolyEval(OperatorPtr parentOp_, Target* target_, 
-								int lsbIn_,
-								int msbOut_,
-								int lsbOut_,
-								vector<BasicPolyApprox> poly_, // these should all be the same degree and all have the same format  
-								bool signedXandCoeffs_,
-								bool finalRounding_) :
+														 int lsbIn_,
+														 int msbOut_,
+														 int lsbOut_,
+														 vector<BasicPolyApprox*> poly_, // these should all be the same degree and all have the same format  
+														 bool finalRounding_) :
 			Operator(parentOp_, target_),
 			poly(poly_),
 			lsbIn(lsbIn_),
 			msbOut(msbOut_),
 			lsbOut(lsbOut_),
-			signedXandCoeffs(signedXandCoeffs_),
 			finalRounding(finalRounding_)
 		{
 			// Extraction of shared polynomial data, + sanity checks
 			// The degree
-			degree = poly[0].getDegree();
+			degree = poly[0]->getDegree();
 			for (auto p: poly) {
-				if(p.getDegree() !=degree) {
+				if(p->getDegree() !=degree) {
 					THROWERROR("Something wrong in FixPolyEval, it seems the polynomials do not all have the same degree");
 				}
 			}
 
 			// The coefficient formats
 			for(int i=0; i<=degree; i++) {
-				coeffMSB.push_back( poly[0].getCoeff(i)->MSB );
-				coeffLSB.push_back( poly[0].getCoeff(i)->LSB );
+				coeffMSB.push_back( poly[0]->getCoeff(i)->MSB );
+				coeffLSB.push_back( poly[0]->getCoeff(i)->LSB );
 			}
 			for (auto p: poly) {
 				for(int i=0; i<=degree; i++) {
-					if(coeffMSB[i] != p.getCoeff(i)->MSB) {
+					if(coeffMSB[i] != p->getCoeff(i)->MSB) {
 						THROWERROR("Something wrong in FixPolyEval, it seems the polynomials do not all have the same MSB for coeff "<< i);
 					}
-					if(coeffLSB[i] != p.getCoeff(i)->LSB) {
+					if(coeffLSB[i] != p->getCoeff(i)->LSB) {
 						THROWERROR("Something wrong in FixPolyEval, it seems the polynomials do not all have the same LSB for coeff "<< i);
 					}
 				}

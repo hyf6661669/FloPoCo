@@ -54,9 +54,9 @@ namespace flopoco{
 		 Final rounding may entail up to exp2(lsbOut-1).
 		 So approximation+rounding error budget is  exp2(lsbOut-1).
 		 We call PiecewisePolyApprox with approximation target error bound exp2(lsbOut-2).
-		 It reports polyApprox->LSB: may be lsbOut-2, may be up to lsbOut-2- intlog2(degree) 
-		 It also reports polyApprox->approxErrorBound
-		 so rounding error budget is  exp2(lsbOut-1) - polyApprox->approxErrorBound
+		 It reports pwp->LSB: may be lsbOut-2, may be up to lsbOut-2- intlog2(degree) 
+		 It also reports pwp->approxErrorBound
+		 so rounding error budget is  exp2(lsbOut-1) - pwp->approxErrorBound
 		 Staying within this budget is delegated to FixHornerEvaluator: see there for the details
 			 
 	 */
@@ -83,10 +83,10 @@ namespace flopoco{
 
 
 		setCopyrightString("Florent de Dinechin (2014-2020)");
-		addHeaderComment("-- Evaluator for " +  f-> getDescription() + "\n"); 
+		addHeaderComment("Evaluator for " +  f-> getDescription() + "\n");
 		REPORT(DETAILED, "Entering: FixFunctionByPiecewisePoly \"" << func << "\" " << lsbIn << " " << lsbOut << " " << degree);
  		int wX=-lsbIn;
-		addInput("X", wX); // TODO managed signedIn
+		addInput("X", wX); // TODO manage signedIn
 		int outputSize = msbOut-lsbOut+1; 
 		addOutput("Y" ,outputSize , 2);
 		useNumericStd();
@@ -114,21 +114,25 @@ namespace flopoco{
 			// Build the polynomial approximation
 			double targetAcc= approxErrorBudget*pow(2, lsbOut);
 			REPORT(INFO, "Computing polynomial approximation for target accuracy "<< targetAcc);
-			polyApprox = new PiecewisePolyApprox(func, targetAcc, degree);
-			alpha =  polyApprox-> alpha; // coeff table input size 
+			pwp = new UniformPiecewisePolyApprox(func, targetAcc, degree);
+			alpha =  pwp-> alpha; // coeff table input size 
 			
-			// Resize its MSB to the one input by the user. 
+			// Resize its MSB to the one of f 
 			for (int i=0; i<(1<<alpha); i++) {
-				polyApprox -> poly[i] -> getCoeff(0) -> changeMSB(msbOut);
+				// but first check, maybe it can also be unsigned
+				if(!f->signedOut)
+					pwp -> poly[i] -> getCoeff(0) -> setUnsigned();
+				pwp -> poly[i] -> getCoeff(0) -> changeMSB(msbOut);
 			}
-			polyApprox -> MSB[0] = msbOut;
+			pwp -> MSB[0] = msbOut;
 
 			// Build the coefficient table out of the vector of polynomials. This is also where we add the final rounding bit
 			buildCoeffTable();
 
 			// What remains of the error budget for the evaluation phase ?
-			double roundingErrorBudget=exp2(lsbOut-1)-polyApprox->approxErrorBound;
-			REPORT(INFO, "Overall error budget = " << exp2(lsbOut) << "  of which approximation error = " << polyApprox->approxErrorBound
+			double roundingErrorBudget=exp2(lsbOut-1)-pwp->approxErrorBound;
+			// (this is actually useless because we will jointly optimize approx+round errors on each subinterval)
+			REPORT(INFO, "Overall error budget = " << exp2(lsbOut) << "  of which approximation error = " << pwp->approxErrorBound
 						 << " hence rounding error budget = "<< roundingErrorBudget );
 
 			// The VHDL that splits the input into A and Z
@@ -141,12 +145,12 @@ namespace flopoco{
 			
 			// Split the table output into each coefficient
 			int currentShift=0;
-			for(int i=polyApprox->degree; i>=0; i--) {
-				int actualSize = polyApprox->MSB[i] - polyApprox->LSB + (polyApprox->coeffSigns[i]==0 ? 1 : 0);
-				vhdl << tab << declare(join("A",i), polyApprox->MSB[i] - polyApprox->LSB +1)
+			for(int i=pwp->degree; i>=0; i--) {
+				int actualSize = pwp->MSB[i] - pwp->LSB + (pwp->coeffSigns[i]==0 ? 1 : 0);
+				vhdl << tab << declare(join("A",i), pwp->MSB[i] - pwp->LSB +1)
 						 << " <= ";
-				if (polyApprox->coeffSigns[i]!=0) // add constant sign back
-					vhdl << (polyApprox->coeffSigns[i]==1? "\"0\"" :  "\"1\"") << " & " ;				
+				if (pwp->coeffSigns[i]!=0) // add constant sign back
+					vhdl << (pwp->coeffSigns[i]==1? "\"0\"" :  "\"1\"") << " & " ;				
 				vhdl << "Coeffs" << range(currentShift + actualSize-1, currentShift) << ";" << endl;
 				currentShift += actualSize;
 			}
@@ -154,6 +158,27 @@ namespace flopoco{
 			
 			// What follows is related to Horner evaluator
 			// Here I wish I could plug other (more parallel) evaluators. 
+
+
+			REPORT(INFO, "Now building the Horner evaluator for rounding error budget "<< roundingErrorBudget);
+
+		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator, which wouldn't make sense
+		schedule();
+		inPortMap("X", "Zs");
+		for(int i=0; i<=pwp->degree; i++) {
+			inPortMap(join("A",i),  join("A",i));
+		}
+		outPortMap("R", "Ys");
+		OperatorPtr h = new  FixHornerEvaluator(this, target, 
+																						lsbIn+alpha+1,
+																						msbOut,
+																						lsbOut,
+																						pwp->poly // provides degree and coeff formats
+																						);
+		vhdl << instance(h, "horner", false);
+			
+		vhdl << tab << "Y <= " << "std_logic_vector(Ys);" << endl;
+
 
 #if 0
 			//  compute the size of the intermediate terms sigma_i  (Horner-specific)  
@@ -169,7 +194,7 @@ namespace flopoco{
 		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator, which wouldn't make sense
 		schedule();
 		inPortMap("X", "Zs");
-		for(int i=0; i<=polyApprox->degree; i++) {
+		for(int i=0; i<=pwp->degree; i++) {
 			inPortMap(join("A",i),  join("A",i));
 		}
 		outPortMap("R", "Ys");
@@ -178,8 +203,8 @@ namespace flopoco{
 																msbOut,
 																lsbOut,
 																degree, 
-																polyApprox->MSB, 
-																polyApprox->LSB // it is the smaller LSB
+																pwp->MSB, 
+																pwp->LSB // it is the smaller LSB
 																);
 		vhdl << instance(h, "horner", false);
 			
@@ -204,7 +229,7 @@ namespace flopoco{
 		// First compute the table output size
 		polyTableOutputSize=0;
 		for (int i=0; i<=degree; i++) {
-			polyTableOutputSize += polyApprox->MSB[i] - polyApprox->LSB + (polyApprox->coeffSigns[i]==0? 1 : 0);
+			polyTableOutputSize += pwp->MSB[i] - pwp->LSB + (pwp->coeffSigns[i]==0? 1 : 0);
 		} 
 		REPORT(DETAILED, "Poly table input size  = " << alpha);
 		REPORT(DETAILED, "Poly table output size = " << polyTableOutputSize);
@@ -213,24 +238,24 @@ namespace flopoco{
 		for(x=0; x<(1<<alpha); x++) {
 			mpz_class z=0;
 			int currentShift=0;
-			for(int i=polyApprox->degree; i>=0; i--) {
-				mpz_class coeff = polyApprox-> getCoeff(x, i); // coeff of degree i from poly number x
-				if (polyApprox->coeffSigns[i] != 0) {// sign is constant among all the coefficients: remove it from here, it will be added back as a constant in the VHDL
-					mpz_class mask = (mpz_class(1)<<(polyApprox->MSB[i] - polyApprox->LSB) ) - 1; // size is msb-lsb+1
+			for(int i=pwp->degree; i>=0; i--) {
+				mpz_class coeff = pwp-> getCoeff(x, i); // coeff of degree i from poly number x
+				if (pwp->coeffSigns[i] != 0) {// sign is constant among all the coefficients: remove it from here, it will be added back as a constant in the VHDL
+					mpz_class mask = (mpz_class(1)<<(pwp->MSB[i] - pwp->LSB) ) - 1; // size is msb-lsb+1
 					coeff = coeff & mask; 
 				}
 				z += coeff << currentShift; // coeff of degree i from poly number x
 				// REPORT(DEBUG, "i=" << i << "   z=" << unsignedBinary(z, 64));
 				if(i==0 && finalRounding){ // coeff of degree 0
 					int finalRoundBitPos = lsbOut-1;
-					z += mpz_class(1)<<(currentShift + finalRoundBitPos - polyApprox->LSB); // add the round bit
+					z += mpz_class(1)<<(currentShift + finalRoundBitPos - pwp->LSB); // add the round bit
 					//REPORT(DEBUG, "i=" << i << " + z=" << unsignedBinary(z, 64));
 					// This may entail an overflow of z, in the case -tiny -> +tiny, e.g. first polynomial of atan
 					// This is OK modulo 2^wOut (two's complement), but will break the vhdl output of Table: fix it here.
 					z = z & ((mpz_class(1)<<polyTableOutputSize) -1);
-					// REPORT(INFO, "Adding final round bit at position " << finalRoundBitPos-polyApprox->LSB);
+					// REPORT(INFO, "Adding final round bit at position " << finalRoundBitPos-pwp->LSB);
 				}
-				currentShift +=  polyApprox->MSB[i] - polyApprox->LSB + (polyApprox->coeffSigns[i]==0? 1: 0);
+				currentShift +=  pwp->MSB[i] - pwp->LSB + (pwp->coeffSigns[i]==0? 1: 0);
 			}
 			coeffTableVector.push_back(z);
 		}
@@ -241,98 +266,6 @@ namespace flopoco{
 
 	
 	
-
-	void FixFunctionByPiecewisePoly::computeSigmaSignsAndMSBs(){
-		mpfr_t res_left, res_right;
-		sollya_obj_t rangeS;
-		mpfr_init2(res_left, 10000); // should be enough for anybody
-		mpfr_init2(res_right, 10000); // should be enough for anybody
-		rangeS = sollya_lib_parse_string("[-1;1]");		
-
-		REPORT(DEBUG, "Computing sigmas, signs and MSBs");
-
-		// initialize the vector of MSB weights
-		for (int j=0; j<=degree; j++) {
-			sigmaMSB.push_back(INT_MIN);
-			sigmaSign.push_back(17); // 17 meaning "not initialized yet"
-		}
-		
-		for (int i=0; i<(1<<polyApprox -> alpha); i++){
-			// initialize the vectors with sigma_d = a_d
-			FixConstant* sigma = polyApprox -> poly[i] -> getCoeff(degree);
-			sollya_obj_t sigmaS = sollya_lib_constant(sigma -> fpValue);
-			int msb = sigma -> MSB;
-			if (msb>sigmaMSB[degree])
-				sigmaMSB[degree]=msb;
-			sigmaSign[degree] = polyApprox -> coeffSigns[degree];
-			
-			for (int j=degree-1; j>=0; j--) {
-				// interval eval of sigma_j
-				// get the output range of sigma
-				sollya_obj_t pi_jS = sollya_lib_mul(rangeS, sigmaS);
-				sollya_lib_clear_obj(sigmaS);
-				sollya_obj_t a_jS = sollya_lib_constant(polyApprox -> poly[i] -> getCoeff(j) -> fpValue);
-				sigmaS = sollya_lib_add(a_jS, pi_jS);
-				sollya_lib_clear_obj(pi_jS);
-				sollya_lib_clear_obj(a_jS);
-				// Get the endpoints
-				int isrange = sollya_lib_get_bounds_from_range(res_left, res_right, sigmaS);
-				if (isrange==false)
-					THROWERROR("computeSigmaMSB: Not a range???");
-				// First a tentative conversion to double to sort and get an estimate of the MSB and zeroness
-				double l=mpfr_get_d(res_left, GMP_RNDN);
-				double r=mpfr_get_d(res_right, GMP_RNDN);
-				REPORT(DEBUG, "i=" << i << "  j=" << j << "  left=" << l << " right=" << r);
-				// Now we want to know is if both have the same sign
-				if (l>=0 && r>=0) { // sigma is positive
-					if (sigmaSign[j] == 17 || sigmaSign[j] == +1)
-						sigmaSign[j] = +1;
-					else
-						sigmaSign[j] = 0;
-				}
-				else if (l<0 && r<0) { // sigma is positive
-					if (sigmaSign[j] == 17 || sigmaSign[j] == -1)
-						sigmaSign[j] = -1;
-					else
-						sigmaSign[j] = 0;
-				}
-				else
-					sigmaSign[j] = 0;
-				
-
-				// now finally the MSB computation
-				int msb;
-				mpfr_t mptmp;
-				mpfr_init2(mptmp, 10000); // should be enough for anybody
-				// we are interested in the max in magnitude
-				if(fabs(l)>fabs(r)){
-					mpfr_abs(mptmp, res_left, GMP_RNDN); // exact
-				}
-				else{
-					mpfr_abs(mptmp, res_right, GMP_RNDN); // exact
-				}
-				mpfr_log2(mptmp, mptmp, GMP_RNDU);
-				mpfr_floor(mptmp, mptmp);
-				msb = mpfr_get_si(mptmp, GMP_RNDU);
-				mpfr_clear(mptmp);
-				msb++; // for the sign
-				if (msb > sigmaMSB[j])
-					sigmaMSB[j] = msb;
-			} // for j
-			
-			
-			sollya_lib_clear_obj(sigmaS);
-		
-		} // for i
-		mpfr_clear(res_left);
-		mpfr_clear(res_right);
-		sollya_lib_clear_obj(rangeS);
-
-		for (int j=degree; j>=0; j--) {
-			REPORT(DETAILED, "Horner step " << j << ":   sigmaSign = " << sigmaSign[j] << " \t sigmaMSB = " << sigmaMSB[j]);
-		}	
-
-	}
 
  
 

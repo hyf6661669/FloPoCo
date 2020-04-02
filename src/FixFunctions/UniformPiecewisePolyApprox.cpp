@@ -24,35 +24,35 @@
 	 Stylistic remark: use index i for the subintervals, and j for the degree
 
 */
-#include "PiecewisePolyApprox.hpp"
+#include "UniformPiecewisePolyApprox.hpp"
 #include <sstream>
 #include <limits.h>
 #include <float.h>
 
 namespace flopoco{
 
-	PiecewisePolyApprox::PiecewisePolyApprox(FixFunction *f_, double targetAccuracy_, int degree_):
+	UniformPiecewisePolyApprox::UniformPiecewisePolyApprox(FixFunction *f_, double targetAccuracy_, int degree_):
 		degree(degree_), f(f_), targetAccuracy(targetAccuracy_)
 	{
 		needToFreeF = false;
-		srcFileName="PiecewisePolyApprox"; // should be somehow static but this is too much to ask me
+		srcFileName="UniformPiecewisePolyApprox"; // should be somehow static but this is too much to ask me
 		build();
 	}
 
 
-	PiecewisePolyApprox::PiecewisePolyApprox(string sollyaString_, double targetAccuracy_, int degree_):
+	UniformPiecewisePolyApprox::UniformPiecewisePolyApprox(string sollyaString_, double targetAccuracy_, int degree_):
 		degree(degree_), targetAccuracy(targetAccuracy_)
 	{
 		//  parsing delegated to FixFunction
 		f = new FixFunction(sollyaString_, false /* on [0,1]*/);
 		needToFreeF = true;
-		srcFileName="PiecewisePolyApprox"; // should be somehow static but this is too much to ask me
+		srcFileName="UniformPiecewisePolyApprox"; // should be somehow static but this is too much to ask me
 		build();
 	}
 
 
 
-	PiecewisePolyApprox::~PiecewisePolyApprox()
+	UniformPiecewisePolyApprox::~UniformPiecewisePolyApprox()
 	{
 		if(needToFreeF)	free(f);
 	}
@@ -73,7 +73,7 @@ namespace flopoco{
 	}
 #else
 	/** a local function to build g_i(x) = f(2^(-alpha-1)*x + i*2^(-alpha) + 2^(-alpha-1)) defined on [-1,1] */
-	sollya_obj_t PiecewisePolyApprox::buildSubIntervalFunction(sollya_obj_t fS, int alpha, int i){
+	sollya_obj_t UniformPiecewisePolyApprox::buildSubIntervalFunction(sollya_obj_t fS, int alpha, int i){
 		stringstream s;
 
 		s << "(1b-" << alpha+1 << ")*x + ("<< i << "b-" << alpha << " + 1b-" << alpha+1 << ")";
@@ -89,7 +89,7 @@ namespace flopoco{
 
 
 	// split into smaller and smaller intervals until the function can be approximated by a polynomial of degree given by degree.
-	void PiecewisePolyApprox::build()
+	void UniformPiecewisePolyApprox::build()
 	{
 		ostringstream cacheFileName;
 		cacheFileName << "PiecewisePoly_"<<vhdlize(f->description) << "_" << degree << "_" << targetAccuracy << ".cache";
@@ -125,7 +125,7 @@ namespace flopoco{
 					sollya_obj_t giS = buildSubIntervalFunction(fS, alpha, ii);
 
 					if(DEBUG <= UserInterface::verbose)
-						sollya_lib_printf("> PiecewisePolyApprox: alpha=%d, ii=%d, testing  %b \n", alpha, ii, giS);
+						sollya_lib_printf("> UniformPiecewisePolyApprox: alpha=%d, ii=%d, testing  %b \n", alpha, ii, giS);
 					// Now what degree do we need to approximate gi?
 					int degreeInf, degreeSup;
 					BasicPolyApprox::guessDegree(giS, rangeS, targetAccuracy, &degreeInf, &degreeSup);
@@ -275,14 +275,14 @@ namespace flopoco{
 	}
 
 
-	mpz_class PiecewisePolyApprox::getCoeff(int i, int d){
+	mpz_class UniformPiecewisePolyApprox::getCoeff(int i, int d){
 		BasicPolyApprox* p = poly[i];
 		FixConstant* c = p->getCoeff(d);
 		return c->getBitVectorAsMPZ();
 	}
 
 
-	void PiecewisePolyApprox::openCacheFile(string cacheFileName)
+	void UniformPiecewisePolyApprox::openCacheFile(string cacheFileName)
 	{
 		cacheFile.open(cacheFileName.c_str(), ios::in);
 
@@ -296,7 +296,7 @@ namespace flopoco{
 	}
 
 
-	void PiecewisePolyApprox::writeToCacheFile(string cacheFileName)
+	void UniformPiecewisePolyApprox::writeToCacheFile(string cacheFileName)
 	{
 		cacheFile.open(cacheFileName.c_str(), ios::out);
 
@@ -324,7 +324,7 @@ namespace flopoco{
 	}
 
 
-	void PiecewisePolyApprox::readFromCacheFile(string cacheFileName)
+	void UniformPiecewisePolyApprox::readFromCacheFile(string cacheFileName)
 	{
 		string line;
 
@@ -357,7 +357,7 @@ namespace flopoco{
 	}
 
 
-	void PiecewisePolyApprox::checkCoefficientsSign()
+	void UniformPiecewisePolyApprox::checkCoefficientsSign()
 	{
 		for (int j=0; j<=degree; j++) {
 			mpz_class mpzsign = (poly[0]->getCoeff(j)->getBitVectorAsMPZ()) >> (MSB[j]-LSB);
@@ -372,7 +372,7 @@ namespace flopoco{
 	}
 
 
-	void PiecewisePolyApprox::createPolynomialsReport()
+	void UniformPiecewisePolyApprox::createPolynomialsReport()
 	{
 		int totalOutputSize;
 
@@ -392,7 +392,7 @@ namespace flopoco{
 	}
 
 
-	OperatorPtr PiecewisePolyApprox::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args)
+	OperatorPtr UniformPiecewisePolyApprox::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args)
 	{
 		string f;
 		double ta;
@@ -402,7 +402,7 @@ namespace flopoco{
 		UserInterface::parseFloat(args, "targetAcc", &ta);
 		UserInterface::parseInt(args, "d", &d);
 
-		PiecewisePolyApprox *ppa = new PiecewisePolyApprox(f, ta, d);
+		UniformPiecewisePolyApprox *ppa = new UniformPiecewisePolyApprox(f, ta, d);
 		cout << "Accuracy is " << ppa->approxErrorBound << " ("<< log2(ppa->approxErrorBound) << " bits)";
 
 		return NULL;
@@ -410,9 +410,9 @@ namespace flopoco{
 
 
 
-	void PiecewisePolyApprox::registerFactory()
+	void UniformPiecewisePolyApprox::registerFactory()
 	{
-		UserInterface::add("PiecewisePolyApprox", // name
+		UserInterface::add("UniformPiecewisePolyApprox", // name
 											 "Helper/Debug feature, does not generate VHDL. Uniformly segmented piecewise polynomial approximation of function f, accurate to targetAcc on [0,1)",
 											 "FunctionApproximation",
 											 "",
@@ -421,7 +421,7 @@ f(string): function to be evaluated between double-quotes, for instance \"exp(x*
 targetAcc(real): the target approximation errror of the polynomial WRT the function;\
 d(int): the degree to use",
 											 "",
-											 PiecewisePolyApprox::parseArguments
+											 UniformPiecewisePolyApprox::parseArguments
 											 ) ;
 	}
 

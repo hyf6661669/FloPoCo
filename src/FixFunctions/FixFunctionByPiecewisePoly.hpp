@@ -8,7 +8,7 @@
 
 #include "../Operator.hpp"
 #include "FixFunction.hpp"
-#include "PiecewisePolyApprox.hpp"
+#include "UniformPiecewisePolyApprox.hpp"
 
 namespace flopoco{
 
@@ -60,7 +60,7 @@ namespace flopoco{
 		int msbOut;
 		int lsbOut;
 		int alpha;
-		PiecewisePolyApprox *polyApprox;
+		UniformPiecewisePolyApprox *pwp;
 		int polyTableOutputSize;
 		FixFunction *f;
 		bool finalRounding;
@@ -69,8 +69,6 @@ namespace flopoco{
 		vector <int> sigmaSign; /** +1 if sigma is always positive, -1 if sigma is always negative, O if sigma needs to be signed */
 		vector<int> sigmaMSB;   /**< vector of MSB weights for each sigma term. Note that these MSB consider that sigma is signed: one may remove 1 if sigmaSign is +1 or -1  */
 
-		/** Compute the MSBs of the intermediate terms sigma_i in an Horner evaluation scheme */
-		void computeSigmaSignsAndMSBs();
 	};
 
 }

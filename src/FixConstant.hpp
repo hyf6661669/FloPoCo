@@ -51,6 +51,7 @@ namespace flopoco{
 		bool addRoundBit(int weight);   /**< updates the value to add a bit of a certain weight . This weight has to be between LSB and MSB. Returns true if it is the case, return false in case of failure */
 		void changeMSB(int newMSB);
 		void changeLSB(int newMSB);
+		void setUnsigned();
 		std::string report();
 		
 	};

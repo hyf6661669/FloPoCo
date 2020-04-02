@@ -42,22 +42,19 @@ namespace flopoco{
 								int lsbIn,
 								int msbOut,
 								int lsbOut,
-								vector<BasicPolyApprox> poly, // these should all be the same degree and all have the same format  
-								bool signedXandCoeffs=true,
+								vector<BasicPolyApprox*> p, // these should all be the same degree and all have the same format  
 								bool finalRounding=true);
 
 		~FixPolyEval();
 		
-  private:
-		vector<BasicPolyApprox> poly;
+  protected:
+		vector<BasicPolyApprox*> poly;
     int degree;                       /**< degree of the polynomial, extracted by the constructor */
 		int lsbIn;                        /** LSB of input. Input is assumed in [0,1], so unsigned and MSB=-1 */
 		int msbOut;                        /** MSB of output  */
 		int lsbOut;                        /** LSB of output */
     vector<int> coeffMSB;             /**< vector of size degree: MSB weight for the coefficients of degree i; extracted by te constructor */
     vector<int> coeffLSB;             /**< vector of MSB weights for each coefficient, extracted by te constructor */
-    bool signedXandCoeffs;                /**< if false, all the coeffs are unsigned and the operator may use unsigned arithmetc. 
-																				 Usually true unless known Taylor etc. Set by the caller of course */
 		bool finalRounding;               /** If true, the operator returns a rounded result (i.e. add the half-ulp then truncate)
 																					If false, the operator returns the full, unrounded results including guard bits */
 

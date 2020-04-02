@@ -166,6 +166,11 @@ namespace flopoco{
 		}
 	}
 
+	void FixConstant::setUnsigned() {
+		isSigned=false;
+	}
+
+	
 	bool FixConstant::addRoundBit(int weight){
 		if(isZeroP) {
 			isZeroP=false;

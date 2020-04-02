@@ -118,6 +118,7 @@ FixFunctions/BasicPolyApprox
 FixFunctions/FixPolyEval
 FixFunctions/FixHornerEvaluator
 FixFunctions/PiecewisePolyApprox
+FixFunctions/UniformPiecewisePolyApprox
 FixFunctions/FixFunctionByPiecewisePoly
 FixFunctions/Multipartite
 FixFunctions/FixFunctionByMultipartiteTable
@@ -165,5 +166,5 @@ Posit/Fun/PositFunction
 Posit/Fun/PositFunctionByTable
 Posit/Posit2Posit
 
-FixFunctions/VaryingPiecewisePolyApprox
-FixFunctions/FixFunctionByVaryingPiecewisePoly
+#FixFunctions/VaryingPiecewisePolyApprox
+#FixFunctions/FixFunctionByVaryingPiecewisePoly

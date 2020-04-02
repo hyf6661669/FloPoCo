@@ -60,10 +60,7 @@ a 		 So all that remains is to compute the parameters of the FixMultAdd.
 		 * size of \sigma_d: MSB is that of  a_{d-j}, plus 1 for overflows (sign extended).
 							 LSB is lsbMult[i]
 
-		 * size of x truncated x^T_i : since it is multiplied by \sigma_{j-1}, it should have the same size
-		 * weight of the MSB of the product: since y \in [-1,1), this is the MSB of \sigma_{j-1}, i.e. the MSB of a_{d-j+1}
-		 ** in case of signed coeffs, the max abs value is 2^(MSB-1).
-		 **   however, since we have zero-extended x in this case there is some thinking TODO
+		 * size of x truncated x^T_i : 
 		 * size of the truncated result:
 		 * weight of the LSB of a_{d-j}
 		 * weight of the MSB of a_{d-j}
@@ -76,8 +73,129 @@ a 		 So all that remains is to compute the parameters of the FixMultAdd.
 namespace flopoco{
 
 
-	void FixHornerEvaluator::computeLSBs(){
 
+
+	FixHornerEvaluator::FixHornerEvaluator(OperatorPtr parentOp, Target* target, 
+																				 int lsbIn_,
+																				 int msbOut_,
+																				 int lsbOut_,
+																				 vector<BasicPolyApprox*> pp,
+																				 bool finalRounding):
+		FixPolyEval(parentOp, target, lsbIn, msbOut, lsbOut, pp, finalRounding)
+	{
+		initialize();
+		computeArchitecturalParameters();
+		generateVHDL();
+	}
+
+
+
+
+
+	void FixHornerEvaluator::initialize(){
+		setNameWithFreqAndUID("FixHornerEvaluator");		
+		setCopyrightString("F. de Dinechin (2014-2020)");
+		srcFileName="FixHornerEvaluator";
+
+}
+
+#if 0
+	void FixFunctionByPiecewisePoly::computeSigmaSignsAndMSBs(){
+		mpfr_t res_left, res_right;
+		sollya_obj_t rangeS;
+		mpfr_init2(res_left, 10000); // should be enough for anybody
+		mpfr_init2(res_right, 10000); // should be enough for anybody
+		rangeS = sollya_lib_parse_string("[-1;1]");		
+
+		REPORT(DEBUG, "Computing sigmas, signs and MSBs");
+
+		// initialize the vector of MSB weights
+		for (int j=0; j<=degree; j++) {
+			sigmaMSB.push_back(INT_MIN);
+			sigmaSign.push_back(17); // 17 meaning "not initialized yet"
+		}
+		
+		for (int i=0; i<(1<<pwp -> alpha); i++){
+			// initialize the vectors with sigma_d = a_d
+			FixConstant* sigma = pwp -> poly[i] -> getCoeff(degree);
+			sollya_obj_t sigmaS = sollya_lib_constant(sigma -> fpValue);
+			int msb = sigma -> MSB;
+			if (msb>sigmaMSB[degree])
+				sigmaMSB[degree]=msb;
+			sigmaSign[degree] = pwp -> coeffSigns[degree];
+			
+			for (int j=degree-1; j>=0; j--) {
+				// interval eval of sigma_j
+				// get the output range of sigma
+				sollya_obj_t pi_jS = sollya_lib_mul(rangeS, sigmaS);
+				sollya_lib_clear_obj(sigmaS);
+				sollya_obj_t a_jS = sollya_lib_constant(pwp -> poly[i] -> getCoeff(j) -> fpValue);
+				sigmaS = sollya_lib_add(a_jS, pi_jS);
+				sollya_lib_clear_obj(pi_jS);
+				sollya_lib_clear_obj(a_jS);
+				// Get the endpoints
+				int isrange = sollya_lib_get_bounds_from_range(res_left, res_right, sigmaS);
+				if (isrange==false)
+					THROWERROR("computeSigmaMSB: Not a range???");
+				// First a tentative conversion to double to sort and get an estimate of the MSB and zeroness
+				double l=mpfr_get_d(res_left, GMP_RNDN);
+				double r=mpfr_get_d(res_right, GMP_RNDN);
+				REPORT(DEBUG, "i=" << i << "  j=" << j << "  left=" << l << " right=" << r);
+				// Now we want to know is if both have the same sign
+				if (l>=0 && r>=0) { // sigma is positive
+					if (sigmaSign[j] == 17 || sigmaSign[j] == +1)
+						sigmaSign[j] = +1;
+					else
+						sigmaSign[j] = 0;
+				}
+				else if (l<0 && r<0) { // sigma is positive
+					if (sigmaSign[j] == 17 || sigmaSign[j] == -1)
+						sigmaSign[j] = -1;
+					else
+						sigmaSign[j] = 0;
+				}
+				else
+					sigmaSign[j] = 0;
+				
+
+				// now finally the MSB computation
+				int msb;
+				mpfr_t mptmp;
+				mpfr_init2(mptmp, 10000); // should be enough for anybody
+				// we are interested in the max in magnitude
+				if(fabs(l)>fabs(r)){
+					mpfr_abs(mptmp, res_left, GMP_RNDN); // exact
+				}
+				else{
+					mpfr_abs(mptmp, res_right, GMP_RNDN); // exact
+				}
+				mpfr_log2(mptmp, mptmp, GMP_RNDU);
+				mpfr_floor(mptmp, mptmp);
+				msb = mpfr_get_si(mptmp, GMP_RNDU);
+				mpfr_clear(mptmp);
+				msb++; // for the sign
+				if (msb > sigmaMSB[j])
+					sigmaMSB[j] = msb;
+			} // for j
+			
+			
+			sollya_lib_clear_obj(sigmaS);
+		
+		} // for i
+		mpfr_clear(res_left);
+		mpfr_clear(res_right);
+		sollya_lib_clear_obj(rangeS);
+
+		for (int j=degree; j>=0; j--) {
+			REPORT(DETAILED, "Horner step " << j << ":   sigmaSign = " << sigmaSign[j] << " \t sigmaMSB = " << sigmaMSB[j]);
+		}	
+
+	}
+#endif
+	
+	void FixHornerEvaluator::computeArchitecturalParameters(){
+
+#if 0
 		lsbSigma[degree] = lsbCoeff; // This one is not variable
 		for(int i=degree-1; i>=0; i--) {
 			lsbSigma[i] = lsbCoeff; // these ones will decrease if we need more accuracy
@@ -123,47 +241,28 @@ namespace flopoco{
 		for(int i=degree-1; i>=0; i--) {
 			REPORT(INFO, "  level " << i << " requires a signed " << 0-lsbXTrunc[i]+1 << "x" <<  msbSigma[i+1] - lsbSigma[i+1] +1 << " multiplier");
 		}
+#endif
 	} 
 
 
 
 	
-	void FixHornerEvaluator::initialize(){
-		setNameWithFreqAndUID("FixHornerEvaluator");		
-		setCopyrightString("F. de Dinechin (2014-2019)");
-		srcFileName="FixHornerEvaluator";
-		if(!signedXandCoeffs)
-			REPORT(0,"signedXandCoeffs=false, this code has probably never been tested in this case. If it works, please remove this warning. If it doesn't, we deeply apologize and invite you to fix it.");
-
-		if(roundingErrorBudget==-1)
-			roundingErrorBudget = exp2(-lsbOut);
-			// computing the coeff sizes
-		for (int i=0; i<=degree; i++)
-			coeffSize.push_back(msbCoeff[i]-lsbCoeff+1); // see FixConstant.hpp for the constant format
-
-		// declaring inputs
-		if(signedXandCoeffs){
-			addInput("X"  , 0 - lsbIn+1);
-			vhdl << tab << declareFixPoint("Xs", true, 0, lsbIn) << " <= signed(X);" << endl;
-		}
-		else{
-			addInput("X"  , -lsbIn);
-			vhdl << tab << declareFixPoint("Xs", false, -1, lsbIn) << " <= unsigned(X);" << endl;
-		}
-		for (int i=0; i<=degree; i++)
-			addInput(join("A",i), coeffSize[i]);
-
-		// declaring outputs
-		addOutput("R", msbOut-lsbOut+1);
-		//		setCriticalPath( getMaxInputDelays(inputDelays) + target->localWireDelay() );
-
-}
 
 
 
 
 	
 	void FixHornerEvaluator::generateVHDL(){
+
+#if 0
+		for (int j=0; j<=degree; j++) {
+			addInput(join("A",j), coeffSize[j]);
+			vhdl << tab << declareFixPoint("Xs", true, 0, lsbIn) << " <= signed(X);" << endl;
+		}
+		// declaring outputs
+		addOutput("R", msbOut-lsbOut+1);
+		//		setCriticalPath( getMaxInputDelays(inputDelays) + target->localWireDelay() );
+
 
 		// Split the coeff table output into various coefficients
 		for(int i=0; i<=degree; i++) {
@@ -212,9 +311,14 @@ namespace flopoco{
 			resizeFixPoint("Ys", "Sigma0",  msbOut, lsbOut);
 
 		vhdl << tab << "R <= " << "std_logic_vector(Ys);" << endl;
-		
+
+#endif
 	}
 
+
+
+	
+#if 0
 
 	// A naive constructor that does a worst case analysis of datapath looking onnly at the coeff sizes
 	FixHornerEvaluator::FixHornerEvaluator(OperatorPtr parentOp, Target* target,
@@ -291,7 +395,8 @@ namespace flopoco{
 		generateVHDL();
   }
 
-
+#endif
+	
 	FixHornerEvaluator::~FixHornerEvaluator(){}
 
 

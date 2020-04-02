@@ -18,24 +18,24 @@ using namespace std;
 namespace flopoco{
 
 	/**
-	 * The PiecewisePolyApprox object builds and maintains a piecewise machine-efficient
+	 * The UniformPiecewisePolyApprox object builds and maintains a piecewise machine-efficient
 	 * polynomial approximation to a fixed-point function over [0,1]
 	*/
 
-	class PiecewisePolyApprox {
+	class UniformPiecewisePolyApprox {
 	public:
 
 		/**
 		 * A minimal constructor
 		 */
-		PiecewisePolyApprox(FixFunction* f, double targetAccuracy, int degree);
+		UniformPiecewisePolyApprox(FixFunction* f, double targetAccuracy, int degree);
 
 		/**
 		 * A minimal constructor that parses a sollya string
 		 */
-		PiecewisePolyApprox(string sollyaString, double targetAccuracy, int degree);
+		UniformPiecewisePolyApprox(string sollyaString, double targetAccuracy, int degree);
 
-		virtual ~PiecewisePolyApprox();
+		virtual ~UniformPiecewisePolyApprox();
 
 		static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);
 

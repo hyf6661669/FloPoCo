@@ -30,7 +30,7 @@ namespace flopoco{
 		setCopyrightString("Florent de Dinechin (2010-2018)");
 
 		f = new FixFunction(func_, signedIn_, lsbIn_, lsbOut_);
-		addHeaderComment("-- Evaluator for " +  f-> getDescription() + "\n");
+		addHeaderComment("Evaluator for " +  f-> getDescription() + "\n");
 		wIn = f->wIn;
 		wOut = f->wOut;
 		if(wIn>30) {

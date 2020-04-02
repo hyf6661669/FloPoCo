@@ -23,7 +23,7 @@ FixFunctionByTable
 FixFunctionByMultipartiteTable
 # FixFunctionBySimplePoly # not sure we will revive it
 FixFunctionByPiecewisePoly
-PiecewisePolyApprox
+UniformPiecewisePolyApprox
 FixRealKCM
 FixRealShiftAdd
 FixRealConstMult

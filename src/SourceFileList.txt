@@ -117,7 +117,6 @@ FixFunctions/FixFunctionByTable
 FixFunctions/BasicPolyApprox
 FixFunctions/FixPolyEval
 FixFunctions/FixHornerEvaluator
-FixFunctions/FixFunctionBySimplePoly
 FixFunctions/PiecewisePolyApprox
 FixFunctions/FixFunctionByPiecewisePoly
 FixFunctions/Multipartite

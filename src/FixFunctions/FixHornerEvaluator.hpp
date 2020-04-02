@@ -17,7 +17,7 @@
 #include <sstream>
 
 #include "Operator.hpp"
-#include "Table.hpp"
+#include "FixPolyEval.hpp"
 
 
 namespace flopoco{

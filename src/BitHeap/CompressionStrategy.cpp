@@ -291,7 +291,7 @@ namespace flopoco{
 			//get bits for plotter
 			Bit *soonestBit, *soonestCompressibleBit;
 			soonestBit = getSoonestBit(0, bitheap->width-1);
-			soonestCompressibleBit = getSoonestCompressibleBit(bitheap->lsb, bitheap->msb, compressionDelay);
+			soonestCompressibleBit = getSoonestCompressibleBit(0, bitheap->width - 1, compressionDelay);
 			for(unsigned int c = 0; c < bitheap->width; c++){	//drop all compressors which start > MSB
 				vector<pair<BasicCompressor*, unsigned int> > tempVector;
 				tempVector = solution.getCompressorsAtPosition(s, c);
@@ -469,8 +469,7 @@ namespace flopoco{
 		bool isConstantNonzero = false;
 		for (int w = bitheap->lsb; w < bitheap->msb; w++){
 			if (1 == ((bitheap->constantBits>>w) & 1) ){
-				Bit* bit = bitheap->addBit("'1'", w - bitheap->lsb);
-
+				Bit* bit = bitheap->addBit("'1'", w);
 				//set the signal to constant type, with declaration
 				bit->signal->setType(Signal::constantWithDeclaration);
 				//initialize the signals predecessors and successors
@@ -974,7 +973,7 @@ namespace flopoco{
 		Bit* soonestBit = nullptr;
 		unsigned count = lsbColumn;
 
-		if(((int)lsbColumn < bitheap->lsb) || ((int)msbColumn > bitheap->msb))
+		if(((int)lsbColumn < 0) || ((int)msbColumn > bitheap->width - 1))
 			THROWERROR("Invalid arguments for getSoonest bit: lsbColumn="
 					<< lsbColumn << " msbColumn=" << msbColumn);
 		if(bitheap->getMaxHeight() == 0)
@@ -1014,7 +1013,7 @@ namespace flopoco{
 		unsigned count = lsbColumn;
 		vector<Bit*> appliedCompressor;
 
-		if(((int)lsbColumn < bitheap->lsb) || ((int)msbColumn > bitheap->msb))
+		if(((int)lsbColumn < 0) || ((int)msbColumn > bitheap->width - 1))
 			THROWERROR("Invalid arguments for getSoonestCompressibleBit bit: lsbColumn="
 					<< lsbColumn << " msbColumn=" << msbColumn);
 		if(bitheap->getMaxHeight() == 0)

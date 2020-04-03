@@ -103,7 +103,7 @@ namespace flopoco {
 		//insert the new bit so that the vector is sorted by bit (cycle, delay)
 		insertBitInColumn(bit, weight - lsb);
 
-		REPORT(DEBUG, "added bit named "  << bit->getName() << " on column " << weight
+		REPORT(DEBUG, "added bit named "  << bit->getName() << " on column " << weight - lsb
 				<< " at cycle=" << bit->signal->getCycle() << " cp=" << bit->signal->getCriticalPath());
 
 		printColumnInfo(weight);

@@ -81,7 +81,7 @@ void	FixFunction::initialize()
 		mpfr_init2(tmp, 1000); // no big deal if we are not accurate here 
 		sollya_lib_get_constant(supMP, supS);
 		sollya_lib_get_constant(infMP, infS);
-		if(mpfr_get_d(infMP,MPFR_RNDD) >= 0)	{
+		if(mpfr_sgn(infMP) >= 0)	{
 			signedOut=false;
 			}
 		else {

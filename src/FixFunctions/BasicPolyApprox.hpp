@@ -107,6 +107,9 @@ namespace flopoco{
 		/** retrieve the bound on approximation error for this polynomial approximation */ 
 		double getApproxErrorBound();
 
+		/** set the polynomial approximatio error bound (mostly useful when polynomials have been cached to disk) */ 
+		void setApproxErrorBound(double b);
+
 		/** retrieve the i-th coefficient  */ 
 		FixConstant* getCoeff(int i);
 		

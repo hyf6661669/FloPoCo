@@ -81,7 +81,7 @@ namespace flopoco{
 																				 int lsbOut_,
 																				 vector<BasicPolyApprox*> poly_,
 																				 bool finalRounding):
-		FixPolyEval(parentOp, target, lsbIn, msbOut, lsbOut, poly_, finalRounding)
+		FixPolyEval(parentOp, target, lsbIn_, msbOut_, lsbOut_, poly_, finalRounding)
 	{
 		initialize();
 		computeArchitecturalParameters();
@@ -101,15 +101,12 @@ namespace flopoco{
 
 
 	void FixHornerEvaluator::computeArchitecturalParameters(){
-		// these are the variables for a polynomial on a sub-interval
-		// vector <int> sSign(degree+1,0); /**< dummy value */
-		vector <int> sMSB(degree+1,INT_MIN); /**< dummy value */ 
-		vector <int> sLSB(degree+1,INT_MAX); /**< dummy value */ 
-		//vector <int> pMSB(degree,INT_MIN); /**< dummy value */ 
-		//vector <int> pLSB(degree,INT_MAX); /**< dummy value */ 
 		// initialize the worst case parameters so that we can use array notation. All dummy values
-		wcSumMSB = vector<int>(degree+1,0);
-		wcSumLSB = vector<int>(degree+1,0);
+		wcSumSign = vector<int>(degree+1, 17);
+		wcMaxAbsSum = vector<double>(degree+1, -1);	
+		wcSumMSB = vector<int>(degree+1,INT_MIN);
+		wcSumLSB = vector<int>(degree+1,INT_MAX);
+		wcYLSB = vector<int>(degree+1,INT_MAX);
 		//		wcProductMSB = vector<int>(degree,0);
 		//wcProductLSB = vector<int>(degree,0);
 
@@ -120,34 +117,123 @@ namespace flopoco{
 	
 		// iterate over all the polynomials to implement the error analysis on each interval
 		for (size_t k=0; k<poly.size(); k++) {
-			REPORT(INFO, "Error analysis on interval " << k);
+			REPORT(INFO, "Error analysis on interval " << k  << " of " << poly.size()-1 );
+
+			// First, compute the max abs value of the d intermediate sums
+			vector<double> maxAbsSum(degree+1, -1);
+			vector<int> sumMSB(degree+1, INT_MIN);
 			// S_d=C_d in the ASA book
 			sollya_obj_t sS =	sollya_lib_constant(poly[k] -> getCoeff(degree) -> fpValue);
-			sMSB[degree] = poly[k] -> getCoeff(degree) -> MSB;
-			sLSB[degree] = poly[k] -> getCoeff(degree) -> LSB;
+			maxAbsSum[degree] = abs(mpfr_get_d(poly[k] -> getCoeff(degree) -> fpValue, MPFR_RNDN)); // should be round away from 0 but nobody will notice
 			for(int i=degree-1; i>=0; i--) {
+				int sumSign;
 				sollya_obj_t cS = sollya_lib_constant(poly[k] -> getCoeff(i) -> fpValue);
 				sollya_obj_t pS = sollya_lib_mul(yS, sS);
 				sollya_lib_clear_obj(sS); // it has been used
 				sS = sollya_lib_add(cS, pS);
 				sollya_lib_clear_obj(pS); // it has been used
 				sollya_lib_clear_obj(cS); // it has been used
-				REPORT(0, "interval " << k << ": expression of S_"<<i);
-				sollya_lib_printf("%b\n", sS);
+				// REPORT(0, "interval " << k << ": expression of S_"<<i);
+				// sollya_lib_printf("%b\n", sS);
 
+				sollya_obj_t sIntervalS = sollya_lib_evaluate(sS,rangeS);
+				sollya_obj_t supS = sollya_lib_sup(sIntervalS);
+				sollya_obj_t infS = sollya_lib_inf(sIntervalS);
+				mpfr_t supMP, infMP, tmp;
+				mpfr_init2(supMP, 1000); // no big deal if we are not accurate here 
+				mpfr_init2(infMP, 1000); // no big deal if we are not accurate here 
+				mpfr_init2(tmp, 1000); // no big deal if we are not accurate here 
+				sollya_lib_get_constant(supMP, supS);
+				sollya_lib_get_constant(infMP, infS);
+
+				if(mpfr_sgn(infMP) >=0 )
+					sumSign = 1;
+				else if(mpfr_sgn(supMP) <0 )
+					sumSign = -1;
+				else 
+					sumSign = 0;
+				
+				// Now recompute the MSB explicitely.
+				mpfr_abs(supMP, supMP, GMP_RNDU);
+				mpfr_abs(infMP, infMP, GMP_RNDU);
+				mpfr_max(supMP, infMP, supMP, GMP_RNDU); // now we have the supnorm
+				maxAbsSum[i] = mpfr_get_d(supMP, GMP_RNDU);
+				mpfr_log2(tmp, supMP, GMP_RNDU);
+				mpfr_floor(tmp, tmp);
+				sumMSB[i] = 1+ mpfr_get_si(tmp, GMP_RNDU); // 1+ because we assume signed arithmetic for s
+
+				REPORT(INFO, " maxAbsSum[" << i << "] = " << maxAbsSum[i] << "  sumMSB[" << i << "] = " << sumMSB[i]);
+				
+				sollya_lib_clear_obj(sIntervalS);
+				sollya_lib_clear_obj(supS);
+				sollya_lib_clear_obj(infS);
+				mpfr_clears(supMP,infMP,tmp, NULL);
+
+				if(wcSumSign[i]==17)
+					wcSumSign[i]=sumSign;
+				else {
+					if(sumSign!=wcSumSign[i])
+						wcSumSign[i]=0; // otherwise leave it as it is
+				} 
+		
 				// Finally update the worst-case values 
-				wcSumMSB[i]     = max(wcSumMSB[i],     sMSB[i]);
-				wcSumLSB[i]     = min(wcSumLSB[i],     sLSB[i]);
+				wcSumMSB[i]     = max(wcSumMSB[i],     sumMSB[i]);
+				//				wcSumLSB[i]     = min(wcSumLSB[i],     sumLSB);
 				//wcProductMSB[i] = max(wcProductMSB[i], pMSB[i]);
 				//wcProductLSB[i] = min(wcProductLSB[i], pLSB[i]);
-			}
-
+			} // end loop on degree 
 			// and free remaining memory
 			sollya_lib_clear_obj(sS);
-		}
+
+			
+			REPORT(0, "OK, now we have the max Si, we may implement the error analysis: poly[k]->getApproxErrorBound()="<< poly[k]->getApproxErrorBound());
+			// initialization
+			double evalErrorBudget = exp2(lsbOut-1) - poly[k]->getApproxErrorBound();
+			int lsb = lsbOut;
+			vector<int> lsbY(degree,0);
+			// we have delta_Y=2^lsbY, and we want to balance the error term maxS[i]deltaY with delta_multadd ~ 2^lsb,    
+			for(int i=degree-1; i>=0; i--) {
+				lsbY[i] = max(lsb - sumMSB[i], lsbIn);
+			}
+
+			bool evalErrorNotOK=true;
+			while(evalErrorNotOK) {
+				double evalerror = 0;
+				for(int i=degree-1; i>=0; i--) {
+					double multaddError=exp2(lsb);
+					double yTruncationError = (lsbY[i]==lsbIn? 0 : exp2(lsbY[i])*maxAbsSum[i]); 
+					evalerror += multaddError + yTruncationError;
+				}
+				if(evalerror < evalErrorBudget)
+					evalErrorNotOK=false;
+					
+				REPORT(0, "Interval " << k  << "  evalErrorBudget=" << evalErrorBudget  << "   lsb=" << lsb
+							 << " => evalError=" << evalerror << (evalErrorNotOK?":  increasing lsb... " : ":  OK!"));
+				if(evalErrorNotOK) {
+					lsb--;
+					for(int i=degree-1; i>=0; i--) {
+						lsbY[i] =  max(lsb - sumMSB[i], lsbIn);
+					}	
+				}
+			}
+
+			// OK, we have the lsbY and lsb for this polynomial, now update the worst-case
+			for(int i=degree-1; i>=0; i--) {
+				wcSumLSB[i] = min(wcSumLSB[i], lsb);
+				wcYLSB[i] = min(wcYLSB[i], lsbY[i]);
+			}	
+			
+		} // closes the for loop on k (the intervals)
+ 
+		// Final reporting
+		REPORT(0, "Architecture parameters:")
+		for(int i=degree-1; i>=0; i--) {
+			REPORT(0,"i=" << i << " YLSB=" << wcYLSB[i] << "  \t SumMSB=" << wcSumMSB[i] << "\t SumLSB=" << wcSumLSB[i] )
+			}	
+		
+
 		sollya_lib_clear_obj(yS); 
 		sollya_lib_clear_obj(rangeS);
-		
 	} 
 
 

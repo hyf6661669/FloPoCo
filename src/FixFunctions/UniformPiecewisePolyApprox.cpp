@@ -316,6 +316,7 @@ namespace flopoco{
 			{
 				cacheFile <<  poly[i] -> getCoeff(j) -> getBitVectorAsMPZ() << endl;
 			}
+			cacheFile << poly[i] -> getApproxErrorBound() << endl;
 		}
 	}
 
@@ -349,6 +350,9 @@ namespace flopoco{
 			}
 			BasicPolyApprox* p = new BasicPolyApprox(degree,MSB,LSB,coeff);
 			poly.push_back(p);
+			double aeb;
+			cacheFile >> aeb;
+			p->setApproxErrorBound(aeb);
 		}
 	}
 

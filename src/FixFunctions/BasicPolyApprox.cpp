@@ -410,6 +410,11 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 		return approxErrorBound;
 	}
 
+	void BasicPolyApprox::setApproxErrorBound(double b){
+		approxErrorBound = b;
+	}
+
+	
 	FixConstant* BasicPolyApprox::getCoeff(int i){
 		return coeff[i];
 	}

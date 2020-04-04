@@ -79,9 +79,9 @@ namespace flopoco{
 																				 int lsbIn_,
 																				 int msbOut_,
 																				 int lsbOut_,
-																				 vector<BasicPolyApprox*> pp,
+																				 vector<BasicPolyApprox*> poly_,
 																				 bool finalRounding):
-		FixPolyEval(parentOp, target, lsbIn, msbOut, lsbOut, pp, finalRounding)
+		FixPolyEval(parentOp, target, lsbIn, msbOut, lsbOut, poly_, finalRounding)
 	{
 		initialize();
 		computeArchitecturalParameters();
@@ -96,9 +96,63 @@ namespace flopoco{
 		setNameWithFreqAndUID("FixHornerEvaluator");		
 		setCopyrightString("F. de Dinechin (2014-2020)");
 		srcFileName="FixHornerEvaluator";
+	}
 
-}
 
+
+	void FixHornerEvaluator::computeArchitecturalParameters(){
+		// these are the variables for a polynomial on a sub-interval
+		// vector <int> sSign(degree+1,0); /**< dummy value */
+		vector <int> sMSB(degree+1,INT_MIN); /**< dummy value */ 
+		vector <int> sLSB(degree+1,INT_MAX); /**< dummy value */ 
+		//vector <int> pMSB(degree,INT_MIN); /**< dummy value */ 
+		//vector <int> pLSB(degree,INT_MAX); /**< dummy value */ 
+		// initialize the worst case parameters so that we can use array notation. All dummy values
+		wcSumMSB = vector<int>(degree+1,0);
+		wcSumLSB = vector<int>(degree+1,0);
+		//		wcProductMSB = vector<int>(degree,0);
+		//wcProductLSB = vector<int>(degree,0);
+
+		sollya_obj_t yS = sollya_lib_build_function_free_variable();		
+		sollya_obj_t rangeS = sollya_lib_parse_string("[-1;1]");		
+
+		REPORT(INFO, "Entering computeArchitecturalParameters, for " << poly.size() << " intervals" );
+	
+		// iterate over all the polynomials to implement the error analysis on each interval
+		for (size_t k=0; k<poly.size(); k++) {
+			REPORT(INFO, "Error analysis on interval " << k);
+			// S_d=C_d in the ASA book
+			sollya_obj_t sS =	sollya_lib_constant(poly[k] -> getCoeff(degree) -> fpValue);
+			sMSB[degree] = poly[k] -> getCoeff(degree) -> MSB;
+			sLSB[degree] = poly[k] -> getCoeff(degree) -> LSB;
+			for(int i=degree-1; i>=0; i--) {
+				sollya_obj_t cS = sollya_lib_constant(poly[k] -> getCoeff(i) -> fpValue);
+				sollya_obj_t pS = sollya_lib_mul(yS, sS);
+				sollya_lib_clear_obj(sS); // it has been used
+				sS = sollya_lib_add(cS, pS);
+				sollya_lib_clear_obj(pS); // it has been used
+				sollya_lib_clear_obj(cS); // it has been used
+				REPORT(0, "interval " << k << ": expression of S_"<<i);
+				sollya_lib_printf("%b\n", sS);
+
+				// Finally update the worst-case values 
+				wcSumMSB[i]     = max(wcSumMSB[i],     sMSB[i]);
+				wcSumLSB[i]     = min(wcSumLSB[i],     sLSB[i]);
+				//wcProductMSB[i] = max(wcProductMSB[i], pMSB[i]);
+				//wcProductLSB[i] = min(wcProductLSB[i], pLSB[i]);
+			}
+
+			// and free remaining memory
+			sollya_lib_clear_obj(sS);
+		}
+		sollya_lib_clear_obj(yS); 
+		sollya_lib_clear_obj(rangeS);
+		
+	} 
+
+
+
+	
 #if 0
 	void FixFunctionByPiecewisePoly::computeSigmaSignsAndMSBs(){
 		mpfr_t res_left, res_right;
@@ -193,58 +247,6 @@ namespace flopoco{
 	}
 #endif
 	
-	void FixHornerEvaluator::computeArchitecturalParameters(){
-
-#if 0
-		lsbSigma[degree] = lsbCoeff; // This one is not variable
-		for(int i=degree-1; i>=0; i--) {
-			lsbSigma[i] = lsbCoeff; // these ones will decrease if we need more accuracy
-		}
-		double error;
-		bool done=false;
-		// Now compute the rounding error entailed by this setup, and loop if it overshoots the budget
-		while (!done){
-			error=0.0;
-			for(int i=degree-1; i>=0; i--) {
-				// Truncation of x:
-				// One input to the mult will be sigma[i+1], of size msbSigma[i+1]-lsbSigma[i+1]+1
-				// The other will be X, of size 0-lsbIn+1;  truncate it to the same size:
-				lsbXTrunc[i] = max(lsbIn, lsbSigma[i+1]-msbSigma[i+1]);
-				//REPORT(DETAILED, "... lsbXTrunc[" << i<< "]=" << lsbXTrunc[i]);
-				if(lsbXTrunc[i]!=lsbIn) // there has been some truncation
-					error += exp2(lsbSigma[i]);
-				// otherwise no truncation, no error...
-				
-				// P is the full product of sigma_i+1 by xtrunc: sum the MSBs+1, and sum the LSBs
-				// Again TODO this +1 is most of the time overkill (only for the case -1*-1. Can sigma reach -1?)
-				lsbP[i] = lsbSigma[i+1] + lsbXTrunc[i]; 
-				if(getTarget()->plainVHDL()) 	// we will be able to round the product to lsbSigma[i] 
-					error += exp2(lsbSigma[i]-1);
-				else // we will truncate the product to lsbSigma[i]
-					error += exp2(lsbSigma[i]);
-				REPORT(DETAILED, "i="<< i  << " lsbXtrunc=" << 	lsbXTrunc[i] << " msbP=" << msbP[i]<< " lsbP=" << lsbP[i]<< " msbSigma=" << 	msbSigma[i]<< " lsbSigma=" << 	lsbSigma[i]);
-			}
-			if(error < roundingErrorBudget){
-				REPORT(INFO, "Rounding error bounded by "<< error  << ": Success!");
-				done=true;
-			}
-			else {// increase all the LSBs and start over. TODO refine
-				REPORT(DETAILED, "Rounding error bounded by "<< error  << ", error budget was " << roundingErrorBudget << ": decreasing LSBs...");
-				for(int i=degree-1; i>=0; i--) {
-					lsbSigma[i] --; // these ones will decrease if we need more accuracy
-				}
-			}
-		} // while
-
-		
-		// A bit of reporting
-		for(int i=degree-1; i>=0; i--) {
-			REPORT(INFO, "  level " << i << " requires a signed " << 0-lsbXTrunc[i]+1 << "x" <<  msbSigma[i+1] - lsbSigma[i+1] +1 << " multiplier");
-		}
-#endif
-	} 
-
-
 
 	
 
@@ -253,14 +255,15 @@ namespace flopoco{
 
 	
 	void FixHornerEvaluator::generateVHDL(){
-
-#if 0
+		addInput("X", -lsbIn);
+		vhdl << tab << declareFixPoint("Xs", true, 0, lsbIn) << " <= signed(X);" << endl;
 		for (int j=0; j<=degree; j++) {
-			addInput(join("A",j), coeffSize[j]);
-			vhdl << tab << declareFixPoint("Xs", true, 0, lsbIn) << " <= signed(X);" << endl;
+			addInput(join("A",j), coeffMSB[j]-coeffLSB[j] +1);
 		}
+
 		// declaring outputs
 		addOutput("R", msbOut-lsbOut+1);
+#if 0
 		//		setCriticalPath( getMaxInputDelays(inputDelays) + target->localWireDelay() );
 
 

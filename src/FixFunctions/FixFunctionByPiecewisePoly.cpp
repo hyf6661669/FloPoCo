@@ -174,6 +174,8 @@ namespace flopoco{
 																						msbOut,
 																						lsbOut,
 																						pwp->poly // provides degree and coeff formats
+																						// do we need to pass the constant signs of the coefficients? No, they have been added back
+																						// and everybody is signed.
 																						);
 		vhdl << instance(h, "horner", false);
 			

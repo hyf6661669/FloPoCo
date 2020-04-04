@@ -102,19 +102,13 @@ namespace flopoco{
     ~FixHornerEvaluator();
 		
 
-  private:
-    int degree;                       /**< degree of the polynomial */
-		int lsbIn;                        /** LSB of input. Input is assumed in [0,1], so unsigned and MSB=-1 */
-		int msbOut;                        /** MSB of output  */
-		int lsbOut;                        /** LSB of output */
-
-		// internal architectural parameters; max degree = 1000 should be enough for anybody
-		vector <int> signSigma;
-		vector<int> msbSigma;
-		vector <int>  msbP;
-		vector <int> lsbSigma;
-		vector <int> lsbP;
-		vector <int> lsbXTrunc;
+  private: // we also inherit attribute of FixPolyEval
+		// internal architectural parameters; 
+		//		vector <int> wcSumSign; /**< size degree+1 */ 
+		vector<int> wcSumMSB; /**< from 0 to degree */
+		vector<int> wcSumLSB; /**< from 0 to degree */
+		vector <int>  wcProductMSB; /**< from 0 to degree */
+		vector <int>  wcProductLSB; /**< from 0 to degree-1 */
 
 		void initialize(); /**< initialization factored out between various constructors */ 
 		void computeArchitecturalParameters(); /**< error analysis that ensures the rounding budget is met */ 

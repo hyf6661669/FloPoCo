@@ -258,16 +258,12 @@ namespace flopoco{
 			REPORT(INFO, "Polynomial data cache found: " << cacheFileName.str());
 			//********************** Just read the cache *********************
 			readFromCacheFile(cacheFileName.str());
+			REPORT(INFO, "Polynomial data read: " << cacheFileName.str());
 		} // end if cache
 
 		// Check if all the coefficients of a given degree are of the same sign
 		checkCoefficientsSign();
 
-#if 0 //experimental, WIP
-		cerr << "***************************************"<<endl;
-		computeSigmaMSBs();
-		cerr << "***************************************"<<endl;
-#endif
 
 		// A bit of reporting
 		createPolynomialsReport();
@@ -356,7 +352,6 @@ namespace flopoco{
 		}
 	}
 
-
 	void UniformPiecewisePolyApprox::checkCoefficientsSign()
 	{
 		for (int j=0; j<=degree; j++) {
@@ -367,10 +362,17 @@ namespace flopoco{
 				int sign = (mpzsign==0 ? 1 : -1);
 				if (sign != coeffSigns[j])
 					coeffSigns[j] = 0;
+				// the following line is probably never useful: if one of the coeff is the unique
+				// negative number that has no positive opposite in two's complement,
+				// then there is nothing to win to convert it to unsigned			 
+				if (poly[i]->getCoeff(j)->getBitVectorAsMPZ() == (mpz_class(1) << (MSB[j]-LSB)))
+					coeffSigns[j] = 0;
 			}
 		}
+		// Currently we just report the constant signs in this class.
+		// Their actual exploitation is delegated to the hardware-generating classes
 	}
-
+	
 
 	void UniformPiecewisePolyApprox::createPolynomialsReport()
 	{
@@ -382,7 +384,7 @@ namespace flopoco{
 
 		totalOutputSize=0;
 		for (int j=0; j<=degree; j++) {
-			int size = MSB[j]-LSB + (coeffSigns[j]==0? 1 : 0);
+			int size = MSB[j]-LSB + (coeffSigns[j] == 0);
 			totalOutputSize += size ;
 			REPORT(INFO,"      MSB["<<j<<"] = \t" << MSB[j] << "\t size=" << size
 					<< (coeffSigns[j]==0? "\t variable sign " : "\t constant sign ") << coeffSigns[j]);

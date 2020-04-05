@@ -203,8 +203,19 @@ namespace flopoco{
 			while(evalErrorNotOK) {
 				double evalerror = 0;
 				for(int i=degree-1; i>=0; i--) {
-					double multaddError=exp2(lsb);
-					double yTruncationError = (lsbY[i]==lsbIn? 0 : exp2(lsbY[i])*maxAbsSum[i+1]); 
+					double multaddError, yTruncationError;
+					if(getTarget()->plainVHDL()) {
+						multaddError=exp2(lsb-1); // full multipliers => correct rounding
+					}
+					else {
+						multaddError=exp2(lsb); // faithful truncated multipliers
+					}
+					if(lsbY[i]==lsbIn) {
+						yTruncationError = 0.0; // no truncation, no error
+					}
+					else {
+						yTruncationError = exp2(lsbY[i])*maxAbsSum[i+1];
+					}
 					evalerror += multaddError + yTruncationError;
 				}
 				if(evalerror < evalErrorBudget)

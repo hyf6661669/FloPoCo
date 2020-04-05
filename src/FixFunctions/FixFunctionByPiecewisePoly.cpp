@@ -68,34 +68,32 @@ namespace flopoco{
 	FixFunctionByPiecewisePoly::FixFunctionByPiecewisePoly(OperatorPtr parentOp, Target* target, string func, int lsbIn_, int lsbOut_, int degree_, bool finalRounding_, double approxErrorBudget_):
 		Operator(parentOp, target), degree(degree_), lsbIn(lsbIn_), lsbOut(lsbOut_), finalRounding(finalRounding_), approxErrorBudget(approxErrorBudget_){
 
+		srcFileName="FixFunctionByPiecewisePoly";
+		setNameWithFreqAndUID("FixFunctionByPiecewisePoly"); 
+		setCopyrightString("Florent de Dinechin (2014-2020)");
+
 		if(finalRounding==false){
 			THROWERROR("FinalRounding=false not implemented yet" );
 		}
+		useNumericStd();
 
 		f=new FixFunction(func, false, lsbIn, lsbOut); // this will provide emulate etc.
 		msbOut = f->msbOut;
-		srcFileName="FixFunctionByPiecewisePoly";
+		signedOut = f->signedOut;
 		
-		ostringstream name;
-
-		name<<"FixFunctionByPiecewisePoly";
-		setNameWithFreqAndUID(name.str()); 
-
-
-		setCopyrightString("Florent de Dinechin (2014-2020)");
 		addHeaderComment("Evaluator for " +  f-> getDescription() + "\n");
 		REPORT(DETAILED, "Entering: FixFunctionByPiecewisePoly \"" << func << "\" " << lsbIn << " " << lsbOut << " " << degree);
  		int wX=-lsbIn;
 		addInput("X", wX); // TODO manage signedIn
-		int outputSize = msbOut-lsbOut+1; 
+
+		int outputSize = msbOut-lsbOut+1; // OK both for signed and unsigned out 
 		addOutput("Y" ,outputSize , 2);
-		useNumericStd();
 
 		if(degree==0){ // This is a simple table
 			REPORT(DETAILED, "Degree 0: building a simple table");
 			ostringstream params;
 			params << "f="<<func
-						 << "signedIn=false" << " lsbIn=" << lsbIn
+						 << " signedIn=false" << " lsbIn=" << lsbIn
 						 << " lsbOut=" << lsbOut; 
 			newInstance("FixFunctionByTable",
 									"simpleTable",
@@ -117,14 +115,14 @@ namespace flopoco{
 			pwp = new UniformPiecewisePolyApprox(func, targetAcc, degree);
 			alpha =  pwp-> alpha; // coeff table input size 
 			
-			// Resize its MSB to the one of f 
+			REPORT(0, "**************************** Changing the MSB to " <<msbOut);
+			// Resize its MSB to the one of f
+			int msbOutWhenSigned = msbOut+(signedOut?0:1); 
 			for (int i=0; i<(1<<alpha); i++) {
-				// but first check, maybe it can also be unsigned
-				if(!f->signedOut)
-					pwp -> poly[i] -> getCoeff(0) -> setUnsigned();
-				pwp -> poly[i] -> getCoeff(0) -> changeMSB(msbOut);
+				pwp -> poly[i] -> getCoeff(0) -> changeMSB(msbOutWhenSigned);
 			}
-			pwp -> MSB[0] = msbOut;
+			pwp -> MSB[0] = msbOutWhenSigned;
+			
 
 			// Build the coefficient table out of the vector of polynomials. This is also where we add the final rounding bit
 			buildCoeffTable();
@@ -264,6 +262,7 @@ namespace flopoco{
 		// the static list of mandatory tests
 		TestList testStateList;
 		vector<string> functionList;
+		functionList.push_back("sin(pi/2*x)");
 		functionList.push_back("sin(x)");
 		functionList.push_back("exp(x)");
 		functionList.push_back("log(x+1)");
@@ -286,17 +285,16 @@ namespace flopoco{
 
 					paramList.push_back(make_pair("f","\"" + f + "\""));
 					paramList.push_back(make_pair("plainVHDL","true"));
-					paramList.push_back(make_pair("lsbOut","-15"));
-					paramList.push_back(make_pair("lsbIn","-15"));
-					paramList.push_back(make_pair("d","2"));
-					paramList.push_back(make_pair("TestBench n=","-2"));
+					paramList.push_back(make_pair("lsbOut","-24"));
+					paramList.push_back(make_pair("lsbIn","-24"));
+					paramList.push_back(make_pair("d","3"));
 					testStateList.push_back(paramList);
 					paramList.clear();
 
 					paramList.push_back(make_pair("f","\"" + f + "\""));
 					paramList.push_back(make_pair("plainVHDL","true"));
-					paramList.push_back(make_pair("lsbOut","-25"));
-					paramList.push_back(make_pair("lsbIn","-25"));
+					paramList.push_back(make_pair("lsbOut","-32"));
+					paramList.push_back(make_pair("lsbIn","-32"));
 					paramList.push_back(make_pair("d","5"));
 					testStateList.push_back(paramList);
 					paramList.clear();

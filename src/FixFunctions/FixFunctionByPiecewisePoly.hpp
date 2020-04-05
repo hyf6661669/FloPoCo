@@ -57,6 +57,7 @@ namespace flopoco{
 	private:
 		int degree;
 		int lsbIn;
+		bool signedOut;
 		int msbOut;
 		int lsbOut;
 		int alpha;

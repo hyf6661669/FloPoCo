@@ -59,9 +59,9 @@ namespace flopoco{
 		vector <int> wcSumSign; /**< 1: always positive; -1: always negative; 0: can be both  */  
 		vector<int> wcSumMSB; /**< from 0 to degree */
 		vector<int> wcSumLSB; /**< from 0 to degree */
-		vector<int> wcYLSB; /**< from 0 to degree */
-		// vector <int>  wcProductMSB; /**< from 0 to degree */
-		// vector <int>  wcProductLSB; /**< from 0 to degree-1 */
+		vector<int> wcYLSB; /**< from 0 to degree-1*/
+		//		vector <int>  wcProductMSB; /**< from 0 to degree */
+		//		vector <int>  wcProductLSB; /**< from 0 to degree-1 */
 
 		void initialize(); /**< initialization factored out between various constructors */ 
 		void computeArchitecturalParameters(); /**< error analysis that ensures the rounding budget is met */ 

@@ -106,8 +106,8 @@ namespace flopoco{
 		wcMaxAbsSum = vector<double>(degree+1, -1);	
 		wcSumMSB = vector<int>(degree+1,INT_MIN);
 		wcSumLSB = vector<int>(degree+1,INT_MAX);
-		wcYLSB = vector<int>(degree+1,INT_MAX);
-		//		wcProductMSB = vector<int>(degree,0);
+		wcYLSB = vector<int>(degree,INT_MAX);
+		//wcProductMSB = vector<int>(degree,0);
 		//wcProductLSB = vector<int>(degree,0);
 
 		sollya_obj_t yS = sollya_lib_build_function_free_variable();		
@@ -125,6 +125,9 @@ namespace flopoco{
 			// S_d=C_d in the ASA book
 			sollya_obj_t sS =	sollya_lib_constant(poly[k] -> getCoeff(degree) -> fpValue);
 			maxAbsSum[degree] = abs(mpfr_get_d(poly[k] -> getCoeff(degree) -> fpValue, MPFR_RNDN)); // should be round away from 0 but nobody will notice
+			sumMSB[degree] = poly[k] ->  getCoeff(degree) -> MSB;
+			wcSumMSB[degree]     = max(wcSumMSB[degree],     sumMSB[degree]); // this one is probably useless
+
 			for(int i=degree-1; i>=0; i--) {
 				int sumSign;
 				sollya_obj_t cS = sollya_lib_constant(poly[k] -> getCoeff(i) -> fpValue);
@@ -186,14 +189,14 @@ namespace flopoco{
 			sollya_lib_clear_obj(sS);
 
 			
-			REPORT(0, "OK, now we have the max Si, we may implement the error analysis: poly[k]->getApproxErrorBound()="<< poly[k]->getApproxErrorBound());
+			REPORT(0, "OK, now we have the max Si, we may implement the error analysis, for approxErrorBound="<< poly[k]->getApproxErrorBound());
 			// initialization
 			double evalErrorBudget = exp2(lsbOut-1) - poly[k]->getApproxErrorBound();
 			int lsb = lsbOut;
 			vector<int> lsbY(degree,0);
 			// we have delta_Y=2^lsbY, and we want to balance the error term maxS[i]deltaY with delta_multadd ~ 2^lsb,    
 			for(int i=degree-1; i>=0; i--) {
-				lsbY[i] = max(lsb - sumMSB[i], lsbIn);
+				lsbY[i] = max(lsb - sumMSB[i+1], lsbIn);
 			}
 
 			bool evalErrorNotOK=true;
@@ -201,7 +204,7 @@ namespace flopoco{
 				double evalerror = 0;
 				for(int i=degree-1; i>=0; i--) {
 					double multaddError=exp2(lsb);
-					double yTruncationError = (lsbY[i]==lsbIn? 0 : exp2(lsbY[i])*maxAbsSum[i]); 
+					double yTruncationError = (lsbY[i]==lsbIn? 0 : exp2(lsbY[i])*maxAbsSum[i+1]); 
 					evalerror += multaddError + yTruncationError;
 				}
 				if(evalerror < evalErrorBudget)
@@ -212,15 +215,17 @@ namespace flopoco{
 				if(evalErrorNotOK) {
 					lsb--;
 					for(int i=degree-1; i>=0; i--) {
-						lsbY[i] =  max(lsb - sumMSB[i], lsbIn);
+						lsbY[i] =  max(lsb - sumMSB[i+1], lsbIn);
 					}	
 				}
 			}
 
 			// OK, we have the lsbY and lsb for this polynomial, now update the worst-case
 			for(int i=degree-1; i>=0; i--) {
-				wcSumLSB[i] = min(wcSumLSB[i], lsb);
 				wcYLSB[i] = min(wcYLSB[i], lsbY[i]);
+			}	
+			for(int i=degree; i>=0; i--) {
+				wcSumLSB[i] = min(wcSumLSB[i], lsb);
 			}	
 			
 		} // closes the for loop on k (the intervals)
@@ -242,44 +247,43 @@ namespace flopoco{
 
 	
 	void FixHornerEvaluator::generateVHDL(){
-		addInput("X", -lsbIn);
-		vhdl << tab << declareFixPoint("Xs", true, 0, lsbIn) << " <= signed(X);" << endl;
+		addInput("Y", -lsbIn+1);
+		vhdl << tab << declareFixPoint("Ys", true, 0, lsbIn) << " <= signed(Y);" << endl;
 		for (int j=0; j<=degree; j++) {
 			addInput(join("A",j), coeffMSB[j]-coeffLSB[j] +1);
 		}
 
 		// declaring outputs
 		addOutput("R", msbOut-lsbOut+1);
-#if 0
-		//		setCriticalPath( getMaxInputDelays(inputDelays) + target->localWireDelay() );
 
 
-		// Split the coeff table output into various coefficients
+		// convert the coefficients to signed. Remark: constant signs have been inserted by the caller
 		for(int i=0; i<=degree; i++) {
-			vhdl << tab << declareFixPoint(join("As", i), signedXandCoeffs, msbCoeff[i], lsbCoeff)
-					 << " <= " << (signedXandCoeffs?"signed":"unsigned") << "(" << join("A",i) << ");" <<endl;
+			vhdl << tab << declareFixPoint(join("As", i), true, coeffMSB[i], coeffLSB[i])
+					 << " <= " << "signed(" << join("A",i) << ");" <<endl;
 		}
 
 		// Initialize the Horner recurrence
-		vhdl << tab << declareFixPoint(join("Sigma", degree), true, msbSigma[degree], lsbSigma[degree])
-				 << " <= " << join("As", degree)  << ";" << endl;
+		resizeFixPoint(join("S", degree), join("As", degree), wcSumMSB[degree], wcSumLSB[degree]);
 
+		// Main loop of the Horner recurrence
 		for(int i=degree-1; i>=0; i--) {
-			resizeFixPoint(join("XsTrunc", i), "Xs", 0, lsbXTrunc[i]);
+			resizeFixPoint(join("YsTrunc", i), "Ys", 0, wcYLSB[i]);
 
 			//  assemble faithful operators (either FixMultAdd, or truncated mult)
 
 			if(getTarget()->plainVHDL()) {	// no pipelining here
-				vhdl << tab << declareFixPoint(join("P", i), true, msbP[i],  lsbP[i])
-						 <<  " <= "<< join("XsTrunc", i) <<" * Sigma" << i+1 << ";" << endl;
-
+				int pMSB = 0 + wcSumMSB[i+1] + 1; // not attempting to save the MSB bit that could be saved.
+				int pLSB = wcYLSB[i] + wcSumLSB[i+1];	
+				vhdl << tab << declareFixPoint(join("P", i), true, pMSB,  pLSB)
+						 <<  " <= "<< join("YsTrunc", i) <<" * S" << i+1 << ";" << endl;
 				// Align before addition
-				resizeFixPoint(join("Ptrunc", i), join("P", i), msbSigma[i], lsbSigma[i]-1);
-				resizeFixPoint(join("Aext", i), join("As", i), msbSigma[i], lsbSigma[i]-1);
+				resizeFixPoint(join("Ptrunc", i), join("P", i), wcSumMSB[i], wcSumLSB[i]-1);
+				resizeFixPoint(join("Aext", i), join("As", i), wcSumMSB[i], wcSumLSB[i]-1); // -1 to make space for the round bit
 
-				vhdl << tab << declareFixPoint(join("SigmaBeforeRound", i), true, msbSigma[i], lsbSigma[i]-1)
+				vhdl << tab << declareFixPoint(join("SBeforeRound", i), true, wcSumMSB[i], wcSumLSB[i]-1)
 						 << " <= " << join("Aext", i) << " + " << join("Ptrunc", i) << "+'1';" << endl;
-				resizeFixPoint(join("Sigma", i), join("SigmaBeforeRound", i), msbSigma[i], lsbSigma[i]);
+				resizeFixPoint(join("S", i), join("SBeforeRound", i), wcSumMSB[i], wcSumLSB[i]);
 			}
 
 			else { // using FixMultAdd
@@ -289,20 +293,19 @@ namespace flopoco{
 				FixMultAdd::newComponentAndInstance(this,
 																						join("Step",i),     // instance name
 																						join("XsTrunc",i),  // x
-																						join("Sigma", i+1), // y
+																						join("S", i+1), // y
 																						join("As", i),       // a
-																						join("Sigma", i),   // result
-																						msbSigma[i], lsbSigma[i]
+																						join("S", i),   // result
+																						wcSumMSB[i], wcSumLSB[i]
 																						);
 #endif
 			}
 		}
 		if(finalRounding)
-			resizeFixPoint("Ys", "Sigma0",  msbOut, lsbOut);
+			resizeFixPoint("Rs", "S0",  msbOut, lsbOut);
 
-		vhdl << tab << "R <= " << "std_logic_vector(Ys);" << endl;
+		vhdl << tab << "R <= " << "std_logic_vector(Rs);" << endl;
 
-#endif
 	}
 
 

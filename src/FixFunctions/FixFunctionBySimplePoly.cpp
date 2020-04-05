@@ -62,7 +62,7 @@ namespace flopoco{
 		addHeaderComment("-- Evaluator for " +  f-> getDescription() + "\n");
 		addInput("X"  , -lsbIn + (signedIn?1:0));
 		int outputSize = msbOut-lsbOut+1;
-		addOutput("Y" ,outputSize , 2);
+		addOutput("R" ,outputSize , 2);
 		useNumericStd();
 
 		if(f->signedIn)
@@ -121,11 +121,11 @@ namespace flopoco{
 		
 		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator
 		schedule();
-		inPortMap("X", "Xs");
+		inPortMap("Y", "Xs");
 		for(int i=0; i<=degree; i++) {
 			inPortMap(join("A",i), join("A",i));
 		}
-		outPortMap("R", "Ys");
+		outPortMap("R", "Rs");
 		OperatorPtr h = new  FixHornerEvaluator(this, target, 
 																						lsbIn,
 																						msbOut,
@@ -136,7 +136,7 @@ namespace flopoco{
 																						);
 		vhdl << instance(h, "horner", false);
 		
-		vhdl << tab << "Y <= " << "std_logic_vector(Ys);" << endl;
+		vhdl << tab << "R <= " << "std_logic_vector(Rs);" << endl;
 	}
 
 

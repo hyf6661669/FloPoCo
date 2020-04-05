@@ -101,9 +101,9 @@ namespace flopoco{
 									"simpleTable",
 									params.str(),
 									"X=>X",
-									"Y=>YR" );
+									"Y=>YY" );
 
-			vhdl << tab << "Y <= YR;" << endl; 
+			vhdl << tab << "Y <= YY;" << endl; 
 		}
 		else{
 			if(degree==1){ // For degree 1, MultiPartite could work better
@@ -137,13 +137,13 @@ namespace flopoco{
 
 			// The VHDL that splits the input into A and Z
 			vhdl << tab << declare("A", alpha)  << " <= X" << range(wX-1, wX-alpha) << ";" << endl;
-			vhdl << tab << declare("Z", wX-alpha)  << " <= X" << range(wX-alpha-1, 0) << ";" << endl;
+			vhdl << tab << declare("Z", wX-alpha)  << " <= X" << range(wX-alpha-1, 0) << ";" << endl; // called Y in the book
 			vhdl << tab << declare("Zs", wX-alpha)  << " <= (not Z(" << wX-alpha-1 << ")) & Z" << range(wX-alpha-2, 0) << "; -- centering the interval" << endl;
 
 			Table::newUniqueInstance(this, "A", "Coeffs",
 															 coeffTableVector, "coeffTable", alpha, polyTableOutputSize );
 			
-			// Split the table output into each coefficient
+			addComment(" Split the table output into each coefficient, adding back the constant signs if any");
 			int currentShift=0;
 			for(int i=pwp->degree; i>=0; i--) {
 				int actualSize = pwp->MSB[i] - pwp->LSB + (pwp->coeffSigns[i]==0 ? 1 : 0);
@@ -164,11 +164,11 @@ namespace flopoco{
 
 		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator, which wouldn't make sense
 		schedule();
-		inPortMap("X", "Zs");
+		inPortMap("Y", "Zs");
 		for(int i=0; i<=pwp->degree; i++) {
 			inPortMap(join("A",i),  join("A",i));
 		}
-		outPortMap("R", "Ys");
+		outPortMap("R", "HornerOutput");
 		OperatorPtr h = new  FixHornerEvaluator(this, target, 
 																						lsbIn+alpha+1,
 																						msbOut,
@@ -177,42 +177,10 @@ namespace flopoco{
 																						// do we need to pass the constant signs of the coefficients? No, they have been added back
 																						// and everybody is signed.
 																						);
-		vhdl << instance(h, "horner", false);
+		vhdl << instance(h, "Horner", false);
 			
-		vhdl << tab << "Y <= " << "std_logic_vector(Ys);" << endl;
+		vhdl << tab << "Y <= " << "std_logic_vector(HornerOutput);" << endl;
 
-
-#if 0
-			//  compute the size of the intermediate terms sigma_i  (Horner-specific)  
-			computeSigmaSignsAndMSBs(); // TODO make it a method of FixHornerEvaluator?
-
-			// the previous has computed the min value of msbOut.
-			if(msbOut<sigmaMSB[0])
-				REPORT(0, "WARNING: msbOut is set to " << msbOut << " but I compute that it should be " << sigmaMSB[0]);
-
-
-			REPORT(INFO, "Now building the Horner evaluator for rounding error budget "<< roundingErrorBudget);
-
-		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator, which wouldn't make sense
-		schedule();
-		inPortMap("X", "Zs");
-		for(int i=0; i<=pwp->degree; i++) {
-			inPortMap(join("A",i),  join("A",i));
-		}
-		outPortMap("R", "Ys");
-		OperatorPtr h = new  FixHornerEvaluator(this, target, 
-																lsbIn+alpha+1,
-																msbOut,
-																lsbOut,
-																degree, 
-																pwp->MSB, 
-																pwp->LSB // it is the smaller LSB
-																);
-		vhdl << instance(h, "horner", false);
-			
-		vhdl << tab << "Y <= " << "std_logic_vector(Ys);" << endl;
-
-		#endif
 		}
 	}
 

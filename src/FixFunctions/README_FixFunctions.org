@@ -1,3 +1,8 @@
+* Naming of the output
+For all these functions, the output is called Y.
+In the ASA book it is called R.
+Both make sense, and the decisive argument was FixFunctionByTable: Table uses Y, and we have zillions of Operators using Table, I don't want to change them.
+
 * Stable stuff:
 
 

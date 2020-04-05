@@ -194,13 +194,14 @@ namespace flopoco{
 			double evalErrorBudget = exp2(lsbOut-1) - poly[k]->getApproxErrorBound();
 			int lsb = lsbOut;
 			vector<int> lsbY(degree,0);
-			// we have delta_Y=2^lsbY, and we want to balance the error term maxS[i]deltaY with delta_multadd ~ 2^lsb,    
-			for(int i=degree-1; i>=0; i--) {
-				lsbY[i] = max(lsb - sumMSB[i+1], lsbIn);
-			}
 
 			bool evalErrorNotOK=true;
 			while(evalErrorNotOK) {
+				// we have delta_Y=2^lsbY, and we want to balance the error term maxS[i]deltaY
+				// with delta_multadd = 2^(lsb-1) if plainVHDL, 2^lsb otherwise    
+				for(int i=degree-1; i>=0; i--) {
+					lsbY[i] = max(lsb - sumMSB[i+1], lsbIn); 
+				}
 				double evalerror = 0;
 				for(int i=degree-1; i>=0; i--) {
 					double multaddError, yTruncationError;
@@ -225,12 +226,18 @@ namespace flopoco{
 							 << " => evalError=" << evalerror << (evalErrorNotOK?":  increasing lsb... " : ":  OK!"));
 				if(evalErrorNotOK) {
 					lsb--;
-					for(int i=degree-1; i>=0; i--) {
-						lsbY[i] =  max(lsb - sumMSB[i+1], lsbIn);
-					}	
 				}
 			}
 
+#if 0 // this is just to check that the error computation is tight
+			// If I plug this code the autotest fails 12% of the cases
+			REPORT(0,"******************** Sabotage ! ********************************");
+			lsb++;
+			for(int i=degree-1; i>=0; i--) {
+				lsbY[i] =  max(lsb - sumMSB[i+1], lsbIn);
+			}	
+#endif
+			
 			// OK, we have the lsbY and lsb for this polynomial, now update the worst-case
 			for(int i=degree-1; i>=0; i--) {
 				wcYLSB[i] = min(wcYLSB[i], lsbY[i]);

@@ -314,7 +314,7 @@ namespace flopoco{
 		{
 			for (int j=0; j<=degree; j++)
 			{
-				cacheFile <<  poly[i] -> getCoeff(j) -> getBitVectorAsMPZ() << endl;
+				cacheFile <<  poly[i] -> getCoeff(j) -> getConstantAsMPZ() << endl;
 			}
 			cacheFile << poly[i] -> getApproxErrorBound() << endl;
 		}

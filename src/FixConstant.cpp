@@ -83,6 +83,19 @@ namespace flopoco{
 		mpfr_clear(fpValue);
 	}
 
+	
+	mpz_class FixConstant::getConstantAsMPZ() {
+		mpz_class h;
+		mpfr_t x;
+		mpfr_init2(x, mpfr_get_prec(fpValue));
+		mpfr_set(x,fpValue,GMP_RNDN);
+		mpfr_mul_2si(x, x, -LSB, GMP_RNDN); // exact
+		mpfr_get_z(h.get_mpz_t(), x,  GMP_RNDN); // rounding could take place here, but should not
+		mpfr_clear(x);
+		return h;
+	}
+
+
 	mpz_class FixConstant::getBitVectorAsMPZ() {
 		mpz_class h;
 		mpfr_t x;

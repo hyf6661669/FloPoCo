@@ -94,7 +94,7 @@ namespace flopoco{
 		 * 		@param degree: degree of the polynomial
 		 * 		@param MSBs: vector of the MSBs of the coefficients
 				@param LSB: weight of the coefficients
-				@param coeffs: the coefficients of the approximating polynomial
+				@param coeffs: the coefficients of the approximating polynomial, divided by 2^LSB to get an integer
 		 */
 		BasicPolyApprox(int degree, vector<int> MSB, int LSB, vector<mpz_class> coeff);
 

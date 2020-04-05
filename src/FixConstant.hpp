@@ -45,6 +45,7 @@ namespace flopoco{
 		mpfr_t fpValue;       /**< the value of this constant as an mpfr_t */
 		bool isZeroP;          /**< true if the constant is zero */
 
+		mpz_class getConstantAsMPZ(); /**< return the constant as a signed MPZ, equal to the constant*2^-LSB.   */ 
 		mpz_class getBitVectorAsMPZ(); /**< return the constant as a bit vector in a positive MPZ.   */ 
 		std::string getBitVector(int margins=0);     /**< return the textual version of the constant. See utils.hpp for margins  */ 
 		bool isZero();        /**< as name suggests */

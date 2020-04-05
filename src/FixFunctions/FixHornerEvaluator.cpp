@@ -113,11 +113,11 @@ namespace flopoco{
 		sollya_obj_t yS = sollya_lib_build_function_free_variable();		
 		sollya_obj_t rangeS = sollya_lib_parse_string("[-1;1]");		
 
-		REPORT(INFO, "Entering computeArchitecturalParameters, for " << poly.size() << " intervals" );
+		REPORT(DEBUG, "Entering computeArchitecturalParameters, for " << poly.size() << " intervals" );
 	
 		// iterate over all the polynomials to implement the error analysis on each interval
 		for (size_t k=0; k<poly.size(); k++) {
-			REPORT(INFO, "Error analysis on interval " << k  << " of " << poly.size()-1 );
+			REPORT(DETAILED, "Error analysis on interval " << k  << " of " << poly.size()-1 );
 
 			// First, compute the max abs value of the d intermediate sums
 			vector<double> maxAbsSum(degree+1, -1);
@@ -165,7 +165,7 @@ namespace flopoco{
 				mpfr_floor(tmp, tmp);
 				sumMSB[i] = 1+ mpfr_get_si(tmp, GMP_RNDU); // 1+ because we assume signed arithmetic for s
 
-				REPORT(INFO, " maxAbsSum[" << i << "] = " << maxAbsSum[i] << "  sumMSB[" << i << "] = " << sumMSB[i]);
+				REPORT(DETAILED, "interval " << k <<":  maxAbsSum[" << i << "] = " << maxAbsSum[i] << "  sumMSB[" << i << "] = " << sumMSB[i]);
 				
 				sollya_lib_clear_obj(sIntervalS);
 				sollya_lib_clear_obj(supS);
@@ -189,7 +189,7 @@ namespace flopoco{
 			sollya_lib_clear_obj(sS);
 
 			
-			REPORT(0, "OK, now we have the max Si, we may implement the error analysis, for approxErrorBound="<< poly[k]->getApproxErrorBound());
+			REPORT(DEBUG, "OK, now we have the max Si, we may implement the error analysis, for approxErrorBound="<< poly[k]->getApproxErrorBound());
 			// initialization
 			double evalErrorBudget = exp2(lsbOut-1) - poly[k]->getApproxErrorBound();
 			int lsb = lsbOut;
@@ -221,7 +221,7 @@ namespace flopoco{
 				if(evalerror < evalErrorBudget)
 					evalErrorNotOK=false;
 					
-				REPORT(0, "Interval " << k  << "  evalErrorBudget=" << evalErrorBudget  << "   lsb=" << lsb
+				REPORT(DETAILED, "Interval " << k  << "  evalErrorBudget=" << evalErrorBudget  << "   lsb=" << lsb
 							 << " => evalError=" << evalerror << (evalErrorNotOK?":  increasing lsb... " : ":  OK!"));
 				if(evalErrorNotOK) {
 					lsb--;
@@ -242,9 +242,10 @@ namespace flopoco{
 		} // closes the for loop on k (the intervals)
  
 		// Final reporting
-		REPORT(0, "Final worst-case architecture parameters:")
+		REPORT(INFO, "Final worst-case architecture parameters:")
 		for(int i=degree-1; i>=0; i--) {
-			REPORT(0,"Horner step " << i << ": YLSB=" << wcYLSB[i] << "  \t SumSign=" << wcSumSign[i] << "  \t SumMSB=" << wcSumMSB[i] << "\t SumLSB=" << wcSumLSB[i] )
+			REPORT(INFO,"Horner step " << i << ": YLSB=" << wcYLSB[i] << "\t SSgn=" << wcSumSign[i] << "  \t SMSB=" << wcSumMSB[i] << "   \t SLSB=" << wcSumLSB[i]
+						 << "\t Mult size " << 1-wcYLSB[i] << "x" << wcSumMSB[i+1]-wcSumLSB[i+1]+1)
 			}	
 		
 
@@ -321,85 +322,6 @@ namespace flopoco{
 
 
 
-	
-#if 0
-
-	// A naive constructor that does a worst case analysis of datapath looking onnly at the coeff sizes
-	FixHornerEvaluator::FixHornerEvaluator(OperatorPtr parentOp, Target* target,
-																				 int lsbIn_, int msbOut_, int lsbOut_,
-																				 int degree_, vector<int> msbCoeff_, int lsbCoeff_,
-																				 double roundingErrorBudget_,
-																				 bool signedXandCoeffs_,
-																				 bool finalRounding_)
-	: Operator(parentOp, target), degree(degree_), lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_),
-		msbCoeff(msbCoeff_), lsbCoeff(lsbCoeff_),
-		roundingErrorBudget(roundingErrorBudget_) ,signedXandCoeffs(signedXandCoeffs_),
-		finalRounding(finalRounding_)
-  {
-		initialize();
-
-		// initialize the vectors to the proper size so we can use them as arrays. I know.
-		for (int i=0; i<degree; i++) {
-			msbSigma.push_back(0);
-			signSigma.push_back(0); // For signSigma this happens to be the default
-			msbP.push_back(0);
-			lsbP.push_back(0);
-			lsbSigma.push_back(0);
-			lsbXTrunc.push_back(0);
-		}
-
-		// Initialize the MSBs with a very rough analysis
-		msbSigma[degree] = msbCoeff[degree];
-		for(int i=degree-1; i>=0; i--) {
-			msbSigma[i] = msbCoeff[i] + 1; // TODO this +1 is there for addition overflow, and probably overkill most of the times.
-		}
-		for(int i=degree-1; i>=0; i--) {
-			msbP[i] = msbSigma[i+1] + 0 + 1;
-		}
-
-		// optimizing the lsbMults
-		computeLSBs();
-
-		generateVHDL();
-  }
-
-
-	// An optimized constructor if the caller has been able to compute the signs and MSBs of the sigma terms
-	FixHornerEvaluator::FixHornerEvaluator(OperatorPtr parentOp, Target* target,
-																				 int lsbIn_, int msbOut_, int lsbOut_,
-																				 int degree_, vector<int> msbCoeff_, int lsbCoeff_,
-																				 vector<int> sigmaSign_, vector<int> sigmaMSB_,
-																				 double roundingErrorBudget_,
-																				 bool signedXandCoeffs_,
-																				 bool finalRounding_)
-	: Operator(parentOp, target), degree(degree_), lsbIn(lsbIn_), msbOut(msbOut_), lsbOut(lsbOut_),
-		msbCoeff(msbCoeff_), lsbCoeff(lsbCoeff_),
-		roundingErrorBudget(roundingErrorBudget_) ,
-		signedXandCoeffs(signedXandCoeffs_),
-		finalRounding(finalRounding_),
-		signSigma(sigmaSign_),  msbSigma(sigmaMSB_)
-  {
-		initialize();
-		// initialize the vectors to the proper size so we can use them as arrays. I know.
-		for (int i=0; i<degree; i++) {
-			msbP.push_back(0);
-			lsbP.push_back(0);
-			lsbSigma.push_back(0);
-			lsbXTrunc.push_back(0);
-		}
-
-		for(int i=degree-1; i>=0; i--) {
-			msbP[i] = msbSigma[i+1] + 0 + 1;
-		}
-
-
-		// optimizing the lsbMults
-		computeLSBs();
-
-		generateVHDL();
-  }
-
-#endif
 	
 	FixHornerEvaluator::~FixHornerEvaluator(){}
 

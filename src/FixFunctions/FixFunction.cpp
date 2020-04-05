@@ -87,20 +87,8 @@ void	FixFunction::initialize()
 		else {
 			signedOut=true;
 		}
-#if 0
-		// compute msbOut
-		sollya_obj_t supNormIntervalS = sollya_lib_infnorm(fS,inputRangeS,NULL);
-		sollya_obj_t supNormS = sollya_lib_sup(supNormIntervalS);
-		sollya_lib_clear_obj(supNormIntervalS);
-		mpfr_t supNormMP;
-		mpfr_init2(supNormMP, 1000); // no big deal if we are not accurate here 
-		mpfr_init2(tmp, 1000); // no big deal if we are not accurate here 
-		sollya_lib_get_constant(supNormMP, supNormS);
-		sollya_lib_clear_obj(supNormS);
-		//		cerr << "supNorm would be " << mpfr_get_d(supNormMP,MPFR_RNDU);
- 		mpfr_clear(supNormMP);
-#endif
-
+		ostringstream t; // write it before we take the absolute value below
+		t << "Out interval: [" << mpfr_get_d(infMP,MPFR_RNDD) << "; "<< mpfr_get_d(supMP,MPFR_RNDU) << "]";
 		// Now recompute the MSB explicitely.
 		mpfr_abs(supMP, supMP, GMP_RNDU);
 		mpfr_abs(infMP, infMP, GMP_RNDU);
@@ -111,8 +99,7 @@ void	FixFunction::initialize()
 		if(signedOut)
 			msbOut++;
 
-		ostringstream t;
-		t << "Out interval: [" << mpfr_get_d(infMP,MPFR_RNDD) << "; "<< mpfr_get_d(supMP,MPFR_RNDU) << "]. Output is " << (signedOut?"signed":"unsigned");
+		t << ". Output is " << (signedOut?"signed":"unsigned");
 		outputDescription=t.str();
 
 		sollya_lib_clear_obj(outIntervalS);

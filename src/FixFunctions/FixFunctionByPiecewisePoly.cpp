@@ -115,7 +115,6 @@ namespace flopoco{
 			pwp = new UniformPiecewisePolyApprox(func, targetAcc, degree);
 			alpha =  pwp-> alpha; // coeff table input size 
 			
-			REPORT(0, "**************************** Changing the MSB to " <<msbOut);
 			// Resize its MSB to the one of f
 			int msbOutWhenSigned = msbOut+(signedOut?0:1); 
 			for (int i=0; i<(1<<alpha); i++) {
@@ -266,6 +265,7 @@ namespace flopoco{
 		functionList.push_back("sin(x)");
 		functionList.push_back("exp(x)");
 		functionList.push_back("log(x+1)");
+		functionList.push_back("log(x+0.5)"); // a function that gets negative
 		functionList.push_back("tanh(4*x)");
 
 		vector<pair<string,string>> paramList;

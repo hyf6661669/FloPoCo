@@ -360,7 +360,7 @@ namespace flopoco{
 		concatenateLSBColumns();
 
 		for(unsigned int c = 0; c < bitheap->bits.size(); c++){
-			if(bitheap->bits[c].size() > 2){
+			if(bitheap->bits[c].size() > 3){
 				THROWERROR("in column " << c << " are more than two bits (" << bitheap->bits[c].size() << ") for the final adder ");
 			}
 		}
@@ -761,7 +761,7 @@ namespace flopoco{
 		{
 			//an adder isn't necessary; concatenateLSBColumns should do the rest
 			//concatenateLSBColumns(); //it is already called in
-		}else{
+		}else if(bitheap->getMaxHeight() == 2){
 			ostringstream adderIn0, adderIn0Name, adderIn1, adderIn1Name, adderOutName, adderCin, adderCinName;
 			int adderStartIndex = compressionDoneIndex + 1;
 
@@ -860,7 +860,112 @@ namespace flopoco{
 #endif
 			//add the result of the final add as the last chunk
 			chunksDone.push_back(join(adderOutName.str(), range(bitheap->msb-adderStartIndex, 0)));
-		}
+
+		} else if(bitheap->getMaxHeight() == 3){
+            ostringstream adderIn0, adderIn0Name, adderIn1, adderIn1Name, adderIn2, adderIn2Name, adderOutName, adderCin, adderCinName;
+            int adderStartIndex = compressionDoneIndex + 1;
+
+            //create the names for the inputs/output of the adder
+            adderIn0Name << "bitheapFinalAdd_bh" << bitheap->guid << "_In0";
+            adderIn1Name << "bitheapFinalAdd_bh" << bitheap->guid << "_In1";
+            adderIn2Name << "bitheapFinalAdd_bh" << bitheap->guid << "_In2";
+            adderCinName << "bitheapFinalAdd_bh" << bitheap->guid << "_Cin";
+            adderOutName << "bitheapFinalAdd_bh" << bitheap->guid << "_Out";
+
+            //add the first bits to the adder inputs
+            if(compressionDoneIndex <= bitheap->width)
+            {
+                if(bitheap->bits[bitheap->width-1].size() > 2)
+                {
+                    adderIn0 << bitheap->bits[bitheap->width-1][0]->getName();
+                    adderIn1 << bitheap->bits[bitheap->width-1][1]->getName();
+                    adderIn2 << bitheap->bits[bitheap->width-1][2]->getName();
+                }else if(bitheap->bits[bitheap->width-1].size() == 2)
+                {
+                    adderIn0 << bitheap->bits[bitheap->width-1][0]->getName();
+                    adderIn1 << bitheap->bits[bitheap->width-1][1]->getName();
+                    adderIn2 << "\"0\"";
+                }else if(bitheap->bits[bitheap->width-1].size() == 1)
+                {
+                    adderIn0 << bitheap->bits[bitheap->width-1][0]->getName();
+                    adderIn1 << "\"0\"";
+                    adderIn2 << "\"0\"";
+                }else{
+                    adderIn0 << "\"0\"";
+                    adderIn1 << "\"0\"";
+                    adderIn2 << "\"0\"";
+                }
+            }
+            //add the rest of the terms to the adder inputs
+            for(int i=bitheap->width-2; i>(int)compressionDoneIndex; i--)
+            {
+                if(bitheap->bits[i].size() > 2)
+                {
+                    adderIn0 << " & " << bitheap->bits[i][0]->getName();
+                    adderIn1 << " & " << bitheap->bits[i][1]->getName();
+                    adderIn2 << " & " << bitheap->bits[i][2]->getName();
+                }else if(bitheap->bits[i].size() == 2)
+                {
+                    adderIn0 << " & " << bitheap->bits[i][0]->getName();
+                    adderIn1 << " & " << bitheap->bits[i][1]->getName();
+                    adderIn2 << " & " << "\"0\"";
+                }else if(bitheap->bits[i].size() == 1)
+                {
+                    adderIn0 << " & " << bitheap->bits[i][0]->getName();
+                    adderIn1 << " & " << "\"0\"";
+                    adderIn2 << " & " << "\"0\"";
+                }else{
+                    adderIn0 << " & " << "\"0\"";
+                    adderIn1 << " & " << "\"0\"";
+                    adderIn2 << " & " << "\"0\"";
+                }
+            }
+            //add the last column to the adder, if compression is still required on that column
+            if((compressionDoneIndex == 0) && (bitheap->bits[compressionDoneIndex].size() > 1))
+            {
+                adderIn0 << " & " << bitheap->bits[compressionDoneIndex][0]->getName();
+                adderIn1 << " & " << bitheap->bits[compressionDoneIndex][1]->getName();
+                if(bitheap->bits[compressionDoneIndex].size() > 2)
+                    adderIn2 << " & " << bitheap->bits[compressionDoneIndex][2]->getName();
+
+                if(bitheap->bits[compressionDoneIndex].size() > 3)
+                    adderCin << bitheap->bits[compressionDoneIndex][3]->getName();
+                else
+                    adderCin << "\'0\'";
+
+                adderStartIndex--;
+            }else{
+                if(bitheap->bits[compressionDoneIndex+1].size() > 2)
+                    adderCin << bitheap->bits[compressionDoneIndex+1][2]->getName();
+                else
+                    adderCin << "\'0\'";
+            }
+
+            //create the signals for the inputs/output of the adder
+            bitheap->getOp()->vhdl << endl;
+            bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderIn0Name.str(), bitheap->msb-adderStartIndex+1+1)
+                                   << " <= \"0\" & " << adderIn0.str() << ";" << endl;
+            bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderIn1Name.str(), bitheap->msb-adderStartIndex+1+1)
+                                   << " <= \"0\" & " << adderIn1.str() << ";" << endl;
+            bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderIn2Name.str(), bitheap->msb-adderStartIndex+1+1)
+                                   << " <= \"0\" & " << adderIn2.str() << ";" << endl;
+            bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderCinName.str())
+                                   << " <= " << adderCin.str() << ";" << endl;
+            bitheap->getOp()->vhdl << endl;
+
+            //declare the adder
+            bitheap->getOp()->newInstance("XilinxTernaryAddSub",
+                                          "bitheapFinalAdd_bh"+to_string(bitheap->guid),
+                                          "wIn=" + to_string(bitheap->msb-adderStartIndex+1+1),
+                                          "x_i=>"+ adderIn0Name.str()
+                                          + ",y_i=>"+adderIn1Name.str()
+                                          + ",z_i=>"+adderIn2Name.str(),
+                                          //+ ",carry_in=>" + adderCinName.str(),
+                                          "sum_o=>"+ adderOutName.str()   );
+
+            //add the result of the final add as the last chunk
+            chunksDone.push_back(join(adderOutName.str(), range(bitheap->msb-adderStartIndex, 0)));
+        }
 	}
 
 

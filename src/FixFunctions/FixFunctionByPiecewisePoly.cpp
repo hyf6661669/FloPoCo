@@ -248,7 +248,6 @@ namespace flopoco{
 		tc->addInput("X", 0);
 		emulate(tc);
 		tcl->add(tc);
-
 		tc = new TestCase(this); 
 		tc->addInput("X", (mpz_class(1) << f->wIn) -1);
 		emulate(tc);
@@ -288,6 +287,14 @@ namespace flopoco{
 					paramList.push_back(make_pair("lsbOut","-24"));
 					paramList.push_back(make_pair("lsbIn","-24"));
 					paramList.push_back(make_pair("d","3"));
+					testStateList.push_back(paramList);
+					paramList.clear();
+
+					paramList.push_back(make_pair("f","\"" + f + "\""));
+					paramList.push_back(make_pair("plainVHDL","true"));
+					paramList.push_back(make_pair("lsbOut","-30"));
+					paramList.push_back(make_pair("lsbIn","-30"));
+					paramList.push_back(make_pair("d","5"));
 					testStateList.push_back(paramList);
 					paramList.clear();
 

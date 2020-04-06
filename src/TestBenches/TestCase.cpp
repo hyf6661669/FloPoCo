@@ -164,7 +164,7 @@ namespace flopoco{
 		Signal* s = op_->getSignalByName(name);
 
 		//TODO Check if we have already too many values for this output
-                  //std::cout << "signal width : " << s->width() << std::endl;
+		// std::cout << "signal width : " << s->width() << std::endl;
 		if (v >= (mpz_class(1) << s->width())){
 			ostringstream e;
 			e << "ERROR in TestCase::addExpectedOutput, signal value " << v << " out of range 0 .. " << (mpz_class(1) << s->width())-1;

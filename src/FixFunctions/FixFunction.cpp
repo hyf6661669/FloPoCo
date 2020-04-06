@@ -172,18 +172,18 @@ void	FixFunction::initialize()
 			mpfr_get_z(rNorD.get_mpz_t(), mpR, GMP_RNDN);
 			// convert to two's complement
 			if(rNorD<0) {
-				rNorD += (1<<wOut);
+				rNorD += (mpz_class(1)<<wOut);
 			}
 			
 		}
 		else{
 			mpfr_get_z(rNorD.get_mpz_t(), mpR, GMP_RNDD);
 			if(rNorD<0) {
-				rNorD += (1<<(wOut));
+				rNorD += (mpz_class(1)<<(wOut));
 			}
 			mpfr_get_z(ru.get_mpz_t(), mpR, GMP_RNDU);
 			if(ru<0) {
-				ru += (1<<wOut);
+				ru += (mpz_class(1)<<wOut);
 			}
 		}
 
@@ -200,7 +200,7 @@ void	FixFunction::initialize()
 			mpz_class x = tc->getInputValue("X");
 			mpz_class rNorD,ru;
 			eval(x,rNorD,ru,correctlyRounded);
-			// cerr << "x=" << x << " -> " << rNorD << " " << ru << endl; // for debugging
+			//cerr << " x=" << x << " -> " << rNorD << " " << ru << endl; // for debugging
 			tc->addExpectedOutput("Y", rNorD);
 			if(!correctlyRounded)
 				tc->addExpectedOutput("Y", ru);

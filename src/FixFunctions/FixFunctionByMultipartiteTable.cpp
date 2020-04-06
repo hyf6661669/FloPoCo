@@ -65,16 +65,20 @@ namespace flopoco
 	FixFunctionByMultipartiteTable::FixFunctionByMultipartiteTable(OperatorPtr parentOp, Target *target, string functionName_, int nbTOi_, bool signedIn_, int lsbIn_, int lsbOut_, bool compressTIV_):
 		Operator(parentOp, target), nbTOi(nbTOi_), compressTIV(compressTIV_)
 {
-		f = new FixFunction(functionName_, signedIn_, lsbIn_, lsbOut_);
-		epsilonT = 1.0 / (1<<(f->wOut+1));
-
 		srcFileName="FixFunctionByMultipartiteTable";
 
 		ostringstream name;
 		name << "FixFunctionByMultipartiteTable_" << getNewUId();
 		setNameWithFreqAndUID(name.str());
 
-		setCopyrightString("Franck Meyer, Florent de Dinechin (2015)");
+		f = new FixFunction(functionName_, signedIn_, lsbIn_, lsbOut_);
+		if(f->signedOut) {
+			THROWERROR("Sorry there is a known bug if the function output can get negative. If this is important to you we will get it fixed of course")
+		}
+		epsilonT = 1.0 / (1<<(f->wOut+1));
+
+
+		setCopyrightString("Franck Meyer, Florent de Dinechin (2015-2020)");
 		addHeaderComment("-- Evaluator for " +  f->getDescription() + "\n");
 		REPORT(DETAILED, "Entering: FixFunctionByMultipartiteTable \"" << functionName_ << "\" " << nbTOi_ << " " << signedIn_ << " " << lsbIn_  << " " << lsbOut_ << " ");
 		int wX=-lsbIn_;
@@ -690,7 +694,7 @@ namespace flopoco
 			vector<bool> signedIn;		  
 			vector<int> msbOut;
 			vector<bool> scaleOutput;			// multiply output by (1-2^lsbOut) to prevent it  reaching 2^(msbOut+1) due to faithful rounding  
-			function.push_back("2^x");			// input in [0,1) output in [1, 2) : need scaleOutput
+			function.push_back("2^x-1");			// input in [0,1) output in [0, 1) : need scaleOutput
 			signedIn.push_back(false);
 			msbOut.push_back(0);
 			scaleOutput.push_back(true);
@@ -711,13 +715,22 @@ namespace flopoco
 			msbOut.push_back(-1);
 			scaleOutput.push_back(true); 
 
+#if 0
+			// It seems we don't manage yet the case when the function may get negative
+			// but the code has been elegantly fixed: it now THROWERRORs
+			function.push_back("log(0.5+x)"); 
+			signedIn.push_back(false);
+			msbOut.push_back(-1);
+			scaleOutput.push_back(true); 
+#endif
+			
 			for (int lsbIn=-8; lsbIn >= -16; lsbIn--) {
 				for (size_t i =0; i<function.size(); i++) {
 					paramList.clear();
 					string f = function[i];
-					int lsbOut = lsbIn + msbOut[i]+1; // to have inputSize=outputSize
+					int lsbOut = lsbIn + msbOut[i]; // to have inputSize=outputSize
 					if(scaleOutput[i]) {
-						f = "(1-1b"+to_string(lsbOut) + ")*" + f;				
+						f = "(1-1b"+to_string(lsbOut) + ")*(" + f + ")";				
 					}
 					f="\"" + f + "\"";
 					paramList.push_back(make_pair("f", f));

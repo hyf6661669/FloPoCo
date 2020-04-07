@@ -1,3 +1,23 @@
+/* A general warning
+	 At some point Florent and Martin decided on the proper terms:
+	 position: a bit position
+	 weight: some power of two, weight=2^position
+	 shift: a position shift
+
+	 Unfortunately, all the code until then was written with the term "weight" used for "position".
+	 It is fixed in the .hpp but not yet in the .cpp 
+ 
+	 WE APOLOGIZE FOR THE INCONVENIENCE
+
+	 Janitoring welcome.
+
+	 Also, the code was initially written for integer bit heaps.
+	 Later Florent decided that a bit heap should have an LSB and a MSB
+	 The corresponding refactoring kept all the datastructures with columns indexed from width-1 to zero
+	 even for bit heaps ranging from MSB to LSB. 
+	 No big deal in principle.
+
+*/
 
 #include "BitHeap.hpp"
 #include "BitHeap/FirstFittingCompressionStrategy.hpp"
@@ -434,34 +454,39 @@ namespace flopoco {
 
 
 
-	void BitHeap::addConstantOneBit(int weight)
+	void BitHeap::addConstantOneBit(int position)
 	{
-		if( (weight < lsb) || (weight > msb) )
-			THROWERROR("addConstantOneBit(): weight (=" << weight << ") out of bitheap bit range  ("<< this->msb << ", " << this->lsb << ")");
+		if( (position < lsb) || (position > msb) )
+			THROWERROR("addConstantOneBit(): position " << position << " out of bitheap bit range  ("<< this->msb << ", " << this->lsb << ")");
 
-		constantBits += (mpz_class(1) << (weight-lsb));
+		constantBits += (mpz_class(1) << (position-lsb));
 
 		isCompressed = false;
 	}
 
 
-	void BitHeap::subtractConstantOneBit(int weight)
+	void BitHeap::subtractConstantOneBit(int position)
 	{
-		if( (weight < lsb) || (weight > msb) )
-			THROWERROR("subtractConstantOneBit(): weight (=" << weight << ") out of bitheap bit range  ("<< this->msb << ", " << this->lsb << ")");
+		if( (position < lsb) || (position > msb) )
+			THROWERROR("subtractConstantOneBit(): position " << position << " out of bitheap bit range  ("<< this->msb << ", " << this->lsb << ")");
 
-		constantBits -= (mpz_class(1) << (weight-lsb));
+		constantBits -= (mpz_class(1) << (position-lsb));
 
 		isCompressed = false;
 	}
 
 
-	void BitHeap::addConstant(mpz_class constant, int weight)
+	void BitHeap::addConstant(mpz_class constant, int shift)
 	{
-		if( (weight < lsb) || (weight+intlog2(constant) > msb) )
-			THROWERROR("addConstant: Constant " << constant << " weighted by " << weight << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
-
-		constantBits += (constant << (weight-lsb));
+		if(constant<0){
+			THROWERROR("addConstant doesn't manage negative constants yet but should: FIXME");
+		}
+		
+		if( (shift < lsb) || (shift+intlog2(constant) > msb) ) {
+			THROWERROR("addConstant: Constant " << constant << " shifted by " << shift << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
+		}
+		
+		constantBits += (constant << (shift-lsb));
 
 		isCompressed = false;
 	}

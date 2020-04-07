@@ -5,8 +5,8 @@
 	 shift: a position shift
 
 	 Unfortunately, all the code until then was written with the term "weight" used for "position".
-	 It is fixed in the .hpp but not yet in the .cpp 
- 
+	 It is fixed in the .hpp but not yet in the .cpp
+
 	 WE APOLOGIZE FOR THE INCONVENIENCE
 
 	 Janitoring welcome.
@@ -14,7 +14,7 @@
 	 Also, the code was initially written for integer bit heaps.
 	 Later Florent decided that a bit heap should have an LSB and a MSB
 	 The corresponding refactoring kept all the datastructures with columns indexed from width-1 to zero
-	 even for bit heaps ranging from MSB to LSB. 
+	 even for bit heaps ranging from MSB to LSB.
 	 No big deal in principle.
 
 */
@@ -117,7 +117,7 @@ namespace flopoco {
 		}
 
 		//create a new bit
-		//	the bit's constructor also declares the signal
+		//  the bit's constructor also declares the signal
 		Bit* bit = new Bit(this, name, weight, BitType::free);
 
 		//insert the new bit so that the vector is sorted by bit (cycle, delay)
@@ -183,7 +183,7 @@ namespace flopoco {
 		}
 
 		//insert the bit in the column
-		//	in the lexicographic order of the timing
+		//  in the lexicographic order of the timing
 		while(it != bits[columnNumber].end())
 		{
 			if((bit->signal->getCycle() < (*it)->signal->getCycle())
@@ -215,7 +215,7 @@ namespace flopoco {
 		vector<Bit*> bitsColumn = bits[weight-lsb];
 
 		//if dir=0 the bit will be removed from the beginning of the list,
-		//	else from the end of the list of weighted bits
+		//  else from the end of the list of weighted bits
 		if(direction == 0)
 			bitsColumn.erase(bitsColumn.begin());
 		else if(direction == 1)
@@ -239,7 +239,7 @@ namespace flopoco {
 		vector<Bit*>::iterator it = bitsColumn.begin();
 
 		//search for the bit and erase it,
-		//	if it is present in the column
+		//  if it is present in the column
 		while(it != bitsColumn.end())
 		{
 			if((*it)->getUid() == bit->getUid())
@@ -481,11 +481,11 @@ namespace flopoco {
 		if(constant<0){
 			THROWERROR("addConstant doesn't manage negative constants yet but should: FIXME");
 		}
-		
+
 		if( (shift < lsb) || (shift+intlog2(constant) > msb) ) {
 			THROWERROR("addConstant: Constant " << constant << " shifted by " << shift << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
 		}
-		
+
 		constantBits += (constant << (shift-lsb));
 
 		isCompressed = false;
@@ -512,7 +512,7 @@ namespace flopoco {
 	void BitHeap::addSignal(string name, int weight)
 	{
 
-		REPORT(DEBUG, "addSignal	" << name << " weight=" << weight);
+		REPORT(DEBUG, "addSignal    " << name << " weight=" << weight);
 		Signal* s = op->getSignalByName(name);
 		int sMSB = s->MSB();
 		int sLSB = s->LSB();
@@ -523,7 +523,7 @@ namespace flopoco {
 			REPORT(0,"WARNING: addSignal(): " << name << " weighted by " << weight << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
 
 		if(s->isSigned()) { // We must sign-extend it, using the constant trick
-			REPORT(DEBUG, "addSignal: this is a signed signal	");
+			REPORT(DEBUG, "addSignal: this is a signed signal   ");
 
 			if(!op->getSignalByName(name)->isBus()) {
 				// getting here doesn't make much sense
@@ -549,7 +549,7 @@ namespace flopoco {
 		}
 
 		else{ // unsigned
-			REPORT(DEBUG, "addSignal: this is an unsigned signal	");
+			REPORT(DEBUG, "addSignal: this is an unsigned signal    ");
 			if(!op->getSignalByName(name)->isBus())
 				addBit(name, weight);
 			else {// isBus: this is a bit vector
@@ -586,7 +586,7 @@ namespace flopoco {
 			//                                                    +1
 			// with the sign extension trick:         000000sXXXXXXX
 			//                                      + 1111111      1
-			REPORT(DEBUG, "subtractSignal: this is a signed signal	");
+			REPORT(DEBUG, "subtractSignal: this is a signed signal  ");
 
 			// If the bit vector is of width 1, the following loop is empty.
 			for(int w=sLSB; w<=sMSB; w++) {
@@ -603,7 +603,7 @@ namespace flopoco {
 			//
 			// so we must add to the bit heap         111111XXXXXXXX
 			//                                                    +1
-			REPORT(DEBUG, "subtractSignal: this is an unsigned signal	");
+			REPORT(DEBUG, "subtractSignal: this is an unsigned signal   ");
 			for(int w=sLSB; w<=sMSB; w++) {
 				addBit("not " + name + of(w - sLSB), w + weight);
 			}
@@ -761,7 +761,7 @@ namespace flopoco {
 				c = c >> 1;
 				if (h > 0)
 					file << tab << tab << "\\drawdotcol{" << i << "}{" << h << "}" << endl;
-				//			cout << "i=" <<i  << "  "<<  h << endl;
+				//          cout << "i=" <<i  << "  "<<  h << endl;
 			}
 			file << tab << tab << "\\end{scope}" << endl;
 			file << tab << "\\end{dotdiag}" << endl;
@@ -805,22 +805,22 @@ namespace flopoco {
 		//create a new compression strategy, if one isn't present already
 		//if(compressionStrategy == nullptr)
 		//start the compression
-        compressionStrategy->startCompression();
-        //mark the bitheap compressed
+		compressionStrategy->startCompression();
+		//mark the bitheap compressed
 		isCompressed = true;
 	}
 
-    void BitHeap::startCompression(CompressionStrategy* compressionStrategy)
-    {
-        if (op->getTarget()->generateFigures())
-            latexPlot();
+	void BitHeap::startCompression(CompressionStrategy* compressionStrategy)
+	{
+		if (op->getTarget()->generateFigures())
+			latexPlot();
 
-        compressionStrategy->startCompression();
+		compressionStrategy->startCompression();
 
-        REPORT(DETAILED,"Using solution for the compressor tree generated combined with tiling");
-        //mark the bitheap compressed
-        isCompressed = true;
-    }
+		REPORT(DETAILED,"Using solution for the compressor tree generated combined with tiling");
+		//mark the bitheap compressed
+		isCompressed = true;
+	}
 
 
 	string BitHeap::getSumName()

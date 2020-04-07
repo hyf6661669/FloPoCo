@@ -467,7 +467,7 @@ namespace flopoco{
 		REPORT(DEBUG, "Adding the constant bits");
 		bitheap-> op->vhdl << endl << tab << "-- Adding the constant bits " << endl;
 		bool isConstantNonzero = false;
-		for (int w = bitheap->lsb; w < bitheap->msb; w++){
+		for (int w = bitheap->lsb; w <= bitheap->msb; w++){
 			if (1 == ((bitheap->constantBits>>(w-bitheap->lsb)) & 1) ){
 				Bit* bit = bitheap->addBit("'1'", w);
 				//set the signal to constant type, with declaration

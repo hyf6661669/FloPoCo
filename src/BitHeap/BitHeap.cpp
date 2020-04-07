@@ -493,12 +493,12 @@ namespace flopoco {
 
 
 
-	void BitHeap::subtractConstant(mpz_class constant, int weight)
+	void BitHeap::subtractConstant(mpz_class constant, int shift)
 	{
-		if( (weight < lsb) || (weight+intlog2(constant) > msb) )
-			THROWERROR("subtractConstant: Constant " << constant << " weighted by " << weight << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
+		if( (shift < lsb) || (shift+intlog2(constant) > msb) )
+			THROWERROR("subtractConstant: Constant " << constant << " shifted by " << shift << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
 
-		constantBits -= (constant << (weight-lsb));
+		constantBits -= (constant << (shift-lsb));
 
 		isCompressed = false;
 	}
@@ -509,18 +509,18 @@ namespace flopoco {
 
 
 
-	void BitHeap::addSignal(string name, int weight)
+	void BitHeap::addSignal(string name, int shift)
 	{
 
-		REPORT(DEBUG, "addSignal    " << name << " weight=" << weight);
+		REPORT(DEBUG, "addSignal    " << name << " shift=" << shift);
 		Signal* s = op->getSignalByName(name);
 		int sMSB = s->MSB();
 		int sLSB = s->LSB();
 
 		// No error reporting here: the current situation is that addBit will ignore bits thrown out of the bit heap (with a warning)
 
-		if( (sLSB+weight < lsb) || (sMSB+weight > msb) )
-			REPORT(0,"WARNING: addSignal(): " << name << " weighted by " << weight << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
+		if( (sLSB+shift < lsb) || (sMSB+shift > msb) )
+			REPORT(0,"WARNING: addSignal(): " << name << " shifted by " << shift << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
 
 		if(s->isSigned()) { // We must sign-extend it, using the constant trick
 			REPORT(DEBUG, "addSignal: this is a signed signal   ");
@@ -532,17 +532,17 @@ namespace flopoco {
 
 			// Now we have a bit vector but it might be of width 1, in which case the following loop is empty.
 			for(int w=sLSB; w<=sMSB-1; w++) {
-				addBit(name + of(w - sLSB), w + weight);
+				addBit(name + of(w - sLSB), w + shift);
 			}
 			if(sMSB==this->msb) { // No point in complementing it and adding a constant bit
-				addBit(name + of(sMSB - sLSB), sMSB + weight);
+				addBit(name + of(sMSB - sLSB), sMSB + shift);
 			}
 			else{
 				// complement the leading bit
-				addBit("not " + name + of(sMSB - sLSB), sMSB + weight);
+				addBit("not " + name + of(sMSB - sLSB), sMSB + shift);
 				// add the string of ones from this bit to the MSB of the bit heap
-				for(int w=sMSB; w<=this->msb-weight; w++) {
-					addConstantOneBit(w+weight);
+				for(int w=sMSB; w<=this->msb-shift; w++) {
+					addConstantOneBit(w+shift);
 				}
 				REPORT(FULL, "addSignal: constant string now " << hex << constantBits);
 			}
@@ -551,10 +551,10 @@ namespace flopoco {
 		else{ // unsigned
 			REPORT(DEBUG, "addSignal: this is an unsigned signal    ");
 			if(!op->getSignalByName(name)->isBus())
-				addBit(name, weight);
+				addBit(name, shift);
 			else {// isBus: this is a bit vector
 				for(int w=sLSB; w<=sMSB; w++) {
-					addBit(name + of(w - sLSB), w + weight);
+					addBit(name + of(w - sLSB), w + shift);
 				}
 			}
 		}
@@ -563,17 +563,17 @@ namespace flopoco {
 	}
 
 
-	void BitHeap::subtractSignal(string name, int weight)
+	void BitHeap::subtractSignal(string name, int shift)
 	{
-		REPORT(DEBUG, "subtractSignal  " << name << " weight=" << weight);
+		REPORT(DEBUG, "subtractSignal  " << name << " shift=" << shift);
 		Signal* s = op->getSignalByName(name);
 		int sMSB = s->MSB();
 		int sLSB = s->LSB();
 
 		// No error reporting here: the current situation is that addBit will ignore bits thrown out of the bit heap (with a warning)
 
-		if( (sLSB+weight < lsb) || (sMSB+weight > msb) )
-			REPORT(0,"WARNING: subtractSignal(): " << name << " weighted by " << weight << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
+		if( (sLSB+shift < lsb) || (sMSB+shift > msb) )
+			REPORT(0,"WARNING: subtractSignal(): " << name << " shifted by " << shift << " has bits out of the bitheap range ("<< this->msb << ", " << this->lsb << ")");
 
 
 		if(s->isSigned()) {
@@ -590,12 +590,12 @@ namespace flopoco {
 
 			// If the bit vector is of width 1, the following loop is empty.
 			for(int w=sLSB; w<=sMSB; w++) {
-				addBit((w != sMSB ? "not " : "") + name + of(w - sLSB), w + weight);
+				addBit((w != sMSB ? "not " : "") + name + of(w - sLSB), w + shift);
 			}
-			addConstantOneBit(sLSB+weight); // the +1
+			addConstantOneBit(sLSB+shift); // the +1
 			// add the string of ones to the MSB of the bit heap
-			for(int w=sMSB; w<=this->msb-weight; w++) {
-				addConstantOneBit(w+weight);
+			for(int w=sMSB; w<=this->msb-shift; w++) {
+				addConstantOneBit(w+shift);
 			}
 		}
 		else{ // unsigned
@@ -605,12 +605,12 @@ namespace flopoco {
 			//                                                    +1
 			REPORT(DEBUG, "subtractSignal: this is an unsigned signal   ");
 			for(int w=sLSB; w<=sMSB; w++) {
-				addBit("not " + name + of(w - sLSB), w + weight);
+				addBit("not " + name + of(w - sLSB), w + shift);
 			}
-			addConstantOneBit(sLSB+weight); // the +1
+			addConstantOneBit(sLSB+shift); // the +1
 			// add the string of ones to the MSB of the bit heap
-			for(int w=sMSB+1; w<=this->msb-weight; w++) {
-				addConstantOneBit(w+weight);
+			for(int w=sMSB+1; w<=this->msb-shift; w++) {
+				addConstantOneBit(w+shift);
 			}
 		}
 		isCompressed = false;

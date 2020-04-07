@@ -412,6 +412,7 @@ enum BitType : unsigned;
 		unsigned width;                              /**< The width of the bitheap */
 		int height;                                 /**< The current maximum height of any column of the bitheap */
 		string name;                                /**< The name of the bitheap */
+		unsigned final_add_height = 2;
 
 	private:
 		Operator* op;

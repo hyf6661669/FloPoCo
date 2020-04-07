@@ -834,13 +834,13 @@ namespace flopoco {
 
 	bool BitHeap::compressionRequired()
 	{
-		if(getMaxHeight() < 3){
+		if(getMaxHeight() <= final_add_height){
 			return false;
 		}else if(height > 3){
 			return true;
 		}else{
 			for(unsigned i=1; i<bits.size(); i++)
-				if(bits[i].size() > 2)
+				if(bits[i].size() > final_add_height)
 					return true;
 			return false;
 		}

@@ -1262,18 +1262,18 @@ namespace flopoco{
 		unsigned count = compressionDoneIndex;
 
 		//check up until which index has the bitheap already been compressed
-		while((count < bitheap->bits.size()) && (bitheap->bits[count].size() < 2))
+		while((count < bitheap->bits.size()) && (bitheap->bits[count].size() <= 1))
 			count++;
 		//all the columns might have been already compressed
 		if(count == bitheap->bits.size())
 			count--;
 		//if the current column needs compression, then do not consider it
-		if((bitheap->bits[count].size() >= 2) && (count > 0))
+		if((bitheap->bits[count].size() > 1) && (count > 0))
 			count--;
 
 		if(count == compressionDoneIndex)
 		{
-			if((!bitheap->compressionRequired()) && (count == 0) && (bitheap->bits[count].size() < 2))
+			if((!bitheap->compressionRequired()) && (count == 0) && (bitheap->bits[count].size() <= 1))
 			{
 				//the bitheap is compressed, all that is left
 				//	is to add the lsb bit to the result

@@ -326,7 +326,8 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
         solver->addConstraint(truncConstraint);
     }
 
-    int finAddHeight = 2;   //Select if dual or ternary adder is used in final stage of bitheap compression
+    // BitHeap compression part of ILP formulation
+    bitheap->final_add_height = 3;   //Select if dual or ternary adder is used in final stage of bitheap compression
     addFlipFlop();      //Add FF to list of compressors
     vector<vector<ScaLP::Variable>> bitsInColAndStage(s_max+1, vector<ScaLP::Variable>(bitsinColumn.size()+1));
     //ScaLP::Term selectLastStage;
@@ -364,7 +365,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                     //std::cout << nvarName.str() << endl;
                     ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
                     obj.add(tempV, (e == possibleCompressors.size()-1)?0.5:1);    //append variable to cost function, r.c.a.-area (cost) is 1 6LUT
-                    bitsinCurrentColumn[c].add(tempV, ((e == possibleCompressors.size()-1)?1: (c == prodWidth) ? 0 : finAddHeight));                 //FFs remove only one bit from current stage, but the  ripple carry adder two, the front element of ripple carry adder does not remove any bit but jus proviedes the carry
+                    bitsinCurrentColumn[c].add(tempV, ((e == possibleCompressors.size()-1)?1: (c == prodWidth) ? 0 : bitheap->final_add_height));                 //FFs remove only one bit from current stage, but the  ripple carry adder two, the front element of ripple carry adder does not remove any bit but jus proviedes the carry
                     bitsinNextColumn[c + 0].add(tempV, 1);
                     //if(c == bitsinColumn.size()-1)
                     //    bitsinNextColumn[c + 1].add(tempV, 1);
@@ -420,7 +421,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                 bitsinLastStageColumn[c].add(bitsInColAndStage[s][c], 1);
                 //if(s < s_max - 1)
                 //    bitsinLastStageColumn[c].add(bitsInColAndStage[s+1][c], 4);
-                ScaLP::Constraint c3Constraint = bitsinLastStageColumn[c] <= ((s == s_max-1)?finAddHeight:1);     //C3_s_c
+                ScaLP::Constraint c3Constraint = bitsinLastStageColumn[c] <= ((s == s_max-1)?bitheap->final_add_height:1);     //C3_s_c
                 c3Constraint.name = consName3.str();
                 solver->addConstraint(c3Constraint);
                 //cout << consName3.str() << " " << stage.str() << endl;

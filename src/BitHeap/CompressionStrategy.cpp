@@ -468,7 +468,7 @@ namespace flopoco{
 		bitheap-> op->vhdl << endl << tab << "-- Adding the constant bits " << endl;
 		bool isConstantNonzero = false;
 		for (int w = bitheap->lsb; w < bitheap->msb; w++){
-			if (1 == ((bitheap->constantBits>>w) & 1) ){
+			if (1 == ((bitheap->constantBits>>(w-bitheap->lsb)) & 1) ){
 				Bit* bit = bitheap->addBit("'1'", w);
 				//set the signal to constant type, with declaration
 				bit->signal->setType(Signal::constantWithDeclaration);
@@ -973,7 +973,7 @@ namespace flopoco{
 		Bit* soonestBit = nullptr;
 		unsigned count = lsbColumn;
 
-		if(((int)lsbColumn < 0) || ((int)msbColumn > bitheap->width - 1))
+		if(msbColumn > bitheap->width - 1)
 			THROWERROR("Invalid arguments for getSoonest bit: lsbColumn="
 					<< lsbColumn << " msbColumn=" << msbColumn);
 		if(bitheap->getMaxHeight() == 0)
@@ -1013,7 +1013,7 @@ namespace flopoco{
 		unsigned count = lsbColumn;
 		vector<Bit*> appliedCompressor;
 
-		if(((int)lsbColumn < 0) || ((int)msbColumn > bitheap->width - 1))
+		if(msbColumn > bitheap->width - 1)
 			THROWERROR("Invalid arguments for getSoonestCompressibleBit bit: lsbColumn="
 					<< lsbColumn << " msbColumn=" << msbColumn);
 		if(bitheap->getMaxHeight() == 0)

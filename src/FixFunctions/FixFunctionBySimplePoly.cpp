@@ -89,9 +89,11 @@ namespace flopoco{
 		vhdl << tab << "-- With the following polynomial, approx error bound is " << approxErrorBound << " ("<< log2(approxErrorBound) << " bits)" << endl;
 
 		// Adding the round bit to the degree-0 coeff
-		int oldLSB0 = poly->getCoeff(0)->LSB;
 		poly->getCoeff(0)->addRoundBit(lsbOut-1);
+
+#if 0
 		// The following is probably dead code. It was a fix for cases
+		int oldLSB0 = poly->getCoeff(0)->LSB;
 		// where BasicPolyApprox found LSB=lsbOut, hence the round bit is outside of MSB[0]..LSB
 		// In this case recompute the poly, it would give better approx error 
 		if(oldLSB0 != poly->getCoeff(0)->LSB) {
@@ -101,8 +103,9 @@ namespace flopoco{
 				REPORT(DEBUG, poly->getCoeff(i)->report());
 			}
 			poly = new BasicPolyApprox(f->fS, degree, poly->getCoeff(0)->LSB, signedIn);
+			poly->getCoeff(0)->addRoundBit(lsbOut-1);
 		}
-
+#endif
 
 		for(int i=0; i<=degree; i++) {
 			coeffMSB.push_back(poly->getCoeff(i)->MSB);
@@ -193,50 +196,47 @@ namespace flopoco{
 		// the static list of mandatory tests
 		TestList testStateList;
 		vector<pair<string,string>> paramList;
+		vector<string> functionList;
+
+		functionList.push_back("sin(x)");
+		functionList.push_back("exp(x)");
+		functionList.push_back("log(x/2+1)");
 		
 		if(index==-1) 
 		{ // The unit tests
-			// A few regression tests
-			// ./flopoco verbose=2 FixFunctionBySimplePoly plainvhdl=true f="sin(x)" lsbIn=-16 msbOut=4 lsbout=-16 TestBench n=-2
-			paramList.push_back(make_pair("f","\"sin(x)\""));
-			paramList.push_back(make_pair("plainVHDL","true"));
-			paramList.push_back(make_pair("lsbIn","-16"));
-			paramList.push_back(make_pair("lsbOut","-16"));
-			paramList.push_back(make_pair("signedIn","true"));
-			testStateList.push_back(paramList);
-			paramList.clear();
-			
-			paramList.push_back(make_pair("f","\"exp(x)\""));
-			paramList.push_back(make_pair("plainVHDL","true"));
-			paramList.push_back(make_pair("lsbIn","-16"));
-			paramList.push_back(make_pair("lsbOut","-16"));
-			paramList.push_back(make_pair("signedIn","true"));
-			testStateList.push_back(paramList);
-			paramList.clear();
-			
+			for (size_t i=0; i<functionList.size(); i++) {
+					// first deg 2 and 3, 15 bits, exhaustive test, then deg 5 for 25 bits 
+					string f = functionList[i];
+					paramList.push_back(make_pair("f","\"" + f + "\""));
+					paramList.push_back(make_pair("plainVHDL","true"));
+					paramList.push_back(make_pair("lsbOut","-15"));
+					paramList.push_back(make_pair("lsbIn","-15"));
+					paramList.push_back(make_pair("TestBench n=","-2"));
+					testStateList.push_back(paramList);
+					paramList.clear();
 
-#if 0
+					paramList.push_back(make_pair("f","\"" + f + "\""));
+					paramList.push_back(make_pair("plainVHDL","true"));
+					paramList.push_back(make_pair("lsbOut","-24"));
+					paramList.push_back(make_pair("lsbIn","-24"));
+					testStateList.push_back(paramList);
+					paramList.clear();
 
-			for(int wF=5; wF<53; wF+=1) {
-				for(int dualPath = 0; dualPath <2; dualPath++)	{
-					for(int sub = 0; sub <2; sub++)	{
-						int wE = 6+(wF/10);
-						while(wE>wF)
-							wE -= 2;
-					
-						paramList.push_back(make_pair("wF",to_string(wF)));
-						paramList.push_back(make_pair("wE",to_string(wE)));
-						paramList.push_back(make_pair("sub",to_string(sub)));
-						paramList.push_back(make_pair("dualPath",to_string(dualPath)));
-						testStateList.push_back(paramList);
-						paramList.clear();
-					}
-					
+					paramList.push_back(make_pair("f","\"" + f + "\""));
+					paramList.push_back(make_pair("plainVHDL","true"));
+					paramList.push_back(make_pair("lsbOut","-30"));
+					paramList.push_back(make_pair("lsbIn","-30"));
+					testStateList.push_back(paramList);
+					paramList.clear();
+
+					paramList.push_back(make_pair("f","\"" + f + "\""));
+					paramList.push_back(make_pair("plainVHDL","true"));
+					paramList.push_back(make_pair("lsbOut","-32"));
+					paramList.push_back(make_pair("lsbIn","-32"));
+					testStateList.push_back(paramList);
+					paramList.clear();
 				}
-			}
-#endif
-
-		}
+	}
 		else     
 		{
 				// finite number of random test computed out of index
@@ -273,15 +273,14 @@ namespace flopoco{
 						   "FunctionApproximation",
 						   "",
 						   "f(string): function to be evaluated between double-quotes, for instance \"exp(x*x)\";\
-signedIn(bool): if true the function input range is [-1,1), if false it is [0,1);\
+signedIn(bool)=true: if true the function input range is [-1,1), if false it is [0,1);\
 lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
 lsbOut(int): weight of output LSB;\
 ",
 						   "This operator uses a table for coefficients, and Horner evaluation with truncated multipliers sized just right.<br>For more details, see <a href=\"bib/flopoco.html#DinJolPas2010-poly\">this article</a>.",
 											 FixFunctionBySimplePoly::parseArguments,
 											 FixFunctionBySimplePoly::unitTest
-
-							);
+											 );
 	}
 
 }

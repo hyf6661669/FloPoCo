@@ -56,34 +56,34 @@ namespace flopoco {
         for( uint i = 0; i < wIn; ++i  ) {
 			Xilinx_LUT6_2 *lut_bit_i = new Xilinx_LUT6_2( this,target );
             lut_bit_i->setGeneric( "init", lut_content, 64 );
-            inPortMap( lut_bit_i, "i0", "z_in" + of( i ) );
-            inPortMap( lut_bit_i, "i1", "y_in" + of( i ) );
-            inPortMap( lut_bit_i, "i2", "x_in" + of( i ) );
-            inPortMap( lut_bit_i, "i3", "sel_in" );
-            inPortMap( lut_bit_i, "i4", "bbus_in" + of( i ) );
-            inPortMapCst( lut_bit_i, "i5", "'1'" );
-            outPortMap( lut_bit_i, "o5", "bbus_out" + of( i ));
-            outPortMap( lut_bit_i, "o6", "lut_o6" + of( i ));
+            inPortMap( "i0", "z_in" + of( i ) );
+            inPortMap( "i1", "y_in" + of( i ) );
+            inPortMap( "i2", "x_in" + of( i ) );
+            inPortMap( "i3", "sel_in" );
+            inPortMap( "i4", "bbus_in" + of( i ) );
+            inPortMapCst( "i5", "'1'" );
+            outPortMap( "o5", "bbus_out" + of( i ));
+            outPortMap( "o6", "lut_o6" + of( i ));
             vhdl << lut_bit_i->primitiveInstance( join( "lut_bit_", i ) );
         }
 
         if( is_initial ) {
 			Xilinx_CARRY4 *init_cc = new Xilinx_CARRY4( this,target );
-            outPortMap( init_cc, "co", "cc_co");
-            outPortMap( init_cc, "o", "cc_o");
-            inPortMap( init_cc, "cyinit", "carry_in" );
-            inPortMapCst( init_cc, "ci", "'0'" );
-            inPortMap( init_cc, "di", "cc_di" );
-            inPortMap( init_cc, "s", "cc_s" );
+            outPortMap( "co", "cc_co");
+            outPortMap( "o", "cc_o");
+            inPortMap( "cyinit", "carry_in" );
+            inPortMapCst( "ci", "'0'" );
+            inPortMap( "di", "cc_di" );
+            inPortMap( "s", "cc_s" );
             vhdl << init_cc->primitiveInstance( "init_cc" );
         } else {
 			Xilinx_CARRY4 *further_cc = new Xilinx_CARRY4( this,target );
-            outPortMap( further_cc, "co", "cc_co");
-            outPortMap( further_cc, "o", "cc_o");
-            inPortMapCst( further_cc, "cyinit", "'0'" );
-            inPortMap( further_cc, "ci", "carry_in" );
-            inPortMap( further_cc, "di", "cc_di" );
-            inPortMap( further_cc, "s", "cc_s" );
+            outPortMap( "co", "cc_co");
+            outPortMap( "o", "cc_o");
+            inPortMapCst( "cyinit", "'0'" );
+            inPortMap( "ci", "carry_in" );
+            inPortMap( "di", "cc_di" );
+            inPortMap( "s", "cc_s" );
             vhdl << further_cc->primitiveInstance( "further_cc" );
         }
 

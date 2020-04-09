@@ -66,15 +66,15 @@ namespace flopoco {
         if( num_slices == 1 ) {
             Xilinx_TernaryAdd_2State_slice *single_slice = new Xilinx_TernaryAdd_2State_slice( this, target, wIn, true, lut_content );
             addSubComponent( single_slice );
-            inPortMap( single_slice, "x_in", "x" );
-            inPortMap( single_slice, "y_in", "y" );
-            inPortMap( single_slice, "z_in", "z" );
-            inPortMap( single_slice, "sel_in", "sel_i" );
-            inPortMap( single_slice, "bbus_in", "bbus" + range( wIn-1, 0 ) );
-            inPortMap( single_slice, "carry_in", "carry_cct" );
-            outPortMap( single_slice, "bbus_out", "bbus" + range( wIn, 1 ));
-            outPortMap( single_slice, "carry_out", "carry" + of( 0 ));
-            outPortMap( single_slice, "sum_out", "sum_o" + range( wIn-1, 0 ));
+            inPortMap("x_in", "x" );
+            inPortMap("y_in", "y" );
+            inPortMap("z_in", "z" );
+            inPortMap("sel_in", "sel_i" );
+            inPortMap("bbus_in", "bbus" + range( wIn-1, 0 ) );
+            inPortMap("carry_in", "carry_cct" );
+            outPortMap( "bbus_out", "bbus" + range( wIn, 1 ));
+            outPortMap( "carry_out", "carry" + of( 0 ));
+            outPortMap( "sum_out", "sum_o" + range( wIn-1, 0 ));
             vhdl << instance( single_slice, "slice_i" );
         }
 
@@ -83,41 +83,41 @@ namespace flopoco {
                 if( i == 0 ) {  // FIRST SLICE
                     Xilinx_TernaryAdd_2State_slice *first_slice = new Xilinx_TernaryAdd_2State_slice( this, target, 4, true, lut_content );
                     addSubComponent( first_slice );
-                    inPortMap( first_slice, "x_in", "x" + range( 3, 0 ) );
-                    inPortMap( first_slice, "y_in", "y" + range( 3, 0 ) );
-                    inPortMap( first_slice, "z_in", "z" + range( 3, 0 ) );
-                    inPortMap( first_slice, "sel_in", "sel_i" );
-                    inPortMap( first_slice, "bbus_in", "bbus" + range( 3, 0 ) );
-                    inPortMap( first_slice, "carry_in", "carry_cct" );
-                    outPortMap( first_slice, "bbus_out", "bbus"  + range( 4, 1 ));
-                    outPortMap( first_slice, "carry_out", "carry" + of( 0 ));
-                    outPortMap( first_slice, "sum_out", "sum_o" + range( 3, 0 ));
+                    inPortMap( "x_in", "x" + range( 3, 0 ) );
+                    inPortMap( "y_in", "y" + range( 3, 0 ) );
+                    inPortMap( "z_in", "z" + range( 3, 0 ) );
+                    inPortMap( "sel_in", "sel_i" );
+                    inPortMap( "bbus_in", "bbus" + range( 3, 0 ) );
+                    inPortMap( "carry_in", "carry_cct" );
+                    outPortMap( "bbus_out", "bbus"  + range( 4, 1 ));
+                    outPortMap( "carry_out", "carry" + of( 0 ));
+                    outPortMap( "sum_out", "sum_o" + range( 3, 0 ));
                     vhdl << instance( first_slice, join( "slice_", i ) ) << endl;
                 } else if( i == (num_slices - 1) ) { // LAST SLICE
                     Xilinx_TernaryAdd_2State_slice *last_slice = new Xilinx_TernaryAdd_2State_slice( this, target, wIn - ( 4 * i ), false, lut_content );
                     addSubComponent( last_slice );
-                    inPortMap( last_slice, "x_in", "x" + range( wIn - 1, 4 * i ) );
-                    inPortMap( last_slice, "y_in", "y" + range( wIn - 1, 4 * i ) );
-                    inPortMap( last_slice, "z_in", "z" + range( wIn - 1, 4 * i ) );
-                    inPortMap( last_slice, "sel_in", "sel_i" );
-                    inPortMap( last_slice, "bbus_in", "bbus" + range( wIn - 1, 4 * i ) );
-                    inPortMap( last_slice, "carry_in", "carry" + of( i - 1 ) );
-                    outPortMap( last_slice, "bbus_out", "bbus" + range( wIn, 4 * i + 1 ));
-                    outPortMap( last_slice, "carry_out", "carry" + of( i ));
-                    outPortMap( last_slice, "sum_out", "sum_o" + range( wIn - 1, 4 * i ));
+                    inPortMap("x_in", "x" + range( wIn - 1, 4 * i ) );
+                    inPortMap("y_in", "y" + range( wIn - 1, 4 * i ) );
+                    inPortMap("z_in", "z" + range( wIn - 1, 4 * i ) );
+                    inPortMap("sel_in", "sel_i" );
+                    inPortMap("bbus_in", "bbus" + range( wIn - 1, 4 * i ) );
+                    inPortMap("carry_in", "carry" + of( i - 1 ) );
+                    outPortMap("bbus_out", "bbus" + range( wIn, 4 * i + 1 ));
+                    outPortMap("carry_out", "carry" + of( i ));
+                    outPortMap("sum_out", "sum_o" + range( wIn - 1, 4 * i ));
                     vhdl << instance( last_slice, join( "slice_", i ) ) << endl;
                 } else {
                     Xilinx_TernaryAdd_2State_slice *full_slice = new Xilinx_TernaryAdd_2State_slice( this, target, 4, false, lut_content );
                     addSubComponent( full_slice );
-                    inPortMap( full_slice, "x_in", "x" + range( ( 4 * i ) + 3, 4 * i ) );
-                    inPortMap( full_slice, "y_in", "y" + range( ( 4 * i ) + 3, 4 * i ) );
-                    inPortMap( full_slice, "z_in", "z" + range( ( 4 * i ) + 3, 4 * i ) );
-                    inPortMap( full_slice, "sel_in", "sel_i" );
-                    inPortMap( full_slice, "bbus_in", "bbus" + range( ( 4 * i ) + 3, 4 * i ) );
-                    inPortMap( full_slice, "carry_in", "carry" + of( i - 1 ) );
-                    outPortMap( full_slice, "bbus_out", "bbus" + range( ( 4 * i ) + 4, 4 * i + 1 ));
-                    outPortMap( full_slice, "carry_out", "carry" + of( i ));
-                    outPortMap( full_slice, "sum_out", "sum_o" + range( ( 4 * i ) + 3, 4 * i ));
+                    inPortMap("x_in", "x" + range( ( 4 * i ) + 3, 4 * i ) );
+                    inPortMap("y_in", "y" + range( ( 4 * i ) + 3, 4 * i ) );
+                    inPortMap("z_in", "z" + range( ( 4 * i ) + 3, 4 * i ) );
+                    inPortMap("sel_in", "sel_i" );
+                    inPortMap("bbus_in", "bbus" + range( ( 4 * i ) + 3, 4 * i ) );
+                    inPortMap("carry_in", "carry" + of( i - 1 ) );
+                    outPortMap( "bbus_out", "bbus" + range( ( 4 * i ) + 4, 4 * i + 1 ));
+                    outPortMap( "carry_out", "carry" + of( i ));
+                    outPortMap( "sum_out", "sum_o" + range( ( 4 * i ) + 3, 4 * i ));
                     vhdl << instance( full_slice, join( "slice_", i ) ) << endl;
                 }
             }

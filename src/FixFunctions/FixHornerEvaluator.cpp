@@ -107,6 +107,7 @@ namespace flopoco{
 		wcSumMSB = vector<int>(degree+1,INT_MIN);
 		wcSumLSB = vector<int>(degree+1,INT_MAX);
 		wcYLSB = vector<int>(degree,INT_MAX);
+		isZero = vector<bool>(degree+1, true) ;
 		//wcProductMSB = vector<int>(degree,0);
 		//wcProductLSB = vector<int>(degree,0);
 
@@ -118,6 +119,12 @@ namespace flopoco{
 		// iterate over all the polynomials to implement the error analysis on each interval
 		for (size_t k=0; k<poly.size(); k++) {
 			REPORT(DETAILED, "Error analysis on interval " << k  << " of " << poly.size()-1 );
+			// detecting zero coefficients
+			for(int i=0; i<=degree; i++) {
+				if(!poly[k] ->  getCoeff(i) -> isZero())
+					isZero[i]=false;
+			}
+			//for(int i=0; i<=degree; i++) {	REPORT(0, "isZero["<< i << "] = " << isZero[i]);  }
 
 			// First, compute the max abs value of the d intermediate sums
 			vector<double> maxAbsSum(degree+1, -1);
@@ -298,7 +305,12 @@ namespace flopoco{
 						 <<  " <= "<< join("YsTrunc", i) <<" * S" << i+1 << ";" << endl;
 				// Align before addition
 				resizeFixPoint(join("Ptrunc", i), join("P", i), wcSumMSB[i], wcSumLSB[i]-1);
-				resizeFixPoint(join("Aext", i), join("As", i), wcSumMSB[i], wcSumLSB[i]-1); // -1 to make space for the round bit
+				if(isZero[i]) {
+					vhdl << tab <<	declareFixPoint(join("Aext", i), true, wcSumMSB[i], wcSumLSB[i]) << " <= " <<  zg( wcSumMSB[i] -  wcSumLSB[i] +1) << ";" << endl; 
+					}
+				else {
+					resizeFixPoint(join("Aext", i), join("As", i), wcSumMSB[i], wcSumLSB[i]-1); // -1 to make space for the round bit
+				}
 
 				vhdl << tab << declareFixPoint(join("SBeforeRound", i), true, wcSumMSB[i], wcSumLSB[i]-1)
 						 << " <= " << join("Aext", i) << " + " << join("Ptrunc", i) << "+'1';" << endl;

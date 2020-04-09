@@ -348,11 +348,12 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 
 			mpfr_t mpcoeff, mptmp;
 			// First a tentative conversion to double to get an estimate of the MSB and zeroness
+			// FIXME do everything in MPFR before it kills somebody
 			double dcoeff;
 			sollya_lib_get_constant_as_double(&dcoeff, coeffS);
 			if(0.0==dcoeff) {
-				msb=1; // for the sign
-				lsb=0;
+				msb=f->msbOut; // for the sign
+				lsb=f->msbOut-1;
 				mpfr_init2(mpcoeff, 32);
 				mpfr_set_d(mpcoeff, 0.0, GMP_RNDN);
 			}

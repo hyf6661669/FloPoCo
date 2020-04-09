@@ -60,6 +60,7 @@ namespace flopoco{
 		vector<int> wcSumMSB; /**< from 0 to degree */
 		vector<int> wcSumLSB; /**< from 0 to degree */
 		vector<int> wcYLSB; /**< from 0 to degree-1*/
+		vector<bool> isZero; /*< a vector of size degree, true if all the coeffs of this degree are 0, avoids cornercase bugs*/
 		//		vector <int>  wcProductMSB; /**< from 0 to degree */
 		//		vector <int>  wcProductLSB; /**< from 0 to degree-1 */
 

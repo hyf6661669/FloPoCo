@@ -17,7 +17,9 @@ namespace flopoco{
 	 We can have a positive constant in a signed Fixconstant object, just as we can have leading zeroes.
 
 	 By default the constructor has to provide MSB and LSB. 
-	 \todo convention for zero in terms of LSB and MSB.
+	 \todo a convention for zero (could be MSB<LSB but then we miss some error reporting) 
+	 (Also support in Operaror::resizeFixPoint)
+	 Currently, just store zero on the number of bits you want...
 
 
 	 */

@@ -21,7 +21,7 @@ IntMultiplierLUT
 IntKaratsubaRectangular
 FixFunctionByTable
 FixFunctionByMultipartiteTable
-# FixFunctionBySimplePoly # not sure we will revive it
+FixFunctionBySimplePoly
 FixFunctionByPiecewisePoly
 UniformPiecewisePolyApprox
 FixRealKCM

@@ -249,9 +249,9 @@ namespace flopoco{
 		} // closes the for loop on k (the intervals)
  
 		// Final reporting
-		REPORT(INFO, "Final worst-case architecture parameters:")
+		REPORT(DETAILED, "Final worst-case architecture parameters:")
 		for(int i=degree-1; i>=0; i--) {
-			REPORT(INFO,"Horner step " << i << ": YLSB=" << wcYLSB[i] << "\t SSgn=" << wcSumSign[i] << "  \t SMSB=" << wcSumMSB[i] << "   \t SLSB=" << wcSumLSB[i]
+			REPORT(DETAILED,"Horner step " << i << ": YLSB=" << wcYLSB[i] << "\t SSgn=" << wcSumSign[i] << "  \t SMSB=" << wcSumMSB[i] << "   \t SLSB=" << wcSumLSB[i]
 						 << "\t Mult size " << 1-wcYLSB[i] << "x" << wcSumMSB[i+1]-wcSumLSB[i+1]+1)
 			}	
 		

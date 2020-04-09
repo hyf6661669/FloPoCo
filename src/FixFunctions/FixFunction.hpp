@@ -27,10 +27,9 @@ namespace flopoco{
 		/**
 			 The FixFunctionByTable constructor
 			 @param[string] func    a string representing the function
-			 @param[int]    lsbX    input LSB weight (-lsbX is the input size)
-			 @param[int]    msbOut  output MSB weight, used to determine wOut
-			 @param[int]    lsbOut  output LSB weight
 			 @param[bool]   signedIn: if true, input range is [0,1], else input range is [0,1]
+			 @param[int]    lsbIn    input LSB weight (-lsbX is the input size)
+			 @param[int]    lsbOut  output LSB weight
 
 			 There are defaults for lsbOut and msbOut for situations when they are computed afterwards.
 		 */

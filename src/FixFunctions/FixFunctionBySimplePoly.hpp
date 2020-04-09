@@ -27,7 +27,7 @@ namespace flopoco{
 			 This would require quite a lot of work for non-trivial functions (isolating roots of the derivative etc).
 			 So this is currently left to the user.
 		 */
-		FixFunctionBySimplePoly(OperatorPtr parentOp, Target* target, string func, bool signedIn, int lsbIn, int msbOut, int lsbOut, bool finalRounding = true);
+		FixFunctionBySimplePoly(OperatorPtr parentOp, Target* target, string func, bool signedIn, int lsbIn, int lsbOut, bool finalRounding = true);
 
 		/**
 		 * FixFunctionBySimplePoly destructor

@@ -43,26 +43,33 @@ namespace flopoco{
 #define DEBUGVHDL 0
 
 
-	FixFunctionBySimplePoly::FixFunctionBySimplePoly(OperatorPtr parentOp, Target* target, string func, bool signedIn, int lsbIn, int msbOut, int lsbOut, bool finalRounding_):
+	FixFunctionBySimplePoly::FixFunctionBySimplePoly(OperatorPtr parentOp, Target* target, string func, bool signedIn, int lsbIn, int lsbOut, bool finalRounding_):
 		Operator(parentOp, target), finalRounding(finalRounding_){
 
-		f = new FixFunction(func, signedIn, lsbIn, msbOut, lsbOut);
+		f = new FixFunction(func, signedIn, lsbIn, lsbOut);
 
 		srcFileName="FixFunctionBySimplePoly";
 
+		// You fix code by insulting the user he's using it wrongly
 		if(finalRounding==false){
 			THROWERROR("FinalRounding=false not implemented yet" );
+		}
+
+		if(signedIn==false){
+			THROWERROR("signedIn=false not implemented yet" );
 		}
 
 		ostringstream name;
 		name<<"FixFunctionBySimplePoly_";
 		setNameWithFreqAndUID(name.str());
 
-		setCopyrightString("Florent de Dinechin (2014)");
+		setCopyrightString("Florent de Dinechin (2014-2020)");
 		addHeaderComment("-- Evaluator for " +  f-> getDescription() + "\n");
+		REPORT(DETAILED, "Entering constructor, FixFunction description: " << f-> getDescription());
+
 		addInput("X"  , -lsbIn + (signedIn?1:0));
-		int outputSize = msbOut-lsbOut+1;
-		addOutput("R" ,outputSize , 2);
+		int outputSize = f->msbOut-lsbOut+1;
+		addOutput("Y" ,outputSize , 2);
 		useNumericStd();
 
 		if(f->signedIn)
@@ -76,7 +83,7 @@ namespace flopoco{
 		double approxErrorBound = poly->getApproxErrorBound();
 
 		int degree = poly->getDegree();
-		if(msbOut < poly->getCoeff(0)->MSB) {
+		if(f->msbOut < poly->getCoeff(0)->MSB) {
 			REPORT(INFO, "user-provided msbO smaller that the MSB of the constant coefficient, I am worried it won't work");
 		}
 		vhdl << tab << "-- With the following polynomial, approx error bound is " << approxErrorBound << " ("<< log2(approxErrorBound) << " bits)" << endl;
@@ -119,24 +126,25 @@ namespace flopoco{
 		// In principle we should compute the rounding error budget and pass it to FixHornerEval
 		// REPORT(INFO, "Now building the Horner evaluator for rounding error budget "<< roundingErrorBudget);
 		
+		
 		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator
 		schedule();
 		inPortMap("Y", "Xs");
 		for(int i=0; i<=degree; i++) {
 			inPortMap(join("A",i), join("A",i));
 		}
-		outPortMap("R", "Rs");
+		outPortMap("R", "HornerOutput");
+		vector<BasicPolyApprox*> pv; // because that's what FixHornerEvaluator expects
+		pv.push_back(poly);
 		OperatorPtr h = new  FixHornerEvaluator(this, target, 
 																						lsbIn,
-																						msbOut,
+																						f->msbOut,
 																						lsbOut,
-																						degree, 
-																						coeffMSB, 
-																						poly->getCoeff(0)->LSB // it is the smaller LSB
+																						pv
 																						);
 		vhdl << instance(h, "horner", false);
 		
-		vhdl << tab << "R <= " << "std_logic_vector(Rs);" << endl;
+		vhdl << tab << "Y <= " << "std_logic_vector(HornerOutput);" << endl;
 	}
 
 
@@ -194,7 +202,6 @@ namespace flopoco{
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-16"));
 			paramList.push_back(make_pair("lsbOut","-16"));
-			paramList.push_back(make_pair("msbOut","4"));
 			paramList.push_back(make_pair("signedIn","true"));
 			testStateList.push_back(paramList);
 			paramList.clear();
@@ -203,7 +210,6 @@ namespace flopoco{
 			paramList.push_back(make_pair("plainVHDL","true"));
 			paramList.push_back(make_pair("lsbIn","-16"));
 			paramList.push_back(make_pair("lsbOut","-16"));
-			paramList.push_back(make_pair("msbOut","4"));
 			paramList.push_back(make_pair("signedIn","true"));
 			testStateList.push_back(paramList);
 			paramList.clear();
@@ -247,15 +253,14 @@ namespace flopoco{
 	{
 		string f;
 		bool signedIn;
-		int lsbIn, msbOut, lsbOut;
+		int lsbIn, lsbOut;
 
 		UserInterface::parseString(args, "f", &f);
 		UserInterface::parseBoolean(args, "signedIn", &signedIn);
 		UserInterface::parseInt(args, "lsbIn", &lsbIn);
-		UserInterface::parseInt(args, "msbOut", &msbOut);
 		UserInterface::parseInt(args, "lsbOut", &lsbOut);
 
-		return new FixFunctionBySimplePoly(parentOp, target, f, signedIn, lsbIn, msbOut, lsbOut);
+		return new FixFunctionBySimplePoly(parentOp, target, f, signedIn, lsbIn, lsbOut);
 	}
 
 
@@ -270,7 +275,6 @@ namespace flopoco{
 						   "f(string): function to be evaluated between double-quotes, for instance \"exp(x*x)\";\
 signedIn(bool): if true the function input range is [-1,1), if false it is [0,1);\
 lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
-msbOut(int): weight of output MSB;\
 lsbOut(int): weight of output LSB;\
 ",
 						   "This operator uses a table for coefficients, and Horner evaluation with truncated multipliers sized just right.<br>For more details, see <a href=\"bib/flopoco.html#DinJolPas2010-poly\">this article</a>.",

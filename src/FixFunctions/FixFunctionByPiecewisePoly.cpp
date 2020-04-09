@@ -82,7 +82,7 @@ namespace flopoco{
 		signedOut = f->signedOut;
 		
 		addHeaderComment("Evaluator for " +  f-> getDescription() + "\n");
-		REPORT(DETAILED, "Entering: FixFunctionByPiecewisePoly \"" << func << "\" " << lsbIn << " " << lsbOut << " " << degree);
+		REPORT(DETAILED, "Entering constructor, FixFunction description: " << f-> getDescription());
  		int wX=-lsbIn;
 		addInput("X", wX); // TODO manage signedIn
 

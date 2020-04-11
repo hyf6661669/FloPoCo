@@ -42,9 +42,9 @@ namespace flopoco{
 		static void registerFactory();
 
 		/**
-		 * get the bits of coeff of degree d of polynomial number i
+		 * get the bits of coeff of degree d of polynomial number i. 
 		 */
-		mpz_class getCoeff(int i, int d);
+		mpz_class getCoeffAsPositiveMPZ(int i, int d);
 
 		/**
 		 * function that regroups most of the constructor code

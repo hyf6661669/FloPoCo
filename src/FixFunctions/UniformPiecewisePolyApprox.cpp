@@ -88,6 +88,7 @@ namespace flopoco{
 #endif
 
 
+	
 	// split into smaller and smaller intervals until the function can be approximated by a polynomial of degree given by degree.
 	void UniformPiecewisePolyApprox::build()
 	{
@@ -268,10 +269,23 @@ namespace flopoco{
 		// A bit of reporting
 		createPolynomialsReport();
 
+#if 0 // display the coefficients in pgfplot format			cout << "\addplot  coordinates { ";
+		cout << "xmax=" << nbIntervals-1 << endl;
+		for (int k=0; k<=degree; k++) {
+			cout << "\\addplot[only marks, mark=+]  coordinates { ";
+			for(int i=0; i<nbIntervals; i++) {
+				cout << "(" << i << ", "
+						 << poly[i]->getCoeff(k)->getConstantAsMPZ()
+						 <<  ") ";
+			}
+			cout << "} ;" << endl
+					 <<  "\\legend{$C_" << k << "$} ;" << endl;
+		}
+#endif		
 	}
 
-
-	mpz_class UniformPiecewisePolyApprox::getCoeff(int i, int d){
+	
+	mpz_class UniformPiecewisePolyApprox::getCoeffAsPositiveMPZ(int i, int d){
 		BasicPolyApprox* p = poly[i];
 		FixConstant* c = p->getCoeff(d);
 		return c->getBitVectorAsMPZ();

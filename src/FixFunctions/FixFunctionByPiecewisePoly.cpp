@@ -206,7 +206,7 @@ namespace flopoco{
 			mpz_class z=0;
 			int currentShift=0;
 			for(int i=pwp->degree; i>=0; i--) {
-				mpz_class coeff = pwp-> getCoeff(x, i); // coeff of degree i from poly number x
+				mpz_class coeff = pwp-> getCoeffAsPositiveMPZ(x, i); // coeff of degree i from poly number x
 				if (pwp->coeffSigns[i] != 0) {// sign is constant among all the coefficients: remove it from here, it will be added back as a constant in the VHDL
 					mpz_class mask = (mpz_class(1)<<(pwp->MSB[i] - pwp->LSB) ) - 1; // size is msb-lsb+1
 					coeff = coeff & mask; 

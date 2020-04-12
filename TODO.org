@@ -70,6 +70,7 @@ THIS INCLUDES WRITING ITS AUTOTEST
 * Version 5 versus ASA book
 ** TODO before we submitt the book because of flopocoboxes
 ** TODO between the book submission and its publication
+*** harmonize signedInput among the various FixFunctionBy
 ** TODO some day
 *** Resurrect and fuse CordicAtan2 and FixAtan2
 *** resurrect DualTable
@@ -79,6 +80,11 @@ Problems:
 2/ it is probably quite xilinx-only at the moment
 *** Check IntDualSub situation
 *** resurrect Guillaume's work (IntPower etc)
+*** FixSinCosPoly: use a signed reduced argument
+*** generic Hsiao compression could improve most table-based algorithms 
+*** Class hierarchy for FixFunctionApprox
+** FixSinCosPoly: use all the bit heaps that we advertize
+** FixSinCosPoly:  see comments in FixSinCos.cpp One optim for 24 bits would be to compute z² for free by a table using the second unused port of the blockram
 * Small things in the pipeline framework
 ** constant signal scheduling TODO: check
 The constant signals are currently all scheduled to cycle 0.
@@ -119,9 +125,7 @@ Nobody should do this if they have read the Muller book, so... people will try t
 ** Here and there, fix VHDL style issues needed for whimsical simulators or synthesizers. See doc/VHDLStyle.txt
 ** For Kentaro: avoid generating multiple times the same operators. 
 ** Doxygenize while it's not too late
-
 ** clean up Target
-
 * Targets
 ** DONE Xilinx series 7
 ** Altera 10
@@ -131,7 +135,6 @@ Nobody should do this if they have read the Muller book, so... people will try t
 ** autotest at commit
 ** set up a performance regression test as well
 * Improvements to do, operator by operator
-** generic Hsiao compression could improve most table-based algorithms 
 ** Collision
 *** manage infinities etc
 *** decompose into FPSumOf3Squares and Collision
@@ -155,10 +158,6 @@ ConstMult:
 *** provide finer spec, see the TODOs inside Shifter.cpp
 
 General
-
-** FixSinCos 
-*** currently does not use all the bit heaps that we advertize
-*** see comments in FixSinCos.cpp One optim for 24 bits would be to compute z² for free by a table using the second unused port of the blockram
 
 * Janitoring
 *** replace inPortMap and outPortMap by the modern interface newInstance()

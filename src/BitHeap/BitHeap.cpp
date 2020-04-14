@@ -754,8 +754,7 @@ namespace flopoco {
 			mpz_class c = constantBits;
 			for (int i = lsb; i <= msb; i++)
 			{
-				int w = i - lsb;
-				int h = getColumnHeight(w);
+				int h = getColumnHeight(i);
 				if (c % 2 == 1)
 					h++;
 				c = c >> 1;

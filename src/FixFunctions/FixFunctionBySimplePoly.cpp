@@ -82,10 +82,13 @@ namespace flopoco{
 		poly = new BasicPolyApprox(f, targetApproxError, -1);
 		double approxErrorBound = poly->getApproxErrorBound();
 
+		REPORT(INFO, "Found polynomial of degree " << poly->getDegree());
+		REPORT(INFO, "Overall error budget = " << exp2(lsbOut) << "  of which approximation error = " << approxErrorBound
+					 << " hence rounding error budget = "<< exp2(lsbOut-1) - approxErrorBound);
+
+
 		int degree = poly->getDegree();
-		if(f->msbOut < poly->getCoeff(0)->MSB) {
-			REPORT(INFO, "user-provided msbO smaller that the MSB of the constant coefficient, I am worried it won't work");
-		}
+		
 		vhdl << tab << "-- With the following polynomial, approx error bound is " << approxErrorBound << " ("<< log2(approxErrorBound) << " bits)" << endl;
 
 		// Adding the round bit to the degree-0 coeff
@@ -113,9 +116,11 @@ namespace flopoco{
 			coeffSize.push_back(poly->getCoeff(i)->MSB - poly->getCoeff(i)->LSB +1);
 		}
 
+		REPORT(INFO, poly->report());
+
 		for(int i=degree; i>=0; i--) {
 			FixConstant* ai = poly->getCoeff(i);
-			//			REPORT(DEBUG, " a" << i << " = " << ai->getBitVector() << "  " << printMPFR(ai->fpValue)  );
+			//REPORT(INFO, " C" << i << " = " << string(12) <<ai->getBitVector() << "  " << printMPFR(ai->fpValue)  );
 			//vhdl << tab << "-- " << join("A",i) <<  ": " << ai->report() << endl;
 			vhdl << tab << declareFixPoint(join("A",i), true, coeffMSB[i], coeffLSB[i])
 					 << " <= " << ai->getBitVector(0 /*both quotes*/)

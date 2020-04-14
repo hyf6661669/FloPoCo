@@ -380,9 +380,13 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 			mpfr_clear(mpcoeff);
 		}
 
-		// printing debug string out of the final vector
+		REPORT(DETAILED, report());
+	}
+
+
+
+	string BasicPolyApprox::report(){
 		ostringstream debugstring;
-		debugstring << "buildFixFormatVector:";
 		int maxmsb=coeff[degree]->MSB;
 		int lsb0 = coeff[0]->LSB;
 		for (int i=0; i<degree; i++){
@@ -393,12 +397,12 @@ g(int)=-1: the number of guardbits added. Using -1 gives sensible default",
 		for (int i=0; i<=degree; i++){
 			int lsb= coeff[i]->LSB;
 			int msb= coeff[i]->MSB;
-			debugstring <<  endl << "> coeff" << right << setw(2) << i << ": "
-					<< " (" << setw(3)<< msb << ", " << setw(3)<< lsb << ")   "
-					<< setw(bitwidth + lsb0-lsb) << coeff[i]->getBitVector()
-					<< "  " << setw(10) << printMPFR(coeff[i]->fpValue) ;
+			debugstring <<  endl << ">   coeff" << right << setw(2) << i << ": "
+									<< " (" << setw(3)<< msb << ", " << setw(3)<< lsb << ")   "
+									<< setw(bitwidth + lsb0-lsb) << coeff[i]->getBitVector()
+									<< "  " << setw(10) << printMPFR(coeff[i]->fpValue);
 		}
-		REPORT(DETAILED, debugstring.str());
+		return debugstring.str();
 	}
 
 	// should be computed by one of the constructors, but never set otherwise

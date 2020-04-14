@@ -216,8 +216,8 @@ namespace flopoco{
 					success=true;
 				}
 				else {
-					REPORT(INFO, "Measured approx error:" << approxErrorBound << " is larger than target accuracy: " << targetAccuracy
-							<< ". Increasing LSB and starting over. Thank you for your patience");
+					REPORT(INFO, "With LSB="<<LSB<<", approx error:" << approxErrorBound << " is larger than target accuracy: " << targetAccuracy
+							<< ". Decreasing LSB and starting over. Thank you for your patience");
 					//empty poly
 					for (auto i:poly)
 						free(i);

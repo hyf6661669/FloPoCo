@@ -123,6 +123,7 @@ namespace flopoco{
 		/** A wrapper for Sollya guessdegree
 		 */
 		static	void guessDegree(sollya_obj_t fS, sollya_obj_t rangeS, double targetAccuracy, int* degreeInfP, int* degreeSupP);
+		string report();
 	private:
 		/** initialization of various constant objects for Sollya
 		 * */

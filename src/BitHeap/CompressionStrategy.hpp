@@ -227,6 +227,11 @@ class BitheapPlotter;
           */
         void printSolutionStatistics();
 
+        /**
+          * @brief Check, if the stage of the BitHeap before the final adder has a height <= 2
+          * except the LSB column, where one additional bit can be processed due to the Cin input
+          */
+        int heightIs2exceptCin();
 
 
         /**

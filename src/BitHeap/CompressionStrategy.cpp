@@ -761,7 +761,7 @@ namespace flopoco{
 		{
 			//an adder isn't necessary; concatenateLSBColumns should do the rest
 			//concatenateLSBColumns(); //it is already called in
-		}else if(bitheap->getMaxHeight() == 2){
+		}else if(bitheap->getMaxHeight() == 2  || heightIs2exceptCin()){
 			ostringstream adderIn0, adderIn0Name, adderIn1, adderIn1Name, adderOutName, adderCin, adderCinName;
 			int adderStartIndex = compressionDoneIndex + 1;
 
@@ -1352,4 +1352,15 @@ namespace flopoco{
             bitheap->getOp()->vhdl << " & " << chunksDone[i];
         bitheap->getOp()->vhdl << ";" << endl;
 	}
+
+    int CompressionStrategy::heightIs2exceptCin() {
+        for(int i=bitheap->width-1; i>(int)compressionDoneIndex; i--)
+        {
+            if(bitheap->bits[i].size() > 2)
+                return 0;                       //Dual input adder can only handle 2 inputs
+        }
+        if(bitheap->bits[compressionDoneIndex].size() > 3)
+            return 0;                           //But the adder LSB can process 3 bits due to the Cin, but not more
+        return 1;
+    }
 }

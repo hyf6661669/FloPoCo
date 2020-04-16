@@ -736,9 +736,9 @@ namespace flopoco{
 			//add the outputBits to the bitheap
 			for(unsigned int c = 0; c <= (unsigned) lastOccurence; c++){
 				if(c + weight < bitheap->width && (unsigned)compressor->outHeights[c] >= tempHeight){
-					bitheap->addBit(vectorName.str() + of(c), c + weight);
+					bitheap->addBit(vectorName.str() + of(c), c + weight + bitheap->lsb);
 				}
-				bitheap->markBits(bitheap->getOp()->getSignalByName(vectorName.str()), BitType::justAdded, weight);
+				bitheap->markBits(bitheap->getOp()->getSignalByName(vectorName.str()), BitType::justAdded, weight + bitheap->lsb);
 			}
 
 		}

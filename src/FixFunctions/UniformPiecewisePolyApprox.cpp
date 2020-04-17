@@ -26,6 +26,7 @@
 */
 #include "UniformPiecewisePolyApprox.hpp"
 #include <sstream>
+#include <iomanip>
 #include <limits.h>
 #include <float.h>
 
@@ -188,7 +189,7 @@ namespace flopoco{
 						approxErrorBound = p->getApproxErrorBound();
 					}
 					if (approxErrorBound>targetAccuracy){
-						break;
+						break; // fail, exit for loop
 					}
 
 					// Now compute the englobing MSB for each coefficient
@@ -404,11 +405,13 @@ namespace flopoco{
 		for (int j=0; j<=degree; j++) {
 			int size = MSB[j]-LSB + (coeffSigns[j] == 0);
 			totalOutputSize += size ;
-			REPORT(INFO,"      MSB["<<j<<"] = \t" << MSB[j] << "\t size=" << size
-					<< (coeffSigns[j]==0? "\t variable sign " : "\t constant sign ") << coeffSigns[j]);
+			REPORT(INFO,"  Coeff"<<setw(2) << j<<":  signedMSB =" <<setw(3)<< MSB[j]
+						 << (coeffSigns[j]==0? ",  variable sign " : ", constant sign "+string(coeffSigns[j]==1?"+":"-") ) 
+						 << "   => stored size ="<<setw(3) << size << " bits"
+						 );
 		}
 
-		REPORT(INFO, "  Total size of the table is " << nbIntervals << " x " << totalOutputSize << " bits");
+		REPORT(INFO, "  Total size of the table is " << nbIntervals << " x " << totalOutputSize << " = " << nbIntervals*totalOutputSize << " bits");
 	}
 
 

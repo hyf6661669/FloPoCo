@@ -32,7 +32,6 @@ Both make sense, and the decisive argument was FixFunctionByTable: Table uses Y,
 	 TODO some day, with a nice bit heap and optimized Y^k
 
 ** FixFunctionByPiecewisePoly
-
 ** FixFunctionBySimplePoly: should disappear (it is a special case of FixFunctionByPiecewisePoly)
 
 

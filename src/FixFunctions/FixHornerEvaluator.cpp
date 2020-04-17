@@ -13,6 +13,7 @@
 
 */
 #include <iostream>
+#include <iomanip>
 
 #include "FixHornerEvaluator.hpp"
 #include "IntMult/FixMultAdd.hpp"
@@ -256,9 +257,10 @@ namespace flopoco{
 		} // closes the for loop on k (the intervals)
  
 		// Final reporting
-		REPORT(DETAILED, "Final worst-case architecture parameters:")
+		REPORT(INFO, "Architecture parameters:")
 		for(int i=degree-1; i>=0; i--) {
-			REPORT(DETAILED,"Horner step " << i << ": YLSB=" << wcYLSB[i] << "\t SSgn=" << wcSumSign[i] << "  \t SMSB=" << wcSumMSB[i] << "   \t SLSB=" << wcSumLSB[i]
+			REPORT(INFO,"  Horner step " << i << ": YLSB=" << setw(3) << wcYLSB[i]
+						 << "   SSgn=" << setw(2) << wcSumSign[i] << " SMSB=" << setw(3) << wcSumMSB[i] << " SLSB=" << setw(3) << wcSumLSB[i]
 						 << "\t Mult size " << 1-wcYLSB[i] << "x" << wcSumMSB[i+1]-wcSumLSB[i+1]+1)
 			}	
 		

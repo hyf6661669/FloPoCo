@@ -114,15 +114,7 @@ namespace flopoco{
 			REPORT(INFO, "Computing polynomial approximation for target accuracy "<< targetAcc);
 			pwp = new UniformPiecewisePolyApprox(func, targetAcc, degree);
 			alpha =  pwp-> alpha; // coeff table input size 
-			
-			// Resize its MSB to the one of f
-			int msbOutWhenSigned = msbOut+(signedOut?0:1); 
-			for (int i=0; i<(1<<alpha); i++) {
-				pwp -> poly[i] -> getCoeff(0) -> changeMSB(msbOutWhenSigned);
-			}
-			pwp -> MSB[0] = msbOutWhenSigned;
-			
-
+						
 			// Build the coefficient table out of the vector of polynomials. This is also where we add the final rounding bit
 			buildCoeffTable();
 

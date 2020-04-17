@@ -70,7 +70,9 @@ THIS INCLUDES WRITING ITS AUTOTEST
 * Version 5 versus ASA book
 ** TODO before we submitt the book because of flopocoboxes
 ** TODO between the book submission and its publication
+*** revive FixMultAdd so that plainVHDL is no longer a mandatory option
 *** harmonize signedInput among the various FixFunctionBy
+
 ** TODO some day
 *** Resurrect and fuse CordicAtan2 and FixAtan2
 *** resurrect DualTable
@@ -81,7 +83,8 @@ Problems:
 *** Check IntDualSub situation
 *** resurrect Guillaume's work (IntPower etc)
 *** FixSinCosPoly: use a signed reduced argument
-*** generic Hsiao compression could improve most table-based algorithms 
+*** generic Hsiao compression could improve most table-based algorithms
+*** UniformPiecewisePolyApprox: we never try to give a0 more bits than the others. 
 *** Class hierarchy for FixFunctionApprox
 ** FixSinCosPoly: use all the bit heaps that we advertize
 ** FixSinCosPoly:  see comments in FixSinCos.cpp One optim for 24 bits would be to compute z² for free by a table using the second unused port of the blockram

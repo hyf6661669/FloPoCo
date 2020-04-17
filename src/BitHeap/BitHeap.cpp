@@ -830,7 +830,7 @@ namespace flopoco {
 
 	string BitHeap::getSumName(int msb, int lsb)
 	{
-		return join(join("bitheapResult_bh", guid), range(msb, lsb));
+		return join(join("bitheapResult_bh", guid), range(msb - this->lsb, lsb  - this->lsb));
 	}
 
 

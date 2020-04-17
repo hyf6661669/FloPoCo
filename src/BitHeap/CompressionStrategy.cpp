@@ -823,9 +823,9 @@ namespace flopoco{
 
 			//create the signals for the inputs/output of the adder
 			bitheap->getOp()->vhdl << endl;
-			bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderIn0Name.str(), bitheap->msb-adderStartIndex+1+1)
+			bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderIn0Name.str(), bitheap->msb-adderStartIndex+1+1-bitheap->lsb)
 					<< " <= \"0\" & " << adderIn0.str() << ";" << endl;
-			bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderIn1Name.str(), bitheap->msb-adderStartIndex+1+1)
+			bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderIn1Name.str(), bitheap->msb-adderStartIndex+1+1-bitheap->lsb)
 					<< " <= \"0\" & " << adderIn1.str() << ";" << endl;
 			bitheap->getOp()->vhdl << tab << bitheap->getOp()->declare(adderCinName.str())
 					<< " <= " << adderCin.str() << ";" << endl;
@@ -851,14 +851,14 @@ namespace flopoco{
 #else
 			bitheap->getOp()->newInstance("IntAdder",
 																					"bitheapFinalAdd_bh"+to_string(bitheap->guid),
-																					"wIn=" + to_string(bitheap->msb-adderStartIndex+1+1),
+																					"wIn=" + to_string(bitheap->msb-adderStartIndex+1+1-bitheap->lsb),
 																					"X=>"+ adderIn0Name.str()
 																					+ ",Y=>"+adderIn1Name.str()
 																					+ ",Cin=>" + adderCinName.str(),
 																					"R=>"+ adderOutName.str()   );
 #endif
 			//add the result of the final add as the last chunk
-			chunksDone.push_back(join(adderOutName.str(), range(bitheap->msb-adderStartIndex, 0)));
+			chunksDone.push_back(join(adderOutName.str(), range(bitheap->msb-adderStartIndex-bitheap->lsb, 0)));
 
 		} else if(bitheap->getMaxHeight() == 3){
             ostringstream adderIn0, adderIn0Name, adderIn1, adderIn1Name, adderIn2, adderIn2Name, adderOutName, adderCin, adderCinName;
@@ -963,8 +963,8 @@ namespace flopoco{
                                           "sum_o=>"+ adderOutName.str()   );
 
             //add the result of the final add as the last chunk
-            chunksDone.push_back(join(adderOutName.str(), range(bitheap->msb-adderStartIndex, 0)));
-        }
+			chunksDone.push_back(join(adderOutName.str(), range(bitheap->msb-adderStartIndex-bitheap->lsb, 0)));
+		}
 	}
 
 

@@ -13,7 +13,7 @@
 
  */
 
-
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
@@ -21,7 +21,7 @@
 #include "Table.hpp"
 
 using namespace std;
-
+using std::begin;
 
 namespace flopoco{
 
@@ -32,7 +32,94 @@ namespace flopoco{
 	}
 #endif
 
-	
+	Table::Table::DifferentialCompression find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut)
+	{
+		vector<mpz_class> min_max{values};
+		vector<mpz_class> best_subsampling{values};
+		vector<mpz_class> best_diff{};
+		int best_s = 0;
+		int best_cost = wIn * wOut;
+		int best_diff_word_size = 0;
+		int best_shaved_out = 0;
+		for (int s = 1 ; s < wIn-1 ; s++) { // Iterate over each possible splitting value
+			auto shift = 1 << s;
+			mpz_class max_distance{0};
+			int max_dist_idx = 0;
+			int cur_dist_idx = 0;
+			int min_max_dist = ((shift >> 1) - 1);
+			//TODO : Find better lattice storage scheme to optimise cache access
+			// Compute min, max and diff of current diff table slice using resuts of previous subslice
+			for (auto min_op1_iter = begin(min_max) ; min_op1_iter < end(min_max) ; min_op1_iter += shift) {
+				auto max_op1_iter = min_op1_iter + min_max_dist;
+				auto min_op2_iter = max_op1_iter + 1;
+				auto max_op2_iter = min_op2_iter + min_max_dist;
+				*min_op1_iter = (*min_op1_iter <= *min_op2_iter) ? *min_op1_iter : *min_op2_iter;
+				*max_op2_iter = (*max_op2_iter >= *max_op1_iter) ? *max_op2_iter : *max_op1_iter;
+				auto dist = *max_op2_iter - *max_op1_iter;
+				if (dist > max_distance) {
+					max_distance = dist;
+					max_dist_idx = cur_dist_idx;
+				}
+				cur_dist_idx += shift;
+			}
+			/*
+			 * In the best case, without overflow when adding subsamples low bits, we need enough storage to store the difference between
+			 * the maximal and minimal element of the "slice" in which this distance is maximal
+			 */
+			int min_width = intlog2(mpz_class{max_distance});
+			int shaved_out = min_width;
+			vector<mpz_class> subsamples(1 << (wIn - s));
+			vector<mpz_class> diff(1 << wIn);
+			int overflow_mask = 1 << shaved_out;
+			int low_bit_mask = overflow_mask - 1;
+			bool had_to_overflow = false;
+			diff_compression_compute:
+			for (int i = 0 ; i < values.size() ; i += shift) { //for each slice
+				auto subsample_min = min_max[i]; //Get the minimal value of the table, as we want only positive offsets
+				auto subsample_low_bits = subsample_min & low_bit_mask;
+				auto cur_subsample_val = subsample_min - subsample_low_bits;
+				subsamples[i >> s] = cur_subsample_val >> (shaved_out);
+				bool sub_slice_ok = false;
+				while(!sub_slice_ok) {
+					sub_slice_ok = true;
+					for (int j = i; j < i+shift ; j++) {
+						diff[j] = values[j] - cur_subsample_val;
+						if (diff[j] > overflow_mask) {
+							if (min_width - shaved_out < (shift - 1)) {
+								sub_slice_ok = false;
+								shaved_out -= 1;
+								overflow_mask = 1 << shaved_out;
+								low_bit_mask = overflow_mask - 1;
+								break;
+							} else {
+								min_width += 1;
+								shaved_out = min_width;
+								overflow_mask = 1 << shaved_out;
+								low_bit_mask = overflow_mask - 1;
+								had_to_overflow = true;
+								goto diff_compression_compute; //Jump should be done at most one time
+							}
+						}
+					} //end of diff bank computing loop
+				} // End of shaving adjustment loop
+			}// End of iteration
+			int cur_subsample_input_word_size = 1 << (wIn - s);
+			int cur_subsample_output_word_size = 1 << (wOut - shaved_out);
+			int cur_diff_size = 1 << (wIn + min_width);
+			int cur_cost = cur_diff_size + cur_subsample_input_word_size * cur_subsample_output_word_size;
+			if (cur_cost < best_cost) {
+				best_s = s;
+				best_cost = cur_cost;
+				best_diff_word_size = min_width;
+				best_shaved_out = shaved_out;
+				swap(best_subsampling, subsamples);
+				swap(best_diff, diff);
+			}
+		} // End of iteration to find best s
+		Table::DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size};
+		return difcompress;
+	}
+
 
 	Table::Table(OperatorPtr parentOp_, Target* target_, vector<mpz_class> _values, string _name, int _wIn, int _wOut, int _logicTable, int _minIn, int _maxIn) :
 		Operator(parentOp_, target_)
@@ -40,7 +127,7 @@ namespace flopoco{
 		srcFileName = "Table";
 		setNameWithFreqAndUID(_name);
 		setCopyrightString("Florent de Dinechin, Bogdan Pasca (2007-2018)");
-		init(_values, _name, _wIn, _wOut,  _logicTable,  _minIn,  _maxIn); 
+		init(_values, _name, _wIn, _wOut,  _logicTable,  _minIn,  _maxIn);
 	}
 
 
@@ -74,10 +161,10 @@ namespace flopoco{
 			REPORT(0,"value["<<i<<"] = " << values[i]);
 	}
 #endif
-		
+
 		//determine the lowest and highest values stored in the table
 		mpz_class maxValue = values[0], minValue = values[0];
-		
+
 		//this assumes that the values stored in the values array are all positive
 		for(unsigned int i=0; i<values.size(); i++)		{
 			if(values[i] < 0)
@@ -160,7 +247,7 @@ namespace flopoco{
 		//create the code for the table
 		REPORT(DEBUG,"Table.cpp: Filling the table");
 
-		
+
 		if(logicTable){
 			int lutsPerBit;
 			if(wIn < getTarget()->lutInputs())
@@ -172,7 +259,7 @@ namespace flopoco{
 
 		cpDelay = getTarget()->tableDelay(wIn, wOut, logicTable);
 		vhdl << tab << "with X select " << declare(cpDelay, "Y0", wOut) << " <= " << endl;;
-		
+
 		for(unsigned int i=minIn.get_ui(); i<=maxIn.get_ui(); i++)
 			vhdl << tab << tab << "\"" << unsignedBinary(values[i-minIn.get_ui()], wOut) << "\" when \"" << unsignedBinary(i, wIn) << "\"," << endl;
 		vhdl << tab << tab << "\"";
@@ -206,7 +293,7 @@ namespace flopoco{
 		vhdl << tab << "Y <= Y0;" << endl;
 	}
 
-	
+
 	Table::Table(OperatorPtr parentOp, Target* target) :
 		Operator(parentOp, target){
 		setCopyrightString("Florent de Dinechin, Bogdan Pasca (2007, 2018)");
@@ -215,7 +302,7 @@ namespace flopoco{
 	mpz_class Table::val(int x){
 		if(x<minIn || x>maxIn) {
 			THROWERROR("Error in table: input index " << x
-								 << " out of range ["<< minIn << " " << maxIn << "]" << endl);	
+								 << " out of range ["<< minIn << " " << maxIn << "]" << endl);
 		}
 		return values[x];
 	}
@@ -233,11 +320,11 @@ namespace flopoco{
 		op->schedule();
 		op->inPortMap("X", actualInput);
 		op->outPortMap("Y", actualOutput);
-		Table* t = new Table(op, op->getTarget(), values, name, wIn, wOut); 
+		Table* t = new Table(op, op->getTarget(), values, name, wIn, wOut);
 		op->vhdl << op->instance(t, name, false);
 		return t;
 	}
-	
 
-	
+
+
 }

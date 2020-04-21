@@ -50,12 +50,12 @@ namespace flopoco{
 		 * @param[in] name      a new name for the VHDL entity
 		 * @param[in] wIn    		the with of the input in bits (optional, may be deduced from values)
 		 * @param[in] wOut   		the with of the output in bits  (optional, may be deduced from values)
-		 * @param[in] logicTable 1 if the table is intended to be implemented as logic; It is then shared  
-                            -1 if it is intended to be implemented as embedded RAM; 
-	                        	 0 (default): let the constructor decide, depending on the size and target
+		 * @param[in] logicTable 1 if the table is intended to be implemented as logic; It is then shared
+							-1 if it is intended to be implemented as embedded RAM;
+								 0 (default): let the constructor decide, depending on the size and target
 		 * @param[in] minIn			minimal input value, to which value[0] will be mapped (default 0)
 		 * @param[in] maxIn			maximal input value (default: values.size()-1)
-		 */ 
+		 */
 		Table(OperatorPtr parentOp, Target* target, vector<mpz_class> _values, string name="",
 					int _wIn = -1, int _wOut = -1, int _logicTable = 0, int _minIn = -1, int _maxIn = -1);
 
@@ -66,12 +66,12 @@ namespace flopoco{
 		/** A function that does the actual constructor work, so that it can be called from operators that overload Table.  See FixFunctionByTable for an example */
 
 		void init(vector<mpz_class> _values, string name="", int _wIn = -1, int _wOut = -1, int _logicTable = 0, int _minIn = -1, int _maxIn = -1);
- 
-	
-		/** get one element of the table */
-	  mpz_class val(int x);
 
-		/** Table has no factory because passing the values vector would be a pain. This replaces it.  
+
+		/** get one element of the table */
+		mpz_class val(int x);
+
+		/** Table has no factory because passing the values vector would be a pain. This replaces it.
 		 * @param[in] op            The Operator that will be the parent of this Table (usually "this")
 		 * @param[in] actualInput   The actual input name
 		 * @param[in] actualOutput  The actual input name
@@ -81,6 +81,24 @@ namespace flopoco{
 																				 string actualInput, string actualOutput,
 																				 vector<mpz_class> values, string name,
 																				 int wIn = -1, int wOut = -1);
+
+		typedef struct DifferentialCompression {
+			vector<mpz_class> subsampling;
+			vector<mpz_class> offsets;
+			int sub_sampling_index_size;
+			int samples_word_size;
+			int diff_word_size;
+		} DifferentialCompression;
+
+		/**
+		  * Find a non-destructive compression of a table as a sum of a subsampling + offset
+		  * @param[in] values		The values of the table to compress
+		  * @param[in] wIn			The initial index width of the table to compress
+		  * @param[in] wOut			The output word size of the table to compress
+		  * @return					A DifferentialCompression containing the values and the parameters of the compression for this table
+		  */
+		static DifferentialCompression find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut);
+
 
 		/** A function that returns an estimation of the size of the table in LUTs. Your mileage may vary thanks to boolean optimization */
 		int size_in_LUTs();
@@ -98,14 +116,14 @@ namespace flopoco{
 
 		/** Output width (in bits)*/
 		int wOut;
-		
+
 		/** minimal input value (default 0) */
 		mpz_class minIn;
 
 		/** maximal input value (default 2^wIn-1) */
 		mpz_class maxIn;
 
-		
+
 
 
 

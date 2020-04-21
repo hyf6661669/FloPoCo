@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <cassert>
 #include <cstdlib>
 #include "utils.hpp"
 #include "Table.hpp"
@@ -44,7 +45,7 @@ namespace flopoco{
 		for (int s = 1 ; s < wIn-1 ; s++) { // Iterate over each possible splitting value
 			auto shift = 1 << s;
 			mpz_class max_distance{0};
-			int max_dist_idx = 0;
+			//int max_dist_idx = 0;
 			int cur_dist_idx = 0;
 			int min_max_dist = ((shift >> 1) - 1);
 			//TODO : Find better lattice storage scheme to optimise cache access
@@ -58,7 +59,7 @@ namespace flopoco{
 				auto dist = *max_op2_iter - *max_op1_iter;
 				if (dist > max_distance) {
 					max_distance = dist;
-					max_dist_idx = cur_dist_idx;
+					//max_dist_idx = cur_dist_idx;
 				}
 				cur_dist_idx += shift;
 			}
@@ -78,7 +79,7 @@ namespace flopoco{
 				auto subsample_min = min_max[i]; //Get the minimal value of the table, as we want only positive offsets
 				auto subsample_low_bits = subsample_min & low_bit_mask;
 				auto cur_subsample_val = subsample_min - subsample_low_bits;
-				subsamples[i >> s] = cur_subsample_val >> (shaved_out);
+				subsamples[i >> s] = cur_subsample_val;
 				bool sub_slice_ok = false;
 				while(!sub_slice_ok) {
 					sub_slice_ok = true;
@@ -96,6 +97,7 @@ namespace flopoco{
 								shaved_out = min_width;
 								overflow_mask = 1 << shaved_out;
 								low_bit_mask = overflow_mask - 1;
+								assert(!had_to_overflow);
 								had_to_overflow = true;
 								goto diff_compression_compute; //Jump should be done at most one time
 							}
@@ -116,6 +118,9 @@ namespace flopoco{
 				swap(best_diff, diff);
 			}
 		} // End of iteration to find best s
+		for (auto& subsample : best_subsampling) {
+			subsample >>= best_shaved_out;
+		}
 		Table::DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size};
 		return difcompress;
 	}

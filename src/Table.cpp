@@ -32,21 +32,18 @@ namespace flopoco{
 		return function(x);
 	}
 #endif
-
-	Table::Table::DifferentialCompression find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut)
+	Table::DifferentialCompression Table::find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut)
 	{
 		vector<mpz_class> min_max{values};
 		vector<mpz_class> best_subsampling{values};
 		vector<mpz_class> best_diff{};
 		int best_s = 0;
-		int best_cost = wIn * wOut;
+		int best_cost = (1<<wIn) * wOut;
 		int best_diff_word_size = 0;
 		int best_shaved_out = 0;
 		for (int s = 1 ; s < wIn-1 ; s++) { // Iterate over each possible splitting value
 			auto shift = 1 << s;
 			mpz_class max_distance{0};
-			//int max_dist_idx = 0;
-			int cur_dist_idx = 0;
 			int min_max_dist = ((shift >> 1) - 1);
 			//TODO : Find better lattice storage scheme to optimise cache access
 			// Compute min, max and diff of current diff table slice using resuts of previous subslice
@@ -56,18 +53,18 @@ namespace flopoco{
 				auto max_op2_iter = min_op2_iter + min_max_dist;
 				*min_op1_iter = (*min_op1_iter <= *min_op2_iter) ? *min_op1_iter : *min_op2_iter;
 				*max_op2_iter = (*max_op2_iter >= *max_op1_iter) ? *max_op2_iter : *max_op1_iter;
-				auto dist = *max_op2_iter - *max_op1_iter;
+				auto dist = *max_op2_iter - *min_op1_iter;
 				if (dist > max_distance) {
 					max_distance = dist;
-					//max_dist_idx = cur_dist_idx;
 				}
-				cur_dist_idx += shift;
 			}
+			cout << "Max distance for s=" << s << " : " << max_distance << endl;
 			/*
 			 * In the best case, without overflow when adding subsamples low bits, we need enough storage to store the difference between
 			 * the maximal and minimal element of the "slice" in which this distance is maximal
 			 */
 			int min_width = intlog2(mpz_class{max_distance});
+			cout << "Minimal width for offsets : " << min_width << endl;
 			int shaved_out = min_width;
 			vector<mpz_class> subsamples(1 << (wIn - s));
 			vector<mpz_class> diff(1 << wIn);
@@ -85,6 +82,7 @@ namespace flopoco{
 					sub_slice_ok = true;
 					for (int j = i; j < i+shift ; j++) {
 						diff[j] = values[j] - cur_subsample_val;
+						assert(diff[j] >= 0);
 						if (diff[j] > overflow_mask) {
 							if (min_width - shaved_out < (shift - 1)) {
 								sub_slice_ok = false;
@@ -104,12 +102,13 @@ namespace flopoco{
 						}
 					} //end of diff bank computing loop
 				} // End of shaving adjustment loop
-			}// End of iteration
+			}// End of slices iteration
 			int cur_subsample_input_word_size = 1 << (wIn - s);
-			int cur_subsample_output_word_size = 1 << (wOut - shaved_out);
+			int cur_subsample_output_word_size = (wOut - shaved_out);
 			int cur_diff_size = 1 << (wIn + min_width);
 			int cur_cost = cur_diff_size + cur_subsample_input_word_size * cur_subsample_output_word_size;
 			if (cur_cost < best_cost) {
+				cout << "New best s : " << s << "With cost value of " << cur_cost << endl;
 				best_s = s;
 				best_cost = cur_cost;
 				best_diff_word_size = min_width;

@@ -85,8 +85,8 @@ namespace flopoco{
 		typedef struct DifferentialCompression {
 			vector<mpz_class> subsampling;
 			vector<mpz_class> offsets;
-			int sub_sampling_index_size;
-			int samples_word_size;
+			int subsampling_index_size;
+			int subsampling_word_size;
 			int diff_word_size;
 		} DifferentialCompression;
 

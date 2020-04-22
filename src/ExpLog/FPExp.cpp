@@ -430,21 +430,6 @@ namespace flopoco{
 
 		//***************** Multiplication by 1/log2 to get approximate result ******** 
 
-#if 0 // remove when it works
-		// FixRealKCM does the rounding to the proper place with the proper error
-		FixRealKCM *mulInvLog2 = new  FixRealKCM(target,
-		                                         false,  // unsigned input,
-		                                         wE-2 , // msbIn,
-		                                         lsbXforFirstMult, // lsbIn 
-		                                         0,   // lsbOut,
-		                                         "1/log(2)", //  constant
-		                                         0.5 + 0.09 // error: we have 0.125 on X, and target is 0.5+0.22 
-		                                         );
-		addSubComponent(mulInvLog2);
-		outPortMap(mulInvLog2, "R", "absK");
-		inPortMap(mulInvLog2, "X", "xMulIn");
-		vhdl << instance(mulInvLog2, "mulInvLog2");
-#else
 		newInstance("FixRealKCM",
 								"MulInvLog2",
 								 // unsigned here, the conversion to signed comes later
@@ -456,7 +441,6 @@ namespace flopoco{
 								"X=>xMulIn",
 								"R=>absK");
 				
-#endif
 
 
 		// Now I have two things to do in parallel: compute K, and compute absKLog2
@@ -466,20 +450,6 @@ namespace flopoco{
 		// The synthesizer should be able to merge the addition and this mux,
 		vhdl << tab << declare("K",wE+1) << " <= minusAbsK when  XSign='1'   else ('0' & absK);"<<endl;
 
-#if 0 // to remove when it works
-		FixRealKCM *mulLog2 = new FixRealKCM(target, 
-		                                     false  /* unsigned input */, 
-		                                     wE-1, // msbIn
-		                                     0,    // lsbIn
-		                                     -wF-g, // lsbOut
-		                                     "log(2)", 
-		                                     1.0 );
-
-		addSubComponent(mulLog2);
-		outPortMap(mulLog2, "R", "absKLog2");
-		inPortMap(mulLog2, "X", "absK");
-		vhdl << instance(mulLog2, "mulLog2");
-#else
 		newInstance("FixRealKCM",
 								"MulLog2",
 								// unsigned here, the conversion to signed comes later
@@ -491,7 +461,6 @@ namespace flopoco{
 								"X=>absK",
 								"R=>absKLog2");
 				
-#endif
 
 
 		// absKLog2: msb wE-2, lsb -wF-g
@@ -1044,11 +1013,24 @@ namespace flopoco{
 			if(index==-1) 
 		{ // The unit tests
 
+			// First test with plainVHDL, then with cool multipliers
 			for(int wF=5; wF<53; wF+=1) // test various input widths
 			{ 
 				int nbByteWE = 6+(wF/10);
-				while(nbByteWE>wF)
-				{
+				while(nbByteWE>wF){
+					nbByteWE -= 2;
+				}
+
+				paramList.push_back(make_pair("wF",to_string(wF)));
+				paramList.push_back(make_pair("wE",to_string(nbByteWE)));
+				paramList.push_back(make_pair("plainVHDL","true")); 
+				testStateList.push_back(paramList);
+				paramList.clear();
+			}
+			for(int wF=5; wF<53; wF+=1) // test various input widths
+			{ 
+				int nbByteWE = 6+(wF/10);
+				while(nbByteWE>wF){
 					nbByteWE -= 2;
 				}
 

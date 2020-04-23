@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(TestDifferentialCompressionLarge)
 	auto diff_wout_subsampling = TABLE_WOUT - subsampling_word_size;
 	for (size_t i = 0 ; i < (1 << (TABLE_WIN)) ; ++i) {
 		auto cur_sub_sample = diff_compress.subsampling[i >> diff_win] << diff_wout_subsampling;
-		auto reconstitution = cur_sub_sample + diff_compress.offsets[i];
+		auto reconstitution = cur_sub_sample + diff_compress.diffs[i];
 		BOOST_REQUIRE_MESSAGE(reconstitution == val[i], "Error with reconstitution of table value " <<i << ": got " << reconstitution << " instead of " << val[i]);
 	}
 }

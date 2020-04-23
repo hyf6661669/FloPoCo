@@ -73,6 +73,8 @@ THIS INCLUDES WRITING ITS AUTOTEST
 *** revive FixMultAdd so that plainVHDL is no longer a mandatory option
 *** harmonize signedInput among the various FixFunctionBy
 
+*** resurrect DualPortROM
+*** fix-point-in, FP out version of FPExp 
 ** TODO some day
 *** Resurrect and fuse CordicAtan2 and FixAtan2
 *** resurrect DualTable

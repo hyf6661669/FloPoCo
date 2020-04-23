@@ -366,43 +366,12 @@ namespace flopoco{
 		vhdl << tab << "--  mantissa with implicit bit" << endl;
 		vhdl << tab  << declare("mXu", wFIn+1) << " <= \"1\" & Xfrac;" << endl;
 
-#if 0  //  FIXME maxshift is too large, but fixing it breaks alignment
 		// left shift
-		int maxshift=wE+g-1; // maxX < 2^(wE-1); 
-		Shifter* lshift = new Shifter(target, wFIn+1, maxshift , Shifter::Left);   
-		addSubComponent(lshift);
-		int shiftInSize = lshift->getShiftInWidth();
-		vhdl << tab  << declare("shiftValIn", shiftInSize) << " <= shiftVal" << range(shiftInSize-1, 0) << ";" << endl;
-
-		outPortMap(lshift, "R", "fixX");
-		inPortMap(lshift, "S", "shiftValIn");
-		inPortMap(lshift, "X", "mXu");
-		vhdl << instance(lshift, "mantissa_shift");
-
-		vhdl << tab  << "-- Partial overflow/underflow detection" << endl;
-		vhdl << tab  << declare("oufl0") << " <= not shiftVal(wE+1) when shiftVal(wE downto 0) >= conv_std_logic_vector(" << maxshift << ", wE+1) else '0';" << endl;
-
-
-#else
-
-
-		// left shift
-		vhdl << tab  << "-- Partial overflow/underflow detection" << endl;
+		vhdl << tab  << "-- Partial overflow detection" << endl;
 		int maxshift=wE-1+ wF+g; // maxX < 2^(wE-1); 
-		vhdl << tab  << declare(getTarget()->adderDelay(wE+1),"oufl0") << " <= not shiftVal(wE+1) when shiftVal(wE downto 0) >= conv_std_logic_vector(" << maxshift << ", wE+1) else '0';" << endl;
+		vhdl << tab  << declare("maxShift", wE+1) << " <= conv_std_logic_vector(" << maxshift << ", wE+1);  -- wE-1 + wF+g" << endl;
+		vhdl << tab  << declare(getTarget()->adderDelay(wE+1),"overflow0") << " <= not shiftVal(wE+1) when shiftVal(wE downto 0) >= conv_std_logic_vector(" << maxshift << ", wE+1) else '0';" << endl;
 
-
-#if 0 // to remove when it works
-		Shifter* lshift = new Shifter(target, wFIn+1, maxshift , Shifter::Left);   
-		addSubComponent(lshift);
-		int shiftInSize = lshift->getShiftInWidth();
-		vhdl << tab  << declare("shiftValIn", shiftInSize) << " <= shiftVal" << range(shiftInSize-1, 0) << ";" << endl;
-
-		outPortMap(lshift, "R", "fixX0");
-		inPortMap(lshift, "S", "shiftValIn");
-		inPortMap(lshift, "X", "mXu");
-		vhdl << instance(lshift, "mantissa_shift");
-#else
 		int shiftInSize = intlog2(maxshift);
 		vhdl << tab  << declare("shiftValIn", shiftInSize) << " <= shiftVal" << range(shiftInSize-1, 0) << ";" << endl;
 		newInstance("Shifter",
@@ -411,10 +380,6 @@ namespace flopoco{
 								"X=>mXu,S=>shiftValIn",
 								"R=>fixX0");
 
-#endif
-
-		
-#endif	
 		
 		int sizeXfix = wE+wF+g; // still unsigned; msb=wE-1; lsb = -wF-g
 
@@ -472,19 +437,6 @@ namespace flopoco{
 		vhdl << tab << declare("subOp2",sizeY) << " <= absKLog2" << range(sizeY-1, 0) << " when XSign='1'"
 		<< " else not (absKLog2" << range(sizeY-1, 0) << ");"<<endl;
 
-#if 0 // to remove when it works
-		double ctperiod = 1.0 / getTarget()->frequency(); 
-		getTarget()->setFrequency( 1.0 / (ctperiod - getTarget()->LogicToRAMWireDelay() ) ); // Bogdan, WTF is that? 
-		IntAdder *yPaddedAdder = new IntAdder(target, sizeY // we know the leading bits will cancel out
-); 
-		getTarget()->setFrequency( 1.0 / ctperiod );
-		addSubComponent(yPaddedAdder);
-		outPortMap( yPaddedAdder, "R", "Y");
-		inPortMapCst ( yPaddedAdder, "Cin", "'1'");
-		inPortMapCst ( yPaddedAdder, "Y", "subOp2");
-		inPortMap( yPaddedAdder, "X", "subOp1");
-		vhdl << instance(yPaddedAdder, "theYAdder") << endl;
-#else
 		newInstance("IntAdder",
 								"theYAdder",
 								"wIn=" + to_string(sizeY),// we know the leading bits will cancel out
@@ -492,26 +444,15 @@ namespace flopoco{
 								"R=>Y",
 								"Cin=>'1'"); // it is a subtraction
 
-#endif
 
 		vhdl << tab << "-- Now compute the exp of this fixed-point value" <<endl;
 
 		if(expYTabulated) {
-#if 0 // to remove when it works...
-			ExpYTable* table ;
-			table = new ExpYTable(target, sizeY, sizeExpY); // e^A-1 has MSB weight 1
-			addSubComponent(table);
-			outPortMap(table, "Y", "expY");
-			inPortMap(table, "X", "Y");
-			vhdl << instance(table, "table");
-
-#else
 			vector<mpz_class> expYTableContent = ExpYTable(sizeY, sizeExpY); // e^A-1 has MSB weight 1
 			Table::newUniqueInstance(this, "Y", "expY",
 															 expYTableContent,
 															 "ExpYTable",
 															 sizeY, sizeExpY);
-#endif
 		}
 
 		else{
@@ -593,7 +534,6 @@ namespace flopoco{
 								"poly",
 								"f="+function.str()
 								+" lsbIn=" + to_string(-sizeZhigh)
-								+" msbOut=-1" // now ignored
 								+" lsbOut=" + to_string(-wF-g+2*k-1)
 								+" d=" + to_string(d),
 								"X=>Zhigh",
@@ -617,25 +557,15 @@ namespace flopoco{
 				" <= '0' & Z;"<<endl;
 
 				vhdl << tab << declare( "expZminus1Y", sizeExpZm1) << " <= " <<
-				rangeAssign(sizeZ, sizeZ-k+1, "'0'") << 
+				rangeAssign(sizeZ, sizeZ-k, "'0'") << 
 				" & expZmZm1 ;" << endl;
 				
-#if 0 // to remove when it works...
-				addexpZminus1 = new IntAdder( target, sizeExpZm1);
-				addSubComponent(addexpZminus1);
-				inPortMap(addexpZminus1, "X", "expZminus1X");
-				inPortMap(addexpZminus1, "Y", "expZminus1Y");
-				inPortMapCst( addexpZminus1, "Cin" , " '0' ");
-				outPortMap( addexpZminus1, "R", "expZminus1");
-				vhdl << instance( addexpZminus1, "Adder_expZminus1");
-#else
 		newInstance("IntAdder",
 								"Adder_expZminus1",
 								"wIn=" + to_string(sizeExpZm1),
 								"X=>expZminus1X,Y=>expZminus1Y",
 								"R=>expZminus1",
 								"Cin=>'0'");
-#endif
 
 
 			} // now we have in expZminus1 e^Z-1
@@ -647,16 +577,6 @@ namespace flopoco{
 			if(useMagicTableExpZm1 || useMagicTableExpZmZm1) {
 				vhdl << tab << "-- Rounding expA to the same accuracy as expZminus1" << endl;
 				vhdl << tab << "--   (truncation would not be accurate enough and require one more guard bit)" << endl;
-#if 0 // to remove when it works...
-				IntAdder* expArounded0 = new IntAdder( target, sizeMultIn+1);
-				addSubComponent(expArounded0);
-				
-				inPortMapCst(expArounded0, "X", "expA"+range(sizeExpA-1, sizeExpA-sizeMultIn-1));
-				inPortMapCst(expArounded0, "Y", zg(sizeMultIn+1,0));
-				inPortMapCst( expArounded0, "Cin" , " '1' ");
-				outPortMap( expArounded0, "R", "expArounded0");
-				vhdl << instance( expArounded0, "Adder_expArounded0");
-#else
 				vhdl << tab << declare("expA_T", sizeMultIn+1) << " <= expA"+range(sizeExpA-1, sizeExpA-sizeMultIn-1) << ";" << endl;
 				newInstance("IntAdder",
 										"Adder_expArounded0",
@@ -664,7 +584,6 @@ namespace flopoco{
 										"X=>expA_T",
 										"R=>expArounded0",
 										"Cin=>'1',Y=>" +  zg(sizeMultIn+1,0) ); // two constant inputs
-#endif
 
 				vhdl << tab << declare("expArounded", sizeMultIn) << " <= expArounded0" << range(sizeMultIn, 1) << ";" << endl;
 			}
@@ -696,20 +615,6 @@ namespace flopoco{
 
 			     int sizeProd;
 			     sizeProd = sizeExpZm1+1;
-#if 0 // to remove when it works
-					 Operator* lowProd;
-			     lowProd = new IntMultiplier(target, sizeMultIn, sizeExpZm1,  
-			                            sizeProd,  // truncated
-			                            false  /*unsigned*/
-			                            );
-			     addSubComponent(lowProd);
-
-			     inPortMap(lowProd, "X", "expArounded");
-			     inPortMap(lowProd, "Y", "expZminus1");
-			     outPortMap(lowProd, "R", "lowerProduct");
-
-			     vhdl << instance(lowProd, "TheLowerProduct")<<endl;
-#else
 					 newInstance("IntMultiplier",
 											 "TheLowerProduct",
 											 "wX=" + to_string(sizeMultIn)
@@ -718,7 +623,6 @@ namespace flopoco{
 											 +" signedI0=0",
 											 "X=>expArounded, Y=>expZminus1 ",
 											 "R=>lowerProduct");
-#endif
 
 
 			vhdl << tab << declare("extendedLowerProduct",sizeExpY) << " <= (" << rangeAssign(sizeExpY-1, sizeExpY-k+1, "'0'") 
@@ -729,25 +633,12 @@ namespace flopoco{
 
 			vhdl << tab << "-- Final addition -- the product MSB bit weight is -k+2 = "<< -k+2 << endl;
 			// remember that sizeExpA==sizeExpY
-#if 0 // to remove when it works...
-			IntAdder *finalAdder = new IntAdder(target, sizeExpY);
-			addSubComponent(finalAdder);
-			
-			
-			inPortMap(finalAdder, "X", "expA");
-			inPortMap(finalAdder, "Y", "extendedLowerProduct");
-			inPortMapCst(finalAdder, "Cin", "'0'");
-			outPortMap(finalAdder, "R", "expY");
-
-			vhdl << instance(finalAdder,"TheFinalAdder") << endl;
-#else
 			newInstance("IntAdder",
 									"TheFinalAdder",
 									"wIn=" + to_string(sizeExpY),
 									"X=>expA,Y=>extendedLowerProduct",
 									"R=>expY",
 									"Cin=>'0'");
-#endif
 		
 		} // end if(expYTabulated)
 
@@ -767,35 +658,23 @@ namespace flopoco{
 		vhdl << tab << declare("roundNormAddend", wE+wF+2) << " <= K(" << wE << ") & K & "<< rangeAssign(wF-1, 1, "'0'") << " & roundBit;" << endl;
 
 		
-#if 0 // to remove when it works
-		IntAdder *roundedExpSigOperandAdder = new IntAdder(target, wE+wF+2);
-		addSubComponent(roundedExpSigOperandAdder);
-		
-		inPortMap(roundedExpSigOperandAdder, "X", "preRoundBiasSig");
-		inPortMap(roundedExpSigOperandAdder, "Y", "roundNormAddend");
-		inPortMapCst(roundedExpSigOperandAdder, "Cin", "'0'");
-		outPortMap(roundedExpSigOperandAdder, "R", "roundedExpSigRes");
-		
-		vhdl << instance(roundedExpSigOperandAdder,"roundedExpSigOperandAdder") << endl;
-#else
 		newInstance("IntAdder",
 								"roundedExpSigOperandAdder",
 								"wIn=" + to_string(wE+wF+2),
 								"X=>preRoundBiasSig,Y=>roundNormAddend",
 								"R=>roundedExpSigRes",
 								"Cin=>'0'");
-#endif
 		vhdl << tab << declare(getTarget()->logicDelay(), "roundedExpSig", wE+wF+2) << " <= roundedExpSigRes when Xexn=\"01\" else "
 		<< " \"000\" & (wE-2 downto 0 => '1') & (wF-1 downto 0 => '0');" << endl;
 
-		vhdl << tab << declare(getTarget()->logicDelay(), "ofl1") << " <= not XSign and oufl0 and (not Xexn(1) and Xexn(0)); -- input positive, normal,  very large" << endl;
+		vhdl << tab << declare(getTarget()->logicDelay(), "ofl1") << " <= not XSign and overflow0 and (not Xexn(1) and Xexn(0)); -- input positive, normal,  very large" << endl;
 		vhdl << tab << declare("ofl2") << " <= not XSign and (roundedExpSig(wE+wF) and not roundedExpSig(wE+wF+1)) and (not Xexn(1) and Xexn(0)); -- input positive, normal, overflowed" << endl;
 		vhdl << tab << declare("ofl3") << " <= not XSign and Xexn(1) and not Xexn(0);  -- input was -infty" << endl;
 		vhdl << tab << declare("ofl") << " <= ofl1 or ofl2 or ofl3;" << endl;
 
 		vhdl << tab << declare("ufl1") << " <= (roundedExpSig(wE+wF) and roundedExpSig(wE+wF+1))  and (not Xexn(1) and Xexn(0)); -- input normal" << endl;
 		vhdl << tab << declare("ufl2") << " <= XSign and Xexn(1) and not Xexn(0);  -- input was -infty" << endl;
-		vhdl << tab << declare("ufl3") << " <= XSign and oufl0  and (not Xexn(1) and Xexn(0)); -- input negative, normal,  very large" << endl;
+		vhdl << tab << declare("ufl3") << " <= XSign and overflow0  and (not Xexn(1) and Xexn(0)); -- input negative, normal,  very large" << endl;
 
 		vhdl << tab << declare("ufl") << " <= ufl1 or ufl2 or ufl3;" << endl;
 

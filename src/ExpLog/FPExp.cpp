@@ -368,9 +368,9 @@ namespace flopoco{
 
 		// left shift
 		vhdl << tab  << "-- Partial overflow detection" << endl;
-		int maxshift = wE-1+ wF+g; // maxX < 2^(wE-1); 
-		vhdl << tab  << declare("maxShift", wE+1) << " <= conv_std_logic_vector(" << maxshift << ", wE+1);  -- wE-1 + wF+g" << endl;
-		vhdl << tab  << declare(getTarget()->adderDelay(wE+1),"overflow0") << " <= not shiftVal(wE+1) when shiftVal(wE downto 0) >= maxShift else '0';" << endl;
+		int maxshift = wE-2+ wF+g; // maxX < 2^(wE-1); 
+		vhdl << tab  << declare("maxShift", wE+1) << " <= conv_std_logic_vector(" << maxshift << ", wE+1);  -- wE-2 + wF+g" << endl;
+		vhdl << tab  << declare(getTarget()->adderDelay(wE+1),"overflow0") << " <= not shiftVal(wE+1) when shiftVal(wE downto 0) > maxShift else '0';" << endl;
 
 		int shiftInSize = intlog2(maxshift);
 		vhdl << tab  << declare("shiftValIn", shiftInSize) << " <= shiftVal" << range(shiftInSize-1, 0) << ";" << endl;
@@ -384,7 +384,7 @@ namespace flopoco{
 		int sizeXfix = wE-2 +wF+g +1; // still unsigned; msb=wE-1; lsb = -wF-g
 
 		vhdl << tab << declareFixPoint("ufixX", false, wE-2, -wF-g) << " <= " << " unsigned(fixX0)" << 
-			range(sizeShiftOut -2, sizeShiftOut- sizeXfix-1) << 
+			range(sizeShiftOut -1, sizeShiftOut- sizeXfix) << 
 			" when resultWillBeOne='0' else " << zg(sizeXfix) <<  ";" << endl;		
 #if 0
 		// TODO here it doesn't match exactly the error analysis in the ASA Book, but it works

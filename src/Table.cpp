@@ -120,7 +120,7 @@ namespace flopoco{
 		for (auto& subsample : best_subsampling) {
 			subsample >>= best_shaved_out;
 		}
-		Table::DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size};
+		Table::DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size, wOut};
 		return difcompress;
 	}
 

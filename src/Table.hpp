@@ -88,6 +88,7 @@ namespace flopoco{
 			int subsampling_index_size;
 			int subsampling_word_size;
 			int diff_word_size;
+			int original_Wout;
 		} DifferentialCompression;
 
 		/**

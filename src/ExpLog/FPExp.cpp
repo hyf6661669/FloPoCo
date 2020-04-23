@@ -381,10 +381,10 @@ namespace flopoco{
 								"R=>fixX0");
 
 		int sizeShiftOut=maxshift + wF+1;
-		int sizeXfix = wE-1 +wF+g +1; // still unsigned; msb=wE-1; lsb = -wF-g
+		int sizeXfix = wE-2 +wF+g +1; // still unsigned; msb=wE-1; lsb = -wF-g
 
-		vhdl << tab << declareFixPoint("ufixX", false, wE-1, -wF-g) << " <= " << " unsigned(fixX0)" << 
-			range(sizeShiftOut -1, sizeShiftOut- sizeXfix) << 
+		vhdl << tab << declareFixPoint("ufixX", false, wE-2, -wF-g) << " <= " << " unsigned(fixX0)" << 
+			range(sizeShiftOut -2, sizeShiftOut- sizeXfix-1) << 
 			" when resultWillBeOne='0' else " << zg(sizeXfix) <<  ";" << endl;		
 #if 0
 		// TODO here it doesn't match exactly the error analysis in the ASA Book, but it works

@@ -397,7 +397,6 @@ namespace flopoco{
 #else
 		int lsbXforFirstMult = -3;
 		int msbXforFirstMult = wE-2;
-		int sizeXMulIn = msbXforFirstMult - lsbXforFirstMult+1; // msb=wE-2, lsb=-3
 		resizeFixPoint("xMulIn", "ufixX", msbXforFirstMult, lsbXforFirstMult);
 #endif
 
@@ -406,7 +405,7 @@ namespace flopoco{
 		newInstance("FixRealKCM",
 								"MulInvLog2",
 								 // unsigned here, the conversion to signed comes later
-								 "signedIn=0 msbIn=" + to_string(wE-2)
+								 "signedIn=0 msbIn=" + to_string(msbXforFirstMult)
 								+ " lsbIn=" + to_string(lsbXforFirstMult)
 								+ " lsbOut=0" 
 								+ " constant=1/log(2)"

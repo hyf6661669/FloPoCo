@@ -101,6 +101,12 @@ namespace flopoco{
 		  */
 		static DifferentialCompression find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut);
 
+		/**
+		  * Build the plain uncompressed table from its differential compression
+		  * @param[in] compression The differential compression to use
+		  */
+		static vector<mpz_class> reconstructTable(DifferentialCompression const & compression);
+
 
 		/** A function that returns an estimation of the size of the table in LUTs. Your mileage may vary thanks to boolean optimization */
 		int size_in_LUTs();

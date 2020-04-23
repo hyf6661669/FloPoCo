@@ -31,13 +31,8 @@ BOOST_AUTO_TEST_CASE(TestDifferentialCompressionLarge)
 	auto diff_compress = Table::find_differential_compression(val, TABLE_WIN, TABLE_WOUT);
 
 	BOOST_TEST_CHECKPOINT("find_differential_compression returned");
-	auto subsampling_index_size =	diff_compress.subsampling_index_size;
-	auto subsampling_word_size = diff_compress.subsampling_word_size;
-	auto diff_win = TABLE_WIN - subsampling_index_size;
-	auto diff_wout_subsampling = TABLE_WOUT - subsampling_word_size;
+	auto reconstructedTable = Table::reconstructTable(diff_compress);
 	for (size_t i = 0 ; i < (1 << (TABLE_WIN)) ; ++i) {
-		auto cur_sub_sample = diff_compress.subsampling[i >> diff_win] << diff_wout_subsampling;
-		auto reconstitution = cur_sub_sample + diff_compress.diffs[i];
-		BOOST_REQUIRE_MESSAGE(reconstitution == val[i], "Error with reconstitution of table value " <<i << ": got " << reconstitution << " instead of " << val[i]);
+		BOOST_REQUIRE_MESSAGE(reconstructedTable[i] == val[i], "Error with reconstitution of table value " <<i << ": got " << reconstructedTable[i] << " instead of " << val[i]);
 	}
 }

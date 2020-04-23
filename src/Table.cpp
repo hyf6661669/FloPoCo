@@ -157,6 +157,18 @@ namespace flopoco{
 		return difcompress;
 	}
 
+	vector<mpz_class> Table::reconstructTable(DifferentialCompression const & compression) {
+		vector<mpz_class> reconstructedTable(1 << compression.diff_index_size);
+		int stride = compression.diff_index_size - compression.subsampling_index_size;
+		int subsamplingShift = compression.original_Wout - compression.subsampling_word_size;
+
+		for(int i = 0; i < 1 << compression.diff_index_size; i++)
+			reconstructedTable[i] = (compression.subsampling[i >> stride] << subsamplingShift) + compression.diffs[i];
+
+		return reconstructedTable;
+	}
+
+
 
 	Table::Table(OperatorPtr parentOp_, Target* target_, vector<mpz_class> _values, string _name, int _wIn, int _wOut, int _logicTable, int _minIn, int _maxIn) :
 		Operator(parentOp_, target_)

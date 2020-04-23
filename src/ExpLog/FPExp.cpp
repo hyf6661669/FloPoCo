@@ -353,7 +353,7 @@ namespace flopoco{
 		vhdl << tab  << declare("Xexn", 2) << " <= X(wE+wFIn+2 downto wE+wFIn+1);" << endl;
 		vhdl << tab  << declare("XSign") << " <= X(wE+wFIn);" << endl;
 		vhdl << tab  << declare("XexpField", wE) << " <= X(wE+wFIn-1 downto wFIn);" << endl;
-		vhdl << tab  << declare("Xfrac", wFIn) << " <= X(wFIn-1 downto 0);" << endl;
+		vhdl << tab  << declareFixPoint("Xfrac", false, -1,-wFIn) << " <= unsigned(X(wFIn-1 downto 0));" << endl;
 
 		int e0 = bias - (wF+g);
 		vhdl << tab  << declare("e0", wE+2) << " <= conv_std_logic_vector(" << e0 << ", wE+2);  -- bias - (wF+g)" << endl;
@@ -364,13 +364,13 @@ namespace flopoco{
 
 		// As we don't have a signed shifter, shift first, complement next. TODO? replace with a signed shifter
 		vhdl << tab << "--  mantissa with implicit bit" << endl;
-		vhdl << tab  << declare("mXu", wFIn+1) << " <= \"1\" & Xfrac;" << endl;
+		vhdl << tab  << declareFixPoint("mXu", false, 0,-wFIn) << " <= \"1\" & Xfrac;" << endl;
 
 		// left shift
 		vhdl << tab  << "-- Partial overflow detection" << endl;
-		int maxshift=wE-1+ wF+g; // maxX < 2^(wE-1); 
+		int maxshift = wE-1+ wF+g; // maxX < 2^(wE-1); 
 		vhdl << tab  << declare("maxShift", wE+1) << " <= conv_std_logic_vector(" << maxshift << ", wE+1);  -- wE-1 + wF+g" << endl;
-		vhdl << tab  << declare(getTarget()->adderDelay(wE+1),"overflow0") << " <= not shiftVal(wE+1) when shiftVal(wE downto 0) >= conv_std_logic_vector(" << maxshift << ", wE+1) else '0';" << endl;
+		vhdl << tab  << declare(getTarget()->adderDelay(wE+1),"overflow0") << " <= not shiftVal(wE+1) when shiftVal(wE downto 0) >= maxShift else '0';" << endl;
 
 		int shiftInSize = intlog2(maxshift);
 		vhdl << tab  << declare("shiftValIn", shiftInSize) << " <= shiftVal" << range(shiftInSize-1, 0) << ";" << endl;
@@ -380,18 +380,26 @@ namespace flopoco{
 								"X=>mXu,S=>shiftValIn",
 								"R=>fixX0");
 
-		
-		int sizeXfix = wE+wF+g; // still unsigned; msb=wE-1; lsb = -wF-g
+		int sizeShiftOut=maxshift + wF+1;
+		int sizeXfix = wE-1 +wF+g +1; // still unsigned; msb=wE-1; lsb = -wF-g
 
-		vhdl << tab << declare("fixX", sizeXfix) << " <= " << " fixX0" << 
-		range(wE-1 + wF+g + wFIn+1 -1, wFIn) << 
-		"when resultWillBeOne='0' else " << zg(sizeXfix) <<  ";" << endl;		
-
-		int lsbXforFirstMult=-3; 
-		int sizeXMulIn = wE-2 - lsbXforFirstMult +1; // msb=wE-2, lsb=-3
-		vhdl << tab <<	declare("xMulIn", sizeXMulIn) << " <=  fixX" << 
-		range(sizeXfix-2, sizeXfix - sizeXMulIn-1  ) << 
-		"; -- truncation, error 2^-3" << endl;
+		vhdl << tab << declareFixPoint("ufixX", false, wE-1, -wF-g) << " <= " << " unsigned(fixX0)" << 
+			range(sizeShiftOut -1, sizeShiftOut- sizeXfix) << 
+			" when resultWillBeOne='0' else " << zg(sizeXfix) <<  ";" << endl;		
+#if 0
+		// TODO here it doesn't match exactly the error analysis in the ASA Book, but it works
+		int lsbXforFirstMult=-3;   
+		int msbXforFirstMult = wE-2;
+		int sizeXMulIn = msbXforFirstMult - lsbXforFirstMult +1; // msb=wE-2, lsb=-3
+		vhdl << tab <<	declare("xMulIn", sizeXMulIn) << " <=  std_logic_vector(ufixX)" << 
+			range(sizeXfix-2, sizeXfix - sizeXMulIn-1  ) << 
+			"; -- truncation, error 2^-3" << endl;
+#else
+		int lsbXforFirstMult = -3;
+		int msbXforFirstMult = wE-2;
+		int sizeXMulIn = msbXforFirstMult - lsbXforFirstMult+1; // msb=wE-2, lsb=-3
+		resizeFixPoint("xMulIn", "ufixX", msbXforFirstMult, lsbXforFirstMult);
+#endif
 
 		//***************** Multiplication by 1/log2 to get approximate result ******** 
 
@@ -402,7 +410,7 @@ namespace flopoco{
 								+ " lsbIn=" + to_string(lsbXforFirstMult)
 								+ " lsbOut=0" 
 								+ " constant=1/log(2)"
-								+ " targetUlpError=" + to_string(0.5 + 0.09), // we have 0.125 on X, and target is 0.5+0.22
+								+ " targetUlpError=" + to_string(0.5 + 0.12), // we have 0.125 on X, and target is 0.5+0.22
 								"X=>xMulIn",
 								"R=>absK");
 				
@@ -432,8 +440,8 @@ namespace flopoco{
 
 		sizeY=wF+g; // This is also the weight of Y's LSB
 
-		vhdl << tab << declare(getTarget()->logicDelay(), "subOp1",sizeY) << " <= fixX" << range(sizeY-1, 0) << " when XSign='0'"
-		<< " else not (fixX" << range(sizeY-1, 0) << ");"<<endl;
+		vhdl << tab << declare(getTarget()->logicDelay(), "subOp1",sizeY) << " <= std_logic_vector(ufixX)" << range(sizeY-1, 0) << " when XSign='0'"
+		<< " else not (std_logic_vector(ufixX)" << range(sizeY-1, 0) << ");"<<endl;
 		vhdl << tab << declare("subOp2",sizeY) << " <= absKLog2" << range(sizeY-1, 0) << " when XSign='1'"
 		<< " else not (absKLog2" << range(sizeY-1, 0) << ");"<<endl;
 
@@ -510,21 +518,12 @@ namespace flopoco{
 				vhdl << tab << declare("Addr1", k) << " <= Y" << range(sizeY-1, sizeY-k) << ";\n";
 				vhdl << tab << declare("Z", sizeZ) << " <= Y" << range(sizeZ-1, 0) << ";\n";
 				vhdl << tab << declare("Zhigh", sizeZhigh) << " <= Z" << range(sizeZ-1, sizeZ-sizeZhigh) << ";\n";
-#if 0				
-				ExpYTable* table;
-				table = new ExpYTable(target, k, sizeExpA); // e^A-1 has MSB weight 1
-				addSubComponent(table);
-				outPortMap(table, "Y", "expA");
-				inPortMap(table, "X", "Addr1");
-				vhdl << instance(table, "table");
 
-#else
 				vector<mpz_class> expYTableContent = ExpYTable(k, sizeExpA); // e^A-1 has MSB weight 1
 				Table::newUniqueInstance(this, "Addr1", "expA",
 																 expYTableContent,
 																 "ExpYTable",
 																 k, sizeExpA);
-#endif
 
 				REPORT(LIST, "Generating the polynomial approximation, this may take some time");
 				// We want the LSB value to be  2^(wF+g)

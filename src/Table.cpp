@@ -126,7 +126,8 @@ namespace flopoco{
 								if (lowScore >= best_cost) {
 									goto diff_compression_bound;
 								}
-								overflow_mask = 1 << min_width;
+								overflow_mask = 1;
+								overflow_mask <<= min_width;
 								low_bit_mask = overflow_mask - 1;
 								assert(!had_to_overflow);
 								had_to_overflow = true;

@@ -434,12 +434,12 @@ namespace flopoco{
 			auto diffcompress = Table::find_differential_compression(coeffTable, wIn, wOut);
 			assert(diffcompress.getInitialTable() == coeffTable);
 
-			size_t currentDegCostSubsample = diffcompress.subsampling_word_size << diffcompress.subsampling_index_size;
-			size_t currentDegCostDiff = diffcompress.diff_word_size << wIn;
+			size_t currentDegCostSubsample = diffcompress.subsamplingWordSize << diffcompress.subsamplingIndexSize;
+			size_t currentDegCostDiff = diffcompress.diffWordSize << wIn;
 			REPORT(INFO, "Best compression found for coefficients of degree "<< deg << ": " <<
-				   "Subsampling of factor " << (1 << (wIn - diffcompress.subsampling_index_size)) <<
-				   " with subsamples word sizes of" << diffcompress.subsampling_word_size <<
-				   " and diff word_size of " << diffcompress.diff_word_size <<
+				   "Subsampling of factor " << (1 << (wIn - diffcompress.subsamplingIndexSize)) <<
+				   " with subsamples word sizes of" << diffcompress.subsamplingWordSize <<
+				   " and diff word_size of " << diffcompress.diffWordSize <<
 				   " for a cost of " << currentDegCostDiff << " + " << currentDegCostSubsample << " = "
 				   << (currentDegCostDiff + currentDegCostSubsample));
 			totalCompressedSize += currentDegCostDiff + currentDegCostSubsample;

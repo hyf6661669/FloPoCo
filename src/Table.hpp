@@ -85,17 +85,29 @@ namespace flopoco{
 		typedef struct DifferentialCompression {
 			vector<mpz_class> subsampling;
 			vector<mpz_class> diffs;
-			int subsampling_index_size;
-			int subsampling_word_size;
-			int diff_word_size;
-			int diff_index_size;
-			int original_Wout;
+			int subsamplingIndexSize;
+			int subsamplingWordSize;
+			int diffWordSize;
+			int diffIndexSize;
+			int originalWout;
 
 			/**
 			 * @brief Uncompress the table
 			 * @return a vector of mpz_class corresponding to the stored values
 			 */
 			vector<mpz_class> getInitialTable() const;
+
+			/**
+			 * @brief Compute the size in bits of the subsampling table content
+			 * @return the size as a size_t
+			 */
+			size_t subsamplingStorageSize() const;
+
+			/**
+			 * @brief Compute the size in bits of the diffs table content
+			 * @return the size as a size_t
+			 */
+			size_t diffsStorageSize() const;
 		} DifferentialCompression;
 
 		/**

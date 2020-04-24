@@ -16,6 +16,7 @@
 #include <string.h>
 #include <sstream>
 #include <vector>
+#include <cassert>
 #include <cmath> //for abs(double)
 
 #include <gmp.h>
@@ -36,8 +37,8 @@
 To replicate the functions used in the 2017 Hsiao paper
 
 ./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)"  msbOut=-1 lsbIn=-24 lsbOut=-24
-./flopoco FixFunctionByMultipartiteTable f="2^x-1" lsbIn=-16 lsbOut=-15 msbOut=-1 
-./flopoco FixFunctionByMultipartiteTable f="1/(x+1)-0.5" lsbIn=-15 lsbOut=-15 msbOut=-1 
+./flopoco FixFunctionByMultipartiteTable f="2^x-1" lsbIn=-16 lsbOut=-15 msbOut=-1
+./flopoco FixFunctionByMultipartiteTable f="1/(x+1)-0.5" lsbIn=-15 lsbOut=-15 msbOut=-1
 
 >
 */
@@ -111,7 +112,7 @@ namespace flopoco
 					REPORT(INFO, "Exploring nbTO=" << nbTOi);
 					buildOneTableError();
 					buildGammaiMin();
-					decompositionFound = enumerateDec(); 
+					decompositionFound = enumerateDec();
 					if(!decompositionFound)
 						REPORT(INFO, "No decomposition found for nbTOi=" << nbTOi << ", stopping search.");
 					nbTOi ++;
@@ -121,7 +122,7 @@ namespace flopoco
 				}
 			}
 			else	{ // nbTOi was given
- 				// build the required tables of errors
+				// build the required tables of errors
 				buildOneTableError();
 				buildGammaiMin();
 				decompositionFound = enumerateDec();
@@ -138,7 +139,7 @@ namespace flopoco
 				if(bestMP->totalSize==sizeMax) { // This is one of the dummy mpts
 					tryAgain=false;
 				}
-				else {						
+				else {
 					REPORT(INFO, "Now running exhaustive test on candidate #" << rank << " :" << endl
 								 << tab << bestMP->descriptionString() << endl
 								 << tab<< bestMP->descriptionStringLaTeX()  );
@@ -153,11 +154,11 @@ namespace flopoco
 					}
 				}
 			}
-				
+
 			if(rank==ten || bestMP->totalSize==sizeMax) {
 				REPORT(INFO, "It seems we have to use the safe value of g... starting again");
 				for (int i=0; i<ten; i++){
-					topTen[i]-> totalSize =	sizeMax; 
+					topTen[i]-> totalSize =	sizeMax;
 				}
 				guardBitsSlack ++;
 				//REPORT(0,"guardBitsSlack now " << guardBitsSlack);
@@ -174,13 +175,24 @@ namespace flopoco
 
 		bestMP = topTen[rank];
 
-		REPORT(DEBUG,"Full table dump:" <<endl << bestMP->fullTableDump()); 
+		REPORT(DEBUG,"Full table dump:" <<endl << bestMP->fullTableDump());
+		vector<mpz_class> mpzTIV;
+		for (auto i : bestMP->tiv) {
+			mpzTIV.push_back(mpz_class((long) i));
+		}
+		auto diff_compress = Table::find_differential_compression(mpzTIV, bestMP->alpha, f->wOut);
+		assert(mpzTIV == diff_compress.getInitialTable());
+		REPORT(INFO, "lfmc alternative compression : " << endl <<
+				"\tsubsampled tiv: " << diff_compress.subsamplingWordSize <<
+				".2^" << diff_compress.subsamplingIndexSize  << " = "
+				<< diff_compress.subsamplingStorageSize() << endl <<
+				"\tdiff tiv: "<< diff_compress.diffWordSize << ".2^" << diff_compress.diffIndexSize << " = " <<
+			   diff_compress.diffsStorageSize() << endl <<
+			   "\t\t TOTAL :" << (diff_compress.subsamplingStorageSize()+diff_compress.diffsStorageSize())) ;
 
 		if(bestMP->rho==-1) { // uncompressed TIV
 			vhdl << tab << declare("inTIV", bestMP->alpha) << " <= X" << range(f->wIn-1, f->wIn-bestMP->alpha) << ";" << endl;
-			vector<mpz_class> mpzTIV;
-			for (auto i : bestMP->tiv)
-				mpzTIV.push_back(mpz_class((long) i));
+
 			Table::newUniqueInstance(this, "inTIV", "outTIV",
 															 mpzTIV, "TIV", bestMP->alpha, f->wOut );
 				vhdl << endl;
@@ -193,7 +205,7 @@ namespace flopoco
 				Table::newUniqueInstance(this, "inATIV", "outATIV",
 																 mpzaTIV, "ATIV", bestMP->rho, bestMP->outputSizeATIV );
 				vhdl << endl;
-				
+
 				vhdl << tab << declare("inDiffTIV", bestMP->alpha) << " <= X" << range(f->wIn-1, f->wIn-bestMP->alpha) << ";" << endl;
 				vector<mpz_class> mpzDiffTIV;
 				//cerr << " Starting enum"  << endl;
@@ -208,7 +220,7 @@ namespace flopoco
 				//  getSignalByName("outDiffTIV")->setIsSigned(); // so that it is sign-extended in the bit heap
 				// No need to sign-extend it, it is already taken care of in the construction of the table.
 			}
-		
+
 		int p = 0;
 		for(unsigned int i = 0; i < bestMP->toi.size(); ++i)		{
 			string ai = join("a", i);
@@ -233,7 +245,7 @@ namespace flopoco
 			vhdl << tab << declare(deltai, bestMP->outputSizeTOi[i]+1) << " <= " << trueSign << " & (" <<  outTOi  << " xor " << rangeAssign(bestMP->outputSizeTOi[i]-1,0, trueSign)<< ");" << endl;
 			getSignalByName(deltai)->setIsSigned(); // so that it is sign-extended in the bit heap
 		}
-		
+
 		// Throwing everything into a bit heap
 
 		BitHeap *bh = new BitHeap(this, bestMP->outputSize + bestMP->guardBits); // TODO this is using an adder tree
@@ -293,7 +305,7 @@ namespace flopoco
 	}
 
 	//------------------------------------------------------------------------------------ Private classes
-	
+
 	// enumerating the alphas is much simpler
 	vector<vector<int>> FixFunctionByMultipartiteTable::alphaenum(int alpha, int m)
 	{
@@ -503,7 +515,7 @@ namespace flopoco
 		int sizeMax = f->wOut <<f->wIn; // size of a plain table
 
 		bool decompositionFound=false;
-		
+
 		for (int alpha = alphamin; alpha <= alphamax; alpha++)		{
 			beta = n-alpha;
 			betaEnum = betaenum(beta, nbTOi);
@@ -556,7 +568,7 @@ namespace flopoco
 		int sizeMax = f->wOut <<f->wIn; // size of a plain table
 
 		bool decompositionFound=false;
-		
+
 		for (int alpha = alphamin; alpha <= alphamax; alpha++)		{
 			beta = n-alpha;
 			betaEnum = betaenum(beta, nbTOi);
@@ -591,11 +603,11 @@ namespace flopoco
 		}
 		return decompositionFound;
 	}
-	
+
 #endif
 
 
-	
+
 	/** 5th equation implementation */
 	double FixFunctionByMultipartiteTable::epsilon(int ci_, int gammai, int betai, int pi)
 	{
@@ -656,16 +668,16 @@ namespace flopoco
 		return eps;
 	}
 
-	
+
 	void  FixFunctionByMultipartiteTable::insertInTopTen(Multipartite* mp) {
 		REPORT(DEBUG, "Entering  insertInTopTen");
 		int rank=ten-1;
 		Multipartite* current = topTen[rank];
-		while(rank >= 0 &&  // mp strictly smaller than current 
+		while(rank >= 0 &&  // mp strictly smaller than current
 						(mp->totalSize < current->totalSize   ||    (mp->totalSize == current->totalSize &&  mp->m < current->m))) {
 			rank--;
 			if(rank>=0) current = topTen[rank];
-		} 
+		}
 
 		if(rank<ten-1) { // this mp belongs to the top ten,
 			rank ++; // the last rank for which mp was strictly smaller than topTen[rank]
@@ -687,50 +699,50 @@ namespace flopoco
 		// the static list of mandatory tests
 		TestList testStateList;
 		vector<pair<string,string>> paramList;
-		
-		if(index==-1) 
+
+		if(index==-1)
 		{ // The unit tests
 			vector<string> function;
-			vector<bool> signedIn;		  
+			vector<bool> signedIn;
 			vector<int> msbOut;
-			vector<bool> scaleOutput;			// multiply output by (1-2^lsbOut) to prevent it  reaching 2^(msbOut+1) due to faithful rounding  
+			vector<bool> scaleOutput;			// multiply output by (1-2^lsbOut) to prevent it  reaching 2^(msbOut+1) due to faithful rounding
 			function.push_back("2^x-1");			// input in [0,1) output in [0, 1) : need scaleOutput
 			signedIn.push_back(false);
 			msbOut.push_back(0);
 			scaleOutput.push_back(true);
-			
+
 			function.push_back("1/(x+1)");  // input in [0,1) output in [0.5,1] but we don't want scaleOutput
 			signedIn.push_back(false);
 			msbOut.push_back(0);
-			scaleOutput.push_back(false); 
+			scaleOutput.push_back(false);
 			msbOut.push_back(0);
 
-			function.push_back("sin(pi/4*x)"); 
+			function.push_back("sin(pi/4*x)");
 			signedIn.push_back(false);
 			msbOut.push_back(-1);
-			scaleOutput.push_back(false); 
+			scaleOutput.push_back(false);
 
-			function.push_back("sin(pi/2*x)"); 
+			function.push_back("sin(pi/2*x)");
 			signedIn.push_back(false);
 			msbOut.push_back(-1);
-			scaleOutput.push_back(true); 
+			scaleOutput.push_back(true);
 
 #if 0
 			// It seems we don't manage yet the case when the function may get negative
 			// but the code has been elegantly fixed: it now THROWERRORs
-			function.push_back("log(0.5+x)"); 
+			function.push_back("log(0.5+x)");
 			signedIn.push_back(false);
 			msbOut.push_back(-1);
-			scaleOutput.push_back(true); 
+			scaleOutput.push_back(true);
 #endif
-			
+
 			for (int lsbIn=-8; lsbIn >= -16; lsbIn--) {
 				for (size_t i =0; i<function.size(); i++) {
 					paramList.clear();
 					string f = function[i];
 					int lsbOut = lsbIn + msbOut[i]; // to have inputSize=outputSize
 					if(scaleOutput[i]) {
-						f = "(1-1b"+to_string(lsbOut) + ")*(" + f + ")";				
+						f = "(1-1b"+to_string(lsbOut) + ")*(" + f + ")";
 					}
 					f="\"" + f + "\"";
 					paramList.push_back(make_pair("f", f));
@@ -741,17 +753,17 @@ namespace flopoco
 						paramList.push_back(make_pair("TestBench n=","-2"));
 					testStateList.push_back(paramList);
 				}
-			}			
+			}
 		}
-		else     
+		else
 		{
 				// finite number of random test computed out of index
-		}	
+		}
 
 		return testStateList;
 	}
 
-	
+
 
 	OperatorPtr FixFunctionByMultipartiteTable::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
 		string f;

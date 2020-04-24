@@ -432,7 +432,7 @@ namespace flopoco{
 				}
 			}// End of table creation
 			auto diffcompress = Table::find_differential_compression(coeffTable, wIn, wOut);
-			assert(Table::reconstructTable(diffcompress) == coeffTable);
+			assert(diffcompress.getInitialTable() == coeffTable);
 
 			size_t currentDegCostSubsample = diffcompress.subsampling_word_size << diffcompress.subsampling_index_size;
 			size_t currentDegCostDiff = diffcompress.diff_word_size << wIn;

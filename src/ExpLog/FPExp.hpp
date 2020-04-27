@@ -37,7 +37,7 @@ namespace flopoco{
 		vector<mpz_class>	magicTable(int sizeExpA, int sizeExpZPart, bool storeExpZmZm1);
 
 		/** The table that holds the exponential of the high bits of the input */
-		vector<mpz_class> ExpYTable(int wIn, int wOut);
+		vector<mpz_class> ExpATable(int wIn, int wOut);
 
 		
 		/** @brief The constructor with manual control of all options

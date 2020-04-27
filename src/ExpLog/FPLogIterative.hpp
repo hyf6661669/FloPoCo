@@ -1,9 +1,9 @@
-#ifndef __ITERATIVELOG_HPP
-#define __ITERATIVELOG_HPP
+#ifndef __FPLOGITERATIVE_HPP
+#define __FPLOGITERATIVE_HPP
 #include <vector>
 #include <sstream>
 
-#include "Operator.hpp"
+#include "FPLog.hpp"
 #include "ShiftersEtc/LZOC.hpp"
 #include "ShiftersEtc/LZOCShifterSticky.hpp"
 #include "ShiftersEtc/Shifters.hpp"
@@ -14,10 +14,11 @@ namespace flopoco{
 
 #define MAXRRSTAGES 2000 // 4000 bits of accuracy should be enough for anybody
 
-	class IterativeLog : public Operator
+	class FPLogIterative : public FPLog
 	{
 	protected:
 
+#if OLD
 		/**	@brief A table of reciprocals for the first iteration */
 		class FirstInvTable : public Table
 		{
@@ -37,7 +38,7 @@ namespace flopoco{
 		class FirstLogTable : public Table
 		{
 		public:
-			FirstLogTable(Target *target, int p1, int w1,  FirstInvTable* fit, IterativeLog* op_);
+			FirstLogTable(Target *target, int p1, int w1,  FirstInvTable* fit, FPLogIterative* op_);
 			~FirstLogTable();
 			FirstInvTable* fit;
 			mpz_class function(int x);
@@ -46,7 +47,7 @@ namespace flopoco{
 			mpz_class double2output(double x);
 			double output2double(mpz_class x);
 		private:
-			IterativeLog* op;
+			FPLogIterative* op;
 		};
 
 		class OtherLogTable : public Table
@@ -68,22 +69,14 @@ namespace flopoco{
 			int outputPrecision;
 		};
 
+#else // new Table interface makes life so much simpler
+
+#endif
 
 	public:
-		IterativeLog(Target* target, int wE, int wF, int inTableSize=0, map<string, double> inputDelays = emptyDelayMap);
-		~IterativeLog();
+		FPLogIterative(OperatorPtr parentOp, Target* target, int wE, int wF, int inTableSize=0);
+		~FPLogIterative();
 
-		//		Overloading the virtual functions of Operator
-		void emulate(TestCase * tc);
-		void buildStandardTestCases(TestCaseList* tcl);
-		/**Overloading the function of Operator with a function that tests only positive FP numbers (full range)*/
-		TestCase* buildRandomTestCase(int i);
-		// User-interface stuff
-		/** Factory method */
-		static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target , vector<string> &args);
-		static void registerFactory();
-
-		int wE, wF;
 
 		/** The input sizes to the successive tables*/
 		int a[MAXRRSTAGES];

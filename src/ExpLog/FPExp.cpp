@@ -110,7 +110,7 @@ namespace flopoco{
 
 
 
-	vector<mpz_class>	FPExp::ExpYTable(int wIn, int wOut)	{
+	vector<mpz_class>	FPExp::ExpATable(int wIn, int wOut)	{
 		vector<mpz_class> result;
 		for(int x=0; x<(1<<wIn); x++){
 			mpz_class h;
@@ -125,7 +125,7 @@ namespace flopoco{
 			mpfr_set_si(a, xs, GMP_RNDN);
 			mpfr_div_2si(a, a, wIn, GMP_RNDN); // now a in [-1/2, 1/2[
 			mpfr_init2(y, LARGE_PREC); 
-			mpfr_exp(y, a, GMP_RNDN); // in [0.6, 1.7], MSB is 1
+			mpfr_exp(y, a, GMP_RNDN); // in [0.6, 1.7], MSB position is 0
 
 			mpfr_mul_2si(y, y, wOut-1, GMP_RNDN);
 			mpfr_get_z(h.get_mpz_t(), y,  GMP_RNDN);  // here the rounding takes place
@@ -203,10 +203,10 @@ namespace flopoco{
 		g=2;
 		sizeY=wF+g;
 		sizeExpY = wF+g+1+2; // e^Y has MSB weight 1; 2 added because it enables to keep g=2 and it costs nothing here, being at the table output.
-		mpz_class sizeExpYTable= (mpz_class(1)<<sizeY) * sizeExpY;
-		REPORT(3, "Tabulating e^Y would consume " << sizeExpYTable << " bits   (RAM block size is " << blockRAMSize << " bits");
-		if( sizeExpYTable <= mpz_class(blockRAMSize)) {
-			REPORT(DETAILED, "Tabulating e^Y in a blockRAM, using " << sizeExpYTable << " bits");
+		mpz_class sizeExpATable= (mpz_class(1)<<sizeY) * sizeExpY;
+		REPORT(3, "Tabulating e^Y would consume " << sizeExpATable << " bits   (RAM block size is " << blockRAMSize << " bits");
+		if( sizeExpATable <= mpz_class(blockRAMSize)) {
+			REPORT(DETAILED, "Tabulating e^Y in a blockRAM, using " << sizeExpATable << " bits");
 			expYTabulated=true;
 			REPORT(DETAILED, "g=" << g );
 			REPORT(DETAILED, "sizeY=" << sizeY);		
@@ -422,6 +422,9 @@ namespace flopoco{
 		// The synthesizer should be able to merge the addition and this mux,
 		vhdl << tab << declare("K",wE+1) << " <= minusAbsK when  XSign='1'   else ('0' & absK);"<<endl;
 
+
+		// TODO here! We do not need to compute the leading WE bits, as they will be cancelled out by the subtraction anyway.
+		// Not sure the fixrealKCM interface is ready
 		newInstance("FixRealKCM",
 								"MulLog2",
 								// unsigned here, the conversion to signed comes later
@@ -440,10 +443,10 @@ namespace flopoco{
 		sizeY=wF+g; // This is also the weight of Y's LSB
 
 		vhdl << tab << declare(getTarget()->logicDelay(), "subOp1",sizeY) << " <= std_logic_vector(ufixX)" << range(sizeY-1, 0) << " when XSign='0'"
-		<< " else not (std_logic_vector(ufixX)" << range(sizeY-1, 0) << ");"<<endl;
+				 << " else not (std_logic_vector(ufixX)" << range(sizeY-1, 0) << ");"<<endl;
 		vhdl << tab << declare("subOp2",sizeY) << " <= absKLog2" << range(sizeY-1, 0) << " when XSign='1'"
-		<< " else not (absKLog2" << range(sizeY-1, 0) << ");"<<endl;
-
+				 << " else not (absKLog2" << range(sizeY-1, 0) << ");"<<endl;
+		
 		newInstance("IntAdder",
 								"theYAdder",
 								"wIn=" + to_string(sizeY),// we know the leading bits will cancel out
@@ -455,10 +458,10 @@ namespace flopoco{
 		vhdl << tab << "-- Now compute the exp of this fixed-point value" <<endl;
 
 		if(expYTabulated) {
-			vector<mpz_class> expYTableContent = ExpYTable(sizeY, sizeExpY); // e^A-1 has MSB weight 1
+			vector<mpz_class> expYTableContent = ExpATable(sizeY, sizeExpY); // e^A-1 has MSB weight 1
 			Table::newUniqueInstance(this, "Y", "expY",
 															 expYTableContent,
-															 "ExpYTable",
+															 "ExpATable",
 															 sizeY, sizeExpY);
 		}
 
@@ -518,10 +521,10 @@ namespace flopoco{
 				vhdl << tab << declare("Z", sizeZ) << " <= Y" << range(sizeZ-1, 0) << ";\n";
 				vhdl << tab << declare("Zhigh", sizeZhigh) << " <= Z" << range(sizeZ-1, sizeZ-sizeZhigh) << ";\n";
 
-				vector<mpz_class> expYTableContent = ExpYTable(k, sizeExpA); // e^A-1 has MSB weight 1
+				vector<mpz_class> expYTableContent = ExpATable(k, sizeExpA); // e^A-1 has MSB weight 1
 				Table::newUniqueInstance(this, "Addr1", "expA",
 																 expYTableContent,
-																 "ExpYTable",
+																 "ExpATable",
 																 k, sizeExpA);
 
 				REPORT(LIST, "Generating the polynomial approximation, this may take some time");

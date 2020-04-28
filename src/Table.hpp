@@ -119,6 +119,7 @@ namespace flopoco{
 		  */
 		static DifferentialCompression find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut);
 
+		DifferentialCompression compress() const;
 
 		/** A function that returns an estimation of the size of the table in LUTs. Your mileage may vary thanks to boolean optimization */
 		int size_in_LUTs();
@@ -142,12 +143,6 @@ namespace flopoco{
 
 		/** maximal input value (default 2^wIn-1) */
 		mpz_class maxIn;
-
-
-
-
-
-
 
 };
 

@@ -42,9 +42,7 @@ namespace flopoco{
 		int best_cost = wOut << wIn;
 		int best_diff_word_size = 0;
 		int best_shaved_out = 0;
-		cout << "Starting compression of a table of size " << wIn << "x" << wOut << "(required storage : " << best_cost << ")" << endl;
 		for (int s = 1 ; s < wIn ; s++) { // Iterate over each possible splitting value
-			cout << "Evaluating split of size " << s << endl;
 			auto shift = 1 << s;
 			mpz_class max_distance{0};
 			int min_max_dist = ((shift >> 1) - 1);
@@ -66,13 +64,11 @@ namespace flopoco{
 				}
 			}
 
-			cout << "Max distance for s=" << s << " : " << max_distance << endl;
 			/*
 			 * In the best case, without overflow when adding subsamples low bits, we need enough storage to store the difference between
 			 * the maximal and minimal element of the "slice" in which this distance is maximal
 			 */
 			int min_width = intlog2(mpz_class{max_distance});
-			cout << "Minimal width for offsets : " << min_width << endl;
 			int shaved_out = min_width;
 			int subSampleNbEntry = 1 << (wIn - s);
 			int subSampleWordSize = wOut - shaved_out;
@@ -81,9 +77,6 @@ namespace flopoco{
 			int lowScore = diffLowScore + subSampleLowScore;
 			if (lowScore >= best_cost) {
 				diff_compression_bound:
-					cout << "Cost for subsampling power " << s << " is at least " << lowScore <<
-							" which is bigger than previously found best score ("<< best_cost <<
-							"): stopping evaluation here" << endl;
 					continue;
 			}
 			vector<mpz_class> subsamples(1 << (wIn - s));
@@ -142,7 +135,6 @@ namespace flopoco{
 			int cur_diff_size = min_width << (wIn);
 			int cur_cost = cur_diff_size + cur_subsample_input_word_size * cur_subsample_output_word_size;
 			if (cur_cost < best_cost) {
-				cout << "New best s : " << s << " With cost value of " << cur_cost << endl;
 				best_s = s;
 				best_cost = cur_cost;
 				best_diff_word_size = min_width;
@@ -156,6 +148,22 @@ namespace flopoco{
 		}
 		Table::DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size, wIn, wOut};
 		return difcompress;
+	}
+
+	Table::DifferentialCompression Table::compress() const
+	{
+		REPORT(INFO, "Performing differential compression on table.");
+		REPORT(INFO, "Initial cost is " << wOut << "x2^" << wIn << "=" << (wOut << wIn));
+		DifferentialCompression ret = Table::find_differential_compression(values, wIn, wOut);
+		REPORT(INFO, "Best compression split found: " << (wIn - ret.subsamplingIndexSize));
+		auto subsampling_cost = ret.subsamplingWordSize << ret.subsamplingIndexSize;
+		REPORT(INFO, "Best compression subsampling storage cost: " << ret.subsamplingWordSize <<
+			   "x2^" << ret.subsamplingIndexSize << "=" << subsampling_cost);
+		auto diff_cost = ret.diffWordSize << ret.diffIndexSize;
+		REPORT(INFO, "Best compression diff cost: " << ret.diffWordSize << "x2^" <<
+			   ret.diffIndexSize << "=" << diff_cost);
+		REPORT(INFO, "Total cost: " << (diff_cost + subsampling_cost));
+		return ret;
 	}
 
 	vector<mpz_class> Table::DifferentialCompression::getInitialTable() const {

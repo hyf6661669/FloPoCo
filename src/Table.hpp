@@ -122,7 +122,7 @@ namespace flopoco{
 		DifferentialCompression compress() const;
 
 		/** A function that returns an estimation of the size of the table in LUTs. Your mileage may vary thanks to boolean optimization */
-		int size_in_LUTs();
+		int size_in_LUTs() const;
 	private:
 		bool full; 					/**< true if there is no "don't care" inputs, i.e. minIn=0 and maxIn=2^wIn-1 */
 		bool logicTable; 			/**< true: LUT-based table; false: BRAM-based */

@@ -154,15 +154,27 @@ namespace flopoco{
 	{
 		REPORT(INFO, "Performing differential compression on table.");
 		REPORT(INFO, "Initial cost is " << wOut << "x2^" << wIn << "=" << (wOut << wIn));
+		REPORT(INFO, "Initial estimated lut cost is :" << size_in_LUTs());
 		DifferentialCompression ret = Table::find_differential_compression(values, wIn, wOut);
 		REPORT(INFO, "Best compression split found: " << (wIn - ret.subsamplingIndexSize));
-		auto subsampling_cost = ret.subsamplingWordSize << ret.subsamplingIndexSize;
+		auto subsamplingCost = ret.subsamplingWordSize << ret.subsamplingIndexSize;
 		REPORT(INFO, "Best compression subsampling storage cost: " << ret.subsamplingWordSize <<
-			   "x2^" << ret.subsamplingIndexSize << "=" << subsampling_cost);
-		auto diff_cost = ret.diffWordSize << ret.diffIndexSize;
+			   "x2^" << ret.subsamplingIndexSize << "=" << subsamplingCost);
+		auto lutinputs = getTarget()->lutInputs();
+		auto lutcost = [lutinputs](int wIn, int wOut)->int {
+			auto effwIn = ((wIn - lutinputs) > 0) ? wIn - lutinputs : 0;
+			return wOut << effwIn;
+		};
+
+		auto subsamplingLUTCost = lutcost(ret.subsamplingIndexSize, ret.subsamplingWordSize);
+		REPORT(INFO, "Best subsampling LUT cost:" << subsamplingLUTCost);
+		auto diffCost = ret.diffWordSize << ret.diffIndexSize;
+		auto diffLutCost = lutcost(ret.diffIndexSize, ret.diffWordSize);
 		REPORT(INFO, "Best compression diff cost: " << ret.diffWordSize << "x2^" <<
-			   ret.diffIndexSize << "=" << diff_cost);
-		REPORT(INFO, "Total cost: " << (diff_cost + subsampling_cost));
+			   ret.diffIndexSize << "=" << diffCost);
+		REPORT(INFO, "Best diff LUT cost: "<< diffLutCost);
+		REPORT(INFO, "Total cost: " << (diffCost + subsamplingCost));
+		REPORT(INFO, "Total LUT cost: " << (diffLutCost + subsamplingLUTCost));
 		return ret;
 	}
 
@@ -375,7 +387,7 @@ namespace flopoco{
 	}
 
 
-	int Table::size_in_LUTs() {
+	int Table::size_in_LUTs() const {
 		return wOut*int(intpow2(wIn-getTarget()->lutInputs()));
 	}
 

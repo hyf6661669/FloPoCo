@@ -80,7 +80,7 @@ vector<BaseMultiplierCategory const *> const BaseMultiplierCollection::getView()
 
 void BaseMultiplierCollection::print()
 {
-	if (UserInterface::verbose >= DETAILED)
+	if (MAXLOGLEVEL >= DETAILED)
 	{
 		REPORT(DETAILED, "Available base multipliers:");
 		for(BaseMultiplierCategory *bmc : baseMultiplierCategories)

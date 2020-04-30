@@ -153,6 +153,7 @@ PrimitiveComponents/Xilinx/XilinxFourToTwoCompressor
 Tools/Plane
 Tools/Point
 TutorialOperator
+Logging
 
 Complex/FixFFT
 

@@ -214,7 +214,7 @@ namespace flopoco{
 			WordLengthCalculator wlc = WordLengthCalculator(adderGraph, wIn, epsilonMultNormInt);
 			wordSizeMap = wlc.optimizeTruncation();
 			REPORT(DEBUG, "Finished computing word sizes of truncated MCM");
-			if (UserInterface::verbose >= DETAILED)
+			if (MAXLOGLEVEL >= DETAILED)
 			{
 				for (auto &it : wordSizeMap)
 				{
@@ -356,7 +356,7 @@ namespace flopoco{
 			REPORT(DEBUG, "depth is 5 or more, limit MSD permutation limit");
 			rpag->msd_digit_permutation_limit = 1000;
 		}
-		PAGSuite::global_verbose = UserInterface::verbose-2; //set rpag to one less than verbose of FloPoCo
+		PAGSuite::global_verbose = MAXLOGLEVEL-2; //set rpag to one less than verbose of FloPoCo
 
 		PAGSuite::cost_model_t cost_model = PAGSuite::LL_FPGA;// with default value
 		rpag->input_wordsize = msbIn-lsbIn;
@@ -373,7 +373,7 @@ namespace flopoco{
 
 		REPORT(INFO, "  adderGraphStr=" << adderGraphStr);
 
-		if(UserInterface::verbose >= 3)
+		if(MAXLOGLEVEL >= 3)
 			adderGraph.quiet = false; //enable debug output
 		else
 			adderGraph.quiet = true; //disable debug output, except errors
@@ -387,7 +387,7 @@ namespace flopoco{
 			REPORT(DETAILED, "check graph...")
 			adderGraph.check_and_correct(adderGraphStr);
 
-			if (UserInterface::verbose >= DETAILED)
+			if (MAXLOGLEVEL >= DETAILED)
 				adderGraph.print_graph();
 			adderGraph.drawdot("pag_input_graph.dot");
 

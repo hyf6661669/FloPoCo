@@ -65,7 +65,7 @@ namespace flopoco{
 			REPORT(DEBUG, "depth is 5 or more, limit MSD permutation limit");
 			rpag->msd_digit_permutation_limit = 1000;
 		}
-		PAGSuite::global_verbose = UserInterface::verbose-1; //set rpag to one less than verbose of FloPoCo
+		PAGSuite::global_verbose = MAXLOGLEVEL-1; //set rpag to one less than verbose of FloPoCo
 
 		PAGSuite::cost_model_t cost_model = PAGSuite::LL_FPGA;// with default value
 		rpag->input_wordsize = wIn;

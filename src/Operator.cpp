@@ -1879,11 +1879,6 @@ namespace flopoco{
 		return testCaseSignals_;
 	}
 
-
-	string Operator::getSrcFileName(){
-		return srcFileName;
-	}
-
 	int Operator::getOperatorCost(){
 		return cost;
 	}
@@ -3286,7 +3281,6 @@ namespace flopoco{
 
 		vhdl.dependenceTable        = op->vhdl.dependenceTable;
 
-		srcFileName                 = op->getSrcFileName();
 		cost                        = op->getOperatorCost();
 		subComponentList_           = op->getSubComponentList();
 		stdLibType_                 = op->getStdLibType();
@@ -3600,8 +3594,6 @@ namespace flopoco{
 
 	void Operator::outputVHDLToFile(vector<Operator*> &oplist, ofstream& file)
 	{
-		string srcFileName = "Operator.cpp"; // for REPORT
-
 		for(auto it: oplist)
 			{
 				try {

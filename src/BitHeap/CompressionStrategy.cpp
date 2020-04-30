@@ -179,7 +179,7 @@ namespace flopoco{
 	}
 
 	void CompressionStrategy::printBitsInBitheap(){
-		if(UserInterface::verbose < DEBUG){
+		if(MAXLOGLEVEL < DEBUG){
 			return;
 		}
 		for(unsigned int c = 0; c < bitheap->bits.size(); c++){
@@ -190,7 +190,7 @@ namespace flopoco{
 	}
 
 	void CompressionStrategy::printBitAmounts(){
-		if(UserInterface::verbose < DETAILED){
+		if(MAXLOGLEVEL < DETAILED){
 			return;
 		}
 		//first find max value length and maxcolumn

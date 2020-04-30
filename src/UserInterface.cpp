@@ -2,6 +2,7 @@
 #include "Targets/AllTargetsHeaders.hpp"
 #include "TestBenches/TestBench.hpp"
 
+#include "Logging.hpp"
 #include "AutoTest/AutoTest.hpp"
 
 #include <algorithm>
@@ -29,7 +30,6 @@ namespace flopoco
 	// Allocation of the global objects
 	string UserInterface::outputFileName;
 	string UserInterface::entityName=""; // used for the -name option
-	int    UserInterface::verbose;
 	string UserInterface::targetFPGA;
 	double UserInterface::targetFrequencyMHz;
 	bool   UserInterface::clockEnable;
@@ -183,7 +183,7 @@ namespace flopoco
 
 	void UserInterface::parseGenericOptions(vector<string> &args) {
 		parseString(args, "name", &entityName, true); // not sticky: will be used, and reset, after the operator parser
-		parsePositiveInt(args, "verbose", &verbose, true); // sticky option
+		parsePositiveInt(args, "verbose", &MAXLOGLEVEL, true); // sticky option
 		parseString(args, "outputFile", &outputFileName, true); // not sticky: will be used, and reset, after the operator parser
 		parseString(args, "target", &targetFPGA, true); // not sticky: will be used, and reset, after the operator parser
 		parseFloat(args, "frequency", &targetFrequencyMHz, true); // sticky option
@@ -342,7 +342,7 @@ namespace flopoco
 	void UserInterface::initialize(){
         registerFactories();  //implemented in Factories.cpp
 		// Initialize all the command-line options
-		verbose=1;
+		MAXLOGLEVEL = static_cast<int>(flopoco::LogLevel::Info);
 		outputFileName="flopoco.vhdl";
 		targetFPGA=defaultFPGA;
 		targetFrequencyMHz=400;

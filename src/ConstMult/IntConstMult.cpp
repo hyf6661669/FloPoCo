@@ -527,7 +527,7 @@ namespace flopoco{
 				//delete implementation;
 				//implementation=buildMultBoothTreeFromRight(n);
 
-				if(UserInterface::verbose>=DETAILED) showShiftAddDag();
+				if(MAXLOGLEVEL>=DETAILED) showShiftAddDag();
 
 #if HACK4ARITH2019
 				showRPAG();
@@ -664,7 +664,7 @@ namespace flopoco{
 				}
 			}
 
-			if(UserInterface::verbose>=DETAILED) showShiftAddDag();
+			if(MAXLOGLEVEL>=DETAILED) showShiftAddDag();
 
 			int cost=compute_total_cost(implementation->result);
 			REPORT(INFO, "Estimated bare cost (not counting pipeline overhead) : " << cost << " FA/LUT" );

@@ -85,13 +85,12 @@ void IntConstMultShiftAdd::ProcessIntConstMultShiftAdd(
     emu_conf = 0;
 
     bool validParse;
-    srcFileName="IntConstMultShiftAdd";
 
     useNumericStd();
 
 //    setCopyrightString(UniKs::getAuthorsString(UniKs::AUTHOR_MKLEINLEIN|UniKs::AUTHOR_MKUMM|UniKs::AUTHOR_KMOELLER));
 
-    if(UserInterface::verbose >= 3)
+    if(MAXLOGLEVEL >= 3)
         pipelined_adder_graph.quiet = false; //enable debug output
     else
         pipelined_adder_graph.quiet = true; //disable debug output, except errors
@@ -104,7 +103,7 @@ void IntConstMultShiftAdd::ProcessIntConstMultShiftAdd(
         REPORT( DETAILED,  "check graph...")
 		pipelined_adder_graph.check_and_correct(pipelined_realization_str);
 
-		if(UserInterface::verbose >= DETAILED)
+		if(MAXLOGLEVEL >= DETAILED)
 			pipelined_adder_graph.print_graph();
         pipelined_adder_graph.drawdot("pag_input_graph.dot");
 
@@ -121,7 +120,7 @@ void IntConstMultShiftAdd::ProcessIntConstMultShiftAdd(
 			wordSizeMap = wlc.optimizeTruncation();
 
 			REPORT(INFO, "Finished computing word sizes of truncated MCM");
-			if(UserInterface::verbose >= INFO)
+			if(MAXLOGLEVEL >= INFO)
 			{
 				for(auto & it : wordSizeMap) {
 					std::cout << "(" << it.first.first << ", " << it.first.second << "): ";

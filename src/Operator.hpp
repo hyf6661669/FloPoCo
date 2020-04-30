@@ -28,24 +28,17 @@
 using namespace std;
 
 #include "UserInterface.hpp"
+#include "Logging.hpp"
 
 namespace flopoco {
 	// global const variables
 	static const map<string, double> emptyDelayMap;
 	const std::string tab = "   ";
 	
-	// Reporting levels
-#define LIST 0       // information necessary to the user of FloPoCo
-#define INFO 1       // information useful to the user of FloPoCo
-#define DETAILED 2   // information that shows how the algorithm works, useful to inquisitive users
-#define DEBUG 3      // debug info, useful mostly to developers
-#define FULL 4       // pure noise
 
 #define INNER_SEPARATOR "................................................................................"
 #define DEBUG_SEPARATOR "________________________________________________________________________________"
 #define OUTER_SEPARATOR "################################################################################"
-#define REPORT(level, stream) {if ((level)<=(UserInterface::verbose)){ cerr << "> " << srcFileName << " " << uniqueName_ <<": " << stream << endl;}else{}} 
-#define THROWERROR(stream) {{ostringstream o; o << " ERROR in " << uniqueName_ << " (" << srcFileName << "): " << stream << endl; throw o.str();}}
 
 
 	//Floorplanning - direction of placement constraints
@@ -1094,8 +1087,6 @@ namespace flopoco {
 
 		vector<Signal*> getTestCaseSignals();
 
-		string getSrcFileName();
-
 		int getOperatorCost();
 
 		map<string, Signal*> getSignalMap();
@@ -1721,9 +1712,9 @@ namespace flopoco {
 	std::ostringstream 			floorplan;                  /**< Stream containing the floorplanning operations */
 	FloorplanningHelper*		flpHelper;                  /**< Tools for floorplanning */
 	int                    numberOfTests;                   /**< The number of tests, set by TestBench before this operator is tested. Useful for operators with state */
-
+	
+	static constexpr auto srcFileName = "Operator.cpp";
 protected:
-	string              srcFileName;                       /**< Used to debug and report.  */
 	string              uniqueName_;                        /**< By default, a name derived from the operator class and the parameters */
 	string 				      architectureName_;                  /**< Name of the operator architecture */
 	vector<Signal*>     testCaseSignals_;                   /**< The list of pointers to the signals in a test case entry. Its size also gives the dimension of a test case */

@@ -571,17 +571,19 @@ namespace flopoco{
 		vhdl << tab << "-- Sign of the result;" << endl;
 		vhdl << tab << 	declare(getTarget()->logicDelay(),"sR") << " <= '0'   when  (X(wE+wF-1 downto wF) = ('0' & (wE-2 downto 0 => '1')))  -- binade [1..2)" << endl
 		                              << "     else not X(wE+wF-1);                -- MSB of exponent" << endl;
-#if 0 // WIP BELOW
 		
-		//manageCriticalPath( getTarget()->adderDelay(wF-pfinal+2) + getTarget()->lutDelay() );
-		vhdl << tab << declare("absZ0", wF-pfinal+2) << " <=   Y0(wF-pfinal+1 downto 0)          when (sR='0') else" << endl
+		vhdl << tab << declare(getTarget()->adderDelay(wF-pfinal+2),
+													 "absZ0", wF-pfinal+2) << " <=   Y0(wF-pfinal+1 downto 0)          when (sR='0') else" << endl
 			  << "             ((wF-pfinal+1 downto 0 => '0') - Y0(wF-pfinal+1 downto 0));" << endl;
-		vhdl << tab << declare("E", wE) << " <= (X(wE+wF-1 downto wF)) - (\"0\" & (wE-2 downto 1 => '1') & (not FirstBit));" << endl;
+		vhdl << tab << declare(getTarget()->adderDelay(wE),
+													 "E", wE) << " <= (X(wE+wF-1 downto wF)) - (\"0\" & (wE-2 downto 1 => '1') & (not FirstBit));" << endl;
 
 		//manageCriticalPath( getTarget()->adderDelay(wE) + getTarget()->lutDelay() );
-		vhdl << tab << declare("absE", wE) << " <= ((wE-1 downto 0 => '0') - E)   when sR = '1' else E;" << endl;
-		vhdl << tab << declare("EeqZero") << " <= '1' when E=(wE-1 downto 0 => '0') else '0';" << endl;
-
+		vhdl << tab << declare(getTarget()->logicDelay(),
+													 "absE", wE) << " <= ((wE-1 downto 0 => '0') - E)   when sR = '1' else E;" << endl;
+		vhdl << tab << declare(getTarget()->logicDelay(),
+													 "EeqZero") << " <= '1' when E=(wE-1 downto 0 => '0') else '0';" << endl;
+		
 #if OLD
 		//setCycleFromSignal("Y0h"); //get back to fisrt steps
 		//setCriticalPath(cpY0);     //set the corresponding delay		
@@ -594,25 +596,24 @@ namespace flopoco{
 		//setCycleFromSignal("lzo");
 		//setCriticalPath( lzoc->getOutputDelay("O") );
 #else // OLD
-
+		
+		newInstance("LZOC",
+								"lzoc1",
+								"wIn=" + to_string(wF) + " countType=-1",
+								"I=>Y0h, OZB=>FirstBit",
+								"O=>lzo");
 
 #endif
 
-		//manageCriticalPath( getTarget()->localWireDelay() + getTarget()->adderDelay(intlog2(wF)+1) );
-		//		double cpshiftval = getCriticalPath();
 		vhdl << tab << declare("pfinal_s", intlog2(wF)) << " <= \"" << unsignedBinary(mpz_class(pfinal), intlog2(wF)) << "\";"<<endl;
-		vhdl << tab << declare("shiftval", intlog2(wF)+1) << " <= ('0' & lzo) - ('0' & pfinal_s); " << endl;
+		vhdl << tab << declare(getTarget()->adderDelay(intlog2(wF)+1),
+													 "shiftval", intlog2(wF)+1) << " <= ('0' & lzo) - ('0' & pfinal_s); " << endl;
 		vhdl << tab << declare("shiftvalinL", intlog2(wF-pfinal+2))     << " <= shiftval(" << intlog2(wF-pfinal+2)-1 << " downto 0);" << endl;
 		vhdl << tab << declare("shiftvalinR", intlog2(sfinal-pfinal+1)) << " <= shiftval(" << intlog2(sfinal-pfinal+1)-1 << " downto 0);" << endl;
 		vhdl << tab << declare("doRR") << " <= shiftval(log2wF); -- sign of the result" << endl;
 
-		//manageCriticalPath( getTarget()->localWireDelay() + getTarget()->lutDelay() );
 		//done in parallel with the shifter
-		vhdl << tab << declare("small") << " <= EeqZero and not(doRR);" << endl;
-
-
-		// setCycleFromSignal("shiftvalinL");
-		// setCriticalPath(cpshiftval);
+		vhdl << tab << declare(getTarget()->logicDelay(),"small") << " <= EeqZero and not(doRR);" << endl;
 
 		// ao stands for "almost one"
 		vhdl << tab << "-- The left shifter for the 'small' case" <<endl;
@@ -625,10 +626,15 @@ namespace flopoco{
 		outPortMap(ao_lshift, "R", "small_absZ0_normd_full");
 		vhdl << instance(ao_lshift, "small_lshift");
 
-		syncCycleFromSignal("small_absZ0_normd_full");
 		setCriticalPath( getOutputDelay("R") );
 		double cpsmall_absZ0_normd = getCriticalPath();
 #else // OLD
+
+		newInstance("Shifter",
+								"small_lshift",
+								"wIn=" + to_string(wF-pfinal+2) + " maxShift=" + to_string(wF-pfinal+2) + " dir=0",
+								"X=>absZ0,S=>shiftvalinL",
+								"R=>small_absZ0_normd_full");
 
 
 #endif
@@ -636,16 +642,13 @@ namespace flopoco{
 		int small_absZ0_normd_size = getSignalByName("small_absZ0_normd_full")->width() - (wF-pfinal+2);
 		vhdl << tab << declare("small_absZ0_normd", small_absZ0_normd_size) << " <= small_absZ0_normd_full" << range(small_absZ0_normd_size -1, 0) << "; -- get rid of leading zeroes" << endl;
 
-		//////////////////////////////////////////////
-		//		setCycle(0); //back to the beggining
-		//		setCriticalPath( getMaxInputDelays(inputDelays) );
 		vhdl << tab << "---------------- The range reduction box ---------------" << endl;
 
 		vhdl << tab << declare("A0", a[0]) << " <= X" << range(wF-1,  wF-a[0]) << ";" << endl;
 
+		vhdl << tab << "-- First inv table" << endl;
 #if OLD
 		//		nextCycle(); //buffer input to get synthetized into BRAM: TODO
-		vhdl << tab << "-- First inv table" << endl;
 		FirstInvTable* it0 = new FirstInvTable(target, a[0], a[0]+1);
 		inPortMap       (it0, "X", "A0");
 		outPortMap      (it0, "Y", "InvA0");
@@ -657,8 +660,31 @@ namespace flopoco{
 		// TODO: unplugged
 #else // OLD
 
-
+		vector<mpz_class> it0Content;
+		for(int x=0; x<(1<<a[0]); x++) {
+			// convert x to a double
+			double xd;
+			if(x>>(a[0]-1)) //MSB of input
+				xd= ((double)(x+(1<<a[0]))) //      11xxxx (binary)
+				/  ((double)(1<<(a[0]+1))); // 0.11xxxxx (binary)
+			else
+				xd= ((double)(x+(1<<a[0]))) //   10xxxx (binary)
+					/  ((double)(1<<a[0])); // 1.0xxxxx (binary)
+			mpz_class r =  ceil( ((double)(1<<a[0])) / xd); // double rounding, but who cares really
+		// The following line allows us to prove that the case a0=5 is lucky enough to need one bit less than the general case
+		//cout << "FirstInvTable> x=" << x<< "  r=" <<r << "  error=" << ceil( ((double)(1<<(wOut-1))) / d)  - ( ((double)(1<<(wOut-1))) / d) << endl;
+			it0Content.push_back(r);
+		}
+		Table::newUniqueInstance(this, "A0", "InvA0",
+														 it0Content,
+														 "InvA0Table",
+														 a[0], a[0]+1);
+		
 #endif
+
+#if 0 // WIP BELOW
+
+
 
 #if OLD
 		if(false && getTarget()->isPipelined() && a[0]+1>=9) {

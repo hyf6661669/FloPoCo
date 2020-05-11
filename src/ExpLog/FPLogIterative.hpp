@@ -18,60 +18,6 @@ namespace flopoco{
 	{
 	protected:
 
-#if OLD
-		/**	@brief A table of reciprocals for the first iteration */
-		class FirstInvTable : public Table
-		{
-		public:
-			FirstInvTable(Target* target, int p1, int w1);
-			~FirstInvTable();
-			mpz_class function(int x);
-			//  int check_accuracy(int wF);
-			int    double2input(double x);
-			double input2double(int x);
-			mpz_class double2output(double x);
-			double output2double(mpz_class x);
-			double maxMulOut;
-			double minMulOut;
-		};
-
-		class FirstLogTable : public Table
-		{
-		public:
-			FirstLogTable(Target *target, int p1, int w1,  FirstInvTable* fit, FPLogIterative* op_);
-			~FirstLogTable();
-			FirstInvTable* fit;
-			mpz_class function(int x);
-			int    double2input(double x);
-			double input2double(int x);
-			mpz_class double2output(double x);
-			double output2double(mpz_class x);
-		private:
-			FPLogIterative* op;
-		};
-
-		class OtherLogTable : public Table
-		{
-		public:
-			OtherLogTable(Target* target, int wIn, int wOut, int which, int ai, int pi);
-			~OtherLogTable();
-			mpz_class function(int x);
-			int    double2input(double x);
-			double input2double(int x);
-			mpz_class double2output(double x);
-			double output2double(mpz_class x);
-			/** Which table is that ? useful because the first is different from the others.*/
-			int which;
-			/** ai is needed to determine epsiloni */
-			int ai;
-			/** pi is needed to determine epsiloni */
-			int pi;
-			int outputPrecision;
-		};
-
-#else // new Table interface makes life so much simpler
-
-#endif
 
 	public:
 		FPLogIterative(OperatorPtr parentOp, Target* target, int wE, int wF, int inTableSize=0);
@@ -122,11 +68,6 @@ namespace flopoco{
 		// The target precision: numbers may be truncated so that their LSB has weight -target_prec
 		int target_prec;
 
-		// Various subcomponents
-		Shifter *ao_lshift;   // ao stands for "almost one"
-		Shifter *ao_rshift;
-		LZOC *lzoc;
-		LZOCShifterSticky *final_norm;
 	};
 }
 #endif

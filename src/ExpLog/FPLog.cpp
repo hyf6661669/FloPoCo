@@ -144,6 +144,55 @@ namespace flopoco{
 		return tc;
 	}
 
+
+
+
+		TestList FPLog::unitTest(int index)
+		{
+		// the static list of mandatory tests
+			TestList testStateList;
+			vector<pair<string,string>> paramList;
+			
+			if(index==-1) 
+		{ // The unit tests
+
+			// First test with plainVHDL, then with cool multipliers
+			for(int wF=5; wF<53; wF+=1) // test various input widths
+			{ 
+				int nbByteWE = 6+(wF/10);
+				while(nbByteWE>wF){
+					nbByteWE -= 2;
+				}
+
+				paramList.push_back(make_pair("wF",to_string(wF)));
+				paramList.push_back(make_pair("wE",to_string(nbByteWE)));
+				paramList.push_back(make_pair("plainVHDL","true")); 
+				testStateList.push_back(paramList);
+				paramList.clear();
+			}
+			for(int wF=5; wF<53; wF+=1) // test various input widths
+			{ 
+				int nbByteWE = 6+(wF/10);
+				while(nbByteWE>wF){
+					nbByteWE -= 2;
+				}
+
+				paramList.push_back(make_pair("wF",to_string(wF)));
+				paramList.push_back(make_pair("wE",to_string(nbByteWE)));
+				testStateList.push_back(paramList);
+				paramList.clear();
+			}
+		}
+		else     
+		{
+				// finite number of random test computed out of index
+		}	
+
+		return testStateList;
+	}
+
+
+
 	
 	OperatorPtr FPLog::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
 		int wE;
@@ -166,6 +215,9 @@ namespace flopoco{
 			}
 	}
 
+
+
+	
 	void FPLog::registerFactory(){
 		UserInterface::add("FPLog", // name
 											 "Floating-point logarithm",
@@ -176,7 +228,8 @@ namespace flopoco{
                         method(int)=0: 0 for iterative, 1 for polynomial; \
                         inTableSize(int)=0: The input size to the tables of the iterative method, in bits, between 6 and 16. 0 choses a a sensible value",
 											 "For details on the technique used, see <a href=\"bib/flopoco.html#DetDinPuj2007:Arith\">this article</a> and <a href=\"bib/flopoco.html#2010-RR-FPLog\">this research report</a>.",
-											 FPLog::parseArguments
+											 FPLog::parseArguments,
+											 FPLog::unitTest
 											 ) ;
 
 	}

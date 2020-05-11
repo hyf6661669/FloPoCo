@@ -682,33 +682,34 @@ namespace flopoco{
 		
 #endif
 
-#if 0 // WIP BELOW
 
 
 
-#if OLD
+
 		if(false && getTarget()->isPipelined() && a[0]+1>=9) {
+			// TODO currently disabled, check it works
+			// This is a full (untruncated multiplier)
+#if OLD
 			IntMultiplier* p0 = new IntMultiplier(target, a[0]+1, wF+2, 0, false /*unsigned*/);
 			inPortMap  (p0, "X", "InvA0");
 			inPortMap  (p0, "Y", "Y0");
 			outPortMap (p0, "R", "P0");
 			vhdl << instance(p0, "p0_mult");
-			syncCycleFromSignal("P0");
-			setCriticalPath( p0->getOutputDelay("R") );
+#else // OLD
+			newInstance("IntMultiplier",
+								"p0_mult",
+								"wX=" + to_string(a[0]+1) + " wY=" + to_string(wF+2),
+								"X=>InvA0, Y=>Y0",
+								"R=>P0");
+#endif
 		}
 		else {
 			REPORT(DETAILED, "unpipelined multiplier for P0, implemented as * in VHDL");
-			nextCycle();
-			vhdl << tab << declare("P0",  psize[0]) << " <= InvA0 * Y0;" <<endl <<endl;
-			nextCycle();
-			setCriticalPath( 0 ); //FIXME
+			vhdl << tab << declare(getTarget()->logicDelay()+getTarget()->adderDelay(psize[0]), // TODO very approximate timing for a very flat mult
+														 "P0",  psize[0]) << " <= InvA0 * Y0;" <<endl <<endl;
 		}
-#else // OLD
 
 
-#endif
-
-		//double cpzi;
 		vhdl << tab << declare("Z1", s[1]) << " <= P0" << range (psize[0] - p[1]-3,  0) << ";" << endl;
 
 		for (i=1; i<= stages; i++) {
@@ -718,46 +719,39 @@ namespace flopoco{
 			vhdl << tab << declare(join("A",i), a[i]) <<      " <= " << join("Z",i) << range(s[i]-1,      s[i]-a[i]) << ";"<<endl;
 			vhdl << tab << declare(join("B",i), s[i]-a[i]) << " <= " << join("Z",i) << range(s[i]-a[i]-1, 0        ) << ";"<<endl;
 
-			//cpzi = getCriticalPath();
 			vhdl << tab << declare(join("ZM",i), psize[i]) << " <= " << join("Z",i) ;
 			if(psize[i] == s[i])
 				vhdl << ";"<<endl;
 			else
 				vhdl << range(s[i]-1, s[i]-psize[i])  << ";" << endl;
 
+			if(false){ // TODO currently unplugged, resurrect when the rest works 
 
 #if OLD
-			
-#if 0 // TODO unplugged
-			// TODO experiment with logic-based by setting the ratio to 0
-			IntMultiplier* pi = new IntMultiplier(target, a[i], psize[i], 0, false, 1.0 );
-			inPortMap  (pi, "X", join("A",i));
-			inPortMap  (pi, "Y", join("ZM",i));
-			outPortMap (pi, "R", join("P",i));
-			vhdl << instance(pi, join("p",i)+"_mult") << endl;
-
-			syncCycleFromSignal( join("P",i) );
-			setCriticalPath( pi->getOutputDelay("R") );
-
-#else
-			if(UserInterface::verbose) cerr << "> FPLogIterative: unpipelined multiplier for P"<<i<<", implemented as * in VHDL" << endl;
-			nextCycle();//
-			vhdl << tab << declare(join("P",i),  psize[i] + a[i]) << " <= " << join("A",i) << "*" << join("ZM",i) << ";" << endl;
-			nextCycle();
-			setCriticalPath( 0 ); //FIXME
-#endif
-			double cppi = getCriticalPath();
-			vhdl << tab << " -- delay at multiplier output is " << getCriticalPath() << endl;
+				// TODO experiment with logic-based by setting the ratio to 0
+				IntMultiplier* pi = new IntMultiplier(target, a[i], psize[i], 0, false, 1.0 );
+				inPortMap  (pi, "X", join("A",i));
+				inPortMap  (pi, "Y", join("ZM",i));
+				outPortMap (pi, "R", join("P",i));
+				vhdl << instance(pi, join("p",i)+"_mult") << endl;
 #else // OLD
 
-
+			newInstance("IntMultiplier",
+								join("p",i)+"_mult",
+								"wX=" + to_string(a[0]+1) + " wY=" + to_string(a[0]+1),
+								"X=>InvA0, Y=>Y0",
+								"R=>P0");
 #endif
+			}
+			else {
+				REPORT(DETAILED,"Unpipelined multiplier for P"<<i<<", implemented as * in VHDL");
+				vhdl << tab << declare(getTarget()->logicDelay()+getTarget()->adderDelay(psize[i]+a[i]), // TODO very approximate timing for a very flat mult
+															 join("P",i),  psize[i] + a[i]) << " <= " << join("A",i) << "*" << join("ZM",i) << ";" << endl;
+			}
 
 			int yisize = s[i]+p[i]+1; // +1 because implicit 1
 
 			// While the multiplication takes place, we may prepare the other term
-			// setCycleFromSignal(join("Z",i));
-			// setCriticalPath(cpzi);
 
 			string Yi= join("Y",i);
 			string Zi= join("Z",i);
@@ -766,7 +760,9 @@ namespace flopoco{
 			// We truncate EiY to a position well above target_prec
 			if(i==1) {
 				//manageCriticalPath( getTarget()->lutDelay());
-				vhdl << tab << declare(join("EiY",i), s[i+1]) << " <= " << Yi ;
+				vhdl << tab << declare(getTarget()->logicDelay(),
+															 join( "EiY",i), s[i+1])
+						 << " <= " << Yi ;
 				// now we may need to truncate or to pad Yi
 				if(yisize > s[i+1]) // truncate Yi
 					vhdl << range(yisize-1, yisize-s[i+1]);
@@ -789,24 +785,25 @@ namespace flopoco{
 			vhdl <<";"<<endl;
 #if OLD
 			IntAdder* addCycleI1 = new IntAdder ( target, s[i+1]);
-
-
 			inPortMap   ( addCycleI1, "X"  , join("addXIter",i) );
 			inPortMap   ( addCycleI1, "Y"  , join("EiY",i) );
 			inPortMapCst( addCycleI1, "Cin", " '0'" );
 			outPortMap  ( addCycleI1, "R"  , join("EiYPB",i) );
 			vhdl << instance ( addCycleI1, join("addIter1_",i) ) << endl;
-			syncCycleFromSignal ( join("EiYPB",i) );
-			setCriticalPath( addCycleI1->getOutputDelay("R") );
 
-			if(syncCycleFromSignal(join("P",i)))
-				setCriticalPath( cppi );
 #else // OLD
 
+			newInstance("IntAdder",
+									join("addIter1_",i),
+									"wIn="+to_string(s[i+1]),
+									"X=>"+join("addXIter",i) + ", Y=>"+join("EiY",i),
+									"R=>"+join("EiYPB",i),
+									"Cin=>'0'");
 
 #endif
 
-			vhdl << tab << declare(join("Pp", i), s[i+1])  << " <= " << rangeAssign(p[i]-a[i],  0,  "'1'") << " & not(" << join("P", i);
+			vhdl << tab << declare(getTarget()->logicDelay(),
+														 join("Pp", i), s[i+1])  << " <= " << rangeAssign(p[i]-a[i],  0,  "'1'") << " & not(" << join("P", i);
 			// either pad, or truncate P
 			if(p[i]-a[i]+1  + psize[i]+a[i]  < s[i+1]) // size of leading 0s + size of p
 				vhdl << " & "<< rangeAssign(s[i+1] - (p[i]-a[i]+1  + psize[i]+a[i]) - 1,    0,  "'0'");  // Pad
@@ -818,41 +815,27 @@ namespace flopoco{
 
 
 #if OLD
-#if 0
-			double ctperiod;
-			ctperiod = 1.0 / getTarget()->frequency();
-			getTarget()->setFrequency( 1.0 / (ctperiod - getTarget()->LogicToDSPWireDelay() ) );
 			IntAdder* addCycleI2 = new IntAdder ( target, s[i+1]);
-			getTarget()->setFrequency( 1.0 / ctperiod );
-#else
-			IntAdder* addCycleI2 = new IntAdder ( target, s[i+1]);
-#endif
-
 
 			inPortMap( addCycleI2, "X" , join("EiYPB",i) );
 			inPortMap( addCycleI2, "Y" , join("Pp", i) );
 			inPortMapCst( addCycleI2, "Cin", " '1'" );
 			outPortMap( addCycleI2, "R", join("Z", i+1) );
 			vhdl << instance ( addCycleI2, join("addIter2_",i) ) << endl;
-			syncCycleFromSignal ( join("Z", i+1) );
-			setCriticalPath( addCycleI2->getOutputDelay("R") );
-			vhdl << " -- the critical path at the adder output = " << getCriticalPath() << endl;
 #else // OLD
 
+			newInstance("IntAdder",
+									join("addIter2_",i),
+									"wIn="+to_string(s[i+1]),
+									"X=>"+join("EiYPB",i) + ", Y=>"+join("Pp",i),
+									"R=>"+join("Z",i+1),
+									"Cin=>'1'");
 
 #endif
 
 		}
 
 		vhdl << tab << declare("Zfinal", s[stages+1]) << " <= " << join("Z", stages+1) << ";" << endl;
-
-
-		// vhdl << tab << "--  Synchro between RR box and case almost 1" << endl;
-
-		// if (syncCycleFromSignal("small_absZ0_normd"))
-		// 	setCriticalPath(cpsmall_absZ0_normd);
-
-
 
 
 		// In the small path we need Z2O2 accurate to  (wF+gLog+2) - pfinal
@@ -864,8 +847,7 @@ namespace flopoco{
 		else
 			squarerInSize = sfinal-pfinal;
 
-		//manageCriticalPath( getTarget()->localWireDelay() +  getTarget()->lutDelay() );
-		vhdl << tab << declare("squarerIn", squarerInSize) << " <= "
+		vhdl << tab << declare(getTarget()->logicDelay(), "squarerIn", squarerInSize) << " <= "
 			 << "Zfinal(sfinal-1 downto sfinal-"<< squarerInSize << ") when doRR='1'" << endl;
 		if(squarerInSize>small_absZ0_normd_size)
 			vhdl << tab << "                 else (small_absZ0_normd & " << rangeAssign(squarerInSize-small_absZ0_normd_size-1, 0, "'0'") << ");  " << endl;
@@ -880,16 +862,15 @@ namespace flopoco{
 		vhdl << instance(sq, "squarer");
 		
 #else // OLD
-
-
+		// TODO replace with a squarer
+		vhdl << tab << declare("Z2o2_full", 2*squarerInSize) << " <= squarerIn*squarerIn;" << endl; 
 #endif
-		//manageCriticalPath(getTarget()->DSPToLogicWireDelay());
-		// double cpZ2o2_full_dummy = getCriticalPath();
+		
 		vhdl << tab << declare("Z2o2_full_dummy", 2*squarerInSize) << " <= Z2o2_full;" << endl;
 
 		vhdl << tab << declare("Z2o2_normal", sfinal-pfinal-1) << " <= Z2o2_full_dummy ("<< 2*squarerInSize-1 << "  downto " << 2*squarerInSize - (sfinal-pfinal-1) << ");" << endl;
 
-		vhdl << tab << declare( "addFinalLog1pY", sfinal) << " <= (pfinal downto 0  => '1') & not(Z2o2_normal);" <<endl;
+		vhdl << tab << declare(getTarget()->logicDelay(), "addFinalLog1pY", sfinal) << " <= (pfinal downto 0  => '1') & not(Z2o2_normal);" <<endl;
 
 #if OLD
 		IntAdder* addFinalLog1p_normal = new IntAdder( target, sfinal);
@@ -900,14 +881,18 @@ namespace flopoco{
 		inPortMapCst( addFinalLog1p_normal, "Cin", " '1'" );
 		outPortMap( addFinalLog1p_normal, "R", "Log1p_normal" );
 		vhdl << instance(addFinalLog1p_normal, "addFinalLog1p_normalAdder");
-
-		syncCycleFromSignal("Log1p_normal");
-		setCriticalPath( addFinalLog1p_normal->getOutputDelay("R") );
 #else // OLD
 
-
+		newInstance("IntAdder",
+								"addFinalLog1p_normalAdder",
+								"wIn="+to_string(sfinal),
+								"X=>Zfinal, Y=>addFinalLog1pY",
+								"R=>Log1p_normal",
+								"Cin=>'1'");
+		
 #endif
 
+#if 0 // WIP BELOW
 
 
 		vhdl << endl << tab << "-- Now the log tables, as late as possible" << endl;

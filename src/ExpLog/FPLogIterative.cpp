@@ -1034,7 +1034,7 @@ namespace flopoco{
 
 #endif
 
-		vhdl << tab << declare(join("sopX",i), target_prec) << " <= (" << rangeAssign(target_prec, target_prec-p[i],  "'0'") << " & " << join("L",i) <<");"<<endl;
+		vhdl << tab << declare(join("sopX",i), target_prec) << " <= (" << rangeAssign(target_prec-1, target_prec-p[i],  "'0'") << " & " << join("L",i) <<");"<<endl;
 
 
 #if OLD

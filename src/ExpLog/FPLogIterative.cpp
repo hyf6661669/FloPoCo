@@ -21,7 +21,8 @@
 #include <sstream>
 #include <math.h>	// for NaN
 #include "FPLogIterative.hpp"
-#include "TestBenches/FPNumber.hpp"
+//#include "TestBenches/FPNumber.hpp"
+#include "ConstMult/FixRealKCM.hpp"
 #include "utils.hpp"
 //#include "IntMult/IntSquarer.hpp"
 //#include "ConstMult/IntIntKCM.hpp"
@@ -207,7 +208,7 @@ namespace flopoco{
 		mpfr_init2(l,wOut);
 		mpz_init2(r,400);
 		apprinv = fit->output2double(fit->function(x));;
-		// result = double2output(log(apprinv));
+		// result = double2output(log(apprinv));o
 		mpfr_set_d(i, apprinv, GMP_RNDN);
 		mpfr_log(l, i, GMP_RNDN);
 		mpfr_neg(l, l, GMP_RNDN);
@@ -892,8 +893,6 @@ namespace flopoco{
 		
 #endif
 
-#if 0 // WIP BELOW
-
 
 		vhdl << endl << tab << "-- Now the log tables, as late as possible" << endl;
 
@@ -923,31 +922,58 @@ namespace flopoco{
 		outPortMap      (lt0, "Y", "L0");
 		vhdl << instance(lt0, "ltO");
 
-		vhdl << tab << declare("S1", lt0->wOut) << " <= L0;"<<endl;
 #else // OLD
 
+		vector<mpz_class> lt0Content;
+		for(int x=0; x<(1<<a[0]); x++) {
+			mpz_class result;
+			mpfr_t i,l;
+			mpz_t r;
+			mpfr_init(i);
+			mpfr_init2(l,target_prec);
+			mpz_init2(r,400);
 
-#endif
+			mpz_class fitout = it0Content[x];
+			double apprinv = ((double)fitout.get_si()) /  ((double)(1<<a[0])); 
+			mpfr_set_d(i, apprinv, GMP_RNDN);
+			mpfr_log(l, i, GMP_RNDN);
+			mpfr_neg(l, l, GMP_RNDN);
+			
+			// Remove the sum of small offsets that are added to the other log tables
+			for(int j=1; j<=stages; j++){
+				mpfr_set_d(i, 1.0, GMP_RNDN);
+				int pi=p[j];
+				mpfr_mul_2si(i, i, -2*pi, GMP_RNDN);
+				mpfr_sub(l, l, i,  GMP_RNDN);
+			}
+			// code the log in 2's compliment
+			mpfr_mul_2si(l, l, target_prec, GMP_RNDN);
+			mpfr_get_z(r, l, GMP_RNDN);
+			result = mpz_class(r); // signed
+
+			// This is a very inefficient way of converting
+			mpz_class t = mpz_class(1) << target_prec;
+			result = t+result;
+			if(result>t) result-=t;
+			//  cout << "x="<<x<<" apprinv="<<apprinv<<" logapprinv="<<log(apprinv)<<" result="<<result<<endl;
+			mpfr_clear(i);
+			mpfr_clear(l);
+			mpz_clear(r);
+			lt0Content.push_back(result);
+		}
+		Table::newUniqueInstance(this, "A0", "L0",
+														 lt0Content,
+														 "LogTable0",
+														 a[0], target_prec);
+
+		
+#endif // OLD
+
+		vhdl << tab << declare("S1", target_prec) << " <= L0;"<<endl;
 
 		for (i=1; i<= stages; i++) {
 
 #if OLD
-
-#if 0
-			if (i==1){
-				setCycleFromSignal("Log1p_normal", false);
-				setCycle(getCurrentCycle() - profilingDepth , true);
-				setCriticalPath(0.0);
-				manageCriticalPath(getTarget()->LogicToRAMWireDelay() + getTarget()->RAMDelay());
-			}else{
-				manageCriticalPath( getTarget()->LogicToDSPWireDelay() + getTarget()->RAMDelay() );
-			}
-#else
-			if (i>1){
-				manageCriticalPath( getTarget()->LogicToDSPWireDelay() + getTarget()->RAMDelay() );
-			}
-
-#endif
 
 			OtherLogTable* lti = new OtherLogTable(target, a[i], target_prec - p[i], i, a[i], p[i]);
 			inPortMap       (lti, "X", join("A", i));
@@ -957,15 +983,62 @@ namespace flopoco{
 
 #else // OLD
 
+			vector<mpz_class> ltiContent;
+			for(int x=0; x<(1<<a[i]); x++) {
+				mpz_class result;
+				mpfr_t xmp,l;
+				mpz_t r;
+
+				int wIn=a[i];
+				int wOut=target_prec - p[i];
+				mpfr_init(xmp);
+				mpfr_init2(l,wOut);
+				mpz_init2(r,400);
+
+				// input x to double 
+				double  xd;
+				// computation in double is exact as long as we don't want a quad operator...
+				double Ei;
+				if((i>1) || (i==1 && (1==(x>>(wIn-1)))) )
+					Ei = 1.0 / ((double) (((uint64_t) 1)<<(2*p[i])));
+				else
+					Ei = 1.0 / ((double) (((uint64_t) 1)<<(2*p[i]+1)));
+
+				xd = ((double) (-x))   /   ((double) (((uint64_t) 1)<<(p[i]+wIn)));
+
+				//cout << endl << d << " " << Ei << "   " ;
+				xd += Ei;
+				mpfr_set_d(xmp, xd, GMP_RNDN);
+				mpfr_log1p(l, xmp, GMP_RNDN);
+				mpfr_neg(l, l, GMP_RNDN);
+				// cout << "i=" << i <<  " div" << (p[i]+wIn+1) << "  x=" << x << "  apprinv=" << apprinv << "  l=" << mpfr_get_d(l, GMP_RNDN) << endl;
+				// Add the small offset that ensures that it never gets negative (the sum of these offsets will be subtracted to L0)
+				mpfr_set_d(xmp, 1.0, GMP_RNDN);
+				mpfr_mul_2si(xmp, xmp, -2*p[i], GMP_RNDN);
+				mpfr_add(l, l, xmp,  GMP_RNDN);
+
+				mpfr_mul_2si(l, l, p[i]+wOut, GMP_RNDN);
+				mpfr_get_z(r, l, GMP_RNDN);
+				result=mpz_class(r);
+				mpfr_clear(xmp);
+				mpfr_clear(l);
+				mpz_clear(r);
+
+				ltiContent.push_back(result);
+			}
+		Table::newUniqueInstance(this, join("A",i), join("L",i),
+														 ltiContent,
+														 join("LogTable",i),
+														 a[i], target_prec - p[i]);
+
 
 #endif
 
+		vhdl << tab << declare(join("sopX",i), target_prec) << " <= (" << rangeAssign(target_prec, target_prec-p[i],  "'0'") << " & " << join("L",i) <<");"<<endl;
+
 
 #if OLD
-			// if( getTarget()->normalizedFrequency() > 0.5  ) { // we targetting a deeply pipelined operator
-			// 	nextCycle(); nextCycle();// gets absorbed in the BRams, and reinits the critical paths, and we have plenty of cycles to live in
-			// }
-			IntAdder * adderS = new IntAdder( target, lt0->wOut);
+			IntAdder * adderS = new IntAdder( target, target_prec);
 
 			inPortMap( adderS, "X", join("S",i) );
 			inPortMap( adderS, "Y", join("sopX",i) );
@@ -975,15 +1048,19 @@ namespace flopoco{
 			vhdl << instance( adderS, join("adderS",i) ) << endl;
 
 
-			vhdl << tab << declare("almostLog", lt0->wOut) << " <= " << join("S",stages+1) << ";" << endl;
 #else // OLD
 
-
+		newInstance("IntAdder",
+								join("adderS",i),
+								"wIn="+to_string(target_prec),
+								"X=>"+join("S",i)+", Y=>"+join("sopX",i),
+								"R=>"+join("S",i+1),
+								"Cin=>'0'");
 #endif
 
 		}
 
-		//		nextCycle();
+		vhdl << tab << declare("almostLog", target_prec) << " <= " << join("S",stages+1) << ";" << endl;
 
 		vhdl << tab << declare( "adderLogF_normalY", target_prec ) << " <= ((targetprec-1 downto sfinal => '0') & Log1p_normal);" << endl;
 #if OLD
@@ -993,10 +1070,14 @@ namespace flopoco{
 		inPortMapCst( adderLogF_normal, "Cin", "'0'");
 		outPortMap( adderLogF_normal, "R", "LogF_normal" );
 		vhdl << instance( adderLogF_normal, "adderLogF_normal");
-
-		syncCycleFromSignal("LogF_normal");
 #else // OLD
 
+		newInstance("IntAdder",
+								"adderLogF_normal",
+								"wIn="+to_string(target_prec),
+								"X=>almostLog, Y=>adderLogF_normalY",
+								"R=>LogF_normal",
+								"Cin=>'0'");
 
 #endif
 
@@ -1022,6 +1103,17 @@ namespace flopoco{
 		setCycle(getCurrentCycle() + kcm->getPipelineDepth());
 #else // OLD
 
+		newInstance("FixRealKCM",
+								"MulLog2",
+								// unsigned here, the conversion to signed comes later
+								 "signedIn=0 msbIn=" + to_string(wE-1)
+								+ " lsbIn=0"
+								+ " lsbOut=" + to_string(-wF-gLog) 
+								+ " constant=log(2)"
+								+ " targetUlpError=1.0",
+								"X=>absE",
+								"R=>absELog2");
+				
 
 #endif
 
@@ -1033,9 +1125,6 @@ namespace flopoco{
 		vhdl << tab << declare("lnaddX", wE+target_prec) << " <= absELog2_pad;"<<endl;
 
 
-		// setCriticalPath( adderLogF_normal->getOutputDelay("R") );
-		// if (!manageCriticalPath(getTarget()->lutDelay()))
-		// 	setCriticalPath( max( getCriticalPath(), kcm->getOutputDelay("R")) );
 		vhdl << tab << declare("lnaddY", wE+target_prec) << " <= LogF_normal_pad when sR='0' else not(LogF_normal_pad); "<<endl;
 
 
@@ -1049,9 +1138,14 @@ namespace flopoco{
 		vhdl << instance( lnadder, "lnadder") << endl;
 #else // OLD
 
+		newInstance("IntAdder",
+								"lnadder",
+								"wIn="+to_string(wE+target_prec),
+								"X=>lnaddX, Y=>lnaddY, Cin=>sR",
+								"R=>Log_normal"
+								);
 
 #endif
-
 #if OLD
 		final_norm = new LZOCShifterSticky(target, wE+target_prec, target_prec, intlog2(wE+(wF>>1))+1, false, 0);
 		inPortMap(final_norm, "I", "Log_normal");
@@ -1065,8 +1159,14 @@ namespace flopoco{
 		// 		setCycleFromSignal("Z2o2_full");
 #else // OLD
 
+		newInstance("LZOCShifterSticky",
+								"final_norm",
+								"wIn=" + to_string(wE+target_prec) + " wOut=" + to_string(target_prec) + " wCount=" + to_string(intlog2(wE+(wF>>1))+1) + " computeSticky=false countType=0",
+								"I=>Log_normal",
+								"O=>Log_normal_normd, Count=>E_normal");
 
 #endif
+
 
 		int Z2o2_small_size=(wF+gLog+2) - pfinal; // we need   (wF+gLog+2) - pfinal bits of Z2O2
 
@@ -1088,6 +1188,11 @@ namespace flopoco{
 
 #else // OLD
 
+		newInstance("Shifter",
+								"ao_rshift",
+								"wIn=" + to_string(Z2o2_small_size) + " maxShift=" + to_string(sfinal-pfinal+1) + " dir=1", // dir=right
+								"X=>Z2o2_small_bs, S=>shiftvalinR",
+								"R=>Z2o2_small_s");
 
 #endif
 
@@ -1111,13 +1216,14 @@ namespace flopoco{
 		inPortMap (log_small_adder, "Cin", "nsRCin");
 		outPortMap(log_small_adder, "R", "Log_small");
 		vhdl << instance(log_small_adder, "log_small_adder") << endl;
-		// ////////////////////////////////////////////////////////////////////////-> start the other path
-		// syncCycleFromSignal("Log_small");
-		// setCriticalPath(log_small_adder->getOutputDelay("R") );
-		// vhdl << " -- critical path here is " << getCriticalPath() << endl;
-		// manageCriticalPath( getTarget()->localWireDelay() + getTarget()->lutDelay() );
 #else // OLD
 
+		newInstance("IntAdder",
+								"log_small_adder",
+								"wIn="+to_string(wF+gLog+2),
+								"X=>Z_small, Y=>Log_smallY, Cin=>nsRCin",
+								"R=>Log_small"
+								);
 
 #endif
 
@@ -1156,13 +1262,6 @@ namespace flopoco{
 		vhdl << tab << declare("Log_small_normd", wF+gLog) << " <= Log_small(wF+g+1 downto 2) when Log_small(wF+g+1)='1'" << endl
 			  << "           else Log_small(wF+g downto 1)  when Log_small(wF+g)='1'  -- remove the first zero" << endl
 			  << "           else Log_small(wF+g-1 downto 0)  ; -- remove two zeroes (extremely rare, 001000000 only)" << endl ;
-
-
-// //		//////////////////////////////////////// get back to Log_normal_normd
-// 		if ( syncCycleFromSignal("E_small") )
-// 			setCriticalPath( cpE_small );
-// 		if ( syncCycleFromSignal("E_normal") )
-// 			setCriticalPath( cpE_normal );
 
 
 		int E_normalSize = getSignalByName("E_normal")->width();
@@ -1213,18 +1312,24 @@ namespace flopoco{
 		// manageCriticalPath(getTarget()->lutDelay() );
 #else // OLD
 
+		newInstance("IntAdder",
+								"finalRoundAdder",
+								"wIn="+to_string(wE+wF),
+								"X=>fraX, Y=>fraY",
+								"R=>EFR",
+								"Cin=>'0'");
 
 #endif
 
-		vhdl << tab << "R(wE+wF+2 downto wE+wF) <= \"110\" when ((XExnSgn(2) and (XExnSgn(1) or XExnSgn(0))) or (XExnSgn(1) and XExnSgn(0))) = '1' else" << endl
-			  << "                              \"101\" when XExnSgn(2 downto 1) = \"00\"  else" << endl
-			  << "                              \"100\" when XExnSgn(2 downto 1) = \"10\"  else" << endl
-			  << "                              \"00\" & sR when (((Log_normal_normd(targetprec-1)='0') and (small='0')) or ( (Log_small_normd (wF+g-1)='0') and (small='1'))) or (ufl = '1') else" << endl
-			  << "                               \"01\" & sR;" << endl;
-		vhdl << tab << "R(wE+wF-1 downto 0) <=  EFR;" << endl;
+		vhdl << tab << declare(getTarget()->logicDelay(),"Rexn", 3)
+				 << " <= \"110\" when ((XExnSgn(2) and (XExnSgn(1) or XExnSgn(0))) or (XExnSgn(1) and XExnSgn(0))) = '1' else" << endl
+				 << "                              \"101\" when XExnSgn(2 downto 1) = \"00\"  else" << endl
+				 << "                              \"100\" when XExnSgn(2 downto 1) = \"10\"  else" << endl
+				 << "                              \"00\" & sR when (((Log_normal_normd(targetprec-1)='0') and (small='0')) or ( (Log_small_normd (wF+g-1)='0') and (small='1'))) or (ufl = '1') else" << endl
+				 << "                               \"01\" & sR;" << endl;
+		vhdl << tab << "R<=  Rexn & EFR;" << endl;
 
-#endif
-		REPORT(0, "Leaving constructor");
+		REPORT(3, "Leaving constructor");
 	}
 
 	FPLogIterative::~FPLogIterative()

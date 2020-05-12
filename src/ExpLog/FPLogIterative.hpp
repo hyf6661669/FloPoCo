@@ -23,7 +23,7 @@ namespace flopoco{
 		FPLogIterative(OperatorPtr parentOp, Target* target, int wE, int wF, int inTableSize=0);
 		~FPLogIterative();
 
-
+	private:
 		/** The input sizes to the successive tables*/
 		int a[MAXRRSTAGES];
 

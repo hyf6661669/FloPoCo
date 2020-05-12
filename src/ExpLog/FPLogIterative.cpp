@@ -285,8 +285,6 @@ namespace flopoco{
 
 
 		// On we go with the vhdl
-
-
 		addConstant("g",  "positive",          gLog);
 		addConstant("wE", "positive",          wE);
 		addConstant("wF", "positive",          wF);
@@ -296,7 +294,41 @@ namespace flopoco{
 		addConstant("pfinal", "positive",     p[stages+1]);
 
 		vhdl << tab << declare("XExnSgn", 3) << " <=  X(wE+wF+2 downto wE+wF);" << endl;
-		vhdl << tab << declare("FirstBit") << " <=  X(wF-1);" << endl;
+#if 0 // BUG memory bug here:  s[] corrupted when FPLog called without method nor intablesize
+		// To reproduce:  ./flopoco verbose=4 FPLog   wE=7 wF=10 TestBench n=1000
+		// I added the exit(1) because otherwise this bug triggers an infinite loop later
+		// Maybe there is a memory leak bug in FlopocoStream
+		// but the funny thing is that it disappears when passing either method or intablesize to the CLI
+		// Search me
+
+		REPORT(0,"*********************** AAA ");
+			{
+				cerr << "> FPLogIterative\t Initial parameters:" << endl;
+				for(int i=0; i<=stages+1; i++) {
+				cerr<<"\ts"<<i<<"=" << s[i];
+				cerr<<"\tp"<<i<<"=" << p[i];
+				cerr <<endl;
+				}
+			}
+			REPORT(0, vhdl.str());
+
+			// Offending line
+			vhdl << tab << declare("FirstBit") << " <=  X(wF-1);" << endl;
+
+			REPORT(0, vhdl.str());
+			REPORT(0,"*********************** BBB " );
+			{
+				cerr << "> FPLogIterative\t Initial parameters:" << endl;
+				for(int i=0; i<=stages+1; i++) {
+				cerr<<"\ts"<<i<<"=" << s[i];
+				cerr<<"\tp"<<i<<"=" << p[i];
+				cerr <<endl;
+				}
+			}
+			exit(1);
+#else // Dirty fix but I really don't have a clue why
+			vhdl << tab << declare("FirstBit") << " <=  X(" << wF -1<<");" << endl;
+#endif			
 
 		vhdl << tab << declare(getTarget()->logicDelay(), // this is a MUX
 													 "Y0", wF+2) << " <= \"1\" & X(wF-1 downto 0) & \"0\" when FirstBit = '0' else \"01\" & X(wF-1 downto 0);" << endl;
@@ -311,7 +343,6 @@ namespace flopoco{
 		vhdl << tab << declare(getTarget()->adderDelay(wE),
 													 "E", wE) << " <= (X(wE+wF-1 downto wF)) - (\"0\" & (wE-2 downto 1 => '1') & (not FirstBit));" << endl;
 
-		//manageCriticalPath( getTarget()->adderDelay(wE) + getTarget()->lutDelay() );
 		vhdl << tab << declare(getTarget()->logicDelay(),
 													 "absE", wE) << " <= ((wE-1 downto 0 => '0') - E)   when sR = '1' else E;" << endl;
 		vhdl << tab << declare(getTarget()->logicDelay(),
@@ -322,7 +353,6 @@ namespace flopoco{
 								"wIn=" + to_string(wF) + " countType=-1",
 								"I=>Y0h, OZB=>FirstBit",
 								"O=>lzo");
-
 
 		vhdl << tab << declare("pfinal_s", intlog2(wF)) << " <= \"" << unsignedBinary(mpz_class(pfinal), intlog2(wF)) << "\";"<<endl;
 		vhdl << tab << declare(getTarget()->adderDelay(intlog2(wF)+1),

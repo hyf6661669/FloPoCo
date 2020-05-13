@@ -86,11 +86,10 @@ namespace flopoco{
 
 
 	FPLogIterative::FPLogIterative(OperatorPtr parentOp, Target* target,
-																 int wE, int wF,
+																 int wE_, int wF_,
 																 int inTableSize)
-		: FPLog(parentOp, target, wE, wF)
+		: Operator(parentOp, target), wE(wE_), wF(wF_)
 	{
-
 		setCopyrightString("F. de Dinechin, C. Klein  (2008-2011)");
 
 		ostringstream o;
@@ -295,7 +294,7 @@ namespace flopoco{
 
 		vhdl << tab << declare("XExnSgn", 3) << " <=  X(wE+wF+2 downto wE+wF);" << endl;
 #if 0 // BUG memory bug here:  s[] corrupted when FPLog called without method nor intablesize
-		// To reproduce:  ./flopoco verbose=4 FPLog   wE=7 wF=10 TestBench n=1000
+		// To reproduce:  
 		// I added the exit(1) because otherwise this bug triggers an infinite loop later
 		// Maybe there is a memory leak bug in FlopocoStream
 		// but the funny thing is that it disappears when passing either method or intablesize to the CLI
@@ -305,29 +304,33 @@ namespace flopoco{
 			{
 				cerr << "> FPLogIterative\t Initial parameters:" << endl;
 				for(int i=0; i<=stages+1; i++) {
+				cerr<<"\ts="<<s;
 				cerr<<"\ts"<<i<<"=" << s[i];
 				cerr<<"\tp"<<i<<"=" << p[i];
-				cerr <<endl;
+				cerr <<endl;				
+
 				}
 			}
 			REPORT(0, vhdl.str());
 
-			// Offending line
-			vhdl << tab << declare("FirstBit") << " <=  X(wF-1);" << endl;
+			vhdl << tab << declare("FirstBit")		<< " <=  X(wF-1);" << endl;
 
 			REPORT(0, vhdl.str());
 			REPORT(0,"*********************** BBB " );
 			{
 				cerr << "> FPLogIterative\t Initial parameters:" << endl;
 				for(int i=0; i<=stages+1; i++) {
+				cerr<<"\ts="<<s;
 				cerr<<"\ts"<<i<<"=" << s[i];
 				cerr<<"\tp"<<i<<"=" << p[i];
 				cerr <<endl;
 				}
 			}
 			exit(1);
-#else // Dirty fix but I really don't have a clue why
-			vhdl << tab << declare("FirstBit") << " <=  X(" << wF -1<<");" << endl;
+#else 
+			vhdl << tab << declare("FirstBit")		<< " <=  X(wF-1);" << endl;
+			// no longer need for the Dirty fix that  I really don't have a clue why
+			//			vhdl << tab << declare("FirstBit") << " <=  X(" << wF -1<<");" << endl;
 #endif			
 
 		vhdl << tab << declare(getTarget()->logicDelay(), // this is a MUX
@@ -849,4 +852,29 @@ namespace flopoco{
 	{
 	}
 
+
+	void FPLogIterative::emulate(TestCase * tc)
+	{
+		// use the generic one defined in FPLog
+		FPLog::emulate(tc, wE, wF);
+	}
+
+
+
+
+
+	void FPLogIterative::buildStandardTestCases(TestCaseList* tcl){
+		// use the generic one defined in FPLog
+		// Although standard test cases may be architecture-specific, it can't hurt.
+		FPLog::buildStandardTestCases(this, tcl, wE, wF);
+	}
+
+
+
+	TestCase* FPLogIterative::buildRandomTestCase(int i){
+		// use the generic one defined in FPLog
+		return FPLog::buildRandomTestCase(this, i, wE, wF);
+	}
+
+	
 }

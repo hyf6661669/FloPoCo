@@ -14,7 +14,7 @@ namespace flopoco{
 
 #define MAXRRSTAGES 2000 // 4000 bits of accuracy should be enough for anybody
 
-	class FPLogIterative : public FPLog
+	class FPLogIterative : public Operator
 	{
 	protected:
 
@@ -22,8 +22,16 @@ namespace flopoco{
 	public:
 		FPLogIterative(OperatorPtr parentOp, Target* target, int wE, int wF, int inTableSize=0);
 		~FPLogIterative();
+		
+		void emulate(TestCase * tc);
+		void buildStandardTestCases(TestCaseList* tcl);
+		TestCase* buildRandomTestCase(int i);
 
 	private:
+		int wE; 		/**< exponent size */
+
+		int wF; 		/**< mantissa size */ 
+		
 		/** The input sizes to the successive tables*/
 		int a[MAXRRSTAGES];
 

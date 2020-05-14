@@ -12,6 +12,8 @@
 
   */
 
+
+
 #include "FPAddSinglePath.hpp"
 #include "FPAdd.hpp"
 
@@ -158,6 +160,19 @@ namespace flopoco{
 		// shift right the significand of new Y with as many positions as the exponent difference suggests (alignment)
 		REPORT(DETAILED, "Building right shifter");
 
+
+/* The following #if allows the following experiment with vivado 2016.4 on Kintex
+
+./flopoco frequency=1 FPAdd we=8 wf=23 Wrapper
+ with full shifter then sticky 
+404 LUTs 12.345 ns
+
+With combined shifter sticky (and a few useless gates
+324 11.795 
+
+*/
+		
+#if 0 // full shifter, then sticky
 		newInstance("Shifter",
 								"RightShifterComponent",
 								"wIn=" + to_string(wF+1) + " maxShift=" + to_string(wF+3) + " dir=1",
@@ -166,9 +181,21 @@ namespace flopoco{
 		
 		vhdl<<tab<< declare(getTarget()->eqConstComparatorDelay(wF+1), "sticky") 
 				<< " <= '0' when (shiftedFracY("<<wF<<" downto 0) = " << zg(wF+1) << ") else '1';"<<endl;
-		
-		//pad fraction of Y [overflow][shifted frac having inplicit 1][guard][round]
 		vhdl<<tab<< declare("fracYpad", wF+4)      << " <= \"0\" & shiftedFracY("<<2*wF+3<<" downto "<<wF+1<<");"<<endl;
+
+#else //combined shifter+Sticky
+		// TODO ugly, but shifter+sticky doesn't work for win!=wout
+		vhdl<<tab<< declare("fracYuglyhack", wF+3)      << " <= fracY &\"00\";"<<endl;
+		newInstance("Shifter",
+								"RightShifterComponent",
+								"wIn=" + to_string(wF+3) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
+								"X=>fracYuglyhack,S=>shiftVal",
+								"R=>shiftedFracY, Sticky=>sticky");
+		
+		vhdl<<tab<< declare("fracYpad", wF+4)      << " <= \"0\" & shiftedFracY;"<<endl;
+		
+#endif
+		//pad fraction of Y [overflow][shifted frac having inplicit 1][guard][round]
 		vhdl<<tab<< declare("EffSubVector", wF+4) << " <= ("<<wF+3<<" downto 0 => EffSub);"<<endl;
 		vhdl<<tab<< declare(getTarget()->logicDelay(2), "fracYpadXorOp", wF+4)
 				<< " <= fracYpad xor EffSubVector;"<<endl;

@@ -41,9 +41,13 @@ namespace flopoco{
 
 		//cout << endl << "! Shifter::Shifter, wout=" << wOut << endl << endl;
 
-		if(wOut==-1)
-			wOut=wIn+maxShift;
-
+		// -------- Parameter set up -----------------
+		if(wOut==-1){
+			if(computeSticky)
+				wOut =  wIn;
+			else
+				wOut = wIn + maxShift;
+		}
 		//cout << endl << "!! Shifter::Shifter, wout=" << wOut << endl << endl;
 
 		//Sanity check -- there should probably be more
@@ -62,11 +66,6 @@ namespace flopoco{
 		
 		REPORT(DETAILED, " wIn="<<wIn<<" maxShift="<<maxShift<<" direction="<< (direction == Right?  "RightShifter": "LeftShifter") );
 
-		// -------- Parameter set up -----------------
-		if(computeSticky)
-			wOut =  wIn;
-		else
-			wOut = wIn + maxShift;
 
 		wShiftIn     = intlog2(maxShift);
 
@@ -92,7 +91,8 @@ namespace flopoco{
 		double levelDelay;
 		double totalDelay=0; // for reporting
 
-		if (wOut==wIn && computeSticky) {
+		if (computeSticky) {
+			// TODO if wIn>wOut, begin with shifts without sticky, then start sticky computation 
 			// It is better to start the loop with larger bits so as to give time to sticky computation.
 			// The datapath size is constant anyway
 			vhdl << tab << declare(join("level", wShiftIn), wIn) << "<= X;" << endl;

@@ -195,7 +195,7 @@ string IntConstMultShiftAdd_SUB3_2N::get_realisation(map<adder_graph_base_node_t
 
 string IntConstMultShiftAdd_DECODER::get_realisation(map<adder_graph_base_node_t *, IntConstMultShiftAdd_BASE *> &InfoMap)
 {
-    map<uint,uint > decoder_content;
+    map<unsigned int,unsigned int > decoder_content;
     if( node->nodeType == NODETYPE_ADDSUB3_2STATE ){
         int i=0;
         for(map<short,vector<int> >::iterator iter=((IntConstMultShiftAdd_ADDSUB3_2STATE*)node)->adder_states.begin();
@@ -479,14 +479,14 @@ string IntConstMultShiftAdd_MUX::get_realisation(map<adder_graph_base_node_t *, 
     int neg_shift=0;
     if( is_a<adder_subtractor_node_t>(*base_node) ){
         adder_subtractor_node_t* t = (adder_subtractor_node_t*)base_node;
-        for(uint i=0;i<t->input_shifts.size();i++){
+        for(unsigned int i=0;i<t->input_shifts.size();i++){
             if(t->input_shifts[i]<neg_shift )
                 neg_shift = t->input_shifts[i];
         }
     }
     else if( is_a<conf_adder_subtractor_node_t>(*base_node) ){
         conf_adder_subtractor_node_t* t = (conf_adder_subtractor_node_t*)base_node;
-        for(uint i=0;i<t->input_shifts.size();i++){
+        for(unsigned int i=0;i<t->input_shifts.size();i++){
             if(t->input_shifts[i]<neg_shift )
                 neg_shift = t->input_shifts[i];
         }
@@ -553,14 +553,14 @@ string IntConstMultShiftAdd_BASE::getNegativeShiftString(string signalName,int o
     int neg_shift=0;
     if( is_a<adder_subtractor_node_t>(*base_node) ){
         adder_subtractor_node_t* t = (adder_subtractor_node_t*)base_node;
-        for(uint i=0;i<t->input_shifts.size();i++){
+        for(unsigned int i=0;i<t->input_shifts.size();i++){
             if(t->input_shifts[i]<neg_shift )
                 neg_shift = t->input_shifts[i];
         }
     }
     else if( is_a<conf_adder_subtractor_node_t>(*base_node) ){
         conf_adder_subtractor_node_t* t = (conf_adder_subtractor_node_t*)base_node;
-        for(uint i=0;i<t->input_shifts.size();i++){
+        for(unsigned int i=0;i<t->input_shifts.size();i++){
             if(t->input_shifts[i]<neg_shift )
                 neg_shift = t->input_shifts[i];
         }

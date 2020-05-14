@@ -16,7 +16,7 @@
 using namespace std;
 namespace flopoco {
 
-    Xilinx_TernaryAdd_2State_slice::Xilinx_TernaryAdd_2State_slice(Operator *parentOp, Target *target, const uint &wIn , const bool &is_initial , const std::string &lut_content ) : Operator( parentOp, target ) {
+    Xilinx_TernaryAdd_2State_slice::Xilinx_TernaryAdd_2State_slice(Operator *parentOp, Target *target, const unsigned int &wIn , const bool &is_initial , const std::string &lut_content ) : Operator( parentOp, target ) {
         setCopyrightString( "Marco Kleinlein" );
 
 
@@ -53,7 +53,7 @@ namespace flopoco {
             vhdl << tab << tab << "cc_s     <= (fillup_width downto 1 => '0') & lut_o6;" << endl;
         }
 
-        for( uint i = 0; i < wIn; ++i  ) {
+        for( unsigned int i = 0; i < wIn; ++i  ) {
 			Xilinx_LUT6_2 *lut_bit_i = new Xilinx_LUT6_2( this,target );
             lut_bit_i->setGeneric( "init", lut_content, 64 );
             inPortMap( "i0", "z_in" + of( i ) );

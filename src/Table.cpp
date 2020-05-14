@@ -138,7 +138,7 @@ namespace flopoco{
 		//set maxIn
 		if(maxIn < 0){
 			REPORT(DEBUG, "WARNING: maxIn not set, or set to an invalid value; will use the value determined from the values to be written in the table.");
-			maxIn = values.size()-1;
+			maxIn = int(values.size()-1);
 		}
 
 		if((1<<wIn) < maxIn){

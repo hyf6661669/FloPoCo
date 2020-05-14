@@ -16,6 +16,7 @@ Copyright © ENS-Lyon, INRIA, CNRS, UCBL,
 #include <string>
 #include <sstream>
 #include <cstdlib>
+#include <ctime>
 #include "Operator.hpp"
 #include "utils.hpp"
 #include "FloorplanningHelper.hpp"

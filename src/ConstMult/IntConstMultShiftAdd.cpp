@@ -9,7 +9,6 @@
 
 #include <cstdlib>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <fcntl.h>

@@ -123,7 +123,7 @@ void TilingStrategyOptimalILP::constructProblem()
 
     vector<vector<vector<ScaLP::Variable>>> solve_Vars(wS, vector<vector<ScaLP::Variable>>(wX+x_neg, vector<ScaLP::Variable>(wY+y_neg)));
     ScaLP::Term maxEpsTerm;
-    __uint64_t sumOfPosEps = 0;
+    uint64_t sumOfPosEps = 0;
     // add the Constraints
     cout << "   adding the constraints to problem formulation..." << endl;
     for(int y = 0; y < wY; y++){

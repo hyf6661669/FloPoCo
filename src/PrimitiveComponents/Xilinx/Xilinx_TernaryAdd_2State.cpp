@@ -46,7 +46,7 @@ namespace flopoco {
         }
 
         addOutput( "sum_o", wIn );
-        const uint num_slices = ( ( wIn - 1 ) / 4 ) + 1;
+        const unsigned int num_slices = ( ( wIn - 1 ) / 4 ) + 1;
         declare( "x", wIn );
         declare( "y", wIn );
         declare( "z", wIn );
@@ -79,7 +79,7 @@ namespace flopoco {
         }
 
         if ( num_slices > 1 ) {
-            for( uint i = 0; i < num_slices; ++i ) {
+            for( unsigned int i = 0; i < num_slices; ++i ) {
                 if( i == 0 ) {  // FIRST SLICE
                     Xilinx_TernaryAdd_2State_slice *first_slice = new Xilinx_TernaryAdd_2State_slice( this, target, 4, true, lut_content );
                     addSubComponent( first_slice );

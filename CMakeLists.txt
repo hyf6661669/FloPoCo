@@ -103,14 +103,14 @@ ELSE (MPFI_H AND MPFI_LIB)
   MESSAGE(FATAL_ERROR "Could not find MPFI (found: ${MPFI_H},${MPFI_LIB})")
 ENDIF (MPFI_H AND MPFI_LIB)
 
-# Detect Python
+# Detect Python 2
 FIND_PATH(PYTHON_H
   python2.7/Python.h
   DOC "Path of Python.h"
   )
 
 FIND_LIBRARY(PYTHON_LIB
-  NAMES libpython2.7.so libpython2.7.dylib
+  NAMES libpython2.7 libpython2.7.so libpython2.7.dylib # is .so and .dylib necessary?
   HINTS "/usr/lib/x86_64-linux-gnu"
   DOC "Directory of the Python library"
   )
@@ -120,9 +120,9 @@ IF ( PYTHON_H AND PYTHON_LIB )
 ENDIF ( PYTHON_H AND PYTHON_LIB )
 
 IF ( PYTHON_FOUND )
-  MESSAGE ( STATUS "Found Python : ${PYTHON_H},${PYTHON_LIB}" )
+  MESSAGE ( STATUS "Found Python 2: ${PYTHON_H},${PYTHON_LIB}" )
 ELSE ( PYTHON_FOUND )
-  MESSAGE ( STATUS "Could not find (found: ${PYTHON_H},${PYTHON_LIB}), no flopoco_soaktest will be available")
+  MESSAGE ( STATUS "Could not find Python 2 (found: ${PYTHON_H},${PYTHON_LIB}), no flopoco_soaktest will be available")
 ENDIF ( PYTHON_FOUND )
 
 # find boost random
@@ -132,7 +132,7 @@ FIND_PATH(BOOST_RANDOM_H
   )
 
 FIND_LIBRARY(BOOST_RANDOM_LIB
-  NAMES libboost_random.so
+  NAMES libboost_random libboost_random-mt libboost_random.so # is .so necessary?
   DOC "Directory of the boost random library"
   )
 
@@ -153,7 +153,7 @@ ENDIF ( BOOST_RANDOM_FOUND )
 
 # Detect Sollya
 FIND_LIBRARY( SOLLYA_LIB
-  NAMES libsollya.so libsollya.dylib
+  NAMES libsollya libsollya.so libsollya.dylib # is .so and .dylib necessary?
   HINTS "/usr/lib/x86_64-linux-gnu"
   )
 
@@ -164,7 +164,7 @@ FIND_PATH(SOLLYA_H
 IF (SOLLYA_LIB AND SOLLYA_H)
   MESSAGE(STATUS "Found Sollya: ${SOLLYA_LIB},${SOLLYA_H}")
 ELSE (SOLLYA_LIB AND SOLLYA_H)
-  MESSAGE(FATAL_ERROR "Sollya not found (found: ${SOLLYA_LIB},${SOLLYA_H})")
+  MESSAGE(FATAL_ERROR "Could not find Sollya (found: ${SOLLYA_LIB},${SOLLYA_H})")
 ENDIF (SOLLYA_LIB AND SOLLYA_H)
 
 
@@ -312,41 +312,39 @@ FLEX_TARGET(
 	COMPILE_FLAGS --nounput
 	)
 
+cmake_policy(SET CMP0007 NEW)
+# GET_STRINGS(path var) set the variable var to the list of non-empty string without comments of file at path
+FUNCTION(GET_STRINGS path var)
+	FILE(STRINGS ${path} tmp)
+	LIST(TRANSFORM tmp REPLACE "#[^\n]*$" "")
+	LIST(TRANSFORM tmp STRIP)
+	LIST(FILTER tmp EXCLUDE REGEX "^$")
+	SET(${var} ${tmp} PARENT_SCOPE)
+ENDFUNCTION(GET_STRINGS)
 
-ADD_CUSTOM_COMMAND(
-  OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/Factories/Interfaced.txt  ${CMAKE_CURRENT_SOURCE_DIR}/src/Factories/MakeFactory.sh
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/Factories/MakeFactory.sh
-  ARGS ${CMAKE_CURRENT_SOURCE_DIR}/src/Factories  ${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp
-  )
+# Generate Factories.cpp from Factories/Interfaced.txt
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/Factories/head.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+FILE(RENAME ${CMAKE_CURRENT_BINARY_DIR}/head.txt ${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp)
+GET_STRINGS(${CMAKE_CURRENT_SOURCE_DIR}/src/Factories/Interfaced.txt FACTORIES_LIST)
+SET(FACTORIES_DEF ${FACTORIES_LIST})
+LIST(TRANSFORM FACTORIES_DEF REPLACE "^(.+)$" "\tDEF\(\\1\)\\\;\n")
+FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp ${FACTORIES_DEF})
+UNSET(FACTORIES_DEF)
+FILE(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/Factories/middle.txt BUFFER)
+FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp "${BUFFER}")
+LIST(TRANSFORM FACTORIES_LIST REPLACE "^(.+)$" "\t\t\t\\1::registerFactory()\\\;\n")
+FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp ${FACTORIES_LIST})
+UNSET(FACTORIES_LIST)
+FILE(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/Factories/tail.txt BUFFER)
+FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp "${BUFFER}")
+UNSET(BUFFER)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp GENERATED)
 
+# Generate the list of source files from SourceFileList.txt
+GET_STRINGS(${CMAKE_CURRENT_SOURCE_DIR}/src/SourceFileList.txt SOURCE_FILE_LIST)
+LIST(TRANSFORM SOURCE_FILE_LIST PREPEND ${CMAKE_SOURCE_DIR}/src/)
 
-#Thanks SOF https://stackoverflow.com/questions/4346412/how-to-prepend-all-filenames-on-the-list-with-common-path#27630120
-
-# PREPEND(var prefix ${args}) set the variable var to the list [${prefix}x, for x in args]
-FUNCTION(PREPEND var prefix)
-  SET(listVar "")
-  FOREACH(f ${ARGN})
-    LIST(APPEND listVar "${prefix}${f}")
-  ENDFOREACH(f)
-  SET(${var} "${listVar}" PARENT_SCOPE)
-ENDFUNCTION(PREPEND)
-
-execute_process(
-  COMMAND ./tools/EraseComments.sh src/SourceFileList.txt tolink.txt
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  )
-
-FILE(STRINGS ${CMAKE_SOURCE_DIR}/tolink.txt ACTIVE_THINGS)
-PREPEND(PATH_ACTIVE_THINGS ${CMAKE_SOURCE_DIR}/src/ ${ACTIVE_THINGS})
-
-execute_process(
-  COMMAND rm tolink.txt
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  )
-
-ADD_LIBRARY(FloPoCoLib STATIC ${PATH_ACTIVE_THINGS}
+ADD_LIBRARY(FloPoCoLib STATIC ${SOURCE_FILE_LIST}
         ${CMAKE_CURRENT_BINARY_DIR}/Factories.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/VHDLLexer.cpp)
 

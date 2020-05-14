@@ -17,7 +17,7 @@ namespace flopoco {
         name << "GenericMux_w" << wIn << "_s" << inputCount;
         setNameWithFreqAndUID(name.str());
 
-        for( uint i=0;i<inputCount;++i )
+        for( uint32_t i=0;i<inputCount;++i )
             addInput(getInputName(i),wIn);
 
         addInput(getSelectName(), intlog2( inputCount-1 ) );
@@ -35,7 +35,7 @@ namespace flopoco {
     void GenericMux::buildXilinx(Operator* parentOp, Target* target, const uint32_t &wIn, const uint32_t &inputCount){
         Xilinx_GenericMux *mux = new Xilinx_GenericMux(parentOp, target,inputCount,wIn );
         inPortMap("s_in",getSelectName());
-        for( uint i=0;i<inputCount;++i )
+        for( uint32_t i=0;i<inputCount;++i )
             inPortMap(join( "x", i, "_in" ), getInputName(i));
 
         outPortMap("x_out",getOutputName() );

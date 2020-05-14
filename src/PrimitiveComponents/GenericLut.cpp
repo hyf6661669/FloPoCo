@@ -68,7 +68,7 @@ namespace flopoco {
 
             declare( "t_in", wIn_ );
 
-            for( uint i = 0; i < wIn_; ++i ) {
+            for( unsigned int i = 0; i < wIn_; ++i ) {
 
                 vhdl << tab << "t_in(" << i << ") <= " << join( "i", i ) << ";" << endl;
             }
@@ -241,30 +241,30 @@ namespace flopoco {
     void GenericLut::build_select() {
         declare( "t_in", wIn_ );
 
-        for( uint i = 0; i < wIn_; ++i ) {
+        for( unsigned int i = 0; i < wIn_; ++i ) {
 
             vhdl << "t_in(" << i << ") <= " << join( "i", i ) << ";" << endl;
         }
 
         declare( "t_out", wOut_ );
         vhdl << tab << "with t_in select t_out <= " << std::endl;
-        const uint max_val = ( 1 << wIn_ );
+        const unsigned int max_val = ( 1 << wIn_ );
 
-        for( uint i = 0; i < max_val; ++i ) {
+        for( unsigned int i = 0; i < max_val; ++i ) {
             std::vector<bool> input_vec( wIn_ );
             std::vector<bool> output_vec( wOut_ );
 
-            for( uint j = 0; j < wIn_; ++j ) { // eingangswert
+            for( unsigned int j = 0; j < wIn_; ++j ) { // eingangswert
                 input_vec[j] = i & ( 1 << j );
             }
 
-            for( uint j = 0; j < wOut_; ++j ) { // ausgangswert
+            for( unsigned int j = 0; j < wOut_; ++j ) { // ausgangswert
                 output_vec[j] = equations_[j].eval( input_vec );
             }
 
             bool some_set = false;
 
-            for( uint i = 0; i < wOut_; ++i ) {
+            for( unsigned int i = 0; i < wOut_; ++i ) {
                 if( output_vec[i] ) {
                     some_set = true;
                     break;
@@ -291,7 +291,7 @@ namespace flopoco {
 
         vhdl << tab << tab << "\"";
 
-        for( uint i = 0; i < wOut_; ++i ) {
+        for( unsigned int i = 0; i < wOut_; ++i ) {
             vhdl << "0";
         }
 

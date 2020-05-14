@@ -256,19 +256,49 @@ namespace flopoco{
 
 		// shift right the significand of new Y with as many positions as the exponent difference suggests (alignment)
 		REPORT(DEBUG, "Building far path right shifter");
-		{
-			ostringstream args;
-			string inputs, outputs;
-			args << "wIn=" << wF+1 << " maxShift=" << wF+3 << " dir=1";
-			inputs = "X=>fracNewY, S=>shiftVal";
-			outputs = "R=>shiftedFracY";
-			newInstance("Shifter", "RightShifterComponent", args.str(), inputs, outputs);
-		}
+
+/* The following #if allows the following experiment with vivado 2016.4 on Kintex
+
+./flopoco frequency=1 FPAdd we=8 wf=23 Wrapper
+ with full shifter then sticky 
+589 LUTs     9.349 ns
+
+With combined shifter sticky (despite a few useless gates)
+482  9.437   
+
+*/
+		
+#if 0 // full shifter, then sticky
+		newInstance("Shifter",
+								"RightShifterComponent",
+								"wIn=" + to_string(wF+1) + " maxShift=" + to_string(wF+3) + " dir=1",
+								"X=>fracNewY,S=>shiftVal",
+								"R=>shiftedFracY");
+		
+		vhdl<<tab<< declare(getTarget()->eqConstComparatorDelay(wF+1), "sticky") 
+				<< " <= '0' when (shiftedFracY("<<wF<<" downto 0) = " << zg(wF+1) << ") else '1';"<<endl;
+		vhdl<<tab<< declare("fracYpad", wF+4)      << " <= \"0\" & shiftedFracY("<<2*wF+3<<" downto "<<wF+1<<");"<<endl;
+
+
 		// compute sticky bit as the or of the shifted out bits during the alignment //
 		vhdl<<tab<< declare("sticky") << " <= '0' when (shiftedFracY("<<wF<<" downto 0)=CONV_STD_LOGIC_VECTOR(0,"<<wF+1<<")) else '1';"<<endl;
 
 		//pad fraction of Y [sign][shifted frac having inplicit 1][guard bits]
 		vhdl<<tab<< declare("fracYfar", wF+4) << " <= \"0\" & shiftedFracY("<<2*wF+3<<" downto "<<wF+1<<");"<<endl;
+
+#else //combined shifter+Sticky
+		// TODO ugly, but shifter+sticky doesn't work for win!=wout
+		vhdl<<tab<< declare("fracYuglyhack", wF+3)      << " <= fracNewY &\"00\";"<<endl;
+		newInstance("Shifter",
+								"RightShifterComponent",
+								"wIn=" + to_string(wF+3) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
+								"X=>fracYuglyhack,S=>shiftVal",
+								"R=>shiftedFracY, Sticky=>sticky");
+		
+		vhdl<<tab<< declare("fracYfar", wF+4)      << " <= \"0\" & shiftedFracY;"<<endl;
+		
+#endif
+
 
 		// depending on the signs of the operands, perform addition or substraction
 		// the result will be: a + (b xor operation) + operation, where operation=0=addition and operation=1=substraction

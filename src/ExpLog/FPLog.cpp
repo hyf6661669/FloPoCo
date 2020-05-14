@@ -33,9 +33,15 @@ using namespace std;
 
 
 namespace flopoco{
+	
+	FPLog::FPLog(OperatorPtr parentOp, Target* target, int wE, int wF):
+		Operator(parentOp, target), wE(wE), wF(wF)
+	{}
 
-	// a static method that will be called by the emulates of the actual FPLog implems
-	void FPLog::emulate(TestCase * tc, int wE, int wF)
+	FPLog::~FPLog() {}
+
+	
+	void FPLog::emulate(TestCase * tc)
 	{
 		/* Get I/O values */
 		mpz_class svX = tc->getInputValue("X");
@@ -70,15 +76,15 @@ namespace flopoco{
 	// TEST FUNCTIONS
 
 
-	void FPLog::buildStandardTestCases(OperatorPtr op, TestCaseList* tcl, int wE, int wF){
+	void FPLog::buildStandardTestCases(TestCaseList* tcl){
 		TestCase *tc;
 		mpz_class x;
 
 
-		tc = new TestCase(op);
+		tc = new TestCase(this);
 		tc->addFPInput("X", 1.0);
 		tc->addComment("1.0");
-		op->emulate(tc);
+		emulate(tc);
 		tcl->add(tc);
 
 #if 0
@@ -102,13 +108,13 @@ namespace flopoco{
 	// with special treatment for exponents 0 and -1,
 	// and for the range reduction worst case.
 
-	TestCase* FPLog::buildRandomTestCase(OperatorPtr op, int i, int wE, int wF){
+	TestCase* FPLog::buildRandomTestCase(int i){
 
 		TestCase *tc;
 		mpz_class a;
 		mpz_class normalExn = mpz_class(1)<<(wE+wF+1);
 
-		tc = new TestCase(op);
+		tc = new TestCase(this);
 		/* Fill inputs */
 		if ((i & 7) == 0)
 			a = getLargeRandom(wE+wF+3);
@@ -116,7 +122,7 @@ namespace flopoco{
 			a  = getLargeRandom(wF) + ((((mpz_class(1)<<(wE-1))-1)) << wF) + normalExn;
 		else if ((i & 7) == 2) // exponent of 0.5
 			a  = getLargeRandom(wF) + ((((mpz_class(1)<<(wE-1))-2)) << wF) + normalExn;
-#if 0 // To resurrect somehow some day but it is specific to FPLogIterative
+#if 0 // To resurrect somehow some day
 		else if ((i & 7) == 3) { // worst case for range reduction
 			tc->addComment("The worst case of the error analysis: max cancellation, and full range reduction");
 			a = (mpz_class(1) << wF) - (mpz_class(1) << (wF-pfinal+2)) + getLargeRandom(wF-pfinal+2) // mantissa
@@ -129,15 +135,15 @@ namespace flopoco{
 
 		tc->addInput("X", a);
 		/* Get correct outputs */
-		op->emulate(tc);
+		emulate(tc);
 		// add to the test case list
 		return tc;
 	}
 
 
 
-	// TODO  sweep parameters method, inTableSize etc
-	TestList FPLog::unitTest(int index) 
+
+		TestList FPLog::unitTest(int index)
 		{
 		// the static list of mandatory tests
 			TestList testStateList;
@@ -180,6 +186,7 @@ namespace flopoco{
 
 		return testStateList;
 	}
+
 
 
 	

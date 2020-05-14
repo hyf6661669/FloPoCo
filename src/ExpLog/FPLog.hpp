@@ -12,18 +12,22 @@ namespace flopoco{
 	class FPLog : public Operator
 	{
 	public:
+		FPLog(OperatorPtr parentOp, Target* target, int wE, int wF);
+		~FPLog();
+
 		//		Overloading the virtual functions of Operator
-		static void emulate(TestCase * tc, int wE, int wF);
-		static void buildStandardTestCases(OperatorPtr op, TestCaseList* tcl, int wE, int wF);
+		void emulate(TestCase * tc);
+		void buildStandardTestCases(TestCaseList* tcl);
 		static TestList unitTest(int index);
 		/**Overloading the function of Operator with a function that tests only positive FP numbers (full range)*/
-		static TestCase* buildRandomTestCase(OperatorPtr op, int i, int wE, int wF);
+		TestCase* buildRandomTestCase(int i);
 		// User-interface stuff
 		/** Factory method */
 		static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target , vector<string> &args);
 		static void registerFactory();
 	protected:
 		int wE, wF;
+
 	};
 	
 }

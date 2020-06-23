@@ -13,6 +13,7 @@ using namespace std;
 
 using namespace flopoco;
 
+#ifdef SOFTPOSIT
 BOOST_AUTO_TEST_CASE(TEST_POSIT_8_Addition)
 {
 	mpfr_t mpfrstore0, mpfrstore1, addres;
@@ -134,6 +135,7 @@ BOOST_AUTO_TEST_CASE(Posit32TestAdditionSample) {
 				"00011100001010110000011111011100"
 			);
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(PositTestIntConvertTwoWaysNonZeroES) {
 	mpz_class z;	

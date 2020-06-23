@@ -170,6 +170,9 @@ namespace flopoco{
 With combined shifter sticky (and a few useless gates
 324 11.795 
 
+with vrs -i
+394  15.393 
+313  14.550 
 */
 		
 #if 0 // full shifter, then sticky

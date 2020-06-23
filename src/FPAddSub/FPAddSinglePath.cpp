@@ -170,6 +170,9 @@ namespace flopoco{
 With combined shifter sticky (and a few useless gates
 324 11.795 
 
+with vrs -i
+394  15.393 
+313  14.550 
 */
 		
 #if 0 // full shifter, then sticky
@@ -184,12 +187,10 @@ With combined shifter sticky (and a few useless gates
 		vhdl<<tab<< declare("fracYpad", wF+4)      << " <= \"0\" & shiftedFracY("<<2*wF+3<<" downto "<<wF+1<<");"<<endl;
 
 #else //combined shifter+Sticky
-		// TODO ugly, but shifter+sticky doesn't work for win!=wout
-		vhdl<<tab<< declare("fracYuglyhack", wF+3)      << " <= fracY &\"00\";"<<endl;
 		newInstance("Shifter",
 								"RightShifterComponent",
-								"wIn=" + to_string(wF+3) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
-								"X=>fracYuglyhack,S=>shiftVal",
+								"wIn=" + to_string(wF+1) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
+								"X=>fracY, S=>shiftVal",
 								"R=>shiftedFracY, Sticky=>sticky");
 		
 		vhdl<<tab<< declare("fracYpad", wF+4)      << " <= \"0\" & shiftedFracY;"<<endl;

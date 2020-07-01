@@ -13,7 +13,7 @@
 
 	 Also, the code was initially written for integer bit heaps.
 	 Later Florent decided that a bit heap should have an LSB and a MSB
-	 The corresponding refactoring kept all the datastructures with columns indexed from width-1 to zero
+	 The corresponding refactoring kept all the data structures with columns indexed from width-1 to zero
 	 even for bit heaps ranging from MSB to LSB.
 	 No big deal in principle.
 

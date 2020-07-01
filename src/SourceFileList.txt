@@ -155,6 +155,7 @@ PrimitiveComponents/Xilinx/XilinxFourToTwoCompressor
 Tools/Plane
 Tools/Point
 TutorialOperator
+Apps/Perceptron
 
 Complex/FixFFT
 

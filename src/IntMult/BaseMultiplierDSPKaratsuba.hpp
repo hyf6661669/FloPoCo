@@ -44,10 +44,10 @@ namespace flopoco {
         static int getRelativeResultLSBWeight(int n, int wX, int wY) {return 0;}
         float shape_utilisation(int shape_x, int shape_y, int mult_wX, int mult_wY, bool signedIO) override;
         int getDSPCost() const final;
-        double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY);
-        int ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY);
-        bool shapeValid(const Parametrization &param, unsigned int x, unsigned int y) const;
-        bool shapeValid(int x, int y);
+        double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) override;
+        int ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) override;
+        bool shapeValid(const Parametrization &param, unsigned int x, unsigned int y) const override;
+        bool shapeValid(int x, int y) override;
         bool isKaratsuba() const override { return true;}
         unsigned getArea(void) override {return (n+1)*wX*(n+1)*wY;}
 
@@ -61,7 +61,7 @@ namespace flopoco {
         static int gcd(int a, int b) { return b == 0 ? a : gcd(b, a % b);}
     private:
         int wX, wY, wR, n;
-        static long fpr(int wX, int wY, int gcd) {long kxy = gcd; for(; kxy % wX || kxy % wY; kxy += gcd); return kxy;}
+        static long fpr(int wX, int wY, int gcd) {long kxy = gcd; for(; kxy % wX || kxy % wY; kxy += gcd) {} return kxy;}
 
     };
 

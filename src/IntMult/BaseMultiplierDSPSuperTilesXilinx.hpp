@@ -58,19 +58,19 @@ namespace flopoco {
 
         bool isIrregular() const override { return true;}
         int getDSPCost() const override { return 2; }
-        unsigned getArea() {return 2*24*17;}
+        unsigned getArea() override {return 2*24*17;}
         static int get_wX(BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][0];}
         static int get_wY(BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][1];}
         static int get_wR(BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][2];}
         static int getRelativeResultMSBWeight(BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][3];}
         static int getRelativeResultLSBWeight(BaseMultiplierDSPSuperTilesXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][4];}
-        double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY);
-        int getRelativeResultLSBWeight(Parametrization const& param) const;
-        int getRelativeResultMSBWeight(Parametrization const& param) const;
-		bool shapeValid(int x, int y);
-        bool shapeValid(Parametrization const & param, unsigned x, unsigned y) const;
+        double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) override;
+        int getRelativeResultLSBWeight(Parametrization const& param) const override;
+        int getRelativeResultMSBWeight(Parametrization const& param) const override;
+		bool shapeValid(int x, int y) override;
+        bool shapeValid(Parametrization const & param, unsigned x, unsigned y) const override;
         float shape_utilisation(int shape_x, int shape_y, int wX, int wY, bool signedIO) override;
-        int isSuperTile(int rx1, int ry1, int lx1, int ly1, int rx2, int ry2, int lx2, int ly2);
+        int isSuperTile(int rx1, int ry1, int lx1, int ly1, int rx2, int ry2, int lx2, int ly2) override;
 
 		Operator *generateOperator(Operator *parentOp, Target *target, Parametrization const & params) const final;
 

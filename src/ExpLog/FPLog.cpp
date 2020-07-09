@@ -22,6 +22,7 @@
 #include <math.h>	// for NaN
 #include "FPLog.hpp"
 #include "FPLogIterative.hpp"
+#include "FPLogPolynomial.hpp"
 #include "TestBenches/FPNumber.hpp"
 #include "utils.hpp"
 //#include "IntMult/IntSquarer.hpp"
@@ -202,9 +203,7 @@ namespace flopoco{
 		if(method==0)
 			return new FPLogIterative(parentOp, target, wE, wF, inTableSize);
 		else if(method==1)
-			{
-				throw(string("TODO for Correntin"));
-			}
+			return new FPLogPolynomial(parentOp, target, wE, wF, inTableSize);
 		else 
 			{
 				throw(string("FPLog: the method parameter should currently be 0 or 1"));
@@ -222,7 +221,7 @@ namespace flopoco{
 											 "wE(int): exponent size in bits; \
                         wF(int): mantissa size in bits; \
                         method(int)=0: 0 for iterative, 1 for polynomial; \
-                        inTableSize(int)=0: The input size to the tables of the iterative method, in bits, between 6 and 16. 0 choses a a sensible value",
+                        inTableSize(int)=0: The input size to the tables in bits, between 6 and 16. 0 choses a a sensible value.",
 											 "For details on the technique used, see <a href=\"bib/flopoco.html#DetDinPuj2007:Arith\">this article</a> and <a href=\"bib/flopoco.html#2010-RR-FPLog\">this research report</a>.",
 											 FPLog::parseArguments,
 											 FPLog::unitTest

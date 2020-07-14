@@ -200,10 +200,12 @@ namespace flopoco{
 		UserInterface::parseInt(args, "method", &method);
 		int inTableSize;
 		UserInterface::parseInt(args, "inTableSize", &inTableSize);
+		int maxDegree;
+		UserInterface::parseInt(args, "maxDegree", &maxDegree);
 		if(method==0)
 			return new FPLogIterative(parentOp, target, wE, wF, inTableSize);
 		else if(method==1)
-			return new FPLogPolynomial(parentOp, target, wE, wF, inTableSize);
+			return new FPLogPolynomial(parentOp, target, wE, wF, inTableSize, maxDegree);
 		else 
 			{
 				throw(string("FPLog: the method parameter should currently be 0 or 1"));
@@ -221,7 +223,8 @@ namespace flopoco{
 											 "wE(int): exponent size in bits; \
                         wF(int): mantissa size in bits; \
                         method(int)=0: 0 for iterative, 1 for polynomial; \
-                        inTableSize(int)=0: The input size to the tables in bits, between 6 and 16. 0 choses a a sensible value.",
+                        inTableSize(int)=0: The input size to the tables in bits, between 6 and 16. 0 choses a a sensible value; \
+                        maxDegree(int)=2: The maximum degree allowed for the piecewise polynomial approximation. A negative value uses a simple polynomial.",
 											 "For details on the technique used, see <a href=\"bib/flopoco.html#DetDinPuj2007:Arith\">this article</a> and <a href=\"bib/flopoco.html#2010-RR-FPLog\">this research report</a>.",
 											 FPLog::parseArguments,
 											 FPLog::unitTest

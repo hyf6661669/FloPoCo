@@ -8,7 +8,7 @@ namespace flopoco{
 	class FPLogPolynomial: public FPLog
 	{
 	public:
-		FPLogPolynomial(OperatorPtr parentOp, Target* target, int wE, int wF, int inTableSize=0);
+		FPLogPolynomial(OperatorPtr parentOp, Target* target, int wE, int wF, int inTableSize=0, int maxDegree=2);
 		~FPLogPolynomial();
 	};
 }

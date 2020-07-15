@@ -70,30 +70,10 @@ You are therefore encouraged to download one of these, install it, then recompil
 
 <h4>Unstable git master version</h4>
 
-<p> See <a href="install_scripts/install-plain-gitmaster-on-bionic64.sh"> the install script for the plain version</a>, or <a href="install_scripts/install-full-gitmaster-on-bionic64.sh"> the install script for the full version with all possible optional dependencies</a>.
-	These scripts are written for ubuntu 18.04 (bionic).
-	You can install them in a virtual machine using Vagrant as follows:
+<p> See <a href="install_scripts/install-plain-gitmaster-on-focal64.sh"> the install script for the plain version</a>, or <a href="install_scripts/install-full-gitmaster-on-focal64.sh"> the install script for the full version with all possible optional dependencies</a>.
+	These scripts are written for ubuntu 20.04 (focal fossa), you may adapt them to other Linux systems.
 </p>	
 
-<p><kbd>
-		vagrant init ubuntu/bionic64	&&	vagrant up  
-<br>
-  		vagrant ssh
-</kbd></p>
-<p><kbd>
-  		# the following happens in the virtual machine
-<br>
-  		wget http://flopoco.gforge.inria.fr/install_scripts/install-plain-gitmaster-on-bionic64.sh
-<br>
-  	sh install-plain-gitmaster-on-bionic64.sh
-</kbd></p>
-To install all the possible dependencies, replace the two last lines with
-<p><kbd>
-  		wget http://flopoco.gforge.inria.fr/install_scripts/install-full-gitmaster-on-bionic64.sh
-<br>
-  	sh install-full-gitmaster-on-bionic64.sh
-</kbd></p>
-Your mileage may vary, but these scripts provide a good starting point.
 
 <h4>Version 4.1.2, the last one with the old pipelining framework</h4>
 
@@ -119,6 +99,7 @@ Your mileage may vary, but these scripts provide a good starting point.
 
 <h4>Version 2.5.0, the last version before the transition to Sollya4 broke everything that bit heaps had not yet broken</h4>
 See the <a href="install_scripts/install-2.5.0-on-precise.sh">the install script</a>, that it tested to work in Ubuntu 12.04, aka "precise".
+You probably want to run it in Docker.
 
 <h4>Version 2.3.2, the last version before the Great Leader embarked the project in the bit heap hazardous adventure</h4>
 See the <a href="install_scripts/install-2.3.2-on-precise.sh">the install script</a>, that it tested to work in Ubuntu 12.04, aka "precise".
@@ -145,7 +126,7 @@ You will need to install :
 		<p>	Open a command prompt and go into this folder. If you are using windows, you can quickly open a command prompt by holding down shift and right-clicking the project folder, then choose “open command window here”.	</p>
 	
 	<p>	Now type the following commands :
-		<p><kbd>vagrant init ubuntu/bionic64</kbd></p>
+		<p><kbd>vagrant init ubuntu/focal64</kbd></p>
 		<p><kbd>vagrant up</kbd></p>
   The first time, it may take some time depending on your internet connection.	</p>
 	

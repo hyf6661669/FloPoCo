@@ -88,6 +88,15 @@ namespace flopoco{
 		emulate(tc);
 		tcl->add(tc);
 
+		tc = new TestCase(this);
+		int xx=(1<<wF)+1;
+		int yy=(1<<wF)	;
+		double t=((double)xx)/((double)yy);
+		tc->addFPInput("X", t);
+		tc->addComment("1+1 ulp");
+		emulate(tc);
+		tcl->add(tc);
+
 #if 0
 		tc = new TestCase(this);
 		tc->addComment("The worst case of the error analysis: max cancellation, and full range reduction");

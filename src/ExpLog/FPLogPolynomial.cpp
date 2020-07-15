@@ -63,9 +63,9 @@ namespace flopoco{
 			<< " <= ('1' & X"<<range(wF-1, 0) << " & '0') when CenterCond = '0' else (\"01\" & X"<<range(wF-1, 0) << ");" << endl;
 
 		addComment("Compute log(2^exponent)");
-		addComment("Exponent is E = Ex - E0 + CenterCond = EX + -((1 << wE) - 1) + CenterCond");
+		addComment("Exponent is E = Ex - E0 + CenterCond = EX + -((1 << (wE-1)) - 1) + CenterCond");
 		vhdl << tab << declare("E", wE+1) // s(wE, 0)
-			<< " <= X"<<range(wF+wE-1, wF) << " + "<<signed_const(1 - (1 << wE), wE+1)<<" + CenterCond;" << endl;
+				 << " <= X"<<range(wF+wE-1, wF) << " + "<<signed_const(1 - (1 << (wE-1)), wE+1)<<" + CenterCond;" << endl;
 		// E needs one more bit compared to Ex because of one value out of range, it would be unnecessary using IEEE floats
 
 		addComment("Compute log(2^exponent) as E*log(2)");
@@ -122,7 +122,7 @@ namespace flopoco{
 			Table::newUniqueInstance(this, "A", "L1", lt0Content, "LogY0Table", inTableSize, wL); // L1 is s(0, -wL+1)
 		}
 		newInstance("IntMultiplier", "Mul0",
-			"wX=" + to_string(wF+2)
+			"signedIO=false wX=" + to_string(wF+2)
 			+ " wY=" + to_string(inTableSize+2),
 			"X=>Y, Y=>Yhat", "R=>YYhat"); // exact computation atm, YYhat is s(0, -inTableSize-wF-2)
 		vhdl << tab << declare("Z", wF+3) // s(0, -wF-2) but there is a exponent of -inTableSize associated
@@ -147,10 +147,12 @@ namespace flopoco{
 			<< " <= '1' when E = "<<zg(wE+1)<<" and (A = "<<zg(inTableSize)<<" or A = "<<og(inTableSize)<<") else '0';" << endl
 			<< tab << declare("Zu", wF+3) << " <= (SZ & mZ) when EL1 = '1' else Z;" << endl; // s(0, -wF-2)
 		constexpr int g = 3;
+		// TODO bug! the two FixFunction below do not have the same VHDL interface.
+		// Debugging with SimplePoly.
 		if (maxDegree >= 0) { // more range reduction
 			addComment("Piecewise polynomial approximation");
 			newInstance("FixFunctionByPiecewisePoly", "P",
-				"f=(log1p(x*1b" + to_string(-inTableSize-1) + ")/(x*1b" + to_string(-inTableSize-1) + ")-1)"
+				"f=(log1p(x*1b"+to_string(-inTableSize-1)+")/(x*1b"+to_string(-inTableSize-1)+")-1)*1b"+to_string(inTableSize)
 				+ " signedIn=1"
 				+ " lsbIn=" + to_string(-wF-2)
 				+ " lsbOut=" + to_string(-wF-g)
@@ -159,15 +161,15 @@ namespace flopoco{
 		} else { // unlimited degree
 			addComment("Simple polynomial approximation");
 			newInstance("FixFunctionBySimplePoly", "P",
-				"f=(log1p(x*1b"+to_string(-inTableSize-1)+")/(x*1b"+to_string(-inTableSize-1)+")-1)*1b"+to_string(inTableSize)
+				"f=(log1p(x*1b"+to_string(-inTableSize-1)+")/(x*1b"+to_string(-inTableSize-1)+")-1)"
 				+ " signedIn=1"
 				+ " lsbIn=" + to_string(-wF-2)
-				+ " lsbOut=" + to_string(-wF-g),
+				+ " lsbOut=" + to_string(-wF-g-inTableSize),
 				"X=>Z", "Y=>PZ"); // PZ is s(-inTableSize-1, -inTableSize-wF-g)
 		}
 		if (true || getTarget()->plainVHDL()) {
 			newInstance("IntMultiplier", "Mul1",
-				"wX=" + to_string(wF+g)
+				"signedIO=true wX=" + to_string(wF+g)
 				+ " wY=" + to_string(wF+3)
 				+ " wOut=" + to_string(wF+2-inTableSize),
 				"X=>PZ, Y=>Zu", "R=>PZZu"); // PZZu is s(-inTableSize-1, -wF-2)
@@ -201,33 +203,34 @@ namespace flopoco{
 		}
 
 		addComment("Almost final exponent");
-		const int Esize = max(intlog2(wE+inTableSize), intlog2(wF-inTableSize));
+		const int Esize = max(intlog2(wE+inTableSize), intlog2(wF-inTableSize)+1);
 		// Sign of FixL is always the right sign, so it is the final sign
 		vhdl << tab << declare("Sr") << " <= FixL"<<of(wE+wL-1) << ";" << endl
 		// We also need to correct the value of Ez by the table input size and 1 more if there is a cancellation on PZu
-			<< tab << declare("PZuLT1") << " <= '1' when Sr = FixL"<<of(wE+wL-2) << " else '0';" << endl
-			<< tab << declare("Ez", Esize) << " <= "<<signed_const(-inTableSize, Esize)
-			<<" - ("<<zg(intlog2(wE+inTableSize)-intlog2(wF-inTableSize))<<" & Zshift) - PZuLT1;" << endl;
+				 << tab << declare("PZuLT1") << " <= '1' when Sr = PZu"<<of(wF+1) << " else '0';" << endl;
+		vhdl << declare("fracELZ0", wF+1) << " <= PZu"<<range(wF,0) << " when PZuLT1='1' else PZu"<<range(wF+1,1) << "; -- remove the implicit 1" << endl; 
+		vhdl << tab << declare("Ez", Esize) << " <= "<<signed_const(-inTableSize, Esize)
+				 <<" - ("<<zg(Esize-intlog2(wF-inTableSize))<<" & Zshift) - PZuLT1;" << endl;
 
 		// Exponent for the path not(E=L0=0), bounded by wE+inTableSize
 		newInstance("LZOCShifterSticky", "Normalizer",
-			"wIn=" + to_string(wE+wL)
-			+ " wOut=" + to_string(wF+3)
-			+ " countType=-1"
-			+ " wCount=" + to_string(intlog2(wE+inTableSize)),
-			"I=>FixL, OZb=>Sr", "Count=>Efix, O=>Mr");
+								"wIn=" + to_string(wE+wL)
+								+ " wOut=" + to_string(wF+2)
+								+ " countType=-1"
+								+ " wCount=" + to_string(intlog2(wE+inTableSize)),
+								"I=>FixL, OZb=>Sr", "Count=>Efix, O=>Mr");
 
 		addComment("Result selection");
 		vhdl << tab << declare("Er", Esize)
-			<< " <= Ez when EL1 = '1' else ("<<zg(intlog2(wF-inTableSize)-intlog2(wE+inTableSize))<<" & Efix);" << endl
-			<< tab << declare("Fr", wF+3) << " <= PZu when EL1 = '1' else Mr;" << endl;
+				 << " <= Ez when EL1 = '1' else ("<<zg(Esize-intlog2(wE+inTableSize))<<" & Efix);" << endl;
+		vhdl << tab << declare("Fr", wF+1) << " <= fracELZ0 when EL1 = '1' else Mr" << range(wF,0) <<"; -- remove implicit 1" << endl;
 
 		addComment("Final rounding with wE=" + to_string(wE) + " and wF=" + to_string(wF));
-		vhdl << tab << declare("xFr", wF+3) << " <= "<<rangeAssign(wF+2, 0, "Sr")<<" xor Fr;" << endl
-			<< tab << declare("Lfp", wE+wF+3) << " <= (Er + "<<signed_const((1 << wE) - 1, wE)<<") & xFr;" << endl
-			<< tab << declare("halfulp", wE+wF+3) << " <= "<<zg(wE+wF)<<" & \"100\";" << endl;
+		vhdl << tab << declare("xFr", wF+1) << " <= "<<rangeAssign(wF, 0, "Sr")<<" xor Fr;" << endl;
+		vhdl << tab << declare("Lfp", wE+wF+1) << " <= ((" << rangeAssign(wE-1, Esize, "Er" + of(Esize-1)) <<  " & Er ) + "<<signed_const((1 << (wE-1)) - 1, wE)<<") & xFr;" << endl
+			<< tab << declare("halfulp", wE+wF+1) << " <= "<<zg(wE+wF)<<" & \"1\";" << endl;
 		newInstance("IntAdder", "FinalRounding",
-			"wIn=" + to_string(wE+wF+3),
+			"wIn=" + to_string(wE+wF+1),
 			"X=>Lfp, Y=>halfulp, Cin=>Sr", "R=>REF");
 
 		addComment("Conversion to FloPoCo floating point format");
@@ -241,7 +244,7 @@ namespace flopoco{
 			<< tab << tab << "\"110\" when \"110\",\n"
 			<< tab << tab << "\"110\" when \"111\",\n"
 			<< tab << tab << "\"---\" when others;" << endl
-			<< tab << "R <= RES & REF"<<range(wE+wF+2, 3) << ";" << endl;
+			<< tab << "R <= RES & REF"<<range(wE+wF, 1) << ";" << endl;
 	}
 
 	FPLogPolynomial::~FPLogPolynomial()

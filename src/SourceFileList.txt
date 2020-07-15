@@ -109,6 +109,7 @@ FPDivSqrt/FPSqrt
 ExpLog/FPExp
 ExpLog/FPLog
 ExpLog/FPLogIterative
+ExpLog/FPLogPolynomial
 IEEE/IEEEFMA
 IEEE/IEEEAdd
 Table

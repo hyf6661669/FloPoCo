@@ -37,7 +37,7 @@ namespace flopoco{
 		int wE, int wF, int inTableSize, int maxDegree):
 		FPLog(parentOp, target, wE, wF)
 	{
-		setCopyrightString("F. de Dinechin, C. Klein, Q. Corradi  (2008-2020)");
+		setCopyrightString("F. de Dinechin, Q. Corradi  (2008-2020)");
 
 		ostringstream o;
 		srcFileName = "FPLogPolynomial";

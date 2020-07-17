@@ -1,0 +1,27 @@
+digraph perceptron {
+    graph [splines=true];
+    {
+        node [shape=plaintext];
+        Xi; Wi; A;
+    }
+    {
+        node [shape=box];
+        "or"; bitheap; activation;
+        plus [label="+"];
+        exp [label="2^x"];
+    }
+    Xi -> or [label="ZXi\nbit"];
+    Wi -> or [label="ZWi\nbit"];
+
+    Xi -> plus [label="valXi\nsigned"];
+    Wi -> plus [label="valWi\nsigned"];
+
+    or -> exp [label="Zi\nbit"];
+    Wi -> exp [label="Si\nbit"];
+    plus -> exp [label="LogProducti\nsigned"];
+
+    exp -> bitheap [label="summand\nsigned"];
+    bitheap -> activation [label="weightedSum\nsigned"];
+    activation -> A [label="valAct\nsigned"];
+    activation -> A [label="zAct\nbit"];
+}

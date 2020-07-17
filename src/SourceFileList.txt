@@ -168,5 +168,7 @@ Posit/Fun/PositFunction
 Posit/Fun/PositFunctionByTable
 Posit/Posit2Posit
 
+Apps/Perceptron
+
 #FixFunctions/VaryingPiecewisePolyApprox
 #FixFunctions/FixFunctionByVaryingPiecewisePoly

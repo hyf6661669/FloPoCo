@@ -84,4 +84,6 @@ PositExp
 PositFunctionByTable
 Posit2Posit
 
+Perceptron
+
 #FixFunctionByVaryingPiecewisePoly # to revive soon

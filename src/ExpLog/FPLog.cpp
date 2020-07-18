@@ -89,11 +89,17 @@ namespace flopoco{
 		tcl->add(tc);
 
 		tc = new TestCase(this);
-		int xx=(1<<wF)+1;
-		int yy=(1<<wF)	;
+		int xx=((1<<6)+1)<<(wF-6);
+		int yy=(1<<wF);
 		double t=((double)xx)/((double)yy);
 		tc->addFPInput("X", t);
-		tc->addComment("1+1 ulp");
+		tc->addComment("non-zero tabulated log");
+		emulate(tc);
+		tcl->add(tc);
+
+		tc = new TestCase(this);
+		tc->addFPInput("X", exp(1));
+		tc->addComment("non-zero exponent");
 		emulate(tc);
 		tcl->add(tc);
 

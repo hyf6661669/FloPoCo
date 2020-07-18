@@ -71,7 +71,7 @@ namespace flopoco{
 		addComment("Compute log(2^exponent) as E*log(2)");
 		// lsb is -wF-3 because only 2 guard bits are needed and 1/2 < log(2) < 1
 		newInstance("FixRealKCM", "MulLog2",
-			"signedIn=0 msbIn=" + to_string(wE)
+			"signedIn=true msbIn=" + to_string(wE)
 			+ " lsbIn=0"
 			+ " lsbOut=" + to_string(-wF-3)
 			+ " constant=log(2)",

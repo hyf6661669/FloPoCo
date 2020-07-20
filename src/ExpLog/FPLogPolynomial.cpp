@@ -243,7 +243,7 @@ namespace flopoco{
 			"X=>Lfp, Y=>halfulp, Cin=>Sr", "R=>REF");
 
 		addComment("Conversion to FloPoCo floating point format");
-		vhdl << tab << declare("Exr", 2) << " <= \"00\" when (EL1='1' and PZu"<<range(wF+2,wF) << "=\"000\") else \"01\";" << endl
+		vhdl << tab << declare("Exr", 2) << " <= \"00\" when (EL1='1' and PZu"<<range(wF+3,wF+1) << "=\"000\") else \"01\";" << endl
 			<< tab << "with X"<<range(wE+wF+2, wE+wF) << " select " << declare("RES", 3) << " <=\n"
 			<< tab << tab << "\"101\" when \"000\",\n"
 			<< tab << tab << "\"101\" when \"001\",\n"

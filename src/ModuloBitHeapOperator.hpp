@@ -32,7 +32,7 @@ namespace flopoco {
 
     protected:
 
-        vector<vector<vector<int> > > bits;
+        vector<vector<vector<unsigned long long> > > bits;
 
         int stage;
 
@@ -47,6 +47,8 @@ namespace flopoco {
         int getModuloMSB();
 
         int reqBitsForRange(int min, int max);
+
+        int getLeadingZero(int value);
     };
 }//namespace
 

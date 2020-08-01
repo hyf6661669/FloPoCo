@@ -51,6 +51,7 @@ Clean up poly eval and bitheapize it
 
 namespace flopoco{
 
+	//Obsolete ?
 	vector<mpz_class>	FPExp::magicTable(int sizeExpA, int sizeExpZPart, bool storeExpZmZm1) 
 		//	DualTable(target, 9, sizeExpA_+sizeExpZPart_, 0, 511),
 	{
@@ -104,6 +105,80 @@ namespace flopoco{
 			mpfr_clears(yh, yl, a, one, NULL);
 
 			result.push_back(l + (h<<sizeExpZPart));
+		}
+		return result;
+	};
+
+	// TODO fix parameters
+	vector<mpz_class>	tableExpZm1(int k, int p, int l) // with the notations of the ASA book 
+	{
+		vector<mpz_class> result;
+		int wIn=-k-p; 
+		for(int x=0; x<(1<<wIn); x++){
+			mpz_class h;
+			mpfr_t mpz, mpy, one;
+
+			mpfr_init2(mpz, wIn);
+			mpfr_init2(one, 16);
+			mpfr_set_d(one, 1.0, GMP_RNDN);
+			mpfr_init2(mpy, LARGE_PREC); 
+
+			// build z 
+			mpfr_set_ui(mpz, x, GMP_RNDN);
+			mpfr_div_2si(mpz, mpz, -p, GMP_RNDN);
+			// compute its exp
+			mpfr_exp(mpy, mpz, GMP_RNDN);
+			mpfr_sub(mpy, mpy, one, GMP_RNDN); // e^z-1 
+		
+			//now scale to an int 
+			mpfr_mul_2si(mpy,mpy, -l, GMP_RNDN); 
+			mpfr_get_z(h.get_mpz_t(), mpy,  GMP_RNDN);
+
+			// debug
+			//			if((h>=(1<<27)) || l>=512 || h<0 || l<0)
+			// cout  <<"x=" << x << " h=" << h <<endl;
+
+			mpfr_clears(mpz, mpy, one, NULL);
+
+			result.push_back(h);
+		}
+		return result;
+	};
+
+
+
+	vector<mpz_class>	tableExpZmZm1(int k, int p, int l) // with the notations of the ASA book 
+	{
+		vector<mpz_class> result;
+		int wIn=-k-p; 
+		for(int x=0; x<(1<<wIn); x++){
+			mpz_class h;
+			mpfr_t mpz, mpy, one;
+
+			mpfr_init2(mpz, wIn);
+			mpfr_init2(one, 16);
+			mpfr_set_d(one, 1.0, GMP_RNDN);
+			mpfr_init2(mpy, LARGE_PREC); 
+
+			// build z 
+			mpfr_set_ui(mpz, x, GMP_RNDN);
+			mpfr_div_2si(mpz, mpz, -p, GMP_RNDN);
+			// compute its exp
+			mpfr_exp(mpy, mpz, GMP_RNDN);
+			mpfr_sub(mpy, mpy, one, GMP_RNDN); // e^z-1 
+			mpfr_sub(mpy, mpy, mpz, GMP_RNDN); // e^z-1 -z 
+		
+			//now scale to an int 
+			mpfr_mul_2si(mpy,mpy, -l, GMP_RNDN); 
+			mpfr_get_z(h.get_mpz_t(), mpy,  GMP_RNDN);
+
+			// debug
+			// cout  <<"x=" << x << " h=" << h <<endl;
+
+			//cout << x << "\t" << h << "\t" << l <<endl;
+			mpfr_clears(mpz, mpy, one, NULL);
+
+			result.push_back(h);
 		}
 		return result;
 	};
@@ -190,7 +265,7 @@ namespace flopoco{
 			 int sizeExpY;
 			 int sizeExpA; 
 		// The following only useful in the generic case
-			 int sizeZhigh;
+			 int sizeZtrunc;
 			 int sizeExpZmZm1;
 		int sizeExpZm1; // 
 		int sizeMultIn; // sacrificing accuracy where it costs
@@ -214,7 +289,7 @@ namespace flopoco{
 		}
 		else if (wF<=23) {
 			REPORT(DETAILED, "We will split Y into A and Z, using a magic table");
-			g=3;
+			g=4;
 			k=9;
 			sizeY=wF+g;
 			sizeExpY = wF+g+1; // e^Y has MSB weight 1
@@ -229,7 +304,7 @@ namespace flopoco{
 			else {
 				REPORT(DETAILED, "Z is large, magic table tabulating e^Z-Z-1");
 				useMagicTableExpZmZm1=true;
-				sizeZhigh=wF+g-2*k;
+				sizeZtrunc=wF+g-2*k;
 				sizeExpZmZm1 = wF+g - 2*k +1;
 				sizeMultIn = sizeZ; // sacrificing accuracy where it costs
 				REPORT(DETAILED, "g=" << g);
@@ -237,7 +312,7 @@ namespace flopoco{
 				REPORT(DETAILED, "sizeY=" << sizeY);		
 				REPORT(DETAILED, "sizeExpY=" << sizeExpY);		
 				REPORT(DETAILED, "sizeZ=" << sizeZ);
-				REPORT(DETAILED, "sizeZhigh=" << sizeZhigh);
+				REPORT(DETAILED, "sizeZtrunc=" << sizeZtrunc);
 				REPORT(DETAILED, "sizeExpZmZm1=" << sizeExpZmZm1);
 				REPORT(DETAILED, "sizeExpZm1=" << sizeExpZm1);
 			}
@@ -273,7 +348,7 @@ namespace flopoco{
 			sizeExpY = wF+g+1; // e^Y has MSB weight 1
 			sizeExpA = sizeExpY; 
 			sizeZ = wF+g-k; 
-			sizeZhigh=wF+g-2*k;
+			sizeZtrunc=wF+g-2*k;
 			sizeExpZmZm1 = wF+g - 2*k +1;
 			sizeExpZm1 = sizeZ+1; // 
 			sizeMultIn = sizeZ; // sacrificing accuracy where it costs
@@ -282,7 +357,7 @@ namespace flopoco{
 			REPORT(DETAILED, "sizeY=" << sizeY);		
 			REPORT(DETAILED, "sizeExpY=" << sizeExpY);		
 			REPORT(DETAILED, "sizeZ=" << sizeZ);
-			REPORT(DETAILED, "sizeZhigh=" << sizeZhigh);
+			REPORT(DETAILED, "sizeZtrunc=" << sizeZtrunc);
 			REPORT(DETAILED, "sizeExpZmZm1=" << sizeExpZmZm1);
 			REPORT(DETAILED, "sizeExpZm1=" << sizeExpZm1);
 		}
@@ -465,9 +540,20 @@ namespace flopoco{
 															 sizeY, sizeExpY);
 		}
 
-		else{
-			if(useMagicTableExpZmZm1 || useMagicTableExpZm1) { // use a dual table, works up to single precision			
-				//The following is really designed for k=9
+		else{ // expY not plainly tabulated, splitting it into A and Z
+			vhdl << tab << declare("A", k) << " <= Y" << range(sizeY-1, sizeY-k) << ";\n";
+			vhdl << tab << declare("Z", sizeZ) << " <= Y" << range(sizeZ-1, 0) << ";\n";
+			vhdl << tab << declare("Ztrunc", sizeZtrunc) << " <= Z" << range(sizeZ-1, sizeZ-sizeZtrunc) << ";\n";
+			
+			vector<mpz_class> expYTableContent = ExpATable(k, sizeExpA); // e^A-1 has MSB weight 1
+			Table::newUniqueInstance(this, "A", "expA",
+															 expYTableContent,
+															 "ExpATable",
+															 k, sizeExpA);
+			
+				
+#if 0 //---------------------------------------------------------
+				//The following is really designed for k=9 TODO FIXME
 				if(k!=9){
 					REPORT(0, "k!=9, setting it to 9 to use the magic exp dual table")
 					k=9;	
@@ -489,8 +575,9 @@ namespace flopoco{
 					sizeExpZPart=sizeExpZm1;
 				}
 
-				vector<mpz_class> magicTableContent =  magicTable(sizeExpA, sizeExpZPart, useMagicTableExpZmZm1);
+				
 #if 0
+				vector<mpz_class> magicTableContent =  magicTable(sizeExpA, sizeExpZPart, useMagicTableExpZmZm1);
 				addSubComponent(table);
 
 				// TODO: delegate this cycle management to Table
@@ -502,42 +589,49 @@ namespace flopoco{
 				inPortMap(table, "X1", "Addr1");
 				vhdl << instance(table, "table");
 #else
-				THROWERROR("Sorry, I still need to resurrect DualTable");
+				// THROWERROR("Sorry, I still need to resurrect DualTable");
 #endif	 
 				vhdl << tab << declare("expA", sizeExpA) << " <=  expA_output" << range(sizeExpA+sizeExpZPart-1, sizeExpZPart) << ";" << endl;
 
-				if(useMagicTableExpZm1){
-					vhdl << tab << declare("expZminus1", sizeExpZm1) << " <= expZ_output" << range(sizeExpZPart-1, 0) << ";" << endl;
-				}
-				else { // useMagicTableexpZmZm1
-					vhdl << tab << declare("expZmZm1", sizeExpZmZm1) << " <= expZ_output" << range(sizeExpZPart-1, 0) << ";" << endl;
-				}
 				// TODO: If we are here, the rest of the computation fits in one DSP block: we should pack it for it.
-			}
 
+#endif// --------------------
 
-			else { // generic case, use a polynomial evaluator
-				vhdl << tab << declare("Addr1", k) << " <= Y" << range(sizeY-1, sizeY-k) << ";\n";
-				vhdl << tab << declare("Z", sizeZ) << " <= Y" << range(sizeZ-1, 0) << ";\n";
-				vhdl << tab << declare("Zhigh", sizeZhigh) << " <= Z" << range(sizeZ-1, sizeZ-sizeZhigh) << ";\n";
+				//should be				int p = -wF-g+k-1; // ASA book notation
+				int p = -wF-g+k; // ASA book notation
 
-				vector<mpz_class> expYTableContent = ExpATable(k, sizeExpA); // e^A-1 has MSB weight 1
-				Table::newUniqueInstance(this, "Addr1", "expA",
+				if(useMagicTableExpZm1){
+				vector<mpz_class> expYTableContent = tableExpZm1(k, p, -wF-g);
+				Table::newUniqueInstance(this, "Ztrunc", "expZminus1",
 																 expYTableContent,
-																 "ExpATable",
-																 k, sizeExpA);
+																 "ExpZm1Table",
+																 -k-p,
+																 -2*k-wF-g);
+				}
 
+				else if (useMagicTableExpZmZm1)  { 
+				vector<mpz_class> expYTableContent = tableExpZmZm1(k, p, -wF-g);
+				Table::newUniqueInstance(this, "Ztrunc", "expZmZm1",
+																 expYTableContent,
+																 "ExpZmZm1Table",
+																 -k-p,
+																 -2*k-wF-g);
+				}
+				
+
+
+				else { // generic case, use a polynomial evaluator
+					
 				REPORT(LIST, "Generating the polynomial approximation, this may take some time");
 				// We want the LSB value to be  2^(wF+g)
 				ostringstream function;
 				function << "1b"<<2*k-1<<"*(exp(x*1b-" << k << ")-x*1b-" << k << "-1)";  // e^z-z-1
 		newInstance("FixFunctionByPiecewisePoly",
 								"poly",
-								"f="+function.str()
-								+" lsbIn=" + to_string(-sizeZhigh)
+								+" lsbIn=" + to_string(-sizeZtrunc)
 								+" lsbOut=" + to_string(-wF-g+2*k-1)
 								+" d=" + to_string(d),
-								"X=>Zhigh",
+								"X=>Ztrunc",
 								"Y=>expZmZm1");
 
 			}// end if magic table/generic
@@ -558,7 +652,7 @@ namespace flopoco{
 				" <= '0' & Z;"<<endl;
 
 				vhdl << tab << declare( "expZminus1Y", sizeExpZm1) << " <= " <<
-				rangeAssign(sizeZ, sizeZ-k, "'0'") << 
+				rangeAssign(k+1, 0, "'0'") << 
 				" & expZmZm1 ;" << endl;
 				
 		newInstance("IntAdder",

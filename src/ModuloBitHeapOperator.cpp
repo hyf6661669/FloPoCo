@@ -52,7 +52,7 @@ namespace flopoco {
         range[stage][0] = 0;
         BitHeap *bitHeapTmp;
 
-        bits.resize(15,vector<vector<unsigned long long> >(100,vector<unsigned long long>(64)));
+        bits.resize(15,vector<vector<long long> >(100,vector<long long>(64)));
 
         // initialize bits
         for (int i = 0; i < bits.size(); ++i) {
@@ -72,11 +72,11 @@ namespace flopoco {
 
         while (stage < bits.size() - 1) {
             int bitHeapHeight = getMaxHeight();
-            REPORT(INFO, "bitHeapHeight: " << bitHeapHeight << " range: " << range[stage][1]);
+            REPORT(INFO, "bitHeapHeight: " << bitHeapHeight << " range upper: " << range[stage][1] << " range lower: " << range[stage][0]);
             range.resize(stage+2);
             range[stage+1].resize(2);
 
-            if (bitHeapHeight == 1 && range[stage][1] > (2*modulo)) {
+            if (bitHeapHeight == 1 && (range[stage][1] > modulo || range[stage][0] < -modulo)) {
                 REPORT(DEBUG, "bitheapHeight == 1");
                 applyPseudoCompressors();
             } else if (bitHeapHeight >= 2 || (bitHeapHeight == 1 && range[stage][1] < (2*modulo))) {
@@ -84,6 +84,7 @@ namespace flopoco {
                 ostringstream bhName;
                 bhName << "modheap_" << bhStage;
                 bitHeapTmp = new BitHeap(this, wOut-1, 0, bhName.str(), 1);
+                long long oneLL = static_cast<long long>(1);
 
                 // consider bits
                 for (int j = 0; j < bits[stage].size(); ++j) {
@@ -91,15 +92,15 @@ namespace flopoco {
                         if (bits[stage][j][k] != -1) {
                             ostringstream signalName;
 
-                            int bitOrigin = bits[stage][j][k] - (1 << (48));
-                            if (bitOrigin - (1 << (32)) > 0) {
-                                bitOrigin = bitOrigin - (1 << (32));
+                            int bitOrigin = bits[stage][j][k] - (oneLL << (48));
+                            if (bitOrigin - (oneLL << (32)) > 0) {
+                                bitOrigin = bitOrigin - (oneLL << (32));
                                 signalName << "B_" << bitOrigin << "_" << (bhStage);
-                                REPORT(INFO,"bitheap " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin);
+                                REPORT(INFO,"bitheap --- " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin);
                                 bitHeapTmp->subtractSignal(signalName.str(), j);
                             } else {
                                 signalName << "B_" << bitOrigin << "_" << (bhStage);
-                                REPORT(INFO,"bitheap " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin);
+                                REPORT(INFO,"bitheap +++ " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin);
                                 bitHeapTmp->addSignal(signalName.str(), j);
                             }
                         }
@@ -158,15 +159,16 @@ namespace flopoco {
         int mmsb = getModuloMSB();
         vector<vector<int>> rangeContrib(smsb+1,vector<int>(5));
 
+        REPORT(INFO, "range lower: " << " : " << range[stage][0]);
+        REPORT(INFO, "range upper: " << " : " << range[stage][1]);
+
+
         // fills the first two rows with the modulus and the congruent negative modulus
         for (int i = 0; i <= smsb; ++i) {
             rangeContrib[i][0] = (1 << (i)) % modulo;
             rangeContrib[i][1] = rangeContrib[i][0] - modulo;
-            if (i == smsb && range[stage][0] > 0) {
+            if (i == smsb && range[stage][0] < 0) {
                 rangeContrib[i][0] = (-1 << (i)) % modulo;
-                int power = (-1 << (i));
-                //printf("negative power for i " + i + " : " + power);
-                REPORT(INFO, "negative power for i " << i << " : " << power);
                 rangeContrib[i][1] = rangeContrib[i][0] - modulo;
             }
         }
@@ -175,7 +177,7 @@ namespace flopoco {
         int minBitsToBitHeap = INT_MAX;
         int rangeReached = 0;;
         vector<vector<int>> ranges(2,vector<int>(2));
-        vector<vector<vector<unsigned long long>>> tmpBitHeap(smsb+1,vector<vector<unsigned long long> >(64,vector<unsigned long long>(2)));
+        vector<vector<vector<long long>>> tmpBitHeap(smsb+1,vector<vector<long long> >(64,vector<long long>(2)));
 
         // initialize tmpBitHeap with -1
         for (int i = 0; i < tmpBitHeap.size(); ++i) {
@@ -186,15 +188,15 @@ namespace flopoco {
             }
         }
 
-        for (int combi = 0; combi <= (1 << (smsb))-1; ++combi) {
+        for (int combi = 0; combi <= (1 << (smsb+1))-1; ++combi) {
             int combiMin = 0;
             int combiMax = 0;
             int bhHeight = 0;
             int bitsToBitHeap = 0;
 
-            // calculate range max
+            // calculate range max and min
             for (int i = 0; i <= smsb ; ++i) {
-                if ((combi & (1 << (i - 1))) != 0 ) {
+                if ((combi & (1 << (i))) != 0 ) {
                     rangeContrib[i][2] = rangeContrib[i][0];
                     combiMax = combiMax + rangeContrib[i][0];
                 } else {
@@ -203,15 +205,22 @@ namespace flopoco {
                 }
             }
 
-            vector<vector<unsigned long long>> combiBitHeap(reqBitsForRange(combiMin, combiMax),vector<unsigned long long>(64));
+            // TODO: only debug
+            for (int k = 0; k < rangeContrib.size(); ++k) {
+                REPORT(DEBUG, "mixed range contrib:" << k << " : " << rangeContrib[k][2]);
+            }
+
+            vector<vector<long long>> combiBitHeap(reqBitsForRange(combiMin, combiMax),vector<long long>(64));
             // initialize combiBitHeap with -1
             for (int i = 0; i < combiBitHeap.size(); ++i) {
                 for (int j = 0; j < combiBitHeap[i].size(); ++j) {
                     combiBitHeap[i][j] = -1;
                 }
             }
+
             vector<int> bhHeights(combiBitHeap.size());
             int constVec = 0;
+            long long oneLL = static_cast<long long>(1);
 
             // for every column on bitheap
             for (int i = 0; i <= smsb; ++i) {
@@ -227,33 +236,44 @@ namespace flopoco {
                         if (bhHeight < bhHeights[j]) {
                             bhHeight = bhHeights[j];
                         }
-                        if (j <= leadingZeroWeight || 0 <= rangeContrib[i][2]) {
-                            combiBitHeap[j][bit] = i + (1 << (48));
+                        if(combiMin == -18 && combiMax == 14) {
+                            REPORT(INFO, "leading zero weight " << leadingZeroWeight);
+                            REPORT(INFO, "rangeContrib: " << rangeContrib[i][2]);
+                            REPORT(INFO, "j " << j << " bit " << bit);
+                        }
+                        if (j < leadingZeroWeight+1 || 0 <= rangeContrib[i][2]) {
+                            combiBitHeap[j][bit] = i + (oneLL << (48));
                         } else {
-                            combiBitHeap[j][bit] = i + (1 << (48)) + (1 << (32));
-                            constVec = (constVec + (1 << (combiBitHeap.size())) - 1 -
-                                    (1 << (leadingZeroWeight)) -1) & (1 << (smsb));
+                            combiBitHeap[j][bit] = i + (oneLL << (48)) + (oneLL << (32));
+                            //constVec = (constVec + (1 << (combiBitHeap.size())) - 1 -
+                                  //  (1 << (leadingZeroWeight)) -1) & (1 << (smsb));
                             break;
                         }
                     }
                 }
             }
-            for (int i = 0; i < combiBitHeap.size(); ++i) {
-                if (constVec & (1 << (i)) != 0) {
-                    int bit = 0;
-                    while (combiBitHeap[i][bit] != -1) {
-                        bit++;
-                    }
-                    combiBitHeap[i][bit] = i + (1 << (48)) + 5 * (1 << (32));
-                    bitsToBitHeap++;
-                    bhHeights[i] = bhHeights[i] + 1;
-                    if (bhHeight < bhHeights[i]) {
-                        bhHeight = bhHeights[i];
-                    }
-                }
-            }
+
+//            for (int i = 0; i < combiBitHeap.size(); ++i) {
+//                if (constVec & (1 << (i)) != 0) {
+//                    int bit = 0;
+//                    while (combiBitHeap[i][bit] != -1) {
+//                        bit++;
+//                    }
+//                    combiBitHeap[i][bit] = i + (1 << (48)) + 5 * (1 << (32));
+//                    bitsToBitHeap++;
+//                    bhHeights[i] = bhHeights[i] + 1;
+//                    if (bhHeight < bhHeights[i]) {
+//                        bhHeight = bhHeights[i];
+//                    }
+//                }
+//            }
             // final stage of pseudocompression
+            REPORT(DEBUG, "combi min " << combiMin << " , combiMax " << combiMax);
             if (-modulo < combiMin && combiMax < modulo) {
+                // TODO: only debug
+                for (int k = 0; k < rangeContrib.size(); ++k) {
+                    REPORT(INFO, "ranged reached - mixed range contrib:" << k << " : " << rangeContrib[k][2]);
+                }
                 rangeReached = 1;
                 ranges[1] = {combiMin, combiMax};
                 for (int i = 0; i < rangeContrib.size(); ++i) {
@@ -267,6 +287,7 @@ namespace flopoco {
             }
 
             // fill bits in temporary bitheap
+            REPORT(DEBUG, "bitsToBitHeap " << bitsToBitHeap);
             if (bitsToBitHeap < minBitsToBitHeap && bhHeight <= maxBhHeight) {
                 minBitsToBitHeap = bitsToBitHeap;
                 ranges[0] = {combiMin, combiMax};
@@ -279,6 +300,12 @@ namespace flopoco {
                         tmpBitHeap[i][j][0] = combiBitHeap[i][j];
                     }
                 }
+            }
+        }
+
+        for (int i = 0; i <= 5; ++i) {
+            for (int j = 0; j <= 8; ++j) {
+                REPORT(INFO, "tmp Bitheap: " << i << " , j " << j << " is " << tmpBitHeap[i][j][rangeReached]);
             }
         }
 
@@ -350,7 +377,7 @@ namespace flopoco {
     int ModuloBitHeapOperator::getLeadingZero(int value) {
         int msz = 0;
         for (int w = 0; w < 32; ++w) {
-            if (value & (1 << (w)) == 0) {
+            if ((value & (1 << (w))) == 0) {
                 msz = w;
             }
         }

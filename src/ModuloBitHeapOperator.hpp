@@ -32,7 +32,7 @@ namespace flopoco {
 
     protected:
 
-        vector<vector<vector<unsigned long long> > > bits;
+        vector<vector<vector<long long> > > bits;
 
         int stage;
 

@@ -375,7 +375,7 @@ namespace flopoco {
     }
 
     int ModuloBitHeapOperator::getLeadingZero(int value) {
-        int msz = 0;
+        int msz = -1;
         for (int w = 0; w < 32; ++w) {
             if ((value & (1 << (w))) == 0) {
                 msz = w;

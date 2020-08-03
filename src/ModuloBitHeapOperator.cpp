@@ -13,18 +13,18 @@ using namespace std;
 namespace flopoco {
 
 
-    ModuloBitHeapOperator::ModuloBitHeapOperator(Target* target, int wIn_, int wOut_, int modulo_) : Operator(target), wIn(wIn_), wOut(wOut_), modulo(modulo_) {
+    ModuloBitHeapOperator::ModuloBitHeapOperator(Target* target, int wIn_, int modulo_) : Operator(target), wIn(wIn_), modulo(modulo_) {
         srcFileName="ModuloBitHeapOperator";
 
         // definition of the name of the operator
         ostringstream name;
-        name << "ModuloBitHeapOperator_" << wIn << "_" << wOut;
+        name << "ModuloBitHeapOperator_" << wIn << "_" << modulo;
         setName(name.str()); // See also setNameWithFrequencyAndUID()
         // Copyright
         setCopyrightString("Annika Oeste, 2020");
 
         REPORT(INFO,"Declaration of ModuloBitHeapOperator \n");
-        REPORT(DETAILED, "this operator has received three parameters: wIn " << wIn << " ,wOut " << wOut << " modulo " << modulo);        // modulo
+        REPORT(DETAILED, "this operator has received two parameters: wIn " << wIn << " modulo " << modulo);
 
         // debug message for developer
         REPORT(DEBUG,"debug of ModuloBitHeapOperator");
@@ -33,7 +33,8 @@ namespace flopoco {
         addInput ("X" , wIn, true);
         addConstant("M", "positive", modulo);
         // declaring output
-        addOutput("S" , wOut);
+        int outPutSize = getModuloMSB() + 1;
+        addOutput("S" , outPutSize);
 
         addFullComment("Start of vhdl generation");
         int bhStage = 0;
@@ -47,10 +48,11 @@ namespace flopoco {
         }
 
         stage = 0;
-        range.resize(1);
-        range[stage].resize(2);
-        range[stage][0] = 0;
+        rangeBH.resize(1);
+        rangeBH[stage].resize(2);
+        rangeBH[stage][0] = 0;
         BitHeap *bitHeapTmp;
+        int bitHeapReqBits;
 
         bits.resize(20,vector<vector<long long> >(100,vector<long long>(64)));
 
@@ -66,23 +68,24 @@ namespace flopoco {
         // fill bits for input
         for (int i = 0; i < wIn; ++i) {
             bits[0][i][0] = i;
-            range[stage][1] = range[stage][1] + (1 << i);
+            rangeBH[stage][1] = rangeBH[stage][1] + (1 << i);
         }
 
         while (stage < bits.size() - 1) {
             int bitHeapHeight = getMaxHeight();
-            REPORT(DEBUG, "bitHeapHeight: " << bitHeapHeight << " range upper: " << range[stage][1] << " range lower: " << range[stage][0]);
-            range.resize(stage+2);
-            range[stage+1].resize(2);
+            REPORT(DEBUG, "bitHeapHeight: " << bitHeapHeight << "upper: " << rangeBH[stage][1] << "lower: " << rangeBH[stage][0]);
+            rangeBH.resize(stage+2);
+            rangeBH[stage+1].resize(2);
 
-            if (bitHeapHeight == 1 && (range[stage][1] >= modulo || range[stage][0] < -modulo)) {
+            if (bitHeapHeight == 1 && (rangeBH[stage][1] >= modulo || rangeBH[stage][0] < -modulo)) {
                 REPORT(DEBUG, "bitheapHeight == 1");
                 applyPseudoCompressors();
-            } else if (bitHeapHeight >= 2 || (bitHeapHeight == 1 && (range[stage][1] < modulo || range[stage][0] >= -modulo))) {
+            } else if (bitHeapHeight >= 2 || (bitHeapHeight == 1 && (rangeBH[stage][1] < modulo || rangeBH[stage][0] >= -modulo))) {
                 REPORT(DEBUG, "bitheapHeight >= 2");
                 ostringstream bhName;
                 bhName << "modheap_" << bhStage;
-                bitHeapTmp = new BitHeap(this, wOut-1, 0, bhName.str(), 1);
+                bitHeapReqBits = reqBitsForRange(rangeBH[stage][0], rangeBH[stage][1]);
+                bitHeapTmp = new BitHeap(this, bitHeapReqBits-1, 0, bhName.str(), 1);
                 long long oneLL = static_cast<long long>(1);
 
                 // consider bits
@@ -113,10 +116,10 @@ namespace flopoco {
                 }
                 bitHeapTmp->startCompression();
 
-                range[stage+1] = range[stage];
-                REPORT(DEBUG, "range in next stage is: " << range[stage+1][1]);
-                if (-modulo < range[stage+1][0] && range[stage+1][1] < modulo) {
-                    REPORT(DEBUG, "modulo range reached in bitheap: break");
+                rangeBH[stage+1] = rangeBH[stage];
+                REPORT(DEBUG, "rangeBH in next stage is: " << rangeBH[stage+1][1]);
+                if (-modulo < rangeBH[stage+1][0] && rangeBH[stage+1][1] < modulo) {
+                    REPORT(DEBUG, "modulo rangeBH reached in bitheap: break");
                     break;
                 }
 
@@ -143,7 +146,7 @@ namespace flopoco {
                     bits[stage+1][i][0] = i;
                 }
 
-                for (int i = 0; i < wOut; ++i) {
+                for (int i = 0; i < bitHeapReqBits; ++i) {
                     ostringstream bitName;
                     bitName << "B_" << i << "_" << (bhStage+1);
                     vhdl << tab << declare(
@@ -153,27 +156,29 @@ namespace flopoco {
             }
             stage++;
         }
-        vhdl << tab << "S <= " << bitHeapTmp->getSumName(wOut-1,0) << " when ";
-        vhdl << tab << bitHeapTmp->getSumName(wOut-1, wOut-1) << " = 0 else " << bitHeapTmp->getSumName(wOut-1,0) << " + M;" << endl;
-        //vhdl << tab << "S <= " << bitHeapTmp->getSumName(wOut-1,0) << ";" << endl;
+        vhdl << tab << declare(
+                "T", bitHeapReqBits, false) << tab << "<= " << bitHeapTmp->getSumName(bitHeapReqBits-1,0) << " + M;" << endl;
+        vhdl << tab << "S <= " << bitHeapTmp->getSumName(outPutSize-1,0) << " when ";
+        vhdl << tab << bitHeapTmp->getSumName(bitHeapReqBits-1, bitHeapReqBits-1) << " = 0";
+        vhdl << tab << "else T" << range(outPutSize-1,0) << ";" << endl;
         addFullComment("End of vhdl generation");
     }
 
     void ModuloBitHeapOperator::applyPseudoCompressors() {
         REPORT(DEBUG,"applyPseudoCompressors");
         int smsb = getMSBInStage();
-        int mmsb = getModuloMSB();
         vector<vector<int>> rangeContrib(smsb+1,vector<int>(5));
 
         // fills the first two rows with the modulus and the congruent negative modulus
         for (int i = 0; i <= smsb; ++i) {
             rangeContrib[i][0] = (1 << (i)) % modulo;
             rangeContrib[i][1] = rangeContrib[i][0] - modulo;
-            if (i == smsb && range[stage][0] < 0) {
+            if (i == smsb && rangeBH[stage][0] < 0) {
                 rangeContrib[i][0] = (-1 << (i)) % modulo;
                 rangeContrib[i][1] = rangeContrib[i][0] - modulo;
             }
         }
+
         int maxBhHeight = INT_MAX;
         int minBitsToBitHeap = INT_MAX;
         int rangeReached = 0;;
@@ -194,7 +199,7 @@ namespace flopoco {
             int combiMax = 0;
             int bhHeight = 0;
             int bitsToBitHeap = 0;
-            // calculate range max and min
+            // calculate rangeBH max and min
             for (int i = 0; i <= smsb ; ++i) {
                 if ((combi & (1 << (i))) != 0 ) {
                     rangeContrib[i][2] = rangeContrib[i][0];
@@ -300,7 +305,7 @@ namespace flopoco {
             }
         }
         // fill bits from tmp bitheap in bits
-        range[stage+1] = ranges[rangeReached];
+        rangeBH[stage+1] = ranges[rangeReached];
         int reqCols = reqBitsForRange(ranges[rangeReached][0], ranges[rangeReached][1]);
         for (int i = 0; i < tmpBitHeap.size(); ++i) {
             for (int j = 0; j < reqCols; ++j) {
@@ -336,9 +341,9 @@ namespace flopoco {
     }
 
     int ModuloBitHeapOperator::getModuloMSB() {
-        int mmsb = 1;
+        int mmsb = 0;
         for (int w = 0; w < 31; ++w) {
-            if (modulo & (1 << (w)) != 0) {
+            if ((modulo & (1 << (w))) != 0) {
                 mmsb = w;
             }
         }
@@ -413,11 +418,10 @@ namespace flopoco {
     }
 
     OperatorPtr ModuloBitHeapOperator::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
-        int wIn, wOut, modulo;
+        int wIn, modulo;
         UserInterface::parseInt(args, "wIn", &wIn);
-        UserInterface::parseInt(args, "wOut", &wOut);
         UserInterface::parseInt(args, "modulo", &modulo);
-        return new ModuloBitHeapOperator(target, wIn, wOut, modulo);
+        return new ModuloBitHeapOperator(target, wIn, modulo);
     }
 
     void ModuloBitHeapOperator::registerFactory(){
@@ -430,8 +434,7 @@ namespace flopoco {
                 // Syntax is: a semicolon-separated list of parameterDescription;
                 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                            "wIn(int)=16: A first parameter - the input size; \
-                            wOut(int): A second parameter - the output size; \
-                        modulo(int): modulo",
+                            modulo(int): modulo",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",
                            ModuloBitHeapOperator::parseArguments

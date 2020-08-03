@@ -11,12 +11,11 @@ namespace flopoco {
     public:
 
             int wIn; // length of the input
-            int wOut; // length of the output
             int modulo;
 
     public:
 
-            ModuloBitHeapOperator(Target* target, int wIn = 0, int wOut = 0, int modulo = 1);
+            ModuloBitHeapOperator(Target* target, int wIn = 0, int modulo = 1);
 
             ~ModuloBitHeapOperator() {};
 
@@ -36,7 +35,7 @@ namespace flopoco {
 
         int stage;
 
-        vector<vector<int> > range;
+        vector<vector<int> > rangeBH;
 
         void applyPseudoCompressors();
 
@@ -51,6 +50,7 @@ namespace flopoco {
         int getLeadingZero(int value);
     };
 }//namespace
+
 
 
 

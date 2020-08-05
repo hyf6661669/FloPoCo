@@ -111,12 +111,14 @@ namespace flopoco{
 		return result;
 	};
 
-	// TODO fix parameters
-	vector<mpz_class>	tableExpZm1(int k, int p, int l) // with the notations of the ASA book 
+	vector<mpz_class>	tableExpZm1(int k, int l) // with the notations of the ASA book: l=-wF-g 
 	{
+		// This table inputs Z in the format (-k-1, l) -- sizeZ and outputs e^Z-1 with LSB l
 		vector<mpz_class> result;
-		int wIn=-k-p; 
-		for(int x=0; x<(1<<wIn); x++){
+		int wIn=-l-k;
+		int wOut=-l-k+1;
+		cout << "A " << wIn << endl;
+		for(int z=0; z<(1<<wIn); z++){
 			mpz_class h;
 			mpfr_t mpz, mpy, one;
 
@@ -126,11 +128,12 @@ namespace flopoco{
 			mpfr_init2(mpy, LARGE_PREC); 
 
 			// build z 
-			mpfr_set_ui(mpz, x, GMP_RNDN);
-			mpfr_div_2si(mpz, mpz, -p, GMP_RNDN);
+			mpfr_set_ui(mpz, z, GMP_RNDN); // exact
+			mpfr_mul_2si(mpz, mpz, l, GMP_RNDN); // exact
 			// compute its exp
-			mpfr_exp(mpy, mpz, GMP_RNDN);
-			mpfr_sub(mpy, mpy, one, GMP_RNDN); // e^z-1 
+			mpfr_exp(mpy, mpz, GMP_RNDN); // rounding here
+			//subtract 1 
+			mpfr_sub(mpy, mpy, one, GMP_RNDN); // exact e^z-1 
 		
 			//now scale to an int 
 			mpfr_mul_2si(mpy,mpy, -l, GMP_RNDN); 
@@ -138,7 +141,7 @@ namespace flopoco{
 
 			// debug
 			//			if((h>=(1<<27)) || l>=512 || h<0 || l<0)
-			 cout  <<"x=" << x << " h=" << h <<endl;
+			 cout  <<"z=" << z << " h=" << h <<endl;
 
 			mpfr_clears(mpz, mpy, one, NULL);
 
@@ -545,7 +548,6 @@ namespace flopoco{
 		else{ // expY not plainly tabulated, splitting it into A and Z
 			vhdl << tab << declare("A", k) << " <= Y" << range(sizeY-1, sizeY-k) << ";\n";
 			vhdl << tab << declare("Z", sizeZ) << " <= Y" << range(sizeZ-1, 0) << ";\n";
-			vhdl << tab << declare("Ztrunc", sizeZtrunc) << " <= Z" << range(sizeZ-1, sizeZ-sizeZtrunc) << ";\n";
 			
 			vector<mpz_class> expYTableContent = ExpATable(k, sizeExpA); // e^A-1 has MSB weight 1
 			Table::newUniqueInstance(this, "A", "expA",
@@ -559,21 +561,22 @@ namespace flopoco{
 				int p = -wF-g+k; // ASA book notation
 
 				if(useTableExpZm1){
-				vector<mpz_class> expYTableContent = tableExpZm1(k, p, -wF-g);
-				Table::newUniqueInstance(this, "Ztrunc", "expZminus1",
-																 expYTableContent,
-																 "ExpZm1Table",
-																 -k-p,
-																 -2*k-wF-g);
+					vector<mpz_class> expZm1TableContent = tableExpZm1(k, -wF-g);
+					Table::newUniqueInstance(this, "Z", "expZminus1",
+																	 expZm1TableContent,
+																	 "ExpZm1Table",
+																	 sizeZ,
+																	 sizeZ+1);
 				}
 
 				else if (useTableExpZmZm1)  { 
-				vector<mpz_class> expYTableContent = tableExpZmZm1(k, p, -wF-g);
-				Table::newUniqueInstance(this, "Ztrunc", "expZmZm1",
-																 expYTableContent,
-																 "ExpZmZm1Table",
-																 -k-p,
-																 -2*k-wF-g);
+					vhdl << tab << declare("Ztrunc", sizeZtrunc) << " <= Z" << range(sizeZ-1, sizeZ-sizeZtrunc) << ";\n";
+					vector<mpz_class> expYTableContent = tableExpZmZm1(k, p, -wF-g);
+					Table::newUniqueInstance(this, "Ztrunc", "expZm1",
+																	 expYTableContent,
+																	 "ExpZmZm1Table",
+																	 -k-p,
+																	 -2*k-wF-g);
 				}
 				
 
@@ -584,7 +587,7 @@ namespace flopoco{
 				// We want the LSB value to be  2^(wF+g)
 				ostringstream function;
 				function << "1b"<<2*k-1<<"*(exp(x*1b-" << k << ")-x*1b-" << k << "-1)";  // e^z-z-1
-		newInstance("FixFunctionByPiecewisePoly",
+				newInstance("FixFunctionByPiecewisePoly",
 								"poly",
 								+"f=" + function.str() + ""
 								+" lsbIn=" + to_string(-sizeZtrunc)
@@ -606,7 +609,6 @@ namespace flopoco{
 				
 				vhdl << tab << "-- Computing Z + (exp(Z)-1-Z)" << endl;
 
-				
 				vhdl << tab << declare( "expZminus1X", sizeExpZm1) << 
 				" <= '0' & Z;"<<endl;
 

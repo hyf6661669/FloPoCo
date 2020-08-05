@@ -111,6 +111,9 @@ namespace flopoco{
 		return result;
 	};
 
+
+	// All these functions could be removed by calling FixFunctionByTable
+	// it is somehow pedagogical, too
 	vector<mpz_class>	tableExpZm1(int k, int l) // with the notations of the ASA book: l=-wF-g 
 	{
 		// This table inputs Z in the format (-k-1, l) -- sizeZ and outputs e^Z-1 with LSB l
@@ -537,12 +540,25 @@ namespace flopoco{
 
 		vhdl << tab << "-- Now compute the exp of this fixed-point value" <<endl;
 
+
+		
 		if(expYTabulated) {
-			vector<mpz_class> expYTableContent = ExpATable(sizeY, sizeExpY); // e^A-1 has MSB weight 1
+			
+#if 0 // both work, not sure which is the simplest to read
+			// tabulate e^Y with Y in sfix(-1, -wF-g) ie in -0.5, 0.5.
+			newInstance("FixFunctionByTable",
+									"ExpYTable",
+									"f=exp(2*x) signedIn=true lsbIn=" + to_string(-wF-g) + " lsbOut="+to_string(-wF-g),
+									"X=>Y",
+									"Y=>expY");			
+
+#else
+			vector<mpz_class> expYTableContent = ExpATable(sizeY, sizeExpY);
 			Table::newUniqueInstance(this, "Y", "expY",
 															 expYTableContent,
-															 "ExpATable",
+															 "ExpYTable",
 															 sizeY, sizeExpY);
+#endif
 		}
 
 		else{ // expY not plainly tabulated, splitting it into A and Z
@@ -562,7 +578,7 @@ namespace flopoco{
 
 				if(useTableExpZm1){
 					vector<mpz_class> expZm1TableContent = tableExpZm1(k, -wF-g);
-					Table::newUniqueInstance(this, "Z", "expZminus1",
+					Table::newUniqueInstance(this, "Z", "expZm1",
 																	 expZm1TableContent,
 																	 "ExpZm1Table",
 																	 sizeZ,
@@ -572,7 +588,7 @@ namespace flopoco{
 				else if (useTableExpZmZm1)  { 
 					vhdl << tab << declare("Ztrunc", sizeZtrunc) << " <= Z" << range(sizeZ-1, sizeZ-sizeZtrunc) << ";\n";
 					vector<mpz_class> expYTableContent = tableExpZmZm1(k, p, -wF-g);
-					Table::newUniqueInstance(this, "Ztrunc", "expZm1",
+					Table::newUniqueInstance(this, "Ztrunc", "expZmZm1",
 																	 expYTableContent,
 																	 "ExpZmZm1Table",
 																	 -k-p,
@@ -583,20 +599,21 @@ namespace flopoco{
 
 				else { // generic case, use a polynomial evaluator
 					
-				REPORT(LIST, "Generating the polynomial approximation, this may take some time");
-				// We want the LSB value to be  2^(wF+g)
-				ostringstream function;
-				function << "1b"<<2*k-1<<"*(exp(x*1b-" << k << ")-x*1b-" << k << "-1)";  // e^z-z-1
-				newInstance("FixFunctionByPiecewisePoly",
-								"poly",
-								+"f=" + function.str() + ""
-								+" lsbIn=" + to_string(-sizeZtrunc)
-								+" lsbOut=" + to_string(-wF-g+2*k-1)
-								+" d=" + to_string(d),
-								"X=>Ztrunc",
-								"Y=>expZmZm1");
-
-			}// end if magic table/generic
+					vhdl << tab << declare("Ztrunc", sizeZtrunc) << " <= Z" << range(sizeZ-1, sizeZ-sizeZtrunc) << ";\n";
+					REPORT(LIST, "Generating the polynomial approximation, this may take some time");
+					// We want the LSB value to be  2^(wF+g)
+					ostringstream function;
+					function << "1b"<<2*k-1<<"*(exp(x*1b-" << k << ")-x*1b-" << k << "-1)";  // e^z-z-1
+					newInstance("FixFunctionByPiecewisePoly",
+											"poly",
+											+"f=" + function.str() + ""
+											+" lsbIn=" + to_string(-sizeZtrunc)
+											+" lsbOut=" + to_string(-wF-g+2*k-1)
+											+" d=" + to_string(d),
+											"X=>Ztrunc",
+											"Y=>expZmZm1");
+					
+			}// end if table/poly
 
 			// Do we need the adder that adds back Z to e^Z-Zm1? 
 			if(!useTableExpZm1) {
@@ -609,29 +626,29 @@ namespace flopoco{
 				
 				vhdl << tab << "-- Computing Z + (exp(Z)-1-Z)" << endl;
 
-				vhdl << tab << declare( "expZminus1X", sizeExpZm1) << 
+				vhdl << tab << declare( "expZm1adderX", sizeExpZm1) << 
 				" <= '0' & Z;"<<endl;
 
-				vhdl << tab << declare( "expZminus1Y", sizeExpZm1) << " <= " <<
-				rangeAssign(k+1, 0, "'0'") << 
-				" & expZmZm1 ;" << endl;
+				int sizeActualexpZmZm1 = getSignalByName("expZmZm1")->width(); // if faithful it will be one bit more... be on the safe size
+				vhdl << tab << declare( "expZm1adderY", sizeExpZm1) << " <= " <<
+					rangeAssign(sizeExpZm1-sizeActualexpZmZm1-1, 0, "'0'") << " & expZmZm1 ;" << endl;
 				
 		newInstance("IntAdder",
-								"Adder_expZminus1",
+								"Adder_expZm1",
 								"wIn=" + to_string(sizeExpZm1),
-								"X=>expZminus1X,Y=>expZminus1Y",
-								"R=>expZminus1",
+								"X=>expZm1adderX,Y=>expZm1adderY",
+								"R=>expZm1",
 								"Cin=>'0'");
 
 
-			} // now we have in expZminus1 e^Z-1
+			} // now we have in expZm1 e^Z-1
 
 			// Now, if we want g=3 (needed for the magic table to fit a BRAM for single prec)
 			// we need to keep max error below 4 ulp.
 			// Every half-ulp counts, in particular we need to round expA instead of truncating it...
 			// The following "if" is because I have tried several alternatives to get rid of this addition.
 			if(useTableExpZm1 || useTableExpZmZm1) {
-				vhdl << tab << "-- Rounding expA to the same accuracy as expZminus1" << endl;
+				vhdl << tab << "-- Rounding expA to the same accuracy as expZm1" << endl;
 				vhdl << tab << "--   (truncation would not be accurate enough and require one more guard bit)" << endl;
 				vhdl << tab << declare("expA_T", sizeMultIn+1) << " <= expA"+range(sizeExpA-1, sizeExpA-sizeMultIn-1) << ";" << endl;
 				newInstance("IntAdder",
@@ -644,7 +661,7 @@ namespace flopoco{
 				vhdl << tab << declare("expArounded", sizeMultIn) << " <= expArounded0" << range(sizeMultIn, 1) << ";" << endl;
 			}
 			else{ // if  generic we have a faithful expZmZm1, not a CR one: we need g=4, so anyway we do not need to worry
-				vhdl << tab << "-- Truncating expA to the same accuracy as expZminus1" << endl;
+				vhdl << tab << "-- Truncating expA to the same accuracy as expZm1" << endl;
 				vhdl << tab << declare("expArounded", sizeMultIn) << " <= expA" << range(sizeExpA-1, sizeExpA-sizeMultIn) << ";" << endl;
 			}
 
@@ -659,7 +676,7 @@ namespace flopoco{
 			addSubComponent(lowProd);
 			
 			inPortMap(lowProd, "X", "expArounded");
-			inPortMap(lowProd, "Y", "expZminus1");
+			inPortMap(lowProd, "Y", "expZm1");
 			outPortMap(lowProd, "R", "lowerProduct");
 			
 			vhdl << instance(lowProd, "TheLowerProduct")<<endl;
@@ -677,7 +694,7 @@ namespace flopoco{
 											 +" wY=" + to_string(sizeExpZm1)
 											 +" wOut=" + to_string(sizeProd)   // truncated
 											 +" signedI0=0",
-											 "X=>expArounded, Y=>expZminus1 ",
+											 "X=>expArounded, Y=>expZm1 ",
 											 "R=>lowerProduct");
 
 

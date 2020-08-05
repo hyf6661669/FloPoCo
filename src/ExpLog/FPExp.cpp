@@ -45,6 +45,8 @@ Pass DSPThreshold to PolyEval
 replace the truncated mult and following adder with an FixedMultAdd 
 Clean up poly eval and bitheapize it
 
+
+All the tables could be FixFunctionByTable...
 */
 
 #define LARGE_PREC 1000 // 1000 bits should be enough for everybody
@@ -136,7 +138,7 @@ namespace flopoco{
 
 			// debug
 			//			if((h>=(1<<27)) || l>=512 || h<0 || l<0)
-			// cout  <<"x=" << x << " h=" << h <<endl;
+			 cout  <<"x=" << x << " h=" << h <<endl;
 
 			mpfr_clears(mpz, mpy, one, NULL);
 
@@ -288,7 +290,7 @@ namespace flopoco{
 			REPORT(DETAILED, "sizeExpY=" << sizeExpY);		
 		}
 		else if (wF<=23) {
-			REPORT(DETAILED, "We will split Y into A and Z, using a magic table");
+			REPORT(DETAILED, "We will split Y into A and Z, using a table for the Z part");
 			g=4;
 			k=10;
 			sizeY=wF+g;
@@ -298,7 +300,7 @@ namespace flopoco{
 			sizeExpZm1 = sizeZ+1; // 
 			sizeMultIn = sizeZ; // sacrificing accuracy where it costs
 			if (sizeZ<=k) {
-				REPORT(DETAILED, "Z is small, simpler magic table tabulating e^Z-1");
+				REPORT(DETAILED, "Z is small, simpler table tabulating e^Z-1");
 				useTableExpZm1=true;
 			}
 			else {
@@ -584,6 +586,7 @@ namespace flopoco{
 				function << "1b"<<2*k-1<<"*(exp(x*1b-" << k << ")-x*1b-" << k << "-1)";  // e^z-z-1
 		newInstance("FixFunctionByPiecewisePoly",
 								"poly",
+								+"f=" + function.str() + ""
 								+" lsbIn=" + to_string(-sizeZtrunc)
 								+" lsbOut=" + to_string(-wF-g+2*k-1)
 								+" d=" + to_string(d),

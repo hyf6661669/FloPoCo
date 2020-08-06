@@ -63,7 +63,7 @@ namespace flopoco {
                     bits[i][j][k] = -1;
                 }
             }
-            }
+        }
 
         // fill bits for input
         for (int i = 0; i < wIn; ++i) {
@@ -142,7 +142,7 @@ namespace flopoco {
                         break;
                     }
                 }
-                for (int i = 0; i <= msbSum; ++i) {
+                for (int i = 0; i < bitHeapReqBits; ++i) {
                     bits[stage+1][i][0] = i;
                 }
 
@@ -351,9 +351,12 @@ namespace flopoco {
     }
 
     int ModuloBitHeapOperator::reqBitsForRange(int min, int max) {
+        REPORT(DEBUG, "reBitsForRange min: " << min << " max " << max);
         int bit = 0;
-        while((max >> bit) != 0) {
-            bit++;
+        if (max > 0) {
+            while((max >> bit) != 0) {
+                bit++;
+            }
         }
         if (min < 0) {
             int negBit = 0;

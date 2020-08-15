@@ -73,15 +73,15 @@ namespace flopoco {
 
         while (stage < bits.size() - 1) {
             int bitHeapHeight = getMaxHeight();
-            REPORT(DEBUG, "bitHeapHeight: " << bitHeapHeight << "upper: " << rangeBH[stage][1] << "lower: " << rangeBH[stage][0]);
+            REPORT(INFO, "bitHeapHeight: " << bitHeapHeight << " upper: " << rangeBH[stage][1] << " lower: " << rangeBH[stage][0]);
             rangeBH.resize(stage+2);
             rangeBH[stage+1].resize(2);
 
             if (bitHeapHeight == 1 && (rangeBH[stage][1] >= modulo || rangeBH[stage][0] < -modulo)) {
-                REPORT(DEBUG, "bitheapHeight == 1");
+                REPORT(INFO, "bitheapHeight == 1");
                 applyPseudoCompressors();
             } else if (bitHeapHeight >= 2 || (bitHeapHeight == 1 && (rangeBH[stage][1] < modulo || rangeBH[stage][0] >= -modulo))) {
-                REPORT(DEBUG, "bitheapHeight >= 2");
+                REPORT(INFO, "bitheapHeight >= 2");
                 ostringstream bhName;
                 bhName << "modheap_" << bhStage;
                 bitHeapReqBits = reqBitsForRange(rangeBH[stage][0], rangeBH[stage][1]);
@@ -99,7 +99,7 @@ namespace flopoco {
                             if (bitOrigin - (oneLL << (32)) >= 0) {
                                 bitOrigin = bitOrigin - (oneLL << (32));
                                 signalName << "B_" << bitOrigin << "_" << (bhStage);
-                                REPORT(DEBUG,"bitheap --- " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
+                                REPORT(INFO,"bitheap --- " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
 
                                 ostringstream signalNameNeg;
                                 signalNameNeg << "B_" << bitOrigin << "_" << bhStage << "N";
@@ -108,7 +108,7 @@ namespace flopoco {
                                 bitHeapTmp->subtractSignal(signalNameNeg.str(), j);
                             } else {
                                 signalName << "B_" << bitOrigin << "_" << (bhStage);
-                                REPORT(DEBUG,"bitheap +++ " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
+                                REPORT(INFO,"bitheap +++ " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
                                 bitHeapTmp->addSignal(signalName.str(), j);
                             }
                         }
@@ -118,30 +118,11 @@ namespace flopoco {
 
                 rangeBH[stage+1] = rangeBH[stage];
                 REPORT(DEBUG, "rangeBH in next stage is: " << rangeBH[stage+1][1]);
-                if (-modulo < rangeBH[stage+1][0] && rangeBH[stage+1][1] < modulo) {
-                    REPORT(DEBUG, "modulo rangeBH reached in bitheap: break");
+                if (-modulo <= rangeBH[stage+1][0] && rangeBH[stage+1][1] < modulo) {
+                    REPORT(INFO, "modulo rangeBH reached in bitheap: break");
                     break;
                 }
 
-                // add sum bits to bits in next stage
-                vector<vector<Bit*>> bhBits = bitHeapTmp->getBits();
-
-                // add bits with weight to get correct int
-                // this int then has to be put in the bits vector
-                int bitHeapSum = 0;
-                for (int i = 0; i < bhBits.size(); ++i) {
-                    for (int j = 0; j < bhBits[i].size(); ++j) {
-                        bitHeapSum += (1 << bhBits[i][j]->weight);
-                    }
-                }
-                string sumString = bitset<10>(bitHeapSum).to_string();
-                int msbSum = 0;
-                for (int i = 0; i < sumString.size(); ++i) {
-                    if ((sumString[i] - '0') == 1) {
-                        msbSum = sumString.size() - 1 - i;
-                        break;
-                    }
-                }
                 for (int i = 0; i < bitHeapReqBits; ++i) {
                     bits[stage+1][i][0] = i;
                 }
@@ -152,6 +133,7 @@ namespace flopoco {
                     vhdl << tab << declare(
                             bitName.str(), 1, false) << tab << "<=" << bitHeapTmp->getSumName() << of(i) << ";" << endl;
                 }
+                delete bitHeapTmp;
                 bhStage++;
             }
             stage++;
@@ -159,9 +141,10 @@ namespace flopoco {
         vhdl << tab << declare(
                 "T", bitHeapReqBits, false) << tab << "<= " << bitHeapTmp->getSumName(bitHeapReqBits-1,0) << " + M;" << endl;
         vhdl << tab << "S <= " << bitHeapTmp->getSumName(outPutSize-1,0) << " when ";
-        vhdl << tab << bitHeapTmp->getSumName(bitHeapReqBits-1, bitHeapReqBits-1) << " = 0";
+        vhdl << bitHeapTmp->getSumName(bitHeapReqBits-1, bitHeapReqBits-1) << " = 0";
         vhdl << tab << "else T" << range(outPutSize-1,0) << ";" << endl;
         addFullComment("End of vhdl generation");
+        delete bitHeapTmp;
     }
 
     void ModuloBitHeapOperator::applyPseudoCompressors() {
@@ -174,7 +157,7 @@ namespace flopoco {
             rangeContrib[i][0] = (1 << (i)) % modulo;
             rangeContrib[i][1] = rangeContrib[i][0] - modulo;
             if (i == smsb && rangeBH[stage][0] < 0) {
-                rangeContrib[i][0] = (-1 << (i)) % modulo;
+                rangeContrib[i][0] = (((-1 << (i)) % modulo) + modulo) % modulo;
                 rangeContrib[i][1] = rangeContrib[i][0] - modulo;
             }
         }
@@ -264,6 +247,7 @@ namespace flopoco {
             // final stage of pseudocompression
             REPORT(DEBUG, "combi min " << combiMin << " , combiMax " << combiMax);
             if (-modulo <= combiMin && combiMax < modulo) {
+                REPORT(DEBUG, "rangeReached");
                 rangeReached = 1;
                 ranges[1] = {combiMin, combiMax};
                 for (int i = 0; i < rangeContrib.size(); ++i) {

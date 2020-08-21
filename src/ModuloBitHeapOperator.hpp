@@ -15,13 +15,15 @@ namespace flopoco {
 
     public:
 
-            ModuloBitHeapOperator(Target* target, int wIn = 0, int modulo = 1);
+            ModuloBitHeapOperator(OperatorPtr parentOp, Target* target, int wIn = 0, int modulo = 1);
 
             ~ModuloBitHeapOperator() {};
 
             void emulate(TestCase * tc);
 
             void buildStandardTestCases(TestCaseList* tcl);
+
+            static TestList unitTest(int index);
 
             /** Factory method that parses arguments and calls the constructor */
             static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target , vector<string> &args);

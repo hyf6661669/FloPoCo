@@ -13,7 +13,7 @@ using namespace std;
 namespace flopoco {
 
 
-    ModuloBitHeapOperator::ModuloBitHeapOperator(Target* target, int wIn_, int modulo_) : Operator(target), wIn(wIn_), modulo(modulo_) {
+    ModuloBitHeapOperator::ModuloBitHeapOperator(OperatorPtr parentOp, Target* target, int wIn_, int modulo_) : Operator(parentOp,  target), wIn(wIn_), modulo(modulo_) {
         srcFileName="ModuloBitHeapOperator";
 
         // definition of the name of the operator
@@ -404,11 +404,31 @@ namespace flopoco {
         tcl->add(tc);
     }
 
+    TestList ModuloBitHeapOperator::unitTest(int index)
+    {
+        // the static list of mandatory tests
+        TestList testStateList;
+        vector<pair<string,string>> paramList;
+        if(index==-1) 	{ // The unit tests
+            for (int wIn=8; wIn<=12; wIn++) {
+                for(int m=2; m<20; m++) {
+                    paramList.push_back(make_pair("wIn",to_string(wIn)));
+                    paramList.push_back(make_pair("modulo",to_string(m)));
+                    paramList.push_back(make_pair("TestBench n=",to_string(1000)));
+                    testStateList.push_back(paramList);
+
+                    paramList.clear();
+                }
+            }
+        }
+        return testStateList;
+    }
+
     OperatorPtr ModuloBitHeapOperator::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
         int wIn, modulo;
         UserInterface::parseInt(args, "wIn", &wIn);
         UserInterface::parseInt(args, "modulo", &modulo);
-        return new ModuloBitHeapOperator(target, wIn, modulo);
+        return new ModuloBitHeapOperator(parentOp, target, wIn, modulo);
     }
 
     void ModuloBitHeapOperator::registerFactory(){
@@ -424,7 +444,8 @@ namespace flopoco {
                             modulo(int): modulo",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",
-                           ModuloBitHeapOperator::parseArguments
+                           ModuloBitHeapOperator::parseArguments,
+                           ModuloBitHeapOperator::unitTest
         ) ;
     }
 }//namespace

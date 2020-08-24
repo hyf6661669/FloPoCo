@@ -148,7 +148,7 @@ namespace flopoco {
     }
 
     void ModuloBitHeapOperator::applyPseudoCompressors() {
-        REPORT(DEBUG,"applyPseudoCompressors");
+        REPORT(INFO,"applyPseudoCompressors");
         int smsb = getMSBInStage();
         vector<vector<int>> rangeContrib(smsb+1,vector<int>(5));
 
@@ -247,7 +247,7 @@ namespace flopoco {
             // final stage of pseudocompression
             REPORT(DEBUG, "combi min " << combiMin << " , combiMax " << combiMax);
             if (-modulo <= combiMin && combiMax < modulo) {
-                REPORT(DEBUG, "rangeReached");
+                REPORT(INFO, "rangeReached");
                 rangeReached = 1;
                 ranges[1] = {combiMin, combiMax};
                 for (int i = 0; i < rangeContrib.size(); ++i) {
@@ -265,6 +265,7 @@ namespace flopoco {
                         tmpBitHeap[i][j][1] = combiBitHeap[i][j];
                     }
                 }
+                break;
             }
             // fill bits in temporary bitheap
             if (bitsToBitHeap < minBitsToBitHeap && bhHeight <= maxBhHeight) {
@@ -291,8 +292,8 @@ namespace flopoco {
         // fill bits from tmp bitheap in bits
         rangeBH[stage+1] = ranges[rangeReached];
         int reqCols = reqBitsForRange(ranges[rangeReached][0], ranges[rangeReached][1]);
-        for (int i = 0; i < tmpBitHeap.size(); ++i) {
-            for (int j = 0; j < reqCols; ++j) {
+        for (int i = 0; i < reqCols; ++i) {
+            for (int j = 0; j < tmpBitHeap[i].size(); ++j) {
                 bits[stage+1][i][j] = tmpBitHeap[i][j][rangeReached];
             }
         }
@@ -383,25 +384,33 @@ namespace flopoco {
 
     void ModuloBitHeapOperator::buildStandardTestCases(TestCaseList * tcl) {
         TestCase *tc;
-        tc = new TestCase(this);
-        tc->addInput("X", mpz_class(15));
-        emulate(tc);
-        tcl->add(tc);
 
-        tc = new TestCase(this);
-        tc->addInput("X", mpz_class(120));
-        emulate(tc);
-        tcl->add(tc);
+        if (wIn >= 8) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(222));
+            emulate(tc);
+            tcl->add(tc);
+        } else if (wIn >= 7) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(120));
+            emulate(tc);
+            tcl->add(tc);
+        } else if (wIn >= 6) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(33));
+            emulate(tc);
+            tcl->add(tc);
 
-        tc = new TestCase(this);
-        tc->addInput("X", mpz_class(33));
-        emulate(tc);
-        tcl->add(tc);
-
-        tc = new TestCase(this);
-        tc->addInput("X", mpz_class(222));
-        emulate(tc);
-        tcl->add(tc);
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(40));
+            emulate(tc);
+            tcl->add(tc);
+        } else if (wIn >= 4) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(15));
+            emulate(tc);
+            tcl->add(tc);
+        }
     }
 
     TestList ModuloBitHeapOperator::unitTest(int index)
@@ -410,7 +419,7 @@ namespace flopoco {
         TestList testStateList;
         vector<pair<string,string>> paramList;
         if(index==-1) 	{ // The unit tests
-            for (int wIn=8; wIn<=12; wIn++) {
+            for (int wIn=6; wIn<=12; wIn++) {
                 for(int m=2; m<20; m++) {
                     paramList.push_back(make_pair("wIn",to_string(wIn)));
                     paramList.push_back(make_pair("modulo",to_string(m)));

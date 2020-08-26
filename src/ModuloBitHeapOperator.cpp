@@ -222,28 +222,27 @@ namespace flopoco {
                             combiBitHeap[j][bit] = i + (oneLL << (48));
                         } else {
                             combiBitHeap[j][bit] = i + (oneLL << (48)) + (oneLL << (32));
-                            //constVec = (constVec + (1 << (combiBitHeap.size())) - 1 -
-                                  //  (1 << (leadingZeroWeight)) -1) & (1 << (smsb));
+                            constVec = (constVec + (oneLL << (combiBitHeap.size())) - 1 -
+                                    ((oneLL << (leadingZeroWeight+1)) - 1));
                             break;
                         }
                     }
                 }
             }
 
-//            for (int i = 0; i < combiBitHeap.size(); ++i) {
-//                if (constVec & (1 << (i)) != 0) {
-//                    int bit = 0;
-//                    while (combiBitHeap[i][bit] != -1) {
-//                        bit++;
-//                    }
-//                    combiBitHeap[i][bit] = i + (1 << (48)) + 5 * (1 << (32));
-//                    bitsToBitHeap++;
-//                    bhHeights[i] = bhHeights[i] + 1;
-//                    if (bhHeight < bhHeights[i]) {
-//                        bhHeight = bhHeights[i];
-//                    }
-//                }
-//            }
+            for (int i = 0; i < combiBitHeap.size(); ++i) {
+                if ((constVec & (oneLL << (i))) != 0) {
+                    int bit = 0;
+                    while (combiBitHeap[i][bit] != -1) {
+                        bit++;
+                    }
+                    bitsToBitHeap++;
+                    bhHeights[i] = bhHeights[i] + 1;
+                    if (bhHeight < bhHeights[i]) {
+                        bhHeight = bhHeights[i];
+                    }
+                }
+            }
             // final stage of pseudocompression
             REPORT(DEBUG, "combi min " << combiMin << " , combiMax " << combiMax);
             if (-modulo <= combiMin && combiMax < modulo) {

@@ -77,7 +77,6 @@ namespace flopoco{
 		// Area-wise it would be the same as comparing exp+frac here.
 		// Delay-wise it adds one mux delay and removes the delay of a wF-bit carry propagation.
 		// So the present choice should be better for small sizes and worse for large sizes...
-		// In IEEEFPAdd we do the exponent comparison only.
 		vhdl << tab << declare("excExpFracX",2+wE+wF) << " <= X"<<range(wE+wF+2, wE+wF+1) << " & X"<<range(wE+wF-1, 0)<<";"<<endl;
 		vhdl << tab << declare("excExpFracY",2+wE+wF) << " <= Y"<<range(wE+wF+2, wE+wF+1) << " & Y"<<range(wE+wF-1, 0)<<";"<<endl;
 

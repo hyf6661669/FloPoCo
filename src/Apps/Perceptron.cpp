@@ -26,15 +26,15 @@ namespace flopoco {
         for (int i = 0; i < prevLayerWidth; i++) {
             string inputSignal = join("X", i);
             string weightSignal = join("W", i);
-            addInput(inputSignal, inputMsb - inputLsb + 1, true); // zero flage + unsigned (always positive)
+            addInput(inputSignal, inputMsb - inputLsb + 1, true); // zero flag + unsigned (always positive)
             addInput(weightSignal, inputMsb - inputLsb + 2, true); // zero flag + sign bit + signed int
 
-            vhdl << tab << declare(join("zeroW", i), 1) << " <= " << weightSignal << "(" << inputPrec << ");" << endl;
-            vhdl << tab << declare(join("signW", i), 1) << " <= " << weightSignal << "(" << inputPrec - 1 << ");" << endl;
+            vhdl << tab << declare(join("zeroW", i)) << " <= " << weightSignal << "(" << inputPrec << ");" << endl;
+            vhdl << tab << declare(join("signW", i)) << " <= " << weightSignal << "(" << inputPrec - 1 << ");" << endl;
             vhdl << tab << declareFixPoint(join("valueW", i), true, inputMsb - 2, inputLsb) << " <= signed(" << weightSignal;
             vhdl<< "(" << inputPrec - 2 << " downto 0));" << endl;
 
-            vhdl << tab << declare(join("zeroX", i), 1) << " <= " << inputSignal << "(" << inputPrec << ");" << endl;
+            vhdl << tab << declare(join("zeroX", i)) << " <= " << inputSignal << "(" << inputPrec << ");" << endl;
             vhdl << tab << declareFixPoint(join("valueX", i), true, inputMsb - 1, inputLsb) << " <= signed(" << inputSignal;
             vhdl<< "(" << inputPrec - 1 << " downto 0));" << endl;
         }
@@ -43,7 +43,7 @@ namespace flopoco {
 
         // LNS adder
         for (int i = 0; i < prevLayerWidth; i++) {
-            vhdl << tab << declare(join("z", i)) << " <= " << join("zw", i) << " or " << join("zx", i) << ";" << endl;
+            vhdl << tab << declare(join("z", i)) << " <= " << join("zeroW", i) << " or " << join("zeroX", i) << ";" << endl;
             vhdl << tab << declareFixPoint(join("LogProduct", i), true, inputMsb + 1, inputLsb) << " <= ";
             vhdl << join("valueX", i) << " + " << join("valueW", i) << ";" << endl;
         }
@@ -79,17 +79,16 @@ namespace flopoco {
             string expOutput = join("expOutput", i);
             declare(expInput, -inputLsb + 2);
             declare(expOutput, -expLsb + 2);
-            vhdl << tab << expInput << " <= " << join("signW", i);
-            vhdl << " & " << join("LogProduct", i) << "(" << -inputLsb << "downto 0);" << endl;
+            vhdl << tab << expInput << " <= std_logic_vector(" << join("signW", i);
+            vhdl << " & " << join("LogProduct", i) << "(" << -inputLsb << "downto 0));" << endl;
 
             Table::newUniqueInstance(this, expInput, expOutput, exp_vector,
                                         join("ExpTable", i), -inputLsb + 2,
                                         -expLsb + 2);
 
-            vhdl << tab << declareFixPoint(join("summand", i), true, 1, expLsb) << " <= ";
-            vhdl << " 000 when " << join("z", i) << " = 1 else expOutput;" << endl;
-            // vhdl << tab << join("expX", i) << " <= signed(" << join("output", i) << ");" << endl;
-            // vhdl << instance(expTable, join("expTable", i));
+            vhdl << tab << declareFixPoint(join("summand", i), true, 1, expLsb) << " <= signed(";
+            vhdl << zg(2 - expLsb) << " when " << join("z", i) << " = '1' eles "<< expOutput << " when " << join("signW", i) << " = '0' else not " << expOutput << ");";
+            // vhdl << rangeAssign(1 - expLsb, 0,join("signW", i)) << ";" << endl;
         }
 
         // Accumulator

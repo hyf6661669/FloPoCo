@@ -6,22 +6,24 @@ digraph perceptron {
     }
     {
         node [shape=box];
-        "or"; bitheap; activation;
+        bitheap; flags;
+        activation [label="trunc\nactivation\nlog"];
         plus [label="+"];
         exp [label="2^x"];
     }
-    Xi -> or [label="ZXi\nbit"];
-    Wi -> or [label="ZWi\nbit"];
+    Xi -> flags [label="zXi\nbit"];
+    Wi -> flags [label="zWi\nbit"];
 
-    Xi -> plus [label="valXi\nsigned"];
-    Wi -> plus [label="valWi\nsigned"];
+    Xi -> plus [label="logXi\nsigned"];
+    Wi -> plus [label="logWi\nsigned"];
 
-    or -> exp [label="Zi\nbit"];
-    Wi -> exp [label="Si\nbit"];
-    plus -> exp [label="LogProducti\nsigned"];
+    plus -> exp [label="logProd_i\nsigned"];
 
-    exp -> bitheap [label="summand\nsigned"];
+    exp -> flags;
+    Wi -> flags [label="si\nbit"];
+
+    flags -> bitheap [label="summand\nsigned"];
     bitheap -> activation [label="weightedSum\nsigned"];
-    activation -> A [label="valAct\nsigned"];
+    activation -> A [label="logAct\nsigned"];
     activation -> A [label="zAct\nbit"];
 }

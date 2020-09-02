@@ -153,6 +153,8 @@ namespace flopoco
 		static bool   clockEnable;
 		static bool   useHardMult;
 		static bool   plainVHDL;
+		static bool   registerLargeTables;
+		static bool   tableCompression;
 		static bool   generateFigures;
 		static double unusedHardMultThreshold;
         static bool   useTargetOptimizations;

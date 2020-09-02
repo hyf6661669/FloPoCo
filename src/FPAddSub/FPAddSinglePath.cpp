@@ -224,11 +224,11 @@ with vrs -i
 									"I=>fracSticky",
 									"Count=>nZerosNew, O=>shiftedFrac");
 
-		// pipeline: I am assuming the two additions can be merged in a row of luts but I am not sure
-		vhdl << tab << declare("extendedExpInc",wE+2) << "<= (\"00\" & expX) + '1';"<<endl;
+		// pipeline: there is plenty of time for this addition during the significand processing
+		vhdl << tab << declare(getTarget()->adderDelay(wE+1), "extendedExpInc",wE+1) << "<= (\"0\" & expX) + '1';"<<endl;
 
 		vhdl << tab << declare(getTarget()->adderDelay(wE+2),
-													 "updatedExp",wE+2) << " <= extendedExpInc - (" << zg(wE+2-lzocs->getCountWidth(),0) <<" & nZerosNew);"<<endl;
+													 "updatedExp",wE+2) << " <= (\"0\" &extendedExpInc) - (" << zg(wE+2-lzocs->getCountWidth(),0) <<" & nZerosNew);"<<endl;
 		vhdl << tab << declare("eqdiffsign")<< " <= '1' when nZerosNew="<<og(lzocs->getCountWidth(),0)<<" else '0';"<<endl;
 
 

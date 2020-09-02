@@ -129,7 +129,7 @@ if __name__ == '__main__':
     workdir="/tmp/vivado_runsyn_"+entity+"_"+target+"_"+frequency
     os.system("rm -R "+workdir)
     os.mkdir(workdir)
-    os.system("cp flopoco.vhdl "+workdir)
+    os.system("cp "+filename+" "+workdir)
     os.chdir(workdir)
 
     # Create the clock.xdc file. For this we use the previous frequency,

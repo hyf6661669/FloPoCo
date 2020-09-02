@@ -112,7 +112,7 @@ namespace flopoco{
 		 */
 		bool useHardMultipliers();
 
-
+		
 		/** defines if flopoco should use hardware multipliers
 		 */
 		void setUseHardMultipliers(bool v);
@@ -125,6 +125,14 @@ namespace flopoco{
 		/** returns the value of the unused hard mult threshold, see the the corresponding attribute for its meaning
 		 */
 		float unusedHardMultThreshold();
+
+
+		bool registerLargeTables();
+		void setRegisterLargeTables(bool v);
+
+		bool tableCompression();
+		void setTableCompression(bool v);
+
 
 		/** Returns true if the target has fast ternary adders in the logic blocks
 		 * @return the status of the hasFastLogicTernaryAdder_ parameter
@@ -758,6 +766,8 @@ namespace flopoco{
 																		So: 0 means: any sub-multiplier that does not fully fill a DSP goes to logic
 																		1 means: any sub-multiplier, even very small ones, go to DSP*/
 		bool   plainVHDL_;     /**< True if we want the VHDL code to be concise and readable, with + and * instead of optimized FloPoCo operators. */
+		bool   registerLargeTables_;     /**< if true, a register is forced on the output of a Table objects that is larger than the blockRAM size, otherwise BlockRAM will not be used. Defaults to true, but sometimes you want to force a large table into LUTs. */
+		bool   tableCompression_;     /**< if true, Hsiao table compression will be used. Should default to true, the flag is there for experiments measuring how useful it is */
 		bool   generateFigures_;  /**< If true, some operators may generate some figures in SVG format */
         bool   useTargetOptimizations_; /**< If true, target specific optimizations using primitives are performed. Vendor specific libraries are necessary for simulation. */
 

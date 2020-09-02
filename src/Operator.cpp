@@ -414,10 +414,18 @@ namespace flopoco{
 				}
 			}
 
+		//REPORT(FULL, "connectionSignal=" << connectionSignal);
+
 		//check if any match was found in the port mappings
-		if(connectionSignal == nullptr)
+		if(connectionSignal == nullptr) {
+			REPORT(0,"I/O port " << portSignal->getName() << " of operator " << getName()
+								 << " is not connected to any signal of parent operator " << parentOp_->getName());
+			exit(1);
+			// The following exception seems to be stupidely caught somewhere and lost, and I'm too lazy to debug that 
 			THROWERROR("I/O port " << portSignal->getName() << " of operator " << getName()
 								 << " is not connected to any signal of parent operator " << parentOp_->getName());
+		}
+
 		//sanity check: verify that the signal that was found is actually part of the parent operator
 		try{
 			parentOp_->getSignalByName(connectionSignal->getName());
@@ -1455,7 +1463,8 @@ namespace flopoco{
 		string portName, signalName, mapping;
 
 		REPORT(DEBUG, "entering newInstance("<< opName << ", " << instanceName <<")" );
-
+		REPORT(DETAILED, "An instance corresponding to :    flopoco " + opName  + " " + parameters); 
+		
 		schedule(); // Schedule the parent operator, so the subcomponent may get timing information about its inputs.
 
 		//parse the parameters

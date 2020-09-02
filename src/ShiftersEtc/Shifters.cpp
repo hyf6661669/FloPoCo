@@ -41,14 +41,20 @@ namespace flopoco{
 
 		//cout << endl << "! Shifter::Shifter, wout=" << wOut << endl << endl;
 
-		if(wOut==-1)
-			wOut=wIn+maxShift;
-
+		// -------- Parameter set up -----------------
+		if(wOut==-1){ // The user asked a sensible default for wOut, here it is
+			if(computeSticky)
+				wOut =  wIn; // no information loss since we compute the sticky
+			else
+				wOut = wIn + maxShift;  // no information loss
+		}
 		//cout << endl << "!! Shifter::Shifter, wout=" << wOut << endl << endl;
 
 		//Sanity check -- there should probably be more
 		if(wOut>wIn+maxShift)
 			THROWERROR("Sorry, but a shifter of wIn=" << wIn << " input bits by maxShift=" << maxShift << " bits should have wOut<=wIn+maxShift=" << wIn+maxShift << ". \n Somebody asked for wOut=" << wOut);
+		if(wOut<wIn)
+			THROWERROR("Sorry, but I can't see the point in a shifter with wOut<wIn. Please truncate your input first.  wIn=" << wIn << " wOut=" << wOut);
 		
 		ostringstream name;
 		if(direction==Left) name <<"Left";
@@ -62,11 +68,6 @@ namespace flopoco{
 		
 		REPORT(DETAILED, " wIn="<<wIn<<" maxShift="<<maxShift<<" direction="<< (direction == Right?  "RightShifter": "LeftShifter") );
 
-		// -------- Parameter set up -----------------
-		if(computeSticky)
-			wOut =  wIn;
-		else
-			wOut = wIn + maxShift;
 
 		wShiftIn     = intlog2(maxShift);
 
@@ -78,7 +79,7 @@ namespace flopoco{
 		if(computeSticky)
 					addOutput("Sticky");
 
-
+		string padbit = (inputPadBit? "padBit" : "'0'");
 		//vhdl << tab << declare(getTarget()->localWireDelay(), "level0", wIn) << "<= X;" << endl;
 		//vhdl << tab << declare(getTarget()->localWireDelay(), "ps", wShiftIn) << "<= S;" << endl;
 		vhdl << tab << declare("ps", wShiftIn) << "<= S;" << endl;
@@ -92,10 +93,20 @@ namespace flopoco{
 		double levelDelay;
 		double totalDelay=0; // for reporting
 
-		if (wOut==wIn && computeSticky) {
+		if (computeSticky) {
+			// TODO if wIn<wOut, begin with shifts without sticky, then start sticky computation
+			// In the mean time we have padded the input to wOut, hopefully with few bits only...
+			if(wIn<wOut) {
+				string pad="("+to_string(wOut-wIn-1) + " downto 0 => " + padbit + ")";
+				vhdl << tab << declare("Xpadded", wOut) << " <= "<< (direction == Left? pad+"&":"") << "X"<< (direction == Right? "&"+pad : "") <<";"  << endl;
+			}
+			else // with the earlier sanity checks we should have wIn=wOut
+			 {
+				 vhdl << tab << declare("Xpadded", wOut) << " <= X;" << endl;
+			}	
 			// It is better to start the loop with larger bits so as to give time to sticky computation.
 			// The datapath size is constant anyway
-			vhdl << tab << declare(join("level", wShiftIn), wIn) << "<= X;" << endl;
+			vhdl << tab << declare(join("level", wShiftIn), wOut) << "<= Xpadded;" << endl;
 			for(int i=wShiftIn-1; i>=0; i--){
 				levelInLut ++;
 				if (levelInLut >= levelPerLut) {
@@ -115,11 +126,11 @@ namespace flopoco{
 				vhdl	 << "   else '0';" <<  endl;
 				// then the shift
 				vhdl << tab << declare(levelDelay, 
-															 join("level", i), wIn) << " <= "
+															 join("level", i), wOut) << " <= "
 						 << " level" << i+1 << " when  ps" << of(i) << "='0'"
-						 << "    else (" << intpow2(i)-1 << " downto 0 => " << (inputPadBit? "padBit" : "'0'") << ") ";
-				if(wIn-1>= intpow2(i)) // because when wIn is a power of two, that's all folks 
-					vhdl << "& level" << i+1 << range(wIn-1, intpow2(i));
+						 << "    else (" << intpow2(i)-1 << " downto 0 => " << padbit << ") ";
+				if(wOut-1>= intpow2(i)) // because when wOut is a power of two, that's all folks 
+					vhdl << "& level" << i+1 << range(wOut-1, intpow2(i));
 				vhdl << ";" << endl;
 			}
 		  vhdl << tab << "R <= level0;"<<endl;
@@ -148,7 +159,7 @@ namespace flopoco{
 					if (direction==Right){
 						vhdl << tab << declare(levelDelay,
 																	 nextLevelName.str(),wIn+intpow2(currentLevel+1)-1 )
-								 <<" <=  ("<<intpow2(currentLevel)-1 <<" downto 0 => " << (inputPadBit? "padBit" : "'0'") << ") & "<<currentLevelName.str()<<" when ps";
+								 <<" <=  ("<<intpow2(currentLevel)-1 <<" downto 0 => " << padbit << ") & "<<currentLevelName.str()<<" when ps";
 						if (wShiftIn > 1)
 							vhdl << "(" << currentLevel << ")";
 						vhdl << " = '1' else "
@@ -164,7 +175,7 @@ namespace flopoco{
 							if (wShiftIn>1)
 								vhdl << "(" << currentLevel<< ")";
 							vhdl << "= '1' else "
-									 << tab <<" ("<<intpow2(currentLevel)-1<<" downto 0 => "  << (inputPadBit? "padBit" : "'0'") << ") & "<< currentLevelName.str() <<";"<<endl;
+									 << tab <<" ("<<intpow2(currentLevel)-1<<" downto 0 => "  << padbit << ") & "<< currentLevelName.str() <<";"<<endl;
 						}
 					}
 					ostringstream lastLevelName;

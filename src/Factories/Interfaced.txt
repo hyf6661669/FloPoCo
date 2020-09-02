@@ -35,6 +35,7 @@ FPAdd
 FPDiv
 FPSqrt
 FPExp
+FPLog
 FP2Fix
 FPMult
 OutputIEEE

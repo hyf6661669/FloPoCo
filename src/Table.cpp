@@ -87,17 +87,15 @@ namespace flopoco{
 			bool had_to_overflow = false;
 			diff_compression_compute:
 			for (int i = 0 ; i < values.size() ; i += shift) { //for each slice
-				mpz_class subsample_min{min_max[i]}; //Get the minimal value of the table, as we want only positive offsets
+				mpz_class subsample_min{min_max[i]}; //Get the minimal value of the slice as we want only positive offset
+				mpz_class subsample_max{min_max[i+shift - 1]}; //Get the maximal value of the slice
 				bool sub_slice_ok = false;
 				while(!sub_slice_ok) {
 					mpz_class subsample_low_bits {subsample_min & low_bit_mask};
 					mpz_class cur_subsample_val {subsample_min - subsample_low_bits};
 					subsamples[i >> s] = cur_subsample_val;
-					sub_slice_ok = true;
-					for (int j = i; j < i+shift ; j++) {
-						diff[j] = values[j] - cur_subsample_val;
-						assert(diff[j] >= 0);
-						if (diff[j] >= overflow_mask) {
+					mpz_class max_diff = subsample_max - cur_subsample_val;
+					if (max_diff >= overflow_mask) {
 							if (min_width - shaved_out < (shift - 1) ) {
 								sub_slice_ok = false;
 								shaved_out -= 1;
@@ -127,6 +125,10 @@ namespace flopoco{
 								goto diff_compression_compute; //Jump should be done at most one time
 							}
 						}
+					sub_slice_ok = true;
+					for (int j = i; j < i+shift ; j++) {
+						diff[j] = values[j] - cur_subsample_val;
+						assert(diff[j] >= 0);
 					} //end of diff bank computing loop
 				} // End of shaving adjustment loop
 			}// End of slices iteration

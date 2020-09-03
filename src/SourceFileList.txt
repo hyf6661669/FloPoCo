@@ -33,6 +33,7 @@ BitHeap/ParandehAfsharCompressionStrategy
 BitHeap/MaxEfficiencyCompressionStrategy
 BitHeap/OptimalCompressionStrategy
 ModuloBitHeapOperator
+ModuloMontgomery
 TutorialOperator
 ShiftersEtc/LZOC
 ShiftersEtc/LZOC3

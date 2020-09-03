@@ -58,6 +58,7 @@ XilinxGPC
 XilinxFourToTwoCompressor
 TutorialOperator
 ModuloBitHeapOperator
+ModuloMontgomery
 BaseMultiplierDSPSuperTilesXilinx
 BaseMultiplierXilinx2xk
 BaseMultiplierIrregularLUTXilinx

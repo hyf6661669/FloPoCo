@@ -36,7 +36,7 @@ public:
         BitHeap* bitheap);
 
     void solve() override;
-	void compressionAlgorithm();
+	void compressionAlgorithm() override;
 
 private:
     base_multiplier_id_t small_tile_mult_;

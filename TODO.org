@@ -70,9 +70,12 @@ THIS INCLUDES WRITING ITS AUTOTEST
 * Version 5 versus ASA book
 ** TODO before we submitt the book because of flopocoboxes
 ** TODO between the book submission and its publication
+*** pipeline in IntAdder broken: fix discrepancy between prediction and adderDelay()
 *** revive FixMultAdd so that plainVHDL is no longer a mandatory option
 *** harmonize signedInput among the various FixFunctionBy
 
+*** resurrect DualPortROM
+*** fix-point-in, FP out version of FPExp 
 ** TODO some day
 *** Resurrect and fuse CordicAtan2 and FixAtan2
 *** resurrect DualTable

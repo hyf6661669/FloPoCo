@@ -12,6 +12,8 @@
 
   */
 
+
+
 #include "FPAddSinglePath.hpp"
 #include "FPAdd.hpp"
 
@@ -70,7 +72,11 @@ namespace flopoco{
 		//                          Swap/Difference                                |
 		// ========================================================================|
 		// In principle the comparison could be done on the exponent only, but then the result of the effective addition could be negative,
-		// so we would have to take its absolute value, which would cost the same as comparing exp+frac here.
+		// so we would have to take its absolute value, which would cost
+		// one mantissa mux selected by the sign bit of the difference.
+		// Area-wise it would be the same as comparing exp+frac here.
+		// Delay-wise it adds one mux delay and removes the delay of a wF-bit carry propagation.
+		// So the present choice should be better for small sizes and worse for large sizes...
 		vhdl << tab << declare("excExpFracX",2+wE+wF) << " <= X"<<range(wE+wF+2, wE+wF+1) << " & X"<<range(wE+wF-1, 0)<<";"<<endl;
 		vhdl << tab << declare("excExpFracY",2+wE+wF) << " <= Y"<<range(wE+wF+2, wE+wF+1) << " & Y"<<range(wE+wF-1, 0)<<";"<<endl;
 
@@ -158,6 +164,22 @@ namespace flopoco{
 		// shift right the significand of new Y with as many positions as the exponent difference suggests (alignment)
 		REPORT(DETAILED, "Building right shifter");
 
+
+/* The following #if allows the following experiment with vivado 2016.4 on Kintex
+
+./flopoco frequency=1 FPAdd we=8 wf=23 Wrapper
+ with full shifter then sticky 
+404 LUTs 12.345 ns
+
+With combined shifter sticky (and a few useless gates
+324 11.795 
+
+with vrs -i
+394  15.393 
+313  14.550 
+*/
+		
+#if 0 // full shifter, then sticky
 		newInstance("Shifter",
 								"RightShifterComponent",
 								"wIn=" + to_string(wF+1) + " maxShift=" + to_string(wF+3) + " dir=1",
@@ -166,9 +188,19 @@ namespace flopoco{
 		
 		vhdl<<tab<< declare(getTarget()->eqConstComparatorDelay(wF+1), "sticky") 
 				<< " <= '0' when (shiftedFracY("<<wF<<" downto 0) = " << zg(wF+1) << ") else '1';"<<endl;
-		
-		//pad fraction of Y [overflow][shifted frac having inplicit 1][guard][round]
 		vhdl<<tab<< declare("fracYpad", wF+4)      << " <= \"0\" & shiftedFracY("<<2*wF+3<<" downto "<<wF+1<<");"<<endl;
+
+#else //combined shifter+Sticky
+		newInstance("Shifter",
+								"RightShifterComponent",
+								"wIn=" + to_string(wF+1) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
+								"X=>fracY, S=>shiftVal",
+								"R=>shiftedFracY, Sticky=>sticky");
+		
+		vhdl<<tab<< declare("fracYpad", wF+4)      << " <= \"0\" & shiftedFracY;"<<endl;
+		
+#endif
+		//pad fraction of Y [overflow][shifted frac having inplicit 1][guard][round]
 		vhdl<<tab<< declare("EffSubVector", wF+4) << " <= ("<<wF+3<<" downto 0 => EffSub);"<<endl;
 		vhdl<<tab<< declare(getTarget()->logicDelay(2), "fracYpadXorOp", wF+4)
 				<< " <= fracYpad xor EffSubVector;"<<endl;
@@ -192,11 +224,11 @@ namespace flopoco{
 									"I=>fracSticky",
 									"Count=>nZerosNew, O=>shiftedFrac");
 
-		// pipeline: I am assuming the two additions can be merged in a row of luts but I am not sure
-		vhdl << tab << declare("extendedExpInc",wE+2) << "<= (\"00\" & expX) + '1';"<<endl;
+		// pipeline: there is plenty of time for this addition during the significand processing
+		vhdl << tab << declare(getTarget()->adderDelay(wE+1), "extendedExpInc",wE+1) << "<= (\"0\" & expX) + '1';"<<endl;
 
 		vhdl << tab << declare(getTarget()->adderDelay(wE+2),
-													 "updatedExp",wE+2) << " <= extendedExpInc - (" << zg(wE+2-lzocs->getCountWidth(),0) <<" & nZerosNew);"<<endl;
+													 "updatedExp",wE+2) << " <= (\"0\" &extendedExpInc) - (" << zg(wE+2-lzocs->getCountWidth(),0) <<" & nZerosNew);"<<endl;
 		vhdl << tab << declare("eqdiffsign")<< " <= '1' when nZerosNew="<<og(lzocs->getCountWidth(),0)<<" else '0';"<<endl;
 
 

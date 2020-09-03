@@ -371,8 +371,8 @@ namespace flopoco {
 		int wIn;
 		int bitmask,bitmask2;
 		UserInterface::parseInt(args,"wIn",&wIn );
-		UserInterface::parseInt(args,"bitmask",&bitmask);
-		UserInterface::parseInt(args,"bitmask2",&bitmask2);
+		UserInterface::parseInt(args,"AddSubBitMask",&bitmask);
+		UserInterface::parseInt(args,"AddSubBitMask2",&bitmask2);
 		return new Xilinx_TernaryAdd_2State(parentOp,target,wIn,bitmask,bitmask2);
 	}
 
@@ -382,8 +382,8 @@ namespace flopoco {
                              "Primitives", // category, from the list defined in UserInterface.cpp
                              "",
                              "wIn(int): The wordsize of the adder; \
-                             bitmask(int)=0: First bitmask for input negation; \
-                             bitmask2(int)=-1: Second bitmask for configurable input negation;",
+                             AddSubBitMask(int)=0: First bitmask for input negation; \
+                             AddSubBitMask2(int)=-1: Second bitmask for configurable input negation;",
                              "",
                              Xilinx_TernaryAdd_2State::parseArguments,
 							 Xilinx_TernaryAdd_2State::unitTest

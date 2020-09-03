@@ -89,7 +89,7 @@ enum BitType : unsigned;
 
 		/**
 		 * @brief add a bit to the bit heap.
-		 * @param position    the bit position of the bit to be added. 
+		 * @param position    the bit position of the bit to be added.
 		 *                    It should be between msb and lsb,
 		 *                         e.g. non-negative for an integer bitheap.
 		 * @param rhs        some VHDL defining the bit (it should be accepted as RHS of a VHDL <= )
@@ -109,17 +109,17 @@ enum BitType : unsigned;
 		/**
 		 * @brief subtract a constant 1 from the bitheap.
 		 * @param position      the position of the 1 bit to be removed
-		 *                          (should be between lsb and lsb, by default 0)       
+		 *                          (should be between lsb and lsb, by default 0)
 		 *                          so the value subtracted from the bit heap is 2^position
 		 */
 		void subtractConstantOneBit(int position = 0);
 
 
 		/**
-		 * @brief add a constant to the bitheap. 
+		 * @brief add a constant to the bitheap.
 		 * @param constant          An integer value
 		 * @param shift             the shift that should be applied to the constant,
-      *                          (by default 0)
+	  *                          (by default 0)
 		 *                          so the value added to the bit heap is 2^shift*constant
 		 */
 		void addConstant(mpz_class constant, int shift = 0);
@@ -129,14 +129,14 @@ enum BitType : unsigned;
 		 * @brief subtract a constant to the bitheap.
 		 * @param constant          An integer value
 		 * @param shift             the shift that should be applied to the constant,
-      *                          (by default 0)
+	  *                          (by default 0)
 		 *                          so the value subtracted from the bit heap is 2^shift*constant
 		 */
 		void subtractConstant(mpz_class constant, int shift = 0);
 
 
 		/**
-		 * @brief add a signal (a fixed-point value held in a bit vector) to the bitheap 
+		 * @brief add a signal (a fixed-point value held in a bit vector) to the bitheap
 		 * @param signalName            the name of a Signal being added
 		 * @param shift              shift to be applied to the signal: the value will be multiplied by 2^shift
 		 *                          (by default 0)
@@ -163,20 +163,20 @@ enum BitType : unsigned;
 		void startCompression();
 
 
-        /**
-        * @brief generate the VHDL for the bit heap.
-        * @param strategy passes the instance with the precomputed results
-        * Uses a precomputed result for the compressor tree
-        * To be called last by operators using BitHeap.
-        */
-        void startCompression(CompressionStrategy *compressionStrategy);
+		/**
+		* @brief generate the VHDL for the bit heap.
+		* @param strategy passes the instance with the precomputed results
+		* Uses a precomputed result for the compressor tree
+		* To be called last by operators using BitHeap.
+		*/
+		void startCompression(CompressionStrategy *compressionStrategy);
 
 		/**
 		 * @brief return the name of the compressed sum
 		 */
 		string getSumName();
 
-		
+
 		/**
 		 * @brief remove a bit from the bitheap.
 		 * @param position  the position of the bit to be removed
@@ -389,7 +389,7 @@ enum BitType : unsigned;
 		// Quick hack for The Book
 		void latexPlot();
 
-			//TODO is all the following useful at all? 
+			//TODO is all the following useful at all?
 		void initializeDrawing();
 
 		void closeDrawing(int offsetY);
@@ -418,17 +418,18 @@ enum BitType : unsigned;
 		Operator* op;
 
 		vector<vector<Bit*> > bits;                 /**< The bits currently contained in the bitheap, ordered into columns by position in the bitheap,
-		                                                 and by arrival time of the bits, i.e. lexicographic order on (cycle, cp), inside each column. */
+														 and by arrival time of the bits, i.e. lexicographic order on (cycle, cp), inside each column. */
 		vector<vector<Bit*> > history;              /**< All the bits that have been added (and possibly removed at some point) to the bitheap. */
-		mpz_class constantBits;						/**< The sum of all the constant bits that need to be added to the bit heap
-				                                                 (constants added to the bitheap, for rounding, two's complement etc) */
+		mpz_class constantBits;						          /**< The sum of all the constant bits that need to be added to the bit heap
+												   (constants added to the bitheap, for rounding, two's complement etc)
+												   It is stored as an integer, whose LSB corresponds to the position lsb of the bitheap */
 
 		ostringstream vhdlCode;                     /**< The VHDL code buffer */
 
 		CompressionStrategy* compressionStrategy;   /**< The compression strategy used to compress the bitheap */
 		bool isCompressed;                          /**< Has the bitheap already been compressed, or not */
 		int compressionType;						/**< The type of compression performed:
-		                                                 0=using only compressors, 1=using adder trees, 2=mixed, using compressors and adders*/
+														 0=using only compressors, 1=using adder trees, 2=mixed, using compressors and adders*/
 
 		vector<int> bitUID;                         /**< A unique identifier for the bits in this bitheap (for each column) */
 		int guid;                                   /**< The global UID for this bit heap, useful in operators managing several bit heaps */

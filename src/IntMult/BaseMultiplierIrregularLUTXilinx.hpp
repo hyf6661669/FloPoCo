@@ -45,8 +45,8 @@ namespace flopoco
 
         bool isIrregular() const override { return true;}
         int getDSPCost() const final {return 0;}
-        double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY);
-        int ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY);
+        double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) override;
+        int ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) override;
         static int get_wX(BaseMultiplierIrregularLUTXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][0];}
         static int get_wY(BaseMultiplierIrregularLUTXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][1];}
         static int get_wR(BaseMultiplierIrregularLUTXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][2];}
@@ -54,10 +54,10 @@ namespace flopoco
         static int getRelativeResultLSBWeight(BaseMultiplierIrregularLUTXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][4];}
         //int getArea(BaseMultiplierIrregularLUTXilinx::TILE_SHAPE shape) const {return shape_size[(int)shape-1][5];}
         unsigned getArea(void) override {return shape_size[(int)shape-1][5];}
-        int getRelativeResultLSBWeight(Parametrization const& param) const;
-        int getRelativeResultMSBWeight(Parametrization const& param) const;
-        bool shapeValid(int x, int y);
-        bool shapeValid(Parametrization const & param, unsigned x, unsigned y) const;
+        int getRelativeResultLSBWeight(Parametrization const& param) const override;
+        int getRelativeResultMSBWeight(Parametrization const& param) const override;
+        bool shapeValid(int x, int y) override;
+        bool shapeValid(Parametrization const & param, unsigned x, unsigned y) const override;
 
         Operator *generateOperator(Operator *parentOp, Target *target, Parametrization const & params) const final;
 

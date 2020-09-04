@@ -177,6 +177,11 @@ namespace flopoco{
 		REPORT(INFO, "Best diff LUT cost: "<< diffLutCost);
 		REPORT(INFO, "Total cost: " << (diffCost + subsamplingCost));
 		REPORT(INFO, "Total LUT cost: " << (diffLutCost + subsamplingLUTCost));
+		REPORT(INFO, "Latex table line : & $" << wOut << "\\times 2^{" << wIn << "}$ & $" << (wOut << wIn) << "$ & $" <<
+			size_in_LUTs() << "$ & $" << ret.diffWordSize << "\\times 2^{" << ret.diffIndexSize << "} + " <<
+			ret.subsamplingWordSize << "\\times 2^{" << ret.subsamplingIndexSize << "}$ & $" <<
+			(ret.subsamplingWordSize << ret.subsamplingIndexSize) << "$ & $" << diffLutCost + subsamplingLUTCost <<
+			"$ \\\\");
 		return ret;
 	}
 

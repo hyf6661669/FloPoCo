@@ -10,6 +10,7 @@
   Copyright © Complutense University of Madrid, Spain,
   2020.
   All rights reserved.
+
 */
 
 #include <sstream>
@@ -35,7 +36,7 @@ namespace flopoco
 
 		name << "PositDecoder_" << width << "_" << wES;
 		setNameWithFreqAndUID(name.str());
-		setCopyrightString("Raul Murillo, 2020");
+		setCopyrightString("Raul Murillo, Alberto A. del Barrio, Guillermo Botella, 2020");
 
 		if (width < 3)
 		{

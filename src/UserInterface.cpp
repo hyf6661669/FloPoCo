@@ -58,6 +58,7 @@ namespace flopoco
 		v.push_back(make_pair("CompositeFixPoint", "Composite fixed-point operators"));
 		v.push_back(make_pair("ElementaryFunctions", "Elementary functions in fixed- or floating-Point"));
 		v.push_back(make_pair("FunctionApproximation", "Arbitrary function approximators"));
+		v.push_back(make_pair("BasicPosit", "Basic posit Operators"));
 		//		v.push_back(make_pair("ComplexFixPoint", "Complex arithmetic in fixed point" ));
 		//		v.push_back(make_pair("ComplexFloatingPoint", "Complex arithmetic in floating point" ));
 		//		v.push_back(make_pair("LNS", "Logarithm Number System" ));

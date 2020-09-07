@@ -1,5 +1,5 @@
-#ifndef PositDecoder_HPP
-#define PositDecoder_HPP
+#ifndef POSITDECODER_HPP
+#define POSITDECODER_HPP
 #include "../../Operator.hpp"
 #include "../../utils.hpp"
 

@@ -35,7 +35,7 @@ namespace flopoco
 
 		name << "PositDecoder_" << width << "_" << wES;
 		setNameWithFreqAndUID(name.str());
-		setCopyrightString("Raul Murillo, 2019");
+		setCopyrightString("Raul Murillo, 2020");
 
 		if (width < 3)
 		{

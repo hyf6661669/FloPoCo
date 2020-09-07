@@ -143,7 +143,7 @@ Posit/Exp/PositExp
 Posit/Fun/PositFunction
 Posit/Fun/PositFunctionByTable
 Posit/Posit2Posit
-Posit/Mult/PositDecoder
+Posit/Decoder/PositDecoder
 Posit/Mult/PositMult
 
 FixFunctions/VaryingPiecewisePolyApprox

@@ -7,7 +7,7 @@
 #include "ShiftersEtc/LZOC.hpp"
 #include "ShiftersEtc/LZOCShifterSticky.hpp"
 #include "ShiftersEtc/Shifters.hpp"
-#include "Table.hpp"
+#include "Tables/Table.hpp"
 
 
 namespace flopoco{

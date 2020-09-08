@@ -18,7 +18,7 @@
 #include "BitHeap/BitHeap.hpp"
 #include "FixSinPoly.hpp"
 #include "FixSinCosPoly.hpp"
-#include "Table.hpp"
+#include "Tables/Table.hpp"
 
 #include <iostream>
 #include <sstream>

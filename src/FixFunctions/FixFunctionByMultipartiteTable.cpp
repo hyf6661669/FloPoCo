@@ -31,7 +31,7 @@
 #include "FixFunctionByMultipartiteTable.hpp"
 #include "Multipartite.hpp"
 #include "../BitHeap/BitHeap.hpp"
-#include "../Table.hpp"
+#include "../Tables/Table.hpp"
 
 /*
 To replicate the functions used in the 2017 Hsiao paper

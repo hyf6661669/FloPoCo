@@ -7,7 +7,7 @@
 #include <gmpxx.h>
 #include <boost/test/unit_test.hpp>
 
-#include "Table.hpp"
+#include "Tables/Table.hpp"
 
 using std::vector;
 

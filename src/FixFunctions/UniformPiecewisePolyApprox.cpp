@@ -25,7 +25,7 @@
 
 */
 #include "UniformPiecewisePolyApprox.hpp"
-#include "Table.hpp"
+#include "Tables/Table.hpp"
 
 #include <cassert>
 #include <sstream>

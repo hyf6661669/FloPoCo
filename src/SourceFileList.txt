@@ -112,6 +112,8 @@ ExpLog/FPLogIterative
 IEEE/IEEEFMA
 IEEE/IEEEAdd
 Tables/Table
+Tables/TableCompressor
+Tables/DifferentialCompression
 Tables/DualTable
 FixConstant
 FixFunctions/FixFunction

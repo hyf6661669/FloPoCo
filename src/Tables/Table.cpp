@@ -19,7 +19,8 @@
 #include <cassert>
 #include <cstdlib>
 #include "utils.hpp"
-#include "Tables/Table.hpp"
+#include "Table.hpp"
+#include "TableCompressor.hpp"
 
 using namespace std;
 using std::begin;
@@ -32,180 +33,6 @@ namespace flopoco{
 		return function(x);
 	}
 #endif
-	Table::DifferentialCompression Table::find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut)
-	{
-		vector<mpz_class> min_max{values};
-		vector<mpz_class> best_subsampling{values};
-		vector<mpz_class> best_diff{};
-		int diffNbEntry = 1 << wIn;
-		int best_s = 0;
-		int best_cost = wOut << wIn;
-		int best_diff_word_size = 0;
-		int best_shaved_out = 0;
-		for (int s = 1 ; s < wIn ; s++) { // Iterate over each possible splitting value
-			auto shift = 1 << s;
-			mpz_class max_distance{0};
-			int min_max_dist = ((shift >> 1) - 1);
-			//TODO : Find better lattice storage scheme to optimise cache access
-			// Compute min, max and diff of current diff table slice using resuts of previous subslice
-			for (auto min_op1_iter = begin(min_max) ; min_op1_iter < end(min_max) ; min_op1_iter += shift) {
-				auto max_op1_iter = min_op1_iter + min_max_dist;
-				auto min_op2_iter = max_op1_iter + 1;
-				auto max_op2_iter = min_op2_iter + min_max_dist;
-				if (*min_op1_iter > *min_op2_iter) {
-					std::swap(*min_op1_iter, *min_op2_iter);
-				}
-				if (*max_op2_iter < *max_op1_iter) {
-					std::swap(*max_op1_iter, *max_op2_iter);
-				}
-				mpz_class dist{*max_op2_iter - *min_op1_iter};
-				if (dist > max_distance) {
-					max_distance = dist;
-				}
-			}
-
-			/*
-			 * In the best case, without overflow when adding subsamples low bits, we need enough storage to store the difference between
-			 * the maximal and minimal element of the "slice" in which this distance is maximal
-			 */
-			int min_width = intlog2(mpz_class{max_distance});
-			int shaved_out = min_width;
-			int subSampleNbEntry = 1 << (wIn - s);
-			int subSampleWordSize = wOut - shaved_out;
-			int subSampleLowScore = subSampleNbEntry * subSampleWordSize;
-			int diffLowScore = diffNbEntry * min_width;
-			int lowScore = diffLowScore + subSampleLowScore;
-			if (lowScore >= best_cost) {
-				diff_compression_bound:
-					continue;
-			}
-			vector<mpz_class> subsamples(1 << (wIn - s));
-			vector<mpz_class> diff(1 << wIn);
-			mpz_class overflow_mask {1};
-			overflow_mask <<= min_width;
-			mpz_class low_bit_mask{overflow_mask - 1};
-			bool had_to_overflow = false;
-			diff_compression_compute:
-			for (int i = 0 ; i < values.size() ; i += shift) { //for each slice
-				mpz_class subsample_min{min_max[i]}; //Get the minimal value of the slice as we want only positive offset
-				mpz_class subsample_max{min_max[i+shift - 1]}; //Get the maximal value of the slice
-				bool sub_slice_ok = false;
-				while(!sub_slice_ok) {
-					mpz_class subsample_low_bits {subsample_min & low_bit_mask};
-					mpz_class cur_subsample_val {subsample_min - subsample_low_bits};
-					subsamples[i >> s] = cur_subsample_val;
-					mpz_class max_diff = subsample_max - cur_subsample_val;
-					if (max_diff >= overflow_mask) {
-							if (min_width - shaved_out < (shift - 1) ) {
-								sub_slice_ok = false;
-								shaved_out -= 1;
-								subSampleWordSize += 1;
-								subSampleLowScore += subSampleNbEntry;
-								lowScore = subSampleLowScore + diffLowScore;
-								if (lowScore >= best_cost) {
-									goto diff_compression_bound;
-								}
-								low_bit_mask >>= 1;
-								break;
-							} else {
-								min_width += 1;
-								diffLowScore = diffNbEntry * min_width;
-								shaved_out = min_width;
-								subSampleWordSize = wOut - shaved_out;
-								subSampleLowScore = subSampleWordSize * subSampleNbEntry;
-								lowScore = subSampleLowScore + diffLowScore;
-								if (lowScore >= best_cost) {
-									goto diff_compression_bound;
-								}
-								overflow_mask = 1;
-								overflow_mask <<= min_width;
-								low_bit_mask = overflow_mask - 1;
-								assert(!had_to_overflow);
-								had_to_overflow = true;
-								goto diff_compression_compute; //Jump should be done at most one time
-							}
-						}
-					sub_slice_ok = true;
-					for (int j = i; j < i+shift ; j++) {
-						diff[j] = values[j] - cur_subsample_val;
-						assert(diff[j] >= 0);
-					} //end of diff bank computing loop
-				} // End of shaving adjustment loop
-			}// End of slices iteration
-			int cur_subsample_input_word_size = 1 << (wIn - s);
-			int cur_subsample_output_word_size = (wOut - shaved_out);
-			int cur_diff_size = min_width << (wIn);
-			int cur_cost = cur_diff_size + cur_subsample_input_word_size * cur_subsample_output_word_size;
-			if (cur_cost < best_cost) {
-				best_s = s;
-				best_cost = cur_cost;
-				best_diff_word_size = min_width;
-				best_shaved_out = shaved_out;
-				swap(best_subsampling, subsamples);
-				swap(best_diff, diff);
-			}
-		} // End of iteration to find best s
-		for (auto& subsample : best_subsampling) {
-			subsample >>= best_shaved_out;
-		}
-		Table::DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size, wIn, wOut};
-		return difcompress;
-	}
-
-	Table::DifferentialCompression Table::compress() const
-	{
-		REPORT(INFO, "Performing differential compression on table.");
-		REPORT(INFO, "Initial cost is " << wOut << "x2^" << wIn << "=" << (wOut << wIn));
-		REPORT(INFO, "Initial estimated lut cost is :" << size_in_LUTs());
-		DifferentialCompression ret = Table::find_differential_compression(values, wIn, wOut);
-		REPORT(INFO, "Best compression split found: " << (wIn - ret.subsamplingIndexSize));
-		auto subsamplingCost = ret.subsamplingWordSize << ret.subsamplingIndexSize;
-		REPORT(INFO, "Best compression subsampling storage cost: " << ret.subsamplingWordSize <<
-			   "x2^" << ret.subsamplingIndexSize << "=" << subsamplingCost);
-		auto lutinputs = getTarget()->lutInputs();
-		auto lutcost = [lutinputs](int wIn, int wOut)->int {
-			auto effwIn = ((wIn - lutinputs) > 0) ? wIn - lutinputs : 0;
-			return wOut << effwIn;
-		};
-
-		auto subsamplingLUTCost = lutcost(ret.subsamplingIndexSize, ret.subsamplingWordSize);
-		REPORT(INFO, "Best subsampling LUT cost:" << subsamplingLUTCost);
-		auto diffCost = ret.diffWordSize << ret.diffIndexSize;
-		auto diffLutCost = lutcost(ret.diffIndexSize, ret.diffWordSize);
-		REPORT(INFO, "Best compression diff cost: " << ret.diffWordSize << "x2^" <<
-			   ret.diffIndexSize << "=" << diffCost);
-		REPORT(INFO, "Best diff LUT cost: "<< diffLutCost);
-		REPORT(INFO, "Total cost: " << (diffCost + subsamplingCost));
-		REPORT(INFO, "Total LUT cost: " << (diffLutCost + subsamplingLUTCost));
-		REPORT(INFO, "Latex table line : & $" << wOut << "\\times 2^{" << wIn << "}$ & $" << (wOut << wIn) << "$ & $" <<
-			size_in_LUTs() << "$ & $" << ret.diffWordSize << "\\times 2^{" << ret.diffIndexSize << "} + " <<
-			ret.subsamplingWordSize << "\\times 2^{" << ret.subsamplingIndexSize << "}$ & $" <<
-			(ret.subsamplingWordSize << ret.subsamplingIndexSize) << "$ & $" << diffLutCost + subsamplingLUTCost <<
-			"$ \\\\");
-		return ret;
-	}
-
-	vector<mpz_class> Table::DifferentialCompression::getInitialTable() const {
-		vector<mpz_class> reconstructedTable(1 << diffIndexSize);
-		int stride = diffIndexSize - subsamplingIndexSize;
-		int subsamplingShift = originalWout - subsamplingWordSize;
-
-		for(int i = 0; i < 1 << diffIndexSize; i++)
-			reconstructedTable[i] = (subsampling[i >> stride] << subsamplingShift) + diffs[i];
-
-		return reconstructedTable;
-	}
-
-	size_t Table::DifferentialCompression::subsamplingStorageSize() const
-	{
-		return subsamplingWordSize << subsamplingIndexSize;
-	}
-
-	size_t Table::DifferentialCompression::diffsStorageSize() const
-	{
-		return diffWordSize << diffIndexSize;
-	}
-
 
 	Table::Table(OperatorPtr parentOp_, Target* target_, vector<mpz_class> _values, string _name, int _wIn, int _wOut, int _logicTable, int _minIn, int _maxIn) :
 		Operator(parentOp_, target_)
@@ -403,6 +230,39 @@ namespace flopoco{
 		}
 		return values[x];
 	}
+
+    DifferentialCompression Table::compress() const {
+        REPORT(INFO, "Performing differential compression on table.");
+        REPORT(INFO, "Initial cost is " << wOut << "x2^" << wIn << "=" << (wOut << wIn));
+        REPORT(INFO, "Initial estimated lut cost is :" << size_in_LUTs());
+        DifferentialCompression ret = TableCompressor::find_differential_compression(values, wIn, wOut);
+        REPORT(INFO, "Best compression split found: " << (wIn - ret.subsamplingIndexSize));
+        auto subsamplingCost = ret.subsamplingWordSize << ret.subsamplingIndexSize;
+        REPORT(INFO, "Best compression subsampling storage cost: " << ret.subsamplingWordSize <<
+               "x2^" << ret.subsamplingIndexSize << "=" << subsamplingCost);
+        auto lutinputs = getTarget()->lutInputs();
+        auto lutcost = [lutinputs](int wIn, int wOut)->int {
+            auto effwIn = ((wIn - lutinputs) > 0) ? wIn - lutinputs : 0;
+            return wOut << effwIn;
+        };
+
+        auto subsamplingLUTCost = lutcost(ret.subsamplingIndexSize, ret.subsamplingWordSize);
+        REPORT(INFO, "Best subsampling LUT cost:" << subsamplingLUTCost);
+        auto diffCost = ret.diffWordSize << ret.diffIndexSize;
+        auto diffLutCost = lutcost(ret.diffIndexSize, ret.diffWordSize);
+        REPORT(INFO, "Best compression diff cost: " << ret.diffWordSize << "x2^" <<
+               ret.diffIndexSize << "=" << diffCost);
+        REPORT(INFO, "Best diff LUT cost: "<< diffLutCost);
+        REPORT(INFO, "Total cost: " << (diffCost + subsamplingCost));
+        REPORT(INFO, "Total LUT cost: " << (diffLutCost + subsamplingLUTCost));
+        REPORT(INFO, "Latex table line : & $" << wOut << "\\times 2^{" << wIn << "}$ & $" << (wOut << wIn) << "$ & $" <<
+            size_in_LUTs() << "$ & $" << ret.diffWordSize << "\\times 2^{" << ret.diffIndexSize << "} + " <<
+            ret.subsamplingWordSize << "\\times 2^{" << ret.subsamplingIndexSize << "}$ & $" <<
+            (ret.subsamplingWordSize << ret.subsamplingIndexSize) << "$ & $" << diffLutCost + subsamplingLUTCost <<
+            "$ \\\\");
+        return ret;
+    }
+
 
 
 	int Table::size_in_LUTs() const {

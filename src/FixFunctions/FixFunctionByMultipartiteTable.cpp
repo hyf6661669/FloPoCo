@@ -32,6 +32,7 @@
 #include "Multipartite.hpp"
 #include "../BitHeap/BitHeap.hpp"
 #include "../Tables/Table.hpp"
+#include "../Tables/TableCompressor.hpp"
 
 /*
 To replicate the functions used in the 2017 Hsiao paper
@@ -180,7 +181,7 @@ namespace flopoco
 		for (auto i : bestMP->tiv) {
 			mpzTIV.push_back(mpz_class((long) i));
 		}
-		auto diff_compress = Table::find_differential_compression(mpzTIV, bestMP->alpha, f->wOut);
+		auto diff_compress = TableCompressor::find_differential_compression(mpzTIV, bestMP->alpha, f->wOut);
 		assert(mpzTIV == diff_compress.getInitialTable());
 		REPORT(INFO, "lfmc alternative compression : " << endl <<
 				"\tsubsampled tiv: " << diff_compress.subsamplingWordSize <<

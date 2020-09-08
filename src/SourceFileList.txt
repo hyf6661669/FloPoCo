@@ -111,8 +111,8 @@ ExpLog/FPLog
 ExpLog/FPLogIterative
 IEEE/IEEEFMA
 IEEE/IEEEAdd
-Table
-DualTable
+Tables/Table
+Tables/DualTable
 FixConstant
 FixFunctions/FixFunction
 FixFunctions/FixFunctionByTable

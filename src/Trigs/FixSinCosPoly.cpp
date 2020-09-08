@@ -349,31 +349,18 @@ namespace flopoco{
 			vhdl << tab << declare ( "A", wA) << " <= Yneg " << range(wYIn-1, wYIn-wA) << ";" << endl;
 			vhdl << tab << declare ("Y_red", wY) << " <= Yneg" << range (wYIn-wA-1,0) << ";" << endl; // wYin-wA=wY: OK
 
-#if 0 // Old code, to remove
-			//------------------------------------SinCosTable building for A -------------------------------------
-			vector<mpz_class> tableValues = buildSinCosTable(wA, w, g, 8);
-			auto tptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this, "A", "SCA",
-															 tableValues,
-															 "sinCosPiATable", //name
-															 wA, // wIn
-															 2*(w+g) //wOut
-															 ));
-			tptr->compress();
-			vhdl << tab << declare("SinPiA", w+g) << " <= SCA " << range( 2*(w+g)-1 , w+g ) << ";" << endl;
-			vhdl << tab << declare("CosPiA", w+g) << " <= SCA " << range( w+g-1, 0 ) << ";" << endl;
-#endif
+			
 			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(wA, w, g, 8);
-#if 1 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado 
+#if 1 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado.
+			// However it is the one that we can compress so we'll see.
 			auto ctptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
 																																		"A", "CosPiA",
 																																		tableContent.first, "CosATable",
 																																		wA, w+g));
-			ctptr->compress();
 			auto stptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
 																																		 "A", "SinPiA",
 																																		 tableContent.second, "SinATable",
 																																		 wA, w+g));
-			stptr->compress();
 #else
 			vector<mpz_class> sincosvalues = mergeTables(tableContent, w+g);
 			Table::newUniqueInstance(this,

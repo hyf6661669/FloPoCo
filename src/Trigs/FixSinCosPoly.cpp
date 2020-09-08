@@ -40,8 +40,9 @@ namespace flopoco{
 	////////////////////////////////////// SinCosTable ///////////////////
 	// argRedCase=1 for full table, 4 for quadrant, 8 for octant
 	//
-	vector<mpz_class> FixSinCosPoly::buildSinCosTable(int wA, int lsbOut, int g, int argRedCase){
-		vector<mpz_class> result;
+	pair<vector<mpz_class>,vector<mpz_class>> FixSinCosPoly::buildSinCosTable(int wA, int lsbOut, int g, int argRedCase){
+		vector<mpz_class> costable;
+		vector<mpz_class> sintable;
 		for (int32_t x=0; x<(1<<wA); x++) {
 			mpz_class sin,cos;
 			mpfr_t a, c, s;
@@ -53,7 +54,7 @@ namespace flopoco{
 			int xs=x;
 			if ( (xs>>(wA-1)) && (argRedCase==1) )
 				xs-=(1<<wA);
-
+			
 			// a will be used for the value in xs
 			mpfr_init2(a,10*wA-1);
 			mpfr_set_si(a, xs, GMP_RNDN);
@@ -114,17 +115,26 @@ namespace flopoco{
 					cos+=mpz_class(1)<<(lsbOut+g+1);
 				}
 			}
-
 			// REPORT(0," function() returns. Value: "<<(sin+(cos<<wA))<<" ( sin=" << sin<<" , cos="<<cos<<  " )");
-			result.push_back( cos  + ( sin << (lsbOut+g + (argRedCase==1?1:0)) ) );
+			//			result.push_back( cos  + ( sin << (lsbOut+g + (argRedCase==1?1:0)) ) );
+			costable.push_back(cos);
+			sintable.push_back(sin);
 		}
-		return result;
+		return make_pair(costable, sintable);
 	}
 
 
 
-
-
+	// helper function
+	vector<mpz_class> mergeTables(	pair<vector<mpz_class>,vector<mpz_class>> tableContent, int wOut) {
+			vector<mpz_class> sincosvalues;
+			for (int i=0; i<tableContent.first.size(); i++) {
+				mpz_class cos = (tableContent.first)[i];
+				mpz_class sin = (tableContent.second)[i];
+				sincosvalues.push_back( cos  + (sin<<wOut) );
+			}
+			return sincosvalues;
+	}
 
 	////////////////////////////////////// FixSinCosPoly ///////////////////
 
@@ -203,17 +213,30 @@ namespace flopoco{
 			REPORT(INFO, "Simpler architecture: Using plain table" );
 			//int sinCosSize = 2*(w_+1); // size of output (sine plus cosine in a same number, sine on high weight bits)
 			vhdl << tab << declare("sinCosTabIn", w+1) << " <= X;" << endl;// signal declaration
-			vector<mpz_class> tableContent = buildSinCosTable(w+1, w, 0, 1);
-			auto tptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
-															 "sinCosTabIn", "SC",
-															 tableContent, "sincosTable",
-															 w+1, 2*(w+1) ));
-			tptr->compress();
 
-			vhdl << tab << declare("Sine", w+1) << " <= SC" << range(2*(w+1)-1, w+1) << ";" << endl;// signal declaration
-			vhdl << tab << declare("Cosine", w+1) << " <= SC" << range(w, 0) << ";" << endl;// signal declaration
-			vhdl << tab<< "S <= Sine;"<<endl;
-			vhdl << tab<< "C <= Cosine;"<<endl;
+			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(w+1, w, 0, 1);
+		 
+#if 0 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado 
+			Table::newUniqueInstance(this,
+															 "sinCosTabIn", "Cos",
+															 tableContent.first, "CosTable",
+															 w+1, w+1 );
+			Table::newUniqueInstance(this,
+															 "sinCosTabIn", "Sin",
+															 tableContent.second, "SinTable",
+															 w+1, w+1 );
+#else
+			vector<mpz_class> sincosvalues = mergeTables(tableContent, w+1);
+			Table::newUniqueInstance(this,
+															 "sinCosTabIn", "SinCos",
+															 sincosvalues, "SinCosTable",
+															 w+1, 2*(w+1) );
+
+			vhdl << tab << declare("Sin", w+1) << " <= SinCos" << range(2*(w+1)-1, w+1) << ";" << endl;// signal declaration
+			vhdl << tab << declare("Cos", w+1) << " <= SinCos" << range(w, 0) << ";" << endl;// signal declaration
+#endif
+			vhdl << tab<< "S <= Sin;"<<endl;
+			vhdl << tab<< "C <= Cos;"<<endl;
 
 		}
 
@@ -231,15 +254,27 @@ namespace flopoco{
 					 << " <= Q xor X_sgn;" << endl; //sign of cosin
 
 			/*********************************** REDUCED TABLE **************************************/
-			vector<mpz_class> tableContent = buildSinCosTable(w-1, w, 0, 4);
-			auto tptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
-															 "sinCosTabIn", "SC_red",
-															 tableContent, "sincosTable",
-															 w-1, 2*w ));
-			tptr->compress();
 
-			vhdl << tab << declare("S_out", w) << " <= SC_red " << range( 2*w-1 , w ) << ";" << endl;// signal declaration
-			vhdl << tab << declare("C_out", w) << " <= SC_red " << range( w-1, 0 ) << ";" << endl;// signal declaration
+			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(w-1, w, 0,4);
+#if 0 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado 
+			Table::newUniqueInstance(this,
+															 "sinCosTabIn", "C_out",
+															 tableContent.first, "CosTable",
+															 w-1, w);
+			Table::newUniqueInstance(this,
+															 "sinCosTabIn", "S_out",
+															 tableContent.second, "SinTable",
+															 w-1, w );
+#else
+			vector<mpz_class> sincosvalues = mergeTables(tableContent, w);
+			Table::newUniqueInstance(this,
+															 "sinCosTabIn", "SinCos",
+															 sincosvalues, "SinCosTable",
+															 w-1, 2*w );
+
+			vhdl << tab << declare("S_out", w) << " <= SinCos" << range(2*w-1, w) << ";" << endl;// signal declaration
+			vhdl << tab << declare("C_out", w) << " <= SinCos" << range(w-1, 0) << ";" << endl;// signal declaration
+#endif
 
 			/*********************************** Reconstruction of both sine and cosine **************************************/
 
@@ -314,6 +349,7 @@ namespace flopoco{
 			vhdl << tab << declare ( "A", wA) << " <= Yneg " << range(wYIn-1, wYIn-wA) << ";" << endl;
 			vhdl << tab << declare ("Y_red", wY) << " <= Yneg" << range (wYIn-wA-1,0) << ";" << endl; // wYin-wA=wY: OK
 
+#if 0 // Old code, to remove
 			//------------------------------------SinCosTable building for A -------------------------------------
 			vector<mpz_class> tableValues = buildSinCosTable(wA, w, g, 8);
 			auto tptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this, "A", "SCA",
@@ -323,9 +359,31 @@ namespace flopoco{
 															 2*(w+g) //wOut
 															 ));
 			tptr->compress();
-
 			vhdl << tab << declare("SinPiA", w+g) << " <= SCA " << range( 2*(w+g)-1 , w+g ) << ";" << endl;
 			vhdl << tab << declare("CosPiA", w+g) << " <= SCA " << range( w+g-1, 0 ) << ";" << endl;
+#endif
+			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(wA, w, g, 8);
+#if 1 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado 
+			auto ctptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
+																																		"A", "CosPiA",
+																																		tableContent.first, "CosATable",
+																																		wA, w+g));
+			ctptr->compress();
+			auto stptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
+																																		 "A", "SinPiA",
+																																		 tableContent.second, "SinATable",
+																																		 wA, w+g));
+			stptr->compress();
+#else
+			vector<mpz_class> sincosvalues = mergeTables(tableContent, w+g);
+			Table::newUniqueInstance(this,
+															 "A", "SinCosA",
+															 sincosvalues, "SinCosTable",
+															 wA, 2*(w+g));
+
+			vhdl << tab << declare("SinPiA", w+g) << " <= SinCosA" << range(2*(w+g)-1, w+g) << ";" << endl;// signal declaration
+			vhdl << tab << declare("CosPiA", w+g) << " <= SinCosA" << range(w+g-1, 0) << ";" << endl;// signal declaration
+#endif
 			//-------------------------------- MULTIPLIER BY PI ---------------------------------------
 
 			int wZ=w-wA+g; // see alignment below. Actually w-2-wA+2  (-2 because Q&O bits, +2 because mult by Pi)

@@ -160,6 +160,7 @@ if __name__ == '__main__':
 #    tclscriptfile.write("set_property board_part em.avnet.com:zed:part0:1.3 [current_project]\n")
     tclscriptfile.write("add_files -norecurse " + filename_abs + "\n")
     tclscriptfile.write("read_xdc -mode out_of_context " + xdc_file_name + "\n")
+    tclscriptfile.write("set_property top " + entity + "  [current_fileset]\n")
     tclscriptfile.write("update_compile_order -fileset sources_1\n")
     tclscriptfile.write("update_compile_order -fileset sim_1\n")
     tclscriptfile.write("synth_design -mode out_of_context\n")

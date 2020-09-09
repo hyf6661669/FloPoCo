@@ -59,48 +59,51 @@ namespace flopoco {
             bool had_to_overflow = false;
             diff_compression_compute:
             for (int i = 0 ; i < values.size() ; i += shift) { //for each slice
-                mpz_class subsample_min{min_max[i]}; //Get the minimal value of the slice as we want only positive offset
-                mpz_class subsample_max{min_max[i+shift - 1]}; //Get the maximal value of the slice
                 bool sub_slice_ok = false;
+				//Get the minimal value of the slice as we want only positive offset
+                mpz_class subsample_min{min_max[i]}; 
+				//Get the maximal value of the slice
+                mpz_class subsample_max{min_max[i+shift - 1]}; 
                 while(!sub_slice_ok) {
                     mpz_class subsample_low_bits {subsample_min & low_bit_mask};
                     mpz_class cur_subsample_val {subsample_min - subsample_low_bits};
                     subsamples[i >> s] = cur_subsample_val;
                     mpz_class max_diff = subsample_max - cur_subsample_val;
                     if (max_diff >= overflow_mask) {
-                            if (min_width - shaved_out < (shift - 1) ) {
-                                sub_slice_ok = false;
-                                shaved_out -= 1;
-                                subSampleWordSize += 1;
-                                subSampleLowScore += subSampleNbEntry;
-                                lowScore = subSampleLowScore + diffLowScore;
-                                if (lowScore >= best_cost) {
-                                    goto diff_compression_bound;
-                                }
-                                low_bit_mask >>= 1;
-                                break;
-                            } else {
-                                min_width += 1;
-                                diffLowScore = diffNbEntry * min_width;
-                                shaved_out = min_width;
-                                subSampleWordSize = wOut - shaved_out;
-                                subSampleLowScore = subSampleWordSize * subSampleNbEntry;
-                                lowScore = subSampleLowScore + diffLowScore;
-                                if (lowScore >= best_cost) {
-                                    goto diff_compression_bound;
-                                }
-                                overflow_mask = 1;
-                                overflow_mask <<= min_width;
-                                low_bit_mask = overflow_mask - 1;
-                                assert(!had_to_overflow);
-                                had_to_overflow = true;
-                                goto diff_compression_compute; //Jump should be done at most one time
-                            }
-                        }
+						sub_slice_ok = false;
+						if (min_width - shaved_out < (shift - 1) ) {
+							shaved_out -= 1;
+							subSampleWordSize += 1;
+							subSampleLowScore += subSampleNbEntry;
+							lowScore = subSampleLowScore + diffLowScore;
+							if (lowScore >= best_cost) {
+								goto diff_compression_bound;
+							}
+							low_bit_mask >>= 1;
+							continue;
+						} else {
+							min_width += 1;
+							diffLowScore = diffNbEntry * min_width;
+							shaved_out = min_width;
+							subSampleWordSize = wOut - shaved_out;
+							subSampleLowScore = subSampleWordSize * subSampleNbEntry;
+							lowScore = subSampleLowScore + diffLowScore;
+							if (lowScore >= best_cost) {
+								goto diff_compression_bound;
+							}
+							overflow_mask = 1;
+							overflow_mask <<= min_width;
+							low_bit_mask = overflow_mask - 1;
+							assert(!had_to_overflow);
+							had_to_overflow = true;
+							goto diff_compression_compute; //Jump should be done at most one time
+						}
+					}
                     sub_slice_ok = true;
                     for (int j = i; j < i+shift ; j++) {
                         diff[j] = values[j] - cur_subsample_val;
-                        assert(diff[j] >= 0);
+                        assert(diff[j] >= 0); 
+						assert(values[j] <= subsample_max);
                     } //end of diff bank computing loop
                 } // End of shaving adjustment loop
             }// End of slices iteration
@@ -121,6 +124,7 @@ namespace flopoco {
             subsample >>= best_shaved_out;
         }
         DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size, wIn, wOut};
+		assert(difcompress.getInitialTable() == values);
         return difcompress;
     }
 

@@ -195,7 +195,7 @@ namespace flopoco
 			vhdl << tab << declare("inTIV", bestMP->alpha) << " <= X" << range(f->wIn-1, f->wIn-bestMP->alpha) << ";" << endl;
 
 			Table::newUniqueInstance(this, "inTIV", "outTIV",
-															 mpzTIV, "TIV", bestMP->alpha, f->wOut );
+															 mpzTIV, "TIV", bestMP->alpha, f->wOut+bestMP->guardBits );
 				vhdl << endl;
 		}else
 			{ // Hsiao-compressed TIV

@@ -19,6 +19,7 @@
 #include "FixSinPoly.hpp"
 #include "FixSinCosPoly.hpp"
 #include "Tables/Table.hpp"
+#include "Tables/TableCompressor.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -351,17 +352,35 @@ namespace flopoco{
 
 			
 			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(wA, w, g, 8);
-#if 1 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado.
-			// However it is the one that we can compress so we'll see.
+
+			// The following #ifs are experiments with table compression
+#if 1 // Option 0 : uncompressed, most inefficient, written as an intermediate step
 			auto ctptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
-																																		"A", "CosPiA",
-																																		tableContent.first, "CosATable",
+																																		"A", "CosPiARef",
+																																		tableContent.first, "CosATableRef",
 																																		wA, w+g));
+			ctptr -> compress();
 			auto stptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
-																																		 "A", "SinPiA",
-																																		 tableContent.second, "SinATable",
+																																		 "A", "SinPiARef",
+																																		 tableContent.second, "SinATableRef",
 																																		 wA, w+g));
-#else
+			stptr -> compress();
+#endif
+#if 1  // Option 1:  drop in replacement with compressed table and adder (suboptimal here because tables are not merged)
+			string s;
+			s=TableCompressor::newUniqueInstance(this,
+																				 "A", "CosPiA",
+																				 tableContent.first, "CosATable",
+																				 wA, w+g);
+			REPORT(0, "compression of Cos table:" <<endl<< s );
+			s=TableCompressor::newUniqueInstance(this,
+																				 "A", "SinPiA",
+																				 tableContent.second, "SinATable",
+																				 wA, w+g);
+			REPORT(0, "compression of Sin table:" <<endl<< s );
+#endif
+
+#if 0  // Option 2 merged tables, uncompressed
 			vector<mpz_class> sincosvalues = mergeTables(tableContent, w+g);
 			Table::newUniqueInstance(this,
 															 "A", "SinCosA",
@@ -370,6 +389,9 @@ namespace flopoco{
 
 			vhdl << tab << declare("SinPiA", w+g) << " <= SinCosA" << range(2*(w+g)-1, w+g) << ";" << endl;// signal declaration
 			vhdl << tab << declare("CosPiA", w+g) << " <= SinCosA" << range(w+g-1, 0) << ";" << endl;// signal declaration
+#endif
+#if 0  // Option 3 merged tables, compressed
+			// TODO (reprendre le code de TableCompressor::newUniqueInstance mais merger les vecteurs avant)
 #endif
 			//-------------------------------- MULTIPLIER BY PI ---------------------------------------
 

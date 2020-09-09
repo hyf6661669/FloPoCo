@@ -1,4 +1,5 @@
 #include "TableCompressor.hpp"
+#include "Table.hpp"
 #include <cassert>
 
 namespace flopoco {
@@ -122,4 +123,42 @@ namespace flopoco {
         DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size, wIn, wOut};
         return difcompress;
     }
+
+
+	string TableCompressor::newUniqueInstance(OperatorPtr op,
+																								 string actualInput, string actualOutput,
+																								 vector<mpz_class> values, string name,
+																								 int wIn, int wOut)
+	{
+		if (wIn==-1 || wOut==-1){
+			ostringstream o; o << " TableCompressor::newUniqueInstance needs explicit wIn and wOut" << endl;
+			throw o.str();
+		}
+		// compress
+		auto t = find_differential_compression(values, wIn, wOut);
+		// generate VHDL for subsampling table
+		string subsamplingIn = actualInput+"_"+name+"_subsampling";
+		op->vhdl << tab << op->declare(subsamplingIn, t.subsamplingIndexSize) << " <= " << actualInput << range(wIn-1, wIn-t.subsamplingIndexSize) << ";" << endl;
+		string subsamplingout = actualOutput+"_subsampling";
+		string diffout = actualOutput+"_diff";
+		Table::newUniqueInstance( op, subsamplingIn, subsamplingout,
+															t.subsampling, name+"_subsampling",
+															t.subsamplingIndexSize, t.subsamplingWordSize );
+		// generate VHDL for diff table
+		Table::newUniqueInstance( op, actualInput, diffout,
+															t.diffs, name+"_diff",
+															wIn, t.diffWordSize );
+
+		int nonOverlapBits = wOut-t.diffWordSize;
+		int overlapBits    = t.subsamplingWordSize - nonOverlapBits;
+		// TODO an intadder when needed, but this is proably never useful
+		op->vhdl << tab << op->declare(op->getTarget()->adderDelay(t.subsamplingWordSize),
+																	 actualOutput+"_topbits", t.subsamplingWordSize) << " <= " << subsamplingout
+			// Following line is with sign extension
+			// 			 << " + (" << rangeAssign(t.subsamplingWordSize-1, t.subsamplingWordSize-nonOverlapBits, diffout+of(t.diffWordSize-1)) << "& (" <<diffout << range(t.diffWordSize-1,t.diffWordSize-overlapBits) << "));" << endl;
+						 << " + (" << zg(nonOverlapBits) << "& (" <<diffout << range(t.diffWordSize-1,t.diffWordSize-overlapBits) << "));" << endl;
+		op->vhdl << tab << op->declare(actualOutput, wOut) << " <= " << actualOutput+"_topbits & (" <<diffout << range(t.diffWordSize-overlapBits-1,0) << ");" << endl;
+		return 	t.report(); // don't know what Operator to return, hope it is harmless here
+	}
+
 }

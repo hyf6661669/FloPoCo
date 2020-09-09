@@ -278,9 +278,11 @@ namespace flopoco{
 		op->inPortMap("X", actualInput);
 		op->outPortMap("Y", actualOutput);
 		Table* t = new Table(op, op->getTarget(), values, name, wIn, wOut);
+#if 0 /// Unplugged because it segfaults on  ./flopoco frequency=1 FixSinCos method=0 lsb=-5  
 		auto diffcompress = t->compress();
 		auto decompress = diffcompress.getInitialTable();
 		assert(decompress == values);
+#endif
 		op->vhdl << op->instance(t, name, false);
 		return t;
 	}

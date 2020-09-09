@@ -31,6 +31,8 @@ namespace flopoco {
              * @return the size as a size_t
              */
             size_t diffsStorageSize() const;
-      };
+
+				string report() const;
+			};
 }
 #endif

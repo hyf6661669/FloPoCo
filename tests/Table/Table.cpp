@@ -7,7 +7,7 @@
 #include <gmpxx.h>
 #include <boost/test/unit_test.hpp>
 
-#include "Tables/Table.hpp"
+#include "Tables/TableCompressor.hpp"
 
 using std::vector;
 
@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(TestDifferentialCompressionLarge)
 	}
 
 	BOOST_TEST_CHECKPOINT("Calling find_differential_compression");
-	auto diff_compress = Table::find_differential_compression(val, TABLE_WIN, TABLE_WOUT);
+	auto diff_compress = TableCompressor::find_differential_compression(val, TABLE_WIN, TABLE_WOUT);
 
 	BOOST_TEST_CHECKPOINT("find_differential_compression returned");
 	auto reconstructedTable = diff_compress.getInitialTable();

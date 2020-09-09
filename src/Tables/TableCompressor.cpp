@@ -148,15 +148,19 @@ namespace flopoco {
 		Table::newUniqueInstance( op, actualInput, diffout,
 															t.diffs, name+"_diff",
 															wIn, t.diffWordSize );
+		for(int i=0; i<(1<<wIn); i++) cerr <<  "*************************** " << i << "  "  << t.diffs[i] << endl;
 
 		int nonOverlapBits = wOut-t.diffWordSize;
 		int overlapBits    = t.subsamplingWordSize - nonOverlapBits;
 		// TODO an intadder when needed, but this is proably never useful
 		op->vhdl << tab << op->declare(op->getTarget()->adderDelay(t.subsamplingWordSize),
 																	 actualOutput+"_topbits", t.subsamplingWordSize) << " <= " << subsamplingout
-			// Following line is with sign extension
-			// 			 << " + (" << rangeAssign(t.subsamplingWordSize-1, t.subsamplingWordSize-nonOverlapBits, diffout+of(t.diffWordSize-1)) << "& (" <<diffout << range(t.diffWordSize-1,t.diffWordSize-overlapBits) << "));" << endl;
-						 << " + (" << zg(nonOverlapBits) << "& (" <<diffout << range(t.diffWordSize-1,t.diffWordSize-overlapBits) << "));" << endl;
+			
+#if 0			// Following line is with sign extension
+			 			 << " + (" << rangeAssign(t.subsamplingWordSize-1, t.subsamplingWordSize-nonOverlapBits, diffout+of(t.diffWordSize-1)) << "& (" <<diffout << range(t.diffWordSize-1,t.diffWordSize-overlapBits) << "));" << endl;
+#else
+		<< " + (" << zg(nonOverlapBits) << "& (" <<diffout << range(t.diffWordSize-1,t.diffWordSize-overlapBits) << "));" << endl;
+#endif
 		op->vhdl << tab << op->declare(actualOutput, wOut) << " <= " << actualOutput+"_topbits & (" <<diffout << range(t.diffWordSize-overlapBits-1,0) << ");" << endl;
 		return 	t.report(); // don't know what Operator to return, hope it is harmless here
 	}

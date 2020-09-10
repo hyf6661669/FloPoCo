@@ -26,7 +26,7 @@
 */
 #include "UniformPiecewisePolyApprox.hpp"
 #include "Tables/Table.hpp"
-#include "Tables/TableCompressor.hpp"
+#include "Tables/DiffCompressedTable.hpp"
 
 #include <cassert>
 #include <sstream>
@@ -432,7 +432,7 @@ namespace flopoco{
 					mask += 1;
 				}
 			}// End of table creation
-			auto diffcompress = TableCompressor::find_differential_compression(coeffTable, wIn, wOut);
+			auto diffcompress = DifferentialCompression::find_differential_compression(coeffTable, wIn, wOut);
 			assert(diffcompress.getInitialTable() == coeffTable);
 
 			size_t currentDegCostSubsample = diffcompress.subsamplingWordSize << diffcompress.subsamplingIndexSize;

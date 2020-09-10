@@ -112,7 +112,7 @@ ExpLog/FPLogIterative
 IEEE/IEEEFMA
 IEEE/IEEEAdd
 Tables/Table
-Tables/TableCompressor
+Tables/DiffCompressedTable
 Tables/DifferentialCompression
 Tables/DualTable
 FixConstant

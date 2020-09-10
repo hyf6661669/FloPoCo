@@ -20,7 +20,6 @@
 #include <cstdlib>
 #include "utils.hpp"
 #include "Table.hpp"
-#include "TableCompressor.hpp"
 
 using namespace std;
 using std::begin;
@@ -41,6 +40,7 @@ namespace flopoco{
 		setNameWithFreqAndUID(_name);
 		setCopyrightString("Florent de Dinechin, Bogdan Pasca (2007-2020)");
 		init(_values, _name, _wIn, _wOut,  _logicTable,  _minIn,  _maxIn);
+		generateVHDL(); 
 	}
 
 
@@ -155,7 +155,11 @@ namespace flopoco{
 		//user warnings
 		if(wIn > 12)
 			REPORT(FULL, "WARNING: FloPoCo is building a table with " << wIn << " input bits, it will be large.");
+	}
 
+
+	
+		void	Table::generateVHDL()	{
 
 		//create the code for the table
 		REPORT(DEBUG,"Table.cpp: Filling the table");
@@ -231,37 +235,37 @@ namespace flopoco{
 		return values[x];
 	}
 
-    DifferentialCompression Table::compress() const {
-        REPORT(INFO, "Performing differential compression on table.");
-        REPORT(INFO, "Initial cost is " << wOut << "x2^" << wIn << "=" << (wOut << wIn));
-        REPORT(INFO, "Initial estimated lut cost is :" << size_in_LUTs());
-        DifferentialCompression ret = TableCompressor::find_differential_compression(values, wIn, wOut);
-        REPORT(INFO, "Best compression split found: " << (wIn - ret.subsamplingIndexSize));
-        auto subsamplingCost = ret.subsamplingWordSize << ret.subsamplingIndexSize;
-        REPORT(INFO, "Best compression subsampling storage cost: " << ret.subsamplingWordSize <<
-               "x2^" << ret.subsamplingIndexSize << "=" << subsamplingCost);
-        auto lutinputs = getTarget()->lutInputs();
-        auto lutcost = [lutinputs](int wIn, int wOut)->int {
-            auto effwIn = ((wIn - lutinputs) > 0) ? wIn - lutinputs : 0;
-            return wOut << effwIn;
-        };
+    // DifferentialCompression Table::compress() const {
+    //     REPORT(INFO, "Performing differential compression on table.");
+    //     REPORT(INFO, "Initial cost is " << wOut << "x2^" << wIn << "=" << (wOut << wIn));
+    //     REPORT(INFO, "Initial estimated lut cost is :" << size_in_LUTs());
+    //     DifferentialCompression ret = TableCompressor::find_differential_compression(values, wIn, wOut);
+    //     REPORT(INFO, "Best compression split found: " << (wIn - ret.subsamplingIndexSize));
+    //     auto subsamplingCost = ret.subsamplingWordSize << ret.subsamplingIndexSize;
+    //     REPORT(INFO, "Best compression subsampling storage cost: " << ret.subsamplingWordSize <<
+    //            "x2^" << ret.subsamplingIndexSize << "=" << subsamplingCost);
+    //     auto lutinputs = getTarget()->lutInputs();
+    //     auto lutcost = [lutinputs](int wIn, int wOut)->int {
+    //         auto effwIn = ((wIn - lutinputs) > 0) ? wIn - lutinputs : 0;
+    //         return wOut << effwIn;
+    //     };
 
-        auto subsamplingLUTCost = lutcost(ret.subsamplingIndexSize, ret.subsamplingWordSize);
-        REPORT(INFO, "Best subsampling LUT cost:" << subsamplingLUTCost);
-        auto diffCost = ret.diffWordSize << ret.diffIndexSize;
-        auto diffLutCost = lutcost(ret.diffIndexSize, ret.diffWordSize);
-        REPORT(INFO, "Best compression diff cost: " << ret.diffWordSize << "x2^" <<
-               ret.diffIndexSize << "=" << diffCost);
-        REPORT(INFO, "Best diff LUT cost: "<< diffLutCost);
-        REPORT(INFO, "Total cost: " << (diffCost + subsamplingCost));
-        REPORT(INFO, "Total LUT cost: " << (diffLutCost + subsamplingLUTCost));
-        REPORT(INFO, "Latex table line : & $" << wOut << "\\times 2^{" << wIn << "}$ & $" << (wOut << wIn) << "$ & $" <<
-            size_in_LUTs() << "$ & $" << ret.diffWordSize << "\\times 2^{" << ret.diffIndexSize << "} + " <<
-            ret.subsamplingWordSize << "\\times 2^{" << ret.subsamplingIndexSize << "}$ & $" <<
-            (ret.subsamplingWordSize << ret.subsamplingIndexSize) << "$ & $" << diffLutCost + subsamplingLUTCost <<
-            "$ \\\\");
-        return ret;
-    }
+    //     auto subsamplingLUTCost = lutcost(ret.subsamplingIndexSize, ret.subsamplingWordSize);
+    //     REPORT(INFO, "Best subsampling LUT cost:" << subsamplingLUTCost);
+    //     auto diffCost = ret.diffWordSize << ret.diffIndexSize;
+    //     auto diffLutCost = lutcost(ret.diffIndexSize, ret.diffWordSize);
+    //     REPORT(INFO, "Best compression diff cost: " << ret.diffWordSize << "x2^" <<
+    //            ret.diffIndexSize << "=" << diffCost);
+    //     REPORT(INFO, "Best diff LUT cost: "<< diffLutCost);
+    //     REPORT(INFO, "Total cost: " << (diffCost + subsamplingCost));
+    //     REPORT(INFO, "Total LUT cost: " << (diffLutCost + subsamplingLUTCost));
+    //     REPORT(INFO, "Latex table line : & $" << wOut << "\\times 2^{" << wIn << "}$ & $" << (wOut << wIn) << "$ & $" <<
+    //         size_in_LUTs() << "$ & $" << ret.diffWordSize << "\\times 2^{" << ret.diffIndexSize << "} + " <<
+    //         ret.subsamplingWordSize << "\\times 2^{" << ret.subsamplingIndexSize << "}$ & $" <<
+    //         (ret.subsamplingWordSize << ret.subsamplingIndexSize) << "$ & $" << diffLutCost + subsamplingLUTCost <<
+    //         "$ \\\\");
+    //     return ret;
+    // }
 
 
 
@@ -273,11 +277,11 @@ namespace flopoco{
 	OperatorPtr Table::newUniqueInstance(OperatorPtr op,
 																			 string actualInput, string actualOutput,
 																			 vector<mpz_class> values, string name,
-																			 int wIn, int wOut){
+																			 int wIn, int wOut, int logicTable){
 		op->schedule();
 		op->inPortMap("X", actualInput);
 		op->outPortMap("Y", actualOutput);
-		Table* t = new Table(op, op->getTarget(), values, name, wIn, wOut);
+		Table* t = new Table(op, op->getTarget(), values, name, wIn, wOut,logicTable);
 #if 0 /// Unplugged because it segfaults on  ./flopoco frequency=1 FixSinCos method=0 lsb=-5  
 		auto diffcompress = t->compress();
 		auto decompress = diffcompress.getInitialTable();

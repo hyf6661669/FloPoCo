@@ -19,7 +19,7 @@
 #include "FixSinPoly.hpp"
 #include "FixSinCosPoly.hpp"
 #include "Tables/Table.hpp"
-#include "Tables/TableCompressor.hpp"
+#include "Tables/DiffCompressedTable.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -359,24 +359,32 @@ namespace flopoco{
 																																		"A", "CosPiARef",
 																																		tableContent.first, "CosATableRef",
 																																		wA, w+g));
-			ctptr -> compress();
 			auto stptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
 																																		 "A", "SinPiARef",
 																																		 tableContent.second, "SinATableRef",
 																																		 wA, w+g));
-			stptr -> compress();
 #endif
-#if 1  // Option 1:  drop in replacement with compressed table and adder (suboptimal here because tables are not merged)
+#if 1  // Option 1:  drop in replacement with compressed table and adder, allows for synthesis of the entity (suboptimal here because tables are not merged)
+			DiffCompressedTable::newUniqueInstance(this,
+																						 "A", "CosPiA",
+																						 tableContent.first, "CosATable",
+																						 wA, w+g, 1);
+			DiffCompressedTable::newUniqueInstance(this,
+																						 "A", "SinPiA",
+																						 tableContent.second, "SinATable",
+																						 wA, w+g, 1);
+#endif
+#if 0  // Option 1, old code:  drop in replacement with compressed table and adder (suboptimal here because tables are not merged)
 			string s;
-			s=TableCompressor::newUniqueInstance(this,
+			s=DifferentialCompression::newUniqueInstance(this,
 																				 "A", "CosPiA",
 																				 tableContent.first, "CosATable",
-																				 wA, w+g);
+																					 wA, w+g, 1);
 			REPORT(0, "compression of Cos table:" <<endl<< s );
-			s=TableCompressor::newUniqueInstance(this,
+			s=DifferentialCompression::newUniqueInstance(this,
 																				 "A", "SinPiA",
 																				 tableContent.second, "SinATable",
-																				 wA, w+g);
+																					 wA, w+g, 1);
 			REPORT(0, "compression of Sin table:" <<endl<< s );
 #endif
 
@@ -391,7 +399,7 @@ namespace flopoco{
 			vhdl << tab << declare("CosPiA", w+g) << " <= SinCosA" << range(w+g-1, 0) << ";" << endl;// signal declaration
 #endif
 #if 0  // Option 3 merged tables, compressed
-			// TODO (reprendre le code de TableCompressor::newUniqueInstance mais merger les vecteurs avant)
+			// TODO (reprendre le code de DifferentialCompression::newUniqueInstance mais merger les vecteurs avant)
 #endif
 			//-------------------------------- MULTIPLIER BY PI ---------------------------------------
 

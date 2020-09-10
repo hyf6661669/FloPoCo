@@ -17,7 +17,6 @@
 #include <gmpxx.h>
 
 #include "Operator.hpp"
-#include "DifferentialCompression.hpp"
 
 /**
  A basic hardware look-up table for FloPoCo.
@@ -45,6 +44,9 @@ namespace flopoco{
 		public:
 		/**
 		 * The Table constructor
+		 It is an exception in FloPoCo as there is no corresponding user interface for it, because passing the vector of content on the command line would be a pain.
+		 The proper way to instanciate this component is with newUniqueInstance(), 
+		 or with one of the subclasses of Table which provide a user interface, such as FixFunctionByTable
 		 * @param[in] parentOp 	the parent operator in the component hierarchy
 		 * @param[in] target 		the target device
 		 * @param[in] values 		the values used to fill the table. Each value is a bit vector given as positive mpz_class.
@@ -65,9 +67,10 @@ namespace flopoco{
 		virtual ~Table() {};
 
 		/** A function that does the actual constructor work, so that it can be called from operators that overload Table.  See FixFunctionByTable for an example */
-
 		void init(vector<mpz_class> _values, string name="", int _wIn = -1, int _wOut = -1, int _logicTable = 0, int _minIn = -1, int _maxIn = -1);
 
+		/** actual VHDL generation */
+		void generateVHDL();
 
 		/** get one element of the table */
 		mpz_class val(int x);
@@ -81,9 +84,8 @@ namespace flopoco{
 		static OperatorPtr newUniqueInstance(OperatorPtr op,
 																				 string actualInput, string actualOutput,
 																				 vector<mpz_class> values, string name,
-																				 int wIn = -1, int wOut = -1);
-
-		DifferentialCompression compress() const;
+																				 int wIn = -1, int wOut = -1,
+																				 int logicTable=0);
 
 		/** A function that returns an estimation of the size of the table in LUTs. Your mileage may vary thanks to boolean optimization */
 		int size_in_LUTs() const;
@@ -107,7 +109,6 @@ namespace flopoco{
 
 		/** maximal input value (default 2^wIn-1) */
 		mpz_class maxIn;
-
 };
 
 }

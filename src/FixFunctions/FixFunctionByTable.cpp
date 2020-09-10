@@ -45,6 +45,7 @@ namespace flopoco{
 			//cerr <<   f-> getDescription()<< " : f("<< i << ") = " << rn <<endl;
 		};
 		Table::init(v, join("f", getNewUId()), wIn, wOut);
+		Table::generateVHDL();
 	}
 
 

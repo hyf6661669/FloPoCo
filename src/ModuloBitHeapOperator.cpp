@@ -36,7 +36,6 @@ namespace flopoco {
         int outPutSize = getModuloMSB() + 1;
         addOutput("S" , outPutSize);
 
-        addFullComment("Start of vhdl generation");
         int bhStage = 0;
         // declares every bit in input as a signal
         for (int i = 0; i < wIn; ++i) {
@@ -389,12 +388,14 @@ namespace flopoco {
             tc->addInput("X", mpz_class(222));
             emulate(tc);
             tcl->add(tc);
-        } else if (wIn >= 7) {
+        }
+        if (wIn >= 7) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(120));
             emulate(tc);
             tcl->add(tc);
-        } else if (wIn >= 6) {
+        }
+        if (wIn >= 6) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(33));
             emulate(tc);
@@ -404,7 +405,8 @@ namespace flopoco {
             tc->addInput("X", mpz_class(40));
             emulate(tc);
             tcl->add(tc);
-        } else if (wIn >= 4) {
+        }
+        if (wIn >= 4) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(15));
             emulate(tc);

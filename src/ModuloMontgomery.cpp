@@ -23,8 +23,10 @@ namespace flopoco {
         REPORT(DETAILED, "this operator has received two parameters: wIn " << wIn << " modulo " << modulo);
 
         // calculating R and m'
-        R = (1 << wIn);
-        mLine = -getModularInverse(R, modulo);
+        int modSize = getModuloMSB() + 1;
+        R = (1 << modSize);
+        mLine = getModularInverse(modulo, 2) % 2;
+        REPORT(INFO, "mline: " << mLine);
 
         // declaring inputs
         addInput ("X" , wIn, true);
@@ -32,36 +34,40 @@ namespace flopoco {
         addConstant("MLineInt", "integer", mLine);
         addConstant("Rmod", "integer", R % modulo);
         // declaring output
-        int modSize = getModuloMSB() + 1;
         addOutput("S" , modSize*2);
 
-
+        REPORT(INFO, "rmod: " << R % modulo);
         addFullComment("Start of vhdl generation");
         // calculating residue to use montgomery
         // conversion to signed
         vhdl << tab << declare(
                 "MLine", modSize, false) << tab << "<= STD_LOGIC_VECTOR(TO_SIGNED(MLineInt," << modSize << "));" << endl;
         vhdl << tab << declareFixPoint(
-                "XSg", true, modSize-1, 0) << tab << "<= SIGNED(STD_LOGIC_VECTOR(SIGNED(X) mod " << modulo << ")" << range(modSize-1, 0) << ");" << endl;
+                "XSg", false, modSize-1, 0) << tab << "<= UNSIGNED(SIGNED(STD_LOGIC_VECTOR(SIGNED(X) mod " << modulo << ")" << range(modSize-1, 0) << "));" << endl;
         vhdl << tab << declareFixPoint(
-                "RmodSg", true, modSize-1, 0) << tab << "<= TO_SIGNED(Rmod," << modSize << ");" << endl;
-        vhdl << tab << declareFixPoint(
-                "test", true, modSize*2-1, 0) << tab << "<= XSg * RmodSg;" << endl;
+                "RmodSg", false, modSize-1, 0) << tab << "<= UNSIGNED(TO_SIGNED(Rmod," << modSize << "));" << endl;
         // calculate and convert back
         vhdl << tab << declare(
-                "T", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
+                "T_0", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
+        vhdl << tab << declare(
+                "T1", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
         // montgomery - automatically converts back
 
         for (int i = 0; i < modSize; ++i) {
             ostringstream uName;
             uName << "U_" << i;
             vhdl << tab << declare(
-                    uName.str(), 1, false) << " <= MLine" << of(0) << " when T" << of(i) << " = '1' else '0';" << endl;
-            vhdl << tab << "T <= STD_LOGIC_VECTOR(UNSIGNED(T) + SHIFT_LEFT(TO_UNSIGNED(M," << modSize << ")," << i << ")) when T" << of(i) << " = '1' else T;" << endl;
+                    uName.str(), 1, false) << " <= MLine" << of(0) << " when T_" << i << of(i) << " = '1' else '0';" << endl;
+            //vhdl << tab << "T <= STD_LOGIC_VECTOR(UNSIGNED(T) + SHIFT_LEFT(TO_UNSIGNED(M," << modSize << ")," << i << ")) when T" << of(i) << " = '1' else T;" << endl;
+            ostringstream tName;
+            int index = i+1;
+            tName << "T_" << index;
+            vhdl << tab << declare(
+                    tName.str(), modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << i << ") + SHIFT_LEFT(TO_UNSIGNED(M," << modSize << ")," << i << ")) when T_" << i << "" << of(i) << " = '1' else T_" << i << ";" << endl;
         }
-        vhdl << tab << "T <= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T)," << modSize << "));" << endl;
-
-        vhdl << tab << "S <= T when UNSIGNED(T) < M else STD_LOGIC_VECTOR(UNSIGNED(T) - M);" << endl;
+        vhdl << tab << declare(
+                "TRes", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T_" << modSize << ")," << modSize << "));" << endl;
+        vhdl << tab << "S <= TRes when UNSIGNED(TRes) < M else STD_LOGIC_VECTOR(UNSIGNED(TRes) - M);" << endl;
         addFullComment("End of vhdl generation");
     }
 
@@ -77,7 +83,7 @@ namespace flopoco {
 
     int ModuloMontgomery::getModularInverse(int number, int mod) {
         for (int i = 0; i < mod; ++i) {
-            if ((number * 1) % mod == 1) {
+            if ((number * i) % mod == 1) {
                 return i;
             }
         }
@@ -96,40 +102,33 @@ namespace flopoco {
         TestCase *tc;
 
         if (wIn >= 8) {
-            if (222 < modulo * R) {
-                tc = new TestCase(this);
-                tc->addInput("X", mpz_class(222));
-                emulate(tc);
-                tcl->add(tc);
-            }
-        } else if (wIn >= 7) {
-            if (120 < modulo * R) {
-                tc = new TestCase(this);
-                tc->addInput("X", mpz_class(120));
-                emulate(tc);
-                tcl->add(tc);
-            }
-        } else if (wIn >= 6) {
-            if (33 < modulo * R) {
-                tc = new TestCase(this);
-                tc->addInput("X", mpz_class(33));
-                emulate(tc);
-                tcl->add(tc);
-            }
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(222));
+            emulate(tc);
+            tcl->add(tc);
+        }
+        if (wIn >= 7) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(120));
+            emulate(tc);
+            tcl->add(tc);
+        }
+        if (wIn >= 6) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(33));
+            emulate(tc);
+            tcl->add(tc);
 
-            if (40 < modulo * R) {
-                tc = new TestCase(this);
-                tc->addInput("X", mpz_class(40));
-                emulate(tc);
-                tcl->add(tc);
-            }
-        } else if (wIn >= 4) {
-            if (15 < modulo * R) {
-                tc = new TestCase(this);
-                tc->addInput("X", mpz_class(15));
-                emulate(tc);
-                tcl->add(tc);
-            }
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(40));
+            emulate(tc);
+            tcl->add(tc);
+        }
+        if (wIn >= 4) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(15));
+            emulate(tc);
+            tcl->add(tc);
         }
     }
 

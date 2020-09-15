@@ -16,7 +16,7 @@
 namespace flopoco{
 	class FixSinCosPoly: public FixSinCos {
 	public:
-		FixSinCosPoly(OperatorPtr parentOp, Target * target, int lsb);
+		FixSinCosPoly(OperatorPtr parentOp, Target * target, int lsb, int wA=0);
 	
 		~FixSinCosPoly();
 

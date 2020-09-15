@@ -8,12 +8,13 @@
 
 // One optim for 24 bits would be to compute z² for free by a table using the second unused port of the blockram
 
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include "ConstMult/FixRealKCM.hpp"
-#include "IntMult//IntMultiplier.hpp"
+#include "IntMult/IntMultiplier.hpp"
 #include "FixFunctions/FixFunctionByTable.hpp"
 #include "BitHeap/BitHeap.hpp"
 #include "FixSinPoly.hpp"
@@ -128,18 +129,18 @@ namespace flopoco{
 
 	// helper function
 	vector<mpz_class> mergeTables(	pair<vector<mpz_class>,vector<mpz_class>> tableContent, int wOut) {
-			vector<mpz_class> sincosvalues;
-			for (int i=0; i<tableContent.first.size(); i++) {
-				mpz_class cos = (tableContent.first)[i];
-				mpz_class sin = (tableContent.second)[i];
-				sincosvalues.push_back( cos  + (sin<<wOut) );
-			}
-			return sincosvalues;
+		vector<mpz_class> sincosvalues;
+		for (int i=0; i<tableContent.first.size(); i++) {
+			mpz_class cos = (tableContent.first)[i];
+			mpz_class sin = (tableContent.second)[i];
+			sincosvalues.push_back( cos  + (sin<<wOut) );
+		}
+		return sincosvalues;
 	}
 
 	////////////////////////////////////// FixSinCosPoly ///////////////////
 
-	FixSinCosPoly::FixSinCosPoly(OperatorPtr parentOp, Target * target, int lsb_):
+	FixSinCosPoly::FixSinCosPoly(OperatorPtr parentOp, Target * target, int lsb_, int wA_):
 		FixSinCos(parentOp,target, lsb_){
 		int g=-42; // silly value from the start, because so many different paths may assign it (or forget to do so)
 		srcFileName="FixSinCosPoly";
@@ -181,18 +182,23 @@ namespace flopoco{
 		int gGeneric=4;
 
 		// For all the other methods we need to address a table of sincos with wA bits of the input
-		// Let us compute wA such that these bits fit in a blockRAM
-		// but it depends on g, so we compute the various cases
-		int wAtemp=3;
-		while((mpz_class(2)<<wAtemp)*(w+1+gOrder1Arch) < getTarget()->sizeOfMemoryBlock()) wAtemp++;
-		int wAOrder1Arch = wAtemp--;
-		wAtemp=3;
-		while((mpz_class(2)<<wAtemp)*(w+1+gOrder2Arch) < getTarget()->sizeOfMemoryBlock()) wAtemp++;
-		int wAOrder2Arch = wAtemp--;
-		wAtemp=3;
-		while((mpz_class(2)<<wAtemp)*(w+1+gGeneric) < getTarget()->sizeOfMemoryBlock()) wAtemp++;
-		int wAGeneric = wAtemp--;
-
+		int wAOrder1Arch,  wAOrder2Arch, wAGeneric;
+		if(wA_!=0) { // If wA was provided on the command line, we respect it, however inefficient it may be
+			wAOrder1Arch = wAOrder2Arch = wAGeneric = wA_;
+		}
+		else {
+			// Let us compute wA such that these bits fit in a blockRAM
+			// but it depends on g, so we compute the various cases
+			int wAtemp=3;
+			while((mpz_class(2)<<wAtemp)*(w+1+gOrder1Arch) < getTarget()->sizeOfMemoryBlock()) wAtemp++;
+			wAOrder1Arch = wAtemp--;
+			wAtemp=3;
+			while((mpz_class(2)<<wAtemp)*(w+1+gOrder2Arch) < getTarget()->sizeOfMemoryBlock()) wAtemp++;
+			wAOrder2Arch = wAtemp--;
+			wAtemp=3;
+			while((mpz_class(2)<<wAtemp)*(w+1+gGeneric) < getTarget()->sizeOfMemoryBlock()) wAtemp++;
+			wAGeneric = wAtemp--;
+		}
 
 		// Now we may compute the borders on the simplified cases
 		// Y will be smaller than 1/4 => Z will be smaller than pi*2^(-wA-2), or Z<2^-wA
@@ -266,7 +272,7 @@ namespace flopoco{
 															 "sinCosTabIn", "S_out",
 															 tableContent.second, "SinTable",
 															 w-1, w );
-#else
+#else // Therefore, of course, we keep the following, but we also keep the comments
 			vector<mpz_class> sincosvalues = mergeTables(tableContent, w);
 			Table::newUniqueInstance(this,
 															 "sinCosTabIn", "SinCos",
@@ -306,29 +312,29 @@ namespace flopoco{
 
 		else { // From now on we will have a table-based argument reduction
 			REPORT(INFO, "Using a table-based argument reduction");
-		// We must set g here (early) in order to be able to factor out code that uses g
-		g=0;
-		int wA=0;
-		if (!wSmallerThanBorder4 && wSmallerThanBorderFirstOrderTaylor) {
-			g=gOrder1Arch;
-			wA = wAOrder1Arch;
-			REPORT(INFO, "Using order-1 arch with wA="<<wA << " and g=" << g);
-		}
-		else if(wSmallerThanBorderSecondOrderTaylor) {
-			g = gOrder2Arch;
-			wA = wAOrder2Arch;
-			REPORT(INFO, "Using order-2 arch with wA="<<wA << " and g=" << g);
-		}
-		else{ // generic case
-			g=gGeneric;
-			wA=wAGeneric;
-			// In the generic case we neglect order-4 term, Z^4/24 < Z^4/16
-			// Let us check that our current wA allows that, otherwise increase it.
-			while (w > 4*wA-4-g) {
-				wA++;
+			// We must set g here (early) in order to be able to factor out code that uses g
+			g=0;
+			int wA=0;
+			if (!wSmallerThanBorder4 && wSmallerThanBorderFirstOrderTaylor) {
+				g=gOrder1Arch;
+				wA = wAOrder1Arch;
+				REPORT(INFO, "Using order-1 arch with wA="<<wA << " and g=" << g);
 			}
-			REPORT(INFO, "Using order-3 arch with wA="<<wA << " and g=" << g);
-		}
+			else if(wSmallerThanBorderSecondOrderTaylor) {
+				g = gOrder2Arch;
+				wA = wAOrder2Arch;
+				REPORT(INFO, "Using order-2 arch with wA="<<wA << " and g=" << g);
+			}
+			else{ // generic case
+				g=gGeneric;
+				wA=wAGeneric;
+				// In the generic case we neglect order-4 term, Z^4/24 < Z^4/16
+				// Let us check that our current wA allows that, otherwise increase it.
+				while (w > 4*wA-4-g) {
+					wA++;
+				}
+				REPORT(INFO, "Using order-3 arch with wA="<<wA << " and g=" << g);
+			}
 
 			/*********************************** RANGE REDUCTION **************************************/
 			addComment("The argument is reduced into (0,1/4)");
@@ -353,91 +359,63 @@ namespace flopoco{
 			
 			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(wA, w, g, 8);
 
-			// The following #ifs are experiments with table compression
-#if 0 // Option 0 : uncompressed, most inefficient, written as an intermediate step
-			auto ctptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
-																																		"A", "CosPiARef",
-																																		tableContent.first, "CosATableRef",
-																																		wA, w+g));
-			auto stptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
-																																		 "A", "SinPiARef",
-																																		 tableContent.second, "SinATableRef",
-																																		 wA, w+g));
-#endif
-#if 0  // Option 1:  drop in replacement with compressed table and adder, allows for synthesis of the entity (suboptimal here because tables are not merged)
-			DiffCompressedTable::newUniqueInstance(this,
-																						 "A", "CosPiA",
-																						 tableContent.first, "CosATable",
-																						 wA, w+g, 1);
-			DiffCompressedTable::newUniqueInstance(this,
-																						 "A", "SinPiA",
-																						 tableContent.second, "SinATable",
-																						 wA, w+g, 1);
-#endif
-#if 0  // Option 1, old code:  drop in replacement with compressed table and adder (suboptimal here because tables are not merged)
-			string s;
-			s=DifferentialCompression::newUniqueInstance(this,
-																				 "A", "CosPiA",
-																				 tableContent.first, "CosATable",
-																					 wA, w+g, 1);
-			REPORT(0, "compression of Cos table:" <<endl<< s );
-			s=DifferentialCompression::newUniqueInstance(this,
-																				 "A", "SinPiA",
-																				 tableContent.second, "SinATable",
-																					 wA, w+g, 1);
-			REPORT(0, "compression of Sin table:" <<endl<< s );
-#endif
+			if(target->tableCompression()) {
+				addComment("This instance is there to show what the uncompressed table would be, but is not used");
+				vector<mpz_class> sincosvalues = mergeTables(tableContent, w+g);
+				Table::newUniqueInstance(this,
+																 "A", "SinCosA_unused",
+																 sincosvalues, "SinCosTableRef",
+																 wA, 2*(w+g));
 
-#if 0  // Option 2:  merged tables, uncompressed
-			vector<mpz_class> sincosvalues = mergeTables(tableContent, w+g);
-			Table::newUniqueInstance(this,
-															 "A", "SinCosA",
-															 sincosvalues, "SinCosTable",
-															 wA, 2*(w+g));
+				// Now for the real useful tables
+				auto cosTable=tableContent.first;
+				auto sinTable=tableContent.second;
+				auto compressedCos = DifferentialCompression::find_differential_compression(cosTable, wA, w+g);
+				auto compressedSin = DifferentialCompression::find_differential_compression(sinTable, wA, w+g);
+				// For the diff table we know that we can merge the tables without check
+				auto mergedDiffTable = mergeTables(make_pair(compressedCos.diffs, compressedSin.diffs), compressedCos.diffWordSize);
+				Table::newUniqueInstance(this,
+																 "A", "SinCosPiADiffs",
+																 mergedDiffTable, "SinCosDiffsTable",
+																 wA,
+																 compressedCos.diffWordSize + compressedSin.diffWordSize);
+				vhdl << tab << declare("SinPiADiff", compressedSin.diffWordSize) << " <= SinCosPiADiffs" << range(compressedCos.diffWordSize + compressedSin.diffWordSize-1, compressedCos.diffWordSize) << ";" << endl;
+				vhdl << tab << declare("CosPiADiff", compressedCos.diffWordSize) << " <= SinCosPiADiffs" << range(compressedCos.diffWordSize-1, 0) << ";" << endl;
+					
+				// for the subsampling table we are not sure that the inputsizes are equal
+				if(compressedCos.subsamplingIndexSize == compressedSin.subsamplingIndexSize) {
+					auto mergedSubsamplingTable = mergeTables(make_pair(compressedCos.subsampling, compressedSin.subsampling), compressedCos.subsamplingWordSize);
+					vhdl << tab << declare("A_topbits", compressedCos.subsamplingIndexSize) << " <= " << "A" << range(wA-1, wA-compressedCos.subsamplingIndexSize) << ";" << endl;
+					Table::newUniqueInstance(this,
+																	 "A_topbits", "SinCosPiASubsamplings",
+																	 mergedSubsamplingTable, "SinCosSubsamplingsTable",
+																	 compressedCos.subsamplingIndexSize,
+																	 compressedCos.subsamplingWordSize + compressedSin.subsamplingWordSize);
+					vhdl << tab << declare("SinPiASubsampling", compressedSin.subsamplingWordSize) << " <= SinCosPiASubsamplings" << range(compressedCos.subsamplingWordSize + compressedSin.subsamplingWordSize-1, compressedCos.subsamplingWordSize) << ";" << endl;
+					vhdl << tab << declare("CosPiASubsampling", compressedCos.subsamplingWordSize) << " <= SinCosPiASubsamplings" << range(compressedCos.subsamplingWordSize-1, 0) << ";" << endl;
+				}
+				else { // This error never appears during autotest, there is something surprising here
+					THROWERROR("Fixme! compressedCos.subsamplingIndexSize != compressedSin.subsamplingIndexSize");
+				}
 
-			vhdl << tab << declare("SinPiA", w+g) << " <= SinCosA" << range(2*(w+g)-1, w+g) << ";" << endl;
-			vhdl << tab << declare("CosPiA", w+g) << " <= SinCosA" << range(w+g-1, 0) << ";" << endl;
-#endif
-
-
-			///////////////////////////////////////////////////:
-#if 1  // Option 3 merged tables, compressed
-			auto cosTable=tableContent.first;
-			auto sinTable=tableContent.second;
-			auto compressedCos = DifferentialCompression::find_differential_compression(cosTable, wA, w+g);
-			auto compressedSin = DifferentialCompression::find_differential_compression(sinTable, wA, w+g);
-			// For the diff table we know that we can merge the tables without check
-			auto mergedDiffTable = mergeTables(make_pair(compressedCos.diffs, compressedSin.diffs), compressedCos.diffWordSize);
-			Table::newUniqueInstance(this,
-															 "A", "SinCosPiADiffs",
-															 mergedDiffTable, "SinCosDiffsTable",
-															 wA,
-															 compressedCos.diffWordSize + compressedSin.diffWordSize);
-			vhdl << tab << declare("SinPiADiff", compressedSin.diffWordSize) << " <= SinCosPiADiffs" << range(compressedCos.diffWordSize + compressedSin.diffWordSize-1, compressedCos.diffWordSize) << ";" << endl;
-			vhdl << tab << declare("CosPiADiff", compressedCos.diffWordSize) << " <= SinCosPiADiffs" << range(compressedCos.diffWordSize-1, 0) << ";" << endl;
-
-			// for the subsampling table we are not sure that the inputsizes are equal
-			if(compressedCos.subsamplingIndexSize == compressedSin.subsamplingIndexSize) {
-			auto mergedSubsamplingTable = mergeTables(make_pair(compressedCos.subsampling, compressedSin.subsampling), compressedCos.subsamplingWordSize);
-			vhdl << tab << declare("A_topbits", compressedCos.subsamplingIndexSize) << " <= " << "A" << range(wA-1, wA-compressedCos.subsamplingIndexSize) << ";" << endl;
-			Table::newUniqueInstance(this,
-															 "A_topbits", "SinCosPiASubsamplings",
-															 mergedSubsamplingTable, "SinCosSubsamplingsTable",
-															 compressedCos.subsamplingIndexSize,
-															 compressedCos.subsamplingWordSize + compressedSin.subsamplingWordSize);
-			vhdl << tab << declare("SinPiASubsampling", compressedSin.subsamplingWordSize) << " <= SinCosPiASubsamplings" << range(compressedCos.subsamplingWordSize + compressedSin.subsamplingWordSize-1, compressedCos.subsamplingWordSize) << ";" << endl;
-			vhdl << tab << declare("CosPiASubsampling", compressedCos.subsamplingWordSize) << " <= SinCosPiASubsamplings" << range(compressedCos.subsamplingWordSize-1, 0) << ";" << endl;
-			}
-			else {
-				THROWERROR("Fixme! compressedCos.subsamplingIndexSize != compressedSin.subsamplingIndexSize");
+				compressedCos.insertAdditionVHDL(this, "CosPiA", "CosPiASubsampling", "CosPiADiff");
+				compressedSin.insertAdditionVHDL(this, "SinPiA", "SinPiASubsampling", "SinPiADiff");
 			}
 
-			compressedCos.insertAdditionVHDL(this, "CosPiA", "CosPiASubsampling", "CosPiADiff");
-			compressedSin.insertAdditionVHDL(this, "SinPiA", "SinPiASubsampling", "SinPiADiff");
-			
+			else {			// if(target->tableCompression()
+				// Simple merged table
+				vector<mpz_class> sincosvalues = mergeTables(tableContent, w+g);
+				Table::newUniqueInstance(this,
+																 "A", "SinCosA",
+																 sincosvalues, "SinCosTable",
+																 wA, 2*(w+g));
 
-#endif
-			//-------------------------------- MULTIPLIER BY PI ---------------------------------------
+				vhdl << tab << declare("SinPiA", w+g) << " <= SinCosA" << range(2*(w+g)-1, w+g) << ";" << endl;
+				vhdl << tab << declare("CosPiA", w+g) << " <= SinCosA" << range(w+g-1, 0) << ";" << endl;
+			}  // end if(target->tableCompression() {
+
+
+				
 
 			int wZ=w-wA+g; // see alignment below. Actually w-2-wA+2  (-2 because Q&O bits, +2 because mult by Pi)
 

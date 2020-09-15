@@ -66,10 +66,18 @@ namespace flopoco{
 
 void	FixFunction::initialize()
 	{
-		if(signedIn)
-			inputRangeS = sollya_lib_parse_string("[-1;1]");
-		else
-			inputRangeS = sollya_lib_parse_string("[0;1]");
+		ostringstream s;
+#if 0 // This should be more accurate but it breaks ./flopoco FixFunctionByMultipartiteTable f="1-1/(x+1)" signedIn=0 lsbIn=-15 lsbOut=-16 nbtoi=2 compresstiv=0
+		// We should probably add one ulp for the faithful rounding
+		s << "[" << (signedIn?"-1":"0") << ";1-1b" << lsbIn <<"]";
+#else
+		s << "[" << (signedIn?"-1":"0") << ";1]";
+#endif
+
+		
+		// ?? wtf middle age C here? 
+		
+		inputRangeS = sollya_lib_parse_string(s.str().c_str());
 
 		
 		sollya_obj_t outIntervalS = sollya_lib_evaluate(fS,inputRangeS);
@@ -89,7 +97,7 @@ void	FixFunction::initialize()
 		}
 		ostringstream t; // write it before we take the absolute value below
 		t << "Out interval: [" << mpfr_get_d(infMP,MPFR_RNDD) << "; "<< mpfr_get_d(supMP,MPFR_RNDU) << "]";
-		//		cerr << " " << t.str() << endl;
+				cerr << " " << t.str() << endl;
 		// Now recompute the MSB explicitely.
 		mpfr_abs(supMP, supMP, GMP_RNDU);
 		mpfr_abs(infMP, infMP, GMP_RNDU);
@@ -99,7 +107,7 @@ void	FixFunction::initialize()
 		msbOut = mpfr_get_si(tmp, GMP_RNDU);
 		if(signedOut)
 			msbOut++;
-
+		cerr << "Computed msbOut=" << msbOut <<endl;
 		t << ". Output is " << (signedOut?"signed":"unsigned");
 		outputDescription=t.str();
 

@@ -36,10 +36,16 @@
 
 /*
 To replicate the functions used in the 2017 Hsiao paper
+-> good match, only the TIV has one MSB constant 0, I don't know why
+./flopoco FixFunctionByMultipartiteTable f="1/(x+1)-0.5" signedIn=0 lsbIn=-15 lsbOut=-16
 
-./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)"  msbOut=-1 lsbIn=-24 lsbOut=-24
-./flopoco FixFunctionByMultipartiteTable f="2^x-1" lsbIn=-16 lsbOut=-15 msbOut=-1
-./flopoco FixFunctionByMultipartiteTable f="1/(x+1)-0.5" lsbIn=-15 lsbOut=-15 msbOut=-1
+perfect match with the "MP" lines of table 5
+./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-16 lsbOut=-16 compresstiv=0 
+./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-24 lsbOut=-24 compresstiv=0 
+(et sur le 24 bits on est bien meilleurs que le résultat HMP !) 
+
+absolutely no match
+./flopoco FixFunctionByMultipartiteTable f="2^x-1"       signedIn=0 lsbIn=-16 lsbOut=-15 compresstiv=0 
 
 >
 */
@@ -181,6 +187,7 @@ namespace flopoco
 		for (auto i : bestMP->tiv) {
 			mpzTIV.push_back(mpz_class((long) i));
 		}
+#if 1 // This should be inside the exploration
 		auto diff_compress = DifferentialCompression::find_differential_compression(mpzTIV, bestMP->alpha, f->wOut);
 		assert(mpzTIV == diff_compress.getInitialTable());
 		REPORT(INFO, "lfmc alternative compression : " << endl <<
@@ -190,7 +197,7 @@ namespace flopoco
 				"\tdiff tiv: "<< diff_compress.diffWordSize << ".2^" << diff_compress.diffIndexSize << " = " <<
 			   diff_compress.diffsStorageSize() << endl <<
 			   "\t\t TOTAL :" << (diff_compress.subsamplingStorageSize()+diff_compress.diffsStorageSize())) ;
-
+#endif
 		if(bestMP->rho==-1) { // uncompressed TIV
 			vhdl << tab << declare("inTIV", bestMP->alpha) << " <= X" << range(f->wIn-1, f->wIn-bestMP->alpha) << ";" << endl;
 

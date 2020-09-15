@@ -354,7 +354,7 @@ namespace flopoco{
 			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(wA, w, g, 8);
 
 			// The following #ifs are experiments with table compression
-#if 1 // Option 0 : uncompressed, most inefficient, written as an intermediate step
+#if 0 // Option 0 : uncompressed, most inefficient, written as an intermediate step
 			auto ctptr = reinterpret_cast<Table*>(Table::newUniqueInstance(this,
 																																		"A", "CosPiARef",
 																																		tableContent.first, "CosATableRef",
@@ -364,7 +364,7 @@ namespace flopoco{
 																																		 tableContent.second, "SinATableRef",
 																																		 wA, w+g));
 #endif
-#if 1  // Option 1:  drop in replacement with compressed table and adder, allows for synthesis of the entity (suboptimal here because tables are not merged)
+#if 0  // Option 1:  drop in replacement with compressed table and adder, allows for synthesis of the entity (suboptimal here because tables are not merged)
 			DiffCompressedTable::newUniqueInstance(this,
 																						 "A", "CosPiA",
 																						 tableContent.first, "CosATable",
@@ -388,18 +388,54 @@ namespace flopoco{
 			REPORT(0, "compression of Sin table:" <<endl<< s );
 #endif
 
-#if 0  // Option 2 merged tables, uncompressed
+#if 0  // Option 2:  merged tables, uncompressed
 			vector<mpz_class> sincosvalues = mergeTables(tableContent, w+g);
 			Table::newUniqueInstance(this,
 															 "A", "SinCosA",
 															 sincosvalues, "SinCosTable",
 															 wA, 2*(w+g));
 
-			vhdl << tab << declare("SinPiA", w+g) << " <= SinCosA" << range(2*(w+g)-1, w+g) << ";" << endl;// signal declaration
-			vhdl << tab << declare("CosPiA", w+g) << " <= SinCosA" << range(w+g-1, 0) << ";" << endl;// signal declaration
+			vhdl << tab << declare("SinPiA", w+g) << " <= SinCosA" << range(2*(w+g)-1, w+g) << ";" << endl;
+			vhdl << tab << declare("CosPiA", w+g) << " <= SinCosA" << range(w+g-1, 0) << ";" << endl;
 #endif
-#if 0  // Option 3 merged tables, compressed
-			// TODO (reprendre le code de DifferentialCompression::newUniqueInstance mais merger les vecteurs avant)
+
+
+			///////////////////////////////////////////////////:
+#if 1  // Option 3 merged tables, compressed
+			auto cosTable=tableContent.first;
+			auto sinTable=tableContent.second;
+			auto compressedCos = DifferentialCompression::find_differential_compression(cosTable, wA, w+g);
+			auto compressedSin = DifferentialCompression::find_differential_compression(sinTable, wA, w+g);
+			// For the diff table we know that we can merge the tables without check
+			auto mergedDiffTable = mergeTables(make_pair(compressedCos.diffs, compressedSin.diffs), compressedCos.diffWordSize);
+			Table::newUniqueInstance(this,
+															 "A", "SinCosPiADiffs",
+															 mergedDiffTable, "SinCosDiffsTable",
+															 wA,
+															 compressedCos.diffWordSize + compressedSin.diffWordSize);
+			vhdl << tab << declare("SinPiADiff", compressedSin.diffWordSize) << " <= SinCosPiADiffs" << range(compressedCos.diffWordSize + compressedSin.diffWordSize-1, compressedCos.diffWordSize) << ";" << endl;
+			vhdl << tab << declare("CosPiADiff", compressedCos.diffWordSize) << " <= SinCosPiADiffs" << range(compressedCos.diffWordSize-1, 0) << ";" << endl;
+
+			// for the subsampling table we are not sure that the inputsizes are equal
+			if(compressedCos.subsamplingIndexSize == compressedSin.subsamplingIndexSize) {
+			auto mergedSubsamplingTable = mergeTables(make_pair(compressedCos.subsampling, compressedSin.subsampling), compressedCos.subsamplingWordSize);
+			vhdl << tab << declare("A_topbits", compressedCos.subsamplingIndexSize) << " <= " << "A" << range(wA-1, wA-compressedCos.subsamplingIndexSize) << ";" << endl;
+			Table::newUniqueInstance(this,
+															 "A_topbits", "SinCosPiASubsamplings",
+															 mergedSubsamplingTable, "SinCosSubsamplingsTable",
+															 compressedCos.subsamplingIndexSize,
+															 compressedCos.subsamplingWordSize + compressedSin.subsamplingWordSize);
+			vhdl << tab << declare("SinPiASubsampling", compressedSin.subsamplingWordSize) << " <= SinCosPiASubsamplings" << range(compressedCos.subsamplingWordSize + compressedSin.subsamplingWordSize-1, compressedCos.subsamplingWordSize) << ";" << endl;
+			vhdl << tab << declare("CosPiASubsampling", compressedCos.subsamplingWordSize) << " <= SinCosPiASubsamplings" << range(compressedCos.subsamplingWordSize-1, 0) << ";" << endl;
+			}
+			else {
+				THROWERROR("Fixme! compressedCos.subsamplingIndexSize != compressedSin.subsamplingIndexSize");
+			}
+
+			compressedCos.insertAdditionVHDL(this, "CosPiA", "CosPiASubsampling", "CosPiADiff");
+			compressedSin.insertAdditionVHDL(this, "SinPiA", "SinPiASubsampling", "SinPiADiff");
+			
+
 #endif
 			//-------------------------------- MULTIPLIER BY PI ---------------------------------------
 

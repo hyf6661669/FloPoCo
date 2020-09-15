@@ -10,10 +10,10 @@ namespace flopoco {
 		vector<mpz_class> diffs;
 		int subsamplingIndexSize;
 		int subsamplingWordSize;
-		int diffWordSize;
-		int diffIndexSize;
+		int diffWordSize; 
+		int diffIndexSize; // also originalWin
 		int originalWout;
-
+		
 				/**
           * Find a non-destructive compression of a table as a sum of a subsampling + offset
           * @param[in] values       The values of the table to compress
@@ -43,6 +43,10 @@ namespace flopoco {
 
 				string report() const;
 
+		/**  Computes the parameters of the addition, then inserts the corresponding VHDL in Operator op. */  
+		void insertAdditionVHDL(OperatorPtr op, string actualOutputName, string subsamplingOutName, string diffOutputName);
+			
+		
 							/** This is a drop-in  replacement for Table::newUniqueInstance. 
 					It will instantiate two tables and an adder, therefore will be suboptimal if the table output goes to a bit heap 
 				 * @param[in] op            The Operator that will be the parent of this Table (usually "this")

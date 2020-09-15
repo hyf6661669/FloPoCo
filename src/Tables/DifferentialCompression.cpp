@@ -183,7 +183,7 @@ namespace flopoco {
 	}
 
 	string DifferentialCompression::newUniqueInstance(OperatorPtr op,
-																										string actualInput, string actualOutput,
+																										string actualInputName, string actualOutputName,
 																										vector<mpz_class> values, string name,
 																										int wIn, int wOut, int logicTable)
 	{
@@ -193,29 +193,36 @@ namespace flopoco {
 		}
 		// compress
 		auto t = find_differential_compression(values, wIn, wOut);
+		string subsamplingOutName = actualOutputName+"_subsampling";
+		string diffOutputName = actualOutputName+"_diff";
+		string subsamplingIn = actualInputName+"_"+name+"_subsampling";
 		// generate VHDL for subsampling table
-		string subsamplingIn = actualInput+"_"+name+"_subsampling";
-		op->vhdl << tab << op->declare(subsamplingIn, t.subsamplingIndexSize) << " <= " << actualInput << range(wIn-1, wIn-t.subsamplingIndexSize) << ";" << endl;
-		string subsamplingout = actualOutput+"_subsampling";
-		string diffout = actualOutput+"_diff";
-		Table::newUniqueInstance( op, subsamplingIn, subsamplingout,
+		op->vhdl << tab << op->declare(subsamplingIn, t.subsamplingIndexSize) << " <= " << actualInputName << range(wIn-1, wIn-t.subsamplingIndexSize) << ";" << endl;
+		Table::newUniqueInstance( op, subsamplingIn, subsamplingOutName,
 															t.subsampling, name+"_subsampling",
 															t.subsamplingIndexSize, t.subsamplingWordSize, logicTable );
 		// generate VHDL for diff table
-		Table::newUniqueInstance( op, actualInput, diffout,
+		Table::newUniqueInstance( op, actualInputName, diffOutputName,
 															t.diffs, name+"_diff",
 															wIn, t.diffWordSize );
-		for(int i=0; i<(1<<wIn); i++) cerr <<  "*************************** " << i << "  "  << t.diffs[i] << endl;
-
-		int nonOverlapBits = wOut-t.diffWordSize;
-		int overlapBits    = t.subsamplingWordSize - nonOverlapBits;
-		// TODO an intadder when needed, but this is proably never useful
-		op->vhdl << tab << op->declare(op->getTarget()->adderDelay(t.subsamplingWordSize),
-																	 actualOutput+"_topbits", t.subsamplingWordSize) << " <= " << subsamplingout			
-		<< " + (" << zg(nonOverlapBits) << "& (" <<diffout << range(t.diffWordSize-1,t.diffWordSize-overlapBits) << "));" << endl;
-		op->vhdl << tab << op->declare(actualOutput, wOut) << " <= " << actualOutput+"_topbits & (" <<diffout << range(t.diffWordSize-overlapBits-1,0) << ");" << endl;
+		
+		t.insertAdditionVHDL(op, actualOutputName, subsamplingOutName, diffOutputName);
 		return 	t.report(); // don't know what Operator to return, hope it is harmless here 
 	}
 
 
+	
+	void DifferentialCompression::insertAdditionVHDL(OperatorPtr op,
+																									 string actualOutputName, string subsamplingOutName,string diffOutputName)
+	{
+		int wIn = diffIndexSize;
+		int wOut=originalWout;
+		int nonOverlapMSBBits = wOut-diffWordSize;
+		int overlapMiddleBits    = subsamplingWordSize - nonOverlapMSBBits;
+		// TODO an intadder when needed, but this is proably never useful
+		op->vhdl << tab << op->declare(op->getTarget()->adderDelay(subsamplingWordSize),
+																	 actualOutputName+"_topbits", subsamplingWordSize) << " <= " << subsamplingOutName			
+		<< " + (" << zg(nonOverlapMSBBits) << "& (" << diffOutputName << range(diffWordSize-1, diffWordSize-overlapMiddleBits) << "));" << endl;
+		op->vhdl << tab << op->declare(actualOutputName, wOut) << " <= " << actualOutputName+"_topbits & (" <<diffOutputName << range(diffWordSize-overlapMiddleBits-1,0) << ");" << endl;
+	}
 }

@@ -95,6 +95,7 @@ namespace flopoco
 		addOutput("Y" ,outputSize , 2);
 		useNumericStd();
 
+
 		int sizeMax = f->wOut<<f->wIn; // size of a plain table
 		topTen=vector<Multipartite*>(ten);
 		for (int i=0; i<ten; i++){
@@ -181,23 +182,12 @@ namespace flopoco
 		// Exploration complete. Now building the operator
 
 		bestMP = topTen[rank];
-
+		
 		REPORT(DEBUG,"Full table dump:" <<endl << bestMP->fullTableDump());
 		vector<mpz_class> mpzTIV;
 		for (auto i : bestMP->tiv) {
 			mpzTIV.push_back(mpz_class((long) i));
 		}
-#if 1 // This should be inside the exploration
-		auto diff_compress = DifferentialCompression::find_differential_compression(mpzTIV, bestMP->alpha, f->wOut);
-		assert(mpzTIV == diff_compress.getInitialTable());
-		REPORT(INFO, "lfmc alternative compression : " << endl <<
-				"\tsubsampled tiv: " << diff_compress.subsamplingWordSize <<
-				".2^" << diff_compress.subsamplingIndexSize  << " = "
-				<< diff_compress.subsamplingStorageSize() << endl <<
-				"\tdiff tiv: "<< diff_compress.diffWordSize << ".2^" << diff_compress.diffIndexSize << " = " <<
-			   diff_compress.diffsStorageSize() << endl <<
-			   "\t\t TOTAL :" << (diff_compress.subsamplingStorageSize()+diff_compress.diffsStorageSize())) ;
-#endif
 		if(bestMP->rho==-1) { // uncompressed TIV
 			vhdl << tab << declare("inTIV", bestMP->alpha) << " <= X" << range(f->wIn-1, f->wIn-bestMP->alpha) << ";" << endl;
 
@@ -206,12 +196,12 @@ namespace flopoco
 				vhdl << endl;
 		}else
 			{ // Hsiao-compressed TIV
-				vhdl << tab << declare("inATIV", bestMP->rho) << " <= X" << range(f->wIn-1, f->wIn-bestMP->rho) << ";" << endl;
-				vector<mpz_class> mpzaTIV;
-				for (auto i : bestMP->aTIV)
-					mpzaTIV.push_back(mpz_class((long) i));
-				Table::newUniqueInstance(this, "inATIV", "outATIV",
-																 mpzaTIV, "ATIV", bestMP->rho, bestMP->outputSizeATIV );
+				vhdl << tab << declare("inSSTIV", bestMP->rho) << " <= X" << range(f->wIn-1, f->wIn-bestMP->rho) << ";" << endl;
+				vector<mpz_class> mpzssTIV;
+				for (auto i : bestMP->ssTIV)
+					mpzssTIV.push_back(mpz_class((long) i));
+				Table::newUniqueInstance(this, "inSSTIV", "outSSTIV",
+																 mpzssTIV, "SSTIV", bestMP->rho, bestMP->outputSizeSSTIV );
 				vhdl << endl;
 
 				vhdl << tab << declare("inDiffTIV", bestMP->alpha) << " <= X" << range(f->wIn-1, f->wIn-bestMP->alpha) << ";" << endl;
@@ -262,8 +252,7 @@ namespace flopoco
 			bh->addSignal("outTIV");
 		}else
 			{ // Hsiao-compressed TIV
-				bh->addSignal("outATIV", bestMP->nbZeroLSBsInATIV); // shifted because its LSB bits were shaved in the Hsiao compression
-				//bh->addSignal("outATIV"); // shifted because its LSB bits were shaved in the Hsiao compression
+				bh->addSignal("outSSTIV", bestMP->nbZeroLSBsInSSTIV); // shifted because its LSB bits were shaved in the Hsiao compression
 				bh->addSignal("outDiffTIV");
 			}
 
@@ -500,6 +489,28 @@ namespace flopoco
 		}
 	}
 
+
+	
+#if 0 //REMOVE ME
+	
+	void	 FixFunctionByMultipartiteTable::buildDiffTIVCache(){
+		for (auto g=0; g<2+intlog2(f->wIn); g++) {
+			vector<DifferentialCompression*> v;
+			for (auto alpha=0; alpha<f->wIn; alpha++) {
+				// build the TIV
+				vector<mpz_class> mptiv;
+				for (auto i=0; i<(1<<alpha); i++) {
+					mptiv.push_back(mpz_class(TIVFunction(i)));
+				}
+				// then compress it and store it
+				auto d=DifferentialCompression::find_differential_compression(mptiv, alpha, f->wOut + g);
+				v.push_back(d); 
+			}
+			DCTIV.push_back(v);
+		}
+	}
+		
+#endif
 
 	/**
 	 * @brief enumerateDec : This function enumerates all the decompositions and returns the smallest one

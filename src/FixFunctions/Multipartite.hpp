@@ -6,6 +6,7 @@
 
 #include "FixFunction.hpp"
 #include "../Operator.hpp"
+#include "../Tables/DifferentialCompression.hpp"
 
 
 using namespace std;
@@ -86,7 +87,7 @@ namespace flopoco
 		vector<int64_t> tiv;
 		
 		/** The first part of the compressed TIV table, just as in the Hsiao article */
-		vector<int64_t> aTIV;
+		vector<int64_t> ssTIV;
 
 		/** The second part of the compressed TIV table, just as in the Hsiao article */
 		vector<int64_t> diffTIV;
@@ -97,29 +98,32 @@ namespace flopoco
 		double mathError;
 
 		int guardBits;
-		int outputSizeATIV;
-		int outputSizeDiffTIV;
 		vector<int> outputSizeTOi;
 		vector<int> sizeTOi;
 		vector<bool> negativeTOi;
 		int sizeTIV;
-		int sizeATIV;
-		int nbZeroLSBsInATIV;
-		int sizeDiffTIV;
 		int totalSize;
+#if 1
+		int outputSizeSSTIV;
+		int outputSizeDiffTIV;
+		int sizeDiffTIV;
+		int sizeSSTIV;
+		int nbZeroLSBsInSSTIV;
+#else
+		DifferentialCompression diffCompressedTIV;
+#endif
 
 		// holds precalculated TOi math errors. Valid as long as we don't change m!
+		// Also a table of TIV compressions
 		FixFunctionByMultipartiteTable *mpt;
 
 	private:
 
 		//------------------------------------------------------------------------------------ Private methods
 		void computeTOiSize (int i);
-
 		double deltai(int i);
 		double mui(int i, int Bi);
 		double si(int i, int Ai);
-
 		void computeTIVCompressionParameters();
 
 	};

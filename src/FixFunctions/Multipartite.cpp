@@ -122,7 +122,7 @@ namespace flopoco
 
 #if 0
 	// This version works just as well but is less generic. Vae victis
-	void Multipartite::computeTIVCompressionParametersOldVersion() {
+	void Multipartite::computeTIVCompressionParameters() {
 		string srcFileName = mpt->getSrcFileName(); // for REPORT to work
 		REPORT(FULL, "Entering computeTIVCompressionParameters: alpha=" << alpha << "  uncompressed size=" << sizeTIV);		
 		// OLD

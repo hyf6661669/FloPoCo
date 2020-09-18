@@ -26,6 +26,7 @@ namespace flopoco
 
 		Multipartite(FixFunctionByMultipartiteTable* mpt_, FixFunction* f_, int inputSize_, int outputSize_);
 
+
 		int64_t TIVFunction(int x);
 		int64_t TOiFunction(int x, int ti);
 		//------------------------------------------------------------------------------------- Public methods

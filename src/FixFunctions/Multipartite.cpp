@@ -59,6 +59,8 @@ namespace flopoco
 			}
 	}
 
+
+
 	//------------------------------------------------------------------------------------ Private methods
 
 
@@ -205,6 +207,10 @@ namespace flopoco
 			}
 			REPORT(FULL, "Computing new compression for  alpha=" << alpha << "   wOut=" << outputSize + guardBits);		
 			dcTIV = DifferentialCompression::find_differential_compression(mptiv, alpha, outputSize + guardBits);
+			// Trick to save memory: we won't need the complete tables, they take up more than 16Gb for 24 bit functions
+			// better free them now, and recompute at the end only the winner
+			dcTIV.subsampling.clear();
+			dcTIV.diffs.clear();
 			mpt->DCTIV[key]=dcTIV;
 		}
 		else {
@@ -246,9 +252,10 @@ namespace flopoco
 			size += sizeTOi[i];
 		}
 		totalSize = size;
-
+#if 1 // COMPRESSION_IN_EXPLORATION
 		if(mpt->compressTIV)
 			computeTIVCompressionParameters(); // may change sizeTIV and totalSize
+#endif
 	}
 
 
@@ -297,6 +304,9 @@ namespace flopoco
 				//toi[i] = new Table(mpt, target, values, name, gammai[i] + betai[i] - 1, outputSizeTOi[i]-1);
 			}
 
+
+#if 1 // Florent's version
+		
 		if(mpt->compressTIV) {
 			ssTIV.clear();
 			diffTIV.clear();
@@ -323,6 +333,13 @@ namespace flopoco
 				}
 			}
 		}
+#else // The previous code is in principle redundant with code in DifferentialCompression
+		if(mpt->compressTIV) {
+			computeTIVCompressionParameters(); // may change sizeTIV and totalSize
+			... TODO
+		}
+#endif
+		
 	}
 
 

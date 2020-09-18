@@ -188,7 +188,7 @@ namespace flopoco
 		for (auto i : bestMP->tiv) {
 			mpzTIV.push_back(mpz_class((long) i));
 		}
-		if(bestMP->rho==-1) { // uncompressed TIV
+		if(!target->tableCompression()) { // uncompressed TIV
 			vhdl << tab << declare("inTIV", bestMP->alpha) << " <= X" << range(f->wIn-1, f->wIn-bestMP->alpha) << ";" << endl;
 
 			Table::newUniqueInstance(this, "inTIV", "outTIV",
@@ -196,12 +196,12 @@ namespace flopoco
 				vhdl << endl;
 		}else
 			{ // Hsiao-compressed TIV
-				vhdl << tab << declare("inSSTIV", bestMP->rho) << " <= X" << range(f->wIn-1, f->wIn-bestMP->rho) << ";" << endl;
+				vhdl << tab << declare("inSSTIV", bestMP->dcTIV.subsamplingIndexSize) << " <= X" << range(f->wIn-1, f->wIn-bestMP->dcTIV.subsamplingIndexSize) << ";" << endl;
 				vector<mpz_class> mpzssTIV;
 				for (auto i : bestMP->ssTIV)
 					mpzssTIV.push_back(mpz_class((long) i));
 				Table::newUniqueInstance(this, "inSSTIV", "outSSTIV",
-																 mpzssTIV, "SSTIV", bestMP->rho, bestMP->outputSizeSSTIV );
+																 mpzssTIV, "SSTIV", bestMP->dcTIV.subsamplingIndexSize, bestMP->dcTIV.subsamplingWordSize );
 				vhdl << endl;
 
 				vhdl << tab << declare("inDiffTIV", bestMP->alpha) << " <= X" << range(f->wIn-1, f->wIn-bestMP->alpha) << ";" << endl;
@@ -211,9 +211,9 @@ namespace flopoco
 					mpzDiffTIV.push_back(mpz_class((long) i));
 					//cerr  << " " <<mpz_class((long) i) << endl;
 				}
-				//cerr << "bestMP->outputSizeDiffTIV=" <<bestMP->outputSizeDiffTIV << endl;
+				//cerr << "bestMP->dcTIV.diffWordSize=" <<bestMP->dcTIV.diffWordSize << endl;
 				Table::newUniqueInstance(this, "inDiffTIV", "outDiffTIV",
-																 mpzDiffTIV, "DiffTIV", bestMP->alpha, bestMP->outputSizeDiffTIV );
+																 mpzDiffTIV, "DiffTIV", bestMP->alpha, bestMP->dcTIV.diffWordSize );
 				// TODO need to sign-extend for 1/(1+x), but it makes an error for sin(x)
 				//  getSignalByName("outDiffTIV")->setIsSigned(); // so that it is sign-extended in the bit heap
 				// No need to sign-extend it, it is already taken care of in the construction of the table.
@@ -248,11 +248,11 @@ namespace flopoco
 
 		BitHeap *bh = new BitHeap(this, bestMP->outputSize + bestMP->guardBits); // TODO this is using an adder tree
 
-		if(bestMP->rho==-1) { // uncompressed TIV
+		if(!target->tableCompression()) { // uncompressed TIV
 			bh->addSignal("outTIV");
 		}else
 			{ // Hsiao-compressed TIV
-				bh->addSignal("outSSTIV", bestMP->nbZeroLSBsInSSTIV); // shifted because its LSB bits were shaved in the Hsiao compression
+				bh->addSignal("outSSTIV", bestMP->dcTIV.subsamplingShift()); // shifted because its LSB bits were shaved in the Hsiao compression
 				bh->addSignal("outDiffTIV");
 			}
 

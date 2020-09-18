@@ -72,8 +72,6 @@ namespace flopoco
 		int m;
 		/** Just as in the article  */
 		int alpha;
-		/** the number of bits that address the first part of a compressed TIV (alpha -s) */
-		int rho;
 		/** Just as in the article */
 		int beta;
 		/** Just as in the article */
@@ -103,14 +101,16 @@ namespace flopoco
 		vector<bool> negativeTOi;
 		int sizeTIV;
 		int totalSize;
-#if 1
+		/** the number of bits that address the first part of a compressed TIV (alpha -s) */
+#if 0
+		int rho;
 		int outputSizeSSTIV;
 		int outputSizeDiffTIV;
+		int nbZeroLSBsInSSTIV;
 		int sizeDiffTIV;
 		int sizeSSTIV;
-		int nbZeroLSBsInSSTIV;
 #else
-		DifferentialCompression diffCompressedTIV;
+		DifferentialCompression dcTIV;
 #endif
 
 		// holds precalculated TOi math errors. Valid as long as we don't change m!

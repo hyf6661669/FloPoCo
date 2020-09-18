@@ -13,7 +13,6 @@ namespace flopoco {
 		int diffWordSize; 
 		int diffIndexSize; // also originalWin
 		int originalWout;
-		
 				/**
           * Find a non-destructive compression of a table as a sum of a subsampling + offset
           * @param[in] values       The values of the table to compress
@@ -34,6 +33,11 @@ namespace flopoco {
              * @return the size as a size_t
              */
             size_t subsamplingStorageSize() const;
+
+		         /**
+             * @brief Compute the left shift, in bits of the subsampling table content WRT the diff table content
+             */
+            size_t subsamplingShift() const;
 
             /**
              * @brief Compute the size in bits of the diffs table content

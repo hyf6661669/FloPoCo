@@ -38,7 +38,7 @@ namespace flopoco
 		 * @param[bool]	signedIn_	true if the input range is [-1,1)
 		 */
 		FixFunctionByMultipartiteTable(OperatorPtr parentOp, Target* target, string function, int nbTOi, bool signedIn,
-																	 int lsbIn, int lsbOut, bool compressTIV);
+																	 int lsbIn, int lsbOut);
 
 		virtual ~FixFunctionByMultipartiteTable();
 

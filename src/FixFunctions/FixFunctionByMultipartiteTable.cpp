@@ -40,12 +40,12 @@ To replicate the functions used in the 2017 Hsiao paper
 ./flopoco FixFunctionByMultipartiteTable f="1/(x+1)-0.5" signedIn=0 lsbIn=-15 lsbOut=-16
 
 perfect match with the "MP" lines of table 5
-./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-16 lsbOut=-16 compresstiv=0 
-./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-24 lsbOut=-24 compresstiv=0 
+./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-16 lsbOut=-16 
+./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-24 lsbOut=-24  
 (et sur le 24 bits on est bien meilleurs que le résultat HMP !) 
 
 absolutely no match
-./flopoco FixFunctionByMultipartiteTable f="2^x-1"       signedIn=0 lsbIn=-16 lsbOut=-15 compresstiv=0 
+./flopoco FixFunctionByMultipartiteTable f="2^x-1"       signedIn=0 lsbIn=-16 lsbOut=-15  
 
 >
 */
@@ -70,15 +70,15 @@ namespace flopoco
 	 @param[int]	nbTOi_	number of tables which will be created
 	 @param[bool]	signedIn_	true if the input range is [-1,1)
 	 */
-	FixFunctionByMultipartiteTable::FixFunctionByMultipartiteTable(OperatorPtr parentOp, Target *target, string functionName_, int nbTOi_, bool signedIn_, int lsbIn_, int lsbOut_, bool compressTIV_):
-		Operator(parentOp, target), nbTOi(nbTOi_), compressTIV(compressTIV_)
+	FixFunctionByMultipartiteTable::FixFunctionByMultipartiteTable(OperatorPtr parentOp, Target *target, string functionName_, int nbTOi_, bool signedIn_, int lsbIn_, int lsbOut_):
+		Operator(parentOp, target), nbTOi(nbTOi_)
 {
+	compressTIV = target->tableCompression();
 		srcFileName="FixFunctionByMultipartiteTable";
 
 		ostringstream name;
 		name << "FixFunctionByMultipartiteTable_" << getNewUId();
 		setNameWithFreqAndUID(name.str());
-
 		f = new FixFunction(functionName_, signedIn_, lsbIn_, lsbOut_);
 		if(f->signedOut) {
 			THROWERROR("Sorry there is a known bug if the function output can get negative. If this is important to you we will get it fixed of course")
@@ -775,15 +775,14 @@ namespace flopoco
 
 	OperatorPtr FixFunctionByMultipartiteTable::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
 		string f;
-		bool signedIn, compressTIV;
+		bool signedIn;
 		int lsbIn, lsbOut, nbTO;
 		UserInterface::parseString(args, "f", &f);
 		UserInterface::parsePositiveInt(args, "nbTO", &nbTO);
 		UserInterface::parseInt(args, "lsbIn", &lsbIn);
 		UserInterface::parseInt(args, "lsbOut", &lsbOut);
 		UserInterface::parseBoolean(args, "signedIn", &signedIn);
-		UserInterface::parseBoolean(args, "compressTIV", &compressTIV);
-		return new FixFunctionByMultipartiteTable(parentOp, target, f, nbTO, signedIn, lsbIn, lsbOut, compressTIV);
+		return new FixFunctionByMultipartiteTable(parentOp, target, f, nbTO, signedIn, lsbIn, lsbOut);
 	}
 
 	void FixFunctionByMultipartiteTable::registerFactory(){
@@ -795,8 +794,7 @@ namespace flopoco
 signedIn(bool): if true the function input range is [-1,1), if false it is [0,1);\
 lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
 lsbOut(int): weight of output LSB;\
-nbTO(int)=0: number of Tables of Offsets, between 1 (bipartite) to 4 or 5 for large input sizes -- 0: let the tool choose ;\
-compressTIV(bool)=true: use Hsiao TIV compression, or not",
+nbTO(int)=0: number of Tables of Offsets, between 1 (bipartite) to 4 or 5 for large input sizes -- 0: let the tool choose",
 
 											 "This operator uses the multipartite table method as introduced in <a href=\"http://perso.citi-lab.fr/fdedinec/recherche/publis/2005-TC-Multipartite.pdf\">this article</a>, with the improvement described in <a href=\"http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6998028&tag=1\">this article</a>. ",
 											 FixFunctionByMultipartiteTable::parseArguments,

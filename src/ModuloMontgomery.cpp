@@ -43,14 +43,13 @@ namespace flopoco {
         vhdl << tab << declare(
                 "MLine", modSize, false) << tab << "<= STD_LOGIC_VECTOR(TO_SIGNED(MLineInt," << modSize << "));" << endl;
         vhdl << tab << declareFixPoint(
-                "XSg", false, modSize-1, 0) << tab << "<= UNSIGNED(SIGNED(STD_LOGIC_VECTOR(SIGNED(X) mod " << modulo << ")" << range(modSize-1, 0) << "));" << endl;
+                "XSg", false, modSize-1, 0) << tab << "<= UNSIGNED(STD_LOGIC_VECTOR(UNSIGNED(X) mod " << modulo << ")" << range(modSize-1, 0) << ");" << endl;
         vhdl << tab << declareFixPoint(
                 "RmodSg", false, modSize-1, 0) << tab << "<= UNSIGNED(TO_SIGNED(Rmod," << modSize << "));" << endl;
         // calculate and convert back
         vhdl << tab << declare(
                 "T_0", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
-        vhdl << tab << declare(
-                "T1", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
+
         // montgomery - automatically converts back
 
         for (int i = 0; i < modSize; ++i) {
@@ -58,12 +57,11 @@ namespace flopoco {
             uName << "U_" << i;
             vhdl << tab << declare(
                     uName.str(), 1, false) << " <= MLine" << of(0) << " when T_" << i << of(i) << " = '1' else '0';" << endl;
-            //vhdl << tab << "T <= STD_LOGIC_VECTOR(UNSIGNED(T) + SHIFT_LEFT(TO_UNSIGNED(M," << modSize << ")," << i << ")) when T" << of(i) << " = '1' else T;" << endl;
             ostringstream tName;
             int index = i+1;
             tName << "T_" << index;
             vhdl << tab << declare(
-                    tName.str(), modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << i << ") + SHIFT_LEFT(TO_UNSIGNED(M," << modSize << ")," << i << ")) when T_" << i << "" << of(i) << " = '1' else T_" << i << ";" << endl;
+                    tName.str(), modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << i << ") + SHIFT_LEFT(TO_UNSIGNED(M," << modSize+i << ")," << i << ")) when U_" << i << " = '1' else T_" << i << ";" << endl;
         }
         vhdl << tab << declare(
                 "TRes", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T_" << modSize << ")," << modSize << "));" << endl;
@@ -101,6 +99,12 @@ namespace flopoco {
     void ModuloMontgomery::buildStandardTestCases(TestCaseList * tcl) {
         TestCase *tc;
 
+        if (wIn >= 10) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(634));
+            emulate(tc);
+            tcl->add(tc);
+        }
         if (wIn >= 8) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(222));

@@ -22,6 +22,7 @@ namespace flopoco {
         setName(name.str()); // See also setNameWithFrequencyAndUID()
         // Copyright
         setCopyrightString("Annika Oeste, 2020");
+        useNumericStd();
 
         REPORT(INFO,"Declaration of ModuloBitHeapOperator \n");
         REPORT(DETAILED, "this operator has received two parameters: wIn " << wIn << " modulo " << modulo);
@@ -42,7 +43,7 @@ namespace flopoco {
             ostringstream bitName;
             bitName << "B_" << i << "_" << bhStage;
             vhdl << tab << declare(
-                    bitName.str(), 1, false) << tab << "<= X" << of(i) << ";" << endl;
+                    bitName.str(), 1, true) << tab << "<= X" << range(i, i) << ";" << endl;
 
         }
 
@@ -100,11 +101,12 @@ namespace flopoco {
                                 signalName << "B_" << bitOrigin << "_" << (bhStage);
                                 REPORT(INFO,"bitheap --- " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
 
-                                ostringstream signalNameNeg;
-                                signalNameNeg << "B_" << bitOrigin << "_" << bhStage << "N";
-                                vhdl << tab << declare(
-                                        signalNameNeg.str(), 1, true) << tab << "<= \"1\" when " << signalName.str() << " = '1' else \"0\";" << endl;
-                                bitHeapTmp->subtractSignal(signalNameNeg.str(), j);
+                                // for use with bits as std_logic signals
+//                                ostringstream signalNameNeg;
+//                                signalNameNeg << "B_" << bitOrigin << "_" << bhStage << "N";
+//                                vhdl << tab << declare(
+//                                        signalNameNeg.str(), 1, true) << tab << "<= \"1\" when " << signalName.str() << " = '1' else \"0\";" << endl;
+                                bitHeapTmp->subtractSignal(signalName.str(), j);
                             } else {
                                 signalName << "B_" << bitOrigin << "_" << (bhStage);
                                 REPORT(INFO,"bitheap +++ " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
@@ -138,9 +140,9 @@ namespace flopoco {
             stage++;
         }
         vhdl << tab << declare(
-                "T", bitHeapReqBits, false) << tab << "<= " << bitHeapTmp->getSumName(bitHeapReqBits-1,0) << " + M;" << endl;
+                "T", bitHeapReqBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeapTmp->getSumName(bitHeapReqBits-1,0) << ") + M);" << endl;
         vhdl << tab << "S <= " << bitHeapTmp->getSumName(outPutSize-1,0) << " when ";
-        vhdl << bitHeapTmp->getSumName(bitHeapReqBits-1, bitHeapReqBits-1) << " = 0";
+        vhdl << bitHeapTmp->getSumName() << of(bitHeapReqBits-1) << " = '0'";
         vhdl << tab << "else T" << range(outPutSize-1,0) << ";" << endl;
         addFullComment("End of vhdl generation");
         delete bitHeapTmp;
@@ -383,6 +385,12 @@ namespace flopoco {
     void ModuloBitHeapOperator::buildStandardTestCases(TestCaseList * tcl) {
         TestCase *tc;
 
+        if (wIn >= 10) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(634));
+            emulate(tc);
+            tcl->add(tc);
+        }
         if (wIn >= 8) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(222));

@@ -31,6 +31,7 @@
 
 #include "FixFunctionByPiecewisePoly.hpp"
 #include "Tables/Table.hpp"
+#include "Tables/DifferentialCompression.hpp"
 #include "FixFunctionByTable.hpp"
 #include "FixHornerEvaluator.hpp"
 
@@ -189,6 +190,10 @@ namespace flopoco{
 		polyTableOutputSize=0;
 		for (int i=0; i<=degree; i++) {
 			polyTableOutputSize += pwp->MSB[i] - pwp->LSB + (pwp->coeffSigns[i]==0? 1 : 0);
+
+			// initialize the table of coeffs
+			vector<mpz_class> v;
+			SplitCoeffTableVector.push_back(v);
 		}
 		REPORT(DETAILED, "Poly table input size  = " << alpha);
 		REPORT(DETAILED, "Poly table output size = " << polyTableOutputSize);
@@ -203,6 +208,7 @@ namespace flopoco{
 					mpz_class mask = (mpz_class(1)<<(pwp->MSB[i] - pwp->LSB) ) - 1; // size is msb-lsb+1
 					coeff = coeff & mask;
 				}
+				SplitCoeffTableVector[i].push_back(coeff); // TODO if this is to be used: integrate the rounding bit below into coeff before storing it in SplitCoeffTable 
 				z += coeff << currentShift; // coeff of degree i from poly number x
 				// REPORT(DEBUG, "i=" << i << "   z=" << unsignedBinary(z, 64));
 				if(i==0 && finalRounding){ // coeff of degree 0
@@ -218,6 +224,17 @@ namespace flopoco{
 			}
 			coeffTableVector.push_back(z);
 		}
+		// report the potential of compression
+		int initialCost=0;
+		int compressedCost=0;
+		for (int i=0; i<=degree; i++) {
+			auto dc = DifferentialCompression::find_differential_compression(SplitCoeffTableVector[i], alpha, pwp->MSB[i] - pwp->LSB + (pwp->coeffSigns[i]==0? 1: 0));
+			REPORT(0, "Differential compression of coeff table for degree " << i << endl << dc.report());
+			initialCost += (dc.originalWout)<< alpha;
+			compressedCost += dc.subsamplingStorageSize() + dc.diffsStorageSize();
+		}
+		REPORT(0, "For the full table of coeffs, initial cost is: " << initialCost <<   ", compressed cost is: " << compressedCost <<   "   Saved: " << 100*((double)initialCost-compressedCost)/ ((double)initialCost) << " %");
+
 
 	}
 

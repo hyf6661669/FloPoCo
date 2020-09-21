@@ -158,7 +158,8 @@ namespace flopoco {
 	string DifferentialCompression::report() const
 	{
 		ostringstream t;
-		t << "  Initial cost is:          " << originalWout << "x2^" << diffIndexSize << "=" << (originalWout << diffIndexSize) << endl;
+		int initialCost = originalWout << diffIndexSize;
+		t << "  Initial cost is:          " << originalWout << "x2^" << diffIndexSize << "=" << initialCost << endl;
 		//t << "Initial estimated lut cost is :" << size_in_LUTs()<< endl;
 		auto subsamplingCost = subsamplingWordSize << subsamplingIndexSize;
 		t << "  Best subsampling cost is: " << subsamplingWordSize <<	"x2^" << subsamplingIndexSize << "=" << subsamplingCost<< endl;
@@ -174,14 +175,15 @@ namespace flopoco {
 		// auto diffLutCost = lutcost(diffIndexSize, diffWordSize);
 		t << "  Best diff cost is:        " << diffWordSize << "x2^" << diffIndexSize << "=" << diffCost<< endl;
 		// t << "Best diff LUT cost: "<< diffLutCost<< endl;
-		t << "  Total compressed cost is: " << (diffCost + subsamplingCost)<< endl;
+		int compressedCost=diffCost + subsamplingCost;
+		t << "  Total compressed cost is: " << compressedCost <<   "         Saved: " << 100*((double)initialCost-compressedCost)/ ((double)initialCost) << " %";
 		// t << "Total LUT cost: " << (diffLutCost + subsamplingLUTCost)<< endl;
 		
 		// t << "Latex table line : & $" << wOut << "\\times 2^{" << diffIndexSize << "}$ & $" << (wOut << diffIndexSize) << "$ & $" <<
 		// 	size_in_LUTs() << "$ & $" << diffWordSize << "\\times 2^{" << diffIndexSize << "} + " <<
 		// 	subsamplingWordSize << "\\times 2^{" << subsamplingIndexSize << "}$ & $" <<
 		// 	(subsamplingWordSize << subsamplingIndexSize) << "$ & $" << diffLutCost + subsamplingLUTCost <<
-		// 	"$ \\\\"<< endl;
+		// 	"$ \\\\"<< endl;		
 		return t.str();
 
 	}

@@ -107,7 +107,7 @@ void	FixFunction::initialize()
 		msbOut = mpfr_get_si(tmp, GMP_RNDU);
 		if(signedOut)
 			msbOut++;
-		cerr << "Computed msbOut=" << msbOut <<endl;
+		// cerr << "Computed msbOut=" << msbOut <<endl;
 		t << ". Output is " << (signedOut?"signed":"unsigned");
 		outputDescription=t.str();
 

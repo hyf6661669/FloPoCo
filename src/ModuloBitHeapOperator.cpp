@@ -132,18 +132,18 @@ namespace flopoco {
                     ostringstream bitName;
                     bitName << "B_" << i << "_" << (bhStage+1);
                     vhdl << tab << declare(
-                            bitName.str(), 1, false) << tab << "<=" << bitHeapTmp->getSumName() << of(i) << ";" << endl;
+                            bitName.str(), 1, true) << tab << "<=" << bitHeapTmp->getSumName() << range(i,i) << ";" << endl;
                 }
                 delete bitHeapTmp;
                 bhStage++;
             }
             stage++;
         }
-        vhdl << tab << declare(
-                "T", bitHeapReqBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeapTmp->getSumName(bitHeapReqBits-1,0) << ") + M);" << endl;
+//        vhdl << tab << declare(
+//                "T", bitHeapReqBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeapTmp->getSumName(bitHeapReqBits-1,0) << ") + M);" << endl;
         vhdl << tab << "S <= " << bitHeapTmp->getSumName(outPutSize-1,0) << " when ";
         vhdl << bitHeapTmp->getSumName() << of(bitHeapReqBits-1) << " = '0'";
-        vhdl << tab << "else T" << range(outPutSize-1,0) << ";" << endl;
+        vhdl << tab << "else STD_LOGIC_VECTOR(SIGNED(" << bitHeapTmp->getSumName(bitHeapReqBits-1,0) << ") + M)" << range(outPutSize-1,0) << ";" << endl;
         addFullComment("End of vhdl generation");
         delete bitHeapTmp;
     }

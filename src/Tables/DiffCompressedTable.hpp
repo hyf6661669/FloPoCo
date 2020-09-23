@@ -45,6 +45,10 @@ namespace flopoco {
 																				 int wIn = -1, int wOut = -1,
 																				 int logicTable=0);
 
+		void report_compression_gain();
+
+
+		DifferentialCompression diff_comp;
 	};
 }
 #endif

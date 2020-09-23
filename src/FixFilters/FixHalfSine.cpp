@@ -79,11 +79,11 @@ namespace flopoco{
 	
 	void FixHalfSine::registerFactory(){
 		UserInterface::add("FixHalfSine", // name
-											 "A generator of fixed-point Half-Sine filters",
+											 "A generator of fixed-point Half-Sine filters, for inputs between -1 and 1",
 											 "FiltersEtc", // categories
 											 "",
-											 "lsbIn(int): weight of the integer size in bits;\
-											  lsbOut(int): integer size in bits;\
+											 "lsbIn(int): position of the LSB of the input, e.g. -15 for a 16-bit signed input;\
+											  lsbOut(int): position of the LSB of the output;\
                         n(int): filter order (number of taps will be 2n)",
 											 "For more details, see <a href=\"bib/flopoco.html#DinIstoMas2014-SOPCJR\">this article</a>.",
 											 FixHalfSine::parseArguments,

@@ -80,12 +80,12 @@ namespace flopoco{
 	
 	void FixRootRaisedCosine::registerFactory(){
 		UserInterface::add("FixRootRaisedCosine", // name
-											 "A generator of fixed-point Root-Raised Cosine filters",
+											 "A generator of fixed-point Root-Raised Cosine filters, for inputs between -1 and 1",
 											 "FiltersEtc", // categories
 											 "",
 											 "alpha(real): roll-off factor;\
-                        lsbIn(int): weight of the integer size in bits;							\
-											  lsbOut(int): integer size in bits;\
+											  lsbIn(int): position of the LSB of the input, e.g. -15 for a 16-bit signed input; \
+											  lsbOut(int): position of the LSB of the output;\
                         n(int): filter order (number of taps will be 2n+1)",
 											 "",
 											 FixRootRaisedCosine::parseArguments,

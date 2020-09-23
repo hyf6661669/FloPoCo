@@ -353,7 +353,7 @@ namespace flopoco{
 			}
 			else if(k!=0 && d==0) {
 				// The idea here is that if k only was provided then we just do a single polynomial with no further table.
-				d = wF/k; // because Y<2^(-k) hence y^k<2^(-dk)				
+				d = max(wF/k-2, 0) ; // because Y<2^(-k) hence y^k<2^(-dk)				
 				REPORT(DETAILED, "k=" << k << " provided, chosing sensible default for d: d="<<d);
 			}
 			else if(k==0 && d!=0) {

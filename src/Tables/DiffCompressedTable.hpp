@@ -13,7 +13,7 @@ namespace flopoco {
     class DiffCompressedTable  : public Table {
     public:
 		/**
-		 * The DiffCompressedTable constructor. 
+		 * The DiffCompressedTable constructor.
 		 It is an exception in FloPoCo as there is no corresponding user interface for it, because passing the vector of content on the command line would be a pain.
 		 The proper way to instanciate this component is with newUniqueInstance()
 		 * @param[in] parentOp 	the parent operator in the component hierarchy
@@ -28,17 +28,17 @@ namespace flopoco {
 		 * @param[in] minIn			minimal input value, to which value[0] will be mapped (default 0)
 		 * @param[in] maxIn			maximal input value (default: values.size()-1)
 		 */
-			DiffCompressedTable(OperatorPtr parentOp, Target* target, vector<mpz_class> _values, string name="",
+		DiffCompressedTable(OperatorPtr parentOp, Target* target, vector<mpz_class> _values, string name="",
 					int _wIn = -1, int _wOut = -1, int _logicTable = 0, int _minIn = -1, int _maxIn = -1);
 
-			
-	
+
+
 		/** Drop-in replacement for Table::newUniqueInstance
 		 * @param[in] op            The Operator that will be the parent of this Table (usually "this")
 		 * @param[in] actualInput   The actual input name
 		 * @param[in] actualOutput  The actual input name
 		 * @param[in] values        The vector of mpz_class values to be passed to the Table constructor
- */
+		 */
 		static OperatorPtr newUniqueInstance(OperatorPtr op,
 																				 string actualInput, string actualOutput,
 																				 vector<mpz_class> values, string name,

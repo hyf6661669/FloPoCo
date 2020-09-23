@@ -32,10 +32,10 @@ namespace flopoco {
 
 	}
 
-		OperatorPtr DiffCompressedTable::newUniqueInstance(OperatorPtr op,
-																				 string actualInput, string actualOutput,
-																				 vector<mpz_class> values, string name,
-																				 int wIn, int wOut, int logicTable){
+	OperatorPtr DiffCompressedTable::newUniqueInstance(OperatorPtr op,
+																										 string actualInput, string actualOutput,
+																										 vector<mpz_class> values, string name,
+																										 int wIn, int wOut, int logicTable){
 		op->schedule();
 		op->inPortMap("X", actualInput);
 		op->outPortMap("Y", actualOutput);

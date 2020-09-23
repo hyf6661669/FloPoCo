@@ -61,9 +61,9 @@ namespace flopoco {
             for (int64_t i = 0 ; i < values.size() ; i += shift) { //for each slice
                 bool sub_slice_ok = false;
 				//Get the minimal value of the slice as we want only positive offset
-                mpz_class subsample_min{min_max[i]}; 
+                mpz_class subsample_min{min_max[i]};
 				//Get the maximal value of the slice
-                mpz_class subsample_max{min_max[i+shift - 1]}; 
+                mpz_class subsample_max{min_max[i+shift - 1]};
                 while(!sub_slice_ok) {
                     mpz_class subsample_low_bits {subsample_min & low_bit_mask};
                     mpz_class cur_subsample_val {subsample_min - subsample_low_bits};
@@ -102,7 +102,7 @@ namespace flopoco {
                     sub_slice_ok = true;
                     for (int64_t j = i; j < i+shift ; j++) {
                         diff[j] = values[j] - cur_subsample_val;
-                        assert(diff[j] >= 0); 
+                        assert(diff[j] >= 0);
 						assert(values[j] <= subsample_max);
                     } //end of diff bank computing loop
                 } // End of shaving adjustment loop
@@ -211,13 +211,12 @@ namespace flopoco {
 		Table::newUniqueInstance( op, actualInputName, diffOutputName,
 															t.diffs, name+"_diff",
 															wIn, t.diffWordSize );
-		
+
 		t.insertAdditionVHDL(op, actualOutputName, subsamplingOutName, diffOutputName);
-		return 	t.report(); // don't know what Operator to return, hope it is harmless here 
+		return t.report(); // don't know what Operator to return, hope it is harmless here
 	}
 
 
-	
 	void DifferentialCompression::insertAdditionVHDL(OperatorPtr op,
 																									 string actualOutputName, string subsamplingOutName,string diffOutputName)
 	{
@@ -227,7 +226,7 @@ namespace flopoco {
 		int overlapMiddleBits    = subsamplingWordSize - nonOverlapMSBBits;
 		// TODO an intadder when needed, but this is proably never useful
 		op->vhdl << tab << op->declare(op->getTarget()->adderDelay(subsamplingWordSize),
-																	 actualOutputName+"_topbits", subsamplingWordSize) << " <= " << subsamplingOutName			
+																	 actualOutputName+"_topbits", subsamplingWordSize) << " <= " << subsamplingOutName
 		<< " + (" << zg(nonOverlapMSBBits) << "& (" << diffOutputName << range(diffWordSize-1, diffWordSize-overlapMiddleBits) << "));" << endl;
 		op->vhdl << tab << op->declare(actualOutputName, wOut) << " <= " << actualOutputName+"_topbits & (" <<diffOutputName << range(diffWordSize-overlapMiddleBits-1,0) << ");" << endl;
 	}

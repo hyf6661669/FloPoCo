@@ -28,6 +28,7 @@
 #include "FixFunctions/FixFunctionByTable.hpp"
 #include "utils.hpp"
 #include "IntAddSubCmp/IntAdder.hpp"
+#include "Tables/DiffCompressedTable.hpp"
 
 
 using namespace std;
@@ -566,10 +567,23 @@ namespace flopoco{
 			vhdl << tab << declare("Z", sizeZ) << " <= Y" << range(sizeZ-1, 0) << ";\n";
 
 			vector<mpz_class> expYTableContent = ExpATable(k, sizeExpA); // e^A-1 has MSB weight 1
-			Table::newUniqueInstance(this, "A", "expA",
-															 expYTableContent,
-															 "ExpATable",
-															 k, sizeExpA);
+			if(getTarget()->tableCompression() == false) {
+				Table::newUniqueInstance(this, "A", "expA",
+																 expYTableContent,
+																 "ExpATable",
+																 k, sizeExpA);
+			} else {
+				Table::newUniqueInstance(this, "A", "expARef",
+																 expYTableContent,
+																 "ExpATableRef",
+																 k, sizeExpA);
+				auto op_ptr = reinterpret_cast<DiffCompressedTable*>(
+					DiffCompressedTable::newUniqueInstance(this, "A", "expA",
+																								expYTableContent,
+																								"ExpATable",
+																								k, sizeExpA));
+				op_ptr->report_compression_gain();
+			}
 
 
 

@@ -416,36 +416,6 @@ namespace flopoco{
 		}
 
 		REPORT(INFO, "  Total size of the table is " << nbIntervals << " x " << totalOutputSize << " = " << nbIntervals*totalOutputSize << " bits");
-		// Compute the compression size for each table
-		size_t totalCompressedSize = 0;
-		size_t wIn = alpha;
-		vector<mpz_class> coeffTable(nbIntervals);
-		for(size_t deg = 0 ; deg <= degree ; deg += 1) {
-			size_t wOut = 1;
-			mpz_class mask{1};
-			// create the table of degree j coefficients
-			for (size_t inter = 0 ; inter < nbIntervals ; inter += 1 ) {
-				coeffTable[inter] = getCoeffAsPositiveMPZ(inter, deg);
-				while (coeffTable[inter] > mask) {
-					wOut++;
-					mask <<= 1;
-					mask += 1;
-				}
-			}// End of table creation
-			auto diffcompress = DifferentialCompression::find_differential_compression(coeffTable, wIn, wOut);
-			assert(diffcompress.getInitialTable() == coeffTable);
-
-			size_t currentDegCostSubsample = diffcompress.subsamplingWordSize << diffcompress.subsamplingIndexSize;
-			size_t currentDegCostDiff = diffcompress.diffWordSize << wIn;
-			REPORT(INFO, "Best compression found for coefficients of degree "<< deg << ": " <<
-				   "Subsampling of factor " << (1 << (wIn - diffcompress.subsamplingIndexSize)) <<
-				   " with subsamples word sizes of" << diffcompress.subsamplingWordSize <<
-				   " and diff word_size of " << diffcompress.diffWordSize <<
-				   " for a cost of " << currentDegCostDiff << " + " << currentDegCostSubsample << " = "
-				   << (currentDegCostDiff + currentDegCostSubsample));
-			totalCompressedSize += currentDegCostDiff + currentDegCostSubsample;
-		}
-		REPORT(INFO, "Compressed coefficient table total cost :" << totalCompressedSize);
 	}
 
 

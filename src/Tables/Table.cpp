@@ -176,8 +176,8 @@ namespace flopoco{
 
 		cpDelay = getTarget()->tableDelay(wIn, wOut, logicTable);
 		declare(cpDelay, "Y0", wOut);
-		REPORT(0, "logicTable=" << logicTable << "   table delay is "<< cpDelay << "ns");
-
+		REPORT(DEBUG, "logicTable=" << logicTable << "   table delay is "<< cpDelay << "ns");
+		
 		vhdl << tab << "with X select Y0 <= " << endl;;
 
 		for(unsigned int i=minIn.get_ui(); i<=maxIn.get_ui(); i++)

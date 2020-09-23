@@ -112,7 +112,7 @@ namespace flopoco{
 
 			// Build the polynomial approximation
 			double targetAcc= approxErrorBudget*pow(2, lsbOut);
-			REPORT(INFO, "Computing polynomial approximation for target accuracy "<< targetAcc);
+			REPORT(INFO, "Computing polynomial approximation of degree " << degree << " for target accuracy "<< targetAcc);
 			pwp = new UniformPiecewisePolyApprox(func, targetAcc, degree);
 			alpha =  pwp-> alpha; // coeff table input size
 
@@ -152,7 +152,7 @@ namespace flopoco{
 
 			REPORT(INFO, "Now building the Horner evaluator for rounding error budget "<< roundingErrorBudget);
 
-		// This is the same order as newwInstance() would do, but does not require to write a factory for this Operator, which wouldn't make sense
+		// This is the same order as newInstance() would do, but does not require to write a factory for this Operator, which wouldn't make sense
 		schedule();
 		inPortMap("Y", "Zs");
 		for(int i=0; i<=pwp->degree; i++) {

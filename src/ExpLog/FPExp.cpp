@@ -330,7 +330,8 @@ namespace flopoco{
 		else {// generic case
 			g=4;
 			if(k==0 && d==0) { 		// if automatic mode, set up the parameters
-				d=2;
+				REPORT(DETAILED, "Chosing sensible defaults for both k and d");
+				d=2; 
 				k=9;
 
 				if (wF<32){
@@ -349,6 +350,15 @@ namespace flopoco{
 					d=4;
 					k=12;
 				}
+			}
+			else if(k!=0 && d==0) {
+				// The idea here is that if k only was provided then we just do a single polynomial with no further table.
+				d = wF/k; // because Y<2^(-k) hence y^k<2^(-dk)				
+				REPORT(DETAILED, "k=" << k << " provided, chosing sensible default for d: d="<<d);
+			}
+			else if(k==0 && d!=0) {
+				k=9; // because it is always sensible?
+				REPORT(DETAILED, "d=" << d << " provided, chosing sensible default for k: k="<<k);
 			}
 
 			REPORT(DETAILED, "Generic case with k=" << k << " and degree d=" << d);

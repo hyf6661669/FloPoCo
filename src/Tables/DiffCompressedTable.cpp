@@ -52,7 +52,8 @@ namespace flopoco {
 		auto diffCost = diff_comp.diffWordSize << diff_comp.diffIndexSize;
 		REPORT(INFO, "  Best diff cost is:        " << diff_comp.diffWordSize << "x2^" << diff_comp.diffIndexSize << "=" << diffCost);
 		REPORT(INFO, "  Overlap cost is  :        " << (diff_comp.subsamplingWordSize + diff_comp.diffWordSize - diff_comp.originalWout));
-		REPORT(INFO, "  Total compressed cost is: " << (diffCost + subsamplingCost));
+		REPORT(INFO, "  Total compressed cost is: " << (diffCost + subsamplingCost) << "/" << 100 * (1.0 -
+			(float)(diffCost + subsamplingCost)/(diff_comp.originalWout << diff_comp.diffIndexSize)));
 
 		auto lutinputs = getTarget()->lutInputs();
 		auto lutcost = [lutinputs](int wIn, int wOut)->int {
@@ -61,13 +62,5 @@ namespace flopoco {
 		};
 		auto diffLutCost = lutcost(diff_comp.diffIndexSize, diff_comp.diffWordSize);
 		auto subsamplingLutCost = lutcost(diff_comp.subsamplingIndexSize, diff_comp.subsamplingWordSize);
-		REPORT(INFO, "Latex table line : & $" << diff_comp.originalWout << "\\times 2^{" << diff_comp.diffIndexSize <<
-			"}$ & $" << (diff_comp.originalWout << diff_comp.diffIndexSize) << "$ & $" << diff_comp.originalWout*
-			int(intpow2(diff_comp.diffIndexSize-lutinputs)) << "$ & $" << diff_comp.diffWordSize << "\\times 2^{" <<
-			diff_comp.diffIndexSize << "} + " << diff_comp.subsamplingWordSize << "\\times 2^{" <<
-			diff_comp.subsamplingIndexSize << "}$ & $" << (diff_comp.diffWordSize << diff_comp.diffIndexSize) << " + " <<
-			(diff_comp.subsamplingWordSize << diff_comp.subsamplingIndexSize) << "$ & $" << diffLutCost + subsamplingLutCost <<
-			"$ \\\\");
-		REPORT(INFO, "cost Compression factor : " << 1.0 - (float)(diffCost + subsamplingCost)/(diff_comp.originalWout << diff_comp.diffIndexSize));
 	}
 }

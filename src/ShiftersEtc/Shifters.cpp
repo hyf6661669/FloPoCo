@@ -244,7 +244,7 @@ namespace flopoco{
 
 	void Shifter::registerFactory(){
 		UserInterface::add("Shifter", // name
-											 "A classical barrel shifter. The output size is computed.",
+											 "A flexible shifter.",
 											 "ShiftersLZOCs",
 											 "",
 											 "wIn(int): input size in bits;\

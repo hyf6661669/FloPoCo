@@ -27,7 +27,7 @@
 #include "ShiftersEtc/LZOC.hpp"
 #include "ShiftersEtc/Shifters.hpp"
 #include "FixAtan2ByCORDIC.hpp"
-//#include "FixAtan2ByRecipMultAtan.hpp"
+#include "FixAtan2ByRecipMultAtan.hpp"
 //#include "FixAtan2ByBivariateApprox.hpp"
 
 using namespace std;
@@ -340,8 +340,7 @@ namespace flopoco {
 		UserInterface::parsePositiveInt(args, "method", &method);
 		//select the method
 		if(method < 8){
-			throw("This FixAtan2ByRecipMultAtan architecture is still disabled, we are working on it");
-			// return new FixAtan2ByRecipMultAtan(parentOp, target, -lsb,-lsb, method);
+			return new FixAtan2ByRecipMultAtan(parentOp, target, -lsb,-lsb, method);
 		}
 		else if(method<10) {
 			return new FixAtan2ByCORDIC(parentOp, target, -lsb,-lsb);

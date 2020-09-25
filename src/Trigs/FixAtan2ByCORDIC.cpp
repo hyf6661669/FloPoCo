@@ -64,11 +64,15 @@ namespace flopoco{
 		/////////////////////////////////////////////////////////////////////////////
 
 		buildQuadrantRangeReduction();
-
-		// No scaling RR: just a copy
+		
+#if 0 // it helps a bit with the last LSB errors, but not 100% 
+		buildScalingRangeReduction();
+#else
+		// No scaling RR: just a copy 
 		vhdl << tab << declare("XRS", wIn-1) << " <=  XR;" << endl;
 		vhdl << tab << declare("YRS", wIn-1) << " <=  YR;" << endl;
-		
+#endif
+
 		int sizeZ=wOut-2+gA; // w-2 because two bits come from arg red 
 
 		////////////////////////////////////////////////////////////////////////////

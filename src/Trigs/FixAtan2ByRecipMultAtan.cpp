@@ -27,8 +27,8 @@ namespace flopoco{
 
 
 
-	FixAtan2ByRecipMultAtan::FixAtan2ByRecipMultAtan(Target* target_, int wIn_, int wOut_, int degree, map<string, double> inputDelays_) :
-		FixAtan2(target_, wIn_, wOut_, inputDelays_)
+	FixAtan2ByRecipMultAtan::FixAtan2ByRecipMultAtan(OperatorPtr parentOp, Target* target_, int wIn_, int wOut_, int degree) :
+		FixAtan2(target_, wIn_, wOut_)
 	{
 		//int stage;
 		srcFileName="FixAtan2ByRecipMultAtan";
@@ -68,7 +68,8 @@ namespace flopoco{
 		msbAtan = -2; // bits 0 and -1 come from the range reduction
 		lsbAtan = -wOut+1;
 		msbRecip = 0; // 2/(1+x) in 0..1 for x in 0..1
-		msbProduct = -1 ; // y/x between 0 and 1 but the faithful product may overflow a bit.
+		msbProduct = -1 ; // y/x between
+		0 and 1 but the faithful product may overflow a bit.
 		if(degree==0) { // both tables are correctly rounded
 			lsbRecip = -wOut+1; // see error analysis in the Arith2015 paper. It says we should have -w, but exhaustive test show that -w+1 work :)
 			lsbProduct = -wOut+1; // It says we should have -w, but exhaustive test show that -w+1 work :)

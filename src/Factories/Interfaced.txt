@@ -50,6 +50,7 @@ FixIIR
 Posit2FP
 
 FixSinCos
+FixAtan2
 
 Xilinx_GenericAddSub
 Xilinx_Comparator

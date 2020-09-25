@@ -129,6 +129,8 @@ Trigs/FixSinPoly
 Trigs/FixSinCos
 Trigs/FixSinCosPoly
 Trigs/FixSinCosCORDIC
+Trigs/FixAtan2
+Trigs/FixAtan2ByCORDIC
 PrimitiveComponents/BooleanEquation
 PrimitiveComponents/GenericLut
 PrimitiveComponents/Primitive

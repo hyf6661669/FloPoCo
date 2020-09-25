@@ -139,51 +139,19 @@ namespace flopoco {
 		vhdl << tab << declare(getTarget()->logicDelay(), "XorY", sizeXYR-1) << " <= XR" << range(sizeXYR-1,1) << " or YR" << range(sizeXYR-1,1) << ";" << endl;
 		// The LZC
 
-#if 0
-		LZOC* lzc = new	LZOC(getTarget(), sizeXYR-1);
-		addSubComponent(lzc);
-
-		inPortMap(lzc, "I", "XorY");
-		inPortMapCst(lzc, "OZB", "'0'");
-		outPortMap(lzc, "O", "S");
-		vhdl << instance(lzc, "lzc");
-		syncCycleFromSignal("S");
-		setCriticalPath(lzc->getOutputDelay("O"));
-#else
 		newInstance("LZOC",
 								"LZC",
 								"countType=0 wIn=" + to_string(sizeXYR-1), 
 								"I=>XorY",
 								"O=>S");
-
-#endif
-
-#if 0
-		// The two shifters are two instance of the same component
-		Shifter* lshift = new Shifter(getTarget(), sizeXYR, sizeXYR-1, Shifter::Left);
-		addSubComponent(lshift);
-
-		inPortMap(lshift, "S", "S");
-
-		inPortMap(lshift, "X", "XR");
-		outPortMap(lshift, "R", "XRSfull");
-		vhdl << instance(lshift, "Xshift");
-
-		inPortMap(lshift, "X", "YR");
-		outPortMap(lshift, "R", "YRSfull");
-		vhdl << instance(lshift, "Yshift");
-		vhdl << tab << declare("YRS", sizeXYR) << " <=  YRSfull " << range(sizeXYR-1,0) << ";" << endl;
-
-		syncCycleFromSignal("YRSfull");
-		setCriticalPath(lshift->getOutputDelay("R"));
-#else
 		
 		newInstance("Shifter", 
 								"XShift", 
 								"wIn=" + to_string(sizeXYR) + " maxShift=" + to_string(sizeXYR-1) + " dir=0",
 								"X=>XR, S=>S",
 								"R=>XRSfull" // output size will be 2*wF+6 TODO: not output unused bits
-								); 
+								);
+		
 		vhdl << tab << declare("XRS", sizeXYR) << " <=  XRSfull " << range(sizeXYR-1,0) << ";" << endl;
 		newInstance("Shifter", 
 								"YShift", 
@@ -191,9 +159,7 @@ namespace flopoco {
 								"X=>YR, S=>S",
 								"R=>YRSfull" // output size will be 2*wF+6 TODO: not output unused bits
 								); 
-		vhdl << tab << declare("YRS", sizeXYR) << " <=  YRSfull " << range(sizeXYR-1,0) << ";" << endl;
-#endif
-		
+		vhdl << tab << declare("YRS", sizeXYR) << " <=  YRSfull " << range(sizeXYR-1,0) << ";" << endl;		
 }
 
 

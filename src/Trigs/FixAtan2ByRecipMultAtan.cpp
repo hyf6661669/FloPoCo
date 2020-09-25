@@ -81,33 +81,8 @@ namespace flopoco{
 		invfun << "2/(1+x)-1b"<<lsbRecip;
 
 
-#if 0
-		if(degree==1) {
-		//BipartiteTable *deltaX2Table
-		recipTable = new BipartiteTable(getTarget(),
-			invfun.str(),
-			-wOut+2,  // XRS was between 1/2 and 1. XRm1 is between 0 and 1/2
-			msbRecip + 1, // +1 because internally uses signed arithmetic and we want an unsigned result
-			lsbRecip);
-	}
-		else {
-		recipTable = new FixFunctionByPiecewisePoly(getTarget(),
-			invfun.str(),
-			-wOut+2,  // XRS was between 1/2 and 1. XRm1 is between 0 and 1/2
-			msbRecip + 1, // +1 because internally uses signed arithmetic and we want an unsigned result
-			lsbRecip,
-			degree,
-			true /*finalRounding*/
-			);
-	}
-		recipTable->changeName(join("reciprocal_uid", getNewUId()));
-		addSubComponent(recipTable);
-		inPortMap(recipTable, "X", "XRm1");
-		outPortMap(recipTable, "Y", "R0");
-		vhdl << instance(recipTable, "recipTable");
-
-		syncCycleFromSignal("R0");
-#else
+#if 0 // Multipartite does not always work here and tends to die without grace, mostly a bug of the exploration in the implementation (for wIn < wOut)
+		// TODO ! There is still a potential
 		if(degree==1) {
 			newInstance("FixFunctionByMultipartiteTable",
 									join("reciprocal_uid", getNewUId()),
@@ -115,14 +90,16 @@ namespace flopoco{
 									"X=>XRm1",
 									"Y=>R0");
 				}
-		else {
-			newInstance("FixFunctionByPiecewisePoly",
-									join("reciprocal_uid", getNewUId()),
-									"f="+invfun.str() + " signedIn=0 compressTIV=true lsbIn="+to_string(-wOut+2) + " lsbOut="+to_string(lsbRecip) + " d="+to_string(degree),
-									"X=>XRm1",
-									"Y=>R0");
-		}
+		else { }
 #endif
+			
+		newInstance("FixFunctionByPiecewisePoly",
+								join("reciprocal_uid", getNewUId()),
+								"f="+invfun.str() + " signedIn=0 compressTIV=true lsbIn="+to_string(-wOut+2) + " lsbOut="+to_string(lsbRecip) + " d="+to_string(degree),
+								"X=>XRm1",
+								"Y=>R0");
+		
+
 		vhdl << tab << declareFixPoint("R", false, msbRecip, lsbRecip) << " <= unsigned(R0" << range(msbRecip-lsbRecip  , 0) << "); -- removing the sign  bit" << endl;
 		vhdl << tab << declareFixPoint("YRU", false, -1, -wOut+1) << " <= unsigned(YRS);" << endl;
 
@@ -142,57 +119,34 @@ namespace flopoco{
 																						 msbProduct, lsbProduct
 			);
 			#else
+			// TODO an instance
 			#endif
-	}
+		}
 
 
 		string atanfun = "atan(x)/pi";
-#if 0
-		if(degree==1) {
-		atanTable = new BipartiteTable(getTarget(),
-			atanfun.str(),
-			lsbProduct,
-			msbAtan,
-			lsbAtan);
-	}
-		else {
-		atanTable  = new FixFunctionByPiecewisePoly(getTarget(),
-			atanfun.str(),
-			lsbProduct,
-			msbAtan,
-			lsbAtan,
-			degree,
-			true /*finalRounding*/
-			);
-	}
-		atanTable->changeName(join("atan_uid", getNewUId()));
-		addSubComponent(atanTable);
-		inPortMap(atanTable, "X", "P_slv");
-		outPortMap(atanTable, "Y", "atanTableOut");
-		vhdl << instance(atanTable, "atanTable");
-		syncCycleFromSignal("atanTableOut");
-#else
+		
+#if 0 // same comment as above, but now it dies because wIn>wOut: it seem we only ever tested wIn=wOut
 		if(degree==1) {
 			newInstance("FixFunctionByMultipartiteTable",
 									join("atan_uid", getNewUId()),
 									"f="+ atanfun+ " signedIn=0 compressTIV=true lsbIn="+to_string(lsbProduct) + " lsbOut="+to_string(lsbAtan),
 									"X=>P_slv",
 									"Y=>atanTableOut");
-				}
-		else {
-			newInstance("FixFunctionByPiecewisePoly",
-									join("atan_uid", getNewUId()),
-									"f="+ atanfun+ " signedIn=0 compressTIV=true lsbIn="+to_string(lsbProduct) + " lsbOut="+to_string(lsbAtan) + " d="+to_string(degree),
-									"X=>P_slv",
-									"Y=>atanTableOut");
 		}
+		else {}
 #endif
-		
+		newInstance("FixFunctionByPiecewisePoly",
+								join("atan_uid", getNewUId()),
+								"f="+ atanfun+ " signedIn=0 compressTIV=true lsbIn="+to_string(lsbProduct) + " lsbOut="+to_string(lsbAtan) + " d="+to_string(degree),
+								"X=>P_slv",
+								"Y=>atanTableOut");
+	
 		vhdl << tab << declare("finalZ", wOut) << " <= \"00\" & atanTableOut;" << endl;
-
+		
 		// Reconstruction code is shared, defined in FixAtan2
 		buildQuadrantReconstruction();
-
+		
 #if MULTDEBUG
 		getTarget()->setPlainVHDL(wasPlainVHDL);
 #endif

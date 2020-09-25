@@ -66,11 +66,16 @@ namespace flopoco{
 
 void	FixFunction::initialize()
 	{
+		string maxvalIn="1-1b"+to_string(lsbIn);
+		ostringstream uselessNoise;
+		uselessNoise << "[" << (signedIn?"-1":"0") << ";" << maxvalIn << "]";
+		inputRangeS = sollya_lib_parse_string(uselessNoise.str().c_str());
+#if 0
 		if(signedIn)
-			inputRangeS = sollya_lib_parse_string("[-1;1]");
+			inputRangeS = sollya_lib_parse_string("[-1;"+maxvalIn+"]");
 		else
-			inputRangeS = sollya_lib_parse_string("[0;1]");
-
+			inputRangeS = sollya_lib_parse_string("[0;"+maxvalIn+"]");
+#endif
 		
 		sollya_obj_t outIntervalS = sollya_lib_evaluate(fS,inputRangeS);
 		sollya_obj_t supS = sollya_lib_sup(outIntervalS);

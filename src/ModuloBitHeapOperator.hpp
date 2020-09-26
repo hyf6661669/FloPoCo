@@ -37,7 +37,7 @@ namespace flopoco {
 
         int stage;
 
-        vector<vector<int> > rangeBH;
+        vector<vector<long long> > rangeBH;
 
         void applyPseudoCompressors();
 

@@ -65,10 +65,11 @@ namespace flopoco {
             }
         }
 
+        long long oneLL = static_cast<long long>(1);
         // fill bits for input
         for (int i = 0; i < wIn; ++i) {
             bits[0][i][0] = i;
-            rangeBH[stage][1] = rangeBH[stage][1] + (1 << i);
+            rangeBH[stage][1] = rangeBH[stage][1] + (oneLL << i);
         }
 
         while (stage < bits.size() - 1) {
@@ -86,7 +87,7 @@ namespace flopoco {
                 bhName << "modheap_" << bhStage;
                 bitHeapReqBits = reqBitsForRange(rangeBH[stage][0], rangeBH[stage][1]);
                 bitHeapTmp = new BitHeap(this, bitHeapReqBits-1, 0, bhName.str(), 1);
-                long long oneLL = static_cast<long long>(1);
+                oneLL = static_cast<long long>(1);
 
                 // consider bits
                 for (int j = 0; j < bits[stage].size(); ++j) {
@@ -151,14 +152,15 @@ namespace flopoco {
     void ModuloBitHeapOperator::applyPseudoCompressors() {
         REPORT(INFO,"applyPseudoCompressors");
         int smsb = getMSBInStage();
-        vector<vector<int>> rangeContrib(smsb+1,vector<int>(5));
+        vector<vector<long long>> rangeContrib(smsb+1,vector<long long>(5));
+        long long oneLL = static_cast<long long>(1);
 
         // fills the first two rows with the modulus and the congruent negative modulus
         for (int i = 0; i <= smsb; ++i) {
-            rangeContrib[i][0] = (1 << (i)) % modulo;
+            rangeContrib[i][0] = (oneLL << (i)) % modulo;
             rangeContrib[i][1] = rangeContrib[i][0] - modulo;
             if (i == smsb && rangeBH[stage][0] < 0) {
-                rangeContrib[i][0] = (((-1 << (i)) % modulo) + modulo) % modulo;
+                rangeContrib[i][0] = (((-oneLL << (i)) % modulo) + modulo) % modulo;
                 rangeContrib[i][1] = rangeContrib[i][0] - modulo;
             }
         }
@@ -166,7 +168,7 @@ namespace flopoco {
         int maxBhHeight = INT_MAX;
         int minBitsToBitHeap = INT_MAX;
         int rangeReached = 0;;
-        vector<vector<int>> ranges(2,vector<int>(2));
+        vector<vector<long long>> ranges(2,vector<long long>(2));
         vector<vector<vector<long long>>> tmpBitHeap(smsb+1,vector<vector<long long> >(64,vector<long long>(2)));
 
         // initialize tmpBitHeap with -1
@@ -178,14 +180,14 @@ namespace flopoco {
             }
         }
 
-        for (int combi = 0; combi <= (1 << (smsb+1))-1; ++combi) {
-            int combiMin = 0;
-            int combiMax = 0;
+        for (int combi = 0; combi <= (oneLL << (smsb+1))-1; ++combi) {
+            long long combiMin = 0;
+            long long combiMax = 0;
             int bhHeight = 0;
             int bitsToBitHeap = 0;
             // calculate rangeBH max and min
             for (int i = 0; i <= smsb ; ++i) {
-                if ((combi & (1 << (i))) != 0 ) {
+                if ((combi & (oneLL << (i))) != 0 ) {
                     rangeContrib[i][2] = rangeContrib[i][0];
                     combiMax = combiMax + rangeContrib[i][0];
                 } else {
@@ -204,12 +206,11 @@ namespace flopoco {
 
             vector<int> bhHeights(combiBitHeap.size());
             int constVec = 0;
-            long long oneLL = static_cast<long long>(1);
             // for every column on bitheap
             for (int i = 0; i <= smsb; ++i) {
                 int leadingZeroWeight = getLeadingZero(rangeContrib[i][2]);
                 for (int j = 0; j < combiBitHeap.size(); ++j) {
-                    if ((rangeContrib[i][2] & (1 << (j))) != 0 ) {
+                    if ((rangeContrib[i][2] & (oneLL << (j))) != 0 ) {
                         int bit = 0;
                         while (combiBitHeap[j][bit] != -1) {
                             bit++;
@@ -326,9 +327,10 @@ namespace flopoco {
     }
 
     int ModuloBitHeapOperator::getModuloMSB() {
+        long long oneLL = static_cast<long long>(1);
         int mmsb = 0;
         for (int w = 0; w < 31; ++w) {
-            if ((modulo & (1 << (w))) != 0) {
+            if ((modulo & (oneLL << (w))) != 0) {
                 mmsb = w;
             }
         }
@@ -358,9 +360,10 @@ namespace flopoco {
     }
 
     int ModuloBitHeapOperator::getLeadingZero(int value) {
+        long long oneLL = static_cast<long long>(1);
         int msz = -1;
         for (int w = 0; w < 32; ++w) {
-            if ((value & (1 << (w))) == 0) {
+            if ((value & (oneLL << (w))) == 0) {
                 msz = w;
             }
         }

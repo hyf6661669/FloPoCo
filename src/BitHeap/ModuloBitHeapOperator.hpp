@@ -2,9 +2,9 @@
 // Created by Annika Oeste on 20.06.20.
 //
 
-#include "Operator.hpp"
-#include "BitHeap/BitHeap.hpp"
-#include "utils.hpp"
+#include "../Operator.hpp"
+#include "BitHeap.hpp"
+#include "../utils.hpp"
 
 namespace flopoco {
     class ModuloBitHeapOperator: public Operator {

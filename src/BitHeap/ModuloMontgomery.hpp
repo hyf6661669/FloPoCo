@@ -2,7 +2,7 @@
 // Created by annika on 31.08.20.
 //
 
-#include "Operator.hpp"
+#include "../Operator.hpp"
 
 #ifndef FLOPOCO_MODULOMONTGOMERY_H
 #define FLOPOCO_MODULOMONTGOMERY_H

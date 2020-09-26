@@ -31,9 +31,9 @@ BitHeap/BitHeapTest
 BitHeap/FirstFittingCompressionStrategy
 BitHeap/ParandehAfsharCompressionStrategy
 BitHeap/MaxEfficiencyCompressionStrategy
+BitHeap/ModuloBitHeapOperator
+BitHeap/ModuloMontgomery
 BitHeap/OptimalCompressionStrategy
-ModuloBitHeapOperator
-ModuloMontgomery
 TutorialOperator
 ShiftersEtc/LZOC
 ShiftersEtc/LZOC3

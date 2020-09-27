@@ -22,46 +22,50 @@ namespace flopoco {
         REPORT(INFO,"Declaration of ModuloMontgomery \n");
         REPORT(DETAILED, "this operator has received two parameters: wIn " << wIn << " modulo " << modulo);
 
-        // calculating R and m'
+        // calculating R
         int modSize = getModuloMSB() + 1;
         R = (1 << modSize);
-        mLine = getModularInverse(modulo, 2) % 2;
-        REPORT(INFO, "mline: " << mLine);
 
         // declaring inputs
         addInput ("X" , wIn, true);
         addConstant("M", "positive", modulo);
-        addConstant("MLineInt", "integer", mLine);
         addConstant("Rmod", "integer", R % modulo);
         // declaring output
         addOutput("S" , modSize*2);
 
         REPORT(INFO, "rmod: " << R % modulo);
         addFullComment("Start of vhdl generation");
-        // calculating residue to use montgomery
-        // conversion to signed
-        vhdl << tab << declare(
-                "MLine", modSize, false) << tab << "<= STD_LOGIC_VECTOR(TO_SIGNED(MLineInt," << modSize << "));" << endl;
-        vhdl << tab << declareFixPoint(
-                "XSg", false, modSize-1, 0) << tab << "<= UNSIGNED(STD_LOGIC_VECTOR(UNSIGNED(X) mod " << modulo << ")" << range(modSize-1, 0) << ");" << endl;
-        vhdl << tab << declareFixPoint(
-                "RmodSg", false, modSize-1, 0) << tab << "<= UNSIGNED(TO_SIGNED(Rmod," << modSize << "));" << endl;
-        // calculate and convert back
-        vhdl << tab << declare(
-                "T_0", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
-
-        // montgomery - automatically converts back
-
-        for (int i = 0; i < modSize; ++i) {
-            ostringstream uName;
-            uName << "U_" << i;
+        if(false) {
+            // calculating residue to use montgomery
+            // conversion to signed
+            vhdl << tab << declareFixPoint(
+                    "XSg", false, modSize-1, 0) << tab << "<= UNSIGNED(STD_LOGIC_VECTOR(UNSIGNED(X) mod " << modulo << ")" << range(modSize-1, 0) << ");" << endl;
+            vhdl << tab << declareFixPoint(
+                    "RmodSg", false, modSize-1, 0) << tab << "<= UNSIGNED(TO_SIGNED(Rmod," << modSize << "));" << endl;
+            // calculate and convert back
             vhdl << tab << declare(
-                    uName.str(), 1, false) << " <= MLine" << of(0) << " when T_" << i << of(i) << " = '1' else '0';" << endl;
+                    "T_0", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
+        } else {
+            // classical modular multiplication
+            // use shift because R is power of two
+            vhdl << tab << declare(
+                    "XRProd", wIn + modSize, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_LEFT(RESIZE(UNSIGNED(X)," << wIn + modSize << ")," << modSize << "));" << endl;
+            // use division
+            ostringstream divParams;
+            divParams << "wIn=" << wIn + modSize << " d=" << modulo << " computeQuotient=false computeRemainder=true";
+            newInstance("IntConstDiv", "modDiv", divParams.str(), "X=>XRProd", "R=>XRemain");
+            vhdl << tab << declare(
+                    "T_0", modSize*2, false) << tab << "<= (" << modSize*2-1 << " downto " << modSize << " => '0') & XRemain;" << endl;
+        }
+
+        // montgomery reduction - automatically converts back
+        for (int i = 0; i < modSize; ++i) {
             ostringstream tName;
             int index = i+1;
             tName << "T_" << index;
             vhdl << tab << declare(
-                    tName.str(), modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << i << ") + SHIFT_LEFT(TO_UNSIGNED(M," << modSize+i << ")," << i << ")) when U_" << i << " = '1' else T_" << i << ";" << endl;
+                    tName.str(), modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << i
+                 << ") + SHIFT_LEFT(TO_UNSIGNED(M," << modSize+i << ")," << i << ")) when T_" << i << of(i) << " = '1' else T_" << i << ";" << endl;
         }
         vhdl << tab << declare(
                 "TRes", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T_" << modSize << ")," << modSize << "));" << endl;
@@ -77,14 +81,6 @@ namespace flopoco {
             }
         }
         return mmsb;
-    }
-
-    int ModuloMontgomery::getModularInverse(int number, int mod) {
-        for (int i = 0; i < mod; ++i) {
-            if ((number * i) % mod == 1) {
-                return i;
-            }
-        }
     }
 
     void ModuloMontgomery::emulate(TestCase * tc) {

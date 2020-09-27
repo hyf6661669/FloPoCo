@@ -35,7 +35,6 @@ namespace flopoco {
         protected:
 
             int R;
-            int mLine;
 
             int getModuloMSB();
 

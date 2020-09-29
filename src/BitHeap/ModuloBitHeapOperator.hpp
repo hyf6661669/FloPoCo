@@ -12,10 +12,11 @@ namespace flopoco {
 
             int wIn; // length of the input
             int modulo;
+            string method;
 
     public:
 
-            ModuloBitHeapOperator(OperatorPtr parentOp, Target* target, int wIn = 0, int modulo = 1);
+            ModuloBitHeapOperator(OperatorPtr parentOp, Target* target, int wIn = 0, int modulo = 1, string method = "compl");
 
             ~ModuloBitHeapOperator() {};
 
@@ -41,6 +42,12 @@ namespace flopoco {
 
         void applyPseudoCompressors();
 
+        void applyPseudoCompressorsMinBits();
+
+        void applyPseudoCompressorsMinRange();
+
+        void applyPseudoCompressorsMinRangeWeighted();
+
         int getMaxHeight();
 
         int getMSBInStage();
@@ -50,6 +57,10 @@ namespace flopoco {
         int reqBitsForRange(int min, int max);
 
         int getLeadingZero(int value);
+
+        int countOnes(long long value);
+
+        bool checkForRepetition();
     };
 }//namespace
 

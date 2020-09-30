@@ -33,7 +33,7 @@
 
 #include <ShiftersEtc/LZOC.hpp>
 #include <ShiftersEtc/Shifters.hpp>
-#include <ShiftersEtc/LZOCShifter.hpp>
+#include <ShiftersEtc/Normalizer.hpp>
 #include <IntAddSubCmp/IntAdder.hpp>
 #include <IntAddSubCmp/IntDualAddSub.hpp>
 #include <TestBenches/FPNumber.hpp>
@@ -212,9 +212,9 @@ namespace flopoco{
 			// LZC + Shifting. The number of leading zeros are returned together with the shifted input
 			REPORT(DEBUG, "Building close path LZC + shifter");
 			int countWidth = intlog2(wF + 2);
-			newInstance("LZOCShifter",
+			newInstance("Normalizer",
 									getName() + "_LZCShifter",
-									"countType=0" + join(" wIn=", wF + 2) + join(" wOut=", wF + 2) +
+									"countType=0" + join(" wX=", wF + 2) + join(" wR=", wF + 2) +
 									join(" wCount=", countWidth),
 									"I=>fracRClose1",
 									"Count=>nZerosNew,O=>shiftedFrac"
@@ -228,7 +228,7 @@ namespace flopoco{
 			// Is the result zero?
 			vhdl << tab << declare("resultCloseIsZero0") << " <= '1' when nZerosNew"
 				 << " = CONV_STD_LOGIC_VECTOR(" << (1 << countWidth) -
-												   1 // Should be wF+2 but this is a bug of LZOCShifter: for all zeroes it returns this value
+												   1 // Should be wF+2 but this is a bug of Normalizer: for all zeroes it returns this value
 				 << ", " << countWidth
 				 << ") else '0';" << endl;
 

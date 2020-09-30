@@ -11,7 +11,7 @@
 // include the header of the Operator
 #include "Posit2PIF.hpp"
 
-#include "ShiftersEtc/LZOCShifter.hpp"
+#include "ShiftersEtc/Normalizer.hpp"
 #include "TestBenches/PositNumber.hpp"
 #include "TestBenches/IEEENumber.hpp"
 
@@ -105,15 +105,15 @@ namespace flopoco {
 		ostringstream param, inmap, outmap;
 		int wCount = intlog2(widthI) - 1; //comme ça le shifter ne pense pas qu'il peut shifter un nombre absurde de bits
 
-		param << "wIn=" << widthI - 2;
-		param << " wOut=" << widthI - 2;
+		param << "wX=" << widthI - 2;
+		param << " wR=" << widthI - 2;
 		param << " wCount=" << wCount; 
 
-		inmap << "I=>remainder,OZb=>count_type";
+		inmap << "X=>remainder,OZb=>count_type";
 
-		outmap << "Count=>lzCount,O=>usefulBits";
+		outmap << "Count=>lzCount,R=>usefulBits";
 
-		newInstance("LZOCShifter", "lzoc", param.str(), inmap.str(), outmap.str());
+		newInstance("Normalizer", "lzoc", param.str(), inmap.str(), outmap.str());
 
 		vhdl << "with neg_count select " << declare(0., "extended_neg_count", wCount+2) << " <= "  << endl <<
 		  tab << "\"" << string(wCount+2, '0') << "\" when '0', " << endl <<

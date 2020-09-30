@@ -1,7 +1,7 @@
 /*
-  A leading zero/one counter + shifter + sticky bit computer for FloPoCo
+  A normalizer (leading zero/one counter + shifter + optional sticky bit) for FloPoCo
 
-  Authors: Florent de Dinechin, Bogdan Pasca
+  Author: Florent de Dinechin
 
    This file is part of the FloPoCo project
   developed by the Arenaire team at Ecole Normale Superieure de Lyon
@@ -21,7 +21,7 @@
 #include <gmpxx.h>
 #include "utils.hpp"
 #include "Operator.hpp"
-#include "LZOCShifter.hpp"
+#include "Normalizer.hpp"
 
 using namespace std;
 
@@ -30,46 +30,46 @@ using namespace std;
 namespace flopoco{
 
 
-	LZOCShifter::LZOCShifter(OperatorPtr parentOp, Target* target, int wIn, int wOut, int wCount, bool computeSticky, const int countType) :
-		Operator(parentOp, target), wIn_(wIn), wOut_(wOut), wCount_(wCount), computeSticky_(computeSticky), countType_(countType) {
+	Normalizer::Normalizer(OperatorPtr parentOp, Target* target, int wX, int wR, int wCount, bool computeSticky, const int countType) :
+		Operator(parentOp, target), wX_(wX), wR_(wR), wCount_(wCount), computeSticky_(computeSticky), countType_(countType) {
 
 		// -------- Parameter set up -----------------
-		srcFileName = "LZOCShifter";
-		setCopyrightString("Florent de Dinechin, Bogdan Pasca (2007-2016)");
+		srcFileName = "Normalizer";
+		setCopyrightString("Florent de Dinechin, (2007-2020)");
 
-		REPORT(DETAILED, "wIn="<<wIn << " wOut="<<wOut << " wCount="<<wCount << " computeSticky=" << computeSticky  << " countType=" << countType);
+		REPORT(DETAILED, "wX="<<wX << " wR="<<wR << " wCount="<<wCount << " computeSticky=" << computeSticky  << " countType=" << countType);
 
 		ostringstream name;
 		name << "L" << (countType_<0?"ZO":((countType_>0)?"O":"Z")) << "CShifter"
-			  << (computeSticky_?"Sticky":"") << "_" << wIn_ << "_to_"<<wOut_<<"_counting_"<<(1<<wCount_);
+			  << (computeSticky_?"Sticky":"") << "_" << wX_ << "_to_"<<wR_<<"_counting_"<<(1<<wCount_);
 		setNameWithFreqAndUID(name.str());
 
-		addInput ("I", wIn_);
+		addInput ("X", wX_);
 		if (countType_==-1) addInput ("OZb"); /* if we generate a generic LZOC */
 		addOutput("Count", wCount_);
-		addOutput("O", wOut_);
+		addOutput("R", wR_);
 		if (computeSticky_)   addOutput("Sticky"); /* if we require a sticky bit computation */
 
-		// we consider that wOut <= wIn. We fix this at the end if not the case
-		int wOut_true = wOut_;
-		wOut_ = wOut > wIn_ ? wIn_ : wOut;
+		// we consider that wR <= wX. We fix this at the end if not the case
+		int wR_true = wR_;
+		wR_ = wR > wX_ ? wX_ : wR;
 
 
-		vhdl << tab << declare(join("level",wCount_), wIn_) << " <= I ;"   <<endl;
+		vhdl << tab << declare(join("level",wCount_), wX_) << " <= I ;"   <<endl;
 		if (countType_==-1) vhdl << tab << declare("sozb") << "<= OZb;"<<endl;
-		if ((computeSticky_)&&(wOut_<wIn))   vhdl << tab << declare(join("sticky",wCount_)) << " <= '0' ;"<<endl; //init sticky
+		if ((computeSticky_)&&(wR_<wX))   vhdl << tab << declare(join("sticky",wCount_)) << " <= '0' ;"<<endl; //init sticky
 
 
 		// Now comes the main loop.
 		// i is the level index. Level i counts 2^i bits, and shifts by 2^i
-		int currLevSize=wIn, prevLevSize=0;
+		int currLevSize=wX, prevLevSize=0;
 		for (int i=wCount_-1; i>=0; i--){
 			prevLevSize = currLevSize;
 
-			// level(k) = max ( max (2^k, wOut) + 2^k -1) , wIn)
-			currLevSize = (wOut_>intpow2(i)?wOut_:intpow2(i));
+			// level(k) = max ( max (2^k, wR) + 2^k -1) , wX)
+			currLevSize = (wR_>intpow2(i)?wR_:intpow2(i));
 			currLevSize += (intpow2(i)-1);
-			currLevSize = (currLevSize > wIn_? wIn_: currLevSize);
+			currLevSize = (currLevSize > wX_? wX_: currLevSize);
 
 			// Delay evaluation.
 			// As we output the count bits, their computation will not be merged inside the shift
@@ -100,7 +100,7 @@ namespace flopoco{
 				vhdl << (l>=r?" & ":"") << rangeAssign(currLevSize -(prevLevSize - intpow2(i))-1,0,"'0'");
 			vhdl << ";"<<endl;
 
-			if ((computeSticky_)&&(wOut_<wIn)) {
+			if ((computeSticky_)&&(wR_<wX)) {
 
 				// Delay computation. Here we try to compute as much of the sticky in each level.
 				double levelStickyDelay;
@@ -132,10 +132,10 @@ namespace flopoco{
 			vhdl <<endl;
 		}
 
-		//assign back the value to wOut_
-		wOut_ =  wOut_true;
+		//assign back the value to wR_
+		wR_ =  wR_true;
 		vhdl << tab << "O <= "<< join("level",0)
-			  << (wOut_<=wIn?"":join("&",rangeAssign(wOut_-wIn-1,0,"'0'")))<<";"<<endl;
+			  << (wR_<=wX?"":join("&",rangeAssign(wR_-wX-1,0,"'0'")))<<";"<<endl;
 
 
 		vhdl << tab << declare("sCount",wCount_) <<(wCount_==1?"(0)":"")<<" <= ";
@@ -144,10 +144,10 @@ namespace flopoco{
 			vhdl << (i>0?" & ":join(";","\n"));
 		}
 
-		if((1<<wCount_)-1 > wIn_) {
+		if((1<<wCount_)-1 > wX_) {
 			vhdl << tab << "Count <= sCount;"<<endl;
 
-			/*			vhdl << tab << "Count <= CONV_STD_LOGIC_VECTOR("<<wIn_<<","<<wCount_<<") when sCount=CONV_STD_LOGIC_VECTOR("<<intpow2(wCount_)-1<<","<<wCount_<<")"<<endl
+			/*			vhdl << tab << "Count <= CONV_STD_LOGIC_VECTOR("<<wX_<<","<<wCount_<<") when sCount=CONV_STD_LOGIC_VECTOR("<<intpow2(wCount_)-1<<","<<wCount_<<")"<<endl
 				  << tab << tab << "else sCount;"<<endl;*/
 		}
 		else {
@@ -156,26 +156,26 @@ namespace flopoco{
 
 
 		if (computeSticky_){
-			if (wOut_>=wIn)
+			if (wR_>=wX)
 				vhdl << tab << "Sticky <= '0';"<<endl;
 			else
 				vhdl << tab << "Sticky <= sticky0;"<<endl;
 		}
-		REPORT( DEBUG, "Leaving LZOCShifter");
+		REPORT( DEBUG, "Leaving Normalizer");
 
 	}
 
-	LZOCShifter::~LZOCShifter() {
+	Normalizer::~Normalizer() {
 	}
 
 
-	int LZOCShifter::getCountWidth() const{
+	int Normalizer::getCountWidth() const{
 		return wCount_;
 	}
 
 
 
-	void LZOCShifter::emulate(TestCase* tc)
+	void Normalizer::emulate(TestCase* tc)
 	{
 		mpz_class inputValue  = tc->getInputValue("I");
 
@@ -190,7 +190,7 @@ namespace flopoco{
 
 		mpz_class bit = (countType_ == -1) ? sozb : (countType_ == 0 ? 0 : 1); /* what are we counting in the specific case */
 
-		int j=wIn_-1;
+		int j=wX_-1;
 		while ((count < (1<<wCount_)-1) &&  (j>=0)  && mpz_tstbit(inputValue.get_mpz_t(), j) == bit)   {
 			count ++;
 			j--;
@@ -198,9 +198,9 @@ namespace flopoco{
 			}
 
 		// Now reformat the output value to its size, and compute the sticky of the remaining bits.
-		// The max size of shiftOutputValue is ((1<<wCount)-1) + wIn
-		mpz_class outputMask = (mpz_class(1) << wOut_) -1;
-		int numBitsForSticky = wIn_ - wOut_;
+		// The max size of shiftOutputValue is ((1<<wCount)-1) + wX
+		mpz_class outputMask = (mpz_class(1) << wR_) -1;
+		int numBitsForSticky = wX_ - wR_;
 		if(numBitsForSticky >= 0) {// should be the typical use case where we need to compute a sticky bit
 			mpz_class stickyMask = (mpz_class(1) << numBitsForSticky) -1;
 			mpz_class bitsForSticky = shiftOutputValue & stickyMask;
@@ -223,28 +223,31 @@ namespace flopoco{
 
 	
 
-	OperatorPtr LZOCShifter::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
-		int wIn, wOut, wCount, countType;
-		UserInterface::parseStrictlyPositiveInt(args, "wIn", &wIn);
-		UserInterface::parseStrictlyPositiveInt(args, "wOut", &wOut);
+	OperatorPtr Normalizer::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
+		int wX, wR, wCount, countType;
+		bool computeSticky;
+		UserInterface::parseStrictlyPositiveInt(args, "wX", &wX);
+		UserInterface::parseStrictlyPositiveInt(args, "wR", &wR);
 		UserInterface::parseStrictlyPositiveInt(args, "wCount", &wCount);
+		UserInterface::parseBoolean(args, "computeSticky", &computeSticky);
 		UserInterface::parseInt(args, "countType", &countType);
-		return new LZOCShifter(parentOp, target, wIn, wOut, wCount, false, countType);
+		return new Normalizer(parentOp, target, wX, wR, wCount, computeSticky, countType);
 	}
 
 
 	
-	void LZOCShifter::registerFactory(){
-		UserInterface::add("LZOCShifter", // name
-											 "A combined leading zero/one counter and shifter, useful for floating-point normalization.",
+	void Normalizer::registerFactory(){
+		UserInterface::add("Normalizer", // name
+											 "A combined leading zero/one counter and left shifter, useful for floating-point normalization.",
 											 "ShiftersLZOCs",  // category
 											 "", // see also
-											 "wIn(int): input size in bits;\
-                        wOut(int): output size in bits;\
+											 "wX(int): input size in bits;\
+                        wR(int): output size in bits;\
                         wCount(int): size in bits of the count output;\
+                        computeSticky(bool)=false: if true and wR<wX, a sticky bit is computed out of the discarded bits;\
                         countType(int)=-1:  0 to count zeroes, 1 to count ones, -1 to have a dynamic OZb input that tells what to count", // This string will be parsed
 											 "", // no particular extra doc needed
-											 LZOCShifter::parseArguments
+											 Normalizer::parseArguments
 											 ) ;
 		
 	}

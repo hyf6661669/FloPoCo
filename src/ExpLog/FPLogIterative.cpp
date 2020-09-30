@@ -24,7 +24,7 @@
 #include "FPLog.hpp"
 //#include "TestBenches/FPNumber.hpp"
 #include "ShiftersEtc/LZOC.hpp"
-#include "ShiftersEtc/LZOCShifter.hpp"
+#include "ShiftersEtc/Normalizer.hpp"
 #include "ShiftersEtc/Shifters.hpp"
 #include "Table.hpp"
 #include "ConstMult/FixRealKCM.hpp"
@@ -687,11 +687,11 @@ namespace flopoco{
 								"R=>Log_normal"
 								);
 
-		newInstance("LZOCShifter",
+		newInstance("Normalizer",
 								"final_norm",
-								"wIn=" + to_string(wE+target_prec) + " wOut=" + to_string(target_prec) + " wCount=" + to_string(intlog2(wE+(wF>>1))+1) + " countType=0",
-								"I=>Log_normal",
-								"O=>Log_normal_normd, Count=>E_normal");
+								"wX=" + to_string(wE+target_prec) + " wR=" + to_string(target_prec) + " wCount=" + to_string(intlog2(wE+(wF>>1))+1) + " countType=0",
+								"X=>Log_normal",
+								"R=>Log_normal_normd, Count=>E_normal");
 
 
 		int Z2o2_small_size=(wF+gLog+2) - pfinal; // we need   (wF+gLog+2) - pfinal bits of Z2O2

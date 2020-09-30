@@ -1,5 +1,5 @@
-#ifndef LZOCShifter_HPP
-#define LZOCShifter_HPP
+#ifndef Normalizer_HPP
+#define Normalizer_HPP
 #include <vector>
 #include <sstream>
 #include <gmp.h>
@@ -8,9 +8,20 @@
 #include "utils.hpp"
 #include "Operator.hpp"
 
-/* Refactoring will impact the following operators
+/* 
 
-src/ShiftersEtc/LZOCShifter.o
+Use cases:
+  usually wR=wX (standard FP operators) and then computeSticky doesn't make sense.
+  wR>wX does not make sense: this operator removes meaningless zeroes, it doesn't add information
+	wR<wX makes sense at least in one circumstance: FPLargeAcc.
+  	There we want to normalize the large accumulator into a (much smaller) FP format.
+		Only in such case does computeSticky make sense: it is computed out of the bits to the right of what we keep.
+		Optimizing the sticky computation should be low priority, though: who cares about ensuring the ties to even rule in such a non-standard operator? 
+
+	
+Refactoring needed to change the interface from wCount to maxCount
+It will impact the following operators (plus FPLarge Acc)
+
 src/Conversions/Posit2FP.o
 src/Conversions/Fix2FP.o
 src/FPAddSub/FPAddDualPath.o
@@ -19,9 +30,10 @@ src/ExpLog/FPLogIterative.o
 src/Conversions/Posit2PIF.o
 src/Posit/Add/PIFAdd.o
 
-For ref here is the perf with old version of 
+
+For ref here is the perf on 7k70t-fbv484 with old version of 
 ./flopoco FPAdd frequency=1 we=8 wf=23
- 329 LUTs 11.709ns on 7k70t-fbv484
+ 329 LUTs 11.709ns 
 
 
 */
@@ -31,23 +43,23 @@ namespace flopoco{
 	/** 
 	 * A leading zero/one counter + shifter + sticky bit computer for FloPoCo
 	 */ 
-	class LZOCShifter : public Operator
+	class Normalizer : public Operator
 	{
 	public:
 	
 		/**  
-		 *  LZOCShifter constructor, used in FPLog
+		 *  Normalizer constructor, used in FPLog
 		 * @param[in] target the target device for this operator
-		 * @param[in] wIn the width of the mantissa input
-		 * @param[in] wOut the width of the mantissa output
-		 * @param[in] wCount the numbers of bits to count, often equal to wIn but sometimes less (see FPLog)
+		 * @param[in] wX the width of the mantissa input
+		 * @param[in] wR the width of the mantissa output
+		 * @param[in] wCount the numbers of bits to count, often equal to wX but sometimes less (see FPLog)
 		 * @param[in] computeSticky Should the operator compute a sticky bit out of the shifted-out bits?
 		 * @param[in] countType 0: count zeroes, 1: count ones; -1: have a dynamic OZb input that tells what to count 
 		 */
-		LZOCShifter(OperatorPtr parentOp, Target* target, int wIn, int wOut, int wCount, bool compute_sticky=false, const int countType=-1);
+		Normalizer(OperatorPtr parentOp, Target* target, int wX, int wR, int wCount, bool computeSticky=false, const int countType=-1);
 	
-		/** The LZOCShifter destructor */
-		~LZOCShifter();
+		/** The Normalizer destructor */
+		~Normalizer();
 
 	
 		/** Returns the number of bits of the count
@@ -69,11 +81,11 @@ namespace flopoco{
 
 	private:
 	
-		int          wIn_;                   /**< The number of bits of the input */
-		int          wOut_;                  /**< The number of bits of the shifted output */
+		int          wX_;                   /**< The number of bits of the input */
+		int          wR_;                  /**< The number of bits of the shifted output */
 		int          wCount_;                /**< The number of bits of the count */
-		bool         computeSticky_;         /**< If true, compute the sticky bit. If false, save this hardware */
-		int          countType_;             /**< -1|0|1. If 0, count zeroes (LZC). If 1, count ones (LOC). If -1, generic LZOC is instatiated, with an input stating what to count */
+		int          countType_;             /**< -1|0|1. If 0, count zeroes (LZC). If 1, count ones (LOC). If -1, generic LZOC is instantiated, with an input stating what to count */
+		bool         computeSticky_;         /**<  if true, a sticky bit will be computed and output */
 		string       level_[42];             /**< The names of the signals, just to make code more readable */ 
 		string       leveld_[42];            /**< Same but possibly delayed  */
 		int          size_[42];              /**< Their size. Do we need to count more than 2^42 bits in FloPoCo? */      

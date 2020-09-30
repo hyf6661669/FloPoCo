@@ -4,7 +4,7 @@
 #include <Operator.hpp>
 #include <utils.hpp>
 
-#include "ShiftersEtc/LZOCShifter.hpp"
+#include "ShiftersEtc/Normalizer.hpp"
 #include "ShiftersEtc/Shifters.hpp"
 
 using namespace std;
@@ -114,15 +114,15 @@ namespace flopoco{
     
     ostringstream param2, inmap2, outmap2;
     int wCount = intlog2(wF+6); 
-    param2 << "wIn=" << wF + 6;
-    param2 << " wOut=" << wF + 6;
+    param2 << "wX=" << wF + 6;
+    param2 << " wR=" << wF + 6;
     param2 << " wCount=" << wCount; 
     
-    inmap2 << "I=>add_mantissa,OZb=>count_type";
+    inmap2 << "X=>add_mantissa,OZb=>count_type";
     
-    outmap2 << "Count=>lzCount,O=>significand";
+    outmap2 << "Count=>lzCount,R=>significand";
     
-    newInstance("LZOCShifter", "align_mantissa", param2.str(), inmap2.str(), outmap2.str());
+    newInstance("Normalizer", "norm", param2.str(), inmap2.str(), outmap2.str());
     
     vhdl << declare(target->adderDelay(wE), "exponent", wE) << " <= larger_exp + 2 - lzCount;" << endl;
     

@@ -32,7 +32,7 @@
 
 #include "../ShiftersEtc/LZOC.hpp"
 #include "../ShiftersEtc/Shifters.hpp"
-#include "../ShiftersEtc/LZOCShifter.hpp"
+#include "../ShiftersEtc/Normalizer.hpp"
 #include "../IntAddSubCmp/IntAdder.hpp"
 
 using namespace std;
@@ -221,12 +221,12 @@ with vrs -i
 		//shift in place
 		vhdl << tab << declare("fracSticky",wF+5) << "<= fracAddResult & sticky; "<<endl;
 
-		LZOCShifter* lzocs = (LZOCShifter*)
-			newInstance("LZOCShifter",
+		Normalizer* lzocs = (Normalizer*)
+			newInstance("Normalizer",
 									"LZCAndShifter",
-									"wIn=" + to_string(wF+5) + " wOut=" + to_string(wF+5) + " wCount=" + to_string(intlog2(wF+5)) + " countType=0",
-									"I=>fracSticky",
-									"Count=>nZerosNew, O=>shiftedFrac");
+									"wX=" + to_string(wF+5) + " wR=" + to_string(wF+5) + " wCount=" + to_string(intlog2(wF+5)) + " countType=0",
+									"X=>fracSticky",
+									"Count=>nZerosNew, R=>shiftedFrac");
 
 		// pipeline: there is plenty of time for this addition during the significand processing
 		vhdl << tab << declare(getTarget()->adderDelay(wE+1), "extendedExpInc",wE+1) << "<= (\"0\" & expX) + '1';"<<endl;

@@ -7,7 +7,7 @@ Compressor
 Shifter
 LZOC
 LZOC3
-LZOCShifter
+Normalizer
 ShiftReg
 IntAdder
 IntDualAddSub

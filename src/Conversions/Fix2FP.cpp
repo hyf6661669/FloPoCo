@@ -26,7 +26,7 @@
 
 #include "Fix2FP.hpp"
 #include "TestBenches/FPNumber.hpp"
-#include "ShiftersEtc/LZOCShifter.hpp"
+#include "ShiftersEtc/Normalizer.hpp"
 #include "ShiftersEtc/LZOC.hpp"
 #include "IntAddSubCmp/IntAdder.hpp"
 
@@ -100,7 +100,7 @@ namespace flopoco{
 	
 		vhdl << tab << declare("input",inputWidth) << " <= I;"<<endl;
 	
-		// code for the LZOCShifter part
+		// code for the Normalizer part
 	
 		if(Signed)
 			vhdl << tab << declare("signSignal")<<"<=input"<<of(MSB-1-LSB)<<";"<<endl;
@@ -117,13 +117,13 @@ namespace flopoco{
 	
 			if(Signed){
 #if 0
-				lzocs = new LZOCShifter(this, target,inputWidth-1 , maximalOutputValue, intlog2(inputWidth-1), 0, -1);
+				lzocs = new Normalizer(this, target,inputWidth-1 , maximalOutputValue, intlog2(inputWidth-1), 0, -1);
 				lzocs->changeName(getName()+"_LZOCS");
 
-				inPortMap  (lzocs, "I", "input2LZOC");
+				inPortMap  (lzocs, "X", "input2LZOC");
 				inPortMap  (lzocs,"OZb","signSignal");
 				outPortMap (lzocs, "Count","temporalExponent");
-				outPortMap (lzocs, "O","temporalFraction");
+				outPortMap (lzocs, "R","temporalFraction");
 				vhdl << instance(lzocs, "LZOC_component");
 	
 				sizeExponentValue=lzocs->getCountWidth();
@@ -132,12 +132,12 @@ namespace flopoco{
 			}else{
 		
 #if 0
-				lzcs = new LZOCShifter(this, target, inputWidth , maximalOutputValue, intlog2(inputWidth), 0, 0);
+				lzcs = new Normalizer(this, target, inputWidth , maximalOutputValue, intlog2(inputWidth), 0, 0);
 				lzcs->changeName(getName()+"_LZCS");
 			
-				inPortMap  (lzcs, "I", "passedInput");
+				inPortMap  (lzcs, "X", "passedInput");
 				outPortMap (lzcs, "Count","temporalExponent");
-				outPortMap (lzcs, "O","temporalFraction");
+				outPortMap (lzcs, "R","temporalFraction");
 				vhdl << instance(lzcs, "LZC_component");
 	
 				sizeExponentValue=lzcs->getCountWidth();
@@ -371,12 +371,12 @@ namespace flopoco{
 	
 				if(Signed){
 #if 0
-					lzocs		= new LZOCShifter(this, target,inputWidth-1 , maximalOutputValue, intlog2(inputWidth-1), 0, -1);
+					lzocs		= new Normalizer(this, target,inputWidth-1 , maximalOutputValue, intlog2(inputWidth-1), 0, -1);
 					lzocs->changeName(getName()+"_LZCS");
-					inPortMap  (lzocs, "I", "input2LZOC");
+					inPortMap  (lzocs, "X", "input2LZOC");
 					inPortMap	(lzocs,"OZb","signSignal");
 					outPortMap (lzocs, "Count","temporalExponent");
-					outPortMap (lzocs, "O","temporalFraction");
+					outPortMap (lzocs, "R","temporalFraction");
 					vhdl << instance(lzocs, "LZOC_component");
 					sizeExponentValue=lzocs->getCountWidth();
 #else
@@ -384,11 +384,11 @@ namespace flopoco{
 	
 				}else{
 #if 0
-					lzcs = new LZOCShifter(this, target, inputWidth , maximalOutputValue, intlog2(inputWidth), 0, 0);
+					lzcs = new Normalizer(this, target, inputWidth , maximalOutputValue, intlog2(inputWidth), 0, 0);
 					lzcs->changeName(getName()+"_LZCS");
-					inPortMap  (lzcs, "I", "passedInput");
+					inPortMap  (lzcs, "X", "passedInput");
 					outPortMap (lzcs, "Count","temporalExponent");
-					outPortMap (lzcs, "O","temporalFraction");
+					outPortMap (lzcs, "R","temporalFraction");
 					vhdl << instance(lzcs, "LZC_component");
 					sizeExponentValue=lzcs->getCountWidth();
 #else

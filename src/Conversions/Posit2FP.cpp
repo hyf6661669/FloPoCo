@@ -1,7 +1,7 @@
 #include <sstream>
 
 #include "Posit2FP.hpp"
-#include "ShiftersEtc/LZOCShifter.hpp"
+#include "ShiftersEtc/Normalizer.hpp"
 #include "TestBenches/PositNumber.hpp"
 #include "TestBenches/IEEENumber.hpp"
 
@@ -57,15 +57,15 @@ namespace flopoco{
 		   range(widthI - 3, 0) << ";" << endl;	
 		ostringstream param, inmap, outmap;
 		int wCount = intlog2(widthI - 1);
-		param << "wIn=" << widthI - 2;
-		param << " wOut=" << widthI - 2;
+		param << "wX=" << widthI - 2;
+		param << " wR=" << widthI - 2;
 		param << " wCount=" << wCount; 
 
-		inmap << "I=>encodingTail,OZb=>exponentSign";
+		inmap << "X=>encodingTail,OZb=>exponentSign";
 
-		outmap << "Count=>lzCount,O=>shiftedResult";
+		outmap << "Count=>lzCount,R=>shiftedResult";
 
-		newInstance("LZOCShifter", "lzoc", param.str(), inmap.str(), outmap.str());
+		newInstance("Normalizer", "lzoc", param.str(), inmap.str(), outmap.str());
 		
 		vhdl << "with exponentSign select " << 
 			declare(target->logicDelay(wCount), "rangeExp", wCount + 1, true) <<

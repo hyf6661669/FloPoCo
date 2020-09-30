@@ -35,7 +35,7 @@ BitHeap/OptimalCompressionStrategy
 TutorialOperator
 ShiftersEtc/LZOC
 ShiftersEtc/LZOC3
-ShiftersEtc/LZOCShifter
+ShiftersEtc/Normalizer
 ShiftersEtc/Shifters
 ShiftReg
 FixFilters/FixSOPC

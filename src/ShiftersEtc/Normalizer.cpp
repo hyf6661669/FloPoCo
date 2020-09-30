@@ -30,60 +30,65 @@ using namespace std;
 namespace flopoco{
 
 
-	Normalizer::Normalizer(OperatorPtr parentOp, Target* target, int wX, int wR, int wCount, bool computeSticky, const int countType) :
-		Operator(parentOp, target), wX_(wX), wR_(wR), wCount_(wCount), computeSticky_(computeSticky), countType_(countType) {
+	Normalizer::Normalizer(OperatorPtr parentOp_, Target* target_, int wX_, int wR_, int maxShift_, bool computeSticky_, const int countType_) :
+		Operator(parentOp_, target_), wX(wX_), wR(wR_), maxShift(maxShift_),  computeSticky(computeSticky_), countType(countType_) {
 
+		wCount = intlog2(maxShift);  
 		// -------- Parameter set up -----------------
 		srcFileName = "Normalizer";
 		setCopyrightString("Florent de Dinechin, (2007-2020)");
 
-		REPORT(DETAILED, "wX="<<wX << " wR="<<wR << " wCount="<<wCount << " computeSticky=" << computeSticky  << " countType=" << countType);
+		REPORT(DETAILED, "wX="<<wX << " wR="<<wR << " maxShift="<<maxShift << " computeSticky=" << computeSticky  << " countType=" << countType);
 
+		if(wR>wX) {
+			THROWERROR( "As far as we know, wR>wX doesn't make sense. If you believe otherwise, get in touch!");
+		}
+		if(wR==wX && computeSticky) {
+			THROWERROR( "As far as we know, computeSticky only makes sense if wR<wX doesn't make sense. If you believe otherwise, get in touch!");
+		}
+		 
 		ostringstream name;
-		name << "L" << (countType_<0?"ZO":((countType_>0)?"O":"Z")) << "CShifter"
-			  << (computeSticky_?"Sticky":"") << "_" << wX_ << "_to_"<<wR_<<"_counting_"<<(1<<wCount_);
+		name << "Normalizer_" << (countType<0?"ZO":((countType>0)?"O":"Z"))
+				 << (computeSticky?"Stk":"") << "_" << wX << "_"<<wR<<"_"<<maxShift;
 		setNameWithFreqAndUID(name.str());
 
-		addInput ("X", wX_);
-		if (countType_==-1) addInput ("OZb"); /* if we generate a generic LZOC */
-		addOutput("Count", wCount_);
-		addOutput("R", wR_);
-		if (computeSticky_)   addOutput("Sticky"); /* if we require a sticky bit computation */
-
-		// we consider that wR <= wX. We fix this at the end if not the case
-		int wR_true = wR_;
-		wR_ = wR > wX_ ? wX_ : wR;
+		addInput ("X", wX);
+		if (countType==-1) addInput ("OZb"); /* if we generate a generic LZOC */
+		addOutput("Count", wCount);
+		addOutput("R", wR);
+		if (computeSticky)   addOutput("Sticky"); /* if we require a sticky bit computation */
 
 
-		vhdl << tab << declare(join("level",wCount_), wX_) << " <= X ;"   <<endl;
-		if (countType_==-1) vhdl << tab << declare("sozb") << "<= OZb;"<<endl;
-		if ((computeSticky_)&&(wR_<wX))   vhdl << tab << declare(join("sticky",wCount_)) << " <= '0' ;"<<endl; //init sticky
+
+		vhdl << tab << declare(join("level",wCount), wX) << " <= X ;"   <<endl;
+		if (countType==-1) vhdl << tab << declare("sozb") << "<= OZb;"<<endl;
+		if ((computeSticky)&&(wR<wX))   vhdl << tab << declare(join("sticky",wCount)) << " <= '0' ;"<<endl; //init sticky
 
 
 		// Now comes the main loop.
 		// i is the level index. Level i counts 2^i bits, and shifts by 2^i
 		int currLevSize=wX, prevLevSize=0;
-		for (int i=wCount_-1; i>=0; i--){
+		for (int i=wCount-1; i>=0; i--){
 			prevLevSize = currLevSize;
 
 			// level(k) = max ( max (2^k, wR) + 2^k -1) , wX)
-			currLevSize = (wR_>intpow2(i)?wR_:intpow2(i));
+			currLevSize = (wR>intpow2(i)?wR:intpow2(i));
 			currLevSize += (intpow2(i)-1);
-			currLevSize = (currLevSize > wX_? wX_: currLevSize);
+			currLevSize = (currLevSize > wX? wX: currLevSize);
 
 			// Delay evaluation.
 			// As we output the count bits, their computation will not be merged inside the shift
 			//REPORT( DEBUG, "currSize="<<currLevSize);
 
-			double countBitDelay = getTarget()->fanoutDelay(currLevSize);
+			double countBitDelay;
 			if (countType>=0)
-				countBitDelay += getTarget()->eqConstComparatorDelay( intpow2(i) )  ;
+				countBitDelay = getTarget()-> eqConstComparatorDelay( intpow2(i) )  ;
 			else
-				countBitDelay += getTarget()->eqComparatorDelay( intpow2(i) ) ;
+				countBitDelay = getTarget()->eqComparatorDelay( intpow2(i) ) ;
 			
 			vhdl << tab << declare(countBitDelay, join("count",i))
 					 << "<= '1' when " <<join("level",i+1)<<range(prevLevSize-1,prevLevSize - intpow2(i))<<" = "
-					 <<"("<<prevLevSize-1<<" downto "<<prevLevSize - intpow2(i)<<"=>"<< (countType_==-1? "sozb": countType_==0?"'0'":"'1'")<<") else '0';"<<endl;
+					 <<"("<<prevLevSize-1<<" downto "<<prevLevSize - intpow2(i)<<"=>"<< (countType==-1? "sozb": countType==0?"'0'":"'1'")<<") else '0';"<<endl;
 
 			// The shift will take at most one LUT delay per level. We don't take into account that shift level can be merged: TODO ? It seems non-trivial.
 			double shiftDelay = getTarget()->logicDelay(3);
@@ -100,14 +105,14 @@ namespace flopoco{
 				vhdl << (l>=r?" & ":"") << rangeAssign(currLevSize -(prevLevSize - intpow2(i))-1,0,"'0'");
 			vhdl << ";"<<endl;
 
-			if ((computeSticky_)&&(wR_<wX)) {
+			if ((computeSticky)&&(wR<wX)) {
 
 				// Delay computation. Here we try to compute as much of the sticky in each level.
 				double levelStickyDelay;
 				// n is the size on which we compute the sticky bit
 				int n = max( prevLevSize-currLevSize,
 										 (currLevSize < prevLevSize - intpow2(i) ? (prevLevSize - int(intpow2(i)) ) - currLevSize : 0 ))  ;
-				if ( countType_ == -1 )
+				if ( countType == -1 )
 					levelStickyDelay= getTarget()->eqComparatorDelay(n);
 				else
 					levelStickyDelay= getTarget()->eqConstComparatorDelay(n);
@@ -132,19 +137,18 @@ namespace flopoco{
 			vhdl <<endl;
 		}
 
-		//assign back the value to wR_
-		wR_ =  wR_true;
+		//assign back the value to wR
 		vhdl << tab << "R <= "<< join("level",0)
-			  << (wR_<=wX?"":join("&",rangeAssign(wR_-wX-1,0,"'0'")))<<";"<<endl;
+			  << (wR<=wX?"":join("&",rangeAssign(wR-wX-1,0,"'0'")))<<";"<<endl;
 
 
-		vhdl << tab << declare("sCount",wCount_) <<(wCount_==1?"(0)":"")<<" <= ";
-		for (int i=wCount_-1; i>=0; i--){
+		vhdl << tab << declare("sCount",wCount) <<(wCount==1?"(0)":"")<<" <= ";
+		for (int i=wCount-1; i>=0; i--){
 			vhdl <<join("count",i);
 			vhdl << (i>0?" & ":join(";","\n"));
 		}
 
-		if((1<<wCount_)-1 > wX_) {
+		if((1<<wCount)-1 > wX) {
 			vhdl << tab << "Count <= sCount;"<<endl;
 
 			/*			vhdl << tab << "Count <= CONV_STD_LOGIC_VECTOR("<<wX_<<","<<wCount_<<") when sCount=CONV_STD_LOGIC_VECTOR("<<intpow2(wCount_)-1<<","<<wCount_<<")"<<endl
@@ -155,8 +159,8 @@ namespace flopoco{
 		}
 
 
-		if (computeSticky_){
-			if (wR_>=wX)
+		if (computeSticky){
+			if (wR>=wX)
 				vhdl << tab << "Sticky <= '0';"<<endl;
 			else
 				vhdl << tab << "Sticky <= sticky0;"<<endl;
@@ -170,7 +174,7 @@ namespace flopoco{
 
 
 	int Normalizer::getCountWidth() const{
-		return wCount_;
+		return wCount;
 	}
 
 
@@ -180,7 +184,7 @@ namespace flopoco{
 		mpz_class inputValue  = tc->getInputValue("I");
 
 		mpz_class sozb = 42; //dummy value
-		if (countType_ == -1)
+		if (countType == -1)
 			sozb = tc->getInputValue("OZb");
 
 		int sticky=0;
@@ -188,10 +192,10 @@ namespace flopoco{
 		mpz_class shiftOutputValue = inputValue;
 
 
-		mpz_class bit = (countType_ == -1) ? sozb : (countType_ == 0 ? 0 : 1); /* what are we counting in the specific case */
+		mpz_class bit = (countType == -1) ? sozb : (countType == 0 ? 0 : 1); /* what are we counting in the specific case */
 
-		int j=wX_-1;
-		while ((count < (1<<wCount_)-1) &&  (j>=0)  && mpz_tstbit(inputValue.get_mpz_t(), j) == bit)   {
+		int j=wX-1;
+		while ((count < (1<<wCount)-1) &&  (j>=0)  && mpz_tstbit(inputValue.get_mpz_t(), j) == bit)   {
 			count ++;
 			j--;
 			shiftOutputValue = shiftOutputValue <<1;
@@ -199,8 +203,8 @@ namespace flopoco{
 
 		// Now reformat the output value to its size, and compute the sticky of the remaining bits.
 		// The max size of shiftOutputValue is ((1<<wCount)-1) + wX
-		mpz_class outputMask = (mpz_class(1) << wR_) -1;
-		int numBitsForSticky = wX_ - wR_;
+		mpz_class outputMask = (mpz_class(1) << wR) -1;
+		int numBitsForSticky = wX - wR;
 		if(numBitsForSticky >= 0) {// should be the typical use case where we need to compute a sticky bit
 			mpz_class stickyMask = (mpz_class(1) << numBitsForSticky) -1;
 			mpz_class bitsForSticky = shiftOutputValue & stickyMask;
@@ -216,7 +220,7 @@ namespace flopoco{
 		tc->addExpectedOutput("O", shiftOutputValue);
 		tc->addExpectedOutput("Count", count);
 
-		if (computeSticky_)
+		if (computeSticky)
 			tc->addExpectedOutput("Sticky",sticky);
 	}
 
@@ -224,14 +228,14 @@ namespace flopoco{
 	
 
 	OperatorPtr Normalizer::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
-		int wX, wR, wCount, countType;
+		int wX, wR, maxShift, countType;
 		bool computeSticky;
 		UserInterface::parseStrictlyPositiveInt(args, "wX", &wX);
 		UserInterface::parseStrictlyPositiveInt(args, "wR", &wR);
-		UserInterface::parseStrictlyPositiveInt(args, "wCount", &wCount);
+		UserInterface::parseStrictlyPositiveInt(args, "maxShift", &maxShift);
 		UserInterface::parseBoolean(args, "computeSticky", &computeSticky);
 		UserInterface::parseInt(args, "countType", &countType);
-		return new Normalizer(parentOp, target, wX, wR, wCount, computeSticky, countType);
+		return new Normalizer(parentOp, target, wX, wR, maxShift, computeSticky, countType);
 	}
 
 
@@ -242,8 +246,8 @@ namespace flopoco{
 											 "ShiftersLZOCs",  // category
 											 "", // see also
 											 "wX(int): input size in bits;\
-                        wR(int): output size in bits;\
-                        wCount(int): size in bits of the count output;\
+                        wR(int): output size in bits, with wR <= wX;\
+                        maxShift(int): how many bits to count, with maxShift<= wX ;\
                         computeSticky(bool)=false: if true and wR<wX, a sticky bit is computed out of the discarded bits;\
                         countType(int)=-1:  0 to count zeroes, 1 to count ones, -1 to have a dynamic OZb input that tells what to count", // This string will be parsed
 											 "", // no particular extra doc needed

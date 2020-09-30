@@ -689,7 +689,7 @@ namespace flopoco{
 
 		newInstance("Normalizer",
 								"final_norm",
-								"wX=" + to_string(wE+target_prec) + " wR=" + to_string(target_prec) + " wCount=" + to_string(intlog2(wE+(wF>>1))+1) + " countType=0",
+								"wX=" + to_string(wE+target_prec) + " wR=" + to_string(target_prec) + " maxShift=" + to_string(wE+(wF>>1)) + " countType=0",
 								"X=>Log_normal",
 								"R=>Log_normal_normd, Count=>E_normal");
 

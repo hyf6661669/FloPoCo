@@ -116,7 +116,7 @@ namespace flopoco{
     int wCount = intlog2(wF+6); 
     param2 << "wX=" << wF + 6;
     param2 << " wR=" << wF + 6;
-    param2 << " wCount=" << wCount; 
+    param2 << " maxShift=" << ((1<<wCount)-1) ; 
     
     inmap2 << "X=>add_mantissa,OZb=>count_type";
     

@@ -117,7 +117,7 @@ namespace flopoco{
 	
 			if(Signed){
 #if 0
-				lzocs = new Normalizer(this, target,inputWidth-1 , maximalOutputValue, intlog2(inputWidth-1), 0, -1);
+				lzocs = new Normalizer(this, target,inputWidth-1 , maximalOutputValue, inputWidth-1, 0, -1);
 				lzocs->changeName(getName()+"_LZOCS");
 
 				inPortMap  (lzocs, "X", "input2LZOC");
@@ -132,7 +132,7 @@ namespace flopoco{
 			}else{
 		
 #if 0
-				lzcs = new Normalizer(this, target, inputWidth , maximalOutputValue, intlog2(inputWidth), 0, 0);
+				lzcs = new Normalizer(this, target, inputWidth , maximalOutputValue, inputWidth, 0, 0);
 				lzcs->changeName(getName()+"_LZCS");
 			
 				inPortMap  (lzcs, "X", "passedInput");
@@ -371,7 +371,7 @@ namespace flopoco{
 	
 				if(Signed){
 #if 0
-					lzocs		= new Normalizer(this, target,inputWidth-1 , maximalOutputValue, intlog2(inputWidth-1), 0, -1);
+					lzocs		= new Normalizer(this, target,inputWidth-1 , maximalOutputValue, inputWidth-1, 0, -1);
 					lzocs->changeName(getName()+"_LZCS");
 					inPortMap  (lzocs, "X", "input2LZOC");
 					inPortMap	(lzocs,"OZb","signSignal");
@@ -384,7 +384,7 @@ namespace flopoco{
 	
 				}else{
 #if 0
-					lzcs = new Normalizer(this, target, inputWidth , maximalOutputValue, intlog2(inputWidth), 0, 0);
+					lzcs = new Normalizer(this, target, inputWidth , maximalOutputValue, inputWidth, 0, 0);
 					lzcs->changeName(getName()+"_LZCS");
 					inPortMap  (lzcs, "X", "passedInput");
 					outPortMap (lzcs, "Count","temporalExponent");

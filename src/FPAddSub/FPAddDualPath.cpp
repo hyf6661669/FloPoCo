@@ -213,9 +213,9 @@ namespace flopoco{
 			REPORT(DEBUG, "Building close path LZC + shifter");
 			int countWidth = intlog2(wF + 2);
 			newInstance("Normalizer",
-									getName() + "_LZCShifter",
-									"countType=0" + join(" wX=", wF + 2) + join(" wR=", wF + 2) +
-									join(" wCount=", countWidth),
+									"norm",
+									"countType=0" + join(" wX=", wF+2) + join(" wR=", wF+2) +
+									join(" maxShift=", wF+2),
 									"X=>fracRClose1",
 									"Count=>nZerosNew,R=>shiftedFrac"
 			);

@@ -224,7 +224,7 @@ with vrs -i
 		Normalizer* lzocs = (Normalizer*)
 			newInstance("Normalizer",
 									"LZCAndShifter",
-									"wX=" + to_string(wF+5) + " wR=" + to_string(wF+5) + " wCount=" + to_string(intlog2(wF+5)) + " countType=0",
+									"wX=" + to_string(wF+5) + " wR=" + to_string(wF+5) + " maxShift=" + to_string(wF+5) + " countType=0",
 									"X=>fracSticky",
 									"Count=>nZerosNew, R=>shiftedFrac");
 

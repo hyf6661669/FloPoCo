@@ -107,7 +107,7 @@ namespace flopoco {
 
 		param << "wX=" << widthI - 2;
 		param << " wR=" << widthI - 2;
-		param << " wCount=" << wCount; 
+		param << " maxShift=" << ((1<<wCount)-1); // this is highy suspiscious in terms of optimality, if it works at all
 
 		inmap << "X=>remainder,OZb=>count_type";
 

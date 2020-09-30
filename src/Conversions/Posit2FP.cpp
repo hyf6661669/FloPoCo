@@ -56,10 +56,10 @@ namespace flopoco{
 		vhdl << declare(0., "encodingTail", widthI - 2, true) << " <= absoluteEncoding" <<
 		   range(widthI - 3, 0) << ";" << endl;	
 		ostringstream param, inmap, outmap;
-		int wCount = intlog2(widthI - 1);
+		int wCount = intlog2(widthI - 1); 
 		param << "wX=" << widthI - 2;
 		param << " wR=" << widthI - 2;
-		param << " wCount=" << wCount; 
+		param << " maxShift=" << widthI - 1; 
 
 		inmap << "X=>encodingTail,OZb=>exponentSign";
 

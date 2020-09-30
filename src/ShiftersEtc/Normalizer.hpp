@@ -19,7 +19,7 @@ Use cases:
 		Optimizing the sticky computation should be low priority, though: who cares about ensuring the ties to even rule in such a non-standard operator? 
 
 	
-Refactoring needed to change the interface from wCount to maxCount
+Refactoring needed to change the interface from wCount to maxShift
 It will impact the following operators (plus FPLarge Acc)
 
 src/Conversions/Posit2FP.o
@@ -56,7 +56,7 @@ namespace flopoco{
 		 * @param[in] computeSticky Should the operator compute a sticky bit out of the shifted-out bits?
 		 * @param[in] countType 0: count zeroes, 1: count ones; -1: have a dynamic OZb input that tells what to count 
 		 */
-		Normalizer(OperatorPtr parentOp, Target* target, int wX, int wR, int wCount, bool computeSticky=false, const int countType=-1);
+		Normalizer(OperatorPtr parentOp, Target* target, int wX, int wR, int maxShift, bool computeSticky=false, const int countType=-1);
 	
 		/** The Normalizer destructor */
 		~Normalizer();
@@ -81,17 +81,12 @@ namespace flopoco{
 
 	private:
 	
-		int          wX_;                   /**< The number of bits of the input */
-		int          wR_;                  /**< The number of bits of the shifted output */
-		int          wCount_;                /**< The number of bits of the count */
-		int          countType_;             /**< -1|0|1. If 0, count zeroes (LZC). If 1, count ones (LOC). If -1, generic LZOC is instantiated, with an input stating what to count */
-		bool         computeSticky_;         /**<  if true, a sticky bit will be computed and output */
-		string       level_[42];             /**< The names of the signals, just to make code more readable */ 
-		string       leveld_[42];            /**< Same but possibly delayed  */
-		int          size_[42];              /**< Their size. Do we need to count more than 2^42 bits in FloPoCo? */      
-		bool         levelRegistered_ [42]; /**< if boolean true, the corresponding level signal is registered*/ 
-		int          countDepth_[42];        /**< the depths for the levels of the architecture */	
-		mpz_class    maxValue_;              /**< utilitary var */
+		int          wX;                   /**< The number of bits of the input */
+		int          wR;                  /**< The number of bits of the shifted output */
+		int          maxShift;              /**< max number of bits to count */ 
+		int          wCount;                /**< The number of bits of the count output */
+		int          countType;             /**< -1|0|1. If 0, count zeroes (LZC). If 1, count ones (LOC). If -1, generic LZOC is instantiated, with an input stating what to count */
+		bool         computeSticky;         /**<  if true, a sticky bit will be computed and output */
 	};
 }
 #endif

@@ -271,7 +271,7 @@ With combined shifter sticky (despite a few useless gates)
 #if 0 // full shifter, then sticky
 		newInstance("Shifter",
 								"RightShifterComponent",
-								"wIn=" + to_string(wF+1) + " maxShift=" + to_string(wF+3) + " dir=1",
+								"wX=" + to_string(wF+1) + " maxShift=" + to_string(wF+3) + " dir=1",
 								"X=>fracNewY,S=>shiftVal",
 								"R=>shiftedFracY");
 		
@@ -289,7 +289,7 @@ With combined shifter sticky (despite a few useless gates)
 #else //combined shifter+Sticky
 		newInstance("Shifter",
 								"RightShifterComponent",
-								"wIn=" + to_string(wF+1) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
+								"wX=" + to_string(wF+1) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
 								"X=>fracNewY,S=>shiftVal",
 								"R=>shiftedFracY, Sticky=>sticky");
 		

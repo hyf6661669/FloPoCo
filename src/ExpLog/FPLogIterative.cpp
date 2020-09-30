@@ -23,6 +23,10 @@
 #include "FPLogIterative.hpp"
 #include "FPLog.hpp"
 //#include "TestBenches/FPNumber.hpp"
+#include "ShiftersEtc/LZOC.hpp"
+#include "ShiftersEtc/LZOCShifterSticky.hpp"
+#include "ShiftersEtc/Shifters.hpp"
+#include "Table.hpp"
 #include "ConstMult/FixRealKCM.hpp"
 #include "utils.hpp"
 //#include "IntMult/IntSquarer.hpp"
@@ -337,7 +341,7 @@ namespace flopoco{
 
 		newInstance("Shifter",
 								"small_lshift",
-								"wIn=" + to_string(wF-pfinal+2) + " maxShift=" + to_string(wF-pfinal+2) + " dir=0",
+								"wX=" + to_string(wF-pfinal+2) + " maxShift=" + to_string(wF-pfinal+2) + " dir=0",
 								"X=>absZ0,S=>shiftvalinL",
 								"R=>small_absZ0_normd_full");
 
@@ -699,7 +703,7 @@ namespace flopoco{
 
 		newInstance("Shifter",
 								"ao_rshift",
-								"wIn=" + to_string(Z2o2_small_size) + " maxShift=" + to_string(sfinal-pfinal+1) + " dir=1", // dir=right
+								"wX=" + to_string(Z2o2_small_size) + " maxShift=" + to_string(sfinal-pfinal+1) + " dir=1", // dir=right
 								"X=>Z2o2_small_bs, S=>shiftvalinR",
 								"R=>Z2o2_small_s");
 

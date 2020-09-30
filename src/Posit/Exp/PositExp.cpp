@@ -1,5 +1,5 @@
 /*
-  An Posigt exponential for FloPoCo
+  An Posit exponential for FloPoCo
   
   This file is part of the FloPoCo project
   developed by the Arenaire team at Ecole Normale Superieure de Lyon

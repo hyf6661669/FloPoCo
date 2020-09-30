@@ -216,8 +216,8 @@ namespace flopoco{
 									getName() + "_LZCShifter",
 									"countType=0" + join(" wX=", wF + 2) + join(" wR=", wF + 2) +
 									join(" wCount=", countWidth),
-									"I=>fracRClose1",
-									"Count=>nZerosNew,O=>shiftedFrac"
+									"X=>fracRClose1",
+									"Count=>nZerosNew,R=>shiftedFrac"
 			);
 			// NORMALIZATION
 

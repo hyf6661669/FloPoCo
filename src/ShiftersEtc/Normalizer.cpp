@@ -55,7 +55,7 @@ namespace flopoco{
 		wR_ = wR > wX_ ? wX_ : wR;
 
 
-		vhdl << tab << declare(join("level",wCount_), wX_) << " <= I ;"   <<endl;
+		vhdl << tab << declare(join("level",wCount_), wX_) << " <= X ;"   <<endl;
 		if (countType_==-1) vhdl << tab << declare("sozb") << "<= OZb;"<<endl;
 		if ((computeSticky_)&&(wR_<wX))   vhdl << tab << declare(join("sticky",wCount_)) << " <= '0' ;"<<endl; //init sticky
 
@@ -134,7 +134,7 @@ namespace flopoco{
 
 		//assign back the value to wR_
 		wR_ =  wR_true;
-		vhdl << tab << "O <= "<< join("level",0)
+		vhdl << tab << "R <= "<< join("level",0)
 			  << (wR_<=wX?"":join("&",rangeAssign(wR_-wX-1,0,"'0'")))<<";"<<endl;
 
 

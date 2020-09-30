@@ -56,6 +56,8 @@ namespace flopoco {
 
         int reqBitsForRange(int min, int max);
 
+        int reqBitsForRange2Complement(int min, int max);
+
         int getLeadingZero(int value);
 
         int countOnes(long long value);

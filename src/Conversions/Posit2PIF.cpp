@@ -33,7 +33,7 @@ namespace flopoco {
 		name << "Posit2PIF_" << widthI << "_" << wES;
 		setNameWithFreqAndUID(name.str());
 		// Copyright 
-		setCopyrightString("test");
+    setCopyrightString("Oregane Desrentes 2019");
 
     
 		if (widthI < 3) {

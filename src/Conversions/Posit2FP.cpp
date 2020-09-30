@@ -23,7 +23,7 @@ namespace flopoco{
 		ostringstream name;
 		name << "Posit2FP_" << widthI << "_" << esI ;
 		setNameWithFreqAndUID(name.str());
-		setCopyrightString("test");
+    setCopyrightString("Oregane Desrentes 2019");
 
 		if (widthI < 3) {
 			throw std::string("Posit2FP Constructor : widthI is too small, should be greater than two");

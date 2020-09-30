@@ -147,7 +147,7 @@ namespace flopoco {
 		
 		newInstance("Shifter", 
 								"XShift", 
-								"wIn=" + to_string(sizeXYR) + " maxShift=" + to_string(sizeXYR-1) + " dir=0",
+								"wX=" + to_string(sizeXYR) + " maxShift=" + to_string(sizeXYR-1) + " dir=0",
 								"X=>XR, S=>S",
 								"R=>XRSfull" // output size will be 2*wF+6 TODO: not output unused bits
 								);
@@ -155,7 +155,7 @@ namespace flopoco {
 		vhdl << tab << declare("XRS", sizeXYR) << " <=  XRSfull " << range(sizeXYR-1,0) << ";" << endl;
 		newInstance("Shifter", 
 								"YShift", 
-								"wIn=" + to_string(sizeXYR) + " maxShift=" + to_string(sizeXYR-1) + " dir=0",
+								"wX=" + to_string(sizeXYR) + " maxShift=" + to_string(sizeXYR-1) + " dir=0",
 								"X=>YR, S=>S",
 								"R=>YRSfull" // output size will be 2*wF+6 TODO: not output unused bits
 								); 

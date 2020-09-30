@@ -469,7 +469,7 @@ namespace flopoco{
 		vhdl << tab  << declare("shiftValIn", shiftInSize) << " <= shiftVal" << range(shiftInSize-1, 0) << ";" << endl;
 		newInstance("Shifter",
 								"mantissa_shift",
-								"wIn=" + to_string(wFIn+1) + " maxShift=" + to_string(maxshift) + " dir=0",
+								"wX=" + to_string(wFIn+1) + " maxShift=" + to_string(maxshift) + " dir=0",
 								"X=>mXu,S=>shiftValIn",
 								"R=>fixX0");
 

@@ -18,7 +18,7 @@ namespace flopoco{
     
     name << "PIFAdd_" <<wE<<"_"<<wF;
     setNameWithFreqAndUID(name.str());
-    setCopyrightString("test");
+    setCopyrightString("Oregane Desrentes 2019");
     
     int maxshiftsize = intlog2(wF+4);
     int width = wE + wF + 5;
@@ -87,7 +87,7 @@ namespace flopoco{
     vhdl << declare(.0, "input_shifter", wF+4) << " <= smaller_mantissa & \"00\";" << endl;
     
     ostringstream param1, inmap1, outmap1;
-    param1 << "wIn=" << wF + 4;
+    param1 << "wX=" << wF + 4;
     param1 << " maxShift=" << wF+4;
     param1 << " wOut=" << wF + 4;
     param1 << " dir=" << Shifter::Right;

@@ -26,6 +26,11 @@
 #include <gmpxx.h>
 #include <utils.hpp>
 #include <Operator.hpp>
+#include <ShiftersEtc/LZOC.hpp>
+#include <ShiftersEtc/Shifters.hpp>
+#include <TestBenches/FPNumber.hpp>
+#include <TestBenches/IEEENumber.hpp>
+#include <IntAddSubCmp/IntAdder.hpp>
 
 
 using namespace std;
@@ -144,7 +149,7 @@ namespace flopoco{
 		newInstance(
 				"Shifter", 
 				"RightShifterComponent", 
-				"wIn=" + to_string(wF+3) + " maxShift=" + to_string(wF+2) + " dir=1 " + "wOut=" + to_string(wF+3) + " computeSticky=1", 
+				"wIn=" + to_string(wF+3) + " maxShift=" + to_string(wF+2) + " dir=1 " + "wR=" + to_string(wF+3) + " computeSticky=1", 
 				"X=>significandY00,S=>finalRightShiftValue",
 				"R=>shiftedSignificandY,Sticky=>stickyLow"
 			);
@@ -159,7 +164,7 @@ namespace flopoco{
 		vhdl << endl;
 		addComment("Significand addition", tab);
 
-		//expSigShiftedNewY size = exponent size + RightShifter's wOut_ size
+		//expSigShiftedNewY size = exponent size + RightShifter's wR size
 		vhdl << tab << declare("summandX", wF+4) << " <= '0' & significandNewX & '0' & '0';" << endl;
 
 

@@ -32,7 +32,7 @@
 
 #include "../ShiftersEtc/LZOC.hpp"
 #include "../ShiftersEtc/Shifters.hpp"
-#include "../ShiftersEtc/LZOCShifterSticky.hpp"
+#include "../ShiftersEtc/LZOCShifter.hpp"
 #include "../IntAddSubCmp/IntAdder.hpp"
 
 using namespace std;
@@ -197,7 +197,7 @@ with vrs -i
 #else //combined shifter+Sticky
 		newInstance("Shifter",
 								"RightShifterComponent",
-								"wX=" + to_string(wF+1) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
+								"wX=" + to_string(wF+1) + " wR=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
 								"X=>fracY, S=>shiftVal",
 								"R=>shiftedFracY, Sticky=>sticky");
 		
@@ -221,10 +221,10 @@ with vrs -i
 		//shift in place
 		vhdl << tab << declare("fracSticky",wF+5) << "<= fracAddResult & sticky; "<<endl;
 
-		LZOCShifterSticky* lzocs = (LZOCShifterSticky*)
-			newInstance("LZOCShifterSticky",
+		LZOCShifter* lzocs = (LZOCShifter*)
+			newInstance("LZOCShifter",
 									"LZCAndShifter",
-									"wIn=" + to_string(wF+5) + " wOut=" + to_string(wF+5) + " wCount=" + to_string(intlog2(wF+5)) + " computeSticky=false countType=0",
+									"wIn=" + to_string(wF+5) + " wOut=" + to_string(wF+5) + " wCount=" + to_string(intlog2(wF+5)) + " countType=0",
 									"I=>fracSticky",
 									"Count=>nZerosNew, O=>shiftedFrac");
 

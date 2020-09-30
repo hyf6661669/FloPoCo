@@ -24,7 +24,7 @@
 #include "FPLog.hpp"
 //#include "TestBenches/FPNumber.hpp"
 #include "ShiftersEtc/LZOC.hpp"
-#include "ShiftersEtc/LZOCShifterSticky.hpp"
+#include "ShiftersEtc/LZOCShifter.hpp"
 #include "ShiftersEtc/Shifters.hpp"
 #include "Table.hpp"
 #include "ConstMult/FixRealKCM.hpp"
@@ -687,9 +687,9 @@ namespace flopoco{
 								"R=>Log_normal"
 								);
 
-		newInstance("LZOCShifterSticky",
+		newInstance("LZOCShifter",
 								"final_norm",
-								"wIn=" + to_string(wE+target_prec) + " wOut=" + to_string(target_prec) + " wCount=" + to_string(intlog2(wE+(wF>>1))+1) + " computeSticky=false countType=0",
+								"wIn=" + to_string(wE+target_prec) + " wOut=" + to_string(target_prec) + " wCount=" + to_string(intlog2(wE+(wF>>1))+1) + " countType=0",
 								"I=>Log_normal",
 								"O=>Log_normal_normd, Count=>E_normal");
 

@@ -11,7 +11,7 @@
 // include the header of the Operator
 #include "Posit2PIF.hpp"
 
-#include "ShiftersEtc/LZOCShifterSticky.hpp"
+#include "ShiftersEtc/LZOCShifter.hpp"
 #include "TestBenches/PositNumber.hpp"
 #include "TestBenches/IEEENumber.hpp"
 
@@ -113,7 +113,7 @@ namespace flopoco {
 
 		outmap << "Count=>lzCount,O=>usefulBits";
 
-		newInstance("LZOCShifterSticky", "lzoc", param.str(), inmap.str(), outmap.str());
+		newInstance("LZOCShifter", "lzoc", param.str(), inmap.str(), outmap.str());
 
 		vhdl << "with neg_count select " << declare(0., "extended_neg_count", wCount+2) << " <= "  << endl <<
 		  tab << "\"" << string(wCount+2, '0') << "\" when '0', " << endl <<

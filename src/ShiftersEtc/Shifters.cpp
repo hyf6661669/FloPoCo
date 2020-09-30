@@ -33,28 +33,28 @@ using namespace std;
 namespace flopoco{
 
 
-	Shifter::Shifter(OperatorPtr parentOp, Target* target, int wX_, int maxShift_, ShiftDirection direction_, int wOut_, bool computeSticky_, bool inputPadBit_) :
-		Operator(parentOp, target), wX(wX_), maxShift(maxShift_), direction(direction_), wOut(wOut_), computeSticky(computeSticky_), inputPadBit(inputPadBit_)
+	Shifter::Shifter(OperatorPtr parentOp, Target* target, int wX_, int maxShift_, ShiftDirection direction_, int wR_, bool computeSticky_, bool inputPadBit_) :
+		Operator(parentOp, target), wX(wX_), maxShift(maxShift_), direction(direction_), wR(wR_), computeSticky(computeSticky_), inputPadBit(inputPadBit_)
 	{
 		setCopyrightString ( "Bogdan Pasca (2008-2011), Florent de Dinechin (2008-2019)" );
 		srcFileName = "Shifters";
 
-		//cout << endl << "! Shifter::Shifter, wout=" << wOut << endl << endl;
+		//cout << endl << "! Shifter::Shifter, wout=" << wR << endl << endl;
 
 		// -------- Parameter set up -----------------
-		if(wOut==-1){ // The user asked a sensible default for wOut, here it is
+		if(wR==-1){ // The user asked a sensible default for wR, here it is
 			if(computeSticky)
-				wOut =  wX; // no information loss since we compute the sticky
+				wR =  wX; // no information loss since we compute the sticky
 			else
-				wOut = wX + maxShift;  // no information loss
+				wR = wX + maxShift;  // no information loss
 		}
-		//cout << endl << "!! Shifter::Shifter, wout=" << wOut << endl << endl;
+		//cout << endl << "!! Shifter::Shifter, wout=" << wR << endl << endl;
 
 		//Sanity check -- there should probably be more
-		if(wOut>wX+maxShift)
-			THROWERROR("Sorry, but a shifter of wX=" << wX << " input bits by maxShift=" << maxShift << " bits should have wOut<=wX+maxShift=" << wX+maxShift << ". \n Somebody asked for wOut=" << wOut);
-		if(wOut<wX)
-			THROWERROR("Sorry, but I can't see the point in a shifter with wOut<wX. Please truncate your input first.  wX=" << wX << " wOut=" << wOut);
+		if(wR>wX+maxShift)
+			THROWERROR("Sorry, but a shifter of wX=" << wX << " input bits by maxShift=" << maxShift << " bits should have wR<=wX+maxShift=" << wX+maxShift << ". \n Somebody asked for wR=" << wR);
+		if(wR<wX)
+			THROWERROR("Sorry, but I can't see the point in a shifter with wR<wX. Please truncate your input first.  wX=" << wX << " wR=" << wR);
 		
 		ostringstream name;
 		if(direction==Left) name <<"Left";
@@ -75,7 +75,7 @@ namespace flopoco{
 		addInput ("S", wShiftIn);
 		if(inputPadBit)
 					addInput("padBit");
-		addOutput("R", wOut);
+		addOutput("R", wR);
 		if(computeSticky)
 					addOutput("Sticky");
 
@@ -94,19 +94,19 @@ namespace flopoco{
 		double totalDelay=0; // for reporting
 
 		if (computeSticky) {
-			// TODO if wX<wOut, begin with shifts without sticky, then start sticky computation
-			// In the mean time we have padded the input to wOut, hopefully with few bits only...
-			if(wX<wOut) {
-				string pad="("+to_string(wOut-wX-1) + " downto 0 => " + padbit + ")";
-				vhdl << tab << declare("Xpadded", wOut) << " <= "<< (direction == Left? pad+"&":"") << "X"<< (direction == Right? "&"+pad : "") <<";"  << endl;
+			// TODO if wX<wR, begin with shifts without sticky, then start sticky computation
+			// In the mean time we have padded the input to wR, hopefully with few bits only...
+			if(wX<wR) {
+				string pad="("+to_string(wR-wX-1) + " downto 0 => " + padbit + ")";
+				vhdl << tab << declare("Xpadded", wR) << " <= "<< (direction == Left? pad+"&":"") << "X"<< (direction == Right? "&"+pad : "") <<";"  << endl;
 			}
-			else // with the earlier sanity checks we should have wX=wOut
+			else // with the earlier sanity checks we should have wX=wR
 			 {
-				 vhdl << tab << declare("Xpadded", wOut) << " <= X;" << endl;
+				 vhdl << tab << declare("Xpadded", wR) << " <= X;" << endl;
 			}	
 			// It is better to start the loop with larger bits so as to give time to sticky computation.
 			// The datapath size is constant anyway
-			vhdl << tab << declare(join("level", wShiftIn), wOut) << "<= Xpadded;" << endl;
+			vhdl << tab << declare(join("level", wShiftIn), wR) << "<= Xpadded;" << endl;
 			for(int i=wShiftIn-1; i>=0; i--){
 				levelInLut ++;
 				if (levelInLut >= levelPerLut) {
@@ -126,11 +126,11 @@ namespace flopoco{
 				vhdl	 << "   else '0';" <<  endl;
 				// then the shift
 				vhdl << tab << declare(levelDelay, 
-															 join("level", i), wOut) << " <= "
+															 join("level", i), wR) << " <= "
 						 << " level" << i+1 << " when  ps" << of(i) << "='0'"
 						 << "    else (" << intpow2(i)-1 << " downto 0 => " << padbit << ") ";
-				if(wOut-1>= intpow2(i)) // because when wOut is a power of two, that's all folks 
-					vhdl << "& level" << i+1 << range(wOut-1, intpow2(i));
+				if(wR-1>= intpow2(i)) // because when wR is a power of two, that's all folks 
+					vhdl << "& level" << i+1 << range(wR-1, intpow2(i));
 				vhdl << ";" << endl;
 			}
 		  vhdl << tab << "R <= level0;"<<endl;
@@ -181,9 +181,9 @@ namespace flopoco{
 					ostringstream lastLevelName;
 					lastLevelName << "level"<<wShiftIn;
 					if (direction==Right)
-						vhdl << tab << "R <= "<<lastLevelName.str()<<"("<< wX + intpow2(wShiftIn)-1-1 << " downto " << wX + intpow2(wShiftIn)-1 - wOut <<");"<<endl;
+						vhdl << tab << "R <= "<<lastLevelName.str()<<"("<< wX + intpow2(wShiftIn)-1-1 << " downto " << wX + intpow2(wShiftIn)-1 - wR <<");"<<endl;
 					else
-						vhdl << tab << "R <= "<<lastLevelName.str()<<"("<< wOut-1 << " downto 0);"<<endl;
+						vhdl << tab << "R <= "<<lastLevelName.str()<<"("<< wR-1 << " downto 0);"<<endl;
 				}
 			}
 		}
@@ -206,7 +206,7 @@ namespace flopoco{
 			for (i=0;i<shiftAmount;i++)
 				shiftedInput=shiftedInput*2;
 
-			for (i= wX+intpow2(wShiftIn)-1-1; i>=wOut;i--)
+			for (i= wX+intpow2(wShiftIn)-1-1; i>=wR;i--)
 				if ( mpzpow2(i) <= shiftedInput )
 					shiftedInput-=mpzpow2(i);
 		}else{
@@ -228,16 +228,16 @@ namespace flopoco{
 
 
 	OperatorPtr Shifter::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
-		int wX, wOut, maxShift;
+		int wX, wR, maxShift;
 		bool dirArg, computeSticky, inputPadBit;
 		UserInterface::parseStrictlyPositiveInt(args, "wX", &wX);
-		UserInterface::parseInt(args, "wOut", &wOut);
+		UserInterface::parseInt(args, "wR", &wR);
 		UserInterface::parseStrictlyPositiveInt(args, "maxShift", &maxShift);
 		UserInterface::parseBoolean(args, "dir", &dirArg);
 		UserInterface::parseBoolean(args, "computeSticky", &computeSticky);
 		UserInterface::parseBoolean(args, "inputPadBit", &inputPadBit);
 		ShiftDirection dir = (dirArg?Shifter::Right:Shifter::Left);
-		return new Shifter(parentOp, target, wX, maxShift, dir, wOut, computeSticky, inputPadBit);
+		return new Shifter(parentOp, target, wX, maxShift, dir, wR, computeSticky, inputPadBit);
 	}
 
 
@@ -250,8 +250,8 @@ namespace flopoco{
 											 "wX(int): input size in bits;\
 											  maxShift(int): maximum shift distance in bits;\
 											  dir(bool): 0=left, 1=right;	\
-											  wOut(int)=-1: size of the shifted output , -1 means computed, will be equal to wX+maxShift;\
-											  computeSticky(bool)=false: if true and wOut<wX+maxShift, shifted-out bits are ORed into a sticky bit;\
+											  wR(int)=-1: size of the shifted output , -1 means computed, will be equal to wX+maxShift;\
+											  computeSticky(bool)=false: if true and wR<wX+maxShift, shifted-out bits are ORed into a sticky bit;\
 											  inputPadBit(bool)=false: if true, add an input bit used for left-padding, as in sign extension",
 											 "", // no particular extra doc needed
 											 Shifter::parseArguments

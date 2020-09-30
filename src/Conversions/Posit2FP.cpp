@@ -1,7 +1,7 @@
 #include <sstream>
 
 #include "Posit2FP.hpp"
-#include "ShiftersEtc/LZOCShifterSticky.hpp"
+#include "ShiftersEtc/LZOCShifter.hpp"
 #include "TestBenches/PositNumber.hpp"
 #include "TestBenches/IEEENumber.hpp"
 
@@ -65,7 +65,7 @@ namespace flopoco{
 
 		outmap << "Count=>lzCount,O=>shiftedResult";
 
-		newInstance("LZOCShifterSticky", "lzoc", param.str(), inmap.str(), outmap.str());
+		newInstance("LZOCShifter", "lzoc", param.str(), inmap.str(), outmap.str());
 		
 		vhdl << "with exponentSign select " << 
 			declare(target->logicDelay(wCount), "rangeExp", wCount + 1, true) <<

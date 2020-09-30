@@ -7,7 +7,7 @@ Compressor
 Shifter
 LZOC
 LZOC3
-LZOCShifterSticky
+LZOCShifter
 ShiftReg
 IntAdder
 IntDualAddSub
@@ -31,12 +31,13 @@ FixFixConstMult
 GenericMux
 GenericLut
 
+Fix2FP
+FP2Fix
 FPAdd
 FPDiv
 FPSqrt
 FPExp
 FPLog
-FP2Fix
 FPMult
 OutputIEEE
 

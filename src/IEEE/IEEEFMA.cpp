@@ -33,6 +33,12 @@
 
 #include <utils.hpp>
 #include <Operator.hpp>
+#include <ShiftersEtc/LZOC.hpp>
+#include <ShiftersEtc/Shifters.hpp>
+#include <TestBenches/FPNumber.hpp>
+#include <TestBenches/IEEENumber.hpp>
+#include <IntAddSubCmp/IntAdder.hpp>
+
 
 
 using namespace std;
@@ -228,7 +234,7 @@ namespace flopoco{
 		newInstance(
 								"Shifter", 
 								"RightShifterComponent", 
-								"wX=" + to_string(p) + " maxShift=" + to_string(3*p+4) + " dir=1 " + "wOut=" + to_string(4*p+4) + " computeSticky=0", 
+								"wX=" + to_string(p) + " maxShift=" + to_string(3*p+4) + " dir=1 " + "wR=" + to_string(4*p+4) + " computeSticky=0", 
 								"X=>Csig,S=>ShiftValue",
 								"R=>CsigShifted");
 

@@ -21,7 +21,7 @@
 #include <gmpxx.h>
 #include "utils.hpp"
 #include "Operator.hpp"
-#include "LZOCShifterSticky.hpp"
+#include "LZOCShifter.hpp"
 
 using namespace std;
 
@@ -30,11 +30,11 @@ using namespace std;
 namespace flopoco{
 
 
-	LZOCShifterSticky::LZOCShifterSticky(OperatorPtr parentOp, Target* target, int wIn, int wOut, int wCount, bool computeSticky, const int countType) :
+	LZOCShifter::LZOCShifter(OperatorPtr parentOp, Target* target, int wIn, int wOut, int wCount, bool computeSticky, const int countType) :
 		Operator(parentOp, target), wIn_(wIn), wOut_(wOut), wCount_(wCount), computeSticky_(computeSticky), countType_(countType) {
 
 		// -------- Parameter set up -----------------
-		srcFileName = "LZOCShifterSticky";
+		srcFileName = "LZOCShifter";
 		setCopyrightString("Florent de Dinechin, Bogdan Pasca (2007-2016)");
 
 		REPORT(DETAILED, "wIn="<<wIn << " wOut="<<wOut << " wCount="<<wCount << " computeSticky=" << computeSticky  << " countType=" << countType);
@@ -161,21 +161,21 @@ namespace flopoco{
 			else
 				vhdl << tab << "Sticky <= sticky0;"<<endl;
 		}
-		REPORT( DEBUG, "Leaving LZOCShifterSticky");
+		REPORT( DEBUG, "Leaving LZOCShifter");
 
 	}
 
-	LZOCShifterSticky::~LZOCShifterSticky() {
+	LZOCShifter::~LZOCShifter() {
 	}
 
 
-	int LZOCShifterSticky::getCountWidth() const{
+	int LZOCShifter::getCountWidth() const{
 		return wCount_;
 	}
 
 
 
-	void LZOCShifterSticky::emulate(TestCase* tc)
+	void LZOCShifter::emulate(TestCase* tc)
 	{
 		mpz_class inputValue  = tc->getInputValue("I");
 
@@ -223,31 +223,28 @@ namespace flopoco{
 
 	
 
-	OperatorPtr LZOCShifterSticky::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
+	OperatorPtr LZOCShifter::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
 		int wIn, wOut, wCount, countType;
-		bool computeSticky;
 		UserInterface::parseStrictlyPositiveInt(args, "wIn", &wIn);
 		UserInterface::parseStrictlyPositiveInt(args, "wOut", &wOut);
 		UserInterface::parseStrictlyPositiveInt(args, "wCount", &wCount);
-		UserInterface::parseBoolean(args, "computeSticky", &computeSticky);
 		UserInterface::parseInt(args, "countType", &countType);
-		return new LZOCShifterSticky(parentOp, target, wIn, wOut, wCount, computeSticky, countType);
+		return new LZOCShifter(parentOp, target, wIn, wOut, wCount, false, countType);
 	}
 
 
 	
-	void LZOCShifterSticky::registerFactory(){
-		UserInterface::add("LZOCShifterSticky", // name
+	void LZOCShifter::registerFactory(){
+		UserInterface::add("LZOCShifter", // name
 											 "A combined leading zero/one counter and shifter, useful for floating-point normalization.",
 											 "ShiftersLZOCs",  // category
 											 "", // see also
 											 "wIn(int): input size in bits;\
                         wOut(int): output size in bits;\
                         wCount(int): size in bits of the count output;\
-                        computeSticky(bool)=false: if false the shifted-out bits are discarded, if true they are ORed into a sticky bit which is output;\
                         countType(int)=-1:  0 to count zeroes, 1 to count ones, -1 to have a dynamic OZb input that tells what to count", // This string will be parsed
 											 "", // no particular extra doc needed
-											 LZOCShifterSticky::parseArguments
+											 LZOCShifter::parseArguments
 											 ) ;
 		
 	}

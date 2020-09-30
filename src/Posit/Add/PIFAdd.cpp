@@ -4,7 +4,7 @@
 #include <Operator.hpp>
 #include <utils.hpp>
 
-#include "ShiftersEtc/LZOCShifterSticky.hpp"
+#include "ShiftersEtc/LZOCShifter.hpp"
 #include "ShiftersEtc/Shifters.hpp"
 
 using namespace std;
@@ -89,7 +89,7 @@ namespace flopoco{
     ostringstream param1, inmap1, outmap1;
     param1 << "wX=" << wF + 4;
     param1 << " maxShift=" << wF+4;
-    param1 << " wOut=" << wF + 4;
+    param1 << " wR=" << wF + 4;
     param1 << " dir=" << Shifter::Right;
     param1 << " computeSticky=true";
     param1 << " inputPadBit=true";
@@ -122,7 +122,7 @@ namespace flopoco{
     
     outmap2 << "Count=>lzCount,O=>significand";
     
-    newInstance("LZOCShifterSticky", "align_mantissa", param2.str(), inmap2.str(), outmap2.str());
+    newInstance("LZOCShifter", "align_mantissa", param2.str(), inmap2.str(), outmap2.str());
     
     vhdl << declare(target->adderDelay(wE), "exponent", wE) << " <= larger_exp + 2 - lzCount;" << endl;
     

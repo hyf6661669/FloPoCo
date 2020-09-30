@@ -97,7 +97,7 @@ namespace flopoco {
 		ostringstream param, inmap, outmap;
 		param << "wX=" << wF_ + 1;
 		param << " maxShift=" << maxshift;
-		param << " wOut=" << widthO;
+		param << " wR=" << widthO;
 		param << " dir=" << Shifter::Left;
 		param << " inputPadBit=true";
 

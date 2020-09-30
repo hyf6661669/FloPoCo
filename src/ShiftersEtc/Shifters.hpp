@@ -30,10 +30,10 @@ namespace flopoco{
 		 * @param[in]		wX			  the with of the input
 		 * @param[in]		maxShift	the maximum shift amount
 		 * @param[in]		direction	can be either Left of Right. Determines the shift direction
-		 * @param[in]		wOut	optional size of the shifted output (-1 means: computed) 
+		 * @param[in]		wR	optional size of the shifted output (-1 means: computed) 
 		 * @param[in]		computeSticky optional computation of a sticky bit out of the possible discarded bits
 		 **/
-		Shifter(OperatorPtr parentOp, Target* target, int wX, int maxShift, ShiftDirection dir, int wOut=-1, bool computeSticky=false, bool padWithOnes=false);
+		Shifter(OperatorPtr parentOp, Target* target, int wX, int maxShift, ShiftDirection dir, int wR=-1, bool computeSticky=false, bool padWithOnes=false);
 
 
 		/** Destructor */
@@ -65,7 +65,7 @@ namespace flopoco{
 		int wX;          /**< the width of the input*/
 		int maxShift;     /**< the maximum shift amount*/
 		ShiftDirection direction;  /**< determines the shift direction. can be Left or Right */
-		int wOut;         /**< the width of the output */
+		int wR;         /**< the width of the output */
 		int wShiftIn; 	 /**< the number of bits of the input which determines the shift amount*/
 
 	private:

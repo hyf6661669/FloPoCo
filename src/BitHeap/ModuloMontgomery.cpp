@@ -32,7 +32,7 @@ namespace flopoco {
         addConstant("M", "positive", modulo);
         addConstant("Rmod", "integer", R % modulo);
         // declaring output
-        addOutput("S" , modSize*2);
+        addOutput("S" , modSize);
 
         REPORT(INFO, "rmod: " << R % modulo);
         addFullComment("Start of vhdl generation");
@@ -45,7 +45,7 @@ namespace flopoco {
                     "RmodSg", false, modSize-1, 0) << tab << "<= UNSIGNED(TO_SIGNED(Rmod," << modSize << "));" << endl;
             // calculate and convert back
             vhdl << tab << declare(
-                    "T_0", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
+                    "T_0", modSize*2*R, false) << tab << "<= (" << modSize*2*R-1 << " downto " << modSize*2 << " => '0') & STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
         } else if (method == "ex") {
             // classical modular multiplication
             // use shift because R is power of two
@@ -56,14 +56,14 @@ namespace flopoco {
             divParams << "wIn=" << wIn + modSize << " d=" << modulo << " computeQuotient=false computeRemainder=true";
             newInstance("IntConstDiv", "modDiv", divParams.str(), "X=>XRProd", "R=>XRemain");
             vhdl << tab << declare(
-                    "T_0", modSize*2, false) << tab << "<= (" << modSize*2-1 << " downto " << modSize << " => '0') & XRemain;" << endl;
+                    "T_0", modSize*2*R, false) << tab << "<= (" << modSize*2*R-1 << " downto " << modSize << " => '0') & XRemain;" << endl;
         } else if (method == "redOnly") {
             if (wIn > modSize*2) {
                 REPORT(INFO, "wIn too big for reduction only test");
             }
 
             vhdl << tab << declare(
-                    "T_0", modSize*2, false) << tab << "<= (" << modSize*2-1 << " downto " << wIn << " => '0') & X;" << endl;
+                    "T_0", modSize*2*R, false) << tab << "<= (" << modSize*2*R-1 << " downto " << wIn << " => '0') & X;" << endl;
         } else {
             REPORT(INFO, "invalid method name " << method);
         }
@@ -74,12 +74,12 @@ namespace flopoco {
             int index = i+1;
             tName << "T_" << index;
             vhdl << tab << declare(
-                    tName.str(), modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << i
+                    tName.str(), modSize*2*R, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << i
                  << ") + SHIFT_LEFT(TO_UNSIGNED(M," << modSize+i << ")," << i << ")) when T_" << i << of(i) << " = '1' else T_" << i << ";" << endl;
         }
         vhdl << tab << declare(
-                "TRes", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T_" << modSize << ")," << modSize << "));" << endl;
-        vhdl << tab << "S <= TRes when UNSIGNED(TRes) < M else STD_LOGIC_VECTOR(UNSIGNED(TRes) - M);" << endl;
+                "TRes", modSize+1, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T_" << modSize << ")," << modSize << "))" << range(modSize, 0) << ";" << endl;
+        vhdl << tab << "S <= TRes" << range(modSize-1, 0) << " when UNSIGNED(TRes) < M else STD_LOGIC_VECTOR(UNSIGNED(TRes) - M)" << range(modSize-1, 0) << ";" << endl;
         addFullComment("End of vhdl generation");
     }
 
@@ -162,15 +162,31 @@ namespace flopoco {
         // the static list of mandatory tests
         TestList testStateList;
         vector<pair<string,string>> paramList;
-        if(index==-1) 	{ // The unit tests
-            for (int wIn=6; wIn<=12; wIn++) {
-                for(int m=3; m<20; m+=2) {
-                    paramList.push_back(make_pair("wIn",to_string(wIn)));
-                    paramList.push_back(make_pair("modulo",to_string(m)));
-                    paramList.push_back(make_pair("TestBench n=",to_string(1000)));
-                    testStateList.push_back(paramList);
+        string methods[] = {"ex","modOp","redOnly"};
 
-                    paramList.clear();
+        if(index==-1) 	{ // The unit tests
+            for (int i = 0; i < 3; ++i) {
+                for(int m=3; m<20; m+=2) {
+                    int modSize = 0;
+                    if (methods[i]=="redOnly") {
+                        for (int w = 0; w < 31; ++w) {
+                            if ((m & (1 << (w))) != 0) {
+                                modSize = w;
+                            }
+                        }
+                        modSize++;
+                    }
+                    for (int wIn=6; wIn<=12; wIn++) {
+                        if (!(methods[i]=="redOnly" && wIn > modSize * 2)) {
+                            paramList.push_back(make_pair("wIn",to_string(wIn)));
+                            paramList.push_back(make_pair("modulo",to_string(m)));
+                            paramList.push_back(make_pair("method", methods[i]));
+                            paramList.push_back(make_pair("TestBench n=",to_string(100)));
+                            testStateList.push_back(paramList);
+
+                            paramList.clear();
+                        }
+                    }
                 }
             }
         }

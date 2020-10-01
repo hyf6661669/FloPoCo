@@ -13,10 +13,11 @@ namespace flopoco {
 
             int wIn; // length of the input
             int modulo;
+            string method;
 
         public:
 
-            ModuloMontgomery(OperatorPtr parentOp, Target* target, int wIn = 3, int modulo = 1);
+            ModuloMontgomery(OperatorPtr parentOp, Target* target, int wIn = 3, int modulo = 1, string method = "ex");
 
             ~ModuloMontgomery() {};
 

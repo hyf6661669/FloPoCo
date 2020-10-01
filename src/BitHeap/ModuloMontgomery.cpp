@@ -7,7 +7,8 @@
 using namespace std;
 
 namespace flopoco {
-    ModuloMontgomery::ModuloMontgomery(OperatorPtr parentOp, Target* target, int wIn_, int modulo_) : Operator(parentOp,  target), wIn(wIn_), modulo(modulo_) {
+    ModuloMontgomery::ModuloMontgomery(OperatorPtr parentOp, Target* target, int wIn_, int modulo_, string method_)
+    : Operator(parentOp,  target), wIn(wIn_), modulo(modulo_), method(method_) {
         srcFileName="ModuloMontgomery";
 
         // definition of the name of the operator
@@ -35,7 +36,7 @@ namespace flopoco {
 
         REPORT(INFO, "rmod: " << R % modulo);
         addFullComment("Start of vhdl generation");
-        if(false) {
+        if(method == "modOp") {
             // calculating residue to use montgomery
             // conversion to signed
             vhdl << tab << declareFixPoint(
@@ -45,7 +46,7 @@ namespace flopoco {
             // calculate and convert back
             vhdl << tab << declare(
                     "T_0", modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(XSg * RmodSg);" << endl;
-        } else {
+        } else if (method == "ex") {
             // classical modular multiplication
             // use shift because R is power of two
             vhdl << tab << declare(
@@ -56,6 +57,15 @@ namespace flopoco {
             newInstance("IntConstDiv", "modDiv", divParams.str(), "X=>XRProd", "R=>XRemain");
             vhdl << tab << declare(
                     "T_0", modSize*2, false) << tab << "<= (" << modSize*2-1 << " downto " << modSize << " => '0') & XRemain;" << endl;
+        } else if (method == "redOnly") {
+            if (wIn > modSize*2) {
+                REPORT(INFO, "wIn too big for reduction only test");
+            }
+
+            vhdl << tab << declare(
+                    "T_0", modSize*2, false) << tab << "<= (" << modSize*2-1 << " downto " << wIn << " => '0') & X;" << endl;
+        } else {
+            REPORT(INFO, "invalid method name " << method);
         }
 
         // montgomery reduction - automatically converts back
@@ -83,11 +93,26 @@ namespace flopoco {
         return mmsb;
     }
 
+    int ModuloMontgomery::getModularInverse(int number, int mod) {
+        for (int i = 0; i < mod; ++i) {
+            if ((number * i) % mod == 1) {
+                return i;
+            }
+        }
+    }
+
     void ModuloMontgomery::emulate(TestCase * tc) {
         mpz_class sx = tc->getInputValue("X");
 
         mpz_class sr;
-        sr = sx % modulo;
+        if (method == "redOnly") {
+            int modSize = getModuloMSB() + 1;
+            int rInverse = getModularInverse((1 << modSize), modulo);
+            mpz_class sNormal = (sx * rInverse) % modulo;
+            sr = sNormal % modulo;
+        } else {
+            sr = sx % modulo;
+        }
 
         tc->addExpectedOutput("S",sr);
     }
@@ -154,9 +179,11 @@ namespace flopoco {
 
     OperatorPtr ModuloMontgomery::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
         int wIn, modulo;
+        string method;
         UserInterface::parseInt(args, "wIn", &wIn);
         UserInterface::parseInt(args, "modulo", &modulo);
-        return new ModuloMontgomery(parentOp, target, wIn, modulo);
+        UserInterface::parseString(args, "method", &method);
+        return new ModuloMontgomery(parentOp, target, wIn, modulo, method);
     }
 
     void ModuloMontgomery::registerFactory(){
@@ -169,7 +196,10 @@ namespace flopoco {
                 // Syntax is: a semicolon-separated list of parameterDescription;
                 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                            "wIn(int)=16: A first parameter - the input size; \
-                            modulo(int): modulo",
+                            modulo(int): modulo; \
+                            method(string): The method used for the montgomery algrithm. <br> \
+                            3 available: 'ex' - for explicit conversion, 'modOp' - for Conversion using the vhdl mod operator \
+                            'redOnly' - the input is directly used for the reduction without conversion in montgomery form",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",
                            ModuloMontgomery::parseArguments,

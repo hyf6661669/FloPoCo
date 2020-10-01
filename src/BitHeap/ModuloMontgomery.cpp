@@ -197,9 +197,9 @@ namespace flopoco {
                 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                            "wIn(int)=16: A first parameter - the input size; \
                             modulo(int): modulo; \
-                            method(string): The method used for the montgomery algrithm. <br> \
-                            3 available: 'ex' - for explicit conversion, 'modOp' - for Conversion using the vhdl mod operator \
-                            'redOnly' - the input is directly used for the reduction without conversion in montgomery form",
+                            method(string)=ex: The method used for the montgomery algrithm."
+                            " 3 available: 'ex' - for explicit conversion, 'modOp' - for Conversion using the vhdl mod operator"
+                            " 'redOnly' - the input is directly used for the reduction without conversion in montgomery form",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",
                            ModuloMontgomery::parseArguments,

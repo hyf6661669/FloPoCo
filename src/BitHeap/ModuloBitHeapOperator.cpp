@@ -817,7 +817,9 @@ namespace flopoco {
                 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                            "wIn(int)=16: A first parameter - the input size; \
                             modulo(int): modulo; \
-                            method(string)=compl: The method used for the pseudo compression. 'compl' for the complete search",
+                            method(string)=compl: The method used for the pseudo compression."
+                           " 4 available: 'compl' - for the complete search, 'lMinBits' - for the local bit minimization"
+                           " 'minRange' - for the per bit range minimization, 'minRangeWeight' - for a combination of local bit and range minimization",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",
                            ModuloBitHeapOperator::parseArguments,

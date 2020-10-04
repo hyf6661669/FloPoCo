@@ -30,15 +30,15 @@ using namespace flopoco;
 namespace flopoco
 {
 	//--------------------------------------------------------------------------------------- Constructors
-	Multipartite::Multipartite(FixFunctionByMultipartiteTable* mpt_, FixFunction *f_, int inputSize_, int outputSize_):
-		f(f_), inputSize(inputSize_), outputSize(outputSize_),  mpt(mpt_)
+	Multipartite::Multipartite(FixFunctionByMultipartiteTable* mpt_, FixFunction *f_, int inputSize_, int outputSize_, Target* target):
+		f(f_), inputSize(inputSize_), outputSize(outputSize_),  mpt(mpt_), _target(target)
 	{
 		inputRange = 1<<inputSize_;
 		epsilonT = 1.0 / (1<<(outputSize+1));
 	}
 
-	Multipartite::Multipartite(FixFunction *f_, int m_, int alpha_, int beta_, vector<int> gammai_, vector<int> betai_, FixFunctionByMultipartiteTable *mpt_):
-		f(f_), m(m_), alpha(alpha_),  beta(beta_), gammai(gammai_), betai(betai_), mpt(mpt_)
+	Multipartite::Multipartite(FixFunction *f_, int m_, int alpha_, int beta_, vector<int> gammai_, vector<int> betai_, FixFunctionByMultipartiteTable *mpt_, Target* target):
+		f(f_), m(m_), alpha(alpha_),  beta(beta_), gammai(gammai_), betai(betai_), mpt(mpt_), _target(target)
 	{
 		inputRange = 1 << f->wIn;
 		inputSize = f->wIn;
@@ -126,7 +126,7 @@ namespace flopoco
 	// This version works just as well but is less generic. Vae victis
 	void Multipartite::computeTIVCompressionParameters() {
 		string srcFileName = mpt->getSrcFileName(); // for REPORT to work
-		REPORT(FULL, "Entering computeTIVCompressionParameters: alpha=" << alpha << "  uncompressed size=" << sizeTIV);		
+		REPORT(FULL, "Entering computeTIVCompressionParameters: alpha=" << alpha << "  uncompressed size=" << sizeTIV);
 		// OLD
 		int64_t bestS,bestSizeTIV;
 		// compression using only positive numbers
@@ -185,11 +185,11 @@ namespace flopoco
 		REPORT(FULL, "    total TIV size before=" << ((outputSize+guardBits)<<alpha) << "    compressed=" <<  sizeSSTIV + sizeDiffTIV);
 
 	}
-	
-#else	
+
+#else
 	void Multipartite::computeTIVCompressionParameters() {
 		string srcFileName = mpt->getSrcFileName(); // for REPORT to work
-		REPORT(FULL, "Entering computeTIVCompressionParameters: alpha=" << alpha << "  uncompressed size=" << sizeTIV);		
+		REPORT(FULL, "Entering computeTIVCompressionParameters: alpha=" << alpha << "  uncompressed size=" << sizeTIV);
 
 
 		// NEW : this is mostly a wrapper to the different (and better) notations of Luc's code
@@ -197,16 +197,16 @@ namespace flopoco
 		// As long as it was only for TIVs, 64 bits should be enough for anybody.
 		// but we billgatesed there. Differential compression may indeed be applied to wider tables
 
-	
-		pair<int, int> key (guardBits,alpha); 
+
+		pair<int, int> key (guardBits,alpha);
 		if(mpt->DCTIV.count(key)==0) {
-			
+
 			vector<mpz_class> mptiv;
 			for (auto i=0; i<(1<<alpha); i++) {
 				mptiv.push_back(mpz_class(TIVFunction(i)));
 			}
-			REPORT(FULL, "Computing new compression for  alpha=" << alpha << "   wOut=" << outputSize + guardBits);		
-			dcTIV = DifferentialCompression::find_differential_compression(mptiv, alpha, outputSize + guardBits);
+			REPORT(FULL, "Computing new compression for  alpha=" << alpha << "   wOut=" << outputSize + guardBits);
+			dcTIV = DifferentialCompression::find_differential_compression(mptiv, alpha, outputSize + guardBits, _target);
 			// Trick to save memory: we won't need the complete tables, they take up more than 16Gb for 24 bit functions
 			// better free them now, and recompute at the end only the winner
 			dcTIV.subsampling.clear();
@@ -214,17 +214,17 @@ namespace flopoco
 			mpt->DCTIV[key]=dcTIV;
 		}
 		else {
-			REPORT(DETAILED, "Using cached TIV compression for g=" << guardBits << " and alpha=" << alpha);						 
+			REPORT(DETAILED, "Using cached TIV compression for g=" << guardBits << " and alpha=" << alpha);
 			dcTIV = mpt->DCTIV[key];
 		}
-		
+
 		totalSize = dcTIV.subsamplingStorageSize() + dcTIV.diffsStorageSize();
 		for (int i=0; i<m; i++)		{
 			totalSize += sizeTOi[i];
 		}
 		REPORT(FULL, "New computeTIVCompressionParameters: alpha=" << alpha << "  ssTIVIn=" << dcTIV.subsamplingIndexSize  << "  dcTIV.subsamplingWordSize=" << dcTIV.subsamplingWordSize << "  dcTIV.diffWordSize=" <<  dcTIV.diffWordSize);
 		REPORT(FULL, "    total TIV size before=" << ((outputSize+guardBits)<<alpha) << "    compressed=" <<  dcTIV.subsamplingStorageSize() + dcTIV.diffsStorageSize());
-		REPORT(FULL, "Exiting computeTIVCompressionParameters");	
+		REPORT(FULL, "Exiting computeTIVCompressionParameters");
 	}
 
 #endif
@@ -259,7 +259,7 @@ namespace flopoco
 	}
 
 
-	void Multipartite::mkTables(Target* )
+	void Multipartite::mkTables()
 	{
 		// The TIV
 		tiv.clear();
@@ -306,7 +306,7 @@ namespace flopoco
 
 
 #if 1 // Florent's version
-		
+
 		if(mpt->compressTIV) {
 			ssTIV.clear();
 			diffTIV.clear();
@@ -339,7 +339,7 @@ namespace flopoco
 			... TODO
 		}
 #endif
-		
+
 	}
 
 

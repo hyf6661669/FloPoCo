@@ -40,12 +40,12 @@ To replicate the functions used in the 2017 Hsiao paper
 ./flopoco FixFunctionByMultipartiteTable f="1/(x+1)-0.5" signedIn=0 lsbIn=-15 lsbOut=-16
 
 perfect match with the "MP" lines of table 5
-./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-16 lsbOut=-16 
-./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-24 lsbOut=-24  
-(et sur le 24 bits on est bien meilleurs que le résultat HMP !) 
+./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-16 lsbOut=-16
+./flopoco FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-24 lsbOut=-24
+(et sur le 24 bits on est bien meilleurs que le résultat HMP !)
 
 absolutely no match
-./flopoco FixFunctionByMultipartiteTable f="2^x-1"       signedIn=0 lsbIn=-16 lsbOut=-15  
+./flopoco FixFunctionByMultipartiteTable f="2^x-1"       signedIn=0 lsbIn=-16 lsbOut=-15
 
 >
 */
@@ -99,7 +99,7 @@ namespace flopoco
 		int sizeMax = f->wOut<<f->wIn; // size of a plain table
 		topTen=vector<Multipartite*>(ten);
 		for (int i=0; i<ten; i++){
-			topTen[i] = new Multipartite(this, f, f->wIn, f->wOut);
+			topTen[i] = new Multipartite(this, f, f->wIn, f->wOut, target);
 			topTen[i]-> totalSize =	sizeMax;
 		}
 
@@ -151,7 +151,7 @@ namespace flopoco
 					REPORT(INFO, "Now running exhaustive test on candidate #" << rank << " :" << endl
 								 << tab << bestMP->descriptionString() << endl
 								 << tab<< bestMP->descriptionStringLaTeX()  );
-					bestMP->mkTables(target);
+					bestMP->mkTables();
 					if (bestMP->exhaustiveTest()) {
 						REPORT(INFO, "... passed, now building the operator");
 						tryAgain = false;
@@ -182,7 +182,7 @@ namespace flopoco
 		// Exploration complete. Now building the operator
 
 		bestMP = topTen[rank];
-		
+
 		REPORT(DEBUG,"Full table dump:" <<endl << bestMP->fullTableDump());
 		vector<mpz_class> mpzTIV;
 		for (auto i : bestMP->tiv) {
@@ -490,9 +490,9 @@ namespace flopoco
 	}
 
 
-	
+
 #if 0 //REMOVE ME
-	
+
 	void	 FixFunctionByMultipartiteTable::buildDiffTIVCache(){
 		for (auto g=0; g<2+intlog2(f->wIn); g++) {
 			vector<DifferentialCompression*> v;
@@ -504,12 +504,12 @@ namespace flopoco
 				}
 				// then compress it and store it
 				auto d=DifferentialCompression::find_differential_compression(mptiv, alpha, f->wOut + g);
-				v.push_back(d); 
+				v.push_back(d);
 			}
 			DCTIV.push_back(v);
 		}
 	}
-		
+
 #endif
 
 	/**
@@ -606,7 +606,7 @@ namespace flopoco
 					gammai = alphaEnum[ae];
 					mpt = new Multipartite(f, nbTOi,
 																 alpha, beta,
-																 gammai, betai, this);
+																 gammai, betai, this, getTarget());
 					if(mpt->mathError < epsilonT){
 						decompositionFound=true;
 						mpt->buildGuardBitsAndSizes();

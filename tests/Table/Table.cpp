@@ -8,6 +8,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "Tables/DifferentialCompression.hpp"
+#include "Targets/Kintex7.hpp"
 
 using std::vector;
 
@@ -28,7 +29,8 @@ BOOST_AUTO_TEST_CASE(TestDifferentialCompressionLarge)
 	}
 
 	BOOST_TEST_CHECKPOINT("Calling find_differential_compression");
-	auto diff_compress = DifferentialCompression::find_differential_compression(val, TABLE_WIN, TABLE_WOUT);
+	Kintex7 target{};
+	auto diff_compress = DifferentialCompression::find_differential_compression(val, TABLE_WIN, TABLE_WOUT, &target);
 
 	BOOST_TEST_CHECKPOINT("find_differential_compression returned");
 	auto reconstructedTable = diff_compress.getInitialTable();

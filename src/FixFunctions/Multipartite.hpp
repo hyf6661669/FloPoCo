@@ -22,9 +22,9 @@ namespace flopoco
 		const string uniqueName_=""; // for REPORT to work
 		//---------------------------------------------------------------------------- Constructors/Destructor
 
-		Multipartite(FixFunction *f_, int m_, int alpha_, int beta_, vector<int> gammai_, vector<int> betai_, FixFunctionByMultipartiteTable* mpt_);
+		Multipartite(FixFunction *f_, int m_, int alpha_, int beta_, vector<int> gammai_, vector<int> betai_, FixFunctionByMultipartiteTable* mpt_, Target* target);
 
-		Multipartite(FixFunctionByMultipartiteTable* mpt_, FixFunction* f_, int inputSize_, int outputSize_);
+		Multipartite(FixFunctionByMultipartiteTable* mpt_, FixFunction* f_, int inputSize_, int outputSize_, Target* target);
 
 
 		int64_t TIVFunction(int x);
@@ -40,7 +40,7 @@ namespace flopoco
 		 * @brief mkTables : fill  the TIV and TOs tables
 		 * @param target : The target FPGA
 		 */
-		void mkTables(Target* target);
+		void mkTables();
 
 		/**
 		 * @brief descriptionString(): describe the various parameters in textual form
@@ -53,7 +53,7 @@ namespace flopoco
 		/**
 		 * @brief fullTableDump(): as the name suggests, for debug
 		 */
-		string 	fullTableDump(); 
+		string 	fullTableDump();
 
 		/**
 		 * @brief returns true if the architecture is correct; false if it exceeds the target error
@@ -84,7 +84,7 @@ namespace flopoco
 
 		/** The Table of Initial Values, just as the ARITH 15 article */
 		vector<int64_t> tiv;
-		
+
 		/** The first part of the compressed TIV table, just as in the Hsiao article */
 		vector<int64_t> ssTIV;
 
@@ -126,6 +126,10 @@ namespace flopoco
 		double mui(int i, int Bi);
 		double si(int i, int Ai);
 		void computeTIVCompressionParameters();
+
+
+		//------------------------------------------------------------------------------------- Private attributes
+		Target* _target;
 
 	};
 

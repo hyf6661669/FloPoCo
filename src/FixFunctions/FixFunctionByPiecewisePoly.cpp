@@ -84,7 +84,7 @@ namespace flopoco{
 
 		addHeaderComment("Evaluator for " +  f-> getDescription() + "\n");
 		REPORT(DETAILED, "Entering constructor, FixFunction description: " << f-> getDescription());
- 		int wX=-lsbIn;
+		int wX=-lsbIn;
 		addInput("X", wX); // TODO manage signedIn
 
 		int outputSize = msbOut-lsbOut+1; // OK both for signed and unsigned out
@@ -208,7 +208,7 @@ namespace flopoco{
 					mpz_class mask = (mpz_class(1)<<(pwp->MSB[i] - pwp->LSB) ) - 1; // size is msb-lsb+1
 					coeff = coeff & mask;
 				}
-				SplitCoeffTableVector[i].push_back(coeff); // TODO if this is to be used: integrate the rounding bit below into coeff before storing it in SplitCoeffTable 
+				SplitCoeffTableVector[i].push_back(coeff); // TODO if this is to be used: integrate the rounding bit below into coeff before storing it in SplitCoeffTable
 				z += coeff << currentShift; // coeff of degree i from poly number x
 				// REPORT(DEBUG, "i=" << i << "   z=" << unsignedBinary(z, 64));
 				if(i==0 && finalRounding){ // coeff of degree 0
@@ -228,7 +228,7 @@ namespace flopoco{
 		int initialCost=0;
 		int compressedCost=0;
 		for (int i=0; i<=degree; i++) {
-			auto dc = DifferentialCompression::find_differential_compression(SplitCoeffTableVector[i], alpha, pwp->MSB[i] - pwp->LSB + (pwp->coeffSigns[i]==0? 1: 0));
+			auto dc = DifferentialCompression::find_differential_compression(SplitCoeffTableVector[i], alpha, pwp->MSB[i] - pwp->LSB + (pwp->coeffSigns[i]==0? 1: 0), getTarget());
 			REPORT(0, "Differential compression of coeff table for degree " << i << endl << dc.report());
 			initialCost += (dc.originalWout)<< alpha;
 			compressedCost += dc.subsamplingStorageSize() + dc.diffsStorageSize();
@@ -343,10 +343,10 @@ namespace flopoco{
 											 "FunctionApproximation",
 											 "",
 											 "f(string): function to be evaluated between double-quotes, for instance \"exp(x*x)\";\
-                        lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
-                        lsbOut(int): weight of output LSB;\
-                        d(int): degree of the polynomial;\
-                        approxErrorBudget(real)=0.25: error budget in ulp for the approximation, between 0 and 0.5",
+						lsbIn(int): weight of input LSB, for instance -8 for an 8-bit input;\
+						lsbOut(int): weight of output LSB;\
+						d(int): degree of the polynomial;\
+						approxErrorBudget(real)=0.25: error budget in ulp for the approximation, between 0 and 0.5",
 											 "This operator uses a table for coefficients, and Horner evaluation with truncated multipliers sized just right.<br>For more details, see <a href=\"bib/flopoco.html#DinJolPas2010-poly\">this article</a>.",
 											 FixFunctionByPiecewisePoly::parseArguments,
 											 FixFunctionByPiecewisePoly::unitTest

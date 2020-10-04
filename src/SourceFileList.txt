@@ -112,6 +112,7 @@ ExpLog/FPLogIterative
 IEEE/IEEEFMA
 IEEE/IEEEAdd
 Tables/Table
+Tables/TableCostModel.cpp
 Tables/DiffCompressedTable
 Tables/DifferentialCompression
 Tables/DualTable

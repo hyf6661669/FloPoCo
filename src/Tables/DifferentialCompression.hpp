@@ -2,6 +2,7 @@
 #define DIFFERENTIAL_COMPRESSION_HPP
 
 #include "Operator.hpp"
+#include "TableCostModel.hpp"
 
 namespace flopoco {
 	class DifferentialCompression {
@@ -19,9 +20,22 @@ namespace flopoco {
 		 * @param[in] values       The values of the table to compress
 		 * @param[in] wIn          The initial index width of the table to compress
 		 * @param[in] wOut         The output word size of the table to compress
+		 * @param[in] costModel    The cost function which will be optimised by the method
+		 * @param[in] target       The target for which the optimisation is performed
 		 * @return                 A DifferentialCompression containing the values and the parameters of the compression for this table
 		 */
-		static DifferentialCompression find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut);
+		static DifferentialCompression find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut, Target * target, table_cost_function_t cost);
+
+		/**
+		 * Call find_differential_compression with default cost model
+		 * @param[in] values       The values of the table to compress
+		 * @param[in] wIn          The initial index width of the table to compress
+		 * @param[in] wOut         The output word size of the table to compress
+		 * @param[in] target       The target for which the optimisation is performed
+		 * @return                 A DifferentialCompression containing the values and the parameters of the compression for this table
+		 */
+		static DifferentialCompression find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut, Target * target);
+
 
 		/**
 		 * @brief Uncompress the table
@@ -65,6 +79,6 @@ namespace flopoco {
 																		vector<mpz_class> values, string name,
 																		int wIn = -1, int wOut = -1,
 																		int logicTable=0);
-		};
+	};
 }
 #endif

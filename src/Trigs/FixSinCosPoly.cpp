@@ -56,7 +56,7 @@ namespace flopoco{
 			int xs=x;
 			if ( (xs>>(wA-1)) && (argRedCase==1) )
 				xs-=(1<<wA);
-			
+
 			// a will be used for the value in xs
 			mpfr_init2(a,10*wA-1);
 			mpfr_set_si(a, xs, GMP_RNDN);
@@ -222,8 +222,8 @@ namespace flopoco{
 			vhdl << tab << declare("sinCosTabIn", w+1) << " <= X;" << endl;// signal declaration
 
 			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(w+1, w, 0, 1);
-		 
-#if 0 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado 
+
+#if 0 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado
 			Table::newUniqueInstance(this,
 															 "sinCosTabIn", "Cos",
 															 tableContent.first, "CosTable",
@@ -263,7 +263,7 @@ namespace flopoco{
 			/*********************************** REDUCED TABLE **************************************/
 
 			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(w-1, w, 0,4);
-#if 0 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado 
+#if 0 // the two following option should be equivalent but the first leads to much worse synthesis results with vivado
 			Table::newUniqueInstance(this,
 															 "sinCosTabIn", "C_out",
 															 tableContent.first, "CosTable",
@@ -356,7 +356,7 @@ namespace flopoco{
 			vhdl << tab << declare ( "A", wA) << " <= Yneg " << range(wYIn-1, wYIn-wA) << ";" << endl;
 			vhdl << tab << declare ("Y_red", wY) << " <= Yneg" << range (wYIn-wA-1,0) << ";" << endl; // wYin-wA=wY: OK
 
-			
+
 			pair<vector<mpz_class>,vector<mpz_class>> tableContent = buildSinCosTable(wA, w, g, 8);
 
 			if(target->tableCompression()) {
@@ -370,8 +370,8 @@ namespace flopoco{
 				// Now for the real useful tables
 				auto cosTable=tableContent.first;
 				auto sinTable=tableContent.second;
-				auto compressedCos = DifferentialCompression::find_differential_compression(cosTable, wA, w+g);
-				auto compressedSin = DifferentialCompression::find_differential_compression(sinTable, wA, w+g);
+				auto compressedCos = DifferentialCompression::find_differential_compression(cosTable, wA, w+g, target);
+				auto compressedSin = DifferentialCompression::find_differential_compression(sinTable, wA, w+g, target);
 				// For the diff table we know that we can merge the tables without check
 				auto mergedDiffTable = mergeTables(make_pair(compressedCos.diffs, compressedSin.diffs), compressedCos.diffWordSize);
 				Table::newUniqueInstance(this,
@@ -381,7 +381,7 @@ namespace flopoco{
 																 compressedCos.diffWordSize + compressedSin.diffWordSize);
 				vhdl << tab << declare("SinPiADiff", compressedSin.diffWordSize) << " <= SinCosPiADiffs" << range(compressedCos.diffWordSize + compressedSin.diffWordSize-1, compressedCos.diffWordSize) << ";" << endl;
 				vhdl << tab << declare("CosPiADiff", compressedCos.diffWordSize) << " <= SinCosPiADiffs" << range(compressedCos.diffWordSize-1, 0) << ";" << endl;
-					
+
 				// for the subsampling table we are not sure that the inputsizes are equal
 				if(compressedCos.subsamplingIndexSize == compressedSin.subsamplingIndexSize) {
 					auto mergedSubsamplingTable = mergeTables(make_pair(compressedCos.subsampling, compressedSin.subsampling), compressedCos.subsamplingWordSize);
@@ -415,7 +415,7 @@ namespace flopoco{
 			}  // end if(target->tableCompression() {
 
 
-				
+
 
 			int wZ=w-wA+g; // see alignment below. Actually w-2-wA+2  (-2 because Q&O bits, +2 because mult by Pi)
 

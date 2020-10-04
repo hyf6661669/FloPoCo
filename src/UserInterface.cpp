@@ -1,7 +1,7 @@
 #include "UserInterface.hpp"
 #include "Targets/AllTargetsHeaders.hpp"
 #include "TestBenches/TestBench.hpp"
-
+#include "Tables/TableCostModel.hpp"
 #include "AutoTest/AutoTest.hpp"
 
 #include <algorithm>
@@ -71,9 +71,9 @@ namespace flopoco
 		v.push_back(make_pair("FiltersEtc", "Filters and FFTs"));
 		v.push_back(make_pair("TestBenches", "Test Benches"));
 		v.push_back(make_pair("AutoTest", "AutoTest"));
-        v.push_back(make_pair("Primitives", "Highly target optimized primitive operators"));
-        v.push_back(make_pair("Miscellaneous", "Miscellaneous"));
-        return v;
+		v.push_back(make_pair("Primitives", "Highly target optimized primitive operators"));
+		v.push_back(make_pair("Miscellaneous", "Miscellaneous"));
+		return v;
 	}();
 
 	const vector<string> UserInterface::known_fpgas = []()->vector<string>{
@@ -132,6 +132,14 @@ namespace flopoco
 				v.push_back(option_t("hardMultThreshold", values));
 				v.push_back(option_t("frequency", values));
 
+				//Cost model to use
+				values.clear();
+				for (auto& cost_model : table_cost_models) {
+					values.push_back(std::get<0>(cost_model));
+				}
+				v.push_back(option_t("tableCostModel", values));
+
+
 				//verbosity level
 				values.clear();
 				for(unsigned int i = 0 ; i < 3 ; ++i) {
@@ -180,11 +188,6 @@ namespace flopoco
 		}
 	}
 
-
-
-
-
-
 	void UserInterface::parseGenericOptions(vector<string> &args) {
 		parseString(args, "name", &entityName, true); // not sticky: will be used, and reset, after the operator parser
 		parsePositiveInt(args, "verbose", &verbose, true); // sticky option
@@ -206,6 +209,11 @@ namespace flopoco
 		parseBoolean(args, "floorplanning", &floorplanning, true);
 		//		parseBoolean(args, "reDebug", &reDebug, true );
 		parseString(args, "dependencyGraph", &depGraphDrawing, true);
+		string tableCostModel;
+		parseString(args, "tableCostModel", &tableCostModel, true);
+		if (tableCostModel != "") {
+			setGlobalCostModel(tableCostModel);
+		}
 		//	parseBoolean(args, "", &  );
 	}
 
@@ -346,7 +354,7 @@ namespace flopoco
 
 
 	void UserInterface::initialize(){
-        registerFactories();  //implemented in Factories.cpp
+		registerFactories();  //implemented in Factories.cpp
 		// Initialize all the command-line options
 		verbose=1;
 		outputFileName="flopoco.vhdl";
@@ -654,8 +662,8 @@ namespace flopoco
 				throwMissingArgError(args[0], key);
 		}
 		std::stringstream ss;
-    ss.str(val);
-    std::string item;
+	ss.str(val);
+	std::string item;
 		try {
 			while (std::getline(ss, item, ':')) {
 				variable->push_back(item);
@@ -680,8 +688,8 @@ namespace flopoco
 				throwMissingArgError(args[0], key);
 		}
 		std::stringstream ss;
-    ss.str(val);
-    std::string item;
+	ss.str(val);
+	std::string item;
 		try {
 			while (std::getline(ss, item, ':')) {
 				variable->push_back(std::stoi(item));
@@ -706,7 +714,7 @@ namespace flopoco
 				val = getFactoryByName(args[0])->getDefaultParamVal(key);
 				if (val=="")
 					throwMissingArgError(args[0], key);
- 			}
+			}
 		}
 		size_t end;
 
@@ -787,13 +795,16 @@ namespace flopoco
 		s << "  " << COLOR_BOLD << "plainVHDL" << COLOR_NORMAL << "=<0|1>:              use plain VHDL (default), or not " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL << endl;
 		s << "  " << COLOR_BOLD << "useHardMult" << COLOR_NORMAL << "=<0|1>:            use hardware multipliers " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "tableCompression" << COLOR_NORMAL << "=<0|1>:       use errorless table compression when possible (default false while experimental)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+		s << "  " << COLOR_BOLD << "tableCostModel" << COLOR_NORMAL << "=<";
+						for (auto & i : table_cost_models) { s << std::get<0>(i) << ", "; }
+						s << ">: cost model for table storage" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "registerLargeTables" << COLOR_NORMAL << "=<0|1>:    force registering of large ROMs to force the use of blockRAMs (default false)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "useTargetOptimizations" << COLOR_NORMAL << "=<0|1>: use target specific optimizations (e.g., using primitives) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "ilpSolver" << COLOR_NORMAL << "=<string>:           override ILP solver for operators optimized by ILP, has to match a solver name known by the ScaLP library" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "ilpTimeout" << COLOR_NORMAL << "=<int>:             sets the timeout in seconds for the ILP solver for operators optimized by ILP (default=3600)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "compression" << COLOR_NORMAL << "=<heuristicMaxEff,heuristicPA,heuristicFirstFit,optimal,optimalMinStages>:        compression method (default=heuristicMaxEff)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "tiling" << COLOR_NORMAL << "=<heuristicBasicTiling,optimal,heuristicGreedyTiling,heuristicXGreedyTiling,heuristicBeamSearchTiling>:        tiling method (default=heuristicBasicTiling)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
-        s << "  " << COLOR_BOLD << "hardMultThreshold" << COLOR_NORMAL << "=<float>: unused hard mult threshold (O..1, default 0.7) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+		s << "  " << COLOR_BOLD << "hardMultThreshold" << COLOR_NORMAL << "=<float>: unused hard mult threshold (O..1, default 0.7) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "verbose" << COLOR_NORMAL << "=<int>:        verbosity level (0-4, default=1)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "generateFigures" << COLOR_NORMAL << "=<0|1>:generate graphics in SVG or LaTeX for some operators (default off) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL << endl;
 		s << "  " << COLOR_BOLD << "dependencyGraph" << COLOR_NORMAL << "=<no|compact|full>: generate data dependence drawing of the Operator (default no) " << COLOR_RED_NORMAL << COLOR_NORMAL<<endl;

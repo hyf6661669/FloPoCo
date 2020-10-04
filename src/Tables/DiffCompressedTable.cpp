@@ -12,7 +12,7 @@ namespace flopoco {
 		setCopyrightString("Florent de Dinechin, Luc Forget, Maxime Christ (2020)");
 		Table::init(_values, _name, _wIn, _wOut,  _logicTable,  _minIn,  _maxIn);
 
-		diff_comp = DifferentialCompression::find_differential_compression(values, wIn, wOut);
+		diff_comp = DifferentialCompression::find_differential_compression(values, wIn, wOut, target_);
 		// generate VHDL for subsampling table
 		string subsamplingIn = "X_subsampling";
 		vhdl << tab << declare(subsamplingIn, diff_comp.subsamplingIndexSize) << " <= " << "X" << range(wIn-1, wIn-diff_comp.subsamplingIndexSize) << ";" << endl;

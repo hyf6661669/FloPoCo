@@ -86,4 +86,6 @@ PositExp
 PositFunctionByTable
 Posit2Posit
 
+ModRed
+
 #FixFunctionByVaryingPiecewisePoly # to revive soon

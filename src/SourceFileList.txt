@@ -174,3 +174,8 @@ Posit/Posit2Posit
 
 #FixFunctions/VaryingPiecewisePolyApprox
 #FixFunctions/FixFunctionByVaryingPiecewisePoly
+
+
+ModReduction/ModRed
+ModReduction/PseudoCompressionStrategyOptILP
+ModReduction/PseudoCompressor

@@ -31,7 +31,6 @@ namespace flopoco {
 	table_cost_function_t getGlobalCostModel();
 
 	bool setGlobalCostModel(string const & key);
-
 }
 
 #endif // TABLECOSTMODEL_HPP

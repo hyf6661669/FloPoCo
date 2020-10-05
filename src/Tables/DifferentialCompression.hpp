@@ -14,6 +14,9 @@ namespace flopoco {
 		int diffWordSize;
 		int diffIndexSize; // also originalWin
 		int originalWout;
+		mpz_class originalCost;
+		mpz_class subsamplingCost;
+		mpz_class diffCost;
 
 		/**
 		 * Find a non-destructive compression of a table as a sum of a subsampling + offset

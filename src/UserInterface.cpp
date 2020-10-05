@@ -103,8 +103,7 @@ namespace flopoco
 				return v;
 			}();
 
-	// TODO unless I'm mistaken, this vector is never used. It should.
-
+	// TODO Only used in buildAutocomplete for now, should be used more
 	const vector<option_t> UserInterface::options = []()->vector<option_t>{
 				vector<option_t> v;
 				vector<string> values;
@@ -212,7 +211,10 @@ namespace flopoco
 		string tableCostModel;
 		parseString(args, "tableCostModel", &tableCostModel, true);
 		if (tableCostModel != "") {
-			setGlobalCostModel(tableCostModel);
+			auto ret = setGlobalCostModel(tableCostModel);
+			if (!ret) {
+				throw "Invalid table cost model name";
+			}
 		}
 		//	parseBoolean(args, "", &  );
 	}

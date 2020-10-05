@@ -35,7 +35,8 @@ namespace flopoco {
 		auto maxLutWidth = target->maxLutInputs();
 		auto maxLutCost = target->lutConsumption(maxLutWidth);
 		auto remain = wIn - maxLutWidth;
-		auto finLutCost = mpz_class{maxLutCost * wOut} << remain;
+		auto finLutCost = mpz_class{maxLutCost * wOut};
+		finLutCost <<= remain;
 		return finLutCost;
 	}
 

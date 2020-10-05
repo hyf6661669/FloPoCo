@@ -73,7 +73,7 @@ namespace flopoco
 	FixFunctionByMultipartiteTable::FixFunctionByMultipartiteTable(OperatorPtr parentOp, Target *target, string functionName_, int nbTOi_, bool signedIn_, int lsbIn_, int lsbOut_):
 		Operator(parentOp, target), nbTOi(nbTOi_)
 {
-	compressTIV = target->tableCompression();
+		compressTIV = target->tableCompression();
 		srcFileName="FixFunctionByMultipartiteTable";
 
 		ostringstream name;

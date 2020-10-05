@@ -18,7 +18,8 @@ namespace flopoco {
 		vector<mpz_class> best_subsampling{values};
 		vector<mpz_class> best_diff{};
 		int best_s = 0;
-		auto best_cost = costFunction(0, 0, wOut);
+		auto original_cost = costFunction(0, 0, wOut);
+		auto best_cost = original_cost;
 		int best_diff_word_size = 0;
 		int best_shaved_out = 0;
 		for (int s = 1 ; s < wIn ; s++) { // Iterate over each possible splitting value
@@ -121,7 +122,9 @@ namespace flopoco {
 		for (auto& subsample : best_subsampling) {
 			subsample >>= best_shaved_out;
 		}
-		DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size, wIn, wOut};
+		auto bestSS_cost = costModel(wIn-best_s, wOut - best_shaved_out, target);
+		auto bestDiffCost = costModel(wIn, best_diff_word_size, target);
+		DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size, wIn, wOut, original_cost, bestSS_cost, bestDiffCost};
 				// Cet assert plante pour certaines valeurs parce que diff[0] n'existe pas (2020/09/18). Je n'ai pas débuggé plus loin
 				// exemple: ./flopoco verbose=1 FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-20 lsbOut=-24 tableCompression=1
 				// assert(difcompress.getInitialTable() == values);
@@ -160,10 +163,8 @@ namespace flopoco {
 	string DifferentialCompression::report() const
 	{
 		ostringstream t;
-		int initialCost = originalWout << diffIndexSize;
-		t << "  Initial cost is:          " << originalWout << "x2^" << diffIndexSize << "=" << initialCost << endl;
+		t << "  Initial cost is:          " << originalWout << "x2^" << diffIndexSize << "=" << originalCost << endl;
 		//t << "Initial estimated lut cost is :" << size_in_LUTs()<< endl;
-		auto subsamplingCost = subsamplingWordSize << subsamplingIndexSize;
 		t << "  Best subsampling cost is: " << subsamplingWordSize <<	"x2^" << subsamplingIndexSize << "=" << subsamplingCost<< endl;
 		//auto lutinputs = getTarget()->lutInputs()<< endl;
 		//auto lutcost = [lutinputs](int diffIndexSize, int wOut)->int {
@@ -173,12 +174,12 @@ namespace flopoco {
 
 		// auto subsamplingLUTCost = lutcost(subsamplingIndexSize, subsamplingWordSize);
 		// t << "Best subsampling LUT cost:" << subsamplingLUTCost<< endl;
-		auto diffCost = diffWordSize << diffIndexSize;
 		// auto diffLutCost = lutcost(diffIndexSize, diffWordSize);
 		t << "  Best diff cost is:        " << diffWordSize << "x2^" << diffIndexSize << "=" << diffCost<< endl;
 		// t << "Best diff LUT cost: "<< diffLutCost<< endl;
-		int compressedCost=diffCost + subsamplingCost;
-		t << "  Total compressed cost is: " << compressedCost <<   "         Saved: " << 100*((double)initialCost-compressedCost)/ ((double)initialCost) << " %";
+		auto compressedCost=diffCost + subsamplingCost;
+		mpz_class diff = originalCost - compressedCost;
+		t << "  Total compressed cost is: " << compressedCost <<   "         Saved: " << 100*diff.get_d()/ originalCost.get_d() << " %";
 		// t << "Total LUT cost: " << (diffLutCost + subsamplingLUTCost)<< endl;
 
 		// t << "Latex table line : & $" << wOut << "\\times 2^{" << diffIndexSize << "}$ & $" << (wOut << diffIndexSize) << "$ & $" <<

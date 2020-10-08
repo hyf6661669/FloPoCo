@@ -203,7 +203,8 @@ namespace flopoco {
 
         int maxBhHeight = INT_MAX;
         int minBitsToBitHeap = INT_MAX;
-        int rangeReached = 0;;
+        int minBHRange = INT_MAX;
+        int rangeReached = 0;
         vector<vector<long long>> ranges(2,vector<long long>(2));
         vector<vector<vector<long long>>> tmpBitHeap(smsb+1,vector<vector<long long> >(64,vector<long long>(2)));
 
@@ -300,8 +301,10 @@ namespace flopoco {
                 break;
             }
             // fill bits in temporary bitheap
-            if (bitsToBitHeap < minBitsToBitHeap && bhHeight <= maxBhHeight) {
+            if (bitsToBitHeap < minBitsToBitHeap && bhHeight <= maxBhHeight
+                && (combiMax - combiMin) <= minBHRange) {
                 minBitsToBitHeap = bitsToBitHeap;
+                minBHRange = combiMax - combiMin;
                 ranges[0] = {combiMin, combiMax};
                 for (int i = 0; i < rangeContrib.size(); ++i) {
                     rangeContrib[i][3] = rangeContrib[i][2];
@@ -678,7 +681,7 @@ namespace flopoco {
         return bit;
     }
 
-    int ModuloBitHeapOperator::getLeadingZero(int value) {
+    int ModuloBitHeapOperator::getLeadingZero(long long value) {
         long long oneLL = static_cast<long long>(1);
         int msz = -1;
         for (int w = 0; w < 32; ++w) {
@@ -690,13 +693,15 @@ namespace flopoco {
     }
 
     int ModuloBitHeapOperator::countOnes(long long value) {
+        long long oneLL = static_cast<long long>(1);
         int bits = 0;
-        int limit = 64;
+        int limit = 63;
         if (value < 0) {
             limit = getLeadingZero(value);
         }
-        for (int i = 0; i < limit; ++i) {
-            if ((value & (1 << i)) == (1 << i)) {
+
+        for (int i = 0; i <= limit; ++i) {
+            if ((value & (oneLL << i)) == (oneLL << i)) {
                 bits++;
             }
         }

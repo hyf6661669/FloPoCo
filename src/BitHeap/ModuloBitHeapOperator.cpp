@@ -128,21 +128,23 @@ namespace flopoco {
 
                             long long bitOrigin = bits[stage][j][k] - (oneLL << (48));
 
-                            if (bitOrigin - (oneLL << (32)) >= 0) {
-                                bitOrigin = bitOrigin - (oneLL << (32));
-                                signalName << "B_" << bitOrigin << "_" << (bhStage);
-                                REPORT(INFO,"bitheap --- " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
+                            if ((bitOrigin >> (32)) != 5) {
+                                if (bitOrigin - (oneLL << (32)) >= 0) {
+                                    bitOrigin = bitOrigin - (oneLL << (32));
+                                    signalName << "B_" << bitOrigin << "_" << (bhStage);
+                                    REPORT(INFO,"bitheap --- " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
 
                                 // for use with bits as std_logic signals
 //                                ostringstream signalNameNeg;
 //                                signalNameNeg << "B_" << bitOrigin << "_" << bhStage << "N";
 //                                vhdl << tab << declare(
 //                                        signalNameNeg.str(), 1, true) << tab << "<= \"1\" when " << signalName.str() << " = '1' else \"0\";" << endl;
-                                bitHeapTmp->subtractSignal(signalName.str(), j);
-                            } else {
-                                signalName << "B_" << bitOrigin << "_" << (bhStage);
-                                REPORT(INFO,"bitheap +++ " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
-                                bitHeapTmp->addSignal(signalName.str(), j);
+                                    bitHeapTmp->subtractSignal(signalName.str(), j);
+                                } else {
+                                    signalName << "B_" << bitOrigin << "_" << (bhStage);
+                                    REPORT(INFO,"bitheap +++ " << bitHeapTmp->getName() << " signal use: " << signalName.str() << " bit value: " << bitOrigin << " weight: " << j);
+                                    bitHeapTmp->addSignal(signalName.str(), j);
+                                }
                             }
                         }
                     }
@@ -271,6 +273,11 @@ namespace flopoco {
 
             for (int i = 0; i < combiBitHeap.size(); ++i) {
                 if ((constVec & (oneLL << (i))) != 0) {
+                    int bit = 0;
+                    while (combiBitHeap[i][bit] != -1) {
+                        bit++;
+                    }
+                    combiBitHeap[i][bit] = i + (oneLL << (48)) + 5 * (oneLL << (32));
                     bitsToBitHeap++;
                     bhHeights[i] = bhHeights[i] + 1;
                     if (bhHeight < bhHeights[i]) {
@@ -402,6 +409,12 @@ namespace flopoco {
         }
         for (int i = 0; i < combiBitHeap.size(); ++i) {
             if ((constVec & (oneLL << (i))) != 0) {
+                int bit = 0;
+                while (combiBitHeap[i][bit] != -1) {
+                    bit++;
+                }
+                combiBitHeap[i][bit] = i + (oneLL << (48)) + 5 * (oneLL << (32));
+
                 bitsToBitHeap++;
                 bhHeights[i] = bhHeights[i] + 1;
                 if (bhHeight < bhHeights[i]) {
@@ -490,6 +503,11 @@ namespace flopoco {
         }
         for (int i = 0; i < combiBitHeap.size(); ++i) {
             if ((constVec & (oneLL << (i))) != 0) {
+                int bit = 0;
+                while (combiBitHeap[i][bit] != -1) {
+                    bit++;
+                }
+                combiBitHeap[i][bit] = i + (oneLL << (48)) + 5 * (oneLL << (32));
                 bitsToBitHeap++;
                 bhHeights[i] = bhHeights[i] + 1;
                 if (bhHeight < bhHeights[i]) {
@@ -579,6 +597,11 @@ namespace flopoco {
         }
         for (int i = 0; i < combiBitHeap.size(); ++i) {
             if ((constVec & (oneLL << (i))) != 0) {
+                int bit = 0;
+                while (combiBitHeap[i][bit] != -1) {
+                    bit++;
+                }
+                combiBitHeap[i][bit] = i + (oneLL << (48)) + 5 * (oneLL << (32));
                 bitsToBitHeap++;
                 bhHeights[i] = bhHeights[i] + 1;
                 if (bhHeight < bhHeights[i]) {

@@ -3,128 +3,180 @@
 #include <iostream>
 #include <cassert>
 
+using std::pair;
+using std::make_pair;
+
 namespace flopoco {
+	using min_max_t = pair<mpz_class, mpz_class>;
+
+	auto groupSlices(vector<min_max_t> const & min_max_val)
+	{
+		auto min_max_size = min_max_val.size();
+		auto ret_size = min_max_size / 2;
+		vector<min_max_t> ret_val{ret_size};
+		mpz_class max_dist{0};
+
+		for (size_t i = 0 ; i < ret_size ; i++) {
+			auto& [min_sl1, max_sl1] = min_max_val[i<<1];
+			auto& [min_sl2, max_sl2] = min_max_val[(i<<1) + 1];
+			auto minval = min(min_sl1, min_sl2);
+			auto maxval = max(max_sl1, max_sl2);
+			if ((maxval - minval) > max_dist)
+					max_dist = maxval - minval;
+			ret_val[i] = make_pair(minval, maxval);
+		}
+		return make_pair(ret_val, max_dist);
+	}
+
+	auto groupSlices(vector<mpz_class> const & values)
+	{
+		auto value_size = values.size();
+		vector<min_max_t> ret{value_size};
+		for (size_t i = 0 ; i < value_size ; ++i) {
+			ret[i] = std::make_pair(values[i], values[i]);
+		}
+		return make_pair(ret, mpz_class{0});
+	}
+
+	auto find_best_subconfig(vector<min_max_t> const & min_max, int const wIn, int const wOut, int const split, int const wL, mpz_class const best_cost, table_cost_function_t const cost_model, Target* const target)
+	{
+		auto wHNoOverlap = wOut - wL;
+		auto costFunction = [&](int wH)->mpz_class {
+			auto cost_diff = cost_model(wIn, wL, target);
+			auto cost_ss = cost_model(wIn - split, wH, target);
+			return cost_diff + cost_ss;
+		};
+		auto bestWH = wHNoOverlap;
+		auto estimate = costFunction(wHNoOverlap);
+		bool overlapped = false;
+		mpz_class lowbit_mask{1};
+		lowbit_mask <<= wL;
+		auto overflow_detect = lowbit_mask + 1;
+		for (auto const & [min, max] : min_max) {
+			mpz_class min_low_bits{min & lowbit_mask};
+			mpz_class delta{max - min};
+			mpz_class deltaWithLowBits{delta + min_low_bits};
+			// Assuption : increasing one size parameter, everything else constant, can only increase the cost
+			while (deltaWithLowBits >= overflow_detect) {
+				overlapped = true;
+				bestWH += 1;
+				estimate = costFunction(bestWH);
+				if(estimate >= best_cost) {
+					return make_tuple(false, overlapped, estimate, bestWH);
+				}
+				lowbit_mask >>= 1;
+				min_low_bits = min & lowbit_mask;
+				deltaWithLowBits = delta + min_low_bits;
+			}
+		}
+		return make_tuple(true, overlapped, estimate, bestWH);
+	}
+
+	auto compressHighTable(vector<min_max_t> const & min_max, int const wH, int const wL)
+	{
+		mpz_class high_bits_mask{1};
+		high_bits_mask <<= wH;
+		high_bits_mask -= 1;
+		high_bits_mask <<= wL;
+		mpz_class or_acc{0};
+		for (auto const &[min, max] : min_max) {
+			auto high_bits = min & high_bits_mask;
+			or_acc |= high_bits;
+		}
+		or_acc >>= wL;
+		int zero_counter;
+		for (zero_counter = 0 ; (zero_counter < wH) and ((or_acc & 1) != 0); zero_counter++) {
+			or_acc >>= 1;
+		}
+		return wH - zero_counter;
+	}
+
+	auto buildCompressedTable(vector<mpz_class> const & values, int const wOut, int const s, int const wH, int const wL)
+	{
+		auto size = values.size();
+		auto sssize = size >> s;
+		auto shift = 1 << s;
+		auto shift_h = wOut - wH;
+		vector<mpz_class> diff_table{size};
+		vector<mpz_class> subsamples_table{sssize};
+
+		mpz_class H_mask{1}, L_mask{1};
+		H_mask <<= wH;
+		H_mask -= 1;
+		H_mask <<= shift_h;
+
+		L_mask <<= wL;
+		L_mask -= 1;
+
+		for(size_t slice_idx = 0 ; slice_idx < sssize ; ++slice_idx) {
+			size_t val_idx = slice_idx << s;
+			mpz_class min{values[val_idx]};
+			for (size_t cur_idx = val_idx + 1 ; cur_idx < val_idx + shift ; cur_idx++) {
+				if (values[cur_idx] < min) {
+					min = values[cur_idx];
+				}
+			}
+			mpz_class low_bits = min & L_mask;
+			mpz_class high_bits = min & H_mask;
+			subsamples_table[slice_idx] = high_bits >> shift_h;
+			mpz_class to_sub = min - low_bits;
+			for (size_t cur_idx = val_idx + 1 ; cur_idx < val_idx + shift ; cur_idx++) {
+				diff_table[cur_idx] = values[cur_idx] - to_sub;
+			}
+		}
+		return make_pair(subsamples_table, diff_table);
+	}
+
 
 	DifferentialCompression DifferentialCompression::find_differential_compression(vector<mpz_class> const & values, int wIn, int wOut, Target * target, table_cost_function_t costModel)
 	{
+		auto [min_max, max_dist] = groupSlices(values);
 		auto costFunction = [&](int wB, int wH, int wL)->mpz_class{
-
 			auto costSubSampleSize = costModel(wB, wH, target);
 			auto costDiffTable = costModel(wIn, wL, target);
 			auto ret = costDiffTable + costSubSampleSize;
 			return ret;
 		};
-		vector<mpz_class> min_max{values};
-		vector<mpz_class> best_subsampling{values};
-		vector<mpz_class> best_diff{};
-		int best_s = 0;
 		auto original_cost = costFunction(0, 0, wOut);
 		auto best_cost = original_cost;
-		int best_diff_word_size = 0;
-		int best_shaved_out = 0;
-		for (int s = 1 ; s < wIn ; s++) { // Iterate over each possible splitting value
-			auto shift = 1 << s;
-			mpz_class max_distance{0};
-			int64_t min_max_dist = ((shift >> 1) - 1);
-			//TODO : Find better lattice storage scheme to optimise cache access
-			// Compute min, max and diff of current diff table slice using resuts of previous subslice
-			for (auto min_op1_iter = begin(min_max) ; min_op1_iter < end(min_max) ; min_op1_iter += shift) {
-				auto max_op1_iter = min_op1_iter + min_max_dist;
-				auto min_op2_iter = max_op1_iter + 1;
-				auto max_op2_iter = min_op2_iter + min_max_dist;
-				if (*min_op1_iter > *min_op2_iter) {
-					std::swap(*min_op1_iter, *min_op2_iter);
-				}
-				if (*max_op2_iter < *max_op1_iter) {
-					std::swap(*max_op1_iter, *max_op2_iter);
-				}
-				mpz_class dist{*max_op2_iter - *min_op1_iter};
-				if (dist > max_distance) {
-					max_distance = dist;
-				}
-			}
+		int best_split = 0;
+		int best_wh = wOut;
+		int best_wl = 0;
 
-			/*
-			 * In the best case, without overflow when adding subsamples low bits, we need enough storage to store the difference between
-			 * the maximal and minimal element of the "slice" in which this distance is maximal
-			 */
-			int64_t min_width = intlog2(mpz_class{max_distance});
-			int64_t shaved_out = min_width;
-
-			auto lowScore = costFunction(wIn - s, wOut - shaved_out, min_width);
-			if (lowScore >= best_cost) {
-				diff_compression_bound:
-					continue;
-			}
-			vector<mpz_class> subsamples(1 << (wIn - s));
-			vector<mpz_class> diff(1 << wIn);
-			mpz_class overflow_mask {1};
-			overflow_mask <<= min_width;
-			mpz_class low_bit_mask{overflow_mask - 1};
-			bool had_to_overflow = false;
-			diff_compression_compute:
-			for (int64_t i = 0 ; i < values.size() ; i += shift) { //for each slice
-				bool sub_slice_ok = false;
-				//Get the minimal value of the slice as we want only positive offset
-				mpz_class subsample_min{min_max[i]};
-				//Get the maximal value of the slice
-				mpz_class subsample_max{min_max[i+shift - 1]};
-				while(!sub_slice_ok) {
-					mpz_class subsample_low_bits {subsample_min & low_bit_mask};
-					mpz_class cur_subsample_val {subsample_min - subsample_low_bits};
-					subsamples[i >> s] = cur_subsample_val;
-					mpz_class max_diff = subsample_max - cur_subsample_val;
-					if (max_diff >= overflow_mask) {
-						sub_slice_ok = false;
-						auto score_shaving_one_less = costFunction(wIn - s, wOut - shaved_out + 1, min_width);
-						auto score_increasing_diff_output_size = costFunction(wIn - s, wOut - min_width, min_width + 1);
-						// With some cost model it would be better to continue to grow the size of wOut hence the had_to_overflow
-						if (score_shaving_one_less < score_increasing_diff_output_size or had_to_overflow) {
-							shaved_out -= 1;
-							lowScore = score_shaving_one_less;
-							if (lowScore >= best_cost) {
-								goto diff_compression_bound;
-							}
-							low_bit_mask >>= 1;
-							continue;
-						} else {
-							min_width += 1;
-							shaved_out = min_width;
-							lowScore = score_increasing_diff_output_size;
-							if (lowScore >= best_cost) {
-								goto diff_compression_bound;
-							}
-							overflow_mask = 1;
-							overflow_mask <<= min_width;
-							low_bit_mask = overflow_mask - 1;
-							had_to_overflow = true;
-							goto diff_compression_compute; //Jump should be done at most one time
-						}
+		for (int s = 1 ; s < wIn ; s++) {
+			std::tie(min_max, max_dist) = groupSlices(min_max);
+			auto minWL = intlog2(max_dist);
+			for (auto wL = minWL ; minWL < wIn - 1 ; ++minWL) {
+				auto [interestingSol, overlapped, costBestSol, bestLocalWH] = find_best_subconfig(
+						min_max,
+						wIn,
+						wOut,
+						s,
+						wL,
+						best_cost,
+						costModel,
+						target);
+				if (interestingSol) {
+					if (!overlapped) {
+						bestLocalWH = compressHighTable(min_max, bestLocalWH, wL);
+						costBestSol = costFunction(wIn - s, bestLocalWH, wL);
 					}
-					sub_slice_ok = true;
-					for (int64_t j = i; j < i+shift ; j++) {
-						diff[j] = values[j] - cur_subsample_val;
-						assert(diff[j] >= 0);
-						assert(values[j] <= subsample_max);
-					} //end of diff bank computing loop
-				} // End of shaving adjustment loop
-			}// End of slices iteration
-			auto cur_cost = costFunction(wIn-s, wOut - shaved_out, min_width);
-			if (cur_cost < best_cost) {
-				best_s = s;
-				best_cost = cur_cost;
-				best_diff_word_size = min_width;
-				best_shaved_out = shaved_out;
-				swap(best_subsampling, subsamples);
-				swap(best_diff, diff);
+					if (costBestSol < best_cost) {
+						best_split = s;
+						best_wh = bestLocalWH;
+						best_wl = wL;
+						best_cost = costBestSol;
+					}
+				}
 			}
-		} // End of iteration to find best s
-		for (auto& subsample : best_subsampling) {
-			subsample >>= best_shaved_out;
 		}
-		auto bestSS_cost = costModel(wIn-best_s, wOut - best_shaved_out, target);
-		auto bestDiffCost = costModel(wIn, best_diff_word_size, target);
-		DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_s, wOut - best_shaved_out, best_diff_word_size, wIn, wOut, original_cost, bestSS_cost, bestDiffCost};
+
+		auto [best_subsampling, best_diff] = buildCompressedTable(values, wOut, best_split, best_wh, best_wl);
+
+
+		auto bestSS_cost = costModel(wIn-best_split, best_wh, target);
+		auto bestDiffCost = costModel(wIn, best_wl, target);
+		DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_split, best_wh, best_wl, wIn, wOut, original_cost, bestSS_cost, bestDiffCost};
 				// Cet assert plante pour certaines valeurs parce que diff[0] n'existe pas (2020/09/18). Je n'ai pas débuggé plus loin
 				// exemple: ./flopoco verbose=1 FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-20 lsbOut=-24 tableCompression=1
 				// assert(difcompress.getInitialTable() == values);

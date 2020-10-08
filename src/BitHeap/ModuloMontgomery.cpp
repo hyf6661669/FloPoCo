@@ -78,8 +78,11 @@ namespace flopoco {
                  << ") + SHIFT_LEFT(TO_UNSIGNED(M," << modSize+i << ")," << i << ")) when T_" << i << of(i) << " = '1' else T_" << i << ";" << endl;
         }
         vhdl << tab << declare(
-                "TRes", modSize+1, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T_" << modSize << ")," << modSize << "))" << range(modSize, 0) << ";" << endl;
-        vhdl << tab << "S <= TRes" << range(modSize-1, 0) << " when UNSIGNED(TRes) < M else STD_LOGIC_VECTOR(UNSIGNED(TRes) - M)" << range(modSize-1, 0) << ";" << endl;
+                "TResTemp", modSize*2*R, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T_" << modSize << ")," << modSize << "))"  << ";" << endl;
+        vhdl << tab << declare(
+                "TRes", modSize+1, false) << tab << " <= TResTemp" << range(modSize, 0) << ";" << endl;
+        vhdl << tab << declare("TResMM", modSize+1, false) << "<= STD_LOGIC_VECTOR(UNSIGNED(TRes) - M)" << ";" << endl;
+        vhdl << tab << "S <= TRes" << range(modSize-1, 0) << " when UNSIGNED(TRes) < M else TResMM" << range(modSize-1, 0) << ";" << endl;
         addFullComment("End of vhdl generation");
     }
 

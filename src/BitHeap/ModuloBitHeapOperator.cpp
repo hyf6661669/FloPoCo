@@ -174,9 +174,13 @@ namespace flopoco {
 //        vhdl << tab << declare(
 //                "T", bitHeapReqBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeapTmp->getSumName(bitHeapReqBits-1,0) << ") + M);" << endl;
 
+        vhdl << tab << declare(
+                "STemp", bitHeapUsedBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeapTmp->getSumName(bitHeapUsedBits-1,0) << ") + M);" << endl;
+
+
         vhdl << tab << "S <= " << bitHeapTmp->getSumName(outPutSize-1,0) << " when ";
         vhdl << bitHeapTmp->getSumName() << of(bitHeapUsedBits-1) << " = '0'";
-        vhdl << tab << "else STD_LOGIC_VECTOR(SIGNED(" << bitHeapTmp->getSumName(bitHeapUsedBits-1,0) << ") + M)" << range(outPutSize-1,0) << ";" << endl;
+        vhdl << tab << "else STemp" << range(outPutSize-1,0) << ";" << endl;
         addFullComment("End of vhdl generation");
         delete bitHeapTmp;
     }

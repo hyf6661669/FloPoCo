@@ -77,7 +77,7 @@ namespace flopoco {
 					if (max_diff >= overflow_mask) {
 						sub_slice_ok = false;
 						auto score_shaving_one_less = costFunction(wIn - s, wOut - shaved_out + 1, min_width);
-						auto score_increasing_diff_output_size = costFunction(wIn - s, wOut - shaved_out, min_width + 1);
+						auto score_increasing_diff_output_size = costFunction(wIn - s, wOut - min_width, min_width + 1);
 						// With some cost model it would be better to continue to grow the size of wOut hence the had_to_overflow
 						if (score_shaving_one_less < score_increasing_diff_output_size or had_to_overflow) {
 							shaved_out -= 1;

@@ -137,7 +137,7 @@ namespace flopoco {
 			auto ret = costDiffTable + costSubSampleSize;
 			return ret;
 		};
-		auto original_cost = costFunction(0, 0, wOut);
+		auto original_cost = costModel(wIn, wOut, target);
 		auto best_cost = original_cost;
 		int best_split = 0;
 		int best_wh = wOut;

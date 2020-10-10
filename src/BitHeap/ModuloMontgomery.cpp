@@ -40,7 +40,9 @@ namespace flopoco {
             // calculating residue to use montgomery
             // conversion to signed
             vhdl << tab << declareFixPoint(
-                    "XSg", false, modSize-1, 0) << tab << "<= UNSIGNED(STD_LOGIC_VECTOR(UNSIGNED(X) mod " << modulo << ")" << range(modSize-1, 0) << ");" << endl;
+                    "XSgTemp", false, wIn-1, 0) << tab << "<= UNSIGNED(STD_LOGIC_VECTOR(UNSIGNED(X) mod " << modulo << ")" << ");" << endl;
+            vhdl << tab << declareFixPoint(
+                    "XSg", false, modSize-1, 0) << tab << "<= XSgTemp" << range(modSize-1, 0) << ";" << endl;
             vhdl << tab << declareFixPoint(
                     "RmodSg", false, modSize-1, 0) << tab << "<= UNSIGNED(TO_SIGNED(Rmod," << modSize << "));" << endl;
             // calculate and convert back

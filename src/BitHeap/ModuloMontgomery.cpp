@@ -61,7 +61,7 @@ namespace flopoco {
                     "T_0", modSize*2*R, false) << tab << "<= (" << modSize*2*R-1 << " downto " << modSize << " => '0') & XRemain;" << endl;
         } else if (method == "redOnly") {
             if (wIn > modSize*2) {
-                REPORT(INFO, "wIn too big for reduction only test");
+                THROWERROR("Parameter wIn is too big for reduction only test. Can only be twice the number of bits of the modulo.");
             }
 
             vhdl << tab << declare(

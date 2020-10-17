@@ -66,6 +66,53 @@ namespace flopoco {
 
             vhdl << tab << declare(
                     "T_0", modSize*2*R, false) << tab << "<= (" << modSize*2*R-1 << " downto " << wIn << " => '0') & X;" << endl;
+        } else if (method == "multi") {
+            int conversionMultiplicand = (1 << (2*modSize)) % modulo;
+            addInput ("B" , wIn, true);
+            addConstant("conMult", "positive", conversionMultiplicand);
+            // montgomery multiplication
+            vhdl << tab << declare(
+                    "R_0", modSize*2, false) << tab << "<= (" << modSize*2-1 << " downto 0 => '0');" << endl;
+            for (int i = 0; i < modSize; ++i) {
+                ostringstream rTmp1Name;
+                int index = i+1;
+                rTmp1Name << "Rtmp1_" << i;
+                vhdl << tab << declare(
+                        rTmp1Name.str(), modSize*2, false) << tab << "<= R_" << i << " when X" << of(i) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(R_" << i << ") + UNSIGNED(B));" << endl;
+                ostringstream rTmp2Name;
+                rTmp2Name << "Rtmp2_" << i;
+                vhdl << tab << declare(
+                        rTmp2Name.str(), modSize*2, false) << tab << "<= Rtmp1_" << i << " when Rtmp1_" << i << of(i) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(Rtmp1_" << i << ") + M);" << endl;
+                ostringstream rTmp3Name;
+                rTmp3Name << "R_" << index;
+                vhdl << tab << declare(
+                        rTmp3Name.str(), modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(Rtmp2_" << i << "),1));" << endl;
+            }
+            vhdl << tab << declare(
+                    "MultRes", modSize, false) << tab << "<= R_" << modSize << range(modSize-1,0) << " when UNSIGNED(R_" << modSize << ") < M";
+            vhdl << " else STD_LOGIC_VECTOR(UNSIGNED(R_" << modSize << range(modSize-1,0) << ") - M);" << endl;
+            // montgomery multiplication to convert back from montgomery form
+            vhdl << tab << declare(
+                    "R2_0", modSize*2, false) << tab << "<= (" << modSize*2-1 << " downto 0 => '0');" << endl;
+            for (int i = 0; i < modSize; ++i) {
+                ostringstream rTmp1Name;
+                int index = i+1;
+                rTmp1Name << "R2tmp1_" << i;
+                vhdl << tab << declare(
+                        rTmp1Name.str(), modSize*2, false) << tab << "<= R2_" << i << " when MultRes" << of(i) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(R2_" << i << ") + conMult);" << endl;
+                ostringstream rTmp2Name;
+                rTmp2Name << "R2tmp2_" << i;
+                vhdl << tab << declare(
+                        rTmp2Name.str(), modSize*2, false) << tab << "<= R2tmp1_" << i << " when R2tmp1_" << i << of(i) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(R2tmp1_" << i << ") + M);" << endl;
+                ostringstream rTmp3Name;
+                rTmp3Name << "R2_" << index;
+                vhdl << tab << declare(
+                        rTmp3Name.str(), modSize*2, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(R2tmp2_" << i << "),1));" << endl;
+            }
+            vhdl << tab << "S <= R2_" << modSize << range(modSize-1,0) << " when UNSIGNED(R2_" << modSize << ") < M";
+            vhdl << tab << "else STD_LOGIC_VECTOR(UNSIGNED(R2_" << modSize << range(modSize-1,0) << ") - M);" << endl;
+            addFullComment("End of vhdl generation");
+            return;
         } else {
             REPORT(INFO, "invalid method name " << method);
         }
@@ -128,35 +175,53 @@ namespace flopoco {
         if (wIn >= 10) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(634));
+            if (method == "multi") {
+                tc->addInput("B", mpz_class(1));
+            }
             emulate(tc);
             tcl->add(tc);
         }
         if (wIn >= 8) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(222));
+            if (method == "multi") {
+                tc->addInput("B", mpz_class(1));
+            }
             emulate(tc);
             tcl->add(tc);
         }
         if (wIn >= 7) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(120));
+            if (method == "multi") {
+                tc->addInput("B", mpz_class(1));
+            }
             emulate(tc);
             tcl->add(tc);
         }
         if (wIn >= 6) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(33));
+            if (method == "multi") {
+                tc->addInput("B", mpz_class(1));
+            }
             emulate(tc);
             tcl->add(tc);
 
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(40));
+            if (method == "multi") {
+                tc->addInput("B", mpz_class(1));
+            }
             emulate(tc);
             tcl->add(tc);
         }
         if (wIn >= 4) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(15));
+            if (method == "multi") {
+                tc->addInput("B", mpz_class(1));
+            }
             emulate(tc);
             tcl->add(tc);
         }
@@ -168,12 +233,13 @@ namespace flopoco {
         TestList testStateList;
         vector<pair<string,string>> paramList;
         string methods[] = {"ex","modOp","redOnly"};
+        //string methods[] = {"multi"};
 
         if(index==-1) 	{ // The unit tests
             for (int i = 0; i < 3; ++i) {
                 for(int m=3; m<20; m+=2) {
                     int modSize = 0;
-                    if (methods[i]=="redOnly") {
+                    if (methods[i]=="redOnly" || methods[i]=="multi") {
                         for (int w = 0; w < 31; ++w) {
                             if ((m & (1 << (w))) != 0) {
                                 modSize = w;
@@ -181,15 +247,25 @@ namespace flopoco {
                         }
                         modSize++;
                     }
-                    for (int wIn=6; wIn<=12; wIn++) {
-                        if (!(methods[i]=="redOnly" && wIn > modSize * 2)) {
-                            paramList.push_back(make_pair("wIn",to_string(wIn)));
-                            paramList.push_back(make_pair("modulo",to_string(m)));
-                            paramList.push_back(make_pair("method", methods[i]));
-                            paramList.push_back(make_pair("TestBench n=",to_string(100)));
-                            testStateList.push_back(paramList);
+                    if (methods[i]=="multi") {
+                        paramList.push_back(make_pair("wIn",to_string(modSize)));
+                        paramList.push_back(make_pair("modulo",to_string(m)));
+                        paramList.push_back(make_pair("method", methods[i]));
+                        paramList.push_back(make_pair("TestBench n=",to_string(100)));
+                        testStateList.push_back(paramList);
 
-                            paramList.clear();
+                        paramList.clear();
+                    } else {
+                        for (int wIn=6; wIn<=12; wIn++) {
+                            if (!(methods[i]=="redOnly" && wIn > modSize * 2)) {
+                                paramList.push_back(make_pair("wIn",to_string(wIn)));
+                                paramList.push_back(make_pair("modulo",to_string(m)));
+                                paramList.push_back(make_pair("method", methods[i]));
+                                paramList.push_back(make_pair("TestBench n=",to_string(100)));
+                                testStateList.push_back(paramList);
+
+                                paramList.clear();
+                            }
                         }
                     }
                 }

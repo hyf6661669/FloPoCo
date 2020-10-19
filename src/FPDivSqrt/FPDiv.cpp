@@ -333,10 +333,6 @@ namespace flopoco{
 					 << " <= (\"00\" & fY) + (\"0\" & fY & \"0\");" << endl; // TODO an IntAdder here
       }
 
-			ostringstream wInit;
-			wInit << "w"<<nDigit-1;
-			vhdl << tab << declare(wInit.str(), wF+3) <<" <=  \"00\" & fX;" << endl;
-
 			vector<mpz_class> tableContent;
 			Table* selfunctiontable;
 			
@@ -348,14 +344,14 @@ namespace flopoco{
 
 			for(i=nDigit-1; i>=1; i--) {
 
-				string qi =join( "q", i);						//actual quotient digit, LUT's output
-				ostringstream wi, wim1, seli, qiTimesD, wipad, wim1full;
-				wi << "w" << i;						//actual partial remainder
-				wim1 << "w" << i-1;					//partial remainder for the next iteration, = left shifted wim1full
-				seli << "sel" << i;					//constructed as the wi's first 4 digits and D's first, LUT's input
-				qiTimesD << "q" << i << "D";		//qi*D
-				wipad << "w" << i << "pad";			//1-left-shifted wi
-				wim1full << "w" << i-1 << "full";	//partial remainder after this iteration, = wi+qi*D
+				string qi =join( "q", i);						//current quotient digit, LUT's output
+				string wi = join("w", i);						// current partial remainder
+				string wifull =join("wfull", i);						// current partial remainder
+				string wim1 = join("w", i-1);					//partial remainder for the next iteration, = left shifted wim1full
+				string seli = join("sel", i);					//constructed as the wi's first 4 digits and D's first, LUT's input
+				string qiTimesD = join("q", i)+"D";		//qi*D
+				string wipad = join("w", i)+"pad";			//1-left-shifted wi
+				string wim1full = join("wfull", i-1);	//partial remainder after this iteration, = wi+qi*D
 				string tInstance = "SelFunctionTable" + to_string(i);
 
 				/*
@@ -372,21 +368,36 @@ namespace flopoco{
 						wi-1full = wi-qi*D
 					*	left shifting wi-1full to obtain wi-1, next partial remainder to work on
 				*/
+				if(i==nDigit-1){
+					if(alpha==2) {
+						vhdl << tab << declare(wipad, wF+4) << " <=  \"000\" & fX;" << endl;
+					} 
+					else { // alpha=3
+						vhdl << tab << declare(wipad, wF+4) << " <=  \"00\" & fX & \"0\";" << endl;
+					}
+				}
+				else {
+					//					
+					vhdl << tab << declare(wipad,wF+4) << " <= " << wifull<<range(wF+1,0)<<" & \"00\"; -- multiplication by the radix" << endl;
+				}
+				
+				vhdl << tab << declare(wi,wF+3) << " <= " << wipad<<range(wF+3,1)<<";" << endl;
+				
 				if(alpha==3)
-					vhdl << tab << declare(seli.str(),5) << " <= " << wi.str() << range( wF+2, wF-1) << " & fY" << of(wF-1)  << ";" << endl;
+					vhdl << tab << declare(seli,5) << " <= " << wi << range( wF+2, wF-1) << " & fY" << of(wF-1)  << ";" << endl;
 				else // alpha==2
-					vhdl << tab << declare(seli.str(),9) << " <= " << wi.str() << range( wF+2, wF-3) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
-					//vhdl << tab << declare(seli.str(),10) << " <= " << wi.str() << range( wF+2, wF-4) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
+					vhdl << tab << declare(seli,9) << " <= " << wi << range( wF+2, wF-3) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
+					//vhdl << tab << declare(seli,10) << " <= " << wi << range( wF+2, wF-4) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
 					
-				newSharedInstance(selfunctiontable , tInstance, "X=>"+seli.str(), "Y=>"+ qi);
+				newSharedInstance(selfunctiontable , tInstance, "X=>"+seli, "Y=>"+ qi);
 				vhdl << endl;
 
 				if(alpha==3) {
-					// Two options for radix 4. More experiments are needed, the best is probably target-dependent 
+					// Two options for here. More experiments are needed, the best is probably target-dependent 
 #if 1  // The following leads to higher frequency and higher resource usage: 
 					// For (8,23) on Virtex6 with ISE this gives 466Mhz, 1083 regs+ 1029 LUTs 
 					vhdl << tab << "with " << qi << " select" << endl;
-					vhdl << tab << tab << declare(getTarget()->fanoutDelay(wF+4) + getTarget()->adderDelay(wF+4), qiTimesD.str(),wF+4)
+					vhdl << tab << tab << declare(getTarget()->fanoutDelay(wF+4) + getTarget()->adderDelay(wF+4), qiTimesD,wF+4)
 							 << " <= "<< endl 
 							 << tab << tab << tab << "\"000\" & fY						when \"001\" | \"111\"," << endl
 							 << tab << tab << tab << "\"00\" & fY & \"0\"				when \"010\" | \"110\"," << endl
@@ -406,38 +417,38 @@ namespace flopoco{
 							 << tab << tab << tab << "\"00\" & fY & \"0\"       when \"010\" | \"110\"| \"011\" | \"101\"," << endl
 							 << tab << tab << tab << "(" << wF+3 << " downto 0 => '0')  when others;" << endl;
 					
-					vhdl << tab << tab << declare(getTarget()->adderDelay(wF+4), qiTimesD.str(),wF+4)
+					vhdl << tab << tab << declare(getTarget()->adderDelay(wF+4), qiTimesD,wF+4)
 							 << " <= " << join("addendA",i) << " + " << join("addendB",i) << ";"<< endl << endl;
 #endif				
 
-					vhdl << tab << declare(wipad.str(), wF+4) << " <= " << wi.str() << " & \"0\";" << endl;
 					vhdl << tab << "with " << qi << "(2) select" << endl;
-					vhdl << tab << declare(getTarget()->adderDelay(wF+4), wim1full.str(), wF+4)
-							 << "<= " << wipad.str() << " - " << qiTimesD.str() << " when '0'," << endl
-							 << tab << "      " << wipad.str() << " + " << qiTimesD.str() << " when others;" << endl << endl;
+					vhdl << tab << declare(getTarget()->adderDelay(wF+4), wim1full, wF+4)
+							 << "<= " << wipad << " - " << qiTimesD << " when '0'," << endl
+							 << tab << "      " << wipad << " + " << qiTimesD << " when others;" << endl << endl;
 
-					vhdl << tab << declare(wim1.str(),wF+3) << " <= " << wim1full.str()<<range(wF+1,0)<<" & \"0\";" << endl;
 				} // end if alpha=3
+
+				
 				else { // alpha=2
 					vhdl << tab << "with " << qi << " select" << endl;
 					// no delay for qiTimesD, it should be merged in the following addition
-					vhdl << tab << tab << declare(qiTimesD.str(),wF+4) << " <= "<< endl 
+					vhdl << tab << tab << declare(qiTimesD,wF+4) << " <= "<< endl 
 							 << tab << tab << tab << "\"000\" & fY						 when \"001\" | \"111\"," << endl
 							 << tab << tab << tab << "\"00\" & fY & \"0\"			 when \"010\" | \"110\"," << endl
 							 << tab << tab << tab << "(" << wF+3 << " downto 0 => '0')	 when others;" << endl << endl;
 					
-					vhdl << tab << declare(wipad.str(), wF+4) << " <= " << wi.str() << " & \"0\";" << endl;
+					//				vhdl << tab << declare(wipad, wF+4) << " <= " << wi << " & \"0\";" << endl;
 
 					vhdl << tab << "with " << qi << "(2) select" << endl
-							 << tab << declare(getTarget()->adderDelay(wF+4), wim1full.str(), wF+4)
-							 << "<= " << wipad.str() << " - " << qiTimesD.str() << " when '0'," << endl
-							 << tab << "      " << wipad.str() << " + " << qiTimesD.str() << " when others;" << endl << endl;
+							 << tab << declare(getTarget()->adderDelay(wF+4), wim1full, wF+4)
+							 << "<= " << wipad << " - " << qiTimesD << " when '0'," << endl
+							 << tab << "      " << wipad << " + " << qiTimesD << " when others;" << endl << endl;
 
-					vhdl << tab << declare(wim1.str(),wF+3) << " <= " << wim1full.str()<<range(wF+1,0)<<" & \"0\";" << endl;
 
 				}
 			} // end loop
 
+			vhdl << tab << declare("w0",wF+3) << " <= wfull0" <<range(wF+1,0)<<" & \"0\";" << endl;
 			vhdl << tab << declare(getTarget()->eqConstComparatorDelay(wF+3), "q0",3)
 					 << " <= \"000\" when  w0 = (" << wF+2 << " downto 0 => '0')" << endl;
 			vhdl << tab << "             else w0(" << wF+2 << ") & \"10\";" << endl;
@@ -467,28 +478,36 @@ namespace flopoco{
 
 			// TODO an IntAdder here
 			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "Q", 2*nDigit) << " <= qP - qM;" << endl;
+			if(alpha==3) {
+				vhdl << tab << declare("fR", wF+4) << " <= ";
+				if (1 == (wF & 1) ) // odd wF
+					vhdl << "Q(" << 2*nDigit-1 << " downto 1);  -- odd wF" << endl;
+				else
+					vhdl << "Q(" << 2*nDigit-1 << " downto 3)  & (Q(2) or Q(1));  -- even wF, fixing the round bit" << endl;
+			}
+			else { // alpha=2  
+				vhdl << tab << declare("fR", wF+4) << " <= ";
+				if (1 == (wF & 1) ) // odd wF
+					vhdl << "Q(" << 2*nDigit-2 << " downto 0);  -- odd wF" << endl;
+				else
+					vhdl << "Q(" << 2*nDigit-2 << " downto 2)  & (Q(1) or Q(0));  -- even wF, fixing the round bit" << endl;
+				}
 
 
-			vhdl << tab << declare("fR", wF+4) << " <= ";
-			if (1 == (wF & 1) ) // odd wF
-				vhdl << "Q(" << 2*nDigit-1 << " downto 1);  -- odd wF" << endl;
-			else
-				vhdl << "Q(" << 2*nDigit-1 << " downto 3)  & (Q(2) or Q(1));  -- even wF, fixing the round bit" << endl;
 
-#if 1 // Should be pushed to common code but sizes are a mess
+
+			// normalization should be pushed to common code but sizes are a mess
 			vhdl << tab << "-- normalisation" << endl;
 			vhdl << tab << "with fR(" << wF+3 << ") select" << endl;
-
+			
 			vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRn1", wF+2) << " <= fR(" << wF+2 << " downto 2) & (fR(1) or fR(0)) when '1'," << endl;
 			vhdl << tab << tab << "        fR(" << wF+1 << " downto 0)                    when others;" << endl;
-
+			
 			vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)); -- fRn1(0) is the sticky bit" << endl;
 
 			vhdl << tab << declare(getTarget()->adderDelay(wE+2), "expR1", wE+2) << " <= expR0"
-				  << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & fR(" << wF+3 << ")); -- add back bias" << endl;
-#endif
-
-
+						 << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & fR(" << wF+3 << ")); -- add back bias" << endl;
+			
 		}
 
 

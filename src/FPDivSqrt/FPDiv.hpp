@@ -77,6 +77,10 @@ namespace flopoco{
 		int wE;
 		/** The width of the fraction for the input X */
 		int wF;
+		/** the radix */
+		int radix;
+		/** the digit set parameter: digits will be in {-alpha... alpha} */
+		int alpha;
 		/** The number of iterations */
 		int nDigit;
 

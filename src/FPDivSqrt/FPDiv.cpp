@@ -96,7 +96,7 @@ namespace flopoco{
 	
 
 	
-	FPDiv::FPDiv(OperatorPtr parentOp, Target* target, int wE, int wF, int radix) :
+	FPDiv::FPDiv(OperatorPtr parentOp, Target* target, int wE, int wF, int srt) :
 		Operator(parentOp, target), wE(wE), wF(wF) {
 
 		int i;
@@ -107,16 +107,21 @@ namespace flopoco{
 		name<<"FPDiv_"<<wE<<"_"<<wF;
 		setNameWithFreqAndUID(name.str());
 
-		if(radix !=0  && radix!=4 && radix !=8) {
-			THROWERROR("Got radix = " << radix << ". Only possible choices for radix are 0, 4 or 8" );
+		if(srt!=42 && srt!=43 && srt!=87){
+		THROWERROR("Invalid value for srt: " << srt  );
 		}
-		
-		if(radix==0){ // 0 means "let FloPoCo choose"
-			if( (getTarget()->lutInputs() <= 4) || (!getTarget()->isPipelined()))
-				radix=4;
-			else
-				radix=8;
-			REPORT(INFO, "Using radix " << radix << " SRT algorithm");
+
+		if(srt==42) {
+			radix=4;
+			alpha=2;			 
+		}
+		if(srt==43) {
+			radix=4;
+			alpha=3;			 
+		}
+		if(srt==87) {
+			radix=8;
+			alpha=7;			 
 		}
 
 
@@ -142,11 +147,11 @@ namespace flopoco{
 				 << tab << tab << tab << "\"10\"	 when \"0100\" | \"1000\" | \"1001\", -- overflow" <<endl
 				 << tab << tab << tab << "\"11\"	 when others;										-- NaN" <<endl;
 
-		
+		int extraBit = 0;
+	
 		/*****************************RADIX 8 SRT **********************************************/
-		if(radix==8)
+		if(srt==87)
 		{
-			int extraBit = 0;
 			extraBit+=2; //Here we'll prescale by 5/4 => 2 right extra bits
 			extraBit+=1; //The sticky bit
 			extraBit+=1; //The result will be in [1/2, 2[ => 1 more bit (2^0)
@@ -300,9 +305,26 @@ namespace flopoco{
 			/*****************************RADIX 4 SRT **********************************************/
 		//TODO : the old version is using 5-input's LUTs, try to fit in 4-input's LUTs (same as above : select qA and qB and make a 2-levels addition)
 		{
-			int alpha=3; // can be 3 or 2.
 			// -------- Parameter set up -----------------
-			nDigit = (wF+6) >> 1;
+			int nbBitsD, nbBitsW, nbSelBits;
+			int guardBitsW;
+			if(alpha==3) {
+				nbBitsD=1;
+				nbBitsW=4;
+				extraBit=6; // TODO justify
+				guardBitsW=4; // TODO justify
+			}
+			else if(alpha==2){
+				nbBitsD=3;
+				nbBitsW=6;
+				extraBit=6; // TODO justify
+				guardBitsW=4; // TODO justify
+			}
+			else THROWERROR("alpha="<< alpha << " is not an option");
+
+			nbSelBits=nbBitsD+nbBitsW;
+
+			nDigit = (wF+extraBit) >> 1;
 
 			if(alpha==3) {
 			  vhdl << tab << " -- compute 3Y" << endl;
@@ -310,25 +332,14 @@ namespace flopoco{
 			  vhdl << tab << declare(getTarget()->adderDelay(wF+3), "fYTimes3",wF+3)
 					 << " <= (\"00\" & fY) + (\"0\" & fY & \"0\");" << endl; // TODO an IntAdder here
       }
+
 			ostringstream wInit;
 			wInit << "w"<<nDigit-1;
 			vhdl << tab << declare(wInit.str(), wF+3) <<" <=  \"00\" & fX;" << endl;
 
 			vector<mpz_class> tableContent;
 			Table* selfunctiontable;
-			int nbBitsD, nbBitsW, nbSelBits;
 			
-			if(alpha==3) {
-				nbBitsD=1;
-				nbBitsW=4;
-			}
-			else if(alpha==2){
-				nbBitsD=3;
-				nbBitsW=6;
-			}
-			else THROWERROR("alpha="<< alpha << " is not an option");
-
-			nbSelBits=nbBitsD+nbBitsW;
 			tableContent = selFunctionTable(0.5, 1.0, nbBitsD, nbBitsW, alpha, radix);
 			selfunctiontable = new Table(this, target, tableContent,"selFunction", nbSelBits, 3);
 			selfunctiontable->setShared();
@@ -866,9 +877,9 @@ namespace flopoco{
 		UserInterface::parseStrictlyPositiveInt(args, "wE", &wE);
 		int wF;
 		UserInterface::parseStrictlyPositiveInt(args, "wF", &wF);
-		int radix;
-		UserInterface::parsePositiveInt(args, "radix", &radix);
-		return new FPDiv(parentOp, target, wE, wF, radix);
+		int srt;
+		UserInterface::parsePositiveInt(args, "srt", &srt);
+		return new FPDiv(parentOp, target, wE, wF, srt);
 	}
 
 	TestList FPDiv::unitTest(int index)
@@ -882,20 +893,26 @@ namespace flopoco{
 
 			for(int wF=5; wF<53; wF+=1) // test various input widths
 			{
-				for(int radix = 4; radix <=8; radix +=4)
-				{
 					int wE = 6+(wF/10);
 					while(wE>wF)
 					{
 						wE -= 2;
 					}
-
 					paramList.push_back(make_pair("wF",to_string(wF)));
 					paramList.push_back(make_pair("wE",to_string(wE)));
-					paramList.push_back(make_pair("radix",to_string(radix)));
+					paramList.push_back(make_pair("srt","42"));
 					testStateList.push_back(paramList);
 					paramList.clear();
-				}
+					paramList.push_back(make_pair("wF",to_string(wF)));
+					paramList.push_back(make_pair("wE",to_string(wE)));
+					paramList.push_back(make_pair("srt","43"));
+					testStateList.push_back(paramList);
+					paramList.clear();
+					paramList.push_back(make_pair("wF",to_string(wF)));
+					paramList.push_back(make_pair("wE",to_string(wE)));
+					paramList.push_back(make_pair("srt","87"));
+					testStateList.push_back(paramList);
+					paramList.clear();
 			}
 		}
 		else     
@@ -913,9 +930,9 @@ namespace flopoco{
 											 "BasicFloatingPoint", // categories
 											 "http://www.cs.ucla.edu/digital_arithmetic/files/ch5.pdf",
 											 "wE(int): exponent size in bits; \
-wF(int): mantissa size in bits; \
-radix(int)=0: Can be 0, 4 or 8. Default 0 means: let FloPoCo choose between 4 and 8. In your context, the other choice may have a better area/speed trade-offs;",
-											"The algorithm used here is the division by digit recurrence (SRT). In radix 4, we use a maximally redundant digit set. In radix 8, we use split-digits in [-10,10], and a bit of prescaling.",
+wF(int): mantissa size in bits;\
+srt(int)=42: Can be 42, 43 or 87 so far. Default 42 means radix 4 with digits between -2 and 2. Other choices may have a better area/speed trade-offs",
+											"The algorithm used here is the division by digit recurrence (SRT). In radix 4, we use a maximally redundant digit set. In radix 8, we use split-digits in [-7,7], and a bit of prescaling.",
 											 FPDiv::parseArguments,
 											 FPDiv::unitTest
 
@@ -924,6 +941,8 @@ radix(int)=0: Can be 0, 4 or 8. Default 0 means: let FloPoCo choose between 4 an
 	}
 
 
+
+	
 	OperatorPtr FPDiv::NbBitsMinParseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
 		int radix, digitSet;
 		UserInterface::parseStrictlyPositiveInt(args, "radix", &radix);
@@ -933,7 +952,7 @@ radix(int)=0: Can be 0, 4 or 8. Default 0 means: let FloPoCo choose between 4 an
 	}
 
 	void FPDiv::NbBitsMinRegisterFactory(){
-		UserInterface::add("NbBitsMin", // name
+		UserInterface::add("SRTDivNbBitsMin", // name
 											 "A tool for FPDiv to compute where to truncate both partial remainder and divider.",
 											 "Miscellaneous", // categories
 											 "",

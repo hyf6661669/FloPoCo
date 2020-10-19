@@ -345,12 +345,12 @@ namespace flopoco{
 			for(i=nDigit-1; i>=1; i--) {
 
 				string qi =join( "q", i);						//current quotient digit, LUT's output
-				string wi = join("w", i);						// current partial remainder
-				string wifull =join("wNext", i);						// current partial remainder
-				string wim1 = join("w", i-1);					//partial remainder for the next iteration, = left shifted wim1full
+				string wi = join("betaw", i);						// current partial remainder
+				string wifull =join("w", i);						// current partial remainder
+				string wim1 = join("betaw", i-1);					//partial remainder for the next iteration, = left shifted wim1full
 				string seli = join("sel", i);					//constructed as the wi's first 4 digits and D's first, LUT's input
 				string qiTimesD = join("q", i)+"D";		//qi*D
-				string wim1full = join("wNext", i-1);	//partial remainder after this iteration, = wi+qi*D
+				string wim1full = join("w", i-1);	//partial remainder after this iteration, = wi+qi*D
 				string tInstance = "SelFunctionTable" + to_string(i);
 
 				/*
@@ -445,10 +445,10 @@ namespace flopoco{
 				}
 			} // end loop
 
-			vhdl << tab << declare("w0",wF+3) << " <= wNext0" <<range(wF+1,0)<<" & \"0\";" << endl;
+			vhdl << tab << declare("wfinal",wF+3) << " <= w0" <<range(wF+1,0)<<" & \"0\";" << endl;
 			vhdl << tab << declare(getTarget()->eqConstComparatorDelay(wF+3), "q0",3)
-					 << " <= \"000\" when  w0 = (" << wF+2 << " downto 0 => '0')" << endl;
-			vhdl << tab << "             else w0(" << wF+2 << ") & \"10\"; -- rounding digit, according to sign of remainder" << endl;
+					 << " <= \"000\" when  wfinal = (" << wF+2 << " downto 0 => '0')" << endl;
+			vhdl << tab << "             else wfinal(" << wF+2 << ") & \"10\"; -- rounding digit, according to sign of remainder" << endl;
 
 			for(i=nDigit-1; i>=1; i--) {
 				ostringstream qPi, qMi;

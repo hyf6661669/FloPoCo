@@ -45,18 +45,15 @@ namespace flopoco{
 		double rho = ((double)alpha)/(radix-1);
 
 		vector<mpz_class> t;
-		for (int x=0; x<(1<<wIn); x++) {
-
-			mpz_class result;
-					
-			int w = (x>>nbBitD);	 //separating w and d (together in x)
+		for (int x=0; x<(1<<wIn); x++) {					
+			int w = (x>>nbBitD);	 // splitting x into  w and d
 			int d = x - (w<<nbBitD);
 			int wneg = (w >> (nbBitW-1)) << (nbBitW-1); //getting the sign bit
-			w -= 2*wneg; //switching frhom two's complement to decimal representation, more convenient for upcoming computation
+			w -= 2*wneg; // recovering the signed value 
 					
-			int decimalResult;
-			int nbBitK = ceil(log2(alpha)+1); //Nb of bit for the entire part of w
-			double realw = w/pow(2, nbBitW-nbBitK);
+			int result;
+			int nbBitK = 1+intlog2(alpha); //Nb of bit for the entire part of w
+			double realw = ((double)w) / ((double)(1<< (nbBitW-nbBitK)));
 					
 			double hPitch = pow(2, -nbBitD)*(dMax-dMin);
 			double vPitch = pow(2, -nbBitW+nbBitK);
@@ -76,18 +73,21 @@ namespace flopoco{
 				double wMin = ((d+lCorrecter)*hPitch + dMin) * lSlope;
 
 				if((realw+vPitch <= wMax && realw >= wMin) || (k == alpha && realw >= wMin) || (k == -alpha && realw+vPitch <= wMax))		{
-					decimalResult = k;
+					result = k;
 					break;
 				}
 			}
 
+			int result2c = result;
+			if(result < 0)	
+				result2c+=(1<<nbBitK); //switch to two's complement
 
-			if(decimalResult < 0)	
-				decimalResult+=(pow(2, nbBitK)); //switch to two's complement
+			mpz_class mpzresult;
 						
-			result = mpz_class(decimalResult);
+			mpzresult = mpz_class(result2c);
 
-			t.push_back(result);
+			//cerr << " "<< result << "  " << result2c << endl;
+			t.push_back(mpzresult);
 		}
 		return t;
 	}
@@ -262,18 +262,18 @@ namespace flopoco{
 				vhdl << " & qM" << i;
 			vhdl << " & \"0\";" << endl;
 
-			vhdl << tab << declare(getTarget()->adderDelay(3*nDigit), "fR0", 3*nDigit) << " <= qP - qM;" << endl;
+			vhdl << tab << declare(getTarget()->adderDelay(3*nDigit), "Q", 3*nDigit) << " <= qP - qM;" << endl;
 
 			//The last +3 in computing nDigit is for this part
 			vhdl << tab << declare(getTarget()->fanoutDelay(wF+6) + getTarget()->lutDelay(), "fR", wF+6) << " <= ";
 			if (wF % 3 == 1) //2 extra bit
-				vhdl << "fR0(" << 3*nDigit-1 << " downto 3) & (fR0(0) or fR0(1) or fR0(2)); " << endl;
+				vhdl << "Q(" << 3*nDigit-1 << " downto 3) & (Q(0) or Q(1) or Q(2)); " << endl;
 
 			else if (wF % 3 == 2)// 1 extra bits
-				vhdl << "fR0(" << 3*nDigit-1 << " downto 2) & (fR0(0) or fR0(1)); " << endl;
+				vhdl << "Q(" << 3*nDigit-1 << " downto 2) & (Q(0) or Q(1)); " << endl;
 
 			else // 3 extra bit
-				vhdl << "fR0(" << 3*nDigit-1 << " downto 4) & (fR0(0) or fR0(1) or fR0(2) or fR0(3)); " << endl;
+				vhdl << "Q(" << 3*nDigit-1 << " downto 4) & (Q(0) or Q(1) or Q(2) or Q(3)); " << endl;
 
 #if 1 //  Should be pushed to common code but sizes are a mess
 			vhdl << tab << "-- normalisation" << endl;
@@ -302,12 +302,12 @@ namespace flopoco{
 			// -------- Parameter set up -----------------
 			nDigit = (wF+6) >> 1;
 
-			
-			vhdl << tab << " -- compute 3Y" << endl;
+			if(alpha==3) {
+			  vhdl << tab << " -- compute 3Y" << endl;
 
-			vhdl << tab << declare(getTarget()->adderDelay(wF+3), "fYTimes3",wF+3)
+			  vhdl << tab << declare(getTarget()->adderDelay(wF+3), "fYTimes3",wF+3)
 					 << " <= (\"00\" & fY) + (\"0\" & fY & \"0\");" << endl; // TODO an IntAdder here
-
+      }
 			ostringstream wInit;
 			wInit << "w"<<nDigit-1;
 			vhdl << tab << declare(wInit.str(), wF+3) <<" <=  \"00\" & fX;" << endl;
@@ -320,7 +320,7 @@ namespace flopoco{
 			}
 			else if(alpha==2){
 				tableContent = selFunctionTable(0.5, 1.0, 3, 6, 2, 4, 9, 3);
-				selfunctiontable = new Table(this, target, tableContent,"selFunctionç_3",9,3);
+				selfunctiontable = new Table(this, target, tableContent,"selFunction9_3",9,3);
 			}
 			else THROWERROR("alpha="<< alpha << " is not an option");
 
@@ -448,14 +448,14 @@ namespace flopoco{
 
 
 			// TODO an IntAdder here
-			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "fR0", 2*nDigit) << " <= qP - qM;" << endl;
+			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "Q", 2*nDigit) << " <= qP - qM;" << endl;
 
 
 			vhdl << tab << declare("fR", wF+4) << " <= ";
 			if (1 == (wF & 1) ) // odd wF
-				vhdl << "fR0(" << 2*nDigit-1 << " downto 1);  -- odd wF" << endl;
+				vhdl << "Q(" << 2*nDigit-1 << " downto 1);  -- odd wF" << endl;
 			else
-				vhdl << "fR0(" << 2*nDigit-1 << " downto 3)  & (fR0(2) or fR0(1));  -- even wF, fixing the round bit" << endl;
+				vhdl << "Q(" << 2*nDigit-1 << " downto 3)  & (Q(2) or Q(1));  -- even wF, fixing the round bit" << endl;
 
 #if 1 // Should be pushed to common code but sizes are a mess
 			vhdl << tab << "-- normalisation" << endl;

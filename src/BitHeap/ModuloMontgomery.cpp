@@ -67,9 +67,13 @@ namespace flopoco {
             vhdl << tab << declare(
                     "T_0", modSize*2*R, false) << tab << "<= (" << modSize*2*R-1 << " downto " << wIn << " => '0') & X;" << endl;
         } else if (method == "multi") {
+            if (wIn > modSize) {
+                THROWERROR("Parameter wIn is too big for montgomery multiplication. Cannot be more than the number of bits of the modulo.");
+            }
+
             int conversionMultiplicand = (1 << (2*modSize)) % modulo;
             addInput ("B" , wIn, true);
-            addConstant("conMult", "positive", conversionMultiplicand);
+            addConstant("conMult", "natural", conversionMultiplicand);
             // montgomery multiplication
             vhdl << tab << declare(
                     "R_0", modSize*2, false) << tab << "<= (" << modSize*2-1 << " downto 0 => '0');" << endl;
@@ -82,7 +86,7 @@ namespace flopoco {
                 ostringstream rTmp2Name;
                 rTmp2Name << "Rtmp2_" << i;
                 vhdl << tab << declare(
-                        rTmp2Name.str(), modSize*2, false) << tab << "<= Rtmp1_" << i << " when Rtmp1_" << i << of(i) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(Rtmp1_" << i << ") + M);" << endl;
+                        rTmp2Name.str(), modSize*2, false) << tab << "<= Rtmp1_" << i << " when Rtmp1_" << i << of(0) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(Rtmp1_" << i << ") + M);" << endl;
                 ostringstream rTmp3Name;
                 rTmp3Name << "R_" << index;
                 vhdl << tab << declare(
@@ -103,7 +107,7 @@ namespace flopoco {
                 ostringstream rTmp2Name;
                 rTmp2Name << "R2tmp2_" << i;
                 vhdl << tab << declare(
-                        rTmp2Name.str(), modSize*2, false) << tab << "<= R2tmp1_" << i << " when R2tmp1_" << i << of(i) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(R2tmp1_" << i << ") + M);" << endl;
+                        rTmp2Name.str(), modSize*2, false) << tab << "<= R2tmp1_" << i << " when R2tmp1_" << i << of(0) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(R2tmp1_" << i << ") + M);" << endl;
                 ostringstream rTmp3Name;
                 rTmp3Name << "R2_" << index;
                 vhdl << tab << declare(
@@ -162,6 +166,9 @@ namespace flopoco {
             int rInverse = getModularInverse((1 << modSize), modulo);
             mpz_class sNormal = (sx * rInverse) % modulo;
             sr = sNormal % modulo;
+        } else if (method == "multi") {
+            mpz_class sb = tc->getInputValue("B");
+            sr = (sx * sb) % modulo;
         } else {
             sr = sx % modulo;
         }
@@ -233,13 +240,12 @@ namespace flopoco {
         TestList testStateList;
         vector<pair<string,string>> paramList;
         string methods[] = {"ex","modOp","redOnly"};
-        //string methods[] = {"multi"};
 
         if(index==-1) 	{ // The unit tests
             for (int i = 0; i < 3; ++i) {
                 for(int m=3; m<20; m+=2) {
                     int modSize = 0;
-                    if (methods[i]=="redOnly" || methods[i]=="multi") {
+                    if (methods[i]=="redOnly") {
                         for (int w = 0; w < 31; ++w) {
                             if ((m & (1 << (w))) != 0) {
                                 modSize = w;
@@ -247,15 +253,7 @@ namespace flopoco {
                         }
                         modSize++;
                     }
-                    if (methods[i]=="multi") {
-                        paramList.push_back(make_pair("wIn",to_string(modSize)));
-                        paramList.push_back(make_pair("modulo",to_string(m)));
-                        paramList.push_back(make_pair("method", methods[i]));
-                        paramList.push_back(make_pair("TestBench n=",to_string(100)));
-                        testStateList.push_back(paramList);
-
-                        paramList.clear();
-                    } else {
+                    else {
                         for (int wIn=6; wIn<=12; wIn++) {
                             if (!(methods[i]=="redOnly" && wIn > modSize * 2)) {
                                 paramList.push_back(make_pair("wIn",to_string(wIn)));
@@ -269,6 +267,23 @@ namespace flopoco {
                         }
                     }
                 }
+            }
+            // method multi
+            for(int m=3; m<100; m+=2) {
+                int modSize = 0;
+                for (int w = 0; w < 31; ++w) {
+                    if ((m & (1 << (w))) != 0) {
+                        modSize = w;
+                    }
+                }
+                modSize++;
+                paramList.push_back(make_pair("wIn",to_string(modSize)));
+                paramList.push_back(make_pair("modulo",to_string(m)));
+                paramList.push_back(make_pair("method", "multi"));
+                paramList.push_back(make_pair("TestBench n=",to_string(100)));
+                testStateList.push_back(paramList);
+
+                paramList.clear();
             }
         }
         return testStateList;
@@ -295,8 +310,9 @@ namespace flopoco {
                            "wIn(int)=16: A first parameter - the input size; \
                             modulo(int): modulo; \
                             method(string)=ex: The method used for the montgomery algrithm."
-                            " 3 available: 'ex' - for explicit conversion, 'modOp' - for Conversion using the vhdl mod operator"
-                            " 'redOnly' - the input is directly used for the reduction without conversion in montgomery form",
+                            " 4 available: 'ex' - for explicit conversion, 'modOp' - for Conversion using the vhdl mod operator,"
+                            " 'redOnly' - the input is directly used for the reduction without conversion in montgomery form,"
+                            " 'multi' - using the montgomery multiplication algorithm",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",
                            ModuloMontgomery::parseArguments,

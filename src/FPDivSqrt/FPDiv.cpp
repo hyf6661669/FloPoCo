@@ -346,12 +346,11 @@ namespace flopoco{
 
 				string qi =join( "q", i);						//current quotient digit, LUT's output
 				string wi = join("w", i);						// current partial remainder
-				string wifull =join("wfull", i);						// current partial remainder
+				string wifull =join("wNext", i);						// current partial remainder
 				string wim1 = join("w", i-1);					//partial remainder for the next iteration, = left shifted wim1full
 				string seli = join("sel", i);					//constructed as the wi's first 4 digits and D's first, LUT's input
 				string qiTimesD = join("q", i)+"D";		//qi*D
-				string wipad = join("w", i)+"pad";			//1-left-shifted wi
-				string wim1full = join("wfull", i-1);	//partial remainder after this iteration, = wi+qi*D
+				string wim1full = join("wNext", i-1);	//partial remainder after this iteration, = wi+qi*D
 				string tInstance = "SelFunctionTable" + to_string(i);
 
 				/*
@@ -370,23 +369,21 @@ namespace flopoco{
 				*/
 				if(i==nDigit-1){
 					if(alpha==2) {
-						vhdl << tab << declare(wipad, wF+4) << " <=  \"000\" & fX;" << endl;
+						vhdl << tab << declare(wi, wF+4) << " <=  \"000\" & fX;" << endl;
 					} 
 					else { // alpha=3
-						vhdl << tab << declare(wipad, wF+4) << " <=  \"00\" & fX & \"0\";" << endl;
+						vhdl << tab << declare(wi, wF+4) << " <=  \"00\" & fX & \"0\";" << endl;
 					}
 				}
 				else {
 					//					
-					vhdl << tab << declare(wipad,wF+4) << " <= " << wifull<<range(wF+1,0)<<" & \"00\"; -- multiplication by the radix" << endl;
+					vhdl << tab << declare(wi,wF+4) << " <= " << wifull<<range(wF+1,0)<<" & \"00\"; -- multiplication by the radix" << endl;
 				}
-				
-				vhdl << tab << declare(wi,wF+3) << " <= " << wipad<<range(wF+3,1)<<";" << endl;
-				
+								
 				if(alpha==3)
-					vhdl << tab << declare(seli,5) << " <= " << wi << range( wF+2, wF-1) << " & fY" << of(wF-1)  << ";" << endl;
+					vhdl << tab << declare(seli,5) << " <= " << wi << range( wF+3, wF) << " & fY" << of(wF-1)  << ";" << endl;
 				else // alpha==2
-					vhdl << tab << declare(seli,9) << " <= " << wi << range( wF+2, wF-3) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
+					vhdl << tab << declare(seli,9) << " <= " << wi << range( wF+3, wF-2) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
 					//vhdl << tab << declare(seli,10) << " <= " << wi << range( wF+2, wF-4) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
 					
 				newSharedInstance(selfunctiontable , tInstance, "X=>"+seli, "Y=>"+ qi);
@@ -423,8 +420,8 @@ namespace flopoco{
 
 					vhdl << tab << "with " << qi << "(2) select" << endl;
 					vhdl << tab << declare(getTarget()->adderDelay(wF+4), wim1full, wF+4)
-							 << "<= " << wipad << " - " << qiTimesD << " when '0'," << endl
-							 << tab << "      " << wipad << " + " << qiTimesD << " when others;" << endl << endl;
+							 << "<= " << wi << " - " << qiTimesD << " when '0'," << endl
+							 << tab << "      " << wi << " + " << qiTimesD << " when others;" << endl << endl;
 
 				} // end if alpha=3
 
@@ -437,21 +434,21 @@ namespace flopoco{
 							 << tab << tab << tab << "\"00\" & fY & \"0\"			 when \"010\" | \"110\"," << endl
 							 << tab << tab << tab << "(" << wF+3 << " downto 0 => '0')	 when others;" << endl << endl;
 					
-					//				vhdl << tab << declare(wipad, wF+4) << " <= " << wi << " & \"0\";" << endl;
+					//				vhdl << tab << declare(wi, wF+4) << " <= " << wi << " & \"0\";" << endl;
 
 					vhdl << tab << "with " << qi << "(2) select" << endl
 							 << tab << declare(getTarget()->adderDelay(wF+4), wim1full, wF+4)
-							 << "<= " << wipad << " - " << qiTimesD << " when '0'," << endl
-							 << tab << "      " << wipad << " + " << qiTimesD << " when others;" << endl << endl;
+							 << "<= " << wi << " - " << qiTimesD << " when '0'," << endl
+							 << tab << "      " << wi << " + " << qiTimesD << " when others;" << endl << endl;
 
 
 				}
 			} // end loop
 
-			vhdl << tab << declare("w0",wF+3) << " <= wfull0" <<range(wF+1,0)<<" & \"0\";" << endl;
+			vhdl << tab << declare("w0",wF+3) << " <= wNext0" <<range(wF+1,0)<<" & \"0\";" << endl;
 			vhdl << tab << declare(getTarget()->eqConstComparatorDelay(wF+3), "q0",3)
 					 << " <= \"000\" when  w0 = (" << wF+2 << " downto 0 => '0')" << endl;
-			vhdl << tab << "             else w0(" << wF+2 << ") & \"10\";" << endl;
+			vhdl << tab << "             else w0(" << wF+2 << ") & \"10\"; -- rounding digit, according to sign of remainder" << endl;
 
 			for(i=nDigit-1; i>=1; i--) {
 				ostringstream qPi, qMi;

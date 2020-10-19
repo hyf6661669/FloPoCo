@@ -41,7 +41,10 @@ namespace flopoco{
 
 	// TODO replace all these pow(2, ...) with something safer.
 	
-	vector<mpz_class> FPDiv::selFunctionTable(double dMin, double dMax, int nbBitD, int nbBitW, int alpha, int radix, int wIn, int wOut) {
+	vector<mpz_class> FPDiv::selFunctionTable(double dMin, double dMax, int nbBitD, int nbBitW, int alpha, int radix) {
+
+		int wIn = nbBitD+nbBitW;
+		int wOut = 1+intlog2(alpha); //Nb of bit for the entire part of w
 		double rho = ((double)alpha)/(radix-1);
 
 		vector<mpz_class> t;
@@ -52,11 +55,10 @@ namespace flopoco{
 			w -= 2*wneg; // recovering the signed value 
 					
 			int result;
-			int nbBitK = 1+intlog2(alpha); //Nb of bit for the entire part of w
-			double realw = ((double)w) / ((double)(1<< (nbBitW-nbBitK)));
+			double realw = ((double)w) / ((double)(1<< (nbBitW-wOut)));
 					
 			double hPitch = pow(2, -nbBitD)*(dMax-dMin);
-			double vPitch = pow(2, -nbBitW+nbBitK);
+			double vPitch = pow(2, -nbBitW+wOut);
 					
 			double uSlope, lSlope;
 			int uCorrecter, lCorrecter;
@@ -80,7 +82,7 @@ namespace flopoco{
 
 			int result2c = result;
 			if(result < 0)	
-				result2c+=(1<<nbBitK); //switch to two's complement
+				result2c+=(1<<wOut); //switch to two's complement
 
 			mpz_class mpzresult;
 						
@@ -126,7 +128,7 @@ namespace flopoco{
 		vhdl << tab << declare("fX",wF+1) << " <= \"1\" & X(" << wF-1 << " downto 0);" << endl;
 		vhdl << tab << declare("fY",wF+1) << " <= \"1\" & Y(" << wF-1 << " downto 0);" << endl;
 
-		vhdl << tab << "-- exponent difference, sign and exception combination computed early, to have less bits to pipeline" << endl;
+		vhdl << tab << "-- exponent difference, sign and exception combination computed early, to have fewer bits to pipeline" << endl;
 
 		vhdl << tab << declare("expR0", wE+2) << " <= (\"00\" & X(" << wE+wF-1 << " downto " << wF << ")) - (\"00\" & Y(" << wE+wF-1 << " downto " << wF<< "));" << endl;
 		vhdl << tab << declare(getTarget()->lutDelay(), "sR") << " <= X(" << wE+wF << ") xor Y(" << wE+wF<< ");" << endl;
@@ -172,7 +174,7 @@ namespace flopoco{
 
 			vhdl << tab << declare(join("w", nDigit-1), wF+6) << " <=  \"00\" & prescaledfX;" << endl; //TODO : review that, maybe MSB 0 to save
 
-			vector<mpz_class> tableContent = selFunctionTable(0.75, 1.0, 2, 5, 7, 8, 7, 4);
+			vector<mpz_class> tableContent = selFunctionTable(0.75, 1.0, 2, 5, 7, 8);
 			Table* selfunctiontable = new Table(this, target, tableContent,"selFunction7_4", 7,4);
 
 			for(i=nDigit-1; i>=1; i--) {
@@ -298,7 +300,7 @@ namespace flopoco{
 			/*****************************RADIX 4 SRT **********************************************/
 		//TODO : the old version is using 5-input's LUTs, try to fit in 4-input's LUTs (same as above : select qA and qB and make a 2-levels addition)
 		{
-			int alpha=3; // can be 3 or 2. At the moment, 2 doesn't work.
+			int alpha=3; // can be 3 or 2.
 			// -------- Parameter set up -----------------
 			nDigit = (wF+6) >> 1;
 
@@ -314,17 +316,22 @@ namespace flopoco{
 
 			vector<mpz_class> tableContent;
 			Table* selfunctiontable;
+			int nbBitsD, nbBitsW, nbSelBits;
+			
 			if(alpha==3) {
-				tableContent = selFunctionTable(0.5, 1.0, 1, 4, 3, 4, 5, 3);
-				selfunctiontable = new Table(this, target, tableContent,"selFunction5_3",5,3);
+				nbBitsD=1;
+				nbBitsW=4;
 			}
 			else if(alpha==2){
-				tableContent = selFunctionTable(0.5, 1.0, 3, 6, 2, 4, 9, 3);
-				selfunctiontable = new Table(this, target, tableContent,"selFunction9_3",9,3);
+				nbBitsD=3;
+				nbBitsW=6;
 			}
 			else THROWERROR("alpha="<< alpha << " is not an option");
 
-			 selfunctiontable->setShared();
+			nbSelBits=nbBitsD+nbBitsW;
+			tableContent = selFunctionTable(0.5, 1.0, nbBitsD, nbBitsW, alpha, radix);
+			selfunctiontable = new Table(this, target, tableContent,"selFunction", nbSelBits, 3);
+			selfunctiontable->setShared();
 
 			////////////////////// Main SRT loop, unrolled ///////////////////////
 
@@ -400,7 +407,7 @@ namespace flopoco{
 
 					vhdl << tab << declare(wim1.str(),wF+3) << " <= " << wim1full.str()<<range(wF+1,0)<<" & \"0\";" << endl;
 				} // end if alpha=3
-				else {
+				else { // alpha=2
 					vhdl << tab << "with " << qi << " select" << endl;
 					// no delay for qiTimesD, it should be merged in the following addition
 					vhdl << tab << tab << declare(qiTimesD.str(),wF+4) << " <= "<< endl 

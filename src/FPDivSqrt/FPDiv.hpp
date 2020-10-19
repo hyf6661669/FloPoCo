@@ -40,11 +40,9 @@ namespace flopoco{
 		 * @param number of bits of w to input to the selection table
 		 * @param alpha digit set is {-alpha, .. alpha} 
 		 * @param radix radix used
-		 * @param wIn  table input size
-		 * @param wOut table output size 
 		 */
 
-		vector<mpz_class> selFunctionTable(double dMin, double dMax, int nbBitD, int nbBitW, int alpha, int radix, int wIn, int wOut);
+		vector<mpz_class> selFunctionTable(double dMin, double dMax, int nbBitD, int nbBitW, int alpha, int radix);
 		
 		/**
 		 * Emulate a correctly rounded division using MPFR.

@@ -60,16 +60,6 @@ namespace flopoco{
 		static OperatorPtr parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);
 		static void registerFactory();
 
-	private:
-		static void plotPDDiagram(int delta, int t, int radix, int digitSet);
-		static bool checkDistrib(int delta, int t, int radix, int digitSet);
-		static double L(int k, double ro, double d);
-		static double U(int k, double ro, double d);
-		static double estimateCost(int nbBit, int radix, int digitSet);
-		static void computeNbBit(int radix, int digitSet);
-	public:
-		static void NbBitsMinRegisterFactory();
-		static OperatorPtr NbBitsMinParseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);
 
 		
 	private:
@@ -87,5 +77,21 @@ namespace flopoco{
 
 		
 	};
+
+
+	class SRTDivNbBitsMin : public Operator //not an operator, should be disabled in Factories/ -- just to benefit from the lousy parser
+	{
+	private:
+		static void plotPDDiagram(int delta, int t, int radix, int digitSet);
+		static bool checkDistrib(int delta, int t, int radix, int digitSet);
+		static double L(int k, double ro, double d);
+		static double U(int k, double ro, double d);
+		static double estimateCost(int nbBit, int radix, int digitSet);
+		static void computeNbBit(int radix, int digitSet);
+	public:
+		static void registerFactory();
+		static OperatorPtr NbBitsMinParseArguments(OperatorPtr parentOp, Target *target, vector<string> &args);
+	};
+
 }
 #endif //FPDIV_HPP

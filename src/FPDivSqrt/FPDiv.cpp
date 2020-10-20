@@ -48,15 +48,15 @@ namespace flopoco{
 	vector<mpz_class> FPDiv::selFunctionTable(double dMin, double dMax, int nbBitD, int nbBitW, int alpha, int radix) {
 
 		int wIn = nbBitD+nbBitW;
-		int wOut = 1+intlog2(alpha); //Nb of bit for the entire part of w
+		int wOut = 1+intlog2(alpha); //Nb of bit for the integer part of w
 		double rho = ((double)alpha)/(radix-1);
 
 		vector<mpz_class> t;
 		for (int x=0; x<(1<<wIn); x++) {					
 			int w = (x>>nbBitD);	 // splitting x into  w and d
 			int d = x - (w<<nbBitD);
-			int wneg = (w >> (nbBitW-1)) << (nbBitW-1); //getting the sign bit
-			w -= 2*wneg; // recovering the signed value 
+			int wSign = (w >> (nbBitW-1)) << (nbBitW-1); //getting the sign bit
+			w -= 2*wSign; // recovering the signed value 
 					
 			int result;
 			double realw = ((double)w) / ((double)(1<< (nbBitW-wOut)));
@@ -307,7 +307,7 @@ namespace flopoco{
 			}
 			else if(alpha==2){
 				nbBitsD=3;
-				nbBitsW=6;
+				nbBitsW=7;
 				extraBit=7; // one more than for alpha=3
 			}
 			else THROWERROR("alpha="<< alpha << " is not an option");
@@ -348,7 +348,7 @@ namespace flopoco{
 					*	deducing the value of qi*D out of qi
 						qi is bounded to [-3,3], so you can compute qi*D in 1 addition
 					*	D : 24 bits, qi : 3 bits => qi*D : potentially 27 bits
-						or wi is 26 bits long
+rox P						or wi is 26 bits long
 						=>computing wipad = wi left shifted (27 bits)
 					*	computing the remainder of this step
 						wi-1full = wi-qi*D
@@ -367,12 +367,14 @@ namespace flopoco{
 					vhdl << tab << declare(wi,wF+4) << " <= " << wifull<<range(wF+1,0)<<" & \"00\"; -- multiplication by the radix" << endl;
 				}
 								
+#if 0
 				if(alpha==3)
 					vhdl << tab << declare(seli,5) << " <= " << wi << range( wF+3, wF) << " & fY" << of(wF-1)  << ";" << endl;
 				else // alpha==2
 					vhdl << tab << declare(seli,9) << " <= " << wi << range( wF+3, wF-2) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
 					//vhdl << tab << declare(seli,10) << " <= " << wi << range( wF+2, wF-4) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
-					
+#endif	
+				vhdl << tab << declare(seli,nbBitsW+nbBitsD) << " <= " << wi << range( wF+3, wF+3-nbBitsW+1) << " & fY" << range(wF-1,wF-1-nbBitsD+1)  << ";" << endl;
 				newSharedInstance(selfunctiontable , tInstance, "X=>"+seli, "Y=>"+ qi);
 				vhdl << endl;
 
@@ -520,7 +522,7 @@ namespace flopoco{
 
 
 	// Various functions that used to be in NbBitsMin
-	void FPDiv::computeNbBit (int radix, int digitSet)
+	void SRTDivNbBitsMin::computeNbBit (int radix, int digitSet)
 	{
 
 		double ro = (double)digitSet/(radix-1);
@@ -596,7 +598,7 @@ namespace flopoco{
 	}
 
 	//Produces the P-D Diagram corresponding to the previous analysis in svg format
-	void FPDiv::plotPDDiagram(int delta, int t, int radix, int digitSet)
+	void SRTDivNbBitsMin::plotPDDiagram(int delta, int t, int radix, int digitSet)
 	{
 		double ro = (double)digitSet/((double)radix-1);
 
@@ -701,7 +703,7 @@ namespace flopoco{
 	}
 
 
-	bool FPDiv::checkDistrib(int delta, int t, int radix, int digitSet)
+	bool SRTDivNbBitsMin::checkDistrib(int delta, int t, int radix, int digitSet)
 	{
 		double ro = digitSet/(radix-1);
 		double wMax = U(digitSet, ro, 1);
@@ -806,17 +808,17 @@ namespace flopoco{
 		return true;
 	}
 
-	double FPDiv::L(int k, double ro, double d)
+	double SRTDivNbBitsMin::L(int k, double ro, double d)
 	{
 		return (k-ro)*d;
 	}
 
-	double FPDiv::U(int k, double ro, double d)
+	double SRTDivNbBitsMin::U(int k, double ro, double d)
 	{
 		return (k+ro)*d;
 	}
 
-	double FPDiv::estimateCost(int nbBit, int radix, int digitSet)
+	double SRTDivNbBitsMin::estimateCost(int nbBit, int radix, int digitSet)
 	{
 		int nbIter = (23+6)>>1;
 		double flopocoCost = nbIter*(2*27 + 3);
@@ -943,23 +945,23 @@ srt(int)=42: Can be 42, 43 or 87 so far. Default 42 means radix 4 with digits be
 
 
 	
-	OperatorPtr FPDiv::NbBitsMinParseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
+	OperatorPtr SRTDivNbBitsMin::NbBitsMinParseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
 		int radix, digitSet;
 		UserInterface::parseStrictlyPositiveInt(args, "radix", &radix);
-		UserInterface::parseStrictlyPositiveInt(args, "digitSet", &digitSet);
+		UserInterface::parseStrictlyPositiveInt(args, "alpha", &digitSet);
 		computeNbBit(radix, digitSet);
 		return NULL;
 	}
 
-	void FPDiv::NbBitsMinRegisterFactory(){
+	void SRTDivNbBitsMin::registerFactory(){
 		UserInterface::add("SRTDivNbBitsMin", // name
-											 "A tool for FPDiv to compute where to truncate both partial remainder and divider.",
+											 "A SRT design tool",
 											 "Miscellaneous", // categories
 											 "",
 											 "radix(int): It has to be 2^n; \
-digitSet(int): the range you allow for each digit [-digitSet, digitSet]",
+alpha(int): digit set is [-alpha, alpha]",
 											 "",
-											 FPDiv::NbBitsMinParseArguments
+											 SRTDivNbBitsMin::NbBitsMinParseArguments
 											 ) ;
 
 	}

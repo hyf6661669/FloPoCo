@@ -16,6 +16,10 @@
 
 
 // TODO Radix 4 with digit set -2..2 should fit the iteration in one row of LUT+add
+/*
+
+
+ */
 
 #include <iostream>
 #include <sstream>
@@ -272,28 +276,20 @@ namespace flopoco{
 			vhdl << tab << declare(getTarget()->adderDelay(3*nDigit), "Q", 3*nDigit) << " <= qP - qM;" << endl;
 
 			//The last +3 in computing nDigit is for this part
-			vhdl << tab << declare(getTarget()->fanoutDelay(wF+6) + getTarget()->lutDelay(), "fR", wF+6) << " <= ";
-			if (wF % 3 == 1) //2 extra bit
-				vhdl << "Q(" << 3*nDigit-1 << " downto 3) & (Q(0) or Q(1) or Q(2)); " << endl;
+			// Here we get rid of the leading bit, which is a known zero, we keep
+			// 1 bit for the norm, 1+wF fraction bits, 1 round bit, and one sticky bit out of the LSBs			
+			int qSize=3*nDigit; // where nDigit is  floor((wF + extraBit)/3);
+			// we need to keep wF+4 bits, discarding the leading bit of Q that is a known zero, and building a sticky in the LSB
+			int lsbSize = qSize-1-(wF+3);
+			vhdl << tab << declare(getTarget()->lutDelay(), "fR", wF+4) << " <= Q(" << qSize-2 << " downto "<< lsbSize <<") & (";
 
-			else if (wF % 3 == 2)// 1 extra bits
-				vhdl << "Q(" << 3*nDigit-1 << " downto 2) & (Q(0) or Q(1)); " << endl;
-
-			else // 3 extra bit
-				vhdl << "Q(" << 3*nDigit-1 << " downto 4) & (Q(0) or Q(1) or Q(2) or Q(3)); " << endl;
-
-#if 1 //  Should be pushed to common code but sizes are a mess
-			vhdl << tab << "-- normalisation" << endl;
-			vhdl << tab << "with fR(" << wF+4 << ") select" << endl;
-
-			vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRn1", wF+4)
-					 << " <= fR(" << wF+4 << " downto 2) & (fR(0) or fR(1)) when '1'," << endl
-					 << tab << tab << "        fR(" << wF+3 << " downto 0)          when others;" << endl;
-			vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRn1(2) and (fRn1(0) or fRn1(1) or fRn1(3)); -- fRn1(0) is the sticky bit" << endl;
-
-			vhdl << tab << declare(getTarget()->adderDelay(wE+2), "expR1", wE+2) << " <= expR0"
-				 << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & fR(" << wF+4 << ")); -- add back bias" << endl;
-#endif
+			// computation of the sticky bit
+			for(int j=lsbSize-1; j>=0; j--) {
+				if (j<lsbSize-1)
+					vhdl << " or ";
+				vhdl << "Q(" << j <<")";
+			}
+			vhdl << "); " << endl;
 
 			}
 
@@ -347,9 +343,8 @@ namespace flopoco{
 				string qi =join( "q", i);						//current quotient digit, LUT's output
 				string wi = join("betaw", i);						// current partial remainder
 				string wifull =join("w", i);						// current partial remainder
-				string wim1 = join("betaw", i-1);					//partial remainder for the next iteration, = left shifted wim1full
 				string seli = join("sel", i);					//constructed as the wi's first 4 digits and D's first, LUT's input
-				string qiTimesD = join("q", i)+"D";		//qi*D
+				string qiTimesD = join("q", i)+"Y";		//qi*Y
 				string wim1full = join("w", i-1);	//partial remainder after this iteration, = wi+qi*D
 				string tInstance = "SelFunctionTable" + to_string(i);
 
@@ -445,12 +440,12 @@ namespace flopoco{
 				}
 			} // end loop
 
-			vhdl << tab << declare("wfinal",wF+3) << " <= w0" <<range(wF+1,0)<<" & \"0\";" << endl;
-			vhdl << tab << declare(getTarget()->eqConstComparatorDelay(wF+3), "q0",3)
-					 << " <= \"000\" when  wfinal = (" << wF+2 << " downto 0 => '0')" << endl;
-			vhdl << tab << "             else wfinal(" << wF+2 << ") & \"10\"; -- rounding digit, according to sign of remainder" << endl;
+			vhdl << tab << declare("wfinal", wF+2) << " <= w0" <<range(wF+1,0) << ";" << endl;
+			vhdl << tab << declare(getTarget()->eqConstComparatorDelay(wF+2), "q0",3)
+					 << " <= \"000\" when  wfinal = (" << wF+1 << " downto 0 => '0')" << endl;
+			vhdl << tab << "             else wfinal(" << wF+1 << ") & \"10\"; -- rounding digit, according to sign of remainder" << endl;
 
-			for(i=nDigit-1; i>=1; i--) {
+			for(i=nDigit-1; i>=0; i--) {
 				ostringstream qPi, qMi;
 				string qi = join("q",i);
 				qPi << "qP" << i;
@@ -458,9 +453,6 @@ namespace flopoco{
 				vhdl << tab << declare(qPi.str(), 2) <<" <=      " << qi << "(1 downto 0);" << endl;
 				vhdl << tab << declare(qMi.str(), 2)<<" <=      " << qi << "(2) & \"0\";" << endl;
 			}
-
-			vhdl << tab << declare("qP0", 2) << " <= q0(1 downto 0);" << endl;
-			vhdl << tab << declare("qM0", 2) << " <= q0(2)  & \"0\";" << endl;
 
 			vhdl << tab << declare("qP", 2*nDigit) << " <= qP" << nDigit-1;
 			for (i=nDigit-2; i>=0; i--)
@@ -493,24 +485,24 @@ namespace flopoco{
 
 
 
-			// normalization should be pushed to common code but sizes are a mess
-			vhdl << tab << "-- normalisation" << endl;
-			vhdl << tab << "with fR(" << wF+3 << ") select" << endl;
-			
-			vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRn1", wF+2) << " <= fR(" << wF+2 << " downto 2) & (fR(1) or fR(0)) when '1'," << endl;
-			vhdl << tab << tab << "        fR(" << wF+1 << " downto 0)                    when others;" << endl;
-			
-			vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)); -- fRn1(0) is the sticky bit" << endl;
-
-			vhdl << tab << declare(getTarget()->adderDelay(wE+2), "expR1", wE+2) << " <= expR0"
-						 << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & fR(" << wF+3 << ")); -- add back bias" << endl;
 			
 		}
 
+		vhdl << tab << "-- fR has wf+4 mantissa bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit, and 1 sticky bit" << endl;
+		vhdl << tab << "-- normalisation" << endl;
+		vhdl << tab << "with fR(" << wF+3 << ") select" << endl;
+		
+		vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+2) << " <= fR(" << wF+2 << " downto 2) & (fR(1) or fR(0)) when '1'," << endl;
+		vhdl << tab << tab << "        fR(" << wF+1 << " downto 0)                    when others;" << endl;
+		
+		vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRnorm(1) and (fRnorm(2) or fRnorm(0)); -- fRnorm(0) is the sticky bit" << endl;
+
+		vhdl << tab << declare(getTarget()->adderDelay(wE+2), "expR1", wE+2) << " <= expR0"
+						 << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & fR(" << wF+3 << ")); -- add back bias" << endl;
 
 		vhdl << tab << "-- final rounding" <<endl;
 		vhdl << tab <<  declare("expfrac", wE+wF+2) << " <= "
-				 << "expR1 & fRn1(" <<(radix==4?wF+1:wF+2) << " downto " << (radix==4?2:3)<< ") ;" << endl;
+				 << "expR1 & fRnorm(" <<wF+1 << " downto " << 2 << ") ;" << endl;
 		
 		vhdl << tab << declare("expfracR", wE+wF+2) << " <= "
 				 << "expfrac + ((" << wE+wF+1 << " downto 1 => '0') & round);" << endl;

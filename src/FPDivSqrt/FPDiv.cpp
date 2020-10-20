@@ -120,17 +120,14 @@ namespace flopoco{
 		if(srt==42) {
 			radix=4;
 			alpha=2;
-			prescaling=0; // soon 1
 		}
 		if(srt==43) {
 			radix=4;
 			alpha=3;
-			prescaling=0;
 		}
 		if(srt==87) {
 			radix=8;
 			alpha=7;
-			prescaling=2;
 		}
 
 
@@ -246,20 +243,16 @@ namespace flopoco{
 						 << tab << tab << "(\"00\" & prescaledfY & \"00\")			when \"001\" | \"010\" | \"110\"| \"101\"," << endl
 						 << tab << tab << "(\"0\" & prescaledfY & \"000\")			when \"011\"| \"100\"," << endl
 						 << tab << tab << rangeAssign(wF+6,0,"'0'") << "when others;" << endl;
-				REPORT(DEBUG, "After with2 ");
 				
 				vhdl << tab << "with " << qi << of(3) << " select" << endl; // Remark here: seli(6)==qi(3) but it we get better results using the latter.
 				vhdl << tab << declare(getTarget()->adderDelay(wF+7), wim1full.str(), wF+7) << " <= " << endl;
 				vhdl << tab << tab << wim1fulla.str() << " - " << fYdec << "			when '0'," << endl;
 				vhdl << tab << tab << wim1fulla.str() << " + " << fYdec << "			when others;" << endl;
-				REPORT(DEBUG, "After with 3 ");
 
 #endif
 				vhdl << tab << declare(wim1.str(),wF+6) << " <= " << wim1full.str()<<range(wF+3,0)<<" & \"00\";" << endl;
-				REPORT(DEBUG, "After range ");
 			}
 
-				REPORT(DEBUG, "After loop ");
 
 			vhdl << tab << declare(getTarget()->eqConstComparatorDelay(wF+3), "q0",4) << "(3 downto 0) <= \"0000\" when  w0 = (" << wF+5 << " downto 0 => '0')" << endl;
 			vhdl << tab << "             else w0(" << wF+5 << ") & \"010\";" << endl;
@@ -309,6 +302,9 @@ namespace flopoco{
 			vector<mpz_class> tableContent;
 			Table* selfunctiontable;
 			// -------- Parameter set up -----------------
+
+			prescaling=0 ; // failed to work so far
+
 			if(alpha==3) {
 				nbBitsD=1;
 				nbBitsW=4;
@@ -318,9 +314,9 @@ namespace flopoco{
 			
 			else if(alpha==2){
 				if(prescaling==1) {
-					nbBitsD=3;
-					nbBitsW=5;
-					tableContent = selFunctionTable(0.75, 1.0, nbBitsD, nbBitsW, alpha, radix);
+					nbBitsD=2;
+					nbBitsW=6;
+					tableContent = selFunctionTable(0.75, 9./8., nbBitsD, nbBitsW, alpha, radix);
 				}
 				else if(prescaling==0) { // no prescaling
 					nbBitsD=3;
@@ -339,13 +335,17 @@ namespace flopoco{
 			if(prescaling==0) {
 				dSize=wF+1;
 				vhdl << tab << declare("D", dSize) << " <= fY ;"<< endl;
+				vhdl << tab << declare("psX", dSize+1) << " <= \"0\" & fX ;"<< endl;				
 			}
 			else if(prescaling==1) {
 				vhdl << tab << " -- prescaling " << endl;
 				dSize=wF+2;
-				vhdl << tab << declare("D", dSize) << " <=  (fY & \"0\") when fY" << of(wF-1) << " == 1 -- D when D was in [1.5,2)"<< endl
-						 << tab << tab << " else (\"0\" & fY) + (fY & \"0\") ; -- 3/2*D when D was in [1, 1.5)" ;
+				vhdl << tab << declare("D", dSize) << " <=  (fY & \"0\") when fY" << of(wF-1) << " = '1' -- D when D was in [1.5,2)"<< endl
+						 << tab << tab << " else (\"0\" & fY) + (fY & \"0\") ; -- 3/2*D when D was in [1, 1.5)"  << endl;
 				vhdl << tab << " -- Now D is in [3/2, 9/4) and one bit wider " << endl;
+				
+				vhdl << tab << declare("psX", dSize+1) << " <=  (\"0\" & fX & \"0\") when fY" << of(wF-1) << " = '1'"<< endl
+						 << tab << tab << " else (\"00\" & fX) + (\"0\" & fX & \"0\") ; "<< endl;
 			}
 			else THROWERROR("prescaling="<< prescaling << " is not an option");
 			
@@ -376,7 +376,7 @@ namespace flopoco{
 				string wi = join("betaw", i);						// current partial remainder
 				string wifull =join("w", i);						// current partial remainder
 				string seli = join("sel", i);					//constructed as the wi's first 4 digits and D's first, LUT's input
-				string qiTimesD = join("q", i)+"Y";		//qi*Y
+				string qiTimesD = join("q", i)+"D";		//qi*Y
 				string wim1full = join("w", i-1);	//partial remainder after this iteration, = wi+qi*D
 
 				/*
@@ -395,18 +395,23 @@ rox P						or wi is 26 bits long
 				*/
 				if(i==nDigit-1){
 					if(alpha==2) {
-						vhdl << tab << declare(wi, subSize) << " <=  \"000\" & fX;" << endl;
+						vhdl << tab << declare(wi, subSize) << " <=  \"00\" & psX;" << endl;
 					} 
 					else { // alpha=3
-						vhdl << tab << declare(wi, subSize) << " <=  \"00\" & fX & \"0\";" << endl;
+						vhdl << tab << declare(wi, subSize) << " <=  \"0\" & psX & \"0\";" << endl;
 					}
 				}
 				else {
 					//					
-					vhdl << tab << declare(wi,subSize) << " <= " << wifull<<range(wF+1,0)<<" & \"00\"; -- multiplication by the radix" << endl;
+					vhdl << tab << declare(wi,subSize) << " <= " << wifull<<range(subSize-3,0)<<" & \"00\"; -- multiplication by the radix" << endl;
 				}
-								
-				vhdl << tab << declare(seli, nbBitsW+nbBitsD) << " <= " << wi << range( wF+3, wF+3-nbBitsW+1) << " & fY" << range(wF-1,wF-1-nbBitsD+1)  << ";" << endl;
+
+				if(prescaling==1) { // now that D may exceed 1, we need to consider its top bit as well
+					vhdl << tab << declare(seli, nbBitsW+nbBitsD) << " <= " << wi << range(subSize-1, subSize-nbBitsW) << " & D" << range(dSize-1,dSize-nbBitsD)  << ";" << endl;
+				}
+				else {
+					vhdl << tab << declare(seli, nbBitsW+nbBitsD) << " <= " << wi << range(subSize-1, subSize-nbBitsW) << " & D" << range(dSize-2,dSize-1-nbBitsD)  << ";" << endl;				 
+				}
 				
 				newSharedInstance(selfunctiontable , "SelFunctionTable" + to_string(i), "X=>"+seli, "Y=>"+ qi);
 				vhdl << endl;

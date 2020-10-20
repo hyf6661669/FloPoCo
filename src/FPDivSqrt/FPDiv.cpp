@@ -67,7 +67,7 @@ namespace flopoco{
 			double uSlope, lSlope;
 			int uCorrecter, lCorrecter;
 					
-
+			result=1<<30;
 			for(int k = -alpha; k <= alpha; k++)		{
 				uSlope = k+rho;
 				lSlope = k-rho;
@@ -83,7 +83,9 @@ namespace flopoco{
 					break;
 				}
 			}
-
+			if(result==1<<30) {
+				REPORT(0, "digit selection failed for w=" << w << " and d=" << d);
+			}
 			int result2c = result;
 			if(result < 0)	
 				result2c+=(1<<wOut); //switch to two's complement
@@ -117,15 +119,18 @@ namespace flopoco{
 
 		if(srt==42) {
 			radix=4;
-			alpha=2;			 
+			alpha=2;
+			prescaling=0; // soon 1
 		}
 		if(srt==43) {
 			radix=4;
-			alpha=3;			 
+			alpha=3;
+			prescaling=0;
 		}
 		if(srt==87) {
 			radix=8;
-			alpha=7;			 
+			alpha=7;
+			prescaling=2;
 		}
 
 
@@ -297,39 +302,74 @@ namespace flopoco{
 
 		else 
 			/*****************************RADIX 4 SRT **********************************************/
-		//TODO : the old version is using 5-input's LUTs, try to fit in 4-input's LUTs (same as above : select qA and qB and make a 2-levels addition)
+			// For alpha=3, we need 2 LUTs/bit in the recurrence but the table is small 
+			// For alpha=2 with no prescaling we have a large sel table (10 bits in) but 1 LUT/bit recurrence.
+			//             with prescaling the tables get much smaller (8 input bits)
 		{
+			vector<mpz_class> tableContent;
+			Table* selfunctiontable;
 			// -------- Parameter set up -----------------
 			if(alpha==3) {
 				nbBitsD=1;
 				nbBitsW=4;
 				extraBit=6; //
+				tableContent = selFunctionTable(0.5, 1.0, nbBitsD, nbBitsW, alpha, radix);
 			}
+			
 			else if(alpha==2){
-				nbBitsD=3;
-				nbBitsW=7;
-				extraBit=7; // one more than for alpha=3
+				if(prescaling==1) {
+					nbBitsD=3;
+					nbBitsW=5;
+					tableContent = selFunctionTable(0.75, 1.0, nbBitsD, nbBitsW, alpha, radix);
+				}
+				else if(prescaling==0) { // no prescaling
+					nbBitsD=3;
+					nbBitsW=7;
+					tableContent = selFunctionTable(0.5, 1.0, nbBitsD, nbBitsW, alpha, radix);
+				}
+				else THROWERROR("prescaling="<< prescaling << " is not an option");
+
+				extraBit=7; // one more than for alpha=3 due to the initial alignment to respect rhoD
 			}
 			else THROWERROR("alpha="<< alpha << " is not an option");
-
+			
 			nDigit = (wF+extraBit) >> 1;
 
+			int dSize, subSize;
+			if(prescaling==0) {
+				dSize=wF+1;
+				vhdl << tab << declare("D", dSize) << " <= fY ;"<< endl;
+			}
+			else if(prescaling==1) {
+				vhdl << tab << " -- prescaling " << endl;
+				dSize=wF+2;
+				vhdl << tab << declare("D", dSize) << " <=  (fY & \"0\") when fY" << of(wF-1) << " == 1 -- D when D was in [1.5,2)"<< endl
+						 << tab << tab << " else (\"0\" & fY) + (fY & \"0\") ; -- 3/2*D when D was in [1, 1.5)" ;
+				vhdl << tab << " -- Now D is in [3/2, 9/4) and one bit wider " << endl;
+			}
+			else THROWERROR("prescaling="<< prescaling << " is not an option");
+			
 			if(alpha==3) {
-			  vhdl << tab << " -- compute 3Y" << endl;
-
-			  vhdl << tab << declare(getTarget()->adderDelay(wF+3), "fYTimes3",wF+3)
-					 << " <= (\"00\" & fY) + (\"0\" & fY & \"0\");" << endl; // TODO an IntAdder here
+			  vhdl << tab << " -- compute 3D" << endl;
+			  vhdl << tab << declare(getTarget()->adderDelay(dSize+1), "Dx3",dSize+1)
+					 << " <= (\"0\" & D) + (D & \"0\");" << endl;
       }
 
-			vector<mpz_class> tableContent;
-			Table* selfunctiontable;
+			subSize=dSize+3; // Size of the subtraction in the main iteration
 			
-			tableContent = selFunctionTable(0.5, 1.0, nbBitsD, nbBitsW, alpha, radix);
+
+#if 0 // experiments with prescaling
+			nbBitsD=1;
+			nbBitsW=5;
+			tableContent = selFunctionTable(1.-1./64., 1.+1./8., nbBitsD, nbBitsW, alpha, radix);
+#endif
 			selfunctiontable = new Table(this, target, tableContent,"selFunction", nbBitsD+nbBitsW, 3);
 			selfunctiontable->setShared();
 
 			////////////////////// Main SRT loop, unrolled ///////////////////////
 
+
+			
 			for(i=nDigit-1; i>=1; i--) {
 
 				string qi =join( "q", i);						//current quotient digit, LUT's output
@@ -338,7 +378,6 @@ namespace flopoco{
 				string seli = join("sel", i);					//constructed as the wi's first 4 digits and D's first, LUT's input
 				string qiTimesD = join("q", i)+"Y";		//qi*Y
 				string wim1full = join("w", i-1);	//partial remainder after this iteration, = wi+qi*D
-				string tInstance = "SelFunctionTable" + to_string(i);
 
 				/*
 						Detailed algorithm for alpha=3 :
@@ -356,26 +395,20 @@ rox P						or wi is 26 bits long
 				*/
 				if(i==nDigit-1){
 					if(alpha==2) {
-						vhdl << tab << declare(wi, wF+4) << " <=  \"000\" & fX;" << endl;
+						vhdl << tab << declare(wi, subSize) << " <=  \"000\" & fX;" << endl;
 					} 
 					else { // alpha=3
-						vhdl << tab << declare(wi, wF+4) << " <=  \"00\" & fX & \"0\";" << endl;
+						vhdl << tab << declare(wi, subSize) << " <=  \"00\" & fX & \"0\";" << endl;
 					}
 				}
 				else {
 					//					
-					vhdl << tab << declare(wi,wF+4) << " <= " << wifull<<range(wF+1,0)<<" & \"00\"; -- multiplication by the radix" << endl;
+					vhdl << tab << declare(wi,subSize) << " <= " << wifull<<range(wF+1,0)<<" & \"00\"; -- multiplication by the radix" << endl;
 				}
 								
-#if 0
-				if(alpha==3)
-					vhdl << tab << declare(seli,5) << " <= " << wi << range( wF+3, wF) << " & fY" << of(wF-1)  << ";" << endl;
-				else // alpha==2
-					vhdl << tab << declare(seli,9) << " <= " << wi << range( wF+3, wF-2) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
-					//vhdl << tab << declare(seli,10) << " <= " << wi << range( wF+2, wF-4) << " & fY" << range(wF-1,wF-3)  << ";" << endl;
-#endif	
-				vhdl << tab << declare(seli,nbBitsW+nbBitsD) << " <= " << wi << range( wF+3, wF+3-nbBitsW+1) << " & fY" << range(wF-1,wF-1-nbBitsD+1)  << ";" << endl;
-				newSharedInstance(selfunctiontable , tInstance, "X=>"+seli, "Y=>"+ qi);
+				vhdl << tab << declare(seli, nbBitsW+nbBitsD) << " <= " << wi << range( wF+3, wF+3-nbBitsW+1) << " & fY" << range(wF-1,wF-1-nbBitsD+1)  << ";" << endl;
+				
+				newSharedInstance(selfunctiontable , "SelFunctionTable" + to_string(i), "X=>"+seli, "Y=>"+ qi);
 				vhdl << endl;
 
 				if(alpha==3) {
@@ -383,32 +416,32 @@ rox P						or wi is 26 bits long
 #if 1  // The following leads to higher frequency and higher resource usage: 
 					// For (8,23) on Virtex6 with ISE this gives 466Mhz, 1083 regs+ 1029 LUTs 
 					vhdl << tab << "with " << qi << " select" << endl;
-					vhdl << tab << tab << declare(getTarget()->fanoutDelay(wF+4) + getTarget()->adderDelay(wF+4), qiTimesD,wF+4)
+					vhdl << tab << tab << declare(getTarget()->fanoutDelay(subSize) + getTarget()->adderDelay(subSize), qiTimesD,subSize)
 							 << " <= "<< endl 
-							 << tab << tab << tab << "\"000\" & fY						when \"001\" | \"111\"," << endl
-							 << tab << tab << tab << "\"00\" & fY & \"0\"				when \"010\" | \"110\"," << endl
-							 << tab << tab << tab << "\"0\" & fYTimes3				when \"011\" | \"101\"," << endl
-							 << tab << tab << tab << "(" << wF+3 << " downto 0 => '0')	when others;" << endl<< endl;
+							 << tab << tab << tab << "\"000\" & D  		   when \"001\" | \"111\"," << endl
+							 << tab << tab << tab << "\"00\" & D & \"0\"	 when \"010\" | \"110\"," << endl
+							 << tab << tab << tab << "\"00\" & Dx3    	   when \"011\" | \"101\"," << endl
+							 << tab << tab << tab << "(" << subSize-1 << " downto 0 => '0')	when others;" << endl<< endl;
 #else // Recompute 3Y locally to save the registers: the LUT is used anyway (wrong! on Virtex6 ISE finds a MUX) 
 					// For (8,23) on Virtex6 with ISE this gives 345Mhz, 856 regs+ 1051 LUTs 
 					// Note that this option probably scales worse if we pipeline this addition  
 					vhdl << tab << "with " << qi << " select" << endl
-							 << tab << tab << declare(getTarget()->fanoutDelay(wF+4) + getTarget()->lutDelay(), join("addendA",i),wF+4)
+							 << tab << tab << declare(getTarget()->fanoutDelay(subSize) + getTarget()->lutDelay(), join("addendA",i),subSize)
 							 << " <= " << endl 
-							 << tab << tab << tab << "\"000\" & fY            when \"001\" | \"111\" | \"011\" | \"101\"," << endl
-							 << tab << tab << tab << "(" << wF+3 << " downto 0 => '0')  when others;" << endl;
+							 << tab << tab << tab << "\"000\" & D            when \"001\" | \"111\" | \"011\" | \"101\"," << endl
+							 << tab << tab << tab << "(" << subSize-1 << " downto 0 => '0')  when others;" << endl;
 
 					vhdl << tab << "with " << qi << " select" << endl
-							 << tab << tab << declare(join("addendB",i),wF+4) << " <= "<< endl 
-							 << tab << tab << tab << "\"00\" & fY & \"0\"       when \"010\" | \"110\"| \"011\" | \"101\"," << endl
-							 << tab << tab << tab << "(" << wF+3 << " downto 0 => '0')  when others;" << endl;
+							 << tab << tab << declare(join("addendB",i),subSize) << " <= "<< endl 
+							 << tab << tab << tab << "\"00\" & D & \"0\"       when \"010\" | \"110\"| \"011\" | \"101\"," << endl
+							 << tab << tab << tab << "(" << subSize-1 << " downto 0 => '0')  when others;" << endl;
 					
-					vhdl << tab << tab << declare(getTarget()->adderDelay(wF+4), qiTimesD,wF+4)
+					vhdl << tab << tab << declare(getTarget()->adderDelay(subSize), qiTimesD,subSize)
 							 << " <= " << join("addendA",i) << " + " << join("addendB",i) << ";"<< endl << endl;
 #endif				
 
 					vhdl << tab << "with " << qi << "(2) select" << endl;
-					vhdl << tab << declare(getTarget()->adderDelay(wF+4), wim1full, wF+4)
+					vhdl << tab << declare(getTarget()->adderDelay(subSize), wim1full, subSize)
 							 << "<= " << wi << " - " << qiTimesD << " when '0'," << endl
 							 << tab << "      " << wi << " + " << qiTimesD << " when others;" << endl << endl;
 
@@ -418,15 +451,15 @@ rox P						or wi is 26 bits long
 				else { // alpha=2
 					vhdl << tab << "with " << qi << " select" << endl;
 					// no delay for qiTimesD, it should be merged in the following addition
-					vhdl << tab << tab << declare(qiTimesD,wF+4) << " <= "<< endl 
-							 << tab << tab << tab << "\"000\" & fY						 when \"001\" | \"111\"," << endl
-							 << tab << tab << tab << "\"00\" & fY & \"0\"			 when \"010\" | \"110\"," << endl
-							 << tab << tab << tab << "(" << wF+3 << " downto 0 => '0')	 when others;" << endl << endl;
+					vhdl << tab << tab << declare(qiTimesD,subSize) << " <= "<< endl 
+							 << tab << tab << tab << "\"000\" & D						 when \"001\" | \"111\"," << endl
+							 << tab << tab << tab << "\"00\" & D & \"0\"			 when \"010\" | \"110\"," << endl
+							 << tab << tab << tab << "(" << subSize-1 << " downto 0 => '0')	 when others;" << endl << endl;
 					
-					//				vhdl << tab << declare(wi, wF+4) << " <= " << wi << " & \"0\";" << endl;
+					//				vhdl << tab << declare(wi, subSize) << " <= " << wi << " & \"0\";" << endl;
 
 					vhdl << tab << "with " << qi << "(2) select" << endl
-							 << tab << declare(getTarget()->adderDelay(wF+4), wim1full, wF+4)
+							 << tab << declare(getTarget()->adderDelay(subSize), wim1full, subSize)
 							 << "<= " << wi << " - " << qiTimesD << " when '0'," << endl
 							 << tab << "      " << wi << " + " << qiTimesD << " when others;" << endl << endl;
 

@@ -73,8 +73,8 @@ namespace flopoco{
 		int alpha;
 		/** The number of iterations */
 		int nDigit;
-
-
+		/** prescaling parameter: 0 means no prescaling; 1 means prescaling with 1 addition; 2 means prescaling with 2 additions */
+		int prescaling;
 		
 	};
 

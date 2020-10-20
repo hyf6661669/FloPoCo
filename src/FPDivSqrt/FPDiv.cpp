@@ -152,10 +152,19 @@ namespace flopoco{
 				 << tab << tab << tab << "\"11\"	 when others;										-- NaN" <<endl;
 
 		int extraBit = 0;
+		int nbBitsD, nbBitsW;
+		int qSize; // size in bits of Q
+		int qMsbToDiscard; // how many known MSB zeroes in Q due to initial alignment to respect R0<rho D
 	
 		/*****************************RADIX 8 SRT **********************************************/
 		if(srt==87)
 		{
+			// parameter setup
+			radix=8;
+			alpha=7;
+			nbBitsD=2;
+			nbBitsW=5;
+
 			extraBit+=2; //Here we'll prescale by 5/4 => 2 right extra bits
 			extraBit+=1; //The sticky bit
 			extraBit+=1; //The result will be in [1/2, 2[ => 1 more bit (2^0)
@@ -163,7 +172,6 @@ namespace flopoco{
 			extraBit+=3; //floor() and the bits cut to get a result depending on wF instead of nDigit (cf. last step before normalization)
 
 			nDigit = floor(((double)(wF + extraBit))/3);
-
 
 			/////////////////////////////////////////////////////////////////////////Prescaling
 			//TODO : maybe we can reduce fX and fY
@@ -183,8 +191,8 @@ namespace flopoco{
 
 			vhdl << tab << declare(join("w", nDigit-1), wF+6) << " <=  \"00\" & prescaledfX;" << endl; //TODO : review that, maybe MSB 0 to save
 
-			vector<mpz_class> tableContent = selFunctionTable(0.75, 1.0, 2, 5, 7, 8);
-			Table* selfunctiontable = new Table(this, target, tableContent,"selFunction7_4", 7,4);
+			vector<mpz_class> tableContent = selFunctionTable(0.75, 1.0, nbBitsD, nbBitsW, alpha, radix);
+			Table* selfunctiontable = new Table(this, target, tableContent,"selFunction7_4", nbBitsD+nbBitsW, 4);
 
 			for(i=nDigit-1; i>=1; i--) {
 
@@ -278,19 +286,9 @@ namespace flopoco{
 			//The last +3 in computing nDigit is for this part
 			// Here we get rid of the leading bit, which is a known zero, we keep
 			// 1 bit for the norm, 1+wF fraction bits, 1 round bit, and one sticky bit out of the LSBs			
-			int qSize=3*nDigit; // where nDigit is  floor((wF + extraBit)/3);
-			// we need to keep wF+4 bits, discarding the leading bit of Q that is a known zero, and building a sticky in the LSB
-			int lsbSize = qSize-1-(wF+3);
-			vhdl << tab << declare(getTarget()->lutDelay(), "fR", wF+4) << " <= Q(" << qSize-2 << " downto "<< lsbSize <<") & (";
-
-			// computation of the sticky bit
-			for(int j=lsbSize-1; j>=0; j--) {
-				if (j<lsbSize-1)
-					vhdl << " or ";
-				vhdl << "Q(" << j <<")";
-			}
-			vhdl << "); " << endl;
-
+			qSize=3*nDigit; // where nDigit is  floor((wF + extraBit)/3);
+			qMsbToDiscard=1;
+			
 			}
 
 
@@ -302,23 +300,17 @@ namespace flopoco{
 		//TODO : the old version is using 5-input's LUTs, try to fit in 4-input's LUTs (same as above : select qA and qB and make a 2-levels addition)
 		{
 			// -------- Parameter set up -----------------
-			int nbBitsD, nbBitsW, nbSelBits;
-			int guardBitsW;
 			if(alpha==3) {
 				nbBitsD=1;
 				nbBitsW=4;
-				extraBit=6; // TODO justify
-				guardBitsW=4; // TODO justify
+				extraBit=6; //
 			}
 			else if(alpha==2){
 				nbBitsD=3;
 				nbBitsW=6;
-				extraBit=6; // TODO justify
-				guardBitsW=4; // TODO justify
+				extraBit=7; // one more than for alpha=3
 			}
 			else THROWERROR("alpha="<< alpha << " is not an option");
-
-			nbSelBits=nbBitsD+nbBitsW;
 
 			nDigit = (wF+extraBit) >> 1;
 
@@ -333,7 +325,7 @@ namespace flopoco{
 			Table* selfunctiontable;
 			
 			tableContent = selFunctionTable(0.5, 1.0, nbBitsD, nbBitsW, alpha, radix);
-			selfunctiontable = new Table(this, target, tableContent,"selFunction", nbSelBits, 3);
+			selfunctiontable = new Table(this, target, tableContent,"selFunction", nbBitsD+nbBitsW, 3);
 			selfunctiontable->setShared();
 
 			////////////////////// Main SRT loop, unrolled ///////////////////////
@@ -467,26 +459,26 @@ namespace flopoco{
 
 			// TODO an IntAdder here
 			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "Q", 2*nDigit) << " <= qP - qM;" << endl;
-			if(alpha==3) {
-				vhdl << tab << declare("fR", wF+4) << " <= ";
-				if (1 == (wF & 1) ) // odd wF
-					vhdl << "Q(" << 2*nDigit-1 << " downto 1);  -- odd wF" << endl;
-				else
-					vhdl << "Q(" << 2*nDigit-1 << " downto 3)  & (Q(2) or Q(1));  -- even wF, fixing the round bit" << endl;
-			}
-			else { // alpha=2  
-				vhdl << tab << declare("fR", wF+4) << " <= ";
-				if (1 == (wF & 1) ) // odd wF
-					vhdl << "Q(" << 2*nDigit-2 << " downto 0);  -- odd wF" << endl;
-				else
-					vhdl << "Q(" << 2*nDigit-2 << " downto 2)  & (Q(1) or Q(0));  -- even wF, fixing the round bit" << endl;
-				}
 
-
-
-
-			
+			// preparing the extraction of a mantissa from q
+			qSize=2*nDigit; // where nDigit is  floor((wF + extraBit)/2)
+			if(alpha==2)
+				qMsbToDiscard=1;// due to initial alignment to respect R0<rho D with rho=2/3
+			else
+				qMsbToDiscard=0; 
 		}
+		
+		vhdl << tab << "-- keep wF+4 bits, discarding the possible known zeroes of Q, and building a sticky in the LSB" << endl;
+		int lsbSize = qSize-qMsbToDiscard-(wF+3);
+		vhdl << tab << declare(getTarget()->lutDelay(), "fR", wF+4) << " <= Q(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<") & (";
+		
+		// computation of the sticky bit
+		for(int j=lsbSize-1; j>=0; j--) {
+			if (j<lsbSize-1)
+				vhdl << " or ";
+			vhdl << "Q(" << j <<")";
+		}
+		vhdl << "); " << endl;
 
 		vhdl << tab << "-- fR has wf+4 mantissa bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit, and 1 sticky bit" << endl;
 		vhdl << tab << "-- normalisation" << endl;

@@ -13,7 +13,7 @@ namespace flopoco {
 	{
 		auto min_max_size = min_max_val.size();
 		auto ret_size = min_max_size / 2;
-		vector<min_max_t> ret_val{ret_size};
+		vector<min_max_t> ret_val(ret_size);
 		mpz_class max_dist{0};
 
 		for (size_t i = 0 ; i < ret_size ; i++) {
@@ -31,7 +31,7 @@ namespace flopoco {
 	auto groupSlices(vector<mpz_class> const & values)
 	{
 		auto value_size = values.size();
-		vector<min_max_t> ret{value_size};
+		vector<min_max_t> ret(value_size);
 		for (size_t i = 0 ; i < value_size ; ++i) {
 			ret[i] = std::make_pair(values[i], values[i]);
 		}
@@ -51,7 +51,7 @@ namespace flopoco {
 		bool overlapped = false;
 		mpz_class lowbit_mask{1};
 		lowbit_mask <<= wL;
-		auto overflow_detect = lowbit_mask + 1;
+		mpz_class overflow_detect = lowbit_mask + 1;
 		for (auto const & [min, max] : min_max) {
 			mpz_class min_low_bits{min & lowbit_mask};
 			mpz_class delta{max - min};
@@ -97,8 +97,8 @@ namespace flopoco {
 		auto sssize = size >> s;
 		auto shift = 1 << s;
 		auto shift_h = wOut - wH;
-		vector<mpz_class> diff_table{size};
-		vector<mpz_class> subsamples_table{sssize};
+		vector<mpz_class> diff_table(size);
+		vector<mpz_class> subsamples_table(sssize);
 
 		mpz_class H_mask{1}, L_mask{1};
 		H_mask <<= wH;
@@ -137,8 +137,8 @@ namespace flopoco {
 			auto ret = costDiffTable + costSubSampleSize;
 			return ret;
 		};
-		auto original_cost = costModel(wIn, wOut, target);
-		auto best_cost = original_cost;
+		mpz_class original_cost = costModel(wIn, wOut, target);
+		mpz_class best_cost = original_cost;
 		int best_split = 0;
 		int best_wh = wOut;
 		int best_wl = 0;
@@ -146,7 +146,7 @@ namespace flopoco {
 		for (int s = 1 ; s < wIn ; s++) {
 			std::tie(min_max, max_dist) = groupSlices(min_max);
 			auto minWL = intlog2(max_dist);
-			for (auto wL = minWL ; minWL < wIn - 1 ; ++minWL) {
+			for (auto wL = minWL ; minWL < wOut - 1 ; ++minWL) {
 				auto [interestingSol, overlapped, costBestSol, bestLocalWH] = find_best_subconfig(
 						min_max,
 						wIn,

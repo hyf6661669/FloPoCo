@@ -318,7 +318,7 @@ namespace flopoco {
                 }
             }
             // fill bits in temporary bitheap
-            if ((combiMax - combiMin) <= minBHRange && bitsToBitHeap <= minBitsToBitHeap
+            if (!rangeReached && (combiMax - combiMin) <= minBHRange && bitsToBitHeap <= minBitsToBitHeap
                 && bhHeight <= maxBhHeight) {
                 minBitsToBitHeap = bitsToBitHeap;
                 minBHRange = combiMax - combiMin;

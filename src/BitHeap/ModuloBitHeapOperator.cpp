@@ -84,6 +84,8 @@ namespace flopoco {
                 REPORT(INFO, "bitheapHeight == 1");
                 if (method == "compl") {
                     applyPseudoCompressors();
+                } else if (method == "complBitsFirst") {
+                    applyPseudoCompressorsBitsFirst();
                 } else if (method == "lMinBits") {
                     applyPseudoCompressorsMinBits();
                     if (checkForRepetition()) {
@@ -189,6 +191,168 @@ namespace flopoco {
 
     void ModuloBitHeapOperator::applyPseudoCompressors() {
         REPORT(INFO,"applyPseudoCompressors complete search");
+        int smsb = getMSBInStage();
+        vector<vector<long long>> rangeContrib(smsb+1,vector<long long>(5));
+        long long oneLL = static_cast<long long>(1);
+
+        // fills the first two rows with the modulus and the congruent negative modulus
+        for (int i = 0; i <= smsb; ++i) {
+            rangeContrib[i][0] = (oneLL << (i)) % modulo;
+            rangeContrib[i][1] = rangeContrib[i][0] - modulo;
+            if (i == smsb && rangeBH[stage][0] < 0) {
+                rangeContrib[i][0] = (((-oneLL << (i)) % modulo) + modulo) % modulo;
+                rangeContrib[i][1] = rangeContrib[i][0] - modulo;
+            }
+        }
+
+        int maxBhHeight = INT_MAX;
+        int minBitsToBitHeap = INT_MAX;
+        int minBHRange = INT_MAX;
+        int targetMaxBhHeight = INT_MAX;
+        int targetMinBitsToBitHeap = INT_MAX;
+        int targetMinBHRange = INT_MAX;
+        int rangeReached = 0;
+        vector<vector<long long>> ranges(2,vector<long long>(2));
+        vector<vector<vector<long long>>> tmpBitHeap(smsb+1,vector<vector<long long> >(64,vector<long long>(2)));
+
+        // initialize tmpBitHeap with -1
+        for (int i = 0; i < tmpBitHeap.size(); ++i) {
+            for (int j = 0; j < tmpBitHeap[i].size(); ++j) {
+                for (int k = 0; k < tmpBitHeap[i][j].size(); ++k) {
+                    tmpBitHeap[i][j][k] = -1;
+                }
+            }
+        }
+
+        for (int combi = 0; combi <= (oneLL << (smsb+1))-1; ++combi) {
+            long long combiMin = 0;
+            long long combiMax = 0;
+            int bhHeight = 0;
+            int bitsToBitHeap = 0;
+            // calculate rangeBH max and min
+            for (int i = 0; i <= smsb ; ++i) {
+                if ((combi & (oneLL << (i))) != 0 ) {
+                    rangeContrib[i][2] = rangeContrib[i][0];
+                    combiMax = combiMax + rangeContrib[i][0];
+                } else {
+                    rangeContrib[i][2] = rangeContrib[i][1];
+                    combiMin = combiMin + rangeContrib[i][1];
+                }
+            }
+
+            vector<vector<long long>> combiBitHeap(reqBitsForRange(combiMin, combiMax),vector<long long>(64));
+            // initialize combiBitHeap with -1
+            for (int i = 0; i < combiBitHeap.size(); ++i) {
+                for (int j = 0; j < combiBitHeap[i].size(); ++j) {
+                    combiBitHeap[i][j] = -1;
+                }
+            }
+
+            vector<int> bhHeights(combiBitHeap.size());
+            int constVec = 0;
+            // for every column on bitheap
+            for (int i = 0; i <= smsb; ++i) {
+                int leadingZeroWeight = getLeadingZero(rangeContrib[i][2]);
+                for (int j = 0; j < combiBitHeap.size(); ++j) {
+                    if ((rangeContrib[i][2] & (oneLL << (j))) != 0 ) {
+                        int bit = 0;
+                        while (combiBitHeap[j][bit] != -1) {
+                            bit++;
+                        }
+                        bitsToBitHeap++;
+                        bhHeights[j] = bhHeights[j] + 1;
+                        if (bhHeight < bhHeights[j]) {
+                            bhHeight = bhHeights[j];
+                        }
+                        if (j < leadingZeroWeight+1 || 0 <= rangeContrib[i][2]) {
+                            combiBitHeap[j][bit] = i + (oneLL << (48));
+                        } else {
+                            combiBitHeap[j][bit] = i + (oneLL << (48)) + (oneLL << (32));
+                            constVec = (constVec + (oneLL << (combiBitHeap.size())) - 1 -
+                                        ((oneLL << (leadingZeroWeight+1)) - 1));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < combiBitHeap.size(); ++i) {
+                if ((constVec & (oneLL << (i))) != 0) {
+                    int bit = 0;
+                    while (combiBitHeap[i][bit] != -1) {
+                        bit++;
+                    }
+                    combiBitHeap[i][bit] = i + (oneLL << (48)) + 5 * (oneLL << (32));
+                    bitsToBitHeap++;
+                    bhHeights[i] = bhHeights[i] + 1;
+                    if (bhHeight < bhHeights[i]) {
+                        bhHeight = bhHeights[i];
+                    }
+                }
+            }
+            // final stage of pseudocompression
+            if (-modulo <= combiMin && combiMax < modulo) {
+                if ((combiMax - combiMin) <= targetMinBHRange && bitsToBitHeap <= targetMinBitsToBitHeap
+                    && bhHeight <= targetMaxBhHeight) {
+                    targetMaxBhHeight = bhHeight;
+                    targetMinBitsToBitHeap = bitsToBitHeap;
+                    targetMinBHRange = (combiMax - combiMin);
+                    REPORT(INFO, "rangeReached");
+                    rangeReached = 1;
+                    ranges[1] = {combiMin, combiMax};
+                    for (int i = 0; i < rangeContrib.size(); ++i) {
+                        rangeContrib[i][4] = rangeContrib[i][2];
+                    }
+                    tmpBitHeap.resize(combiBitHeap.size());
+                    for (int i = 0; i < tmpBitHeap.size(); ++i) {
+                        tmpBitHeap[i].resize(64);
+                        for (int j = 0; j < tmpBitHeap[i].size(); ++j) {
+                            tmpBitHeap[i][j].resize(2);
+                        }
+                    }
+                    for (int i = 0; i < combiBitHeap.size(); ++i) {
+                        for (int j = 0; j < combiBitHeap[i].size(); ++j) {
+                            tmpBitHeap[i][j][1] = combiBitHeap[i][j];
+                        }
+                    }
+                }
+            }
+            // fill bits in temporary bitheap
+            if ((combiMax - combiMin) <= minBHRange && bitsToBitHeap <= minBitsToBitHeap
+                && bhHeight <= maxBhHeight) {
+                minBitsToBitHeap = bitsToBitHeap;
+                minBHRange = combiMax - combiMin;
+                ranges[0] = {combiMin, combiMax};
+                for (int i = 0; i < rangeContrib.size(); ++i) {
+                    rangeContrib[i][3] = rangeContrib[i][2];
+                }
+                maxBhHeight = bhHeight;
+                tmpBitHeap.resize(combiBitHeap.size());
+                for (int i = 0; i < tmpBitHeap.size(); ++i) {
+                    tmpBitHeap[i].resize(64);
+                    for (int j = 0; j < tmpBitHeap[i].size(); ++j) {
+                        tmpBitHeap[i][j].resize(2);
+                    }
+                }
+                for (int i = 0; i < combiBitHeap.size(); ++i) {
+                    for (int j = 0; j < combiBitHeap[i].size(); ++j) {
+                        tmpBitHeap[i][j][0] = combiBitHeap[i][j];
+                    }
+                }
+            }
+        }
+        // fill bits from tmp bitheap in bits
+        rangeBH[stage+1] = ranges[rangeReached];
+        int reqCols = reqBitsForRange(ranges[rangeReached][0], ranges[rangeReached][1]);
+        for (int i = 0; i < reqCols; ++i) {
+            for (int j = 0; j < tmpBitHeap[i].size(); ++j) {
+                bits[stage+1][i][j] = tmpBitHeap[i][j][rangeReached];
+            }
+        }
+    }
+
+    void ModuloBitHeapOperator::applyPseudoCompressorsBitsFirst() {
+        REPORT(INFO,"applyPseudoCompressors complete search with bits considered before range");
         int smsb = getMSBInStage();
         vector<vector<long long>> rangeContrib(smsb+1,vector<long long>(5));
         long long oneLL = static_cast<long long>(1);
@@ -850,7 +1014,7 @@ namespace flopoco {
                            "wIn(int)=16: A first parameter - the input size; \
                             modulo(int): modulo; \
                             method(string)=compl: The method used for the pseudo compression."
-                           " 4 available: 'compl' - for the complete search, 'lMinBits' - for the local bit minimization"
+                           " 5 available: 'compl' - for the complete search, 'complBitsFirst' - for the complete search evaluating the amount of bits before range, 'lMinBits' - for the local bit minimization"
                            " 'minRange' - for the per bit range minimization, 'minRangeWeight' - for a combination of local bit and range minimization",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",

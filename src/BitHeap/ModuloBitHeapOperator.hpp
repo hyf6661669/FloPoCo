@@ -42,6 +42,8 @@ namespace flopoco {
 
         void applyPseudoCompressors();
 
+        void applyPseudoCompressorsBitsFirst();
+
         void applyPseudoCompressorsMinBits();
 
         void applyPseudoCompressorsMinRange();

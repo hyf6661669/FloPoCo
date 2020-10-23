@@ -33,7 +33,7 @@ namespace flopoco{
 		int	maxIterations;         /**< index at which iterations stop */
 		int gXY;                   /**< number of guard bits on the (X,Y) datapath */
 		int gA;                    /**< number of guard bits on the Angle datapath */
-		vector<mpfr_t> atani;      /**< */
+//		vector<mpfr_t> atani;      /**< */
 
 		void computeGuardBits();
 		

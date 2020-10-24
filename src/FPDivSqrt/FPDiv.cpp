@@ -43,50 +43,85 @@ namespace flopoco{
 
 #define DEBUGVHDL 0
 
-	// TODO replace all these pow(2, ...) with something safer.
-	
+	// BEWARE, only works for dMax<1
 	vector<mpz_class> FPDiv::selFunctionTable(double dMin, double dMax, int nbBitD, int nbBitW, int alpha, int radix) {
-
 		int wIn = nbBitD+nbBitW;
 		int wOut = 1+intlog2(alpha); //Nb of bit for the integer part of w
 		double rho = ((double)alpha)/(radix-1);
 
+		if (dMax>1) {
+			REPORT(0, endl << "FPDiv::selFunctionTable: Code untested for dMax>1" << endl);
+		}
+		// what is the weight of the MSB of d, the bits of D passed to selFunTable?
+		// dMin between 0.5 and 0.75 -> msbWeight=0.5
+		// dMin between 0.75 and 0.111_2 - > msbwWeight=1/4
+		double dmsbweight=.5; // 
+		while(dMin >= (1-dmsbweight/2))	{   // e.g when dMin=0.5 or 0.6, no loop
+	 		dmsbweight *= 0.5;
+		}
+		REPORT(0, "dmsbweight=" << dmsbweight);
 		vector<mpz_class> t;
 		for (int x=0; x<(1<<wIn); x++) {					
 			int w = (x>>nbBitD);	 // splitting x into  w and d
-			int d = x - (w<<nbBitD);
+			int d = x - (w<<nbBitD); // when nbitD=0, this ensures d=0
 			int wSign = (w >> (nbBitW-1)) << (nbBitW-1); //getting the sign bit
-			w -= 2*wSign; // recovering the signed value 
-					
+			w -= 2*wSign; // recovering the signed value
+
+			// Now compute the intervals that these values represent: any number in [realwMin, realwMax) may have been truncated to w.
+			double realwMin = 2*radix * ((double)w) / ((double)(1<<nbBitW)); // exact, in [-beta, beta). This bound is reached
+			double realwMax = 2*radix * ((double)w+1) / ((double)(1<<nbBitW)); // exact, in [-beta, beta). This bound is never reached
+			double epsilon = ( (double) 1)  / (1ULL<<40) ; 
+			realwMax -= epsilon; // dirty hack 
+
+			double realdMin = (1-dmsbweight)  +  dmsbweight * ((double)d) / ((double)(1<<nbBitD)); // exact, in [0, 1). This bound is reached
+			double realdMax = (1-dmsbweight)  +  dmsbweight *  ((double)d+1) / ((double)(1<<nbBitD)); // exact, in [0, 1). This bound is reached
+			realdMax -= epsilon; // dirty hack
+			
+			realdMin = max(realdMin,dMin); // ignore whatever is on the left of dMin
+			realdMax = min(realdMax,dMax); // ignore whatever is on the right of dMax
 			int result;
-			double realw = ((double)w) / ((double)(1<< (nbBitW-wOut)));
-					
-			double hPitch = pow(2, -nbBitD)*(dMax-dMin);
-			double vPitch = pow(2, -nbBitW+wOut);
-					
-			double uSlope, lSlope;
-			int uCorrecter, lCorrecter;
+			double uSlope, lSlope, uBound, lBound;
 					
 			result=1<<30;
-			for(int k = -alpha; k <= alpha; k++)		{
+
+			// was: 			for(int k = -alpha; k <= alpha; k++)		{
+			// but we want to favor negative numbers when Ri<0
+			int kstart, kstop, delta;
+			if(wSign>=0) {
+				kstart = -alpha;
+				kstop = alpha+1;
+				delta = +1;
+			}
+			else {
+				kstart = alpha;
+				kstop = -alpha-1;
+				delta = -1;
+			}
+			for(int k = kstart; k!= kstop; k+=delta) {
 				uSlope = k+rho;
 				lSlope = k-rho;
 
-				uCorrecter = (uSlope<0 ? 1 : 0);
-				lCorrecter = (lSlope<0 ? 0 : 1);
+				uBound = uSlope * (uSlope>=0? realdMin: realdMax);	
+				lBound = lSlope * (lSlope>=0? realdMax: realdMin);	
 
-				double wMax = ((d+uCorrecter)*hPitch + dMin) * uSlope;
-				double wMin = ((d+lCorrecter)*hPitch + dMin) * lSlope;
-
-				if((realw+vPitch <= wMax && realw >= wMin) || (k == alpha && realw >= wMin) || (k == -alpha && realw+vPitch <= wMax))		{
-					result = k;
-					break;
-				}
-			}
+				/* the actual test is the first line. 
+					 The second and third are there to pad with -alpha and alpha the unreachable parts 
+					 of the domain, becaause we don't have don't cares in FloPoCo yet. 
+					 Incidentally, it protects us from the Pentium bug */
+				//cerr << "k=" << k<< " realwMax=" << realwMax << " <=  uBound="<< uBound << "? :"<< (realwMax <= uBound) << "   realwMin=" << realwMin << ">= lBound="<<lBound << " ?" <<endl;
+				if( (realwMax <= uBound && realwMin >= lBound)
+						|| (k == alpha && realwMin >= lBound)  
+						|| (k == -alpha && realwMax <= uBound) 
+						)
+					{
+						result = k;
+						break;
+					}
+		}
 			if(result==1<<30) {
-				REPORT(0, "digit selection failed for w=" << w << " and d=" << d);
+				THROWERROR("digit selection failed for w=" << w << " and d=" << d);
 			}
-			int result2c = result;
+		int result2c = result;
 			if(result < 0)	
 				result2c+=(1<<wOut); //switch to two's complement
 
@@ -94,7 +129,7 @@ namespace flopoco{
 						
 			mpzresult = mpz_class(result2c);
 
-			//cerr << " "<< result << "  " << result2c << endl;
+			// cerr << " w="<< w  << "  "<<  realwMin  << "  "<<  realwMax  <<" d=" << d << "  "<<  realdMin  << "  "<<  realdMax << " qi=" << result << "  " << result << endl;
 			t.push_back(mpzresult);
 		}
 		return t;
@@ -320,7 +355,7 @@ namespace flopoco{
 				}
 				else if(prescaling==0) { // no prescaling
 					nbBitsD=3;
-					nbBitsW=7;
+					nbBitsW=6;
 					tableContent = selFunctionTable(0.5, 1.0, nbBitsD, nbBitsW, alpha, radix);
 				}
 				else THROWERROR("prescaling="<< prescaling << " is not an option");
@@ -363,13 +398,13 @@ namespace flopoco{
 			nbBitsW=5;
 			tableContent = selFunctionTable(1.-1./64., 1.+1./8., nbBitsD, nbBitsW, alpha, radix);
 #endif
+
+
 			selfunctiontable = new Table(this, target, tableContent,"selFunction", nbBitsD+nbBitsW, 3);
 			selfunctiontable->setShared();
 
 			////////////////////// Main SRT loop, unrolled ///////////////////////
 
-
-			
 			for(i=nDigit-1; i>=1; i--) {
 
 				string qi =join( "q", i);						//current quotient digit, LUT's output

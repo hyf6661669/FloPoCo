@@ -59,6 +59,7 @@ XilinxFourToTwoCompressor
 TutorialOperator
 ModuloBitHeapOperator
 ModuloMontgomery
+ModuloBarrett
 BaseMultiplierDSPSuperTilesXilinx
 BaseMultiplierXilinx2xk
 BaseMultiplierIrregularLUTXilinx

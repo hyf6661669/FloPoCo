@@ -103,7 +103,7 @@ namespace flopoco {
                 ostringstream tName;
                 int index = i+1;
                 tName << "T_" << index;
-                vhdl << tab << declare(
+                vhdl << tab << declare(getTarget()->adderDelay(modSize*2*R),
                         tName.str(), modSize*2*R, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << i
                      << ") + SHIFT_LEFT(TO_UNSIGNED(M," << modSize+i << ")," << i << ")) when T_" << i << of(i) << " = '1' else T_" << i << ";" << endl;
             }
@@ -111,7 +111,7 @@ namespace flopoco {
                     "TResTemp", modSize*2*R, false) << tab << "<= STD_LOGIC_VECTOR(SHIFT_RIGHT(UNSIGNED(T_" << modSize << ")," << modSize << "))"  << ";" << endl;
             vhdl << tab << declare(
                     "TRes", modSize+1, false) << tab << " <= TResTemp" << range(modSize, 0) << ";" << endl;
-            vhdl << tab << declare("TResMM", modSize+1, false) << "<= STD_LOGIC_VECTOR(UNSIGNED(TRes) - M)" << ";" << endl;
+            vhdl << tab << declare(getTarget()->adderDelay(modSize+1),"TResMM", modSize+1, false) << "<= STD_LOGIC_VECTOR(UNSIGNED(TRes) - M)" << ";" << endl;
             vhdl << tab << declare(
                     "RedRes", modSize, false) << tab << " <= TRes" << range(modSize-1, 0) << " when UNSIGNED(TRes) < M else TResMM" << range(modSize-1, 0) << ";" << endl;
 
@@ -122,11 +122,11 @@ namespace flopoco {
                 ostringstream rTmp1Name;
                 int index = i+1;
                 rTmp1Name << "Rtmp1_" << i;
-                vhdl << tab << declare(
+                vhdl << tab << declare(getTarget()->adderDelay(modSize*2),
                         rTmp1Name.str(), modSize*2, false) << tab << "<= R_" << i << " when RedRes" << of(i) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(R_" << i << ") + conMult);" << endl;
                 ostringstream rTmp2Name;
                 rTmp2Name << "Rtmp2_" << i;
-                vhdl << tab << declare(
+                vhdl << tab << declare(getTarget()->adderDelay(modSize*2),
                         rTmp2Name.str(), modSize*2, false) << tab << "<= Rtmp1_" << i << " when Rtmp1_" << i << of(0) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(Rtmp1_" << i << ") + M);" << endl;
                 ostringstream rTmp3Name;
                 rTmp3Name << "R_" << index;

@@ -3,6 +3,7 @@
 //
 
 #include <math.h>
+#include "../utils.hpp"
 #include "ModuloBarrett.hpp"
 
 using namespace std;
@@ -39,7 +40,7 @@ namespace flopoco {
         newInstance("IntConstMult", "XmMult", multMParams.str(), "X=>X", "R=>Xm");
 
         // only take msb without k lsb
-        int xmSize = wIn + floor(log2(m)+1);
+        int xmSize = intlog2(m * ((mpz_class(1) << wIn)-1));
         int qSize = xmSize - k;
 
         vhdl << tab << declare(
@@ -49,7 +50,7 @@ namespace flopoco {
         multModuloParams << "wIn=" << qSize << " n=" << modulo;
         newInstance("IntConstMult", "QModuloMult", multModuloParams.str(), "X=>Q", "R=>QModulo");
         // subtract new result from X and put in Y
-        int multSize = qSize + floor(log2(modulo)+1);
+        int multSize = intlog2(modulo * ((mpz_class(1) << qSize)-1));
         vhdl << tab << declare(
                 "YTmp", multSize, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(X) - UNSIGNED(QModulo));" << endl;
         vhdl << tab << "Y <= YTmp" << range(modSize-1, 0) << ";" << endl;

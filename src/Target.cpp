@@ -26,7 +26,6 @@ namespace flopoco{
 	extern int verbose;
 
 	Target::Target()   {
-			generateFigures_=false;
             useTargetOptimizations_=true;
 			lutInputs_         = 4;
 			hasHardMultipliers_= true;
@@ -38,7 +37,10 @@ namespace flopoco{
 			frequency_         = 400000000.;
 			useHardMultipliers_= true;
 			unusedHardMultThreshold_=0.5;
+			registerLargeTables_=true; 
+			tableCompression_=true;
 			ilpTimeout_=0;
+			generateFigures_=false;
 		}
 
 	Target::~Target()
@@ -121,6 +123,24 @@ namespace flopoco{
     void  Target::setGenerateFigures(bool b)
     {
       generateFigures_ = b;
+    }
+
+	bool  Target::registerLargeTables(){
+		return registerLargeTables_;
+	}
+
+    void  Target::setRegisterLargeTables(bool b)
+    {
+      registerLargeTables_ = b;
+    }
+	
+	bool  Target::tableCompression(){
+		return tableCompression_;
+	}
+
+    void  Target::setTableCompression(bool b)
+    {
+      tableCompression_ = b;
     }
 
     bool  Target::useTargetOptimizations()

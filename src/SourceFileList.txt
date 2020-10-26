@@ -38,7 +38,7 @@ BitHeap/OptimalCompressionStrategy
 TutorialOperator
 ShiftersEtc/LZOC
 ShiftersEtc/LZOC3
-ShiftersEtc/LZOCShifterSticky
+ShiftersEtc/Normalizer
 ShiftersEtc/Shifters
 ShiftReg
 FixFilters/FixSOPC
@@ -102,6 +102,7 @@ Complex/FixComplexR2Butterfly
 Complex/FixFFTFullyPA
 Conversions/Posit2FP
 Conversions/FP2Fix
+Conversions/Fix2FP
 Conversions/OutputIEEE
 FPAddSub/FPAdd
 FPAddSub/FPAddDualPath
@@ -132,6 +133,9 @@ Trigs/FixSinPoly
 Trigs/FixSinCos
 Trigs/FixSinCosPoly
 Trigs/FixSinCosCORDIC
+Trigs/FixAtan2
+Trigs/FixAtan2ByCORDIC
+Trigs/FixAtan2ByRecipMultAtan
 PrimitiveComponents/BooleanEquation
 PrimitiveComponents/GenericLut
 PrimitiveComponents/Primitive

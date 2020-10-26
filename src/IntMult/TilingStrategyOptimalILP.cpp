@@ -170,10 +170,16 @@ void TilingStrategyOptimalILP::constructProblem()
     }
 
     //limit use of shape n
-    int nDSPTiles = 0;
+    bool nDSPTiles = false;
     for(int s = 0; s < wS; s++)
+    {
         if(tiles[s]->getDSPCost())
-            nDSPTiles++;
+        {
+            nDSPTiles = true;
+            break;
+        }
+    }
+
     if(nDSPTiles) {
         cout << "   adding the constraint to limit the use of DSP-Blocks to " << max_pref_mult_ << " instances..." << endl;
         stringstream consName;

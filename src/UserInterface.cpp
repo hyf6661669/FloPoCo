@@ -34,6 +34,8 @@ namespace flopoco
 	double UserInterface::targetFrequencyMHz;
 	bool   UserInterface::clockEnable;
 	bool   UserInterface::useHardMult;
+	bool   UserInterface::registerLargeTables;
+	bool   UserInterface::tableCompression;
 	bool   UserInterface::plainVHDL;
 	bool   UserInterface::generateFigures;
 	double UserInterface::unusedHardMultThreshold;
@@ -115,6 +117,8 @@ namespace flopoco
 				v.push_back(option_t("plainVHDL", values));
 				v.push_back(option_t("generateFigures", values));
 				v.push_back(option_t("useHardMults", values));
+				v.push_back(option_t("registerLargeTables", values));
+				v.push_back(option_t("tableCompression", values));
 				v.push_back(option_t("useTargetOptimizations", values));
 				v.push_back(option_t("ilpSolver", values));
 				v.push_back(option_t("ilpTimeout", values));
@@ -191,6 +195,8 @@ namespace flopoco
 		parseBoolean(args, "clockEnable", &clockEnable, true);
 		parseFloat(args, "hardMultThreshold", &unusedHardMultThreshold, true); // sticky option
 		parseBoolean(args, "useHardMult", &useHardMult, true);
+		parseBoolean(args, "registerLargeTables", &registerLargeTables, true);
+		parseBoolean(args, "tableCompression", &tableCompression, true);
 		parseBoolean(args, "generateFigures", &generateFigures, true);
 		parseBoolean(args, "useTargetOptimizations", &useTargetOptimizations, true);
 		parseString(args, "ilpSolver", &ilpSolver, true); // sticky option
@@ -347,14 +353,17 @@ namespace flopoco
 		targetFPGA=defaultFPGA;
 		targetFrequencyMHz=400;
 		useHardMult=true;
+		registerLargeTables=false;
+		tableCompression=false;
 		unusedHardMultThreshold=0.7;
 		compression = "heuristicMaxEff";
-		tiling = "heuristicBasicTiling";
+		tiling = "heuristicBeamSearchTiling";
 
 		ilpSolver = "Gurobi";
 		ilpTimeout = 0; //timeout disabled
 
-		depGraphDrawing = "full";
+		depGraphDrawing = "no";
+		generateFigures = false;
 		pipelineActive_ = true;
 
 	}
@@ -453,6 +462,8 @@ namespace flopoco
 				target->setFrequency(1e6*targetFrequencyMHz);
 				target->setUseHardMultipliers(useHardMult);
 				target->setUnusedHardMultThreshold(unusedHardMultThreshold);
+				target->setRegisterLargeTables(registerLargeTables);
+				target->setTableCompression(tableCompression);
 				target->setPlainVHDL(plainVHDL);
 				target->setGenerateFigures(generateFigures);
 				target->setUseTargetOptimizations(useTargetOptimizations);
@@ -775,14 +786,16 @@ namespace flopoco
 		s << "  " << COLOR_BOLD << "frequency" << COLOR_NORMAL << "=<float>:            target frequency in MHz (default 400, 0 means: no pipeline) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "plainVHDL" << COLOR_NORMAL << "=<0|1>:              use plain VHDL (default), or not " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL << endl;
 		s << "  " << COLOR_BOLD << "useHardMult" << COLOR_NORMAL << "=<0|1>:            use hardware multipliers " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+		s << "  " << COLOR_BOLD << "tableCompression" << COLOR_NORMAL << "=<0|1>:       use errorless table compression when possible (default false while experimental)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+		s << "  " << COLOR_BOLD << "registerLargeTables" << COLOR_NORMAL << "=<0|1>:    force registering of large ROMs to force the use of blockRAMs (default false)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "useTargetOptimizations" << COLOR_NORMAL << "=<0|1>: use target specific optimizations (e.g., using primitives) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "ilpSolver" << COLOR_NORMAL << "=<string>:           override ILP solver for operators optimized by ILP, has to match a solver name known by the ScaLP library" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "ilpTimeout" << COLOR_NORMAL << "=<int>:             sets the timeout in seconds for the ILP solver for operators optimized by ILP (default=3600)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "compression" << COLOR_NORMAL << "=<heuristicMaxEff,heuristicPA,heuristicFirstFit,optimal,optimalMinStages>:        compression method (default=heuristicMaxEff)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
-		s << "  " << COLOR_BOLD << "tiling" << COLOR_NORMAL << "=<heuristicBasicTiling,optimal,heuristicGreedyTiling,heuristicXGreedyTiling,heuristicBeamSearchTiling>:        tiling method (default=heuristicBasicTiling)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+		s << "  " << COLOR_BOLD << "tiling" << COLOR_NORMAL << "=<heuristicBasicTiling,optimal,heuristicGreedyTiling,heuristicXGreedyTiling,heuristicBeamSearchTiling>:        tiling method (default=heuristicBeamSearchTiling)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
         s << "  " << COLOR_BOLD << "hardMultThreshold" << COLOR_NORMAL << "=<float>: unused hard mult threshold (O..1, default 0.7) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
-		s << "  " << COLOR_BOLD << "generateFigures" << COLOR_NORMAL << "=<0|1>:generate SVG graphics (default off) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL << endl;
 		s << "  " << COLOR_BOLD << "verbose" << COLOR_NORMAL << "=<int>:        verbosity level (0-4, default=1)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+		s << "  " << COLOR_BOLD << "generateFigures" << COLOR_NORMAL << "=<0|1>:generate graphics in SVG or LaTeX for some operators (default off) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL << endl;
 		s << "  " << COLOR_BOLD << "dependencyGraph" << COLOR_NORMAL << "=<no|compact|full>: generate data dependence drawing of the Operator (default no) " << COLOR_RED_NORMAL << COLOR_NORMAL<<endl;
 		s << "Sticky options apply to the rest of the command line, unless changed again" <<endl;
 		s <<endl;

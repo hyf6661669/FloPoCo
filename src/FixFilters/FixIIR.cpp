@@ -497,7 +497,7 @@ namespace flopoco {
 											 "A fix-point Infinite Impulse Response filter generator.",
 											 "FiltersEtc", // categories
 											 "",
-											 "lsbIn(int): input most significant bit;\
+											 "lsbIn(int): input least significant bit;\
                         lsbOut(int): output least significant bit;\
                         H(real)=0: worst-case peak gain. if 0, it will be computed by the WCPG library;\
                         Heps(real)=0: worst-case peak gain of the feedback loop. if 0, it will be computed by the WCPG library;\

@@ -30,6 +30,10 @@
 #include <utils.hpp>
 #include <Operator.hpp>
 
+#include "../ShiftersEtc/LZOC.hpp"
+#include "../ShiftersEtc/Shifters.hpp"
+#include "../ShiftersEtc/Normalizer.hpp"
+#include "../IntAddSubCmp/IntAdder.hpp"
 
 using namespace std;
 
@@ -72,7 +76,11 @@ namespace flopoco{
 		//                          Swap/Difference                                |
 		// ========================================================================|
 		// In principle the comparison could be done on the exponent only, but then the result of the effective addition could be negative,
-		// so we would have to take its absolute value, which would cost the same as comparing exp+frac here.
+		// so we would have to take its absolute value, which would cost
+		// one mantissa mux selected by the sign bit of the difference.
+		// Area-wise it would be the same as comparing exp+frac here.
+		// Delay-wise it adds one mux delay and removes the delay of a wF-bit carry propagation.
+		// So the present choice should be better for small sizes and worse for large sizes...
 		vhdl << tab << declare("excExpFracX",2+wE+wF) << " <= X"<<range(wE+wF+2, wE+wF+1) << " & X"<<range(wE+wF-1, 0)<<";"<<endl;
 		vhdl << tab << declare("excExpFracY",2+wE+wF) << " <= Y"<<range(wE+wF+2, wE+wF+1) << " & Y"<<range(wE+wF-1, 0)<<";"<<endl;
 
@@ -178,7 +186,7 @@ with vrs -i
 #if 0 // full shifter, then sticky
 		newInstance("Shifter",
 								"RightShifterComponent",
-								"wIn=" + to_string(wF+1) + " maxShift=" + to_string(wF+3) + " dir=1",
+								"wX=" + to_string(wF+1) + " maxShift=" + to_string(wF+3) + " dir=1",
 								"X=>fracY,S=>shiftVal",
 								"R=>shiftedFracY");
 		
@@ -189,7 +197,7 @@ with vrs -i
 #else //combined shifter+Sticky
 		newInstance("Shifter",
 								"RightShifterComponent",
-								"wIn=" + to_string(wF+1) + " wOut=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
+								"wX=" + to_string(wF+1) + " wR=" + to_string(wF+3) + " maxShift=" + to_string(wF+3) + " dir=1 computeSticky=1",
 								"X=>fracY, S=>shiftVal",
 								"R=>shiftedFracY, Sticky=>sticky");
 		
@@ -213,18 +221,18 @@ with vrs -i
 		//shift in place
 		vhdl << tab << declare("fracSticky",wF+5) << "<= fracAddResult & sticky; "<<endl;
 
-		LZOCShifterSticky* lzocs = (LZOCShifterSticky*)
-			newInstance("LZOCShifterSticky",
+		Normalizer* lzocs = (Normalizer*)
+			newInstance("Normalizer",
 									"LZCAndShifter",
-									"wIn=" + to_string(wF+5) + " wOut=" + to_string(wF+5) + " wCount=" + to_string(intlog2(wF+5)) + " computeSticky=false countType=0",
-									"I=>fracSticky",
-									"Count=>nZerosNew, O=>shiftedFrac");
+									"wX=" + to_string(wF+5) + " wR=" + to_string(wF+5) + " maxShift=" + to_string(wF+5) + " countType=0",
+									"X=>fracSticky",
+									"Count=>nZerosNew, R=>shiftedFrac");
 
-		// pipeline: I am assuming the two additions can be merged in a row of luts but I am not sure
-		vhdl << tab << declare("extendedExpInc",wE+2) << "<= (\"00\" & expX) + '1';"<<endl;
+		// pipeline: there is plenty of time for this addition during the significand processing
+		vhdl << tab << declare(getTarget()->adderDelay(wE+1), "extendedExpInc",wE+1) << "<= (\"0\" & expX) + '1';"<<endl;
 
 		vhdl << tab << declare(getTarget()->adderDelay(wE+2),
-													 "updatedExp",wE+2) << " <= extendedExpInc - (" << zg(wE+2-lzocs->getCountWidth(),0) <<" & nZerosNew);"<<endl;
+													 "updatedExp",wE+2) << " <= (\"0\" &extendedExpInc) - (" << zg(wE+2-lzocs->getCountWidth(),0) <<" & nZerosNew);"<<endl;
 		vhdl << tab << declare("eqdiffsign")<< " <= '1' when nZerosNew="<<og(lzocs->getCountWidth(),0)<<" else '0';"<<endl;
 
 

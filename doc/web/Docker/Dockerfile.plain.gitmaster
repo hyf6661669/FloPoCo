@@ -1,8 +1,8 @@
-FROM ubuntu:bionic
+FROM ubuntu:focal
 RUN apt-get update
 RUN yes | apt-get install wget sudo
-RUN wget flopoco.gforge.inria.fr/install_scripts/install-plain-gitmaster-on-bionic64.sh
-RUN yes | sh install-plain-gitmaster-on-bionic64.sh
+RUN wget flopoco.gforge.inria.fr/install_scripts/install-plain-gitmaster-on-focal64.sh
+RUN yes | sh install-plain-gitmaster-on-focal64.sh
 
 VOLUME ["/flopoco_workspace"]
 

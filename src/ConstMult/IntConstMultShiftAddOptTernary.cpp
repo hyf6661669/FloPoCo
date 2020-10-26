@@ -39,7 +39,7 @@ using namespace PAGSuite;
 
 namespace flopoco{
 
-    IntConstMultShiftAddOptTernary::IntConstMultShiftAddOptTernary(Operator* parentOp, Target* target, int wIn, int coeff, bool syncInOut) : IntConstMultShiftAdd(parentOp, target, wIn, "", false, syncInOut, 1000, false, epsilon)
+    IntConstMultShiftAddOptTernary::IntConstMultShiftAddOptTernary(Operator* parentOp, Target* target, int wIn, int coeff, bool syncInOut) : IntConstMultShiftAdd(parentOp, target, wIn, "", false, syncInOut, 1000, false, 0)
     {
 		int maxCoefficient = 4194303; //=2^22-1
 

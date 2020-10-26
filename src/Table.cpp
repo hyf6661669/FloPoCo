@@ -39,7 +39,7 @@ namespace flopoco{
 	{
 		srcFileName = "Table";
 		setNameWithFreqAndUID(_name);
-		setCopyrightString("Florent de Dinechin, Bogdan Pasca (2007-2018)");
+		setCopyrightString("Florent de Dinechin, Bogdan Pasca (2007-2020)");
 		init(_values, _name, _wIn, _wOut,  _logicTable,  _minIn,  _maxIn); 
 	}
 
@@ -171,7 +171,10 @@ namespace flopoco{
 		}
 
 		cpDelay = getTarget()->tableDelay(wIn, wOut, logicTable);
-		vhdl << tab << "with X select " << declare(cpDelay, "Y0", wOut) << " <= " << endl;;
+		declare(cpDelay, "Y0", wOut);
+		REPORT(DEBUG, "logicTable=" << logicTable << "   table delay is "<< cpDelay << "ns");
+		
+		vhdl << tab << "with X select Y0 <= " << endl;;
 		
 		for(unsigned int i=minIn.get_ui(); i<=maxIn.get_ui(); i++)
 			vhdl << tab << tab << "\"" << unsignedBinary(values[i-minIn.get_ui()], wOut) << "\" when \"" << unsignedBinary(i, wIn) << "\"," << endl;
@@ -179,9 +182,8 @@ namespace flopoco{
 		for(int i=0; i<wOut; i++)
 			vhdl << "-";
 		vhdl <<  "\" when others;" << endl;
-
+		
 		// TODO there seems to be several possibilities to make a BRAM; the following seems ineffective
-
 		std::string tableAttributes;
 		//set the table attributes
 		if(getTarget()->getID() == "Virtex6")
@@ -190,7 +192,7 @@ namespace flopoco{
 			tableAttributes =  "attribute rom_extract: string;\nattribute rom_style: string;\nattribute rom_extract of Y0: signal is \"yes\";\nattribute rom_style of Y0: signal is ";
 		else
 			tableAttributes =  "attribute ram_extract: string;\nattribute ram_style: string;\nattribute ram_extract of Y0: signal is \"yes\";\nattribute ram_style of Y0: signal is ";
-
+		
 		if((logicTable == 1) || (wIn <= getTarget()->lutInputs())){
 			//logic
 			if(getTarget()->getID() == "Virtex6")
@@ -202,8 +204,17 @@ namespace flopoco{
 			tableAttributes += "\"block\";";
 		}
 		getSignalByName("Y0") -> setTableAttributes(tableAttributes);
+		schedule();
+		vhdl << declare("Y1", wOut) << " <= Y0; -- for the possible blockram register" << endl;
 
-		vhdl << tab << "Y <= Y0;" << endl;
+		if(!logicTable && getTarget()->registerLargeTables()){ // force a register so that a blockRAM can be infered
+			setSequential();
+			int cycleY0=getCycleFromSignal("Y0");
+			getSignalByName("Y1") -> setSchedule(cycleY0+1, 0);
+			getSignalByName("Y0") -> updateLifeSpan(1) ;
+		}
+		
+		vhdl << tab << "Y <= Y1;" << endl;
 	}
 
 	

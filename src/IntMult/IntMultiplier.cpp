@@ -807,7 +807,6 @@ namespace flopoco {
                         useLUT(bool)=true: if true, attempts to use the LUT-Multipliers for tiling;\
                         useDSP(bool)=true: if true, attempts to use the DSP-Multipliers for tiling;\
                         useKaratsuba(bool)=false: if true, attempts to use rectangular Karatsuba for tiling;\
-                        useKaratsuba(bool)=false: if true, attempts to use the 16x24 sub-size Karazuba-pattern for tiling;\
                         superTile(bool)=false: if true, attempts to use the DSP adders to chain sub-multipliers. This may entail lower logic consumption, but higher latency.;\
                         dspThreshold(real)=0.0: threshold of relative occupation ratio of a DSP multiplier to be used or not;\
 						beamRange(int)=0: range for beam search", // This string will be parsed

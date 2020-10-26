@@ -518,7 +518,9 @@ namespace flopoco{
 		//mark the bitheap as compressed
 		bitheap->isCompressed = true;
 		//plot the bitheap
-		bitheapPlotter->plotBitHeap();
+		if(bitheap->getOp()->getTarget()->generateFigures()) {
+			 bitheapPlotter->plotBitHeap();
+		}
 	}
 
 	bool CompressionStrategy::compress(double delay, Bit *soonestCompressibleBit)

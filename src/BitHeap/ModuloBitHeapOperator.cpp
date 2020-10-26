@@ -35,8 +35,24 @@ namespace flopoco {
         addInput ("X" , wIn, true);
         addConstant("M", "positive", modulo);
         // declaring output
-        int outPutSize = getModuloMSB() + 1;
-        addOutput("S" , outPutSize);
+        int modSize = getModuloMSB() + 1;
+        addOutput("S" , modSize);
+
+        // if wIn is smaller than the bit width of the modulo, no computation has to be done
+        if (wIn < modSize) {
+            addFullComment("Start of vhdl generation");
+            vhdl << tab << "S <= (" << modSize-1 << " downto " << wIn << " => '0') & X;" << endl;
+            addFullComment("End of vhdl generation");
+            return;
+        }
+
+        // if modulo is a power of two, the remainder can be computed more easily
+        if ((1 << (modSize-1)) == modulo) {
+            addFullComment("Start of vhdl generation");
+            vhdl << tab << "S <= '0' & X" << range(modSize-2, 0) << ";" << endl;
+            addFullComment("End of vhdl generation");
+            return;
+        }
 
         int bhStage = 0;
         // declares every bit in input as a signal
@@ -182,9 +198,9 @@ namespace flopoco {
                 "STemp", bitHeapUsedBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeapTmp->getSumName(bitHeapUsedBits-1,0) << ") + M);" << endl;
 
 
-        vhdl << tab << "S <= " << bitHeapTmp->getSumName(outPutSize-1,0) << " when ";
+        vhdl << tab << "S <= " << bitHeapTmp->getSumName(modSize-1,0) << " when ";
         vhdl << bitHeapTmp->getSumName() << of(bitHeapUsedBits-1) << " = '0'";
-        vhdl << tab << "else STemp" << range(outPutSize-1,0) << ";" << endl;
+        vhdl << tab << "else STemp" << range(modSize-1,0) << ";" << endl;
         addFullComment("End of vhdl generation");
         delete bitHeapTmp;
     }
@@ -973,11 +989,11 @@ namespace flopoco {
         // the static list of mandatory tests
         TestList testStateList;
         vector<pair<string,string>> paramList;
-        string methods[] = {"compl","lMinBits","minRange","minRangeWeight"};
+        string methods[] = {"compl","complBitsFirst","lMinBits","minRange","minRangeWeight"};
 
         if(index==-1) 	{ // The unit tests
-            for (int i = 0; i < 4; ++i) {
-                for (int wIn=6; wIn<=12; wIn++) {
+            for (int i = 0; i < 5; ++i) {
+                for (int wIn=4; wIn<=12; wIn++) {
                     for(int m=2; m<20; m++) {
                         paramList.push_back(make_pair("wIn",to_string(wIn)));
                         paramList.push_back(make_pair("modulo",to_string(m)));

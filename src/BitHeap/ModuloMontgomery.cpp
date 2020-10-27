@@ -393,9 +393,10 @@ namespace flopoco {
                            "wIn(int)=16: A first parameter - the input size; \
                             modulo(int): modulo; \
                             method(string)=ex: The method used for the montgomery algrithm."
-                            " 4 available: 'ex' - for explicit conversion, 'modOp' - for Conversion using the vhdl mod operator,"
+                            " 5 available: 'ex' - for explicit conversion, 'modOp' - for Conversion using the vhdl mod operator,"
                             " 'redOnly' - the input is directly used for the reduction without conversion in montgomery form,"
-                            " 'multi' - using the montgomery reduction + montgomery multiplication to convert the result back",
+                            " 'multi' - using the montgomery reduction + montgomery multiplication to convert the result back"
+                            " 'modred' - realizes modulo reduction for random sizes by montgomery reduction + montgomery multiplication to convert the result back",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",
                            ModuloMontgomery::parseArguments,

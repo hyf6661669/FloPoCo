@@ -35,24 +35,35 @@ namespace flopoco {
         addFullComment("Start of vhdl generation");
 
         // multiply with m
+        // extend X with 0 so that IntConstMultShiftAddOpt knows it is a positive number
+        vhdl << tab << declare(
+                "X0", wIn+1, false) << tab << "<= '0' & X;" << endl;
         ostringstream multMParams;
-        multMParams << "wIn=" << wIn << " n=" << m;
-        newInstance("IntConstMult", "XmMult", multMParams.str(), "X=>X", "R=>Xm");
+        multMParams << "wIn=" << wIn+1 << " constant=" << m;
+        ostringstream outPortMapsXm;
+        outPortMapsXm << "x_out0_c" << m << "=>Xm";
+        newInstance("IntConstMultShiftAddOpt", "XmMult", multMParams.str(), "x_in0=>X0", outPortMapsXm.str());
 
         // only take msb without k lsb
         int xmSize = intlog2(m * ((mpz_class(1) << wIn)-1));
         int qSize = xmSize - k;
 
+        // extend with 0 so that IntConstMultShiftAddOpt knows it is a positive number
         vhdl << tab << declare(
-                "Q", qSize, false) << tab << "<= Xm" << range(xmSize-1,k) << ";" << endl;
+                "Q", qSize+1, false) << tab << "<= '0' & Xm" << range(xmSize-1,k) << ";" << endl;
         // multiply with modulo
         ostringstream multModuloParams;
-        multModuloParams << "wIn=" << qSize << " n=" << modulo;
-        newInstance("IntConstMult", "QModuloMult", multModuloParams.str(), "X=>Q", "R=>QModulo");
+        multModuloParams << "wIn=" << qSize+1 << " constant=" << modulo;
+        ostringstream outPortMapsQModulo;
+        outPortMapsQModulo << "x_out0_c" << modulo << "=>QModulo";
+        newInstance("IntConstMultShiftAddOpt", "QModuloMult", multModuloParams.str(), "x_in0=>Q", outPortMapsQModulo.str());
+
         // subtract new result from X and put in Y
-        int multSize = intlog2(modulo * ((mpz_class(1) << qSize)-1));
+        int multSize = intlog2(modulo * ((mpz_class(1) << (qSize))-1));
         vhdl << tab << declare(
-                "YTmp", multSize, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(X) - UNSIGNED(QModulo));" << endl;
+                "QModuloFitRange", multSize, false) << tab << "<= QModulo" << range(multSize-1,0) << ";" << endl;
+        vhdl << tab << declare(
+                "YTmp", multSize, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED(X) - UNSIGNED(QModuloFitRange));" << endl;
         vhdl << tab << "Y <= YTmp" << range(modSize-1, 0) << ";" << endl;
         addFullComment("End of vhdl generation");
     }
@@ -110,11 +121,18 @@ namespace flopoco {
         TestList testStateList;
         vector<pair<string,string>> paramList;
 
+        int modulos[] = {11,13,29,57,1009,20,16};
+        int ms[] = {373,79,283,9,66511,205,1};
+        int ks[] = {12,10,13,9,26,12,4};
+
         if(index==-1) 	{ // The unit tests
-            for (int wIn=6; wIn<=12; wIn++) {
-                for (int m = 2; m < 20; m++) {
+            for (int i = 0; i < 7; ++i) {
+                int modSize = floor(log2(modulos[i])+1);
+                for (int wIn=3; wIn<=modSize*2; wIn++) {
                     paramList.push_back(make_pair("wIn",to_string(wIn)));
-                    paramList.push_back(make_pair("modulo",to_string(m)));
+                    paramList.push_back(make_pair("modulo",to_string(modulos[i])));
+                    paramList.push_back(make_pair("m",to_string(ms[i])));
+                    paramList.push_back(make_pair("k",to_string(ks[i])));
                     paramList.push_back(make_pair("TestBench n=",to_string(100)));
                     testStateList.push_back(paramList);
 

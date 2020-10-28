@@ -245,16 +245,18 @@ namespace flopoco {
             if(shiftSize < modSize) shiftSize = modSize;
             vhdl << tab << declare(
                     "T_0", wIn+1, false) << tab << "<= X & '0';" << endl;
-            int length_red = 0;
+            int length_red = 0, reduced = 0;
             for (int i = 0; i < shiftSize; i++) {
                 ostringstream tName;
                 tName << "T_" << i+1;
                 vhdl << tab << declare(getTarget()->adderDelay(wIn+1-length_red),
-                                       tName.str(), wIn+1-length_red, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED( '0' & T_" << i
-                     << "(" << wIn-length_red << " downto 1)) + TO_UNSIGNED(M, " << wIn+1-length_red << ")) when T_" << i << of(1) << " = '1' else '0' & T_" << i
-                     << "(" << wIn-length_red << " downto 1);" << endl;
-                if(modSize < wIn - length_red - 1 && 0 < i){
+                                       tName.str(), wIn+1-length_red, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED( " << ((reduced)?"      ":"'0' & ") << "T_" << i
+                     << "(" << wIn-length_red+reduced << " downto 1)) + TO_UNSIGNED(M, " << wIn+1-length_red << ")) when T_" << i << of(1) << " = '1' else " << ((reduced)?"      ":"'0' & ") << "T_" << i
+                     << "(" << wIn-length_red+reduced << " downto 1);" << endl;
+                reduced = 0;
+                if(modSize < wIn - length_red - 1){
                     length_red++;
+                    reduced = 1;
                 }
             }
             vhdl << tab << declare(getTarget()->adderDelay(modSize+1),"TResMM", modSize, false) << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << shiftSize <<  "(" << ((shiftSize<modSize)?shiftSize:modSize) << " downto 1)) - M)" << ";" << endl;

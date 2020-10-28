@@ -32,6 +32,14 @@ namespace flopoco {
         int modSize = floor(log2(modulo)+1);
         addOutput("Y" , modSize);
 
+        // if wIn is smaller than the bit width of the modulo, no computation has to be done
+        if (wIn < modSize) {
+            addFullComment("Start of vhdl generation");
+            vhdl << tab << "Y <= (" << modSize-1 << " downto " << wIn << " => '0') & X;" << endl;
+            addFullComment("End of vhdl generation");
+            return;
+        }
+
         addFullComment("Start of vhdl generation");
 
         // multiply with m
@@ -121,23 +129,21 @@ namespace flopoco {
         TestList testStateList;
         vector<pair<string,string>> paramList;
 
+        int wIns[] = {6,8,9,6,16,8,8};
         int modulos[] = {11,13,29,57,1009,20,16};
         int ms[] = {373,79,283,9,66511,205,1};
         int ks[] = {12,10,13,9,26,12,4};
 
         if(index==-1) 	{ // The unit tests
             for (int i = 0; i < 7; ++i) {
-                int modSize = floor(log2(modulos[i])+1);
-                for (int wIn=3; wIn<=modSize*2; wIn++) {
-                    paramList.push_back(make_pair("wIn",to_string(wIn)));
-                    paramList.push_back(make_pair("modulo",to_string(modulos[i])));
-                    paramList.push_back(make_pair("m",to_string(ms[i])));
-                    paramList.push_back(make_pair("k",to_string(ks[i])));
-                    paramList.push_back(make_pair("TestBench n=",to_string(100)));
-                    testStateList.push_back(paramList);
+                paramList.push_back(make_pair("wIn",to_string(wIns[i])));
+                paramList.push_back(make_pair("modulo",to_string(modulos[i])));
+                paramList.push_back(make_pair("m",to_string(ms[i])));
+                paramList.push_back(make_pair("k",to_string(ks[i])));
+                paramList.push_back(make_pair("TestBench n=",to_string(100)));
+                testStateList.push_back(paramList);
 
-                    paramList.clear();
-                }
+                paramList.clear();
             }
         }
 

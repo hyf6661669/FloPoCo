@@ -139,108 +139,6 @@ namespace flopoco {
 
         } else if (method == "modred") {
             // montgomery reduction
-            vhdl << tab << declare(
-                    "T_0", wIn+1, false) << tab << "<= X & '0';" << endl;
-            int length_red = 0;
-            for (int i = 0; i < wIn; ++i) {
-                ostringstream tName;
-                tName << "T_" << i+1;
-                vhdl << tab << declare(getTarget()->adderDelay(wIn+1-length_red),
-                                       tName.str(), wIn+1-length_red, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED( '0' & T_" << i
-                     << "(" << wIn-length_red << " downto 1)) + TO_UNSIGNED(M, " << wIn+1-length_red << ")) when T_" << i << of(1) << " = '1' else '0' & T_" << i
-                                                                                                             << "(" << wIn-length_red << " downto 1);" << endl;
-                if(length_red+1 < wIn-modSize && 0 < i){
-                    length_red++;
-                }
-            }
-            vhdl << tab << declare(getTarget()->adderDelay(modSize+1),"TResMM", modSize, false) << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << wIn <<  "(" << ((wIn<modSize)?wIn:modSize) << " downto 1)) - M)" << ";" << endl;
-            vhdl << tab << declare(
-                    "RedRes", modSize, false) << tab << " <= T_" << wIn << range(modSize, 1) << " when UNSIGNED(T_" << wIn << range(wIn-length_red,1) <<  ") < M else TResMM" << ";" << endl;
-
-            // montgomery multiplication to convert back from montgomery form
-
-            //Constant to shift back from montgomery form
-            mpz_class shiftConst = (((mpz_class)1 << 2*wIn) % modulo);
-            vhdl << tab << declare(
-                    "R_0", modSize+1, false) << tab << "<= (" << modSize << " downto 0 => '0');" << endl;
-            for (int i = 0; i < wIn; ++i) {
-                ostringstream rTmp1Name;
-                rTmp1Name << "Rtmp1_" << i;
-                int index = i + 1;
-                mpz_class place_partial_mult = (shiftConst & ((mpz_class)1 << i)) >> i;
-                if (place_partial_mult.get_si()){
-                    vhdl << tab << declare(getTarget()->adderDelay(modSize+2),
-                                           rTmp1Name.str(), modSize+2, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED('0' & R_" << i << ") + UNSIGNED(\"00\" & RedRes));" << endl;
-                }else {
-                    vhdl << tab << declare(getTarget()->adderDelay(modSize+2),
-                                           rTmp1Name.str(), modSize+2, false) << tab << "<= '0' & R_" << i << ";" << endl;
-                }
-                ostringstream rTmp2Name;
-                rTmp2Name << "Rtmp2_" << i;
-                vhdl << tab << declare(getTarget()->adderDelay(modSize+2),
-                                       rTmp2Name.str(), modSize+2, false) << tab << "<= Rtmp1_" << i << " when Rtmp1_" << i << of(0) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(Rtmp1_" << i << ") + M);" << endl;
-                ostringstream rTmp3Name;
-                rTmp3Name << "R_" << index;
-                vhdl << tab << declare(
-                        rTmp3Name.str(), modSize+1, false) << tab << "<= STD_LOGIC_VECTOR(Rtmp2_" << i << range(modSize+1,1) << ");" << endl;
-            }
-            vhdl << tab << "S <= R_" << wIn << range(modSize-1,0) << " when UNSIGNED(R_" << wIn << ") < M";
-            vhdl << tab << "else STD_LOGIC_VECTOR(UNSIGNED(R_" << wIn << range(modSize-1,0) << ") - M);" << endl;
-
-            addFullComment("End of vhdl generation");
-
-        } else if (method == "modred1") {
-            // montgomery reduction
-            vhdl << tab << declare(
-                    "T_0", wIn+1, false) << tab << "<= X & '0';" << endl;
-
-            int n = ((wIn-modSize)<modSize)?modSize:wIn-modSize;
-            for (int i = 0; i < n; ++i) {
-                ostringstream tName;
-                tName << "T_" << i+1;
-                vhdl << tab << declare(getTarget()->adderDelay(wIn+1),
-                                       tName.str(), wIn+1, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED( '0' & T_" << i
-                     << "(" << wIn << " downto 1)) + TO_UNSIGNED(M, " << wIn+1 << ")) when T_" << i << of(1) << " = '1' else '0' & T_" << i
-                     << "(" << wIn << " downto 1);" << endl;
-            }
-            vhdl << tab << declare(getTarget()->adderDelay(modSize+1),"TResMM", modSize, false) << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << n <<  "(" << ((wIn<modSize)?wIn:modSize) << " downto 1)) - M)" << ";" << endl;
-            vhdl << tab << declare(
-                    "RedRes", modSize, false) << tab << " <= T_" << n << range(modSize, 1) << " when UNSIGNED(T_" << n << range(wIn,1) <<  ") < M else TResMM" << ";" << endl;
-
-            // montgomery multiplication to convert back from montgomery form
-
-            //Constant to shift back from montgomery form
-            mpz_class shiftConst = (((mpz_class)1 << 2*modSize) % modulo);
-            vhdl << tab << declare(
-                    "R_0", wIn, false) << tab << "<= (" << wIn-1 << " downto 0 => '0');" << endl;
-            for (int i = 0; i < n; ++i) {
-                ostringstream rTmp1Name;
-                rTmp1Name << "Rtmp1_" << i;
-                int index = i + 1;
-                mpz_class place_partial_mult = (shiftConst & ((mpz_class)1 << i)) >> i;
-                if (place_partial_mult.get_si()){
-                    vhdl << tab << declare(getTarget()->adderDelay(wIn+1),
-                                           rTmp1Name.str(), wIn+1, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED('0' & R_" << i << ") + UNSIGNED('0' & RedRes));" << endl;
-                }else {
-                    vhdl << tab << declare(getTarget()->adderDelay(wIn+1),
-                                           rTmp1Name.str(), wIn+1, false) << tab << "<= '0' & R_" << i << ";" << endl;
-                }
-                ostringstream rTmp2Name;
-                rTmp2Name << "Rtmp2_" << i;
-                vhdl << tab << declare(getTarget()->adderDelay(wIn+1),
-                                       rTmp2Name.str(), wIn+1, false) << tab << "<= Rtmp1_" << i << " when Rtmp1_" << i << of(0) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(Rtmp1_" << i << ") + M);" << endl;
-                ostringstream rTmp3Name;
-                rTmp3Name << "R_" << index;
-                vhdl << tab << declare(
-                        rTmp3Name.str(), wIn, false) << tab << "<= STD_LOGIC_VECTOR(Rtmp2_" << i << range(wIn,1) << ");" << endl;
-            }
-            vhdl << tab << "S <= R_" << n  << range(modSize-1,0) << " when UNSIGNED(R_" << n  << ") < M";
-            vhdl << tab << "else STD_LOGIC_VECTOR(UNSIGNED(R_" << n  << range(modSize-1,0) << ") - M);" << endl;
-
-            addFullComment("End of vhdl generation");
-
-        } else if (method == "modred2") {
-            // montgomery reduction
             int shiftSize = wIn-modSize;
             if(shiftSize < modSize) shiftSize = modSize;
             vhdl << tab << declare(
@@ -295,6 +193,58 @@ namespace flopoco {
 
             addFullComment("End of vhdl generation");
 
+
+        } else if (method == "modred1") {
+            // montgomery reduction
+            vhdl << tab << declare(
+                    "T_0", wIn+1, false) << tab << "<= X & '0';" << endl;
+            int length_red = 0;
+            for (int i = 0; i < wIn; ++i) {
+                ostringstream tName;
+                tName << "T_" << i+1;
+                vhdl << tab << declare(getTarget()->adderDelay(wIn+1-length_red),
+                                       tName.str(), wIn+1-length_red, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED( '0' & T_" << i
+                     << "(" << wIn-length_red << " downto 1)) + TO_UNSIGNED(M, " << wIn+1-length_red << ")) when T_" << i << of(1) << " = '1' else '0' & T_" << i
+                     << "(" << wIn-length_red << " downto 1);" << endl;
+                if(length_red+1 < wIn-modSize && 0 < i){
+                    length_red++;
+                }
+            }
+            vhdl << tab << declare(getTarget()->adderDelay(modSize+1),"TResMM", modSize, false) << "<= STD_LOGIC_VECTOR(UNSIGNED(T_" << wIn <<  "(" << ((wIn<modSize)?wIn:modSize) << " downto 1)) - M)" << ";" << endl;
+            vhdl << tab << declare(
+                    "RedRes", modSize, false) << tab << " <= T_" << wIn << range(modSize, 1) << " when UNSIGNED(T_" << wIn << range(wIn-length_red,1) <<  ") < M else TResMM" << ";" << endl;
+
+            // montgomery multiplication to convert back from montgomery form
+
+            //Constant to shift back from montgomery form
+            mpz_class shiftConst = (((mpz_class)1 << 2*wIn) % modulo);
+            vhdl << tab << declare(
+                    "R_0", modSize+1, false) << tab << "<= (" << modSize << " downto 0 => '0');" << endl;
+            for (int i = 0; i < wIn; ++i) {
+                ostringstream rTmp1Name;
+                rTmp1Name << "Rtmp1_" << i;
+                int index = i + 1;
+                mpz_class place_partial_mult = (shiftConst & ((mpz_class)1 << i)) >> i;
+                if (place_partial_mult.get_si()){
+                    vhdl << tab << declare(getTarget()->adderDelay(modSize+2),
+                                           rTmp1Name.str(), modSize+2, false) << tab << "<= STD_LOGIC_VECTOR(UNSIGNED('0' & R_" << i << ") + UNSIGNED(\"00\" & RedRes));" << endl;
+                }else {
+                    vhdl << tab << declare(getTarget()->adderDelay(modSize+2),
+                                           rTmp1Name.str(), modSize+2, false) << tab << "<= '0' & R_" << i << ";" << endl;
+                }
+                ostringstream rTmp2Name;
+                rTmp2Name << "Rtmp2_" << i;
+                vhdl << tab << declare(getTarget()->adderDelay(modSize+2),
+                                       rTmp2Name.str(), modSize+2, false) << tab << "<= Rtmp1_" << i << " when Rtmp1_" << i << of(0) << " = '0' else STD_LOGIC_VECTOR(UNSIGNED(Rtmp1_" << i << ") + M);" << endl;
+                ostringstream rTmp3Name;
+                rTmp3Name << "R_" << index;
+                vhdl << tab << declare(
+                        rTmp3Name.str(), modSize+1, false) << tab << "<= STD_LOGIC_VECTOR(Rtmp2_" << i << range(modSize+1,1) << ");" << endl;
+            }
+            vhdl << tab << "S <= R_" << wIn << range(modSize-1,0) << " when UNSIGNED(R_" << wIn << ") < M";
+            vhdl << tab << "else STD_LOGIC_VECTOR(UNSIGNED(R_" << wIn << range(modSize-1,0) << ") - M);" << endl;
+
+            addFullComment("End of vhdl generation");
 
         } else {
             REPORT(INFO, "invalid method name " << method);
@@ -448,7 +398,7 @@ namespace flopoco {
                 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                            "wIn(int)=16: A first parameter - the input size; \
                             modulo(int): modulo; \
-                            method(string)=ex: The method used for the montgomery algrithm."
+                            method(string)=modred: The method used for the montgomery algrithm."
                             " 5 available: 'ex' - for explicit conversion, 'modOp' - for Conversion using the vhdl mod operator,"
                             " 'redOnly' - the input is directly used for the reduction without conversion in montgomery form,"
                             " 'multi' - using the montgomery reduction + montgomery multiplication to convert the result back"

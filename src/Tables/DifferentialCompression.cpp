@@ -100,12 +100,14 @@ namespace flopoco {
 		vector<mpz_class> diff_table(size);
 		vector<mpz_class> subsamples_table(sssize);
 
+
+
 		mpz_class H_mask{1}, L_mask{1};
 		H_mask <<= wH;
 		H_mask -= 1;
 		H_mask <<= shift_h;
 
-		L_mask <<= wL;
+		L_mask <<= shift_h;
 		L_mask -= 1;
 
 		for(size_t slice_idx = 0 ; slice_idx < sssize ; ++slice_idx) {

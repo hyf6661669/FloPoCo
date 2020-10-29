@@ -100,12 +100,12 @@ namespace flopoco {
 		vector<mpz_class> diff_table(size);
 		vector<mpz_class> subsamples_table(sssize);
 
-
-
 		mpz_class H_mask{1}, L_mask{1};
 		H_mask <<= wH;
 		H_mask -= 1;
 		H_mask <<= shift_h;
+
+		L_mask <<= wL;
 		for(size_t slice_idx = 0 ; slice_idx < sssize ; ++slice_idx) {
 			size_t val_idx = slice_idx << s;
 			mpz_class min{values[val_idx]};
@@ -120,6 +120,7 @@ namespace flopoco {
 			mpz_class to_sub = min - low_bits;
 			for (size_t cur_idx = val_idx ; cur_idx < val_idx + shift ; cur_idx++) {
 				diff_table[cur_idx] = values[cur_idx] - to_sub;
+				assert(diff_table[cur_idx] < L_mask);
 			}
 		}
 		return make_pair(subsamples_table, diff_table);

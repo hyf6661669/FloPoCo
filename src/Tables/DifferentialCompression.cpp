@@ -106,10 +106,6 @@ namespace flopoco {
 		H_mask <<= wH;
 		H_mask -= 1;
 		H_mask <<= shift_h;
-
-		L_mask <<= shift_h;
-		L_mask -= 1;
-
 		for(size_t slice_idx = 0 ; slice_idx < sssize ; ++slice_idx) {
 			size_t val_idx = slice_idx << s;
 			mpz_class min{values[val_idx]};
@@ -118,11 +114,11 @@ namespace flopoco {
 					min = values[cur_idx];
 				}
 			}
-			mpz_class low_bits = min & L_mask;
 			mpz_class high_bits = min & H_mask;
+			mpz_class low_bits = min - high_bits;
 			subsamples_table[slice_idx] = high_bits >> shift_h;
 			mpz_class to_sub = min - low_bits;
-			for (size_t cur_idx = val_idx + 1 ; cur_idx < val_idx + shift ; cur_idx++) {
+			for (size_t cur_idx = val_idx ; cur_idx < val_idx + shift ; cur_idx++) {
 				diff_table[cur_idx] = values[cur_idx] - to_sub;
 			}
 		}
@@ -179,9 +175,7 @@ namespace flopoco {
 		auto bestSS_cost = costModel(wIn-best_split, best_wh, target);
 		auto bestDiffCost = costModel(wIn, best_wl, target);
 		DifferentialCompression difcompress {best_subsampling, best_diff, wIn - best_split, best_wh, best_wl, wIn, wOut, original_cost, bestSS_cost, bestDiffCost};
-				// Cet assert plante pour certaines valeurs parce que diff[0] n'existe pas (2020/09/18). Je n'ai pas débuggé plus loin
-				// exemple: ./flopoco verbose=1 FixFunctionByMultipartiteTable f="sin(pi/4*x)" signedIn=0 lsbIn=-20 lsbOut=-24 tableCompression=1
-				// assert(difcompress.getInitialTable() == values);
+		assert(difcompress.getInitialTable() == values);
 		return difcompress;
 	}
 

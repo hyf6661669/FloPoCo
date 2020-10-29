@@ -937,7 +937,7 @@ namespace flopoco{
 
 		// check the signals doesn't already exist
 		if(isSignalDeclared(name)) {
-			THROWERROR("In declareFixPoint(), signal " << name << " already exists" << endl);
+			THROWERROR("In declareFloatingPoint(), signal " << name << " already exists" << endl);
 		}
 
 		// construct the signal (lifeSpan and cycle are reset to 0 by the constructor)
@@ -957,6 +957,29 @@ namespace flopoco{
 		return name;
 	}
 
+	string Operator::declareCustom(string name, string customType, Signal::SignalType regType) {
+		return declareCustom(0.0, name, customType, regType);
+	}
+
+	string Operator::declareCustom(double criticalPathContribution, string name, string customType, Signal::SignalType regType) {
+		Signal* s;
+
+		// check the signals doesn't already exist
+		if(isSignalDeclared(name)) {
+			THROWERROR("In declareCustom(), signal " << name << " already exists" << endl);
+		}
+
+		// construct the signal (lifeSpan and cycle are reset to 0 by the constructor)
+		s = new Signal(this, name, regType, customType);
+
+		initNewSignal(s, criticalPathContribution, regType, false);
+
+		s->setIsFix(false);
+		s->setIsFP(false);
+		s->setIsIEEE(false);
+
+		return name;
+	}
 
 
 	void Operator::initNewSignal(Signal* s, double criticalPathContribution, Signal::SignalType regType, bool incompleteDeclaration)

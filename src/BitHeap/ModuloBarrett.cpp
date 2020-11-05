@@ -13,12 +13,31 @@ namespace flopoco {
     : Operator(parentOp, target), wIn(wIn_), modulo(modulo_), m(m_), k(k_) {
         srcFileName="ModuloBarrett";
 
+        //calculation of coefficients m and k
+        if(m < 0 || k < 0){
+            double S_min = 1/(double)modulo;
+            double S_max = ((1<<wIn)+modulo-1)/(double)((1<<wIn)+modulo-2)*1/(double)modulo;
+            uint64_t m_min, m_max;
+            k = wIn;
+            while(true){
+                m_min = (uint64_t)ceil(S_min*((uint64_t)1<<k));
+                m_max = (uint64_t)floor(S_max*((uint64_t)1<<k));
+                if(m_min <= m_max){
+                   break;
+                } else {
+                    k++;
+                }
+            }
+            m = (int)m_min;
+            REPORT(DETAILED,"ModuloBarrett coefficients calculated: " << " m=" << m << " k=" << k);
+        }
+
         // definition of the name of the operator
         ostringstream name;
         name << "ModuloBarrett" << wIn << "_" << modulo << "_" << m << "_" << k;
         setName(name.str()); // See also setNameWithFrequencyAndUID()
         // Copyright
-        setCopyrightString("Annika Oeste, 2020");
+        setCopyrightString("Annika Oeste, Andreas Boettcher, 2020");
 
         useNumericStd();
 
@@ -170,8 +189,8 @@ namespace flopoco {
                 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                            "wIn(int)=16: A first parameter - the input size; \
                             modulo(int): modulo; \
-                            m(int): constant m for the computation of S; \
-                            k(int): constant k for the computation of S",
+                            m(int)=-1: constant m for the computation of S; \
+                            k(int)=-1: constant k for the computation of S",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "See the developer manual in the doc/ directory of FloPoCo.",
                            ModuloBarrett::parseArguments,

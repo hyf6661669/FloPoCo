@@ -13,7 +13,7 @@ namespace flopoco {
 
         int wIn;
         int modulo;
-        int m;
+        long long int m;
         int k;
 
 

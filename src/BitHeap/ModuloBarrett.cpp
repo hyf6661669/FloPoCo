@@ -10,25 +10,31 @@ using namespace std;
 namespace flopoco {
 
     ModuloBarrett::ModuloBarrett(OperatorPtr parentOp, Target* target, int wIn_, int modulo_, int m_, int k_)
-    : Operator(parentOp, target), wIn(wIn_), modulo(modulo_), m(m_), k(k_) {
+    : Operator(parentOp, target), wIn(wIn_), modulo(modulo_), m((uint64_t)m_), k(k_) {
         srcFileName="ModuloBarrett";
+
+        if(64 <= wIn){
+            REPORT(LIST,"Error: Only max. 63 bit input size wIn supported!\n");
+            return;
+        }
 
         //calculation of coefficients m and k
         if(m < 0 || k < 0){
             double S_min = 1/(double)modulo;
-            double S_max = ((1<<wIn)+modulo-1)/(double)((1<<wIn)+modulo-2)*1/(double)modulo;
+            double S_max = (((uint64_t)1<<wIn)+modulo-1)/(double)(((uint64_t)1<<wIn)+modulo-2)*1/(double)modulo;
             uint64_t m_min, m_max;
             k = wIn;
             while(true){
                 m_min = (uint64_t)ceil(S_min*((uint64_t)1<<k));
                 m_max = (uint64_t)floor(S_max*((uint64_t)1<<k));
+                cout << m_min << " " << m_max << " " << k << endl;
                 if(m_min <= m_max){
                    break;
                 } else {
                     k++;
                 }
             }
-            m = (int)m_min;
+            m = m_min;
             REPORT(DETAILED,"ModuloBarrett coefficients calculated: " << " m=" << m << " k=" << k);
         }
 
@@ -62,28 +68,24 @@ namespace flopoco {
         addFullComment("Start of vhdl generation");
 
         // multiply with m
-        // extend X with 0 so that IntConstMultShiftAddOpt knows it is a positive number
+        // extend X with 0 so that IntConstMult knows it is a positive number
         vhdl << tab << declare(
                 "X0", wIn+1, false) << tab << "<= '0' & X;" << endl;
         ostringstream multMParams;
-        multMParams << "wIn=" << wIn+1 << " constant=" << m;
-        ostringstream outPortMapsXm;
-        outPortMapsXm << "x_out0_c" << m << "=>Xm";
-        newInstance("IntConstMultShiftAddOpt", "XmMult", multMParams.str(), "x_in0=>X0", outPortMapsXm.str());
+        multMParams << "wIn=" << wIn+1 << " n=" << m;
+        newInstance("IntConstMult", "XmMult", multMParams.str(), "X=>X0", "R=>Xm");
 
         // only take msb without k lsb
-        int xmSize = intlog2(m * ((mpz_class(1) << wIn)-1));
+        int xmSize = intlog2((double)m * ((mpz_class(1) << wIn)-1));
         int qSize = xmSize - k;
 
-        // extend with 0 so that IntConstMultShiftAddOpt knows it is a positive number
+        // extend with 0 so that IntConstMult knows it is a positive number
         vhdl << tab << declare(
                 "Q", qSize+1, false) << tab << "<= '0' & Xm" << range(xmSize-1,k) << ";" << endl;
         // multiply with modulo
         ostringstream multModuloParams;
-        multModuloParams << "wIn=" << qSize+1 << " constant=" << modulo;
-        ostringstream outPortMapsQModulo;
-        outPortMapsQModulo << "x_out0_c" << modulo << "=>QModulo";
-        newInstance("IntConstMultShiftAddOpt", "QModuloMult", multModuloParams.str(), "x_in0=>Q", outPortMapsQModulo.str());
+        multModuloParams << "wIn=" << qSize+1 << " n=" << modulo;
+        newInstance("IntConstMult", "QModuloMult", multModuloParams.str(), "X=>Q", "R=>QModulo");
 
         // subtract new result from X and put in Y
         int multSize = intlog2(modulo * ((mpz_class(1) << (qSize))-1));

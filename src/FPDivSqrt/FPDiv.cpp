@@ -417,7 +417,7 @@ namespace flopoco{
 				string wi = join("betaw", i);						// current partial remainder
 				string wifull =join("w", i);						// current partial remainder
 				string seli = join("sel", i);					//constructed as the wi's first 4 digits and D's first, LUT's input
-				string qiTimesD = join("q", i)+"D";		//qi*Y
+				string qiTimesD = join("absq", i)+"D";		//qi*Y
 				string wim1full = join("w", i-1);	//partial remainder after this iteration, = wi+qi*D
 
 				/*
@@ -474,7 +474,7 @@ rox P						or wi is 26 bits long
 					vhdl << tab << "with " << qi << " select" << endl
 							 << tab << tab << declare(getTarget()->fanoutDelay(subSize) + getTarget()->lutDelay(), join("addendA",i),subSize)
 							 << " <= " << endl 
-							 << tab << tab << tab << "\"000\" & D            when \"001\" | \"111\" | \"011\" | \"101\"," << endl
+							 << tab << tab << tab << "\"000\" & D              when \"001\" | \"111\" | \"011\" | \"101\"," << endl
 							 << tab << tab << tab << "(" << subSize-1 << " downto 0 => '0')  when others;" << endl;
 
 					vhdl << tab << "with " << qi << " select" << endl
@@ -498,9 +498,9 @@ rox P						or wi is 26 bits long
 					vhdl << tab << "with " << qi << " select" << endl;
 					// no delay for qiTimesD, it should be merged in the following addition
 					vhdl << tab << tab << declare(qiTimesD,subSize) << " <= "<< endl 
-							 << tab << tab << tab << "\"000\" & D						 when \"001\" | \"111\"," << endl
-							 << tab << tab << tab << "\"00\" & D & \"0\"			 when \"010\" | \"110\"," << endl
-							 << tab << tab << tab << "(" << subSize-1 << " downto 0 => '0')	 when others;" << endl << endl;
+							 << tab << tab << tab << "\"000\" & D						 when \"001\" | \"111\", -- mult by 1" << endl
+							 << tab << tab << tab << "\"00\" & D & \"0\"			   when \"010\" | \"110\", -- mult by 2" << endl
+							 << tab << tab << tab << "(" << subSize-1 << " downto 0 => '0')	 when others;        -- mult by 0" << endl << endl;
 					
 					//				vhdl << tab << declare(wi, subSize) << " <= " << wi << " & \"0\";" << endl;
 

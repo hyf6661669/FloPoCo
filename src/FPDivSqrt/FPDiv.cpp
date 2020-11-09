@@ -59,7 +59,6 @@ namespace flopoco{
 		while(dMin >= (1-dmsbweight/2))	{   // e.g when dMin=0.5 or 0.6, no loop
 	 		dmsbweight *= 0.5;
 		}
-		REPORT(0, "dmsbweight=" << dmsbweight);
 		vector<mpz_class> t;
 		for (int x=0; x<(1<<wIn); x++) {					
 			int w = (x>>nbBitD);	 // splitting x into  w and d
@@ -129,7 +128,7 @@ namespace flopoco{
 						
 			mpzresult = mpz_class(result2c);
 
-			// cerr << " w="<< w  << "  "<<  realwMin  << "  "<<  realwMax  <<" d=" << d << "  "<<  realdMin  << "  "<<  realdMax << " qi=" << result << "  " << result << endl;
+			//cerr << " w="<< w  << "  "<<  realwMin  << "  "<<  realwMax  <<" d=" << d << "  "<<  realdMin  << "  "<<  realdMax << " qi=" << result << "  " << result << endl;
 			t.push_back(mpzresult);
 		}
 		return t;
@@ -394,9 +393,16 @@ namespace flopoco{
 			
 
 #if 0 // experiments with prescaling
-			nbBitsD=1;
+			nbBitsD=0;
 			nbBitsW=5;
 			tableContent = selFunctionTable(1.-1./64., 1.+1./8., nbBitsD, nbBitsW, alpha, radix);
+#endif
+#if 0 // experiments with prescaling
+			// 42 with prescaling by 3/2 when D<42/64 allows to save one table input bit. After synthesis of just this experiment the
+			// LUTs are reduced from 564 to 533. Since the prescaling itself will cost 2 x 27 LUTs, it is a loss. 
+			nbBitsD=3;
+			nbBitsW=5;
+			tableContent = selFunctionTable(42./64, 1, nbBitsD, nbBitsW, alpha, radix);
 #endif
 
 

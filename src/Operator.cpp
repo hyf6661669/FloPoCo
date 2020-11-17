@@ -1095,7 +1095,10 @@ namespace flopoco{
 			THROWERROR("In addRegisteredSignalCopy(): " << e2);
 		}
 		s->setResetType(regType);
-		vhdl << tab << declare(copyName, s->width(), s->isBus()) << " <= "<<sourceName<<"^1;" << endl;
+		if(s->isCustom())
+			vhdl << tab << declareCustom(copyName, s->customType()) << " <= "<<sourceName<<"^1;" << endl;
+		else
+			vhdl << tab << declare(copyName, s->width(), s->isBus()) << " <= "<<sourceName<<"^1;" << endl;
 		// this ^ will be caught in doApplySchedule(). We could have arbitrary number of delays but I wait for a use case
 		getSignalByName(copyName) -> setHasBeenScheduled(true); // so that the schedule can start from these signals -- lexicographic time is (0,0)
 	}
@@ -2007,8 +2010,8 @@ namespace flopoco{
 			newArchitecture(o,name);
 			o << buildVHDLComponentDeclarations();
 			o << buildVHDLAttributes();
-			o << buildVHDLSignalDeclarations();			//TODO: this cannot be called before scheduling the signals (it requires the lifespan of the signals, which is not yet computed)
 			o << buildVHDLTypeDeclarations();
+			o << buildVHDLSignalDeclarations();			//TODO: this cannot be called before scheduling the signals (it requires the lifespan of the signals, which is not yet computed)
 			o << buildVHDLConstantDeclarations();
 			beginArchitecture(o);
 			o << buildVHDLRegisters();					//TODO: this cannot be called before scheduling the signals (it requires the lifespan of the signals, which is not yet computed)

@@ -14,6 +14,7 @@ namespace flopoco {
 
 		diff_comp = DifferentialCompression::find_differential_compression(values, wIn, wOut, target_);
 		// generate VHDL for subsampling table
+		report_compression_gain();		
 		string subsamplingIn = "X_subsampling";
 		vhdl << tab << declare(subsamplingIn, diff_comp.subsamplingIndexSize) << " <= " << "X" << range(wIn-1, wIn-diff_comp.subsamplingIndexSize) << ";" << endl;
 		string subsamplingOut = "Y_subsampling";

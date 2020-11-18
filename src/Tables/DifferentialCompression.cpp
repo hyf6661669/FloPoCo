@@ -276,10 +276,15 @@ namespace flopoco {
 		int wOut=originalWout;
 		int nonOverlapMSBBits = wOut-diffWordSize;
 		int overlapMiddleBits    = subsamplingWordSize - nonOverlapMSBBits;
+		cerr << endl << "*****************" <<diffWordSize-overlapMiddleBits-1 << endl;
 		// TODO an intadder when needed, but this is proably never useful
 		op->vhdl << tab << op->declare(op->getTarget()->adderDelay(subsamplingWordSize),
 																	 actualOutputName+"_topbits", subsamplingWordSize) << " <= " << subsamplingOutName
 		<< " + (" << zg(nonOverlapMSBBits) << "& (" << diffOutputName << range(diffWordSize-1, diffWordSize-overlapMiddleBits) << "));" << endl;
-		op->vhdl << tab << op->declare(actualOutputName, wOut) << " <= " << actualOutputName+"_topbits & (" <<diffOutputName << range(diffWordSize-overlapMiddleBits-1,0) << ");" << endl;
+		op->vhdl << tab << op->declare(actualOutputName, wOut) << " <= " << actualOutputName+"_topbits";
+		if(diffWordSize-overlapMiddleBits-1 >=0 ) {
+			op->vhdl << " & (" <<diffOutputName << range(diffWordSize-overlapMiddleBits-1,0) << ")";
+		}
+		op->vhdl << ";" << endl;
 	}
 }

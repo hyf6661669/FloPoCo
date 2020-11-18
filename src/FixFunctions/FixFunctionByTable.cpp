@@ -46,13 +46,13 @@ namespace flopoco{
 			//cerr <<   f-> getDescription()<< " : f("<< i << ") = " << rn <<endl;
 		};
 
-		if(target_->tableCompression()) {
-			DiffCompressedTable dct = DiffCompressedTable(parentOp_, target_, v, this->getName(), wIn, wOut);
-																											
-		}
-
 		Table::init(v, join("f", getNewUId()), wIn, wOut);
-		Table::generateVHDL();
+		if(target_->tableCompression()) {
+			DiffCompressedTable::newUniqueInstance(this,	"X", "Y", v , "compressedTable", wIn, wOut);
+		}
+		else {
+			Table::generateVHDL();
+		}
 	}
 
 

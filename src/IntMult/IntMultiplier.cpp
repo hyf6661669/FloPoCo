@@ -834,7 +834,7 @@ namespace flopoco {
 				{
 					paramList.push_back(make_pair("wX", to_string(wX)));
 					paramList.push_back(make_pair("wY", to_string(wY)));
-					paramList.push_back(make_pair("signed", sign ? "true" : "false"));
+					paramList.push_back(make_pair("signedIO", sign ? "true" : "false"));
 					paramList.push_back(make_pair("dspThreshold", to_string(1.0)));
 					paramList.push_back(make_pair("maxDSP", to_string(0)));
 					//paramList.push_back(make_pair("tiling", "optimal"));

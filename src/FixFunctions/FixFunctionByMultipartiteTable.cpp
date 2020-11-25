@@ -196,6 +196,7 @@ namespace flopoco
 				vhdl << endl;
 		}else
 			{ // Hsiao-compressed TIV
+				REPORT (INFO, "TIV compression report:" << endl << bestMP->dcTIV.report()); 
 				vhdl << tab << declare("inSSTIV", bestMP->dcTIV.subsamplingIndexSize) << " <= X" << range(f->wIn-1, f->wIn-bestMP->dcTIV.subsamplingIndexSize) << ";" << endl;
 				vector<mpz_class> mpzssTIV;
 				for (auto i : bestMP->ssTIV)

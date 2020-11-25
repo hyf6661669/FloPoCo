@@ -47,6 +47,7 @@ namespace flopoco {
 
 	void DiffCompressedTable::report_compression_gain()
 	{
+#if 0
 		REPORT(INFO, "  Initial cost is:          " << diff_comp.originalWout << "x2^" << diff_comp.diffIndexSize << "=" << (diff_comp.originalWout << diff_comp.diffIndexSize));
 		auto subsamplingCost = diff_comp.subsamplingWordSize << diff_comp.subsamplingIndexSize;
 		REPORT(INFO, "  Best subsampling cost is: " << diff_comp.subsamplingWordSize <<   "x2^" << diff_comp.subsamplingIndexSize << "=" << subsamplingCost);
@@ -55,7 +56,10 @@ namespace flopoco {
 		REPORT(INFO, "  Overlap cost is  :        " << (diff_comp.subsamplingWordSize + diff_comp.diffWordSize - diff_comp.originalWout));
 		REPORT(INFO, "  Total compressed cost is: " << (diffCost + subsamplingCost) << "/" << 100 * (1.0 -
 			(float)(diffCost + subsamplingCost)/(diff_comp.originalWout << diff_comp.diffIndexSize)));
-
+#else
+		REPORT(INFO, endl << diff_comp.report());
+#endif
+		
 		auto lutinputs = getTarget()->lutInputs();
 		auto lutcost = [lutinputs](int wIn, int wOut)->int {
 			auto effwIn = ((wIn - lutinputs) > 0) ? wIn - lutinputs : 0;

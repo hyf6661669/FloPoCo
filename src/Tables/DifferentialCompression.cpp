@@ -237,7 +237,7 @@ namespace flopoco {
 #if LATEX_OUTPUT
 		t  << endl << "Latex table line : " << endl;
 		// first line
-		t << " & " << originalCost << " & " <<  compressedCost << "  (" << gain  << "%) & "
+		t << " & " << originalCost << " & " <<  compressedCost << "  (" << gain  << "\\%) & "
 			<<  subsamplingCost << " & " << diffCost << " & \\\\" <<  endl;
 		// second line
 		t << " & $" << originalWout << "\\cdot 2^{" << diffIndexSize << "}$ "

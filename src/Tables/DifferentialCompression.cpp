@@ -229,17 +229,19 @@ namespace flopoco {
 		// t << "Best diff LUT cost: "<< diffLutCost<< endl;
 		auto compressedCost=diffCost + subsamplingCost;
 		mpz_class diff = originalCost - compressedCost;
-		t << "  Total compressed cost is: " << compressedCost <<   "         Saved: " << 100*diff.get_d()/ originalCost.get_d() << " %";
+		float gain=100*diff.get_d()/ originalCost.get_d();
+		gain=roundf(gain*10)/10;
+		t << "  Total compressed cost is: " << compressedCost <<   "         Saved: " << gain << " %";
 		// t << "Total LUT cost: " << (diffLutCost + subsamplingLUTCost)<< endl;
 #define LATEX_OUTPUT 1 // for the paper
 #if LATEX_OUTPUT
 		t  << endl << "Latex table line : " << endl;
 		// first line
-		t << " & " << originalCost << " & " <<  compressedCost << "  (" << 100*diff.get_d()/ originalCost.get_d()  << ") & "
+		t << " & " << originalCost << " & " <<  compressedCost << "  (" << gain  << "%) & "
 			<<  subsamplingCost << " & " << diffCost << " & \\\\" <<  endl;
 		// second line
-		t << " & $" << originalWout << "\\cdot 2^{" << diffIndexSize << "}$  &  $"
-			<< "$ && $" <<subsamplingWordSize << "\\cdot 2^{" << subsamplingIndexSize << "}$  &  $"
+		t << " & $" << originalWout << "\\cdot 2^{" << diffIndexSize << "}$ "
+			<< "& & $" <<subsamplingWordSize << "\\cdot 2^{" << subsamplingIndexSize << "}$  &  $"
 			<< diffWordSize << "\\cdot 2^{" << diffIndexSize << "}$  &   "
 			<< subsamplingWordSize - (originalWout-diffWordSize) << " \\\\"<< endl;	
 #endif

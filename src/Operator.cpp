@@ -937,7 +937,7 @@ namespace flopoco{
 
 		// check the signals doesn't already exist
 		if(isSignalDeclared(name)) {
-			THROWERROR("In declareFixPoint(), signal " << name << " already exists" << endl);
+			THROWERROR("In declareFloatingPoint(), signal " << name << " already exists" << endl);
 		}
 
 		// construct the signal (lifeSpan and cycle are reset to 0 by the constructor)
@@ -957,6 +957,29 @@ namespace flopoco{
 		return name;
 	}
 
+	string Operator::declareCustom(string name, string customType, Signal::SignalType regType) {
+		return declareCustom(0.0, name, customType, regType);
+	}
+
+	string Operator::declareCustom(double criticalPathContribution, string name, string customType, Signal::SignalType regType) {
+		Signal* s;
+
+		// check the signals doesn't already exist
+		if(isSignalDeclared(name)) {
+			THROWERROR("In declareCustom(), signal " << name << " already exists" << endl);
+		}
+
+		// construct the signal (lifeSpan and cycle are reset to 0 by the constructor)
+		s = new Signal(this, name, regType, customType);
+
+		initNewSignal(s, criticalPathContribution, regType, false);
+
+		s->setIsFix(false);
+		s->setIsFP(false);
+		s->setIsIEEE(false);
+
+		return name;
+	}
 
 
 	void Operator::initNewSignal(Signal* s, double criticalPathContribution, Signal::SignalType regType, bool incompleteDeclaration)
@@ -1072,7 +1095,10 @@ namespace flopoco{
 			THROWERROR("In addRegisteredSignalCopy(): " << e2);
 		}
 		s->setResetType(regType);
-		vhdl << tab << declare(copyName, s->width(), s->isBus()) << " <= "<<sourceName<<"^1;" << endl;
+		if(s->isCustom())
+			vhdl << tab << declareCustom(copyName, s->customType()) << " <= "<<sourceName<<"^1;" << endl;
+		else
+			vhdl << tab << declare(copyName, s->width(), s->isBus()) << " <= "<<sourceName<<"^1;" << endl;
 		// this ^ will be caught in doApplySchedule(). We could have arbitrary number of delays but I wait for a use case
 		getSignalByName(copyName) -> setHasBeenScheduled(true); // so that the schedule can start from these signals -- lexicographic time is (0,0)
 	}
@@ -1984,8 +2010,8 @@ namespace flopoco{
 			newArchitecture(o,name);
 			o << buildVHDLComponentDeclarations();
 			o << buildVHDLAttributes();
-			o << buildVHDLSignalDeclarations();			//TODO: this cannot be called before scheduling the signals (it requires the lifespan of the signals, which is not yet computed)
 			o << buildVHDLTypeDeclarations();
+			o << buildVHDLSignalDeclarations();			//TODO: this cannot be called before scheduling the signals (it requires the lifespan of the signals, which is not yet computed)
 			o << buildVHDLConstantDeclarations();
 			beginArchitecture(o);
 			o << buildVHDLRegisters();					//TODO: this cannot be called before scheduling the signals (it requires the lifespan of the signals, which is not yet computed)

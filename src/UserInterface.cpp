@@ -357,7 +357,7 @@ namespace flopoco
 		tableCompression=false;
 		unusedHardMultThreshold=0.7;
 		compression = "heuristicMaxEff";
-		tiling = "heuristicBeamSearchTiling";
+		tiling = "heuristicBasicTiling"; //should be heuristicBeamSearchTiling in future
 
 		ilpSolver = "Gurobi";
 		ilpTimeout = 0; //timeout disabled
@@ -429,6 +429,10 @@ namespace flopoco
 				throw s.str();
 			}
 
+			if(operatorSpecs.size()==0) {
+				cerr << "No operator specified" << endl << getFullDoc();
+				exit(EXIT_SUCCESS);
+			}
 			for (auto opParams: operatorSpecs) {
 				string opName = opParams[0];  // operator Name
 				// remove the generic options

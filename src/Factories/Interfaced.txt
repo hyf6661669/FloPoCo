@@ -90,4 +90,4 @@ PositFunctionByTable
 Posit2Posit
 
 #FixFunctionByVaryingPiecewisePoly # to revive soon
-SRTDivNbBitsMin
+#SRTDivNbBitsMin

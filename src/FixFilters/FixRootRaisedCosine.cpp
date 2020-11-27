@@ -56,7 +56,7 @@ namespace flopoco{
 		
 		if(index==-1) 
 		{ // The unit tests
-			for(int lsbIn=-1; lsbIn>=-12; lsbIn-=1) {
+			for(int lsbIn=-3; lsbIn>=-12; lsbIn-=3) {
 				for(int lsbOut = min(lsbIn,-5); lsbOut>=-18; lsbOut-=3)	{
 					for(int n = 3; n<8; n++)	{
 						for(double alpha=0; alpha <=1; alpha+=0.25)	{

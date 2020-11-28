@@ -2009,10 +2009,10 @@ namespace flopoco{
 			outputVHDLEntity(o);
 			newArchitecture(o,name);
 			o << buildVHDLComponentDeclarations();
-			o << buildVHDLAttributes();
 			o << buildVHDLTypeDeclarations();
 			o << buildVHDLSignalDeclarations();			//TODO: this cannot be called before scheduling the signals (it requires the lifespan of the signals, which is not yet computed)
 			o << buildVHDLConstantDeclarations();
+			o << buildVHDLAttributes();
 			beginArchitecture(o);
 			o << buildVHDLRegisters();					//TODO: this cannot be called before scheduling the signals (it requires the lifespan of the signals, which is not yet computed)
 			if(getIndirectOperator())

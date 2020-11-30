@@ -39,3 +39,38 @@ BOOST_AUTO_TEST_CASE(TestDifferentialCompressionLarge)
 		"Error with reconstitution of table value " <<i << ": got " << reconstructedTable[i] << " instead of " << val[i]);
 	}
 }
+
+BOOST_AUTO_TEST_CASE(TestDifferentialCompressionTrivial)
+{
+	constexpr size_t HIGH_IDX_WIDTH = 8;
+	constexpr size_t LOW_IDX_WIDTH = 3;
+	constexpr size_t WIN = HIGH_IDX_WIDTH + LOW_IDX_WIDTH;
+	constexpr size_t LOW_ID_MASK = (size_t{1} << LOW_IDX_WIDTH) - 1;
+	constexpr size_t TOTAL_SIZE = size_t{1} << WIN;
+	constexpr size_t SHIFT = LOW_IDX_WIDTH + 2;
+	constexpr size_t WOUT = SHIFT + HIGH_IDX_WIDTH;
+
+	vector<mpz_class> table(TOTAL_SIZE);
+	for (size_t i = 0 ; i < TOTAL_SIZE ; ++i) {
+		size_t low_id = i & LOW_ID_MASK;
+		size_t high_id = (i >> LOW_IDX_WIDTH) << SHIFT;
+		mpz_class val{high_id};
+		val |= low_id;
+		table[i] = val;
+	}
+
+	BOOST_TEST_CHECKPOINT("Calling find_differential_compression");
+	Kintex7 target{};
+	auto diff_compress = DifferentialCompression::find_differential_compression(
+				table,
+				WIN,
+				WOUT,
+				&target
+		);
+
+	BOOST_REQUIRE_MESSAGE(diff_compress.subsamplingIndexSize == HIGH_IDX_WIDTH, "Unexpected diff index size");
+	BOOST_REQUIRE_MESSAGE(diff_compress.diffWordSize == LOW_IDX_WIDTH, "Unexpected diff word size");
+	BOOST_REQUIRE_MESSAGE(diff_compress.subsamplingWordSize == HIGH_IDX_WIDTH + SHIFT - LOW_IDX_WIDTH, "Unexpected subsamble word size");
+	auto overlapp = diff_compress.diffWordSize + diff_compress.subsamplingWordSize - WOUT;
+	BOOST_REQUIRE_MESSAGE(overlapp == 0, "Result compression overlapped while it is not necessary");
+}

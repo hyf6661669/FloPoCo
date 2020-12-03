@@ -54,6 +54,7 @@ private:
     void C67_range_constraint(int s, vector<vector<ScaLP::Variable>> &range_limits, ScaLP::Term &rangeMin,
                               ScaLP::Term &rangeMax, vector<ScaLP::Term> &neg_range_change,
                               vector<ScaLP::Term> &pos_range_change);
+    void C8_sign_extension(ScaLP::Term &sign_ext_vect, unsigned long max_sign_ext_val);
 #endif
 
 

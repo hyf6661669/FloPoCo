@@ -21,6 +21,7 @@ namespace flopoco
     public:
         /** constructor **/
         PseudoCompressor(Operator* parentOp, Target* target, int weight, int modulus);
+        PseudoCompressor(Operator *parentOp, Target *target, vector<int> _heights, vector<int> _outHeights);
 
         /** destructor**/
         ~PseudoCompressor();
@@ -31,5 +32,13 @@ namespace flopoco
     protected:
         int _weight;
         int _modulus;
+    };
+
+    class BasicPseudoCompressor : public BasicCompressor
+    {
+    public:
+        BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> heights, vector<int> outHeights, int range_change, int _ones_vector_start=-1);
+
+        virtual Compressor* getCompressor();
     };
 }

@@ -20,6 +20,10 @@ namespace flopoco {
         this->_weight = weight;
         this->_modulus = modulus;
 
+        //compressors are supposed to be combinatorial
+        setCombinatorial();
+        setShared();
+
         ostringstream name;
         name << "Pseudo_Compressor_Weight_" << _weight << "_for_Modulus_" << _modulus;
         setNameWithFreqAndUID(name.str());
@@ -51,6 +55,51 @@ namespace flopoco {
 
         }
 
+    }
+
+    PseudoCompressor::PseudoCompressor(Operator *parentOp, Target *target, vector<int> _heights, vector<int> _outHeights) : Compressor(
+            parentOp, target, _heights) {
+        setCopyrightString("Andreas Boettcher");
+
+        outHeights = _outHeights;
+
+        //compressors are supposed to be combinatorial
+        setCombinatorial();
+        setShared();
+
+        cout << "in-heights: " << _heights.size() << " out-heights: " << _outHeights.size() << endl;
+
+        for(int i = 0; i < _heights.size(); i++){
+            if(_heights[i] == 1){
+                REPORT(DEBUG, "add pseudocompressor input with weight " << i );
+                addInput(join("X", i), 1);
+                for(int j = 0; j < _outHeights.size(); j++) {
+                    if (_outHeights[j] == 1) {
+                        addOutput(join("R", j), 1);
+                        REPORT(DEBUG, "add pseudocompressor output with weight " << j );
+                        vhdl << tab << join("R", j) << " <= " << join("X", i) << ";" << endl;
+                    }
+                }
+                ostringstream name;
+                name << "Pseudo_Compressor_Weight_" << i << "_for_Modulus_" << _modulus;
+                setNameWithFreqAndUID(name.str());
+            }
+
+        }
+
+    }
+
+    BasicPseudoCompressor::BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> _heights, vector<int> _outHeights, int _range_change, int _ones_vector_start) : BasicCompressor(parentOp_, target, _heights, 0, "pseudo", true)
+    {
+        area = 0; //every pseudo-compressor uses 0 LUTs (so far)
+        outHeights = _outHeights;
+        range_change = _range_change;
+        ones_vector_start = _ones_vector_start;
+    }
+
+    Compressor* BasicPseudoCompressor::getCompressor(){
+        compressor = new PseudoCompressor(parentOp, target, heights, outHeights);
+        return compressor;
     }
 
     PseudoCompressor::~PseudoCompressor() {

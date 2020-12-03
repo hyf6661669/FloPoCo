@@ -161,7 +161,8 @@ namespace flopoco
 		float area;							/**< size of the compressor in LUT-equivalents */
 		string type; 						/**< combinatorial or variableLength */
 		int wOut;
-		int range_change;			/**< value range change by pseudocompressor used for modular reduction*/
+		int range_change;			        /**< value range change by pseudocompressor used for modular reduction*/
+        int ones_vector_start;              /**< marks the start of the 1s vector for sign extension for pseudocompressors used for modular reduction*/
 
 		Compressor* compressor; 				/**< if getCompressor() is being called for the first time, the pointer of the generated compressor will be saved here. */
 

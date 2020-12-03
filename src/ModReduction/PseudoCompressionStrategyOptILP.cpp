@@ -1,4 +1,5 @@
 #include "PseudoCompressionStrategyOptILP.hpp"
+#include "ModReduction/PseudoCompressor.hpp"
 
 using namespace std;
 namespace flopoco {
@@ -42,7 +43,7 @@ void PseudoCompressionptILP::solve()
 
         // print results
         cerr << "The result is " << stat << endl;
-        cerr << solver->getResult() << endl;
+        //cerr << solver->getResult() << endl;
     } while(stat == ScaLP::status::INFEASIBLE);
 
     ScaLP::Result res = solver->getResult();
@@ -163,13 +164,14 @@ void PseudoCompressionptILP::constructProblem(int s_max)
     vector<vector<ScaLP::Variable>> range_limits(s_max+1,vector<ScaLP::Variable>(2));
     vector<ScaLP::Term> neg_range_change(s_max+1), pos_range_change(s_max+1);
     //ScaLP::Term selectLastStage;
+    ScaLP::Term sign_ext_vect;
+    unsigned long max_sign_ext_val = 0;                                                                                 //TODO: extend precision
     for(int s = 0; s <= s_max; s++){
         vector<ScaLP::Term> bitsinNextColumn(wIn + 1);
         vector<ScaLP::Term> bitsinCurrentColumn(wIn + 1);
         vector<ScaLP::Term> rcdDependencies(wIn + 1);
         vector<ScaLP::Term> used_pseudocom_in_col(wIn);
-        ScaLP::Term rangeMax;
-        ScaLP::Term rangeMin;
+        ScaLP::Term rangeMax, rangeMin;
 
         for(unsigned c = 0; c <= wIn; c++){        //one bit more for carry of ripple carry adder
 
@@ -190,7 +192,7 @@ void PseudoCompressionptILP::constructProblem(int s_max)
                                 }
                                 if(possibleCompressors[e]->getHeightsAtColumn((unsigned) ce, false)) {
                                     if(possibleCompressors[e]->type.compare("pseudo") == 0){
-                                        pos_range_change[s].add(tempV, -(1 << ce));
+                                        pos_range_change[s].add(tempV, -(1 << ce));                                 //consider the range change of the bit removed by the pseudo-compressor
                                     }
                                 }
                             }
@@ -202,12 +204,17 @@ void PseudoCompressionptILP::constructProblem(int s_max)
                                 //cout << "stage " << s << " col " << c << " comp " << e << " range chg " << possibleCompressors[e]->range_change << endl;
                                 if(possibleCompressors[e]->range_change < 0){
                                     neg_range_change[s].add(tempV,possibleCompressors[e]->range_change);
+                                    for(unsigned ci = possibleCompressors[e]->ones_vector_start; ci <= wIn; ci++){      //contributions to sign externsion vector of current neg. congruent pseudo-compressor
+                                        sign_ext_vect.add(tempV, 1<<ci );
+                                        max_sign_ext_val += (1<<ci);
+                                    }
+                                    cout << "pseudocompr. " << possibleCompressors[e]->range_change << " start of ones vector " << possibleCompressors[e]->ones_vector_start << endl;
                                 } else {
                                     pos_range_change[s].add(tempV,possibleCompressors[e]->range_change);
                                 }
                             }
                         }
-                    } else {                                                                                            //Handling for FFs an row adders
+                    } else {                                                                                            //Handling for FFs and row adders
                         if(!(c==0 && possibleCompressors.size() < e && e <= possibleCompressors.size()+2) ) {             //MSB and middle element of row adder should not be put in the LSB column of the BitHeap
                             stringstream nvarName;
                             nvarName << "k_" << setfill('0') << setw(dpSt) << s << "_" << setfill('0') << setw(dpK) << e << "_" << setfill('0') << setw(dpC) << c;
@@ -257,9 +264,9 @@ void PseudoCompressionptILP::constructProblem(int s_max)
             if(c == wIn){                                                   //range constraint C6/C7
                 C67_range_constraint(s, range_limits, rangeMin, rangeMax, neg_range_change, pos_range_change);
             }
-
         }
     }
+    C8_sign_extension(sign_ext_vect, max_sign_ext_val);
 
     // Set the Objective
     cout << "   setting objective (minimize cost function)..." << endl;
@@ -347,6 +354,26 @@ void PseudoCompressionptILP::constructProblem(int s_max)
         }
     }
 
+    void PseudoCompressionptILP::C8_sign_extension(ScaLP::Term &sign_ext_vect, unsigned long max_sign_ext_val){
+        stringstream consName8;
+        consName8 << "C8";
+        int wMax, wM = 1, wBitsMax = 1;
+        while (max_sign_ext_val /= 2)
+            wBitsMax++;
+        wMax = wBitsMax;
+        while (wMax /= 10)
+            wM++;
+        for(unsigned ci = 0; ci <= wBitsMax; ci++){      //generate decision variables for bits of the sign extension vector
+            stringstream nvarName;
+            nvarName << "b_" << setfill('0') << setw(wM) << ci;
+            ScaLP::Variable tempV = ScaLP::newIntegerVariable(nvarName.str(), 0, 1);
+            sign_ext_vect.add(tempV, 1<<ci );
+        }
+        cout << consName8.str() << sign_ext_vect << endl;
+        ScaLP::Constraint c8Constraint = sign_ext_vect == 0;     //C8_s
+        c8Constraint.name = consName8.str();
+        solver->addConstraint(c8Constraint);
+    }
 
     bool PseudoCompressionptILP::addFlipFlop(){
         //BasicCompressor* flipflop;
@@ -420,6 +447,7 @@ void PseudoCompressionptILP::constructProblem(int s_max)
                 }
             }
             //cout << " length: " << comp_out_rem.size() << endl;
+            int ones_vector_start = 0, cnt = 1;
             for(int j = 1; j < 1<<wIn; j <<= 1){
                 if(j&reciproc){
                     comp_out_rec.push_back(1);
@@ -427,20 +455,23 @@ void PseudoCompressionptILP::constructProblem(int s_max)
                     //cout << "reciproc: bit " << j << " is set" << endl;
                 } else {
                     comp_out_rec.push_back(0);
+                    ones_vector_start = cnt;
                     //cout << "0";
                 }
+                cnt++;
             }
+            //cout << "value: " << reciproc << " ones vector start " << ones_vector_start << endl;
 
             bool found = false, diff;                                   //search, if pseudocompressors are already in the list
-            for(int i = 0; i < (int)possibleCompressors.size(); i++){
+            for(int k = 0; k < (int)possibleCompressors.size(); k++){
                 diff = false;
-                for(int j = 0; j < (int)possibleCompressors[i]->getHeights(); j++){
-                    if((int)possibleCompressors[i]->getHeightsAtColumn(j) != comp_inputs[j]){
+                for(int j = 0; j < (int)possibleCompressors[k]->getHeights(); j++){
+                    if((int)possibleCompressors[k]->getHeightsAtColumn(j) != comp_inputs[j]){
                         diff = true; break;
                     }
                 }
-                for(int j = 0; j < (int)possibleCompressors[i]->getOutHeights(); j++){
-                    if((int)possibleCompressors[i]->getOutHeightsAtColumn(j) != comp_out_rem[j]){
+                for(int j = 0; j < (int)possibleCompressors[k]->getOutHeights(); j++){
+                    if((int)possibleCompressors[k]->getOutHeightsAtColumn(j) != comp_out_rem[j]){
                         diff = true; break;
                     }
                 }
@@ -451,10 +482,14 @@ void PseudoCompressionptILP::constructProblem(int s_max)
             }
             if(found) break;
             //cout << " length: " << comp_out_rec.size() << endl;
-            BasicCompressor *remCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, 0.1, "pseudo", true);
+/*            BasicCompressor *remCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, 0.1, "pseudo", true);
             remCompressor->outHeights = comp_out_rem;
             remCompressor->range_change = rem;
             possibleCompressors.push_back(remCompressor);
+*/
+            possibleCompressors.push_back(new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, comp_out_rem, rem));
+
+            possibleCompressors.push_back(new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, comp_out_rec, reciproc, ones_vector_start));
 /*
             BasicCompressor *recCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, 0.1, "pseudo", true);
             recCompressor->outHeights = comp_out_rec;

@@ -22,6 +22,10 @@ namespace flopoco{
 		//setting up outHeights
 		outHeights.resize(wOut, 1);
 		compressor = nullptr;
+
+		//initialize variables used for pseudo-compressors if they are not used
+        range_change = 0;
+        ones_vector_start = INT32_MAX;
 	}
 /*
 	BasicCompressor::~BasicCompressor(){

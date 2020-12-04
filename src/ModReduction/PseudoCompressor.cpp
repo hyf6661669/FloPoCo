@@ -58,7 +58,7 @@ namespace flopoco {
     }
 
     PseudoCompressor::PseudoCompressor(Operator *parentOp, Target *target, vector<int> _heights, vector<int> _outHeights) : Compressor(
-            parentOp, target, _heights) {
+            parentOp, target) {
         setCopyrightString("Andreas Boettcher");
 
         outHeights = _outHeights;
@@ -69,20 +69,26 @@ namespace flopoco {
 
         cout << "in-heights: " << _heights.size() << " out-heights: " << _outHeights.size() << endl;
 
+        ostringstream name;
+        name << "Pseudo_Compressor_Weight_" << _heights.size() ;
+        setNameWithFreqAndUID(name.str());
+        //addOutput("R", _outHeights.size());
+
+
+        createInputsAndOutputs();
+
         for(int i = 0; i < _heights.size(); i++){
             if(_heights[i] == 1){
                 REPORT(DEBUG, "add pseudocompressor input with weight " << i );
-                addInput(join("X", i), 1);
+                //addInput(join("X", i), 1);
                 for(int j = 0; j < _outHeights.size(); j++) {
                     if (_outHeights[j] == 1) {
-                        addOutput(join("R", j), 1);
                         REPORT(DEBUG, "add pseudocompressor output with weight " << j );
-                        vhdl << tab << join("R", j) << " <= " << join("X", i) << ";" << endl;
+                        vhdl << tab << "R(" << j << ") <= " << join("X", i) << ";" << endl;
+                    } else {
+
                     }
                 }
-                ostringstream name;
-                name << "Pseudo_Compressor_Weight_" << i << "_for_Modulus_" << _modulus;
-                setNameWithFreqAndUID(name.str());
             }
 
         }

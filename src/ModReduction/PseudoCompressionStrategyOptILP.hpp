@@ -54,7 +54,9 @@ private:
     void C67_range_constraint(int s, vector<vector<ScaLP::Variable>> &range_limits, ScaLP::Term &rangeMin,
                               ScaLP::Term &rangeMax, vector<ScaLP::Term> &neg_range_change,
                               vector<ScaLP::Term> &pos_range_change);
+    void init_cons_bit_vals(ScaLP::Term &sign_ext_vect, vector<vector<ScaLP::Variable>> &possibleConstBitsPos, vector<ScaLP::Variable> &constBits);
     void C8_sign_extension(ScaLP::Term &sign_ext_vect, unsigned long max_sign_ext_val);
+    void C9_sign_extension_bits(vector<vector<ScaLP::Variable>> &possibleConstBitsPos, vector<ScaLP::Variable> &constBits);
 #endif
 
 

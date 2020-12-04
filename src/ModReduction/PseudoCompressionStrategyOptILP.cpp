@@ -43,7 +43,7 @@ void PseudoCompressionptILP::solve()
 
         // print results
         cerr << "The result is " << stat << endl;
-        //cerr << solver->getResult() << endl;
+        cout << solver->getResult() << endl;
     } while(stat == ScaLP::status::INFEASIBLE);
 
     ScaLP::Result res = solver->getResult();
@@ -162,9 +162,12 @@ void PseudoCompressionptILP::constructProblem(int s_max)
     addFlipFlop();              //Add FF to list of compressors
     vector<vector<ScaLP::Variable>> bitsInColAndStage(s_max+1, vector<ScaLP::Variable>(bitsinColumn.size()+1));
     vector<vector<ScaLP::Variable>> range_limits(s_max+1,vector<ScaLP::Variable>(2));
+    vector<vector<ScaLP::Variable>> possibleConstBitsPos(s_max,vector<ScaLP::Variable>(wIn+1));
+    vector<ScaLP::Variable> constBits(wIn+1);
     vector<ScaLP::Term> neg_range_change(s_max+1), pos_range_change(s_max+1);
     //ScaLP::Term selectLastStage;
     ScaLP::Term sign_ext_vect;
+    init_cons_bit_vals(sign_ext_vect, possibleConstBitsPos, constBits);
     unsigned long max_sign_ext_val = 0;                                                                                 //TODO: extend precision
     for(int s = 0; s <= s_max; s++){
         vector<ScaLP::Term> bitsinNextColumn(wIn + 1);
@@ -198,7 +201,11 @@ void PseudoCompressionptILP::constructProblem(int s_max)
                             }
                             for(int ce = 0; ce < (int) possibleCompressors[e]->getOutHeights() && ce < (int)bitsinNextColumn.size() - (int)c; ce++){   //Bits that are added by compressor e in stage s+1 in column c for constraint C2
                                 //cout << possibleCompressors[e]->getOutHeightsAtColumn((unsigned) ce, false) << " c: " << c+ce << endl;
-                                bitsinNextColumn[c+ce].add(tempV, possibleCompressors[e]->getOutHeightsAtColumn((unsigned) ce, false));
+                                if(ce <= possibleCompressors[e]->ones_vector_start){
+                                    bitsinNextColumn[c+ce].add(tempV, possibleCompressors[e]->getOutHeightsAtColumn((unsigned) ce, false));
+                                } else {
+                                    cout << "compr: " << e << " height: " << possibleCompressors[e]->getOutHeightsAtColumn((unsigned) ce, false) << " c: " << c+ce << endl;
+                                }
                             }
                             if(possibleCompressors[e]->type.compare("pseudo") == 0){
                                 //cout << "stage " << s << " col " << c << " comp " << e << " range chg " << possibleCompressors[e]->range_change << endl;
@@ -246,6 +253,7 @@ void PseudoCompressionptILP::constructProblem(int s_max)
                 C0_bithesp_input_bits(s, c, bitsinColumn, bitsInColAndStage);
             }
             if(s < s_max){
+                bitsinNextColumn[c].add(possibleConstBitsPos[s][c], 1);                                     //possible bit form sign extension constant vector
                 C1_compressor_input_bits(s, c, bitsinCurrentColumn, bitsInColAndStage);
                 C2_compressor_output_bits(s, c, bitsinNextColumn, bitsInColAndStage);
             }
@@ -267,6 +275,7 @@ void PseudoCompressionptILP::constructProblem(int s_max)
         }
     }
     C8_sign_extension(sign_ext_vect, max_sign_ext_val);
+    C9_sign_extension_bits(possibleConstBitsPos, constBits);
 
     // Set the Objective
     cout << "   setting objective (minimize cost function)..." << endl;
@@ -354,6 +363,22 @@ void PseudoCompressionptILP::constructProblem(int s_max)
         }
     }
 
+    void PseudoCompressionptILP::init_cons_bit_vals(ScaLP::Term &sign_ext_vect, vector<vector<ScaLP::Variable>> &possibleConstBitsPos, vector<ScaLP::Variable> &constBits){
+        for(unsigned ci = 0; ci <= wIn; ci++){      //generate decision variables for bits of the sign extension vector
+            stringstream nvarName;
+            nvarName << "b_" << setfill('0') << setw(dpC) << ci;
+            cout << endl << " " << nvarName.str();
+            constBits[ci] = ScaLP::newIntegerVariable(nvarName.str(), 0, 1);
+            sign_ext_vect.add(constBits[ci], -(1<<ci) );
+            for(unsigned si = 0; si < s_max; si++){
+                stringstream bitName;
+                bitName << "b_" << setfill('0') << setw(dpSt) << si << "_" << setfill('0') << setw(dpC) << ci;
+                cout << " " << bitName.str();
+                possibleConstBitsPos[si][ci] = ScaLP::newIntegerVariable(bitName.str(), 0, 1);
+            }
+        }
+    }
+
     void PseudoCompressionptILP::C8_sign_extension(ScaLP::Term &sign_ext_vect, unsigned long max_sign_ext_val){
         stringstream consName8;
         consName8 << "C8";
@@ -363,16 +388,31 @@ void PseudoCompressionptILP::constructProblem(int s_max)
         wMax = wBitsMax;
         while (wMax /= 10)
             wM++;
-        for(unsigned ci = 0; ci <= wBitsMax; ci++){      //generate decision variables for bits of the sign extension vector
+        for(unsigned ci = wIn+1; ci <= wBitsMax; ci++){      //generate decision variables for bits of the sign extension vector
             stringstream nvarName;
             nvarName << "b_" << setfill('0') << setw(wM) << ci;
             ScaLP::Variable tempV = ScaLP::newIntegerVariable(nvarName.str(), 0, 1);
-            sign_ext_vect.add(tempV, 1<<ci );
+            sign_ext_vect.add(tempV, -(1<<ci) );
         }
         cout << consName8.str() << sign_ext_vect << endl;
         ScaLP::Constraint c8Constraint = sign_ext_vect == 0;     //C8_s
         c8Constraint.name = consName8.str();
         solver->addConstraint(c8Constraint);
+    }
+
+    void PseudoCompressionptILP::C9_sign_extension_bits(vector<vector<ScaLP::Variable>> &possibleConstBitsPos, vector<ScaLP::Variable> &constBits){
+        for(unsigned ci = 0; ci <= wIn; ci++){
+            ScaLP::Term bitPlacement;
+            stringstream consName9;
+            consName9 << "C9_" << setfill('0') << setw(dpC) << ci;
+            for(unsigned si = 0; si < s_max; si++){
+                bitPlacement.add(possibleConstBitsPos[si][ci], 1);
+            }
+            ScaLP::Constraint c9Constraint = bitPlacement - constBits[ci] == 0;     //C8_s
+            c9Constraint.name = consName9.str();
+            solver->addConstraint(c9Constraint);
+        }
+
     }
 
     bool PseudoCompressionptILP::addFlipFlop(){

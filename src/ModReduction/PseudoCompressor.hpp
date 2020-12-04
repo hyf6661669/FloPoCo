@@ -37,7 +37,7 @@ namespace flopoco
     class BasicPseudoCompressor : public BasicCompressor
     {
     public:
-        BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> heights, vector<int> outHeights, int range_change, int _ones_vector_start=-1);
+        BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> heights, vector<int> outHeights, int range_change, int _ones_vector_start=INT32_MAX);
 
         virtual Compressor* getCompressor();
     };

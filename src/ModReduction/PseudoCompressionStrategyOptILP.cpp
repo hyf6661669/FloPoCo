@@ -119,7 +119,7 @@ void PseudoCompressionptILP::compressionAlgorithm() {
 
 		//reports the area in LUT-equivalents
 		printSolutionStatistics();
-
+        drawBitHeap();
 		//here the VHDL-Code for the compressors as well as the bits->compressors->bits are being written.
 		applyAllCompressorsFromSolution();
 #endif
@@ -353,10 +353,10 @@ void PseudoCompressionptILP::constructProblem(int s_max)
             if( con && s != s_max) rangeMin.add(range_limits[s][con], -1);
             if(!con){
                 if(s < s_max) cxConstraint = rangeMax + ((s != 0)?pos_range_change[s-1]:0) == 0;     //C6_s
-                if(s ==s_max) cxConstraint = rangeMax + ((s != 0)?pos_range_change[s-1]:0)  < 2*mod;     //C6_s
+                if(s ==s_max) cxConstraint = rangeMax + ((s != 0)?pos_range_change[s-1]:0)  < mod;     //C6_s
             } else {
                 if(s < s_max) cxConstraint = rangeMin + ((s != 0)?neg_range_change[s-1]:0) == 0;     //C6_s
-                if(s ==s_max) cxConstraint = rangeMin + ((s != 0)?neg_range_change[s-1]:0)  >= 0;     //C6_s
+                if(s ==s_max) cxConstraint = rangeMin + ((s != 0)?neg_range_change[s-1]:0)  >= -(int)mod;     //C6_s
             }
             cxConstraint.name = consName.str();
             solver->addConstraint(cxConstraint);
@@ -372,7 +372,7 @@ void PseudoCompressionptILP::constructProblem(int s_max)
             sign_ext_vect.add(constBits[ci], -(1<<ci) );
             for(unsigned si = 0; si < s_max; si++){
                 stringstream bitName;
-                bitName << "b_" << setfill('0') << setw(dpSt) << si << "_" << setfill('0') << setw(dpC) << ci;
+                bitName << "p_" << setfill('0') << setw(dpSt) << si << "_" << setfill('0') << setw(dpC) << ci;
                 cout << " " << bitName.str();
                 possibleConstBitsPos[si][ci] = ScaLP::newIntegerVariable(bitName.str(), 0, 1);
             }
@@ -569,6 +569,65 @@ void PseudoCompressionptILP::constructProblem(int s_max)
         }
 
     }
+
+    void PseudoCompressionptILP::drawBitHeap(){
+        vector<vector<int>> bitsOnBitHeap(s_max+1, vector<int>((int)wIn, 0));
+        ScaLP::Result res = solver->getResult();
+        for(auto &p:res.values) {
+            if (p.second >
+                0.5) {     //parametrize all multipliers at a certain position, for which the solver returned 1 as solution, to flopoco solution structure
+                std::string var_name = p.first->getName();
+                //if(var_name.substr(0,1).compare("k") != 0) continue;
+                switch (var_name.substr(0, 1).at(0)) {
+ /*                   case 'k': {      //decision variables 'k' for placed compressors
+                        int sta_id = stoi(var_name.substr(2, dpSt));
+                        int com_id = stoi(var_name.substr(2 + dpSt + 1, dpK));
+                        int col_id = stoi(var_name.substr(2 + dpSt + 1 + dpK + 1, dpC));
+                        float instances = p.second;
+                        while (instances-- > 0.5) {
+                            if(com_id < possibleCompressors.size()){
+                                for(int ci = 0; ci < possibleCompressors[com_id]->outHeights.size() && ci <= possibleCompressors[com_id]->ones_vector_start; ci++){
+                                    bitsOnBitHeap[sta_id][col_id+ci] += possibleCompressors[com_id]->outHeights[ci];
+                                }
+                            } else {
+                                bitsOnBitHeap[sta_id][col_id] += 1;
+                                if(com_id == 26)
+                                    bitsOnBitHeap[sta_id][col_id+1] += 1;
+                            }
+
+                        }
+                        cout << var_name << "\t " << p.second << endl;
+                        break;
+                    }*/
+                    case 'p': {          //constant bits from sign extension of negative congruent pseudo-compressors
+                        int sta_id = stoi(var_name.substr(2, dpSt));
+                        int col_id = stoi(var_name.substr(2 + dpSt + 1, dpC));
+                        //bitsOnBitHeap[sta_id][col_id] += 1;
+                        cout << var_name << "\t " << p.second << endl;
+                        break;
+                    }
+                    case 'N': {          //bits present in a particular column an stage of BitHeap
+                        int sta_id = stoi(var_name.substr(2, dpSt));
+                        int col_id = stoi(var_name.substr(2 + dpSt + 1, dpC));
+                        if(sta_id < s_max+1 && col_id < wIn)
+                            bitsOnBitHeap[sta_id][col_id] = p.second;
+                        //cout << var_name << "\t " << p.second << endl;
+                        break;
+                    }
+                    default:            //Other decision variables are not needed for VHDL-Generation
+                        break;
+                }
+            }
+        }
+        for(int s = 0; s < bitsOnBitHeap.size(); s++){
+            for(int c = bitsOnBitHeap[0].size()-1; 0 <= c; c--){
+                cout << bitsOnBitHeap[s][c];
+            }
+            cout << endl;
+        }
+    }
+
+
 
 #endif
 

@@ -57,6 +57,7 @@ private:
     void init_cons_bit_vals(ScaLP::Term &sign_ext_vect, vector<vector<ScaLP::Variable>> &possibleConstBitsPos, vector<ScaLP::Variable> &constBits);
     void C8_sign_extension(ScaLP::Term &sign_ext_vect, unsigned long max_sign_ext_val);
     void C9_sign_extension_bits(vector<vector<ScaLP::Variable>> &possibleConstBitsPos, vector<ScaLP::Variable> &constBits);
+    void drawBitHeap();
 #endif
 
 

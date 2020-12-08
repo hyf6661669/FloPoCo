@@ -182,3 +182,4 @@ Posit/Posit2Posit
 ModReduction/ModRed
 ModReduction/PseudoCompressionStrategyOptILP
 ModReduction/PseudoCompressor
+ModReduction/RowAdder

@@ -61,6 +61,7 @@ namespace flopoco {
             parentOp, target) {
         setCopyrightString("Andreas Boettcher");
 
+        heights = _heights;
         outHeights = _outHeights;
 
         //compressors are supposed to be combinatorial

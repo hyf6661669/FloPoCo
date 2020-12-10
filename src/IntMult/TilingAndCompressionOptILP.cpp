@@ -215,7 +215,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
         x_neg = (x_neg < (int)tiles[s]->wX())?tiles[s]->wX() - 1:x_neg;
         y_neg = (y_neg < (int)tiles[s]->wY())?tiles[s]->wY() - 1:y_neg;
     }
-    prodWidth = IntMultiplier::prodsize(wX, wY);
+    prodWidth = IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
     int nx = wX-1, ny = wY-1, ns = wS-1; dpX = 1; dpY = 1; dpS = 1;     //calc number of decimal places, for var names
     int nk = possibleCompressors.size()+4, nc = prodWidth + 1, nst = s_max; dpK = 1; dpC = 1; dpSt = 1;
     nx = (x_neg > nx)?x_neg:nx;                                         //in case the extend in negative direction is larger

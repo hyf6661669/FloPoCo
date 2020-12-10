@@ -107,7 +107,7 @@ void TilingStrategyOptimalILP::constructProblem()
     //Assemble cost function, declare problem variables
     cout << "   assembling cost function, declaring problem variables..." << endl;
     ScaLP::Term obj;
-    prodWidth = IntMultiplier::prodsize(wX, wY);
+    prodWidth = IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
     int x_neg = 0, y_neg = 0;
     for(int s = 0; s < wS; s++){
         x_neg = (x_neg < (int)tiles[s]->wX())?tiles[s]->wX() - 1:x_neg;

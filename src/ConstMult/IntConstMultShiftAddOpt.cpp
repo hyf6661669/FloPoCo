@@ -227,6 +227,7 @@ namespace flopoco{
 			constantList.push_back("43"); //smallest coefficient requiring 3 adders
 			constantList.push_back("683"); //smallest coefficient requiring 4 adders
 			constantList.push_back("14709"); //smallest coefficient requiring 5 adders
+			constantList.push_back("66511"); //critical coefficient as we have a node with wsOut < wsIn (factor 975)
 			constantList.push_back(to_string(MAX_SCM_CONST)); //maximum supported coefficient
 
 			for(int wIn=3; wIn<16; wIn+=4) // test various input widths

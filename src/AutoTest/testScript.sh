@@ -1,3 +1,6 @@
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
 cd AutotestResults/tmp
 echo "-------------------------------------------" >> ../$1/report
 echo "./flopoco $*"

@@ -214,7 +214,7 @@ void TilingStrategyOptimalILP::constructProblem()
         //cout << sumOfPosEps << " " << ((unsigned long)1<<((int)prodWidth-wOut-1));
         unsigned long maxErr = (prodWidth-(int)wOut-guardBits > prodWidth)?prodWidth:(prodWidth-(int)wOut-guardBits);
         cout << "shift=" << maxErr << endl;
-        maxErr = ((unsigned long)wX*(((unsigned long)1<<maxErr)));
+        maxErr = ((unsigned long)((wX < wY) ? wX : wY)*(((unsigned long)1<<maxErr)));
         cout << "maxErr=" << maxErr << endl;
         ScaLP::Constraint truncConstraint = maxEpsTerm  <= maxErr; //((unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))));
         //ScaLP::Constraint truncConstraint = maxEpsTerm >= (bool)1;

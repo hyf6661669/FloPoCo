@@ -198,13 +198,14 @@ namespace flopoco {
 			tilingStrategy = new TilingStrategyOptimalILP(
 					wX,
 					wY,
-					wOut + guardBits,
+					wOut,
 					signedIO,
 					&baseMultiplierCollection,
 					baseMultiplierCollection.getPreferedMultiplier(),
 					dspOccupationThreshold,
 					maxDSP,
-					multiplierTileCollection
+					multiplierTileCollection,
+                    guardBits
 			);
 
 		}  else if(tilingMethod.compare("optimalTilingAndCompression") == 0){

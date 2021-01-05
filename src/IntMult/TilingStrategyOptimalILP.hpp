@@ -32,7 +32,8 @@ public:
 		base_multiplier_id_t prefered_multiplier,
 		float occupation_threshold,
 		size_t maxPrefMult,
-        MultiplierTileCollection tiles_);
+        MultiplierTileCollection tiles_,
+        unsigned guardBits);
 
     void solve() override;
 
@@ -42,7 +43,7 @@ private:
     size_t max_pref_mult_;
     float occupation_threshold_;
     int dpX, dpY, dpS, wS;
-    unsigned prodWidth;
+    unsigned prodWidth, guardBits;
     vector<BaseMultiplierCategory*> tiles;
 #ifdef HAVE_SCALP
     void constructProblem();

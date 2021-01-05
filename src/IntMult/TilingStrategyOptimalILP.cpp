@@ -102,7 +102,7 @@ void TilingStrategyOptimalILP::solve()
 #ifdef HAVE_SCALP
 void TilingStrategyOptimalILP::constructProblem()
 {
-	bool performExactTruncation = true;
+	bool performExactTruncation = false;
 
     cout << "constructing problem formulation..." << endl;
     wS = tiles.size();
@@ -158,17 +158,17 @@ void TilingStrategyOptimalILP::constructProblem()
                 }
             }
             ScaLP::Constraint c1Constraint;
-            if(performExactTruncation && (wOut < (int)prodWidth) && ((x+y) <= ((int)prodWidth-wOut)))
-            {
+            if(performExactTruncation == false && (wOut < (int)prodWidth) && ((x+y) <= ((int)prodWidth-wOut))) {
                 stringstream nvarName;
-                nvarName << " b" << ((x < 0)?"m":"") << setfill('0') << setw(dpX) << ((x<0)?-x:x) << ((y < 0)?"m":"")<< setfill('0') << setw(dpY) << ((y<0)?-y:y) ;
+                nvarName << " b" << ((x < 0) ? "m" : "") << setfill('0') << setw(dpX) << ((x < 0) ? -x : x)
+                         << ((y < 0) ? "m" : "") << setfill('0') << setw(dpY) << ((y < 0) ? -y : y);
                 ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
-                maxEpsTerm.add(tempV, (-1)*((long)1<<(x+y)));
-                maxEpsTerm.add((long)1<<(x+y));
+                maxEpsTerm.add(tempV, (-1) * ((long) 1 << (x + y)));
+                maxEpsTerm.add((long) 1 << (x + y));
 
                 c1Constraint = pxyTerm - tempV == 0;
-                //sumOfPosEps += ((unsigned long)1<<(x+y));
-                //cout << sumOfPosEps << " " << ((unsigned long)1<<(x+y)) << endl;
+            } else if(performExactTruncation == true && (wOut < (int)prodWidth) && ((x+y) <= ((int)prodWidth-wOut-guardBits))){
+                c1Constraint = pxyTerm == (bool)0;
             } else {
                 c1Constraint = pxyTerm == (bool)1;
             }
@@ -208,7 +208,7 @@ void TilingStrategyOptimalILP::constructProblem()
     }
 
     //make shure the available precision is present in case of truncation
-    if(performExactTruncation && (wOut < (int)prodWidth))
+    if(performExactTruncation == false && (wOut < (int)prodWidth))
     {
         cout << "   multiplier is truncated by " << (int)prodWidth-wOut << " bits (err=" << (unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))) << "), ensure sufficient precision..." << endl;
         //cout << sumOfPosEps << " " << ((unsigned long)1<<((int)prodWidth-wOut-1));

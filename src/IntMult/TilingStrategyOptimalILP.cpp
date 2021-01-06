@@ -102,7 +102,7 @@ void TilingStrategyOptimalILP::solve()
 #ifdef HAVE_SCALP
 void TilingStrategyOptimalILP::constructProblem()
 {
-	bool performExactTruncation = false;
+	bool performOptimalTruncation = false;
 
     cout << "constructing problem formulation..." << endl;
     wS = tiles.size();
@@ -158,7 +158,7 @@ void TilingStrategyOptimalILP::constructProblem()
                 }
             }
             ScaLP::Constraint c1Constraint;
-            if(performExactTruncation == false && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut))) {
+            if(performOptimalTruncation == true && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut))) {
                 stringstream nvarName;
                 nvarName << " b" << ((x < 0) ? "m" : "") << setfill('0') << setw(dpX) << ((x < 0) ? -x : x)
                          << ((y < 0) ? "m" : "") << setfill('0') << setw(dpY) << ((y < 0) ? -y : y);
@@ -167,7 +167,7 @@ void TilingStrategyOptimalILP::constructProblem()
                 maxEpsTerm.add((long) 1 << (x + y));
 
                 c1Constraint = pxyTerm - tempV == 0;
-            } else if(performExactTruncation == true && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut-guardBits))){
+            } else if(performOptimalTruncation == false && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut-guardBits))){
                 //c1Constraint = pxyTerm <= (bool)1;
             } else {
                 c1Constraint = pxyTerm == (bool)1;
@@ -208,7 +208,7 @@ void TilingStrategyOptimalILP::constructProblem()
     }
 
     //make shure the available precision is present in case of truncation
-    if(performExactTruncation == false && (wOut < (int)prodWidth))
+    if(performOptimalTruncation == true && (wOut < (int)prodWidth))
     {
         cout << "   multiplier is truncated by " << (int)prodWidth-wOut << " bits (err=" << (unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))) << "), ensure sufficient precision..." << endl;
         //cout << sumOfPosEps << " " << ((unsigned long)1<<((int)prodWidth-wOut-1));

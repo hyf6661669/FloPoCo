@@ -1,5 +1,6 @@
 
 #include "CompressionStrategy.hpp"
+#include "ModReduction/PseudoCompressor.hpp"
 #include <climits>
 #include "PrimitiveComponents/Xilinx/XilinxGPC.hpp"
 #include "assert.h"
@@ -394,6 +395,93 @@ namespace flopoco{
 		//both tests were successful
 		return true;
 	}
+
+    void CompressionStrategy::addPseudocompressors(int wIn, int mod){
+        //pseudocompressors.resize(2*wIn);
+        cout << "nr. of avail. compressors: " << possibleCompressors.size() << endl;
+        vector<int> comp_inputs, comp_out_rem, comp_out_rec;
+        int shift;
+        for(int i = 1; i < 1<<wIn; i <<= 1){
+            shift = 0;
+            do{
+                if(i&(1<<shift)) {
+                    comp_inputs.push_back(1);
+                    //cout << "1";
+                } else {
+                    comp_inputs.push_back(0);
+                    //cout << "0";
+                }
+            } while(i > (1<<shift++));
+            //cout << " here, length: " << comp_inputs.size() << endl;
+            int rem = (int)i % (int)mod;
+            int reciproc = rem - mod;
+            //cout << "rem: " << rem << " reciprocal: " << reciproc << endl;
+
+            for(int j = 1; j < 1<<wIn; j <<= 1){
+                if(j&rem){
+                    comp_out_rem.push_back(1);
+                    //cout << "1";
+                    //cout << "remainder: bit " << j << " is set" << endl;
+                } else {
+                    comp_out_rem.push_back(0);
+                    //cout << "0";
+                }
+            }
+            //cout << " length: " << comp_out_rem.size() << endl;
+            int ones_vector_start = 0, cnt = 1;
+            for(int j = 1; j < 1<<wIn; j <<= 1){
+                if(j&reciproc){
+                    comp_out_rec.push_back(1);
+                    //cout << "1";
+                    //cout << "reciproc: bit " << j << " is set" << endl;
+                } else {
+                    comp_out_rec.push_back(0);
+                    ones_vector_start = cnt;
+                    //cout << "0";
+                }
+                cnt++;
+            }
+            //cout << "value: " << reciproc << " ones vector start " << ones_vector_start << endl;
+
+            bool found = false, diff;                                   //search, if pseudocompressors are already in the list
+            for(int k = 0; k < (int)possibleCompressors.size(); k++){
+                diff = false;
+                for(int j = 0; j < (int)possibleCompressors[k]->getHeights(); j++){
+                    if((int)possibleCompressors[k]->getHeightsAtColumn(j) != comp_inputs[j]){
+                        diff = true; break;
+                    }
+                }
+                for(int j = 0; j < (int)possibleCompressors[k]->getOutHeights(); j++){
+                    if((int)possibleCompressors[k]->getOutHeightsAtColumn(j) != comp_out_rem[j]){
+                        diff = true; break;
+                    }
+                }
+                if(diff == false){
+                    found = true;
+                    break;
+                }
+            }
+            if(found) break;
+            //cout << " length: " << comp_out_rec.size() << endl;
+/*            BasicCompressor *remCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, 0.1, "pseudo", true);
+            remCompressor->outHeights = comp_out_rem;
+            remCompressor->range_change = rem;
+            possibleCompressors.push_back(remCompressor);
+*/
+            possibleCompressors.push_back(new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, comp_out_rem, rem));
+
+            possibleCompressors.push_back(new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, comp_out_rec, reciproc, ones_vector_start));
+/*
+            BasicCompressor *recCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, 0.1, "pseudo", true);
+            recCompressor->outHeights = comp_out_rec;
+            recCompressor->range_change = reciproc;
+            possibleCompressors.push_back(recCompressor);
+*/
+            comp_inputs.clear(); comp_out_rec.clear(); comp_out_rem.clear();
+        }
+        cout << "nr. of avial. compressors: " << possibleCompressors.size() << endl;
+        //printIOHeights();
+    }
 
 
 	unsigned CompressionStrategy::getStageOfArrivalForBit(Bit* bit){

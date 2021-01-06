@@ -36,7 +36,6 @@ private:
     void constructProblem(int s_max);
     bool addFlipFlop();
     void remove_all_but_Adders();
-    void addPseudocompressors();
 
     ScaLP::Solver *solver;
 

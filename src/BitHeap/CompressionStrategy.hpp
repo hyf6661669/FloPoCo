@@ -249,6 +249,14 @@ class BitheapPlotter;
 		 */
 		bool checkAlgorithmReachedAdder(unsigned int adderHeight, unsigned int stage);
 
+        /**
+         *	@brief adds pseudocompressors to the list of compressors. pseudo compressors are used
+         	    to reduce the range
+            @param wIn input width decides which pseudo compressors are needed
+            @param mod modulus decides how the pseudo compressors need to reduce the range
+         */
+        void addPseudocompressors(int wIn, int mod);
+
 		vector<vector<vector<Bit*> > > orderedBits; /**< The bits of the bitheap ordered by stages. First dimension is the stage, second the column */
 
 		vector<vector<int> > bitAmount; 			/**< Amount of bits in each stage and column. The compression strategies (currently FirstFitting does not) work on this bitAmount, and if a solution is finished, the compressors will be used. */

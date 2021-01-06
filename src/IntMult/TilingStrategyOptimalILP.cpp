@@ -158,7 +158,7 @@ void TilingStrategyOptimalILP::constructProblem()
                 }
             }
             ScaLP::Constraint c1Constraint;
-            if(performExactTruncation == false && (wOut < (int)prodWidth) && ((x+y) <= ((int)prodWidth-wOut))) {
+            if(performExactTruncation == false && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut))) {
                 stringstream nvarName;
                 nvarName << " b" << ((x < 0) ? "m" : "") << setfill('0') << setw(dpX) << ((x < 0) ? -x : x)
                          << ((y < 0) ? "m" : "") << setfill('0') << setw(dpY) << ((y < 0) ? -y : y);
@@ -167,8 +167,8 @@ void TilingStrategyOptimalILP::constructProblem()
                 maxEpsTerm.add((long) 1 << (x + y));
 
                 c1Constraint = pxyTerm - tempV == 0;
-            } else if(performExactTruncation == true && (wOut < (int)prodWidth) && ((x+y) <= ((int)prodWidth-wOut-guardBits))){
-                c1Constraint = pxyTerm == (bool)0;
+            } else if(performExactTruncation == true && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut-guardBits))){
+                //c1Constraint = pxyTerm <= (bool)1;
             } else {
                 c1Constraint = pxyTerm == (bool)1;
             }

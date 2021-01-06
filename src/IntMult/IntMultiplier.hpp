@@ -121,7 +121,8 @@ namespace flopoco {
 
 		void branchToBitheap(BitHeap* bh, list<TilingStrategy::mult_tile_t> &solution , unsigned int bitheapLSBWeight);
 
-	};
+        void checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned int guardBits);
+    };
 
 }
 #endif

@@ -270,6 +270,7 @@ namespace flopoco {
 
 		if (guardBits > 0) {
 			bitHeap.addConstantOneBit(static_cast<int>(guardBits) - 1);
+            checkTruncationError(solution, guardBits);
 		}
 
 		if (dynamic_cast<CompressionStrategy*>(tilingStrategy)) {
@@ -822,6 +823,46 @@ namespace flopoco {
 			}
 
 		return testStateList;
+	}
+
+	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits){
+        std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
+
+        for(auto & tile : solution) {
+            auto &parameters = tile.first;
+            auto &anchor = tile.second;
+            int xPos = anchor.first;
+            int yPos = anchor.second;
+
+            for(int x = 0; x < parameters.getMultXWordSize(); x++){
+                for(int y = 0; y < parameters.getMultYWordSize(); y++){
+                    if(xPos+x < wX && yPos+y < wY)
+                        mulArea[xPos+x][yPos+y] = mulArea[xPos+x][yPos+y] || parameters.shapeValid(x,y);
+                }
+            }
+        }
+
+        mpz_class truncError, maxErr;
+        truncError = mpz_class(0);
+        for(int y = 0; y < wY; y++){
+            for(int x = wX-1; 0 <= x; x--){
+                if(mulArea[x][y] == false)
+                    truncError += (mpz_class(1)<<(x+y));
+                cout << ((mulArea[x][y] == true)?1:0);
+            }
+            cout << endl;
+        }
+
+        //cout << "wFullP " << wFullP << endl;
+        //cout << "wOut " << wOut << endl;
+        //cout << "guardBits " << guardBits << endl;
+        //maxErr = mpz_class((wX < wY) ? wX : wY)*(mpz_class(1)<<(wFullP-(int)wOut-guardBits));
+        maxErr = (mpz_class(1)<<(wFullP-(int)wOut-1));
+        if(truncError <= maxErr){
+            cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << "." << endl;
+        } else {
+            cout << "ERROR: actual truncation error=" << truncError << " is larger than the max. permissible error=" << maxErr << "." << endl;
+        }
 	}
 
 }

@@ -65,8 +65,9 @@ enum BitType : unsigned;
 		 *								2 = using a mix of the two, with an
 		 *									addition tree at the end of the
 		 *									compression
+		 * @param mod               modulus. Used for modulo reduction if > 0. Default is 0
 		 */
-		BitHeap(Operator* op, unsigned width, string name = "", int compressionType = COMPRESSION_TYPE);
+		BitHeap(Operator* op, unsigned width, string name = "", int compressionType = COMPRESSION_TYPE, int mod = 0);
 
 		/**
 		 * @brief The constructor for an signed/unsigned fixed-point bitheap
@@ -80,8 +81,9 @@ enum BitType : unsigned;
 		 *								2 = using a mix of the two, with an
 		 *									addition tree at the end of the
 		 *									compression
+		 * @param mod               modulus. Used for modulo reduction if > 0. Default is 0
 		 */
-		BitHeap(Operator* op, int msb, int lsb, string name = "", int compressionType = COMPRESSION_TYPE);
+		BitHeap(Operator* op, int msb, int lsb, string name = "", int compressionType = COMPRESSION_TYPE, int mod = 0);
 
 
 		~BitHeap();
@@ -439,6 +441,8 @@ enum BitType : unsigned;
 		bool drawCycleLine;                         /**< Draw lines between cycle, or not */
 		int drawCycleNumber;                        /**< Draw the cycle number, or not */
 		Plotter* plotter;                           /**< The plotter used to draw the bitheap and bitheap compression process */
+
+		int modulus;                                /**> If modulus is > 0 additionally to the compression a modulo reduction with respect to this modulus is performed */
 
 
 		// For error reporting to work

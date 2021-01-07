@@ -23,6 +23,7 @@ namespace flopoco{
 
 		//no chunks already compressed
 		compressionDoneIndex = 0;
+		computeModulo = 0;
 
 		if(UserInterface::pipelineActive_) {
 			//the initial delay between the soonest bit and the rest of the bits
@@ -396,7 +397,12 @@ namespace flopoco{
 		return true;
 	}
 
-    void CompressionStrategy::addPseudocompressors(int wIn, int mod){
+    void CompressionStrategy::shallComputeModulo(int wIn, int mod) {
+	    computeModulo = true;
+        addPseudocompressors(wIn, mod);
+	}
+
+    void CompressionStrategy::addPseudocompressors(int wIn, int mod) {
         //pseudocompressors.resize(2*wIn);
         cout << "nr. of avail. compressors: " << possibleCompressors.size() << endl;
         vector<int> comp_inputs, comp_out_rem, comp_out_rec;

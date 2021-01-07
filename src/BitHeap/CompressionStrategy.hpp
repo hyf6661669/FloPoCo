@@ -43,6 +43,8 @@ class BitheapPlotter;
 		 */
 		void startCompression();
 
+		void shallComputeModulo(int wIn, int mod);
+
 
 	protected:
 
@@ -274,11 +276,13 @@ class BitheapPlotter;
 		int stagesPerCycle;                         /**< The number of stages of compression in each cycle */
 		double compressionDelay;                    /**< The duration of a compression stage */
 
+		bool canComputeModulo;                      /**< Has to be set by subclasses. Says if this strategy supports modulo reduction */
+		bool computeModulo;                         /**< If set in this computation modulo reduction is used */
+
 		// For error reporting to work
 		int guid;
 		string srcFileName;
 		string uniqueName_;
-
 
 
 	};

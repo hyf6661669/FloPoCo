@@ -1,7 +1,6 @@
 #include "IntConstMultShiftAdd.hpp"
 
 #if defined(HAVE_PAGLIB)
-//&& defined(HAVE_RPAGLIB) && defined(HAVE_SCALP)
 
 #include <iostream>
 #include <sstream>
@@ -901,7 +900,7 @@ void IntConstMultShiftAdd::printAdditionalNodeInfo(map<adder_graph_base_node_t *
 namespace flopoco {
     void flopoco::IntConstMultShiftAdd::registerFactory()
     {
-#if defined(HAVE_PAGLIB) && defined(HAVE_RPAGLIB) && defined(HAVE_SCALP)
+#if defined(HAVE_PAGLIB) && defined(HAVE_RPAGLIB)
       UserInterface::add( "IntConstMultShiftAdd", // name
                           "A component for building constant multipliers based on pipelined adder graphs (PAGs).", // description, string
                           "ConstMultDiv", // category, from the list defined in UserInterface.cpp

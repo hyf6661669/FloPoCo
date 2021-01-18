@@ -193,7 +193,7 @@ BaseMultiplierCategory::Parametrization BaseMultiplierCategory::Parametrization:
 		int msb = x_max+y_max;
 
 		int ws = (x_max-x_min==1)?y_max-y_min:((y_max-y_min==1)?x_max-x_min:msb - lsb);
-		return ws*0.65;
+		return ws*target->getBitHeapCompressionCostperBit();
 	}
 
 	int BaseMultiplierCategory::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) {

@@ -93,7 +93,6 @@ namespace flopoco {
 					int shape_para_;
 					BaseMultiplierCategory const * bmCat_;
                     vector<int> output_weights;
-
 				friend BaseMultiplierCategory;
 			};
 
@@ -130,6 +129,10 @@ namespace flopoco {
             int wX_DSPexpanded(int m_x_pos, int m_y_pos, int wX, int wY, bool signedIO);
             int wY_DSPexpanded(int m_x_pos, int m_y_pos, int wX, int wY, bool signedIO);
             virtual int isSuperTile(int rx1, int ry1, int lx1, int ly1, int rx2, int ry2, int lx2, int ly2) {return 0;}
+            void setTarget(Target* target){ this->target = target;}
+
+	    protected:
+            Target* target;
 
 		private:
             BaseMultiplierCategory::Parametrization tile_param;
@@ -140,7 +143,6 @@ namespace flopoco {
             const bool rectangular;
             string type_; /**< Name to identify the corresponding base multiplier in the solution (for debug only) */
             vector<int> output_weights;
-
     };
 
 	typedef BaseMultiplierCategory::Parametrization BaseMultiplierParametrization;

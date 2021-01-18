@@ -32,7 +32,7 @@ Operator* BaseMultiplierLUT::generateOperator(
 		int msb = x_max+y_max;
 		ws = (x_max-x_min==1)?y_max-y_min:((y_max-y_min==1)?x_max-x_min:msb - lsb);
 
-		return luts + ws*0.65;
+		return luts + ws*target->getBitHeapCompressionCostperBit();
 	}
 
 	int BaseMultiplierLUT::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) {

@@ -416,7 +416,7 @@ TilingStrategyBasicTiling::TilingStrategyBasicTiling(
 							);
 						auto coord = make_pair(rightX, topY);
 						solution.push_back(make_pair(param, coord));
-						totalCost += 0.65 * param.getOutWordSize();
+						totalCost += target->getBitHeapCompressionCostperBit() * param.getOutWordSize();
 						numUsedMults_ += 1;
 					} else {
 						//Tile the subBox with smaller multiplier;

@@ -773,7 +773,7 @@ namespace flopoco {
 											 "wX(int): size of input X; wY(int): size of input Y;\
 						wOut(int)=0: size of the output if you want a truncated multiplier. 0 for full multiplier;\
 						signedIO(bool)=false: inputs and outputs can be signed or unsigned;\
-						maxDSP(int)=8: limits the number of DSP-Tiles used in Multiplier;\
+						maxDSP(int)=65535: limits the number of DSP-Tiles used in Multiplier;\
 						use2xk(bool)=false: if true, attempts to use the 2xk-LUT-Multiplier with relatively high efficiency;\
 						useirregular(bool)=false: if true, attempts to use the irregular-LUT-Multipliers with higher area/lut efficiency than the rectangular versions;\
 						useLUT(bool)=true: if true, attempts to use the LUT-Multipliers for tiling;\

@@ -46,7 +46,7 @@ int BaseMultiplierIrregularLUTXilinx::getRelativeResultMSBWeight(Parametrization
         int word_size = getRelativeResultMSBWeight(this->shape) - getRelativeResultLSBWeight(this->shape) + 1;
         int lut_required = (this->wX+this->wY <= 5)?word_size/2+word_size%2:word_size;
 
-        return lut_required + word_size*0.65;
+        return lut_required + word_size*getBitHeapCompressionCostperBit();
         //TODO Imprelement position dependent methode, although LUT-Multiplier dont seem to be placed so that they are protruding
         /*
         int x_min = ((x_anchor < 0)?0: x_anchor);

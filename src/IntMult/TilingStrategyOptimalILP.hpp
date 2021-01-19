@@ -31,18 +31,15 @@ public:
         BaseMultiplierCollection* bmc,
 		base_multiplier_id_t prefered_multiplier,
 		float occupation_threshold,
-		size_t maxPrefMult,
+		int maxPrefMult,
         MultiplierTileCollection tiles_,
         unsigned guardBits);
 
     void solve() override;
 
 private:
-    base_multiplier_id_t small_tile_mult_;
-    size_t numUsedMults_;
-    size_t max_pref_mult_;
     float occupation_threshold_;
-    int dpX, dpY, dpS, wS;
+    int dpX, dpY, dpS, wS, max_pref_mult_;
     unsigned prodWidth, guardBits;
     vector<BaseMultiplierCategory*> tiles;
 #ifdef HAVE_SCALP

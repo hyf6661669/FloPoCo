@@ -31,7 +31,7 @@ double BaseMultiplierXilinx2xk::getLUTCost(int x_anchor, int y_anchor, int wMult
     int y_max = ((wMultY < y_anchor + (int)wY())?wMultY: y_anchor + wY());
     int msb = (x_max==1)?y_max:((y_max==1)?x_max:x_max+y_max);
 
-    return luts + (msb - lsb)*target->getBitHeapCompressionCostperBit();
+    return luts + (msb - lsb)*getBitHeapCompressionCostperBit();
 }
 
 int BaseMultiplierXilinx2xk::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) {

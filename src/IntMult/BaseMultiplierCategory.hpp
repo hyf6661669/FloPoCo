@@ -40,6 +40,7 @@ namespace flopoco {
 
 			int getDeltaWidthSigned() const { return deltaWidthUnsignedSigned_; }
 			string getType() const {return type_;}
+            double getBitHeapCompressionCostperBit();
 
 			class Parametrization{
 				public:
@@ -132,7 +133,7 @@ namespace flopoco {
             void setTarget(Target* target){ this->target = target;}
 
 	    protected:
-            Target* target;
+            Target* target = NULL;
 
 		private:
             BaseMultiplierCategory::Parametrization tile_param;

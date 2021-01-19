@@ -14,7 +14,7 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
 		BaseMultiplierCollection* bmc,
 		base_multiplier_id_t prefered_multiplier,
 		float occupation_threshold,
-		size_t maxPrefMult,
+		int maxPrefMult,
         MultiplierTileCollection mtc_,
         unsigned guardBits):TilingStrategy(
 			wX_,
@@ -22,8 +22,6 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
 			wOut_,
 			signedIO_,
 			bmc),
-		small_tile_mult_{1}, //Most compact LUT-Based multiplier
-		numUsedMults_{0},
 		max_pref_mult_ {maxPrefMult},
 		occupation_threshold_{occupation_threshold},
 		tiles{mtc_.MultTileCollection},
@@ -179,33 +177,35 @@ void TilingStrategyOptimalILP::constructProblem()
         }
     }
 
-    //limit use of shape n
-    bool nDSPTiles = false;
-    for(int s = 0; s < wS; s++)
-    {
-        if(tiles[s]->getDSPCost())
-        {
-            nDSPTiles = true;
-            break;
-        }
-    }
-
-    if(nDSPTiles) {
-        cout << "   adding the constraint to limit the use of DSP-Blocks to " << max_pref_mult_ << " instances..." << endl;
-        stringstream consName;
-        consName << "limDSP";
-        ScaLP::Term pxyTerm;
-        for (int y = 0 - 24 + 1; y < wY; y++) {
-            for (int x = 0 - 24 + 1; x < wX; x++) {
-                for (int s = 0; s < wS; s++)
-                    if (solve_Vars[s][x + x_neg][y + y_neg] != nullptr)
-                        for (int c = 0; c < tiles[s]->getDSPCost(); c++)
-                            pxyTerm.add(solve_Vars[s][x + x_neg][y + y_neg], 1);
+    //limit use of DSPs
+    if(0 <= max_pref_mult_) {
+        //check if DSP tiles are available
+        bool nDSPTiles = false;
+        for (int s = 0; s < wS; s++) {
+            if (tiles[s]->getDSPCost()) {
+                nDSPTiles = true;
+                break;
             }
         }
-        ScaLP::Constraint c1Constraint = pxyTerm <= max_pref_mult_;     //set max usage equ.
-        c1Constraint.name = consName.str();
-        solver->addConstraint(c1Constraint);
+
+        if (nDSPTiles) {
+            cout << "   adding the constraint to limit the use of DSP-Blocks to " << max_pref_mult_ << " instances..."
+                 << endl;
+            stringstream consName;
+            consName << "limDSP";
+            ScaLP::Term pxyTerm;
+            for (int y = 0 - 24 + 1; y < wY; y++) {
+                for (int x = 0 - 24 + 1; x < wX; x++) {
+                    for (int s = 0; s < wS; s++)
+                        if (solve_Vars[s][x + x_neg][y + y_neg] != nullptr)
+                            for (int c = 0; c < tiles[s]->getDSPCost(); c++)
+                                pxyTerm.add(solve_Vars[s][x + x_neg][y + y_neg], 1);
+                }
+            }
+            ScaLP::Constraint c1Constraint = pxyTerm <= max_pref_mult_;     //set max usage equ.
+            c1Constraint.name = consName.str();
+            solver->addConstraint(c1Constraint);
+        }
     }
 
     //make shure the available precision is present in case of truncation

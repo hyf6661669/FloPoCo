@@ -102,7 +102,7 @@ namespace flopoco {
                 }
             }
         }
-        return bits*target->getBitHeapCompressionCostperBit() + add_bits;    //TODO: consider protrusion of multiplier over the bounds of the complete multiplier
+        return bits*getBitHeapCompressionCostperBit() + add_bits;    //TODO: consider protrusion of multiplier over the bounds of the complete multiplier
     }
 
     bool BaseMultiplierDSPKaratsuba::shapeValid(Parametrization const& param, unsigned x, unsigned y) const

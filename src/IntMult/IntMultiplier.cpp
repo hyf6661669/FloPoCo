@@ -62,7 +62,7 @@ namespace flopoco {
 		return wX + wY;
 	}
 
-	IntMultiplier::IntMultiplier (Operator *parentOp, Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, float dspOccupationThreshold, unsigned int maxDSP, bool superTiles, bool use2xk, bool useirregular, bool useLUT, bool useDSP, bool useKaratsuba, int beamRange):
+	IntMultiplier::IntMultiplier (Operator *parentOp, Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, float dspOccupationThreshold, int maxDSP, bool superTiles, bool use2xk, bool useirregular, bool useLUT, bool useDSP, bool useKaratsuba, int beamRange):
 		Operator ( parentOp, target_ ),wX(wX_), wY(wY_), wOut(wOut_),signedIO(signedIO_), dspOccupationThreshold(dspOccupationThreshold)
 	{
 		srcFileName="IntMultiplier";
@@ -140,7 +140,7 @@ namespace flopoco {
 					&baseMultiplierCollection,
 					baseMultiplierCollection.getPreferedMultiplier(),
 					dspOccupationThreshold,
-					maxDSP
+                    ((maxDSP<0)?(unsigned)INT_MAX:(unsigned)maxDSP)
 			);
 		}
 		else if(tilingMethod.compare("heuristicGreedyTiling") == 0) {
@@ -757,10 +757,10 @@ namespace flopoco {
 		UserInterface::parseBoolean(args, "useDSP", &useDSP);
 		UserInterface::parseBoolean(args, "useKaratsuba", &useKaratsuba);
 		UserInterface::parseFloat(args, "dspThreshold", &dspOccupationThreshold);
-		UserInterface::parsePositiveInt(args, "maxDSP", &maxDSP);
+		UserInterface::parseInt(args, "maxDSP", &maxDSP);
 		UserInterface::parsePositiveInt(args, "beamRange", &beamRange);
 
-		return new IntMultiplier(parentOp, target, wX, wY, wOut, signedIO, dspOccupationThreshold, (unsigned)maxDSP, superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba, beamRange);
+		return new IntMultiplier(parentOp, target, wX, wY, wOut, signedIO, dspOccupationThreshold, maxDSP, superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba, beamRange);
 	}
 
 
@@ -773,7 +773,7 @@ namespace flopoco {
 											 "wX(int): size of input X; wY(int): size of input Y;\
 						wOut(int)=0: size of the output if you want a truncated multiplier. 0 for full multiplier;\
 						signedIO(bool)=false: inputs and outputs can be signed or unsigned;\
-						maxDSP(int)=65535: limits the number of DSP-Tiles used in Multiplier;\
+						maxDSP(int)=-1: limits the number of DSP-Tiles used in Multiplier;\
 						use2xk(bool)=false: if true, attempts to use the 2xk-LUT-Multiplier with relatively high efficiency;\
 						useirregular(bool)=false: if true, attempts to use the irregular-LUT-Multipliers with higher area/lut efficiency than the rectangular versions;\
 						useLUT(bool)=true: if true, attempts to use the LUT-Multipliers for tiling;\

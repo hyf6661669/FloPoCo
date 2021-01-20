@@ -202,7 +202,8 @@ BaseMultiplierCategory::Parametrization BaseMultiplierCategory::Parametrization:
 
     double BaseMultiplierCategory::getBitHeapCompressionCostperBit(){
 	    if(target == NULL){
-	        return 0.55;
+            cout << "WARNING target not defined in scope of the multiplier tile" << endl;
+	        return 0.65;
 	    } else {
 	        return target->getBitHeapCompressionCostperBit();
 	    }

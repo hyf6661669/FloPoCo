@@ -258,7 +258,7 @@ void IntConstMultShiftAdd::ProcessIntConstMultShiftAdd(
                         id++;
                     }
 
-                    inputSignalName << "x_in" << id;
+                    inputSignalName << "X" << id;
                     addInput(inputSignalName.str(), wIn);
                     vhdl << "\t" << declare(op_node->outputSignalName,wIn) << " <= " << inputSignalName.str() << ";" << endl;
                     input_signals.push_back(inputSignalName.str());
@@ -319,14 +319,12 @@ void IntConstMultShiftAdd::ProcessIntConstMultShiftAdd(
         }
 
         output_signal_info sig_info;
-        short realizedOutputNodes = 0;
         for (auto operationNode : stageNodesMap[noOfPipelineStages])
         {
             if (is_a<output_node_t>(*operationNode)){
                 IntConstMultShiftAdd_TYPES::IntConstMultShiftAdd_BASE* op_node = additionalNodeInfoMap[operationNode];
                 stringstream outputSignalName;
-                outputSignalName << "x_out" << realizedOutputNodes;
-                realizedOutputNodes++;
+                outputSignalName << "R" ;
                 for(int j=0; j < noOfConfigurations; j++) {
                     outputSignalName << "_c";
                     for(int i=0; i < noOfInputs; i++)
@@ -369,7 +367,7 @@ void IntConstMultShiftAdd::emulate(TestCase * tc)
     for(int i=0;i<noOfInputs;i++ )
     {
         stringstream inputName;
-        inputName << "x_in" << i;
+        inputName << "X" << i;
 
         mpz_class inputVal = tc->getInputValue(inputName.str());
 

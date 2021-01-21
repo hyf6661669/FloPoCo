@@ -96,6 +96,7 @@ namespace flopoco {
         wcpg = 0;
         wcpgBitGain = 0;
 
+
 #if HAVE_WCPG
 
         REPORT(INFO, "Computing worst-case peak gain");
@@ -115,20 +116,27 @@ namespace flopoco {
         wcpgBitGain = ceil(log2(wcpg+1));
         REPORT(INFO, "Computed filter worst-case peak gain: wcpg=" << wcpg << ", wcpg bit gain: " << wcpgBitGain);
 
-        double Heps;
-        double one_d[1] = {1.0};
-        if (!WCPG_tf(&Heps, one_d, coeffa_d_wcpg, 1, m, (int)0))
-        THROWERROR("Could not compute WCPG");
-        REPORT(INFO, "Computed error amplification worst-case peak gain: Heps=" << Heps);
+		// ################# COMPUTE GUARD BITS #########################################
+		if(guardBits < 0)
+		{
+			REPORT(DETAILED, "computing guard bits");
+			double Heps;
+			double one_d[1] = {1.0};
+			if (!WCPG_tf(&Heps, one_d, coeffa_d_wcpg, 1, m, (int)0))
+			THROWERROR("Could not compute WCPG");
+			guardBits = intlog2(Heps)+1;
+			REPORT(INFO, "Computed error amplification worst-case peak gain: Heps=" << Heps);
+		}
 
 #else
-        THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Either provide H, or compile FloPoCo with WCPG");
+        THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Compile FloPoCo with WCPG");
 #endif
+		REPORT(INFO, "No of guard bits=" << guardBits);
 
 		wIn = msbIn - lsbIn + 1;
         msbInt = ceil(msbIn + wcpgBitGain);
         msbOut = msbInt;
-        lsbInt = lsbOut;
+        lsbInt = lsbOut - guardBits;
         int wOut = msbOut - lsbOut + 1;
         //int wInt = wOut + guardBits; // not needed yet
         REPORT(DETAILED, "msbIn: \t\t\t\t" << msbIn << ", msbIn: \t\t\t\t " << msbIn)
@@ -198,8 +206,6 @@ namespace flopoco {
         lsbMultiplicationsFeedbackOut = (int *) malloc(m * sizeof(int));
         msbAdditionsFeedbackOut = (int *) malloc(m * sizeof(int));
         lsbAdditionsFeedbackOut = (int *) malloc(m * sizeof(int));
-        lsbInt -= guardBits;
-        REPORT(DETAILED, "\t\t\t\t\tlsbInt incl. guardBits: \t\t" << lsbInt)
 
         // Multiplications
         for(int i = 0; i < m; i++)
@@ -783,7 +789,7 @@ namespace flopoco {
                            "msbIn(int): input most significant bit;\
                         lsbIn(int): input least significant bit;\
                         lsbOut(int): output least significant bit;\
-                        guardbits(int)=0: number of guard bits for computation in recursive feedback path;\
+                        guardbits(int)=-1: number of guard bits for computation in recursive feedback path (-1: automatic);\
                         coeffa(string): colon-separated list of real coefficients using Sollya syntax. Example: coeffa=\"1.234567890123:sin(3*pi/8)\";\
                         coeffb(string): colon-separated list of real coefficients using Sollya syntax. Example: coeffb=\"1.234567890123:sin(3*pi/8)\";\
                         shifta(int): Num of rightshifts for coeffa (must be positive);\

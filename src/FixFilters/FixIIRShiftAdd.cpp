@@ -59,7 +59,7 @@ namespace flopoco {
         coeffa_mp_f = (mpfr_t *) malloc(m * sizeof(mpfr_t));
         coeffb_mp_f = (mpfr_t *) malloc(n * sizeof(mpfr_t));
         registerForwardTB_mpz = (mpz_t*)malloc(sizeof(mpz_t) * n);
-        registerFeedbackTB_mpz = (mpz_t*)malloc(sizeof(mpz_t) * m);
+        registerFeedbackTB_mpz = (mpz_t*)malloc(sizeof(mpz_t) * (m+1));
 
         for (uint32_t i = 0; i < n; i++) {
             // parse the coeffs from the string, with Sollya parsing
@@ -100,7 +100,7 @@ namespace flopoco {
 
         REPORT(INFO, "Computing worst-case peak gain");
         coeffa_d_wcpg = (double *) malloc(m * sizeof(double));
-        coeffb_d_wcpg = (double *) malloc(m * sizeof(double));
+        coeffb_d_wcpg = (double *) malloc(n * sizeof(double));
         for(int i = 0; i < m; i++)
         {
             coeffa_d_wcpg[i] = coeffa_d[i] * (1 / (pow(2, shifta)));
@@ -110,7 +110,8 @@ namespace flopoco {
             coeffb_d_wcpg[i] = coeffb_d[i]*(1/(pow(2, shiftb)));
 
         if (!WCPG_tf(&wcpg, coeffb_d_wcpg, coeffa_d_wcpg, n, m, (int)0))
-        THROWERROR("Could not compute WCPG");
+        	THROWERROR("Could not compute WCPG");
+
         wcpgBitGain = ceil(log2(wcpg+1));
         REPORT(INFO, "Computed filter worst-case peak gain: wcpg=" << wcpg << ", wcpg bit gain: " << wcpgBitGain);
 
@@ -123,7 +124,8 @@ namespace flopoco {
 #else
         THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Either provide H, or compile FloPoCo with WCPG");
 #endif
-        wIn = msbIn - lsbIn + 1;
+
+		wIn = msbIn - lsbIn + 1;
         msbInt = ceil(msbIn + wcpgBitGain);
         msbOut = msbInt;
         lsbInt = lsbOut;
@@ -236,7 +238,6 @@ namespace flopoco {
          * The maximum word size is given by msbIn + wcpgBitGain, so the maximum output of the adder is
          * msbIn + wcpgBitGain + shifta since it is the latest operation (msbInt = msbIn + wcpgBitGain)
          */
-
         msbAdditionsFeedbackOut[0] = max(msbScaleBOut, msbInt + shifta);
         lsbAdditionsFeedbackOut[0] = min(lsbInt, lsbScaleBOut);
         REPORT(DETAILED, "msbAdditionsFeedbackOut[0]: \t" << msbAdditionsFeedbackOut[0] << ", lsbAdditionsFeedbackOut[0]: \t" << lsbAdditionsFeedbackOut[0])
@@ -256,7 +257,7 @@ namespace flopoco {
         REPORT(DETAILED, "input size (wIn): " << wIn)
         REPORT(DETAILED, "output size (wOut): " << wOut)
 
-        // ################################# TESTBENCH INIT #########################################
+		// ################################# TESTBENCH INIT #########################################
 
         // In VHDL there are for n coefficients n-1 registers, but in testbench register0 stores the input x
         // so there are n registers for n coefficients. So register0 has word length of msbIn msbIn - lsbIn +1
@@ -272,8 +273,7 @@ namespace flopoco {
             mpz_set_si(registerForwardTB_mpz[i], 0); // necessary of 0 by default?
         }
 
-
-        for(int i = 0; i < m; i++)
+        for(int i = 0; i < m+1; i++)
         {
             //mpz_init2(registerFeedbackTB_mpz[i], msbRegisterFeedbackOut[i] - lsbRegisterFeedbackOut[i] + 1 + guardBits);
             mpz_init(registerFeedbackTB_mpz[i]);
@@ -467,7 +467,6 @@ namespace flopoco {
         // shift feedback0 to the right, resp. cut two more bits, guard bits also considered
         vhdl << declare("endresult", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 - abs(lsbAdditionsFeedbackOut[0]-lsbInt - guardBits)) << " <= feedbackAdd0("<< (msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0]) << " downto " << abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits << ");" << endl;
         vhdl << "Result <= std_logic_vector(resize(signed(endresult)," << wOut << "));" << endl;
-
     }
 
     FixIIRShiftAdd::~FixIIRShiftAdd()

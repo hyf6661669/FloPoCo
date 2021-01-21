@@ -48,6 +48,7 @@ FixFIR
 FixHalfSine
 FixRootRaisedCosine
 FixIIR
+FixIIRShiftAdd
 Posit2FP
 
 FixSinCos

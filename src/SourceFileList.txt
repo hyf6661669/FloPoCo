@@ -43,6 +43,7 @@ FixFilters/FixFIR
 FixFilters/FixHalfSine
 FixFilters/FixRootRaisedCosine
 FixFilters/FixIIR
+FixFilters/FixIIRShiftAdd
 IntAddSubCmp/IntAdder
 IntAddSubCmp/IntDualAddSub
 #IntAddSubCmp/BasicCompressor

@@ -61,7 +61,7 @@ IntConstMultShiftAdd::IntConstMultShiftAdd(
 
     ostringstream name;
     name << "IntConstMultShiftAdd_" << wIn;
-    setName(name.str());
+	setNameWithFreqAndUID(name.str());
 
     if(pipelined_realization_str.empty()) return; //in case the realization string is not defined, don't further process it.
 

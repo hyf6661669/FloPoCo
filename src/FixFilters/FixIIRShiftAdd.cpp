@@ -5,7 +5,6 @@
 /*
  *  TODO:
  *  Assert for valid method-string
- *  set lsbInt and lsbOut independently in user interface
  *
  *  Optimizations:
  *  Word sizes in feedbackpath have conservative computation. Using wcpg can optimze the wordsizes - the more coeffs the more potential
@@ -111,29 +110,29 @@ namespace flopoco {
             coeffb_d_wcpg[i] = coeffb_d[i]*(1/(pow(2, shiftb)));
 
         if (!WCPG_tf(&wcpg, coeffb_d_wcpg, coeffa_d_wcpg, n, m, (int)0))
-        	THROWERROR("Could not compute WCPG");
+        THROWERROR("Could not compute WCPG");
 
         wcpgBitGain = ceil(log2(wcpg+1));
         REPORT(INFO, "Computed filter worst-case peak gain: wcpg=" << wcpg << ", wcpg bit gain: " << wcpgBitGain);
 
-		// ################# COMPUTE GUARD BITS #########################################
-		if(guardBits < 0)
-		{
-			REPORT(DETAILED, "computing guard bits");
-			double Heps;
-			double one_d[1] = {1.0};
-			if (!WCPG_tf(&Heps, one_d, coeffa_d_wcpg, 1, m, (int)0))
-			THROWERROR("Could not compute WCPG");
-			guardBits = intlog2(Heps)+1;
-			REPORT(INFO, "Computed error amplification worst-case peak gain: Heps=" << Heps);
-		}
+        // ################# COMPUTE GUARD BITS #########################################
+        if(guardBits < 0)
+        {
+            REPORT(DETAILED, "computing guard bits");
+            double Heps;
+            double one_d[1] = {1.0};
+            if (!WCPG_tf(&Heps, one_d, coeffa_d_wcpg, 1, m, (int)0))
+            THROWERROR("Could not compute WCPG");
+            guardBits = intlog2(Heps)+1;
+            REPORT(INFO, "Computed error amplification worst-case peak gain: Heps=" << Heps);
+        }
 
 #else
-        THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Compile FloPoCo with WCPG");
+            THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Compile FloPoCo with WCPG");
 #endif
-		REPORT(INFO, "No of guard bits=" << guardBits);
+        REPORT(INFO, "No of guard bits=" << guardBits);
 
-		wIn = msbIn - lsbIn + 1;
+        wIn = msbIn - lsbIn + 1;
         msbInt = ceil(msbIn + wcpgBitGain);
         msbOut = msbInt;
         lsbInt = lsbOut - guardBits;
@@ -150,7 +149,6 @@ namespace flopoco {
         lsbForwardPath = lsbIn; // lsb is constant in forward path until scaling
 
         // for n coefficients there are n multiplication, but n-1 registers and additions
-
         // multiplications
         for(int i = 0; i < n; i++)
         {
@@ -221,7 +219,7 @@ namespace flopoco {
         {
             int tmp = 0;
             for (int j = i; j < m; j++)
-                tmp += coeffa_si[j];
+                tmp += abs(coeffa_si[j]);
             msbRegisterFeedbackOut[i] = msbInt+ceil(log2(abs(tmp)+1));
             lsbRegisterFeedbackOut[i] = lsbInt;
             REPORT(DETAILED, "msbRegisterFeedbackOut["<<i<<"]: \t" << msbRegisterFeedbackOut[i] << ", lsbRegisterFeedbackOut["<<i<<"]: \t\t" << lsbRegisterFeedbackOut[i])
@@ -243,8 +241,10 @@ namespace flopoco {
          * This may lead to the fact, that one input word size of the adder is larger than the result
          * The maximum word size is given by msbIn + wcpgBitGain, so the maximum output of the adder is
          * msbIn + wcpgBitGain + shifta since it is the latest operation (msbInt = msbIn + wcpgBitGain)
+         * wcpg determines maximum word size after scalea
          */
-        msbAdditionsFeedbackOut[0] = max(msbScaleBOut, msbInt + shifta);
+
+        msbAdditionsFeedbackOut[0] = msbIn+wcpgBitGain+shifta;
         lsbAdditionsFeedbackOut[0] = min(lsbInt, lsbScaleBOut);
         REPORT(DETAILED, "msbAdditionsFeedbackOut[0]: \t" << msbAdditionsFeedbackOut[0] << ", lsbAdditionsFeedbackOut[0]: \t" << lsbAdditionsFeedbackOut[0])
 
@@ -254,7 +254,7 @@ namespace flopoco {
         REPORT(DETAILED, "msbScaleAOut: \t\t\t" << msbScaleAOut << ", lsbScaleAOut: \t\t\t" << lsbScaleAOut)
 
         // truncationAfterScaleA
-        msbTruncationIntOut = msbScaleAOut;
+        msbTruncationIntOut = msbInt;
         lsbTruncationIntOut = lsbInt;
         REPORT(DETAILED, "msbTruncationIntOut: \t\t" << msbTruncationIntOut << ", lsbTruncationIntOut: \t\t" << lsbTruncationIntOut)
 
@@ -263,7 +263,7 @@ namespace flopoco {
         REPORT(DETAILED, "input size (wIn): " << wIn)
         REPORT(DETAILED, "output size (wOut): " << wOut)
 
-		// ################################# TESTBENCH INIT #########################################
+        // ################################# TESTBENCH INIT #########################################
 
         // In VHDL there are for n coefficients n-1 registers, but in testbench register0 stores the input x
         // so there are n registers for n coefficients. So register0 has word length of msbIn msbIn - lsbIn +1
@@ -343,12 +343,15 @@ namespace flopoco {
         }
 
         vhdl << endl;
+
         // additions
         for (int i = 0; i < n - 1; i++) {
             vhdl << declare(join("forAdd", i), msbAdditionsForwardOut[i] - lsbForwardPath + 1) << " <= std_logic_vector(resize(signed("
                  << join("forRegOut", i) << "), " << msbAdditionsForwardOut[i] - lsbForwardPath + 1 << ") + signed(" << join("forMul", i) << "));"
                  << endl;
         }
+
+
         vhdl << endl;
         // registers
         for (int i = 0; i < n - 2; i++) {
@@ -361,18 +364,17 @@ namespace flopoco {
         vhdl << endl;
         // ################################# CODE GENERATION BACKPATH #########################################
 
-        // truncation, truncate the least significant bits
-        // the amount of truncated bits is lsbInt - lsbScaleAOut, e.g. -8-(-12) = 4, which results in lsbInt bits
-        vhdl << declare("truncationAfterScaleA", msbInt - lsbInt + 1) << " <= feedbackAdd0("<< (msbScaleAOut - lsbScaleAOut) << " downto " << lsbInt - lsbScaleAOut << ");" << endl;
+        // truncation, truncate to lsbInt
+        vhdl << declare("truncationAfterScaleA", msbInt - lsbInt + 1) << " <= feedbackAdd0("<< msbInt - lsbInt + 1 + (lsbInt - lsbScaleAOut)-1 << " downto " << lsbInt - lsbScaleAOut << ");" << endl;
 
         // multiplications, see comment multiplications forward path for explanation of TEMP_SIGN_FOR_RESIZE
         if (method=="plain")
         {
-        for (int i = 0; i < m; i++)
+            for (int i = 0; i < m; i++)
             {
                 vhdl << declare(join("feedbackMul", i), msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1)
                      << " <= std_logic_vector(resize(signed(truncationAfterScaleA), " << msbInt - lsbInt + 1 << " ) * (signed(std_logic_vector(to_signed(" << -coeffa_si[i] << ","
-                     << ceil(abs(log2((coeffa_si[i] + 1)))) + TEMP_SIGN_FOR_RESIZE << ")))))(" << msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1 - 1 << " downto 0);" << endl;
+                     << ceil(abs(log2((abs(coeffa_si[i]) + 1)))) + TEMP_SIGN_FOR_RESIZE << ")))))(" << msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1 - 1 << " downto 0);" << endl;
             }
         }
 
@@ -418,11 +420,12 @@ namespace flopoco {
          * both inputs of the additions must have same amount of lsb-bits
          */
 
-        string operatorFeedbackpathMethod;
+        // this is only testing and applies only for add0 atm
+        string operatorAdd0;
         if(method == "plain")
-            operatorFeedbackpathMethod = "+";
+            operatorAdd0 = "+";
         if(method == "multiplierless")
-            operatorFeedbackpathMethod = "+";
+            operatorAdd0 = "-";
 
         int numLsbBitsDifference = abs(lsbRegisterFeedbackOut[0] - lsbScaleBOut);
         REPORT(DETAILED, "numLsbBitsDifference: " << numLsbBitsDifference)
@@ -433,7 +436,7 @@ namespace flopoco {
             // the word size cannot be larger than the word size of the adder (see comment msb computation for this addition)
             wordsizefeedbackAdd0ResizedReg0 = min(msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1, msbRegisterFeedbackOut[0] - lsbRegisterFeedbackOut[0] + 1 + numLsbBitsDifference);
             vhdl << declare("feedbackAdd0ResizedReg0", wordsizefeedbackAdd0ResizedReg0) << " <= std_logic_vector(shift_left(resize(signed(feedbackRegOut0), " << wordsizefeedbackAdd0ResizedReg0 << "),"<< numLsbBitsDifference <<"));" << endl;
-            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(forAdd0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "<< operatorFeedbackpathMethod <<" signed(feedbackAdd0ResizedReg0));" << endl;
+            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(forAdd0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") " << operatorAdd0 << " signed(feedbackAdd0ResizedReg0));" << endl;
         }
 
         else if(lsbScaleBOut > lsbRegisterFeedbackOut[0])
@@ -441,18 +444,18 @@ namespace flopoco {
             //vhdl << declare("feedbackAdd0ResizedScaleB", msbScaleBOut - lsbScaleBOut + numLsbBitsDifference + 1) << " <= std_logic_vector(shift_left(signed(scaleBOut(" << msbScaleBOut - lsbScaleBOut +1  << " downto 0))), to_integer(to_signed(1, 2)));" << endl;
             wordsizefeedbackAdd0ResizedScaleB = min(msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1, msbScaleBOut - lsbScaleBOut + 1 + numLsbBitsDifference);
             vhdl << declare("feedbackAdd0ResizedScaleB", wordsizefeedbackAdd0ResizedScaleB) << " <= std_logic_vector(shift_left(resize(signed(forAdd0), " << wordsizefeedbackAdd0ResizedScaleB << "),"<< numLsbBitsDifference <<"));" << endl;
-            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedScaleB), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "<< operatorFeedbackpathMethod <<" resize(signed(feedbackRegOut0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedScaleB), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") " << operatorAdd0 << " resize(signed(feedbackRegOut0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
         }
 
         else // if both inputs are well aligned, use non-resized inputs
         {
-            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(forAdd0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "<< operatorFeedbackpathMethod <<" resize(signed(feedbackRegOut0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(forAdd0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") " << operatorAdd0 << " resize(signed(feedbackRegOut0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
         }
 
         for (int i = 1; i < m; i++)
         {
             vhdl << declare(join("feedbackAdd", i), msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1) << " <= std_logic_vector(resize(signed("
-                 << join("feedbackRegOut", i) << "), " << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") "<< operatorFeedbackpathMethod <<" signed(" << join("feedbackMul", i-1) << "));"
+                 << join("feedbackRegOut", i) << "), " << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") + signed(" << join("feedbackMul", i-1) << "));"
                  << endl;
         }
 /*
@@ -463,7 +466,7 @@ namespace flopoco {
                     join("X=>feedbackMulNeg", m - 1), join("Xd1=>feedbackRegOut", m - 1));
 */
         newInstance("ShiftReg", join("feedbackReg", m - 1), join("n=1 reset=1 w=", msbRegisterFeedbackOut[m - 1] - lsbRegisterFeedbackOut[m-1] + 1),
-                   join("X=>feedbackMul", m - 1), join("Xd1=>feedbackRegOut", m - 1));
+                    join("X=>feedbackMul", m - 1), join("Xd1=>feedbackRegOut", m - 1));
 
         for (int i = 0; i < m - 1; i++) {
             newInstance("ShiftReg", join("feedbackReg", i), join("n=1 reset=1 w=", msbRegisterFeedbackOut[i] - lsbRegisterFeedbackOut[i] + 1),
@@ -763,17 +766,114 @@ namespace flopoco {
         paramList.push_back(make_pair("guardbits",  "1"));
         testStateList.push_back(paramList);
         paramList.clear();
-/*
+
+        paramList.push_back(make_pair("msbIn",  "17"));
+        paramList.push_back(make_pair("lsbIn",  "-6"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb",  "-576:512:128:7:8:5:6"));
+        paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
+        paramList.push_back(make_pair("shifta",  "3"));
+        paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
         // multiplierless
+
+        paramList.push_back(make_pair("msbIn",  "4"));
+        paramList.push_back(make_pair("lsbIn",  "-4"));
+        paramList.push_back(make_pair("lsbOut", "-4"));
+        paramList.push_back(make_pair("coeffb",  "7:15:7:7:15"));
+        paramList.push_back(make_pair("coeffa",  "-2:-2:2:2"));
+        paramList.push_back(make_pair("shifta",  "3"));
+        paramList.push_back(make_pair("shiftb",  "2"));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
+        paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "4"));
+        paramList.push_back(make_pair("lsbIn",  "-4"));
+        paramList.push_back(make_pair("lsbOut", "-4"));
+        paramList.push_back(make_pair("coeffb",  "7:15:7:-7:15"));
+        paramList.push_back(make_pair("coeffa",  "-2:-2:2:2"));
+        paramList.push_back(make_pair("shifta",  "3"));
+        paramList.push_back(make_pair("shiftb",  "2"));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
+        paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "2"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "4"));
+        paramList.push_back(make_pair("lsbIn",  "-4"));
+        paramList.push_back(make_pair("lsbOut", "-4"));
+        paramList.push_back(make_pair("coeffb",  "7:15:7:-7:15"));
+        paramList.push_back(make_pair("coeffa",  "-2:-2:2:2"));
+        paramList.push_back(make_pair("shifta",  "3"));
+        paramList.push_back(make_pair("shiftb",  "2"));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
+        paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "4"));
+        paramList.push_back(make_pair("lsbIn",  "-4"));
+        paramList.push_back(make_pair("lsbOut", "-4"));
+        paramList.push_back(make_pair("coeffb",  "7:15:7:-7:15"));
+        paramList.push_back(make_pair("coeffa",  "2:2:-2:-2"));
+        paramList.push_back(make_pair("shifta",  "3"));
+        paramList.push_back(make_pair("shiftb",  "2"));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
+        paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "4"));
+        paramList.push_back(make_pair("lsbIn",  "-4"));
+        paramList.push_back(make_pair("lsbOut", "-4"));
+        paramList.push_back(make_pair("coeffb",  "7:15:7:-7:15"));
+        paramList.push_back(make_pair("coeffa",  "2:-2:-2:2"));
+        paramList.push_back(make_pair("shifta",  "3"));
+        paramList.push_back(make_pair("shiftb",  "2"));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
+        paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "4"));
+        paramList.push_back(make_pair("lsbIn",  "-4"));
+        paramList.push_back(make_pair("lsbOut", "-4"));
+        paramList.push_back(make_pair("coeffb",  "7:15:7:-7:15"));
+        paramList.push_back(make_pair("coeffa",  "2:4:3:7"));
+        paramList.push_back(make_pair("shifta",  "3"));
+        paramList.push_back(make_pair("shiftb",  "2"));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'A',[3],1,[1],0,0,[1],0,1},{'A',[7],1,[1],0,3,[-1],0,0},{'O',[2],1,[1],1,1},{'O',[3],1,[3],1,0},{'O',[4],1,[1],1,2},{'O',[7],1,[7],1,0}}\""));
+        paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+/*
+ *      // TODO: Theres a problem with word size for coefficient 1 with using IntConstMultBlock
         paramList.push_back(make_pair("msbIn",  "21"));
         paramList.push_back(make_pair("lsbIn",  "-8"));
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "7:15:7:-7:15"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7"));
         paramList.push_back(make_pair("shifta",  "3"));
-        paramList.push_back(make_pair("grapha",  "{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}"));
-        paramList.push_back(make_pair("grapha",  "{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}"));
-        paramList.push_back(make_pair("method",  "multiplierless"));
+        paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'A',[7],1,[1],0,3,[-1],0,0},{'O',[1],1,[1],1,0},{'O',[2],1,[1],1,1},{'O',[4],1,[1],1,2},{'O',[7],1,[7],1,0}}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
         paramList.push_back(make_pair("shiftb",  "0"));
         testStateList.push_back(paramList);
         paramList.clear();

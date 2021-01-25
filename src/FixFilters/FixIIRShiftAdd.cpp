@@ -5,6 +5,9 @@
 /*
  *  TODO:
  *  Assert for valid method-string
+ *  remove warnings (since feedbackadd0 is xx...xx until the first value for it is computed but one bit is sliced for endresultfaithfullyrounded)
+
+
  *
  *  Optimizations:
  *  Word sizes in feedbackpath have conservative computation. Using wcpg can optimze the wordsizes - the more coeffs the more potential
@@ -95,7 +98,6 @@ namespace flopoco {
         wcpg = 0;
         wcpgBitGain = 0;
 
-
 #if HAVE_WCPG
 
         REPORT(INFO, "Computing worst-case peak gain");
@@ -126,7 +128,6 @@ namespace flopoco {
             guardBits = intlog2(Heps)+1;
             REPORT(INFO, "Computed error amplification worst-case peak gain: Heps=" << Heps);
         }
-
 #else
             THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Compile FloPoCo with WCPG");
 #endif
@@ -310,26 +311,32 @@ namespace flopoco {
 
         else if (method=="multiplierless")
         {
+            vector<string> outportmapsBuilder;
             stringstream outPortMaps;
             for (int i = 0; i < n; i++)
             {
                 if (FixIIRShiftAdd::getIndexCoeff(coeffb_si, n, coeffb_si[i]) == i) // first time occurence of element, if the result if getIndexCoeff() is not i it means that the element was found earlier in the array, hence duplicate
                 {
-                    if(i != 0) // avoid heading comma
-                        outPortMaps << ",";
-
                     declare(join("forMul", i), msbMultiplicationsForwardOut[i] - lsbForwardPath +1);
                     // check for negative values
-                    if(coeffb_si[i] >= 0)
-                        outPortMaps << "R_c" << coeffb_si[i] << "=>forMul" << i;
-                    else // if value is negative
-                        outPortMaps << "R_cm" << abs(coeffb_si[i]) << "=>forMul" << i; // replace the '-' with 'm'
+                    if(coeffb_si[i] > 0)
+                        outportmapsBuilder.push_back(join("R_c", coeffb_si[i], "=>forMul", i));
+                    else if (coeffb_si[i] < 0)// if value is negative, there is no output signal for coeffb_si[i] == 0
+                        outportmapsBuilder.push_back(join("R_cm", abs(coeffb_si[i]), "=>forMul", i));
                 }
                 else // duplicate detected, set the duplicate to the signal where it was first found, so if coeff_b[0] and coeff_b[2] are equal, forMul2 is set to forMul0
                 {
                     REPORT(LIST, "duplicate detected (" << coeffb_si[i] << ")")
                     vhdl << declare(join("forMul", i), msbMultiplicationsForwardOut[i] - lsbForwardPath +1) << "<= std_logic_vector(forMul" << FixIIRShiftAdd::getIndexCoeff(coeffb_si, n, coeffb_si[i]) << ");" <<  endl;
                 }
+            }
+
+            // add comma between signals in port map. Must be done separatly since leading coefficients can be 0 what doesnt result in a signal
+            for(int i = 0; i < outportmapsBuilder.size(); i++)
+            {
+                outPortMaps << outportmapsBuilder.at(i);
+                if(i != outportmapsBuilder.size()-1)
+                    outPortMaps << ",";
             }
 
             stringstream parameters;
@@ -340,6 +347,12 @@ namespace flopoco {
                         outPortMaps.str());
 
             REPORT(DETAILED, "IntConstMultShiftAdd for forward path created")
+
+            // all coeffs, which are 0 arent mapped since theyre constant 0
+            // set them
+            for (int i = 0; i < n; i++)
+                if(coeffb_si[i] == 0)
+                    vhdl << "forMul" << i << " <= (others => '0');" << endl;
         }
 
         vhdl << endl;
@@ -350,7 +363,6 @@ namespace flopoco {
                  << join("forRegOut", i) << "), " << msbAdditionsForwardOut[i] - lsbForwardPath + 1 << ") + signed(" << join("forMul", i) << "));"
                  << endl;
         }
-
 
         vhdl << endl;
         // registers
@@ -381,25 +393,34 @@ namespace flopoco {
         else if (method=="multiplierless")
         {
             stringstream outPortMaps;
+            vector<string> outportmapsBuilder;
             for (int i = 0; i < m; i++)
             {
                 if (FixIIRShiftAdd::getIndexCoeff(coeffa_si, m, coeffa_si[i]) == i) // first time occurence of element, if the result if getIndexCoeff() is not i it means that the element was found earlier in the array, hence duplicate
                 {
-                    if(i != 0) // avoid heading comma
-                        outPortMaps << ",";
-
                     declare(join("feedbackMul", i), msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] +1);
                     // check for negative values
-                    if(coeffa_si[i] >= 0)
-                        outPortMaps << "R_c" << coeffa_si[i] << "=>feedbackMul" << i;
-                    else // if value is negative
-                        outPortMaps << "R_cm" << abs(coeffa_si[i]) << "=>feedbackMul" << i; // replace the '-' with 'm'
+                    if(coeffa_si[i] > 0)
+                        outportmapsBuilder.push_back(join("R_c", coeffa_si[i], "=>feedbackMul", i));
+
+                    else if(coeffa_si[i] < 0) // if value is negative, there is no output signal for 0
+                        outportmapsBuilder.push_back(join("R_cm", abs(coeffa_si[i]), "=>feedbackMul", i));
+
                 }
                 else // duplicate detected, set the duplicate to the signal where it was first found, so if coeff_b[0] and coeff_b[2] are equal, feedbackMul is set to feedbackMul
                 {
                     REPORT(LIST, "duplicate detected (" << coeffa_si[i] << ")")
                     vhdl << declare(join("feedbackMul", i), msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] +1) << "<= std_logic_vector(feedbackMul" << FixIIRShiftAdd::getIndexCoeff(coeffa_si, m, coeffa_si[i]) << ");" <<  endl;
                 }
+            }
+
+            // add comma between signals in port map. Must be done separatly since leading coefficients can be 0 what doesnt result in a signal
+            for(int i = 0; i < outportmapsBuilder.size(); i++)
+            {
+                REPORT(LIST, "outpotzmapsbuilder: " << outportmapsBuilder.at(i))
+                outPortMaps << outportmapsBuilder.at(i);
+                if(i != outportmapsBuilder.size()-1)
+                    outPortMaps << ",";
             }
 
             stringstream parameters;
@@ -410,6 +431,12 @@ namespace flopoco {
                         outPortMaps.str());
 
             REPORT(DETAILED, "IntConstMultShiftAdd for feedback path created")
+
+            // all coeffs, which are 0 arent mapped since theyre constant 0
+            // set them
+            for (int i = 0; i < m; i++)
+                if(coeffa_si[i] == 0)
+                    vhdl << "feedbackMul" << i << " <= (others => '0');" << endl;
         }
 
         /*
@@ -473,9 +500,17 @@ namespace flopoco {
                         join("X=>feedbackAdd", i + 1), join("Xd1=>feedbackRegOut", i));
         }
 
-        // shift feedback0 to the right, resp. cut two more bits, guard bits also considered
+        // determine bit position for the bit that has to be added
+        uint16_t bitPositionRoundingBit = abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits-1;
+        // cutting bit so it survises truncation
+        vhdl << declare("faithfulRoundingBitValue", 1) << " <= feedbackAdd0(" << bitPositionRoundingBit << " downto "<< bitPositionRoundingBit << " ); " << endl;
+
+        // shift feedback0 to the right, resp. cut two more bits, guard bits also considered (truncation)
         vhdl << declare("endresult", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 - abs(lsbAdditionsFeedbackOut[0]-lsbInt - guardBits)) << " <= feedbackAdd0("<< (msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0]) << " downto " << abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits << ");" << endl;
-        vhdl << "Result <= std_logic_vector(resize(signed(endresult)," << wOut << "));" << endl;
+        //vhdl << "Result <= std_logic_vector(resize(signed(endresult)," << wOut << "));" << endl; // not rounded result
+
+        //vhdl << declare("endresultFaitfullyRounded", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 - abs(lsbAdditionsFeedbackOut[0]-lsbInt - guardBits)) << " <= feedbackAdd0("<< (msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0]) << " downto " << abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits << ") + faithfulRoundingBitValue;" << endl;
+        vhdl << "Result <= std_logic_vector(resize(signed(endresult + faithfulRoundingBitValue)," << wOut << "));" << endl; // faithfully rounded result
     }
 
     FixIIRShiftAdd::~FixIIRShiftAdd()
@@ -528,12 +563,14 @@ namespace flopoco {
 
         mpz_set_si(resultForwardPathTB_mpz, 0);
         mpz_set_si(registerForwardTB_mpz[0], mpz_get_si(x_));
+
         for(int i = 0; i < n; i++)
         {
             // no add_mul_si() for mpz_t
             mpz_mul_si(coeffResult, registerForwardTB_mpz[i], coeffb_si[i]); // coeffb_d[i] * registerforwardTB[i];
             mpz_add(resultForwardPathTB_mpz, resultForwardPathTB_mpz, coeffResult);
         }
+
         for(int i = n-1; i >= 1; i--)
         {
             mpz_set_si(registerForwardTB_mpz[i], mpz_get_si(registerForwardTB_mpz[i-1]));
@@ -568,17 +605,44 @@ namespace flopoco {
 
         // add 0
         mpz_add(feedbackAdd0, registerFeedbackTB_mpz[0], resultForwardPathTB_mpz);
-        REPORT(DETAILED, "feedbackAdd0: " << feedbackAdd0 << ", registerFeedbackTB_mpz[0]: " << registerFeedbackTB_mpz[0] << ", resultForwardPathTB_mpz: " << resultForwardPathTB_mpz)
+        REPORT(DEBUG, "feedbackAdd0: " << feedbackAdd0 << ", registerFeedbackTB_mpz[0]: " << registerFeedbackTB_mpz[0] << ", resultForwardPathTB_mpz: " << resultForwardPathTB_mpz)
 
         // set result and shift to align to lsbOut since lsbAdditionsFeedbackOut[0] can different lsb value (only more lsb)
         mpz_t result_mpz;
         mpz_init_set(result_mpz, feedbackAdd0);
-        mpz_fdiv_q_2exp(result_mpz, result_mpz, abs(lsbAdditionsFeedbackOut[0]-lsbInt)); // realign result
+
+        /*
+         * faithful rounding
+         * determine the bit which must be added (do it before truncating)
+         * Shift result (resop. temp result value) to right so that this bit is the lsb
+         * mod2 to determine if 0 or 1
+         * if 1, add to result
+         */
+        // determine most-left truncated bit position and value
+        REPORT(LIST, "msb: " << msbAdditionsFeedbackOut[0] << ", lsb: " << lsbAdditionsFeedbackOut[0])
+        REPORT(LIST, "most-left truncated bit position: " << abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits-1) // if there are 9 truncated bits, bit 8..0 are truncated, so add bit 8
+
+        mpz_t resultTempForFaithfulRounding;
+        mpz_init_set(resultTempForFaithfulRounding, feedbackAdd0);
+        mpz_t faithfulRoundingBitValue;
+        mpz_init_set_ui(faithfulRoundingBitValue, 2); // set to two for debugging purposes
+        // shift right so that most-left truncated bit is bot 0
+        mpz_fdiv_q_2exp(resultTempForFaithfulRounding, resultTempForFaithfulRounding, abs(lsbAdditionsFeedbackOut[0] - lsbInt) + guardBits - 1);
+        mpz_mod_ui(faithfulRoundingBitValue, resultTempForFaithfulRounding, 2); // use mod2 to determine if 0 or 1
+        REPORT(LIST, "this value must be added: " << mpz_get_si(faithfulRoundingBitValue))
+
+        mpz_fdiv_q_2exp(result_mpz, result_mpz, abs(lsbAdditionsFeedbackOut[0]-lsbInt)); // realign result, truncation to wout
         mpz_fdiv_q_2exp(result_mpz, result_mpz, guardBits); // shift back bc of guard bits
-        REPORT(DETAILED, "")
         REPORT(DETAILED, "RESULT: " << result_mpz << ", shifted: " << (mpz_get_si(result_mpz))/(int)pow(2,abs(lsbOut)))
         mpz_class result_class(result_mpz);
-        tc->addExpectedOutput("Result", result_class);
+        //tc->addExpectedOutput("Result", result_class);
+
+        // add this bit value to the truncated value to get the faithfully rounded result
+        mpz_add(result_mpz, result_mpz, faithfulRoundingBitValue);
+        mpz_class result_class_fathfully(result_mpz);
+        tc->addExpectedOutput("Result", result_class_fathfully); // use this for faithful rounded result
+
+        REPORT(DETAILED, "")
 
         // scaling (only in code, msb and lsb is altered)
         // truncation
@@ -588,13 +652,13 @@ namespace flopoco {
 
         REPORT(DETAILED, "lsbAdditionsFeedbackOut: "<< lsbAdditionsFeedbackOut[0] << ", scaleAOut: " << lsbScaleAOut << ", lsbInt: " << lsbInt);
         // truncate to lsbInt
-        REPORT(DETAILED, "truncate " << feedbackAdd0 << "by " << abs(lsbScaleAOut-lsbInt) << " bits")
+        REPORT(DEBUG, "truncate " << feedbackAdd0 << " by " << abs(lsbScaleAOut-lsbInt) << " bits")
         mpz_fdiv_q_2exp(truncated, feedbackAdd0, abs(lsbScaleAOut-lsbInt)); // dont use tdiv, use fdiv!
 
-        REPORT(DETAILED, "truncated: " << truncated)
-        REPORT(DETAILED, "add0: " << feedbackAdd0)
+        REPORT(DEBUG, "truncated: " << truncated)
+        REPORT(DEBUG, "add0: " << feedbackAdd0)
         for(int i = 0; i < m; i++)
-        REPORT(DETAILED,"register" << i << ": " << registerFeedbackTB_mpz[i])
+        REPORT(DEBUG,"register" << i << ": " << registerFeedbackTB_mpz[i])
 
         for(int i = 0; i < m; i++)
         {
@@ -602,7 +666,7 @@ namespace flopoco {
             mpz_init(coeffR);
             mpz_mul_si(coeffR, truncated, coeffa_si[i]);
             // mpz_mul_si(coeffR, coeffR, -1);
-            REPORT(DETAILED, "coeffr mul" << i << ": " << mpz_get_si(coeffR))
+            REPORT(DEBUG, "coeffr mul" << i << ": " << mpz_get_si(coeffR))
             mpz_sub(registerFeedbackTB_mpz[i], registerFeedbackTB_mpz[i+1], coeffR);
         }
     }
@@ -687,8 +751,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "576:512:128:7:8"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         testStateList.push_back(paramList);
         paramList.clear();
 
@@ -697,8 +761,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "576:512:128:7:8:5:6"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         testStateList.push_back(paramList);
         paramList.clear();
 
@@ -707,8 +771,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "-576:512:128:7:8:5:6"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         testStateList.push_back(paramList);
         paramList.clear();
 
@@ -717,8 +781,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "-576:512:128:7:8:5:6"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("guardbits",  "1"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -728,8 +792,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "-576:512:128:7:8:5:6"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("guardbits",  "5"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -739,8 +803,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "-576:512:128:7:8:5:6"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("guardbits",  "1"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -750,8 +814,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-10"));
         paramList.push_back(make_pair("coeffb",  "-576:512:128:7:8:5:6"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("guardbits",  "1"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -761,8 +825,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "-576:512:128:7:8:5:6"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("guardbits",  "1"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -772,8 +836,8 @@ namespace flopoco {
         paramList.push_back(make_pair("lsbOut", "-8"));
         paramList.push_back(make_pair("coeffb",  "-576:512:128:7:8:5:6"));
         paramList.push_back(make_pair("coeffa",  "2:4:1:7:2:2"));
-        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "0"));
+        paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("guardbits",  "-1"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -787,8 +851,8 @@ namespace flopoco {
         paramList.push_back(make_pair("coeffa",  "-2:-2:2:2"));
         paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "2"));
-        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("method",  "\"multiplierless\""));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -800,8 +864,8 @@ namespace flopoco {
         paramList.push_back(make_pair("coeffa",  "-2:-2:2:2"));
         paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "2"));
-        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("method",  "\"multiplierless\""));
         paramList.push_back(make_pair("guardbits",  "2"));
         testStateList.push_back(paramList);
@@ -814,8 +878,8 @@ namespace flopoco {
         paramList.push_back(make_pair("coeffa",  "-2:-2:2:2"));
         paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "2"));
-        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("method",  "\"multiplierless\""));
         paramList.push_back(make_pair("guardbits",  "-1"));
         testStateList.push_back(paramList);
@@ -828,8 +892,8 @@ namespace flopoco {
         paramList.push_back(make_pair("coeffa",  "2:2:-2:-2"));
         paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "2"));
-        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("method",  "\"multiplierless\""));
         paramList.push_back(make_pair("guardbits",  "-1"));
         testStateList.push_back(paramList);
@@ -842,8 +906,8 @@ namespace flopoco {
         paramList.push_back(make_pair("coeffa",  "2:-2:-2:2"));
         paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "2"));
-        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[-2],1,[-1],1,1},{'O',[2],1,[1],1,1}}\""));
         paramList.push_back(make_pair("method",  "\"multiplierless\""));
         paramList.push_back(make_pair("guardbits",  "-1"));
         testStateList.push_back(paramList);
@@ -856,13 +920,84 @@ namespace flopoco {
         paramList.push_back(make_pair("coeffa",  "2:4:3:7"));
         paramList.push_back(make_pair("shifta",  "3"));
         paramList.push_back(make_pair("shiftb",  "2"));
-        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'A',[3],1,[1],0,0,[1],0,1},{'A',[7],1,[1],0,3,[-1],0,0},{'O',[2],1,[1],1,1},{'O',[3],1,[3],1,0},{'O',[4],1,[1],1,2},{'O',[7],1,[7],1,0}}\""));
         paramList.push_back(make_pair("graphb",  "\"{{'A',[7],1,[1],0,3,[-1],0,0},{'A',[15],1,[1],0,4,[-1],0,0},{'O',[-7],1,[-7],1,0},{'O',[7],1,[7],1,0},{'O',[15],1,[15],1,0}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'A',[3],1,[1],0,0,[1],0,1},{'A',[7],1,[1],0,3,[-1],0,0},{'O',[2],1,[1],1,1},{'O',[3],1,[3],1,0},{'O',[4],1,[1],1,2},{'O',[7],1,[7],1,0}}\""));
         paramList.push_back(make_pair("method",  "\"multiplierless\""));
         paramList.push_back(make_pair("guardbits",  "-1"));
         testStateList.push_back(paramList);
         paramList.clear();
 
+        // from email
+
+        paramList.push_back(make_pair("msbIn",  "10"));
+        paramList.push_back(make_pair("lsbIn",  "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb",  "32:-32:16"));
+        paramList.push_back(make_pair("coeffa",  "96:48"));
+        paramList.push_back(make_pair("shifta",  "12"));
+        paramList.push_back(make_pair("shiftb",  "11"));
+        paramList.push_back(make_pair("graphb",  "\"{{'R',[1],1,[1],0},{'O',[-32],1,[-1],1,5},{'O',[16],1,[1],1,4},{'O',[32],1,[1],1,5}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'A',[3],1,[1],0,0,[1],0,1},{'O',[48],1,[3],1,4},{'O',[96],1,[3],1,5}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "10"));
+        paramList.push_back(make_pair("lsbIn",  "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb",  "128:144:32"));
+        paramList.push_back(make_pair("coeffa",  "0:128"));
+        paramList.push_back(make_pair("shifta",  "12"));
+        paramList.push_back(make_pair("shiftb",  "11"));
+        paramList.push_back(make_pair("graphb",  "\"{{'R',[1],1,[1],0},{'A',[9],1,[1],0,0,[1],0,3},{'O',[32],1,[1],1,5},{'O',[128],1,[1],1,7},{'O',[144],1,[9],1,4}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'O',[128],1,[1],1,7}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "10"));
+        paramList.push_back(make_pair("lsbIn",  "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb",  "32:32:16"));
+        paramList.push_back(make_pair("coeffa",  "-96:48"));
+        paramList.push_back(make_pair("shifta",  "9"));
+        paramList.push_back(make_pair("shiftb",  "9"));
+        paramList.push_back(make_pair("graphb",  "\"{{'R',[1],1,[1],0},{'O',[16],1,[1],1,4},{'O',[32],1,[1],1,5}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'A',[3],1,[1],0,0,[1],0,1},{'O',[-96],1,[-3],1,5},{'O',[48],1,[3],1,4}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "10"));
+        paramList.push_back(make_pair("lsbIn",  "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb",  "32:32:16"));
+        paramList.push_back(make_pair("coeffa",  "-94:48"));
+        paramList.push_back(make_pair("shifta",  "9"));
+        paramList.push_back(make_pair("shiftb",  "9"));
+        paramList.push_back(make_pair("graphb",  "\"{{'R',[1],1,[1],0},{'O',[16],1,[1],1,4},{'O',[32],1,[1],1,5}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'R',[1],1,[1],0},{'A',[3],1,[1],0,0,[1],0,1},{'R',[3],2,[3],1},{'A',[47],2,[3],1,4,[-1],1,0},{'O',[-94],2,[-47],2,1},{'O',[48],2,[3],2,4}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "10"));
+        paramList.push_back(make_pair("lsbIn",  "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb",  "60:60:44"));
+        paramList.push_back(make_pair("coeffa",  "-96:48"));
+        paramList.push_back(make_pair("shifta",  "8"));
+        paramList.push_back(make_pair("shiftb",  "9"));
+        paramList.push_back(make_pair("graphb",  "\"{{'R',[1],1,[1],0},{'A',[3],1,[1],0,0,[1],0,1},{'A',[11],2,[1],1,3,[3],1,0},{'A',[15],2,[1],1,4,[-1],1,0},{'O',[44],2,[11],2,2},{'O',[60],2,[15],2,2}}}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{'A',[3],1,[1],0,0,[1],0,1},{'O',[-96],1,[-3],1,5},{'O',[48],1,[3],1,4}}\""));
+        paramList.push_back(make_pair("method",  "\"multiplierless\""));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
 /*
  *      // TODO: Theres a problem with word size for coefficient 1 with using IntConstMultBlock
         paramList.push_back(make_pair("msbIn",  "21"));
@@ -904,7 +1039,7 @@ namespace flopoco {
         ) ;
     }
 
-    int64_t FixIIRShiftAdd::getIndexCoeff(int64_t* coeff, int64_t arrayLength, int64_t val) // TODO: rename
+    int64_t FixIIRShiftAdd::getIndexCoeff(int64_t* coeff, int64_t arrayLength, int64_t val)
     {
         for(int i = 0; i < arrayLength; i++)
         {

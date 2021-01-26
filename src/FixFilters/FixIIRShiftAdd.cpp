@@ -303,9 +303,8 @@ namespace flopoco {
             // multiplications
             for (int i = 0; i < n; i++) {
                 vhdl << declare(join("forMul", i), ceil(wIn + log2(abs(coeffb_si[i]) + 1)))
-                     << " <= std_logic_vector(signed(X) * (signed(std_logic_vector(to_signed(" << coeffb_si[i] << ","
-                     << ceil(log2(abs(coeffb_si[i]) + 1)) + TEMP_SIGN_FOR_RESIZE << ")))))("
-                     << ceil(wIn + log2(abs(coeffb_si[i]) + 1) - 1) << " downto 0);" << endl;
+                     << " <= std_logic_vector(resize(signed(X) * (signed(std_logic_vector(to_signed(" << coeffb_si[i] << ","
+                     << ceil(log2(abs(coeffb_si[i]) + 1)) + TEMP_SIGN_FOR_RESIZE << ")))),"<<ceil(wIn + log2(abs(coeffb_si[i]) + 1))<<"));" << endl ;
             }
         }
 
@@ -385,8 +384,8 @@ namespace flopoco {
             for (int i = 0; i < m; i++)
             {
                 vhdl << declare(join("feedbackMul", i), msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1)
-                     << " <= std_logic_vector(resize(signed(truncationAfterScaleA), " << msbInt - lsbInt + 1 << " ) * (signed(std_logic_vector(to_signed(" << -coeffa_si[i] << ","
-                     << ceil(abs(log2((abs(coeffa_si[i]) + 1)))) + TEMP_SIGN_FOR_RESIZE << ")))))(" << msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1 - 1 << " downto 0);" << endl;
+                     << " <= std_logic_vector(resize(signed(truncationAfterScaleA) * (signed(std_logic_vector(to_signed(" << -coeffa_si[i] << ","
+                     << ceil(abs(log2((abs(coeffa_si[i]) + 1)))) + TEMP_SIGN_FOR_RESIZE << ")))),"<< msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1<<"));" << endl;
             }
         }
 
@@ -454,7 +453,7 @@ namespace flopoco {
         if(method == "multiplierless")
             operatorAdd0 = "-";
 
-        int numLsbBitsDifference = abs(lsbRegisterFeedbackOut[0] - lsbScaleBOut);
+        int numLsbBitsDifference = abs(lsbRegisterFeedbackOut[0] - lsbScaleBOut); // determine how often to shft
         REPORT(DETAILED, "numLsbBitsDifference: " << numLsbBitsDifference)
         if(lsbScaleBOut < lsbRegisterFeedbackOut[0])
         {
@@ -474,7 +473,7 @@ namespace flopoco {
             vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedScaleB), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") " << operatorAdd0 << " resize(signed(feedbackRegOut0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
         }
 
-        else // if both inputs are well aligned, use non-resized inputs
+        else // if both inputs are well aligned, use regular inputs
         {
             vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(forAdd0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") " << operatorAdd0 << " resize(signed(feedbackRegOut0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
         }
@@ -619,8 +618,8 @@ namespace flopoco {
          * if 1, add to result
          */
         // determine most-left truncated bit position and value
-        REPORT(LIST, "msb: " << msbAdditionsFeedbackOut[0] << ", lsb: " << lsbAdditionsFeedbackOut[0])
-        REPORT(LIST, "most-left truncated bit position: " << abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits-1) // if there are 9 truncated bits, bit 8..0 are truncated, so add bit 8
+        //REPORT(LIST, "msb: " << msbAdditionsFeedbackOut[0] << ", lsb: " << lsbAdditionsFeedbackOut[0])
+        //REPORT(LIST, "most-left truncated bit position: " << abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits-1) // if there are 9 truncated bits, bit 8..0 are truncated, so add bit 8
 
         mpz_t resultTempForFaithfulRounding;
         mpz_init_set(resultTempForFaithfulRounding, feedbackAdd0);
@@ -629,7 +628,7 @@ namespace flopoco {
         // shift right so that most-left truncated bit is bot 0
         mpz_fdiv_q_2exp(resultTempForFaithfulRounding, resultTempForFaithfulRounding, abs(lsbAdditionsFeedbackOut[0] - lsbInt) + guardBits - 1);
         mpz_mod_ui(faithfulRoundingBitValue, resultTempForFaithfulRounding, 2); // use mod2 to determine if 0 or 1
-        REPORT(LIST, "this value must be added: " << mpz_get_si(faithfulRoundingBitValue))
+        //REPORT(LIST, "this value must be added: " << mpz_get_si(faithfulRoundingBitValue))
 
         mpz_fdiv_q_2exp(result_mpz, result_mpz, abs(lsbAdditionsFeedbackOut[0]-lsbInt)); // realign result, truncation to wout
         mpz_fdiv_q_2exp(result_mpz, result_mpz, guardBits); // shift back bc of guard bits

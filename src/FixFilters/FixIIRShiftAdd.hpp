@@ -15,6 +15,12 @@ namespace flopoco{
 
     class FixIIRShiftAdd : public Operator {
 
+    private:
+        struct adderSigns /**< adder signs for the use with IntConstMultShiftAdd component */
+        {
+            string signLeft = "+";
+            string signRight = "+";
+        };
     public:
         /** @brief Constructor ; you must use bitheap in case of negative coefficient*/
         FixIIRShiftAdd(OperatorPtr parentOp, Target* target, int lsbIn, int lsbOut, int msbIn, int guardBits, vector<string> coeffb, vector<string> coeffa, int64_t shifta, int64_t shiftb, string method, string grapha, string graphb);
@@ -34,6 +40,8 @@ namespace flopoco{
 
         /** @brief returns the index for a given value in a given array, -1 if not found */
         int64_t getIndexCoeff(int64_t*, int64_t, int64_t);
+
+        void preventDoubleNegativeInputsAdder(uint16_t, vector<adderSigns>);
 
         // User-interface stuff
         /** Factory method */
@@ -89,7 +97,6 @@ namespace flopoco{
         int lsbTruncationIntOut;           /**< lsb after the truncation to wInt */
         int wordsizefeedbackAdd0ResizedReg0; /**< word size of the aligned word of feedbackReg0 for input for feedbackAdd0 */
         int wordsizefeedbackAdd0ResizedScaleB; /**< word size of the aligned word of scaleB for input for feedbackAdd0 */
-
         mpz_t* registerForwardTB_mpz;
         mpz_t* registerFeedbackTB_mpz;
         mpz_t resultForwardPathTB_mpz; /**< result of the forward path in testbench */

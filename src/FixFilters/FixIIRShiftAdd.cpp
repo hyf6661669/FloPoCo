@@ -305,6 +305,9 @@ namespace flopoco {
             if (coeffa_si[m - 1] >= 0)
                 adderFeedbackpPath.at(m - 1).signLeft = "-";
 
+            for(int i = 0; i < m; i++)
+                REPORT(LIST, "feedback add" << i << " left: " << adderFeedbackpPath.at(i).signLeft << " right: " << adderFeedbackpPath.at(i).signRight)
+
             /*
              * Forward path
              * If coefficient in forward path is negativ, then the result of the multiplication is negative
@@ -323,8 +326,11 @@ namespace flopoco {
              * If that happens, change both "-" inputs to "+" and set the sign of the next higher adder to "-"
              */
 
-            preventDoubleNegativeInputsAdder(m, adderFeedbackpPath);
-            preventDoubleNegativeInputsAdder(n, adderForwardPath);
+            preventDoubleNegativeInputsAdder(m, &adderFeedbackpPath);
+            preventDoubleNegativeInputsAdder(n, &adderForwardPath);
+
+            for(int i = 0; i < m; i++)
+                REPORT(LIST, "feedback add" << i << " left: " << adderFeedbackpPath.at(i).signLeft << " right: " << adderFeedbackpPath.at(i).signRight)
         }
 
         // ################################# TESTBENCH INIT #########################################
@@ -397,6 +403,10 @@ namespace flopoco {
                     outPortMaps << ",";
             }
 
+            for (int i = 0; i < n; i++)
+                if(coeffb_si[i] == 0)
+                    vhdl << "forMul" << i << " <= (others => '0');" << endl;
+
             stringstream parameters;
             parameters << "wIn=" << wIn << " graph=" << graphb;
             string inPortMaps = "X0=>X";
@@ -410,10 +420,27 @@ namespace flopoco {
         vhdl << endl;
 
         // additions
-        for (int i = 0; i < n - 1; i++) {
-            vhdl << declare(join("forAdd", i), msbAdditionsForwardOut[i] - lsbForwardPath + 1) << " <= std_logic_vector(resize(signed("
-                 << join("forRegOut", i) << "), " << msbAdditionsForwardOut[i] - lsbForwardPath + 1 << ") "<< adderForwardPath.at(i).signRight <<" signed(" << join("forMul", i) << "));"
-                 << endl;
+
+        string forwardpathOperandLeft = "forAdd";
+        string forwardpathOperandRight = "forRegOut";
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            if(adderForwardPath.at(i).signLeft == "-" && adderFeedbackpPath.at(i).signRight == "+") // treat special case, see comments addition feedbackpath
+            {
+                vhdl << declare(join(forwardpathOperandRight, i), msbAdditionsForwardOut[i] - lsbForwardPath + 1)
+                     << " <= std_logic_vector(resize(signed("
+                     << join(forwardpathOperandLeft, i) << "), " << msbAdditionsForwardOut[i] - lsbForwardPath + 1
+                     << ") " << adderForwardPath.at(i).signLeft << " signed(" << join("forMul", i) << "));"
+                     << endl;
+            }
+            else {
+                vhdl << declare(join(forwardpathOperandLeft, i), msbAdditionsForwardOut[i] - lsbForwardPath + 1)
+                     << " <= std_logic_vector(resize(signed("
+                     << join(forwardpathOperandRight, i) << "), " << msbAdditionsForwardOut[i] - lsbForwardPath + 1
+                     << ") " << adderForwardPath.at(i).signRight << " signed(" << join("forMul", i) << "));"
+                     << endl;
+            }
         }
 
         vhdl << endl;
@@ -461,10 +488,15 @@ namespace flopoco {
                 }
             }
 
+            for (int i = 0; i < m; i++)
+                if(coeffa_si[i] == 0)
+                    vhdl << "feedbackMul" << i << " <= (others => '0');" << endl;
+
+
             // add comma between signals in port map. Must be done separatly since leading coefficients can be 0 what doesnt result in a signal
             for(int i = 0; i < outportmapsBuilder.size(); i++)
             {
-                REPORT(LIST, "outpotzmapsbuilder: " << outportmapsBuilder.at(i))
+                REPORT(LIST, "outputmapsbuilder: " << outportmapsBuilder.at(i))
                 outPortMaps << outportmapsBuilder.at(i);
                 if(i != outportmapsBuilder.size()-1)
                     outPortMaps << ",";
@@ -486,18 +518,38 @@ namespace flopoco {
          * conservative computation in the feedback path (see comment msb computation for this addition)
          * --> feedbackRegOut0 has to be rescaled to max output of adder (later it can be optimized to mInt + wcpgGain - (msbScaleBOut - msbIn) + shifta
          * both inputs of the additions must have same amount of lsb-bits
+         *
+         * There are 3 cases for the signs. left "+" and right "+", keft "+" and right "-" and left "-" and right "+". The possible fourth case is handled
+         * in preventDoubleNegativeInputsAdder. Left "-" and right "+" is special case and must be treated differently since -a+b ist not feasible using
+         * IntConstMultShift, so use b-a.
          */
+
+        string operandNameFeedbackLeft = "feedbackRegOut"; // except feedbackAdd0
+        string operandNameFeedbackRight = "feedbackMul"; // except feedbackAdd0
 
         int numLsbBitsDifference = abs(lsbRegisterFeedbackOut[0] - lsbScaleBOut); // determine how often to shft
         REPORT(DEBUG, "numLsbBitsDifference: " << numLsbBitsDifference)
         if(lsbScaleBOut < lsbRegisterFeedbackOut[0])
         {
-            // lsbScaleBOut has more lsb bits, so add lsb-bits to regOut0
-            // resize and shifting (to the left), scale this value to the size of the output of feedbackAdd0, since this value cannot be larger
-            // the word size cannot be larger than the word size of the adder (see comment msb computation for this addition)
+            /* lsbScaleBOut has more lsb bits, so add lsb-bits to regOut0
+             * resize and shifting (to the left), scale this value to the size of the output of feedbackAdd0, since this value cannot be larger
+             * the word size cannot be larger than the word size of the adder (see comment msb computation for this addition)
+             */
             wordsizefeedbackAdd0ResizedReg0 = min(msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1, msbRegisterFeedbackOut[0] - lsbRegisterFeedbackOut[0] + 1 + numLsbBitsDifference);
             vhdl << declare("feedbackAdd0ResizedReg0", wordsizefeedbackAdd0ResizedReg0) << " <= std_logic_vector(shift_left(resize(signed(feedbackRegOut0), " << wordsizefeedbackAdd0ResizedReg0 << "),"<< numLsbBitsDifference <<"));" << endl;
-            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(forAdd0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") " << adderFeedbackpPath.at(0).signRight << " signed(feedbackAdd0ResizedReg0));" << endl;
+            if(adderFeedbackpPath.at(0).signLeft == "-" && adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+            {
+                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                     << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedReg0), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                     << adderFeedbackpPath.at(0).signLeft << " signed(forAdd0));" << endl;
+            }
+            else {
+                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                     << " <= std_logic_vector(resize(signed(forAdd0), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                     << adderFeedbackpPath.at(0).signRight << " signed(feedbackAdd0ResizedReg0));" << endl;
+            }
         }
 
         else if(lsbScaleBOut > lsbRegisterFeedbackOut[0])
@@ -505,21 +557,62 @@ namespace flopoco {
             //vhdl << declare("feedbackAdd0ResizedScaleB", msbScaleBOut - lsbScaleBOut + numLsbBitsDifference + 1) << " <= std_logic_vector(shift_left(signed(scaleBOut(" << msbScaleBOut - lsbScaleBOut +1  << " downto 0))), to_integer(to_signed(1, 2)));" << endl;
             wordsizefeedbackAdd0ResizedScaleB = min(msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1, msbScaleBOut - lsbScaleBOut + 1 + numLsbBitsDifference);
             vhdl << declare("feedbackAdd0ResizedScaleB", wordsizefeedbackAdd0ResizedScaleB) << " <= std_logic_vector(shift_left(resize(signed(forAdd0), " << wordsizefeedbackAdd0ResizedScaleB << "),"<< numLsbBitsDifference <<"));" << endl;
-            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedScaleB), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") " << adderFeedbackpPath.at(0).signRight << " resize(signed(feedbackRegOut0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+            if(adderFeedbackpPath.at(0).signLeft == "-" && adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+            {
+                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                     << " <= std_logic_vector(resize(signed(feedbackRegOut0), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                     << adderFeedbackpPath.at(0).signLeft << " resize(signed(feedbackAdd0ResizedScaleB), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+            }
+            else {
+                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                     << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedScaleB), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                     << adderFeedbackpPath.at(0).signRight << " resize(signed(feedbackRegOut0), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+            }
         }
 
         else // if both inputs are well aligned, use regular inputs
         {
-            vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1) << " <= std_logic_vector(resize(signed(forAdd0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") " << adderFeedbackpPath.at(0).signRight << " resize(signed(feedbackRegOut0), " << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+            if(adderFeedbackpPath.at(0).signLeft == "-" && adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+            {
+                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                     << " <= std_logic_vector(resize(signed(feedbackRegOut0), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                     << adderFeedbackpPath.at(0).signLeft << " resize(signed(forAdd0), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+            }
+            else {
+                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                     << " <= std_logic_vector(resize(signed(forAdd0), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                     << adderFeedbackpPath.at(0).signRight << " resize(signed(feedbackRegOut0), "
+                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+            }
         }
 
-        for (int i = 1; i < m; i++) {
-            vhdl << declare(join("feedbackAdd", i), msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1)
-                 << " <= std_logic_vector(resize(signed("
-                 << join("feedbackRegOut", i) << "), "
-                 << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") " << adderFeedbackpPath.at(i).signRight
-                 << " signed(" << join("feedbackMul", i - 1) << "));"
-                 << endl;
+        for (int i = 1; i < m; i++)
+        {
+            if(adderFeedbackpPath.at(i).signLeft == "-" && adderFeedbackpPath.at(i).signRight == "+") // treat special case and switch operands and change sign
+            {
+                vhdl << declare(join("feedbackAdd", i), msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1)
+                     << " <= std_logic_vector(resize(signed("
+                     << join(operandNameFeedbackRight, i-1) << "), "
+                     << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") " << adderFeedbackpPath.at(i).signLeft
+                     << " signed(" << join(operandNameFeedbackLeft, i) << "));"
+                     << endl;
+            }
+            else
+            {
+                vhdl << declare(join("feedbackAdd", i), msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1)
+                     << " <= std_logic_vector(resize(signed("
+                     << join(operandNameFeedbackLeft, i) << "), "
+                     << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") " << adderFeedbackpPath.at(i).signRight
+                     << " signed(" << join(operandNameFeedbackRight, i - 1) << "));"
+                     << endl;
+            }
         }
 
         newInstance("ShiftReg", join("feedbackReg", m - 1), join("n=1 reset=1 w=", msbRegisterFeedbackOut[m - 1] - lsbRegisterFeedbackOut[m-1] + 1),
@@ -605,10 +698,6 @@ namespace flopoco {
             mpz_set_si(registerForwardTB_mpz[i], mpz_get_si(registerForwardTB_mpz[i-1]));
         }
 
-        // scaleB
-        //mpz_fdiv_q_2exp(resultForwardPathTB_mpz, resultForwardPathTB_mpz, abs(shiftb)); // use fdiv, not tdiv
-        //REPORT(LIST, "register forward out mpz: " << resultForwardPathTB_mpz << ", shifted: " << (mpz_get_si(resultForwardPathTB_mpz) >> abs(lsbIn)))
-
         // ######################################## TESTBENCH BACK PATH ###############################################
 
         mpz_init(feedbackAdd0);
@@ -616,7 +705,6 @@ namespace flopoco {
 
         // align both inputs for addition feedbackadd0
         // input from forward path is affected by scaleb, input from feedbackpath is affected by scalea and guard bits
-        //
 
         int numLsbBitsDifferenceTB = abs(lsbRegisterFeedbackOut[0] - lsbScaleBOut);
         REPORT(DEBUG, "numLsbBitsDifferenceTB: " << numLsbBitsDifferenceTB)
@@ -710,7 +798,11 @@ namespace flopoco {
         {
             testcases[i] = 16+i;
         }
-        testcases[0] = 16;
+        testcases[5] = 200;
+        testcases[6] = 210;
+        testcases[7] = 220;
+        testcases[8] = 230;
+        testcases[9] = 240;
 
         TestCase *tc;
         for(int i = 0; i < numTestcases; i++)
@@ -880,9 +972,10 @@ namespace flopoco {
         paramList.push_back(make_pair("coeffa",  "96:48"));
         paramList.push_back(make_pair("shiftb",  "9"));
         paramList.push_back(make_pair("shifta",  "9"));
-        paramList.push_back(make_pair("graphb",  "{{'O',[32],1,[1],0,5},{'O',[16],1,[1],0,4}}"));
-        paramList.push_back(make_pair("grapha",  "{{'O',[96],2,[3],1,5},{'O',[48],2,[3],1,4},{'A',[3],1,[1],0,1,[1],0,0}}"));
+        paramList.push_back(make_pair("graphb",  "\"{{\'O\',[32],1,[1],0,5},{\'O\',[16],1,[1],0,4}}\""));
+        paramList.push_back(make_pair("grapha",  "\"{{\'O\',[96],2,[3],1,5},{\'O\',[48],2,[3],1,4},{\'A\',[3],1,[1],0,1,[1],0,0}}\""));
         paramList.push_back(make_pair("guardbits",  "-1"));
+        paramList.push_back(make_pair("method",  "multiplierless"));
         testStateList.push_back(paramList);
         paramList.clear();
 
@@ -896,6 +989,7 @@ namespace flopoco {
         paramList.push_back(make_pair("graphb",  "{{'O',[128],2,[1],0,7},{'O',[144],2,[9],1,4},{'O',[32],2,[1],0,5},{'A',[9],1,[1],0,3,[1],0,0}}"));
         paramList.push_back(make_pair("grapha",  "{{'O',[128],1,[1],0,7}}"));
         paramList.push_back(make_pair("guardbits",  "-1"));
+        paramList.push_back(make_pair("method",  "multiplierless"));
         testStateList.push_back(paramList);
         paramList.clear();
 
@@ -908,6 +1002,7 @@ namespace flopoco {
         paramList.push_back(make_pair("shifta",  "9"));
         paramList.push_back(make_pair("graphb",  "{{'O',[32],1,[1],0,5},{'O',[16],1,[1],0,4}}"));
         paramList.push_back(make_pair("grapha",  "{{'O',[96],2,[3],1,5},{'O',[48],2,[3],1,4},{'A',[3],1,[1],0,1,[1],0,0}}"));
+        paramList.push_back(make_pair("method",  "multiplierless"));
         paramList.push_back(make_pair("guardbits",  "-1"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -919,8 +1014,23 @@ namespace flopoco {
         paramList.push_back(make_pair("coeffa",  "-96:48"));
         paramList.push_back(make_pair("shiftb",  "9"));
         paramList.push_back(make_pair("shifta",  "9"));
-        paramList.push_back(make_pair("graphb",  "{{'O',[32],1,[1],0,5},{'O',[32],1,[1],0,5},{'O',[16],1,[1],0,4}}"));
+        paramList.push_back(make_pair("graphb",  "{{'O',[32],1,[1],0,5},{'O',[16],1,[1],0,4}}"));
         paramList.push_back(make_pair("grapha",  "{{'O',[96],2,[3],1,5},{'O',[48],2,[3],1,4},{'A',[3],1,[1],0,1,[1],0,0}}"));
+        paramList.push_back(make_pair("method",  "multiplierless"));
+        paramList.push_back(make_pair("guardbits",  "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn",  "-1"));
+        paramList.push_back(make_pair("lsbIn",  "-16"));
+        paramList.push_back(make_pair("lsbOut", "-16"));
+        paramList.push_back(make_pair("coeffb",  "128:144:32"));
+        paramList.push_back(make_pair("coeffa",  "0:128"));
+        paramList.push_back(make_pair("shiftb",  "12"));
+        paramList.push_back(make_pair("shifta",  "11"));
+        paramList.push_back(make_pair("graphb",  "{{'O',[128],2,[1],0,7},{'O',[144],2,[9],1,4},{'O',[32],2,[1],0,5},{'A',[9],1,[1],0,3,[1],0,0}}"));
+        paramList.push_back(make_pair("grapha",  "{{'O',[128],1,[1],0,7}}"));
+        paramList.push_back(make_pair("method",  "multiplierless"));
         paramList.push_back(make_pair("guardbits",  "-1"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -961,18 +1071,17 @@ namespace flopoco {
         return -1;
     }
 
-    void FixIIRShiftAdd::preventDoubleNegativeInputsAdder(uint16_t numAdder, vector<adderSigns> adder)
+    void FixIIRShiftAdd::preventDoubleNegativeInputsAdder(uint16_t numAdder, vector<adderSigns> *adder)
     {
         for (int i = numAdder - 1; i >= 0; i--) {
-            REPORT(LIST, "i: " << i)
-            if (adder.at(i).signRight == "-" && adder.at(i).signLeft == "-") {
-                adder.at(i).signRight = "+";
-                adder.at(i).signLeft = "+";
-                // if signRight is already - change signLeft
-                if (adder.at(i - 1).signRight == "+")
-                    adder.at(i - 1).signRight = "-";
+            if (adder->at(i).signRight == "-" && adder->at(i).signLeft == "-") {
+                adder->at(i).signRight = "+";
+                adder->at(i).signLeft = "+";
+                // if signRight is already -, change signLeft
+                if (adder->at(i - 1).signRight == "+")
+                    adder->at(i - 1).signRight = "-";
                 else
-                    adder.at(i - 1).signLeft = "-";
+                    adder->at(i - 1).signLeft = "-";
             }
         }
     }

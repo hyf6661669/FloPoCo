@@ -41,7 +41,7 @@ namespace flopoco{
         /** @brief returns the index for a given value in a given array, -1 if not found */
         int64_t getIndexCoeff(int64_t*, int64_t, int64_t);
 
-        void preventDoubleNegativeInputsAdder(uint16_t, vector<adderSigns>);
+        void preventDoubleNegativeInputsAdder(uint16_t, vector<adderSigns>*);
 
         // User-interface stuff
         /** Factory method */

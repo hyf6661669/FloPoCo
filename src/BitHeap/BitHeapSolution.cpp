@@ -77,7 +77,7 @@ namespace flopoco{
 	}
 
 	vector<unsigned int> BitHeapSolution::getEmptyInputsByStage(unsigned int stage){
-		if(stage > emptyInputs.size()){
+		if(stage >= emptyInputs.size()){
 			vector<unsigned int> emptyVector;
 			return emptyVector;
 		}

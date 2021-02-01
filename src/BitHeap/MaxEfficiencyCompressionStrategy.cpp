@@ -53,12 +53,14 @@ namespace flopoco{
 	void MaxEfficiencyCompressionStrategy::maxEfficiencyAlgorithm(){
 
 		unsigned int s = 0;
-		while(true){
+		bool adderReached = false;
+		while(!adderReached){
+            bool breakToWhile = false;
 
-            if(checkAlgorithmReachedAdder(2, s)){
-                cout << "should break now" << endl;
-                break;
-            }
+//            if(checkAlgorithmReachedAdder(2, s)){
+//                cout << "should break now" << endl;
+//                break;
+//            }
 
 			//make sure there is the stage s+1 with the same amount of columns as s
 			while(bitAmount.size() <= s + 1){
@@ -69,18 +71,18 @@ namespace flopoco{
 			// check if mod is used and if stage height = 1
 			// then use other compressors -> pseudocompressors
             // right now check the lsb
-            cout << "computeModulo " << computeModulo << endl;
-			if (bitAmount[s][0] == 1 && computeModulo) {
+			int maxHeightBitAmount = *max_element(bitAmount[s].begin(), bitAmount[s].end());
+			if (maxHeightBitAmount == 1 && computeModulo) {
                 BasicCompressor* compressor = nullptr;
                 unsigned int column = 0;
                 unsigned int currentRange = INT_MAX;
 
                 for (unsigned int i = 0; i < possibleCompressors.size(); ++i) {
                     if (possibleCompressors[i]->type == "pseudo") {
-                        cout << "i is " << i << endl;
-                        cout << "range_change is " << possibleCompressors[i]->range_change << endl;
+                        //cout << "i is " << i << endl;
+                        //cout << "range_change is " << possibleCompressors[i]->range_change << endl;
                         for (int j = 0; j < possibleCompressors[i]->heights.size(); ++j) {
-                            cout << "input height on " << j << " = " << possibleCompressors[i]->heights[j] << endl;
+                            //cout << "input height on " << j << " = " << possibleCompressors[i]->heights[j] << endl;
                         }
                         // go through columns
                         // check if allowed
@@ -102,10 +104,13 @@ namespace flopoco{
 			} else {
                 cout << "normal algorithm reached" << endl;
                 //before we start this stage, check if compression is done
-//                if(checkAlgorithmReachedAdder(2, s)){
-//                    cout << "should break now" << endl;
-//                    break;
-//                }
+                if(checkAlgorithmReachedAdder(2, s)){
+                    cerr << "should break now" << endl;
+                    adderReached = true;
+                    breakToWhile = true;
+                    break;
+                }
+                cerr << "continues" << endl;
 
                 bool found = true;
                 while(found){
@@ -158,6 +163,10 @@ namespace flopoco{
                         placeCompressor(s, column, compressor);
                     }
                 }
+			}
+
+			if (breakToWhile) {
+			    break;
 			}
 
 			//finished one stage. bring the remaining bits in bitAmount to the new stage

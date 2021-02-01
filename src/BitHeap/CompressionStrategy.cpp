@@ -23,7 +23,7 @@ namespace flopoco{
 
 		//no chunks already compressed
 		compressionDoneIndex = 0;
-		computeModulo = 0;
+		computeModulo = false;
 
 		if(UserInterface::pipelineActive_) {
 			//the initial delay between the soonest bit and the rest of the bits

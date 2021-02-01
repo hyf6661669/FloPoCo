@@ -75,7 +75,7 @@ namespace flopoco {
         setNameWithFreqAndUID(name.str());
         //addOutput("R", _outHeights.size());
 
-
+        wOut = _outHeights.size();
         createInputsAndOutputs();
 
         for(int i = 0; i < _heights.size(); i++){
@@ -85,7 +85,7 @@ namespace flopoco {
                 for(int j = 0; j < _outHeights.size(); j++) {
                     if (_outHeights[j] == 1) {
                         REPORT(DEBUG, "add pseudocompressor output with weight " << j );
-                        vhdl << tab << "R(" << j << ") <= " << join("X", i) << ";" << endl;
+                        vhdl << tab << "R" << range(j,j) << " <= " << join("X", i) << ";" << endl;
                     } else {
 
                     }

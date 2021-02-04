@@ -1871,7 +1871,7 @@ namespace flopoco{
 
     double Target::getBitHeapCompressionCostperBit(){
         if(vendor_ == "Xilinx"){
-            return 0.55;
+            return 0.65;
         }
         //TODO: Add entry for Intel/Altera when the cost is known.
         return 0.65;

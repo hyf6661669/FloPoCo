@@ -1,4 +1,5 @@
 #include "PseudoCompressionStrategyOptILP.hpp"
+#include "ModReduction/RowAdder.hpp"
 
 using namespace std;
 namespace flopoco {
@@ -72,6 +73,7 @@ void PseudoCompressionptILP::compressionAlgorithm() {
 
 		float compressor_cost = 0;
 		vector<vector<int>> zeroInputsVector(s_max, vector<int>((int)wIn, 0));
+        vector<vector<vector<int>>> row_adder(s_max, vector<vector<int>>((int)wIn, vector<int>(3, 0)));
 		resizeBitAmount(s_max-1);
 		ScaLP::Result res = solver->getResult();
 		for(auto &p:res.values)
@@ -87,16 +89,20 @@ void PseudoCompressionptILP::compressionAlgorithm() {
 						int col_id = stoi(var_name.substr(2 + dpSt + 1 + dpK + 1, dpC));
                         cout << "is compressor" << com_id << " stage " << sta_id << " column " << col_id
                              << " compressor type " << ((com_id<(int)possibleCompressors.size())?possibleCompressors[com_id]->getStringOfIO():"?") << endl;
-                        if((int)possibleCompressors.size() <= com_id) break;
+                        if((int)possibleCompressors.size() <= com_id){
+                            row_adder[sta_id][col_id][(com_id-possibleCompressors.size())%3] += 1;
+                            //cout << "break" << endl;
+                            break;
+                        }
 						compressor_cost += ((com_id < (int)possibleCompressors.size() && sta_id < s_max - 1)?possibleCompressors[com_id]->area:0) * p.second;
-						if (possibleCompressors[com_id] != flipflop && sta_id < s_max - 1) {
+                        if (possibleCompressors[com_id] != flipflop && sta_id < s_max) {
 							float instances = p.second;
 							while (instances-- > 0.5) {
 								CompressionStrategy::solution.addCompressor(sta_id, col_id, possibleCompressors[com_id]);
-								//cout << "is compressor" << com_id << " stage " << sta_id << " column" << col_id
-								//	 << " compressor type " << possibleCompressors[com_id]->getStringOfIO() << endl;
 							}
-						}
+						} else {
+                            cout << "skipped " << possibleCompressors[com_id]  << "==" << flipflop << " " << (possibleCompressors[com_id] == flipflop) << endl;
+                        }
 						break;
 					}
 					case 'Z':{          //compressor input bits that are set zero have to be recorded for VHDL-Generation
@@ -116,7 +122,9 @@ void PseudoCompressionptILP::compressionAlgorithm() {
 
 		cout << "Total compressor LUT-cost: " << compressor_cost << endl;
 
-		//reports the area in LUT-equivalents
+        replace_row_adders(CompressionStrategy::solution, row_adder);
+
+        //reports the area in LUT-equivalents
 		printSolutionStatistics();
         drawBitHeap();
 		//here the VHDL-Code for the compressors as well as the bits->compressors->bits are being written.
@@ -179,7 +187,7 @@ void PseudoCompressionptILP::constructProblem(int s_max)
 
             if(s < s_max){
                 for(unsigned e = 0; e <= possibleCompressors.size() + 2; e++){                                          //place every possible compressor on current position and the following that get covered by it, index extended by 3 for RCA
-                    if(e < possibleCompressors.size() - 1){                                                                         //FFs and the row adders, are handled different since they currently can not be instantiated
+                    if(e < possibleCompressors.size() - 1 && s < s_max-1){                                                                         //FFs and the row adders, are handled different since they currently can not be instantiated
                         if(possibleCompressors[e]->type.compare("pseudo") != 0 || c == 0){                               //pseudocompressors are only used right aligned on BitHeap
                             stringstream nvarName;
                             nvarName << "k_" << setfill('0') << setw(dpSt) << s << "_" << setfill('0') << setw(dpK) << e << "_" << setfill('0') << setw(dpC) << c;
@@ -221,8 +229,8 @@ void PseudoCompressionptILP::constructProblem(int s_max)
                             }
                         }
                     } else {                                                                                            //Handling for FFs and row adders
-                        if(!(c==0 && possibleCompressors.size() < e && e <= possibleCompressors.size()+2) ) {             //MSB and middle element of row adder should not be put in the LSB column of the BitHeap
-                            stringstream nvarName;
+                        if(possibleCompressors.size() <= e && e <= possibleCompressors.size()+2 && (c!=0 || possibleCompressors.size() == e) ) {             //MSB and middle element of row adder should not be put in the LSB column of the BitHeap
+                            cout << "-------------------------- stage" << s << " col " << c << " compr" << e << " ---------------------------------- " << endl;                            stringstream nvarName;
                             nvarName << "k_" << setfill('0') << setw(dpSt) << s << "_" << setfill('0') << setw(dpK) << e << "_" << setfill('0') << setw(dpC) << c;
                             //cout << nvarName.str() << endl;
                             ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
@@ -538,7 +546,43 @@ void PseudoCompressionptILP::constructProblem(int s_max)
         }
     }
 
+    void PseudoCompressionptILP::replace_row_adders(BitHeapSolution &solution, vector<vector<vector<int>>> &row_adders){
+        cout << solution.getSolutionStatus() << endl;
+        for(int s = 0; s < row_adders.size(); s++){
+            for(int c = 0; c < row_adders[0].size(); c++){
+                //cout << "at stage " << s << " col " << c << " " << row_adders[s][c][0] << row_adders[s][c][1] << row_adders[s][c][2] << endl;
+                int ci; bool adder_started;
+                while(0 < row_adders[s][c][0]){
+                    ci = 0;
+                    adder_started = false;
+                    while(0 < row_adders[s][c+ci][0] || 0 < row_adders[s][c+ci][1] || 0 < row_adders[s][c+ci][2]){
+                        if(0 < row_adders[s][c+ci][0] && adder_started == false){
+                            row_adders[s][c+ci][0]--;
+                            adder_started = true;
+                        } else {
+                            if(adder_started || 0 < row_adders[s][c+ci][1] || 0 < row_adders[s][c+ci][2]){
+                                if(0 < row_adders[s][c+ci][1]){
+                                    row_adders[s][c+ci][1]--;
+                                } else {
+                                    row_adders[s][c+ci][2]--;
+                                    adder_started = false;
+                                    cout << "adder in stage " << s <<  "from col " << c << " to " << c+ci << " width " << ci+1 << endl;
+                                    BasicCompressor *newCompressor = new BasicRowAdder(bitheap->getOp(), bitheap->getOp()->getTarget(), ci+1);
+                                    //possibleCompressors.push_back(newCompressor);
+                                    cout << solution.getCompressorsAtPosition(s, c).size() << endl;
+                                    solution.addCompressor(s, c, newCompressor);
+                                    cout << solution.getCompressorsAtPosition(s, c).size() << " " << solution.getCompressorsAtPosition(s, c)[0].first->outHeights.size() << endl;
+                                    cout << "ok" << endl;
+                                }
+                            }
+                        }
+                        ci++;
+                    }
 
+                }
+            }
+        }
+    }
 
 #endif
 

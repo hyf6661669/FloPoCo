@@ -31,7 +31,7 @@ public:
         BaseMultiplierCollection* bmc,
 		base_multiplier_id_t prefered_multiplier,
 		float occupation_threshold,
-		size_t maxPrefMult,
+		int maxPrefMult,
         MultiplierTileCollection tiles_,
         BitHeap* bitheap);
 
@@ -39,11 +39,8 @@ public:
 	void compressionAlgorithm() override;
 
 private:
-    base_multiplier_id_t small_tile_mult_;
-    size_t numUsedMults_;
-    size_t max_pref_mult_;
     float occupation_threshold_;
-    int dpX, dpY, dpS, wS, dpK, dpC, dpSt, s_max;
+    int dpX, dpY, dpS, wS, dpK, dpC, dpSt, s_max, max_pref_mult_;
     unsigned prodWidth;
 	vector<BaseMultiplierCategory*> tiles;
 

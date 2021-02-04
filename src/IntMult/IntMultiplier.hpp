@@ -19,16 +19,16 @@ namespace flopoco {
 
 	public:
 
-        /**
-         * The IntMultiplier constructor
-         * @param[in] target           the target device
-         * @param[in] wX             X multiplier size (including sign bit if any)
-         * @param[in] wY             Y multiplier size (including sign bit if any)
-         * @param[in] wOut           wOut size for a truncated multiplier (0 means full multiplier)
-         * @param[in] signedIO       false=unsigned, true=signed
-         * @param[in] texOutput      true=generate a tek file with the found tiling solution
-         **/
-        IntMultiplier(Operator *parentOp, Target* target, int wX, int wY, int wOut=0, bool signedIO = false, float dspOccupationThreshold=0.0, unsigned int maxDSP=0, bool superTiles=false, bool use2xk=false, bool useirregular=false, bool useLUT=true, bool useDSP=true, bool useKaratsuba=false, int beamRange=0);
+		/**
+		 * The IntMultiplier constructor
+		 * @param[in] target           the target device
+		 * @param[in] wX             X multiplier size (including sign bit if any)
+		 * @param[in] wY             Y multiplier size (including sign bit if any)
+		 * @param[in] wOut           wOut size for a truncated multiplier (0 means full multiplier)
+		 * @param[in] signedIO       false=unsigned, true=signed
+		 * @param[in] texOutput      true=generate a tek file with the found tiling solution
+		 **/
+		IntMultiplier(Operator *parentOp, Target* target, int wX, int wY, int wOut=0, bool signedIO = false, float dspOccupationThreshold=0.0, int maxDSP=-1, bool superTiles=false, bool use2xk=false, bool useirregular=false, bool useLUT=true, bool useDSP=true, bool useKaratsuba=false, int beamRange=0);
 
 		/**
 		 * The emulate function.
@@ -50,7 +50,7 @@ namespace flopoco {
 		 * @param wY size of the second input
 		 * @return the number of bits needed to store a product of I<wX> * I<WY>
 		 */
-		static unsigned int prodsize(unsigned int wX, unsigned int wY);
+		static unsigned int prodsize(unsigned int wX, unsigned int wY, bool signedX, bool signedY);
 
 		static TestList unitTest(int index);
 
@@ -62,11 +62,11 @@ namespace flopoco {
 		unsigned int wY;                         /**< the width for Y after possible swap such that wX>wY */
 		unsigned int wFullP;                     /**< size of the full product: wX+wY  */
 		unsigned int wOut;                       /**< size of the output, to be used only in the standalone constructor and emulate.  */
-        bool signedIO;                   /**< true if the IOs are two's complement */
+		bool signedIO;                   /**< true if the IOs are two's complement */
 		bool negate;                    /**< if true this multiplier computes -xy */
 		float dspOccupationThreshold;   /**< threshold of relative occupation ratio of a DSP multiplier to be used or not */
-        unsigned int maxDSP;            /**< limit the number of DSP-Blocks used in multiplier */
-        BitHeap *bitHeap;
+		int maxDSP;            /**< limit the number of DSP-Blocks used in multiplier */
+		BitHeap *bitHeap;
 
 	private:
 //		Operator* parentOp;  			/**< For a virtual multiplier, adding bits to some external BitHeap,
@@ -83,19 +83,19 @@ namespace flopoco {
 				string output_name
 			);
 
-        /** returns the amount of consecutive bits, which are not constantly zero
+		/** returns the amount of consecutive bits, which are not constantly zero
 		 * @param bm:                          current BaseMultiplier
 		 * @param xPos, yPos:                  position of lower right corner of the BaseMultiplier
 		 * @param totalOffset:                 see placeSingleMultiplier()
-         * */
-        unsigned int getOutputLengthNonZeros(
+		 * */
+		unsigned int getOutputLengthNonZeros(
 				BaseMultiplierParametrization const & parameter,
 				unsigned int xPos,
 				unsigned int yPos,
 				unsigned int totalOffset
 			);
 
-        unsigned int getLSBZeros(
+		unsigned int getLSBZeros(
 				BaseMultiplierParametrization const & parameter,
 				unsigned int xPos,
 				unsigned int yPos,
@@ -113,15 +113,16 @@ namespace flopoco {
 		unsigned int computeGuardBits(unsigned int wX, unsigned int wY, unsigned int wOut);
 
 		/**
-         * add a unique identifier for the multiplier, and possibly for the block inside the multiplier
-         */
-        string addUID(string name, int blockUID=-1);
+		 * add a unique identifier for the multiplier, and possibly for the block inside the multiplier
+		 */
+		string addUID(string name, int blockUID=-1);
 
-        int multiplierUid;
+		int multiplierUid;
 
 		void branchToBitheap(BitHeap* bh, list<TilingStrategy::mult_tile_t> &solution , unsigned int bitheapLSBWeight);
 
-	};
+        void checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned int guardBits);
+    };
 
 }
 #endif

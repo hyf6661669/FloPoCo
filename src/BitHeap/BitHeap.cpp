@@ -27,25 +27,23 @@
 #include <algorithm>
 namespace flopoco {
 
-	BitHeap::BitHeap(Operator* op_, unsigned width_, string name_, int compressionType_) :
+	BitHeap::BitHeap(Operator* op_, unsigned width_, string name_) :
 		msb(width_-1), lsb(0),
 		width(width_),
 		height(0),
 		name(name_),
-		op(op_),
-		compressionType(compressionType_)
+		op(op_)
 	{
 		initialize();
 	}
 
 
-	BitHeap::BitHeap(Operator* op_, int msb_, int lsb_, string name_, int compressionType_) :
+	BitHeap::BitHeap(Operator* op_, int msb_, int lsb_, string name_) :
 		msb(msb_), lsb(lsb_),
 		width(msb_-lsb_+1),
 		height(0),
 		name(name_),
-		op(op_),
-		compressionType(compressionType_)
+		op(op_)
 	{
 		initialize();
 	}

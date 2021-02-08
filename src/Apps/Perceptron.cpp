@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <bitset>
 #include "Perceptron.hpp"
 #include "BitHeap/BitHeap.hpp"
 #include "FixFunctions/FixFunctionByTable.hpp"
@@ -130,7 +131,94 @@ namespace flopoco {
                            Perceptron::parseArguments);
     };
 
-    void Perceptron::emulate(TestCase * tc) {};
-    void Perceptron::buildStandardTestCases(TestCaseList* tcl) {};
+    void Perceptron::emulate(TestCase * tc) {
+        mpz_class tmpx, tmpw, valFilter, x, w, wx, a;
+        mpfr_t sum, summand, acc, loga;
+        mpfr_init2(sum, inputMsb - inputLsb + 2);
+        mpfr_init2(summand, -expLsb);
+        mpfr_init2(acc, sumMsb - sumLsb + 1);
+        mpfr_init2(loga, inputMsb - inputLsb + 1);
+        mpfr_set_zero(acc, 1);
+        for (int i = 0; i < prevLayerWidth; i++) {
+            tmpx = tc->getInputValue(join("X", i));
+            tmpw = tc->getInputValue(join("W", i));
+            mpz_class zerox = tmpx >> (inputMsb - inputLsb);
+            mpz_class zerow = tmpw >> (inputMsb - inputLsb);
+            mpz_class zeroProd = zerox || zerow;
+            if(zeroProd == 1)
+                continue;
+            mpz_class negw = tmpw >> (inputMsb - inputLsb) & 1;
+            valFilter = (mpz_class(1) << (inputMsb - inputLsb + 1)) - 1;
+            x = tmpx & valFilter;
+            w = tmpw & valFilter;
+            wx = w + x;
+            mpfr_set_z_2exp(sum, wx.get_mpz_t(), inputLsb, MPFR_RNDN);
+            mpfr_exp2(summand, sum, MPFR_RNDN);
+            if(negw == 1)
+                mpfr_neg(summand, summand, MPFR_RNDN);
+            mpfr_add(acc, acc, summand, MPFR_RNDN);
+        }
+        mpfr_get_z(a.get_mpz_t(), acc, MPFR_RNDN);
+        if(a == 0)
+            a = mpz_class(1) << (inputMsb - inputLsb); // Zero in our encoding
+        else {
+            mpfr_dump(acc);
+            mpfr_log2(loga, acc, MPFR_RNDN);
+            mpfr_mul_ui(loga, loga, 1 << -inputLsb, MPFR_RNDN);
+            REPORT(0, "Expected result is: ");
+            mpfr_dump(loga);
+            mpfr_get_z(a.get_mpz_t(), loga, MPFR_RNDN);
+        }
+
+        tc->addExpectedOutput("A", a);
+    };
+
+    void Perceptron::buildStandardTestCases(TestCaseList* tcl)
+    {
+        TestCase *tc;
+
+
+        // Set Xis to 0
+        tc = new TestCase(this);
+        mpz_class zero = mpz_class(1) << inputMsb - inputLsb;
+        string wi, xi;
+        for(int i = 0; i < prevLayerWidth; i++) {
+            wi = join("W", i);
+            xi = join("X", i);
+            tc->addInput(xi, getLargeRandom(inputMsb - inputLsb + 1));
+            tc->addInput(wi, zero);
+        }
+        emulate(tc);
+        tcl->add(tc);
+
+        // Sums to 1 -> log should be 0
+        tc = new TestCase(this);
+        tc->addInput("W0", mpz_class(1) << -inputLsb);
+        tc->addInput("X0", mpz_class(0));
+        for(int i = 1; i < prevLayerWidth; i++) {
+            wi = join("W", i);
+            xi = join("X", i);
+            tc->addInput(wi, zero);
+            tc->addInput(xi, zero);
+        }
+        emulate(tc);
+        tcl->add(tc);
+
+        tc = new TestCase(this);
+        for(int i = 0; i < 3; i++) {
+            wi = join("W", i);
+            xi = join("X", i);
+            tc->addInput(wi, mpz_class(0));
+            tc->addInput(xi, mpz_class(0));
+        }
+        for(int i = 4; i < prevLayerWidth; i++) {
+            wi = join("W", i);
+            xi = join("X", i);
+            tc->addInput(wi, zero);
+            tc->addInput(xi, zero);
+        }
+        emulate(tc);
+        tcl->add(tc);
+    };
 
 }

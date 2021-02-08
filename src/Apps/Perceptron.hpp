@@ -11,9 +11,11 @@ namespace flopoco{
         int expLsb;
         int sumLsb;
         int sumMsb;
+        int prevLayerWidth;
 
     public:
-        Perceptron(OperatorPtr parentOp, Target* target, int inputLsb, int inputMsb, int expLsb, int sumMsb, int sumLsb);
+        Perceptron(OperatorPtr parentOp, Target* target, int inputLsb, int inputMsb, int expLsb, int sumMsb, int sumLsb,
+            int prevLayerWidth);
         ~Perceptron() {};
 
         void emulate(TestCase * tc);

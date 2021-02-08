@@ -7,8 +7,9 @@
 using namespace std;
 namespace flopoco {
     Perceptron::Perceptron(OperatorPtr parentOp, Target* target, int inputMsb_, int inputLsb_, int expLsb_, int sumMsb_,
-        int sumLsb_) :
-    Operator(parentOp, target), inputMsb(inputMsb_), inputLsb(inputLsb_), expLsb(expLsb_), sumMsb(sumMsb_), sumLsb(sumLsb_)
+        int sumLsb_, int prevLayerWidth_) :
+    Operator(parentOp, target), inputMsb(inputMsb_), inputLsb(inputLsb_), expLsb(expLsb_), sumMsb(sumMsb_), sumLsb(sumLsb_),
+    prevLayerWidth(prevLayerWidth_)
     {
         srcFileName="Perceptron";
 
@@ -21,7 +22,6 @@ namespace flopoco {
         // Inputs X are unsigned
         // Inputs W have 1 sign bit + coded in 2's complement
         int inputPrec = inputMsb - inputLsb + 1;
-        int prevLayerWidth = 10;
         // int layerWidth = 10;
         for (int i = 0; i < prevLayerWidth; i++) {
             string inputSignal = join("X", i);
@@ -34,7 +34,7 @@ namespace flopoco {
             vhdl << tab << declareFixPoint(join("valueW", i), true, inputMsb - 2, inputLsb) << " <= signed(" << weightSignal;
             vhdl<< "(" << inputPrec - 2 << " downto 0));" << endl;
 
-            vhdl << tab << declare(join("zeroX", i)) << " <= " << inputSignal << "(" << inputPrec << ");" << endl;
+            vhdl << tab << declare(join("zeroX", i)) << " <= " << inputSignal << "(" << inputPrec - 1 << ");" << endl;
             vhdl << tab << declareFixPoint(join("valueX", i), true, inputMsb - 1, inputLsb) << " <= signed(" << inputSignal;
             vhdl<< "(" << inputPrec - 1 << " downto 0));" << endl;
         }
@@ -52,7 +52,7 @@ namespace flopoco {
         REPORT(0, "inputLSB is: " << inputLsb << " and expLsb is: " << expLsb);
         REPORT(0, "EXP VECTOR IS: ");
         vector<mpz_class> exp_vector;
-        for(int i = 0; i < (1<<-inputLsb + 1); i++) {
+        for(int i = 0; i < (1 << -inputLsb+1); i++) {
             int s = i >> -inputLsb;
             int x = i - (s << -inputLsb);
 
@@ -86,8 +86,9 @@ namespace flopoco {
                                         join("ExpTable", i), -inputLsb + 2,
                                         -expLsb + 2);
 
-            vhdl << tab << declareFixPoint(join("summand", i), true, 1, expLsb) << " <= signed(";
-            vhdl << zg(2 - expLsb) << " when " << join("z", i) << " = '1' eles "<< expOutput << " when " << join("signW", i) << " = '0' else not " << expOutput << ");";
+            vhdl << tab << declareFixPoint(join("summand", i), true, 1, expLsb) << " <= ";
+            vhdl << zg(2 - expLsb) << " when " << join("z", i) << " = '1' else signed("<< expOutput << ") when ";
+            vhdl << join("signW", i) << " = '0' else signed(not " << expOutput << ");" << endl;
             // vhdl << rangeAssign(1 - expLsb, 0,join("signW", i)) << ";" << endl;
         }
 
@@ -99,18 +100,19 @@ namespace flopoco {
         bh->startCompression();
 
 
-        vhdl << tab << "A <= " << bh->getSumName(1, -4) << ";" << endl;
+        vhdl << tab << "A <= " << bh->getSumName(2, -5) << ";" << endl;
         // Trunc, act + log
     };
 
     OperatorPtr Perceptron::parseArguments(OperatorPtr parentOp, Target* target, vector<string> &args) {
-        int inputMsb_, inputLsb_, expLsb_, sumMsb_, sumLsb_;
+        int inputMsb_, inputLsb_, expLsb_, sumMsb_, sumLsb_, prevLayerWidth_;
         UserInterface::parseInt(args, "inputMsb", &inputMsb_);
         UserInterface::parseInt(args, "inputLsb", &inputLsb_);
         UserInterface::parseInt(args, "expLsb", &expLsb_);
         UserInterface::parseInt(args, "sumMsb", &sumMsb_);
         UserInterface::parseInt(args, "sumLsb", &sumLsb_);
-        return new Perceptron(parentOp, target, inputMsb_, inputLsb_, expLsb_, sumMsb_, sumLsb_);
+        UserInterface::parseInt(args, "prevLayerWidth", &prevLayerWidth_);
+        return new Perceptron(parentOp, target, inputMsb_, inputLsb_, expLsb_, sumMsb_, sumLsb_, prevLayerWidth_);
     };
 
     void Perceptron::registerFactory() {
@@ -122,7 +124,8 @@ namespace flopoco {
                            inputLsb(int): input fractional size; \
                            expLsb(int): exponential func output lsb; \
                            sumMsb(int): final summation msb; \
-                           sumLsb(int): final summation lsb;",
+                           sumLsb(int): final summation lsb; \
+                           prevLayerWidth(int): number of input and weight from previous layer;",
                            "",
                            Perceptron::parseArguments);
     };

@@ -16,7 +16,10 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
 		float occupation_threshold,
 		int maxPrefMult,
         MultiplierTileCollection mtc_,
-        unsigned guardBits):TilingStrategy(
+        unsigned guardBits,
+        unsigned keepBits,
+        unsigned long long errorBudget,
+        unsigned long long &centerErrConstant):TilingStrategy(
 			wX_,
 			wY_,
 			wOut_,
@@ -25,8 +28,14 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
 		max_pref_mult_ {maxPrefMult},
 		occupation_threshold_{occupation_threshold},
 		tiles{mtc_.MultTileCollection},
-        guardBits{guardBits}
+        guardBits{guardBits},
+        keepBits{keepBits},
+        errorBudget{errorBudget},
+        centerErrConstant{centerErrConstant}
 	{
+	    cout << errorBudget << endl;
+	    cout << this->errorBudget << endl;
+	    cout << "guardBits " << guardBits << " keepBits " << keepBits << endl;
         for(auto &p:tiles)
         {
                 cout << p->getLUTCost(0, 0, wX, wY) << " " << p->getType() << endl;
@@ -75,7 +84,10 @@ void TilingStrategyOptimalILP::solve()
                 auto coord = make_pair(m_x_pos, m_y_pos);
                 solution.push_back(make_pair(tiles[mult_id]->getParametrisation().tryDSPExpand(m_x_pos, m_y_pos, wX, wY, signedIO), coord));
             }
-
+            if(var_name.substr(0,1) == "c"){
+                int c_id = stoi(var_name.substr(1,dpC));
+                cout << var_name << endl;
+            }
         }
     }
     cout << "Total LUT cost:" << total_cost <<std::endl;
@@ -115,8 +127,8 @@ void TilingStrategyOptimalILP::constructProblem()
         x_neg = (x_neg < (int)tiles[s]->wX())?tiles[s]->wX() - 1:x_neg;
         y_neg = (y_neg < (int)tiles[s]->wY())?tiles[s]->wY() - 1:y_neg;
     }
-    int nx = wX-1, ny = wY-1, ns = wS-1; dpX = 1; dpY = 1; dpS = 1; //calc number of decimal places, for var names
-    nx = (x_neg > nx)?x_neg:nx;                                     //in case the extend in negative direction is larger
+    int nx = wX-1, ny = wY-1, ns = wS-1, nc = guardBits-1; dpX = 1; dpY = 1; dpS = 1; dpC = 1;  //calc number of decimal places, for var names
+    nx = (x_neg > nx)?x_neg:nx;                                                                 //in case the extend in negative direction is larger
     ny = (y_neg > ny)?y_neg:ny;
     while (nx /= 10)
         dpX++;
@@ -124,6 +136,8 @@ void TilingStrategyOptimalILP::constructProblem()
         dpY++;
     while (ns /= 10)
         dpS++;
+    while (nc /= 10)
+        dpC++;
 
     vector<vector<vector<ScaLP::Variable>>> solve_Vars(wS, vector<vector<ScaLP::Variable>>(wX+x_neg, vector<ScaLP::Variable>(wY+y_neg)));
     ScaLP::Term maxEpsTerm;
@@ -168,6 +182,13 @@ void TilingStrategyOptimalILP::constructProblem()
                 c1Constraint = pxyTerm - tempV == 0;
             } else if(performOptimalTruncation == false && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut-guardBits))){
                 //c1Constraint = pxyTerm <= (bool)1;
+            } else if(performOptimalTruncation == false && (wOut < (int)prodWidth) && ((x+y) == ((int)prodWidth-wOut-guardBits))){
+                if((keepBits)?keepBits--:0){
+                    c1Constraint = pxyTerm == (bool)1;
+                    cout << "keepBit at" << x << "," << y << endl;
+                } else {
+                    cout << "NO keepBit at" << x << "," << y << endl;
+                }
             } else {
                 c1Constraint = pxyTerm == (bool)1;
             }
@@ -212,14 +233,48 @@ void TilingStrategyOptimalILP::constructProblem()
     if(performOptimalTruncation == true && (wOut < (int)prodWidth))
     {
         cout << "   multiplier is truncated by " << (int)prodWidth-wOut << " bits (err=" << (unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))) << "), ensure sufficient precision..." << endl;
+        cout << "   guardBits=" << guardBits << endl;
+        /*int g, k;
+        long long errorBudget;
+        computeTruncMultParams((int)prodWidth-wOut, g, k, errorBudget);*/
+        cout << "   g=" << guardBits << " k=" << keepBits << " errorBudget=" << errorBudget << " difference to conservative est: " << errorBudget-(long long)(((unsigned long)1)<<(prodWidth-(int)wOut-1)-1) << endl;
         //cout << sumOfPosEps << " " << ((unsigned long)1<<((int)prodWidth-wOut-1));
         //unsigned long maxErr = (prodWidth-(int)wOut-guardBits > prodWidth)?prodWidth:(prodWidth-(int)wOut-guardBits);
         //cout << "shift=" << maxErr << endl;
         //maxErr = ((unsigned long)((wX < wY) ? wX : wY)*(((unsigned long)1<<maxErr)));
-        unsigned long maxErr = ((unsigned long)1)<<(prodWidth-(int)wOut-1);
-        //cout << "maxErr=" << maxErr << endl;
-        ScaLP::Constraint truncConstraint = maxEpsTerm  <= maxErr; //((unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))));
-        //ScaLP::Constraint truncConstraint = maxEpsTerm >= (bool)1;
+        //unsigned long maxErr = ((unsigned long)1)<<(prodWidth-(int)wOut-1);
+
+        stringstream nvarName;
+        nvarName << "C";
+        ScaLP::Variable Cvar = ScaLP::newIntegerVariable(nvarName.str());
+
+        // C = 2^i*c_i + 2^(i+1)*c_(i+1)...
+        ScaLP::Term cTerm;
+        vector<ScaLP::Variable> cVars(guardBits-1);
+        for(int i = 0; i < guardBits-1; i++){
+            stringstream nvarName;
+            nvarName << "c" << prodWidth-wOut-guardBits+i;
+            cout << nvarName.str() << endl;
+            cVars[i] = ScaLP::newBinaryVariable(nvarName.str());
+            cTerm.add(cVars[i],  ( 1ULL << (prodWidth-wOut-guardBits+i)));
+            obj.add(cVars[i], (double)0.65);    //append variable to cost function
+        }
+        ScaLP::Constraint cConstraint = cTerm - Cvar == 0;
+        stringstream cName;
+        cName << "cCons";
+        cConstraint.name = cName.str();
+        solver->addConstraint(cConstraint);
+
+        //Limit value of constant to center the error around 0 to the error budget
+        ScaLP::Constraint cLimConstraint = Cvar <= errorBudget;
+        stringstream cLimName;
+        cLimName << "cLimCons";
+        cLimConstraint.name = cLimName.str();
+        solver->addConstraint(cLimConstraint);
+
+        //Limit the error budget
+        cout << "  maxErr=" << errorBudget << endl;
+        ScaLP::Constraint truncConstraint = maxEpsTerm - Cvar <= errorBudget;
         stringstream consName;
         consName << "maxEps";
         truncConstraint.name = consName.str();
@@ -237,5 +292,27 @@ void TilingStrategyOptimalILP::constructProblem()
 
 
 #endif
+
+    void TilingStrategyOptimalILP::computeTruncMultParams(int w, int &g, int &k, long long &errorBudget){
+        // first loop iterates over the columns, right to left
+        int i = 0;
+        long long weightedSumOfTruncatedBits = 0, constant;
+        bool loop=true;
+        while(loop){
+            i++;
+            weightedSumOfTruncatedBits += i * (1<<(i-1));
+            constant = (1<<(w-1)) - (1<<(i-1));
+            errorBudget = (1<<(w-1)) + constant;
+            loop = (weightedSumOfTruncatedBits < errorBudget);
+        } // when we exit the loop, we have found g
+        g = w-(i-1);
+        // Now add back bits in rigthtmost column, one by one
+        k = 0;
+        while(weightedSumOfTruncatedBits >= errorBudget) {
+            weightedSumOfTruncatedBits -= (1<<(i-1));
+            k++;
+        }
+    }
+
 
 }   //end namespace flopoco

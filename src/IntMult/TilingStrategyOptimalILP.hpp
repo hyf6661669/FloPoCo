@@ -33,20 +33,26 @@ public:
 		float occupation_threshold,
 		int maxPrefMult,
         MultiplierTileCollection tiles_,
-        unsigned guardBits);
+        unsigned guardBits,
+        unsigned keepBits,
+        unsigned long long errorBudget,
+        unsigned long long &centerErrConstant);
 
     void solve() override;
 
 private:
     float occupation_threshold_;
-    int dpX, dpY, dpS, wS, max_pref_mult_;
-    unsigned prodWidth, guardBits;
+    int dpX, dpY, dpS, dpC, wS, max_pref_mult_;
+    unsigned prodWidth, guardBits, keepBits;
+    unsigned long long &centerErrConstant;
+    unsigned long long errorBudget;
     vector<BaseMultiplierCategory*> tiles;
 #ifdef HAVE_SCALP
     void constructProblem();
 
     ScaLP::Solver *solver;
 #endif
+    void computeTruncMultParams(int w, int &g, int &k, long long &errorBudget);
 };
 
 }

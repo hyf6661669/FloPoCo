@@ -112,6 +112,17 @@ namespace flopoco {
 		 */
 		unsigned int computeGuardBits(unsigned int wX, unsigned int wY, unsigned int wOut);
 
+        /**
+         * @brief Compute several parameters for a faithfully rounding truncated multiplier
+         * @param w weight of the LSB of the result, relative to the LSB of a non-truncated multiplier
+         * @param g the number of bits below the output LSB that we need to keep in the summation
+         * @param k number of bits to keep in in the column with weight w-g
+         * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
+         * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
+         * @return none
+         */
+        void computeTruncMultParams(unsigned w, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant);
+
 		/**
 		 * add a unique identifier for the multiplier, and possibly for the block inside the multiplier
 		 */

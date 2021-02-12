@@ -63,30 +63,37 @@ namespace flopoco {
 	}
 
 	IntMultiplier::IntMultiplier (Operator *parentOp, Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, float dspOccupationThreshold, int maxDSP, bool superTiles, bool use2xk, bool useirregular, bool useLUT, bool useDSP, bool useKaratsuba, int beamRange):
-		Operator ( parentOp, target_ ),wX(wX_), wY(wY_), wOut(wOut_),signedIO(signedIO_), dspOccupationThreshold(dspOccupationThreshold)
-	{
-		srcFileName="IntMultiplier";
-		setCopyrightString ( "Martin Kumm, Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012" );
+		Operator ( parentOp, target_ ),wX(wX_), wY(wY_), wOut(wOut_),signedIO(signedIO_), dspOccupationThreshold(dspOccupationThreshold) {
+        srcFileName = "IntMultiplier";
+        setCopyrightString("Martin Kumm, Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012");
 
-		ostringstream name;
-		name <<"IntMultiplier";
-		setNameWithFreqAndUID (name.str());
+        ostringstream name;
+        name << "IntMultiplier";
+        setNameWithFreqAndUID(name.str());
 
-		// the addition operators need the ieee_std_signed/unsigned libraries
-		useNumericStd();
+        // the addition operators need the ieee_std_signed/unsigned libraries
+        useNumericStd();
 
-		multiplierUid=parentOp->getNewUId();
-		wFullP = prodsize(wX, wY, signedIO_, signedIO_);
-		//bool needCentering;                                   //unused
+        multiplierUid = parentOp->getNewUId();
+        wFullP = prodsize(wX, wY, signedIO_, signedIO_);
+        //bool needCentering;                                   //unused
 
-		if(wOut == 0)
-			wOut = prodsize(wX, wY, signedIO_, signedIO_);
+        if (wOut == 0)
+            wOut = prodsize(wX, wY, signedIO_, signedIO_);
 
-		unsigned int guardBits = computeGuardBits(
-					static_cast<unsigned int>(wX),
-					static_cast<unsigned int>(wY),
-					static_cast<unsigned int>(wOut)
-				);
+        bool faithfulTruncation = true;
+        unsigned int guardBits = 0, keepBits = 0;
+        unsigned long long errorBudget = 0, centerErrConstant = 0;
+        if(faithfulTruncation == true){
+            computeTruncMultParams(wFullP - wOut, guardBits, keepBits, errorBudget, centerErrConstant);
+        } else {
+            guardBits = computeGuardBits(
+                static_cast<unsigned int>(wX),
+                static_cast<unsigned int>(wY),
+                static_cast<unsigned int>(wOut)
+            );
+        }
+
 
 		REPORT(INFO, "IntMultiplier(): Constructing a multiplier of size " <<
 					wX << "x" << wY << " faithfully rounded to bit " << wOut <<
@@ -205,7 +212,10 @@ namespace flopoco {
 					dspOccupationThreshold,
 					maxDSP,
 					multiplierTileCollection,
-                    guardBits
+                    guardBits,
+                    keepBits,
+                    errorBudget,
+                    centerErrConstant
 			);
 
 		}  else if(tilingMethod.compare("optimalTilingAndCompression") == 0){
@@ -270,6 +280,13 @@ namespace flopoco {
 
 		if (guardBits > 0) {
 			bitHeap.addConstantOneBit(static_cast<int>(guardBits) - 1);
+            if(faithfulTruncation == true){
+                for(int i = wFullP - wOut - guardBits; (1<<i) < centerErrConstant; i++)
+                    if((1<<i) & centerErrConstant){
+                        bitHeap.addConstantOneBit(i-(wFullP - wOut - guardBits));
+                        cout << "centerErrConstant=" << centerErrConstant << " constant bit at weight=" << i << " BitHeap col=" << i-(wFullP - wOut - guardBits) << endl;
+                    }
+            }
             checkTruncationError(solution, guardBits);
 		}
 
@@ -325,6 +342,37 @@ namespace flopoco {
 
 		return nbDontCare - nbUnneeded;
 	}
+
+    /**
+     * @brief Compute several parameters for a faithfully rounding truncated multiplier
+     * @param w weight of the LSB of the result, relative to the LSB of a non-truncated multiplier
+     * @param g the number of bits below the output LSB that we need to keep in the summation
+     * @param k number of bits to keep in in the column with weight w-g
+     * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
+     * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
+     * @return none
+     */
+    void IntMultiplier::computeTruncMultParams(unsigned w, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant){
+        // first loop iterates over the columns, right to left
+        if(w == 0) return;
+        unsigned i = 0;
+        unsigned long long weightedSumOfTruncatedBits = 0;   //actual error
+        bool loop=true;
+        while(loop){
+            i++;
+            weightedSumOfTruncatedBits += i * (1ULL<<(i-1));
+            constant = (1ULL<<(w-1)) - (1ULL<<(i-1));
+            errorBudget = (1ULL<<(w-1)) + constant;
+            loop = (weightedSumOfTruncatedBits < errorBudget);
+        } // when we exit the loop, we have found g
+        g = w-(i-1);
+        // Now add back bits in rigthtmost column, one by one
+        k = 0;
+        while(weightedSumOfTruncatedBits >= errorBudget) {
+            weightedSumOfTruncatedBits -= (1ULL<<(i-1));
+            k++;
+        }
+    }
 
 	/**
 	 * @brief getZeroMSB if the tile goes out of the multiplier,

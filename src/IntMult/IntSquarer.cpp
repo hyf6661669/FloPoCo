@@ -28,22 +28,32 @@ using namespace std;
 
 namespace flopoco{
 
-	IntSquarer::IntSquarer(Target* target, int wIn, map<string, double> inputDelays):
-		Operator(target, inputDelays), wIn_(wIn), inputDelays_(inputDelays)
+	IntSquarer::IntSquarer(OperatorPtr parentOp_, Target* target_,  int wIn_, bool signedIn_, int wOut_):
+		Operator(parentOp_, target_), wIn(wIn_), signedIn(signedIn_), wOut(wOut_)
 	{
-		ostringstream name;
-		name << "IntSquarer_" << wIn_ << "_uid"<<getNewUId();
-		setNameWithFreqAndUID(name.str());
-		setCopyrightString("Bogdan Pasca (2009)");
-
 		srcFileName = "IntSquarer";
+		if(signedIn){
+			THROWERROR("Sorry, signedIn not implemented yet");
+		}
+		if(wOut==0){
+			wOut=2*wIn; // valid whatever signedIn
+		}
+		if(wOut!=2*wIn){
+			THROWERROR("Sorry, truncation not implemented yet");
+		}
+		ostringstream name;
+		name << "IntSquarer_" << wIn << "_" << wOut;
+		setNameWithFreqAndUID(name.str());
+		setCopyrightString("Florent de Dinechin (2021)");
+
 
 		// Set up the IO signals
-		addInput ("X"  , wIn_);
-		addOutput("R"  , 2*wIn_);
+		addInput ("X"  , wIn);
+		addOutput("R"  , wOut);
 
-		setCriticalPath( getMaxInputDelays(inputDelays) );
 
+#if 0 // Old code
+		
 		if (wIn <= 17 ) {
 			vhdl << tab << declare( "sX", wIn) << " <= X;" << endl;
 			vhdl << tab << declare( "sY", wIn) << " <= X;" << endl;
@@ -248,34 +258,10 @@ namespace flopoco{
 			cerr << " For the moment IntSquarer does not support inputs larger than 68 bits. " << endl;
 			exit (EXIT_FAILURE);
 		}
-
+#endif
 	}
 
 	IntSquarer::~IntSquarer() {
-	}
-
-
-	void IntSquarer::outputVHDL(std::ostream& o, std::string name) {
-		ostringstream signame;
-		licence(o);
-		pipelineInfo(o);
-		o << "library ieee; " << endl;
-		o << "use ieee.std_logic_1164.all;" << endl;
-		o << "use ieee.std_logic_arith.all;" << endl;
-		if ((wIn_>17) && (wIn_<34)) {
-			o << "use ieee.std_logic_signed.all;" << endl;
-		}else
-			o << "use ieee.std_logic_unsigned.all;" << endl;
-
-		o << "library work;" << endl;
-		outputVHDLEntity(o);
-		newArchitecture(o,name);
-		o << buildVHDLComponentDeclarations();
-		o << buildVHDLSignalDeclarations();
-		beginArchitecture(o);
-		o<<buildVHDLRegisters();
-		o << vhdl.str();
-		endArchitecture(o);
 	}
 
 
@@ -284,25 +270,34 @@ namespace flopoco{
 	void IntSquarer::emulate(TestCase* tc)
 	{
 		mpz_class svX = tc->getInputValue("X");
+		if(signedIn) {
+				svX = bitVectorToSigned(svX, wIn);
+		}
 		mpz_class svR = svX * svX ;
+		
 		tc->addExpectedOutput("R", svR);
 	}
 
 
 	OperatorPtr IntSquarer::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
-		int wIn;
+		int wIn, wOut;
+		bool signedIn;
 		UserInterface::parseStrictlyPositiveInt(args, "wIn", &wIn);
-		return new IntSquarer(target, wIn);
+		UserInterface::parseInt(args, "wOut", &wOut);
+		UserInterface::parseBoolean(args, "signedIn", &signedIn);
+		return new IntSquarer(parentOp,target, wIn, signedIn, wOut);
 	}
 
 
 	
 	void IntSquarer::registerFactory(){
 		UserInterface::add("IntSquarer", // name
-											 "A pipelined integer squarer.",
+											 "An integer squarer.",
 											 "BasicInteger", // category
 											 "", // see also
-											 "wIn(int): size of input in bits", // This string will be parsed
+											 "wIn(int): size of input in bits;\
+						            wOut(int)=0: size of the output if you want a truncated squarer. 0 for exact (full) squarer; \
+						            signedIn(bool)=false: inputs can be signed or unsigned (output always unsigned);", // This string will be parsed
 											 "", // no particular extra doc needed
 											 IntSquarer::parseArguments
 											 ) ;

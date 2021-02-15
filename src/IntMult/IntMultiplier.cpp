@@ -281,11 +281,13 @@ namespace flopoco {
 		if (guardBits > 0) {
 			bitHeap.addConstantOneBit(static_cast<int>(guardBits) - 1);
             if(faithfulTruncation == true){
-                for(int i = wFullP - wOut - guardBits; (1<<i) < centerErrConstant; i++)
-                    if((1<<i) & centerErrConstant){
-                        bitHeap.addConstantOneBit(i-(wFullP - wOut - guardBits));
-                        cout << "centerErrConstant=" << centerErrConstant << " constant bit at weight=" << i << " BitHeap col=" << i-(wFullP - wOut - guardBits) << endl;
+                for(int i = wFullP - wOut - guardBits ; (1ULL<<i) <= centerErrConstant; i++) {
+                    if ((1ULL << i) & centerErrConstant) {
+                        bitHeap.addConstantOneBit(i - (wFullP - wOut - guardBits));
+                        REPORT(DEBUG,  "Adding constant bit with weight=" << i
+                             << " BitHeap col=" << i - (wFullP - wOut - guardBits) << "to recenter the truncation error at 0");
                     }
+                }
             }
             checkTruncationError(solution, guardBits);
 		}

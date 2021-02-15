@@ -64,6 +64,8 @@ void TilingStrategyOptimalILP::solve()
     //cerr << solver->getResult() << endl;
     ScaLP::Result res = solver->getResult();
 
+    cout << "centerErrConstant was: " << centerErrConstant << endl;
+    unsigned long long new_constant = 0;
     double total_cost = 0;
     int dsp_cost = 0, own_lut_cost=0;
     for(auto &p:res.values)
@@ -86,13 +88,17 @@ void TilingStrategyOptimalILP::solve()
             }
             if(var_name.substr(0,1) == "c"){
                 int c_id = stoi(var_name.substr(1,dpC));
-                cout << var_name << endl;
+                new_constant |= (1ULL<<c_id);
+                cout << var_name << " pos " << c_id << " dpC " << dpC << endl;
             }
         }
     }
     cout << "Total LUT cost:" << total_cost <<std::endl;
     cout << "Own LUT cost:" << own_lut_cost <<std::endl;
     cout << "Total DSP cost:" << dsp_cost <<std::endl;
+
+    centerErrConstant = new_constant;
+    cout << "centerErrConstant now is: " << centerErrConstant << endl;
 /*
     solution.push_back(make_pair(tiles[1]->getParametrisation().tryDSPExpand(0, 0, wX, wY, signedIO), make_pair(0, 0)));
     solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(16, 0, wX, wY, signedIO), make_pair(16, 0)));
@@ -127,8 +133,8 @@ void TilingStrategyOptimalILP::constructProblem()
         x_neg = (x_neg < (int)tiles[s]->wX())?tiles[s]->wX() - 1:x_neg;
         y_neg = (y_neg < (int)tiles[s]->wY())?tiles[s]->wY() - 1:y_neg;
     }
-    int nx = wX-1, ny = wY-1, ns = wS-1, nc = guardBits-1; dpX = 1; dpY = 1; dpS = 1; dpC = 1;  //calc number of decimal places, for var names
-    nx = (x_neg > nx)?x_neg:nx;                                                                 //in case the extend in negative direction is larger
+    int nx = wX-1, ny = wY-1, ns = wS-1, nc = prodWidth-wOut; dpX = 1; dpY = 1; dpS = 1; dpC = 1;   //calc number of decimal places, for var names
+    nx = (x_neg > nx)?x_neg:nx;                                                                     //in case the extend in negative direction is larger
     ny = (y_neg > ny)?y_neg:ny;
     while (nx /= 10)
         dpX++;

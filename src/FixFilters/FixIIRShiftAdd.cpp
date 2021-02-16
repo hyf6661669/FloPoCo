@@ -136,7 +136,7 @@ namespace flopoco {
 #endif
 
         // enhance guard bits testwise
-        guardBits += shifta;
+        //guardBits += shifta;
         REPORT(INFO, "No of guard bits=" << guardBits);
 
         wIn = msbIn - lsbIn + 1;
@@ -155,14 +155,22 @@ namespace flopoco {
         msbMultiplicationsForwardOut = (int *) malloc(n * sizeof(int));
         lsbForwardPath = lsbIn; // lsb is constant in forward path until scaling
 
-        // for n coefficients there are n multiplication, but n-1 registers and additions
+        /* for n coefficients there are n multiplication, but n-1 registers and additions
+         * There is a special case for sign computation for plain
+         * If input it -128 and coeff is -2, there resulting number will be 256 which need two more bits, but log2(abs(-2)) = 1
+         * This applies to all negative powers of two. It affects word sizes of multiplications, registers and additions
+         * This cannot appear in multiplierless since only positive coeffs are used
+         */
         // multiplications
         for(int i = 0; i < n; i++)
         {
             if(coeffb_si[i] == 0)
                 msbMultiplicationsForwardOut[i] = msbIn;
             else
-                msbMultiplicationsForwardOut[i] = msbIn + ceil(log2(abs(coeffb_si[i])));
+                if(method == "plain" && isPowerOfTwo(coeffb_si[i], true))
+                    msbMultiplicationsForwardOut[i] = msbIn + ceil(log2(abs(coeffb_si[i])+1));
+                else
+                    msbMultiplicationsForwardOut[i] = msbIn + ceil(log2(abs(coeffb_si[i])));
             REPORT(INFO, "msbMultiplicationsForwardOut["<<i<<"]: " << msbMultiplicationsForwardOut[i])
         }
 
@@ -170,8 +178,12 @@ namespace flopoco {
         for(int i = n-2; i >= 0; i--)
         {
             int bitGainForRegister = 0;
-            for (int j = i + 1; j < n; j++) {
-                bitGainForRegister += abs(coeffb_si[j]);
+            for (int j = i + 1; j < n; j++)
+            {
+                if(method == "plain" && isPowerOfTwo(coeffb_si[j], true)) // see comment multiplications forward path
+                    bitGainForRegister += abs(coeffb_si[j])+1;
+                else
+                    bitGainForRegister += abs(coeffb_si[j]);
             }
             if(bitGainForRegister == 0) // avoid log2(0)
                 msbRegisterForwardOut[i] = msbIn;
@@ -195,7 +207,10 @@ namespace flopoco {
         {
             int bitGainForAdditons = 0;
             for (int j = i; j < n; j++)
-                bitGainForAdditons += abs(coeffb_si[j]);
+                if(method == "plain" && isPowerOfTwo(coeffb_si[j], true)) // see comment multiplications forward path
+                    bitGainForAdditons += abs(coeffb_si[j])+1;
+                else
+                    bitGainForAdditons += abs(coeffb_si[j]);
             if(bitGainForAdditons == 0)
                 msbAdditionsForwardOut[i] = msbIn;
             else
@@ -228,10 +243,13 @@ namespace flopoco {
         for(int i = 0; i < m; i++)
         {
             if(coeffa_si[i] == 0) // avoid log(0)
-                msbMultiplicationsFeedbackOut[i] = msbInt + 1;
+                msbMultiplicationsFeedbackOut[i] = msbInt-shifta + 1; // use minus shifta since scaling is after truncation and must be kept in mind
             else
-                msbMultiplicationsFeedbackOut[i] = msbInt + ceil(log2(abs(coeffa_si[i])));
-            lsbMultiplicationsFeedbackOut[i] = lsbInt;
+                if(method == "plain" && isPowerOfTwo(coeffa_si[i], false)) // see comment multiplications forward path
+                    msbMultiplicationsFeedbackOut[i] = msbInt-shifta + ceil(log2(abs(coeffa_si[i])+1));
+                else
+                    msbMultiplicationsFeedbackOut[i] = msbInt-shifta + ceil(log2(abs(coeffa_si[i])));
+            lsbMultiplicationsFeedbackOut[i] = lsbInt - shifta;
             REPORT(INFO, "msbMultiplicationsFeedbackOut["<<i<<"]: \t" << msbMultiplicationsFeedbackOut[i] << ", lsbMultiplicationsFeedbackOut["<<i<<"] \t" << lsbMultiplicationsFeedbackOut[i])
         }
 
@@ -241,10 +259,15 @@ namespace flopoco {
         {
             int tmp = 0;
             for (int j = i; j < m; j++)
-                tmp += abs(coeffa_si[j]);
+            {
+                if(method == "plain" && isPowerOfTwo(coeffa_si[j], false)) // see comment multiplications forward path
+                    tmp += abs(coeffa_si[j])+1;
+                else
+                    tmp += abs(coeffa_si[j]);
+            }
 
-            msbRegisterFeedbackOut[i] = msbInt+ceil(log2((abs(tmp))));
-            lsbRegisterFeedbackOut[i] = lsbInt;
+            msbRegisterFeedbackOut[i] = msbInt-shifta+ceil(log2((abs(tmp))));
+            lsbRegisterFeedbackOut[i] = lsbInt - shifta;
             REPORT(INFO, "msbRegisterFeedbackOut["<<i<<"]: \t" << msbRegisterFeedbackOut[i] << ", lsbRegisterFeedbackOut["<<i<<"]: \t\t" << lsbRegisterFeedbackOut[i])
         }
 
@@ -253,8 +276,8 @@ namespace flopoco {
         // exception for add0, see comment for addition 0 below
         for(int i = m-1; i > 0; i--)
         {
-            msbAdditionsFeedbackOut[i] = msbRegisterFeedbackOut[i-1];
-            lsbAdditionsFeedbackOut[i] = lsbInt;
+            msbAdditionsFeedbackOut[i] = msbRegisterFeedbackOut[i-1]; // no need for special case handling power of two since register msb is used
+            lsbAdditionsFeedbackOut[i] = lsbInt - shifta;
             REPORT(INFO, "msbAdditionsFeedbackOut["<<i<<"]: \t" << msbAdditionsFeedbackOut[i] << ", lsbAdditionsFeedbackOut["<<i<<"]: \t" << lsbAdditionsFeedbackOut[i])
         }
 
@@ -267,19 +290,19 @@ namespace flopoco {
          * wcpg determines maximum word size after scalea
          */
 
-        msbAdditionsFeedbackOut[0] = msbIn+wcpgBitGain+shifta;
-        lsbAdditionsFeedbackOut[0] = min(lsbInt, lsbScaleBOut);
+        msbAdditionsFeedbackOut[0] = msbIn+wcpgBitGain;
+        lsbAdditionsFeedbackOut[0] = min(lsbInt-shifta, lsbScaleBOut);
         REPORT(INFO, "msbAdditionsFeedbackOut[0]: \t" << msbAdditionsFeedbackOut[0] << ", lsbAdditionsFeedbackOut[0]: \t" << lsbAdditionsFeedbackOut[0])
-
-        // ScaleA, only shift fixed point, no code generation
-        msbScaleAOut = msbAdditionsFeedbackOut[0]-(int)shifta;
-        lsbScaleAOut = lsbAdditionsFeedbackOut[0]-(int)shifta;
-        REPORT(INFO, "msbScaleAOut: \t\t\t" << msbScaleAOut << ", lsbScaleAOut: \t\t\t" << lsbScaleAOut)
 
         // truncationAfterScaleA
         msbTruncationIntOut = msbInt;
         lsbTruncationIntOut = lsbInt;
         REPORT(INFO, "msbTruncationIntOut: \t\t" << msbTruncationIntOut << ", lsbTruncationIntOut: \t\t" << lsbTruncationIntOut)
+
+        // ScaleA, only shift fixed point, no code generation
+        msbScaleAOut = msbTruncationIntOut-(int)shifta;
+        lsbScaleAOut = lsbTruncationIntOut-(int)shifta;
+        REPORT(INFO, "msbScaleAOut: \t\t\t" << msbScaleAOut << ", lsbScaleAOut: \t\t\t" << lsbScaleAOut)
 
         addInput("X", wIn, true);
         addOutput("Result", wOut);
@@ -505,7 +528,6 @@ namespace flopoco {
                      << ceil(abs(log2((abs(coeffa_si[i]) + TEMP_SIGN_FOR_RESIZE)))) + TEMP_SIGN_FOR_RESIZE << ")))),"<< msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1<<"));" << endl;
             }
         }
-
         else if (method=="multiplierless")
         {
             stringstream outPortMaps;
@@ -540,7 +562,7 @@ namespace flopoco {
             }
 
             stringstream parameters;
-            parameters << "wIn=" << msbTruncationIntOut-lsbTruncationIntOut+1 << " graph=" << grapha;
+            parameters << "wIn=" << msbScaleAOut-lsbScaleAOut+1 << " graph=" << grapha;
             string inPortMaps = "X0=>truncationAfterScaleA";
             REPORT(LIST, "outPortMaps (feedback): " << outPortMaps.str())
             newInstance("IntConstMultShiftAdd", "IntConstMultShiftAddComponentFeedback", parameters.str(), inPortMaps,
@@ -915,7 +937,7 @@ namespace flopoco {
 
     void FixIIRShiftAdd::buildStandardTestCases(TestCaseList* tcl)
     {
-    if(1) {
+    if(0) {
         TestCase *tc;
         // compute the impulse response
         computeImpulseResponse();
@@ -946,6 +968,7 @@ namespace flopoco {
                 val = ((mpz_class(1)<<(-lsbIn+1)+msbIn) -1) -val +1 ; // 111111 - val + 1
                 //REPORT(LIST, "twos complement: " << val )
             }
+
 #endif
             tc = new TestCase(this);
             tc->addInput("X", val);
@@ -955,19 +978,14 @@ namespace flopoco {
 
         REPORT(0, "Filter output remains in [" << miny << ", " << maxy << "]");
     }
-        if(0) {
+        if(1) {
             int largestPossibleValue = pow(2, msbIn - lsbIn + 1) - 1;
-            int numTestcases = 10;
+            int numTestcases = 10000;
 
             int *testcases = (int *) malloc(numTestcases * sizeof(int));
             for (int i = 0; i < numTestcases; i++) {
-                testcases[i] = 16 + i;
+                testcases[i] = -128;
             }
-            testcases[5] = 200;
-            testcases[6] = 210;
-            testcases[7] = 220;
-            testcases[8] = 230;
-            testcases[9] = 240;
 
             TestCase *tc;
             for (int i = 0; i < numTestcases; i++) {
@@ -1030,7 +1048,7 @@ namespace flopoco {
     TestList FixIIRShiftAdd::unitTest(int index) {
         TestList testStateList;
         vector<pair<string, string>> paramList;
-        if (0) {// old testbench, use again later
+        if (1) {// old testbench, use again later
             paramList.push_back(make_pair("msbIn", "21"));
             paramList.push_back(make_pair("lsbIn", "-8"));
             paramList.push_back(make_pair("lsbOut", "-8"));
@@ -1200,6 +1218,21 @@ namespace flopoco {
             paramList.clear();
 
             paramList.push_back(make_pair("msbIn", "-1"));
+            paramList.push_back(make_pair("lsbIn", "-8"));
+            paramList.push_back(make_pair("lsbOut", "-8"));
+            paramList.push_back(make_pair("coeffb", "32:32:16"));
+            paramList.push_back(make_pair("coeffa", "-96:48"));
+            paramList.push_back(make_pair("shiftb", "9"));
+            paramList.push_back(make_pair("shifta", "9"));
+            paramList.push_back(make_pair("graphb", "\"{{\'O\',[32],1,[1],0,5},{\'O\',[16],1,[1],0,4}}\""));
+            paramList.push_back(make_pair("grapha",
+                                          "\"{{\'O\',[96],2,[3],1,5},{\'O\',[48],2,[3],1,4},{\'A\',[3],1,[1],0,1,[1],0,0}}\""));
+            paramList.push_back(make_pair("method", "multiplierless"));
+            paramList.push_back(make_pair("guardbits", "-1"));
+            testStateList.push_back(paramList);
+            paramList.clear();
+
+            paramList.push_back(make_pair("msbIn", "-1"));
             paramList.push_back(make_pair("lsbIn", "-16"));
             paramList.push_back(make_pair("lsbOut", "-16"));
             paramList.push_back(make_pair("coeffb", "128:144:32"));
@@ -1210,6 +1243,58 @@ namespace flopoco {
                                           "\"{{\'O\',[128],2,[1],0,7},{\'O\',[144],2,[9],1,4},{\'O\',[32],2,[1],0,5},{\'A\',[9],1,[1],0,3,[1],0,0}}\""));
             paramList.push_back(make_pair("grapha", "\"{{\'O\',[128],1,[1],0,7}}\""));
             paramList.push_back(make_pair("method", "multiplierless"));
+            paramList.push_back(make_pair("guardbits", "-1"));
+            testStateList.push_back(paramList);
+            paramList.clear();
+
+            paramList.push_back(make_pair("msbIn", "-1"));
+            paramList.push_back(make_pair("lsbIn", "-8"));
+            paramList.push_back(make_pair("lsbOut", "-8"));
+            paramList.push_back(make_pair("coeffb", "128:144:32"));
+            paramList.push_back(make_pair("coeffa", "0:128"));
+            paramList.push_back(make_pair("shiftb", "12"));
+            paramList.push_back(make_pair("shifta", "11"));
+            paramList.push_back(make_pair("graphb",
+                                          "\"{{\'O\',[128],2,[1],0,7},{\'O\',[144],2,[9],1,4},{\'O\',[32],2,[1],0,5},{\'A\',[9],1,[1],0,3,[1],0,0}}\""));
+            paramList.push_back(make_pair("grapha", "\"{{\'O\',[128],1,[1],0,7}}\""));
+            paramList.push_back(make_pair("method", "multiplierless"));
+            paramList.push_back(make_pair("guardbits", "-1"));
+            testStateList.push_back(paramList);
+            paramList.clear();
+
+            // test negative power of two thing in plain
+            paramList.push_back(make_pair("msbIn", "-1"));
+            paramList.push_back(make_pair("lsbIn", "-8"));
+            paramList.push_back(make_pair("lsbOut", "-8"));
+            paramList.push_back(make_pair("coeffb", "-2:-2:2"));
+            paramList.push_back(make_pair("coeffa", "6:3"));
+            paramList.push_back(make_pair("shiftb", "3"));
+            paramList.push_back(make_pair("shifta", "3"));
+            paramList.push_back(make_pair("method", "plain"));
+            paramList.push_back(make_pair("guardbits", "-1"));
+            testStateList.push_back(paramList);
+            paramList.clear();
+
+            paramList.push_back(make_pair("msbIn", "-1"));
+            paramList.push_back(make_pair("lsbIn", "-8"));
+            paramList.push_back(make_pair("lsbOut", "-8"));
+            paramList.push_back(make_pair("coeffb", "-2:-2:-2"));
+            paramList.push_back(make_pair("coeffa", "6:3"));
+            paramList.push_back(make_pair("shiftb", "3"));
+            paramList.push_back(make_pair("shifta", "3"));
+            paramList.push_back(make_pair("method", "plain"));
+            paramList.push_back(make_pair("guardbits", "-1"));
+            testStateList.push_back(paramList);
+            paramList.clear();
+
+            paramList.push_back(make_pair("msbIn", "-1"));
+            paramList.push_back(make_pair("lsbIn", "-8"));
+            paramList.push_back(make_pair("lsbOut", "-8"));
+            paramList.push_back(make_pair("coeffb", "2:2:2"));
+            paramList.push_back(make_pair("coeffa", "6:3"));
+            paramList.push_back(make_pair("shiftb", "3"));
+            paramList.push_back(make_pair("shifta", "3"));
+            paramList.push_back(make_pair("method", "plain"));
             paramList.push_back(make_pair("guardbits", "-1"));
             testStateList.push_back(paramList);
             paramList.clear();
@@ -1305,10 +1390,43 @@ namespace flopoco {
         paramList.push_back(make_pair("msbIn", "-1"));
         paramList.push_back(make_pair("lsbIn", "-16"));
         paramList.push_back(make_pair("lsbOut", "-16"));
-        paramList.push_back(make_pair("coeffb", "1:0:0"));
-        paramList.push_back(make_pair("coeffa", "256:128"));
-        paramList.push_back(make_pair("shiftb", "0"));
+        paramList.push_back(make_pair("coeffb", "32:-32:16"));
+        paramList.push_back(make_pair("coeffa", "96:48"));
+        paramList.push_back(make_pair("shiftb", "9"));
         paramList.push_back(make_pair("shifta", "9"));
+        paramList.push_back(make_pair("guardbits", "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "32:-32:16"));
+        paramList.push_back(make_pair("coeffa", "96:48"));
+        paramList.push_back(make_pair("shiftb", "9"));
+        paramList.push_back(make_pair("shifta", "9"));
+        paramList.push_back(make_pair("guardbits", "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "2:-2:1"));
+        paramList.push_back(make_pair("coeffa", "6:3"));
+        paramList.push_back(make_pair("shiftb", "3"));
+        paramList.push_back(make_pair("shifta", "3"));
+        paramList.push_back(make_pair("guardbits", "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "2:2:1"));
+        paramList.push_back(make_pair("coeffa", "6:3"));
+        paramList.push_back(make_pair("shiftb", "3"));
+        paramList.push_back(make_pair("shifta", "3"));
         paramList.push_back(make_pair("guardbits", "-1"));
         testStateList.push_back(paramList);
         paramList.clear();
@@ -1406,6 +1524,19 @@ namespace flopoco {
         }
         vanishingK=k;
         REPORT(0, "Impulse response vanishes for k=" << k);
+    }
+
+    bool FixIIRShiftAdd::isPowerOfTwo(int64_t number, bool checkNegativeNumber)
+    {
+        // coefficients are limited to 2^64
+        // if number if power of two, it is 1 followed by zeros and (number -1) has inverted bits
+        // so use bitwise and
+        if(checkNegativeNumber) // negate number so it works for negative numbers only (forwardpath), feedpack path must test for positive coefficient
+            number *= (-1);
+        // only works for positive numbers
+        if(number == 0 || number == 1)
+            return false;
+        return ((number & (number-1))) == 0? true : false;
     }
 
 }

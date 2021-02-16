@@ -22,6 +22,9 @@ namespace flopoco{
             string signRight = "+";
         };
         void computeImpulseResponse(); // evaluates the filter on an impulsion
+        /** @brief checks if an integer number is a power of two.
+         * checkNegativeNumber indicates whether ONLY positive or neg. numbers are checked*/
+        bool isPowerOfTwo(int64_t, bool);
     public:
         /** @brief Constructor ; you must use bitheap in case of negative coefficient*/
         FixIIRShiftAdd(OperatorPtr parentOp, Target* target, int lsbIn, int lsbOut, int msbIn, int guardBits, vector<string> coeffb, vector<string> coeffa, int64_t shifta, int64_t shiftb, string method, string grapha, string graphb);

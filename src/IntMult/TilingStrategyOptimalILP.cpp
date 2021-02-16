@@ -62,6 +62,10 @@ void TilingStrategyOptimalILP::solve()
     // print results
     cerr << "The result is " << stat << endl;
     //cerr << solver->getResult() << endl;
+    /*ofstream result_file;
+    result_file.open ("result.txt");
+    result_file << solver->getResult();
+    result_file.close();*/
     ScaLP::Result res = solver->getResult();
 
     cout << "centerErrConstant was: " << centerErrConstant << endl;
@@ -272,7 +276,7 @@ void TilingStrategyOptimalILP::constructProblem()
         solver->addConstraint(cConstraint);
 
         //Limit value of constant to center the error around 0 to the error budget
-        ScaLP::Constraint cLimConstraint = Cvar <= errorBudget;
+        ScaLP::Constraint cLimConstraint = Cvar < errorBudget;
         stringstream cLimName;
         cLimName << "cLimCons";
         cLimConstraint.name = cLimName.str();
@@ -280,7 +284,7 @@ void TilingStrategyOptimalILP::constructProblem()
 
         //Limit the error budget
         cout << "  maxErr=" << errorBudget << endl;
-        ScaLP::Constraint truncConstraint = maxEpsTerm - Cvar <= errorBudget;
+        ScaLP::Constraint truncConstraint = maxEpsTerm - Cvar < errorBudget-centerErrConstant;
         stringstream consName;
         consName << "maxEps";
         truncConstraint.name = consName.str();

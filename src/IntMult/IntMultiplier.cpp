@@ -285,11 +285,13 @@ namespace flopoco {
                     if ((1ULL << i) & centerErrConstant) {
                         bitHeap.addConstantOneBit(i - (wFullP - wOut - guardBits));
                         REPORT(DEBUG,  "Adding constant bit with weight=" << i
-                             << " BitHeap col=" << i - (wFullP - wOut - guardBits) << "to recenter the truncation error at 0");
+                             << " BitHeap col=" << i - (wFullP - wOut - guardBits)
+                             << "to recenter the truncation error at 0");
+                        cout << "height at pos " << i - (wFullP - wOut - guardBits) << ": " << bitHeap.getColumnHeight( i - (wFullP - wOut - guardBits)) << endl;
                     }
                 }
             }
-            checkTruncationError(solution, guardBits);
+            checkTruncationError(solution, guardBits, errorBudget);
 		}
 
 		if (dynamic_cast<CompressionStrategy*>(tilingStrategy)) {
@@ -875,7 +877,7 @@ namespace flopoco {
 		return testStateList;
 	}
 
-	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits){
+	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, unsigned long long errorBudget){
         std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
 
         for(auto & tile : solution) {
@@ -907,7 +909,14 @@ namespace flopoco {
         //cout << "wOut " << wOut << endl;
         //cout << "guardBits " << guardBits << endl;
         //maxErr = mpz_class((wX < wY) ? wX : wY)*(mpz_class(1)<<(wFullP-(int)wOut-guardBits));
-        maxErr = (mpz_class(1)<<(wFullP-(int)wOut-1));
+        //maxErr = (mpz_class(1)<<(wFullP-(int)wOut-1));
+        unsigned msw = (errorBudget>>32ULL);
+        unsigned lsw = (errorBudget&0xFFFFFFFFULL);
+        mpz_class factor;
+        mpz_pow_ui(factor.get_mpz_t(), mpz_class(2).get_mpz_t(), 32UL);
+        maxErr = (mpz_class(msw) * factor) | mpz_class(lsw);
+        //mpz_mul_2exp(maxErr.get_mpz_t(),mpz_class(msw).get_mpz_t(),mpz_class(32).get_mpz_t());
+        cout << "errorBudget=" << errorBudget << " maxErr=" << maxErr << endl;
         if(truncError <= maxErr){
             cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << "." << endl;
         } else {

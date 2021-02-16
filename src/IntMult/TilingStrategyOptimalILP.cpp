@@ -62,10 +62,10 @@ void TilingStrategyOptimalILP::solve()
     // print results
     cerr << "The result is " << stat << endl;
     //cerr << solver->getResult() << endl;
-    /*ofstream result_file;
+    ofstream result_file;
     result_file.open ("result.txt");
     result_file << solver->getResult();
-    result_file.close();*/
+    result_file.close();
     ScaLP::Result res = solver->getResult();
 
     cout << "centerErrConstant was: " << centerErrConstant << endl;

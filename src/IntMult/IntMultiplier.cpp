@@ -83,7 +83,7 @@ namespace flopoco {
 
         bool faithfulTruncation = true;
         unsigned int guardBits = 0, keepBits = 0;
-        unsigned long long errorBudget = 0, centerErrConstant = 0;
+        unsigned long long errorBudget = 0, centerErrConstant = 0, orgCenterErrConstant;
         if(faithfulTruncation == true){
             computeTruncMultParams(wFullP - wOut, guardBits, keepBits, errorBudget, centerErrConstant);
         } else {
@@ -93,6 +93,7 @@ namespace flopoco {
                 static_cast<unsigned int>(wOut)
             );
         }
+        orgCenterErrConstant = centerErrConstant;
 
 
 		REPORT(INFO, "IntMultiplier(): Constructing a multiplier of size " <<
@@ -291,7 +292,7 @@ namespace flopoco {
                     }
                 }
             }
-            checkTruncationError(solution, guardBits, errorBudget);
+            checkTruncationError(solution, guardBits, errorBudget, orgCenterErrConstant - centerErrConstant);
 		}
 
 		if (dynamic_cast<CompressionStrategy*>(tilingStrategy)) {
@@ -877,7 +878,7 @@ namespace flopoco {
 		return testStateList;
 	}
 
-	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, unsigned long long errorBudget){
+	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, unsigned long long errorBudget, unsigned long long constChanged){
         std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
 
         for(auto & tile : solution) {
@@ -905,13 +906,8 @@ namespace flopoco {
             cout << endl;
         }
 
-        //cout << "wFullP " << wFullP << endl;
-        //cout << "wOut " << wOut << endl;
-        //cout << "guardBits " << guardBits << endl;
-        //maxErr = mpz_class((wX < wY) ? wX : wY)*(mpz_class(1)<<(wFullP-(int)wOut-guardBits));
-        //maxErr = (mpz_class(1)<<(wFullP-(int)wOut-1));
-        unsigned msw = (errorBudget>>32ULL);
-        unsigned lsw = (errorBudget&0xFFFFFFFFULL);
+        unsigned msw = ((errorBudget-constChanged)>>32ULL);
+        unsigned lsw = ((errorBudget-constChanged)&0xFFFFFFFFULL);
         mpz_class factor;
         mpz_pow_ui(factor.get_mpz_t(), mpz_class(2).get_mpz_t(), 32UL);
         maxErr = (mpz_class(msw) * factor) | mpz_class(lsw);

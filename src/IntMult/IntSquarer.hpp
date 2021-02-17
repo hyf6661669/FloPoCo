@@ -7,7 +7,6 @@
 #include "Operator.hpp"
 #include "IntAddSubCmp/IntAdder.hpp"
 #include "IntMult//IntMultiplier.hpp"
-#include "BitHeap/BitHeap.hpp"
 
 namespace flopoco{
 
@@ -43,9 +42,8 @@ namespace flopoco{
 		int signedIn;
 		int wOut;                         /**< the actual width of R*/
 		
-
 	private:
-		BitHeap* bh;
+		int guardBits;
 	};
 }
 #endif

@@ -23,6 +23,7 @@
 #include "utils.hpp"
 #include "Operator.hpp"
 #include "IntSquarer.hpp"
+#include "BitHeap/BitHeap.hpp"
 
 using namespace std;
 
@@ -37,8 +38,9 @@ namespace flopoco{
 		}
 		if(wOut==0){
 			wOut=2*wIn; // valid whatever signedIn
+			guardBits=0;
 		}
-		if(wOut!=2*wIn){
+		else{
 			THROWERROR("Sorry, truncation not implemented yet");
 		}
 		ostringstream name;
@@ -51,6 +53,25 @@ namespace flopoco{
 		addInput ("X"  , wIn);
 		addOutput("R"  , wOut);
 
+		// Naive bit-level version, to get drawings for The Book
+		BitHeap bh(this, wOut + guardBits);
+		// The diagonal bits
+		for (int i=0; i<wIn; i++) {
+			string bit="x"+to_string(i)+"sq";
+			vhdl << tab << declare(getTarget()->logicDelay(), bit) << " <= X" << of(i) << ";" <<endl;
+			bh.addBit(bit, 2*i);
+		}
+		// The triangle bits 
+		for (int i=0; i<wIn-1; i++) {
+			for (int j=i+1; j<wIn; j++) {
+				string bit="x"+to_string(i)+"x"+to_string(j);
+				vhdl << tab << declare(getTarget()->logicDelay(), bit) << " <= X" << of(i) << " and X" << of(j) << ";" <<endl;
+				bh.addBit(bit, i+j+1);
+				
+			}
+		}
+		bh.startCompression();
+		vhdl << tab << "R <= " << bh.getSumName() << ";" <<endl;
 
 #if 0 // Old code
 		

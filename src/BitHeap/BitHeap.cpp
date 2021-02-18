@@ -905,16 +905,16 @@ namespace flopoco {
 	}
 
 
-	void BitHeap::printColumnInfo(int weight)
+	void BitHeap::printColumnInfo(int position)
 	{
-		if((weight < lsb) || (weight > msb))
-			THROWERROR("Invalid argument for printColumnInfo: weight=" << weight);
+		if((position < lsb) || (position > msb))
+			THROWERROR("Invalid argument for printColumnInfo: position=" << position);
 
-		for(unsigned i=0; i<bits[weight-lsb].size(); i++)
+		for(unsigned i=0; i<bits[position-lsb].size(); i++)
 		{
-			REPORT(FULL, "\t column weight=" << weight << " name=" << bits[weight-lsb][i]->getName()
-					<< " cycle=" << bits[weight-lsb][i]->signal->getCycle()
-					<< " criticaPath=" << bits[weight-lsb][i]->signal->getCriticalPath());
+			REPORT(FULL, "\t column position=" << position << " name=" << bits[position-lsb][i]->getName()
+					<< " cycle=" << bits[position-lsb][i]->signal->getCycle()
+					<< " criticaPath=" << bits[position-lsb][i]->signal->getCriticalPath());
 		}
 	}
 
@@ -924,8 +924,8 @@ namespace flopoco {
 		REPORT(DEBUG, "Bitheap status:");
 		for(unsigned w=0; w<bits.size(); w++)
 		{
-			REPORT(DEBUG, "Column weight=" << w << ":\t height=" << bits[w].size());
-			printColumnInfo(w);
+			REPORT(DEBUG, "Column position=" << w+lsb << ":\t height=" << bits[w].size());
+			printColumnInfo(w+lsb);
 		}
 	}
 

@@ -47,7 +47,7 @@ namespace flopoco{
 				return compressor;
 			}
 		}
-		else{
+		else {
 			//TODO cases variable
 			return nullptr;
 		}
@@ -57,12 +57,25 @@ namespace flopoco{
 		int inputBits = 0;
 		int outputBits = 0;
 		double ratio = 0.0;
-		for(unsigned int j = 0; j < heights.size(); j++){
-			inputBits += heights[j];
-		}
-		for(unsigned int j = 0; j < outHeights.size(); j++){
-			outputBits += outHeights[j];
-		}
+
+        if(type.compare("variable") != 0){
+            for(unsigned int j = 0; j < heights.size(); j++){
+                inputBits += heights[j];
+            }
+            for(unsigned int j = 0; j < outHeights.size(); j++){
+                outputBits += outHeights[j];
+            }
+        } else {
+            if (middleLength == INT_MAX) {
+                return 1;
+                // TODO: For other types of row adders
+            } else {
+                inputBits = 3 + middleLength * 2 + 2;
+                outputBits = 1 + middleLength + 2;
+                area = getArea(middleLength);
+            }
+        }
+
 		ratio = (double) (inputBits - outputBits);
 		if(area != 0.0){
 			ratio /= (double) area;
@@ -80,7 +93,7 @@ namespace flopoco{
 		}
 		else{
 			//TODO
-			return 0;
+			return 1 + middleLength + 1;
 		}
 	}
 
@@ -90,7 +103,7 @@ namespace flopoco{
 		}
 		else{
 			//TODO
-			return 0;
+			return 1 + middleLength + 2;
 		}
 	}
 
@@ -110,7 +123,17 @@ namespace flopoco{
 		}
 		else{
 			//TODO
-			return 0;
+            if(column >= getHeights(middleLength)){
+                return 0;
+            }
+            else{
+                if(!ilpGeneration){
+                    return column == 0 ? 3 : 2;
+                }
+                else{	//ilp generation works on the reversed vector
+                    return (column == getHeights(middleLength) - 1) ? 3 : 2;
+                }
+            }
 		}
 	}
 
@@ -130,7 +153,17 @@ namespace flopoco{
 		}
 		else{
 			//TODO
-			return 0;
+            if(column >= getOutHeights(middleLength)){
+                return 0;
+            }
+            else{
+                if(!ilpGeneration){
+                    return 1;
+                }
+                else{	//ilp generation works on the reversed vector
+                    return 1;
+                }
+            }
 		}
 	}
 
@@ -140,7 +173,7 @@ namespace flopoco{
 		}
 		else{
 			//TODO
-			return 0.0;
+			return getHeights(middleLength);
 		}
 	}
 

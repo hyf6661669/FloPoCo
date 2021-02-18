@@ -22,6 +22,9 @@ namespace flopoco{
 	void MaxEfficiencyCompressionStrategy::compressionAlgorithm()
 	{
 		REPORT(DEBUG, "compressionAlgorithm is maxEfficiency");
+		// add row adder
+        //BasicCompressor *rowAdder = new BasicRowAdder(bitheap->getOp(), bitheap->getOp()->getTarget(), 0);
+        //possibleCompressors.push_back(rowAdder);
 
 		//for the maxEfficiency algorithm, the compressors should be ordered by efficiency
 		orderCompressorsByCompressionEfficiency();
@@ -47,7 +50,6 @@ namespace flopoco{
 
 		//here the VHDL-Code for the compressors as well as the bits->compressors->bits are being written.
 		applyAllCompressorsFromSolution();
-
 	}
 
 	void MaxEfficiencyCompressionStrategy::maxEfficiencyAlgorithm(){
@@ -102,7 +104,8 @@ namespace flopoco{
                 REPORT(DETAILED, "range change is " << compressor->range_change);
                 placeCompressor(s, column, compressor);
 			} else {
-                cout << "normal algorithm reached" << endl;
+                cerr << "normal algorithm reached" << endl;
+
                 //before we start this stage, check if compression is done
                 if(checkAlgorithmReachedAdder(2, s)){
                     cerr << "should break now" << endl;
@@ -119,6 +122,7 @@ namespace flopoco{
                     double achievedEfficiencyBest = -1.0;
                     BasicCompressor* compressor = nullptr;
                     unsigned int column = 0;
+                    unsigned int middleLengthBest = 0;
 
                     for(unsigned int e = 0; e < possibleCompressors.size(); e++){
                         BasicCompressor* currentCompressor = possibleCompressors[e];
@@ -139,7 +143,23 @@ namespace flopoco{
                                 }
                             }
                             used[currentMaxColumn] = true;
-                            double achievedEfficiencyCurrent = getCompressionEfficiency(s, currentMaxColumn, currentCompressor);
+
+                            double achievedEfficiencyCurrent;
+                            unsigned int middleLengthCurrent = 0;
+                            if(currentCompressor->type.compare("variable") != 0){
+                                achievedEfficiencyCurrent = getCompressionEfficiency(s, currentMaxColumn, currentCompressor);
+                            } else {
+                                double variableEfficiencyBest = -1.0;
+                                for (int m = 0; m < bitAmount[s].size() - 2; m++) {
+                                    double currentVariableEfficiency = getCompressionEfficiency(s, currentMaxColumn, currentCompressor, m);
+                                    if (currentVariableEfficiency >= variableEfficiencyBest) {
+                                        variableEfficiencyBest = currentVariableEfficiency;
+                                        middleLengthCurrent = m;
+                                    }
+                                }
+                                achievedEfficiencyCurrent = variableEfficiencyBest;
+                            }
+
                             REPORT(FULL, "checked " << currentCompressor->getStringOfIO() << " in stage " << s << " and column " << currentMaxColumn << " with an efficiency of " << achievedEfficiencyCurrent);
 
                             float lowerBound;
@@ -153,6 +173,7 @@ namespace flopoco{
                                 compressor = currentCompressor;
                                 found = true;
                                 column = currentMaxColumn;
+                                middleLengthBest = middleLengthCurrent;
                             }
                             columnsAlreadyChecked++;
                         }
@@ -160,7 +181,7 @@ namespace flopoco{
                     if(found){
                         REPORT(DETAILED, "placed compressor " << compressor->getStringOfIO() << " in stage " << s << " and column " << column);
                         REPORT(DETAILED, "efficiency is " << achievedEfficiencyBest);
-                        placeCompressor(s, column, compressor);
+                        placeCompressor(s, column, compressor, middleLengthBest);
                     }
                 }
 			}
@@ -181,6 +202,5 @@ namespace flopoco{
 			printBitAmounts();
 			s++;
 		}
-
 	}
 }

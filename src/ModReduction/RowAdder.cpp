@@ -117,7 +117,7 @@ namespace flopoco {
         return comp_inputs;
     }
 
-    BasicRowAdder::BasicRowAdder(Operator* parentOp_, Target * target, int wIn) : BasicCompressor(parentOp_, target, calc_heights( wIn), 0, "combinatorial", true)
+    BasicRowAdder::BasicRowAdder(Operator* parentOp_, Target * target, int wIn) : BasicCompressor(parentOp_, target, calc_heights( wIn), 0, "variable", true)
     {
         area = wIn; //1 LUT per bit
         RowAdder::calc_widths(wIn, heights, outHeights);

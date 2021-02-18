@@ -529,7 +529,7 @@ namespace flopoco{
 		vector<bool> alreadyChosen;
 
 		for(unsigned int i = 0; i < possibleCompressors.size(); i++){
-			double ratio = possibleCompressors[i]->getEfficiency();
+			double ratio = possibleCompressors[i]->getEfficiency(INT_MAX);
 			compressionRatio.push_back(ratio);
 			alreadyChosen.push_back(false);
 		}

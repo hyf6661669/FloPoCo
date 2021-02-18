@@ -29,6 +29,69 @@ using namespace std;
 
 namespace flopoco{
 
+	/** compute the guard bits and the size of the last column for the faithful truncation of an exact bit heap.
+			input: a vector bhc of bit heap columns, for an integer bit heap (lsb at position 0)
+	 a positive integer l defining the position of the lsb of the result after truncation (overall error should be strictly smaller than 2^l 
+returns: an integer pext that defines the position of the last column
+	an integer t that defines the number of bits to keep in the last column */
+	void compute_truncation_params(vector<int> bhc, int l, int& lext, int& t) {
+		mpz_class bound = mpz_class(1) << l;
+		mpz_class deltaMinor, newDeltaMinor;
+		// First loop: determine lext.
+		lext=-1;
+		newDeltaMinor=0;
+		do {
+			lext+=1;
+			deltaMinor=newDeltaMinor;
+			newDeltaMinor += (mpz_class(bhc[lext])<<lext);
+			//cerr << "newdeltaminor= " << newDeltaMinor << " lext=" << lext << " bound=" << bound << endl;
+		}
+    while(newDeltaMinor + (mpz_class(1)<<lext)  < bound);
+		// cerr << "deltaminor= " << deltaMinor << " lext=" << lext << endl;
+		// on exit deltaMinor is the weighted sum of all the bits of position < lext
+
+		//  Second loop: lext and Deltaminor no longer move, increase t
+		t=0;
+		while (deltaMinor + (mpz_class(t+1)<<lext) < bound) {
+			t+=1;
+		}
+	}
+
+
+	vector<int> buildExactSquareColumnHeights(int wIn) {
+		vector<int> bhc;
+
+		// mostly for The Book, naive bit-level version
+		for (int i=0; i<2*wIn;i++) { bhc.push_back(0); }
+		// simpler version of the loops in the constructor.
+		// There is some annoying redundancy here but I don't know how to avoid it.
+		// The diagonal bits
+		for (int i=0; i<wIn; i++) {
+			bhc[2*i] += 1 ;
+		}
+		// The triangle bits 
+		for (int i=0; i<wIn-1; i++) {
+			for (int j=i+1; j<wIn; j++) {
+				bhc[i+j+1] += 1;
+			}
+		}
+		return bhc;
+	}
+
+	
+	// a small aux function that tells us if this bit must be stored in the bit heap or if we can discard it.
+	bool needThisBit(int pos, int lext, int&k) {
+		if(pos>lext)
+			return true;
+		if(pos==lext && k>0) {
+			k -=1;
+			return true;
+		}
+		return false;
+	}
+
+
+	
 	IntSquarer::IntSquarer(OperatorPtr parentOp_, Target* target_,  int wIn_, bool signedIn_, int wOut_):
 		Operator(parentOp_, target_), wIn(wIn_), signedIn(signedIn_), wOut(wOut_)
 	{
@@ -38,41 +101,89 @@ namespace flopoco{
 		}
 		if(wOut==0){
 			wOut=2*wIn; // valid whatever signedIn
-			guardBits=0;
-		}
-		else{
-			THROWERROR("Sorry, truncation not implemented yet");
 		}
 		ostringstream name;
 		name << "IntSquarer_" << wIn << "_" << wOut;
 		setNameWithFreqAndUID(name.str());
 		setCopyrightString("Florent de Dinechin (2021)");
 
+		vector<int> bhc = buildExactSquareColumnHeights(wIn);
+		int l=0;    // initialization that works for the exact case
+		int lext=0;
+		int t=0; // trucated bits in the rightmost column
+		guardBits=0;
+		if(wOut!=2*wIn){
+			l=2*wIn-wOut;
+			compute_truncation_params(bhc,  l, lext,  t);
+			guardBits=l-lext;
+			REPORT(INFO, "Truncation parameters: lext=" << lext << " (g=" << guardBits << ")  t=" << t);
+			faithfulOnly=true;
+		} else {
+			lext=0;
+			faithfulOnly=false; // this is an exact squarer	
+		}
+
+		// If you add t++; here simulation fails so we seem to touch the optimal.
+		int k  = bhc[lext]-t; // kept bits in the rightmost column
+		
+
 
 		// Set up the IO signals
 		addInput ("X"  , wIn);
 		addOutput("R"  , wOut);
 
+		// use the fix-point constructor
+		BitHeap bh(this, 2*wIn-1, lext);
+
 		// Naive bit-level version, to get drawings for The Book
-		BitHeap bh(this, wOut + guardBits);
 		// The diagonal bits
 		for (int i=0; i<wIn; i++) {
-			string bit="x"+to_string(i)+"sq";
-			vhdl << tab << declare(getTarget()->logicDelay(), bit) << " <= X" << of(i) << ";" <<endl;
-			bh.addBit(bit, 2*i);
+			if(needThisBit(2*i, lext, k)) {
+				string bit="x"+to_string(i)+"sq";
+				vhdl << tab << declare(getTarget()->logicDelay(), bit) << " <= X" << of(i) << ";" <<endl;
+				bh.addBit(bit, 2*i);
+			}
 		}
 		// The triangle bits 
 		for (int i=0; i<wIn-1; i++) {
 			for (int j=i+1; j<wIn; j++) {
-				string bit="x"+to_string(i)+"x"+to_string(j);
-				vhdl << tab << declare(getTarget()->logicDelay(), bit) << " <= X" << of(i) << " and X" << of(j) << ";" <<endl;
-				bh.addBit(bit, i+j+1);
-				
+				if(needThisBit(i+j+1, lext, k)) {
+					string bit="x"+to_string(i)+"x"+to_string(j);
+					vhdl << tab << declare(getTarget()->logicDelay(), bit) << " <= X" << of(i) << " and X" << of(j) << ";" <<endl;
+					bh.addBit(bit, i+j+1);
+				}	
 			}
 		}
-		bh.startCompression();
-		vhdl << tab << "R <= " << bh.getSumName() << ";" <<endl;
+		// for (int i=lext; i<2*wIn; i++) {	cerr << i << " "  << bh.getColumnHeight(i) << endl ; }
+		
+		// the correction constant + round bit
+		if(wOut!=2*wIn) {
+			for (int i=lext; i<l; i++) {
+				REPORT(0, "constant bit at pos " << i);
+				bh.addConstantOneBit(i);
+			}
+		}
 
+
+		if(wOut==2*wIn){ // sanity check
+			for (int i=0; i<2*wIn; i++) {
+				if(bhc[i] != bh.getColumnHeight(i)) {
+					THROWERROR("failed sanity check on bit heap heights for i=" << i << " : " << bhc[i] << " vs " <<  bh.getColumnHeight(i));
+				}
+			}
+		}
+
+		
+		bh.startCompression();
+		string bhr=bh.getSumName();
+
+
+		if(wOut==2*wIn) {
+			vhdl << tab << "R <= " << bhr << ";" <<endl;
+		}
+		else {
+			vhdl << tab << "R <= " << bhr<< range(wOut+guardBits-1, guardBits) << ";" <<endl;
+		}			
 #if 0 // Old code
 		
 		if (wIn <= 17 ) {
@@ -295,8 +406,26 @@ namespace flopoco{
 				svX = bitVectorToSigned(svX, wIn);
 		}
 		mpz_class svR = svX * svX ;
-		
-		tc->addExpectedOutput("R", svR);
+		if(faithfulOnly) {//faithful rounding
+			mpz_class svRRD, svRRU;
+			svRRD = svR >> (2*wIn-wOut); // truncation
+			if (svR-(svRRD << (2*wIn-wOut))==0) { // if all shifted out bits were 0 
+				svRRU = svRRD;
+			}
+			else {
+				svRRU = svRRD+1;
+			}
+			tc->addExpectedOutput("R", svRRD);
+			tc->addExpectedOutput("R", svRRU);
+		}
+		else { 
+			if(wOut==2*wIn) {
+				tc->addExpectedOutput("R", svR);
+			}
+			else {
+				THROWERROR("TODO: manage correctly-rounded truncated squarers");
+			}
+		}
 	}
 
 

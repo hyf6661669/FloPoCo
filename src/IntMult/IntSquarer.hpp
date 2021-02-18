@@ -44,6 +44,7 @@ namespace flopoco{
 		
 	private:
 		int guardBits;
+		bool faithfulOnly;      /**< true for a truncated bit heap, but false for a tabulated square */
 	};
 }
 #endif

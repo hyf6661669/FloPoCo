@@ -101,7 +101,7 @@ void TilingStrategyOptimalILP::solve()
     cout << "Own LUT cost:" << own_lut_cost <<std::endl;
     cout << "Total DSP cost:" << dsp_cost <<std::endl;
 
-    centerErrConstant = new_constant;
+    if(performOptimalTruncation) centerErrConstant = new_constant;
     cout << "centerErrConstant now is: " << centerErrConstant << endl;
 /*
     solution.push_back(make_pair(tiles[1]->getParametrisation().tryDSPExpand(0, 0, wX, wY, signedIO), make_pair(0, 0)));
@@ -122,7 +122,7 @@ void TilingStrategyOptimalILP::solve()
 #ifdef HAVE_SCALP
 void TilingStrategyOptimalILP::constructProblem()
 {
-	bool performOptimalTruncation = true;
+	performOptimalTruncation = false;
 
     cout << "constructing problem formulation..." << endl;
     wS = tiles.size();

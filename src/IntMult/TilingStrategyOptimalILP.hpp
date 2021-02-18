@@ -47,6 +47,7 @@ private:
     unsigned long long &centerErrConstant;
     unsigned long long errorBudget;
     vector<BaseMultiplierCategory*> tiles;
+    bool performOptimalTruncation;
 #ifdef HAVE_SCALP
     void constructProblem();
 

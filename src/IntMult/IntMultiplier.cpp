@@ -85,7 +85,7 @@ namespace flopoco {
         unsigned int guardBits = 0, keepBits = 0;
         unsigned long long errorBudget = 0, centerErrConstant = 0, orgCenterErrConstant;
         if(faithfulTruncation == true){
-            computeTruncMultParams(wFullP - wOut, guardBits, keepBits, errorBudget, centerErrConstant);
+            computeTruncMultParams(wFullP, wOut, guardBits, keepBits, errorBudget, centerErrConstant);
         } else {
             guardBits = computeGuardBits(
                 static_cast<unsigned int>(wX),
@@ -350,31 +350,34 @@ namespace flopoco {
 
     /**
      * @brief Compute several parameters for a faithfully rounding truncated multiplier
-     * @param w weight of the LSB of the result, relative to the LSB of a non-truncated multiplier
+     * @param wFull width of result of a non-truncated multiplier with the same input widths
+     * @param wOut requested output width of the result vector of the truncated multiplier
      * @param g the number of bits below the output LSB that we need to keep in the summation
      * @param k number of bits to keep in in the column with weight w-g
      * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
      * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
      * @return none
      */
-    void IntMultiplier::computeTruncMultParams(unsigned w, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant){
+    void IntMultiplier::computeTruncMultParams(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant){
         // first loop iterates over the columns, right to left
+        unsigned w = wFull - wOut; //weight of the LSB of the result, relative to the LSB of a non-truncated multiplier
         if(w == 0) return;
-        unsigned i = 0;
+        unsigned col = 0, height;
         unsigned long long weightedSumOfTruncatedBits = 0;   //actual error
         bool loop=true;
         while(loop){
-            i++;
-            weightedSumOfTruncatedBits += i * (1ULL<<(i-1));
-            constant = (1ULL<<(w-1)) - (1ULL<<(i-1));
+            col++;                                                          //bitheap column
+            height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
+            weightedSumOfTruncatedBits += height * (1ULL<<(col-1));
+            constant = (1ULL<<(w-1)) - (1ULL<<(col-1));
             errorBudget = (1ULL<<(w-1)) + constant;
             loop = (weightedSumOfTruncatedBits < errorBudget);
         } // when we exit the loop, we have found g
-        g = w-(i-1);
+        g = w-(col-1);
         // Now add back bits in rigthtmost column, one by one
         k = 0;
         while(weightedSumOfTruncatedBits >= errorBudget) {
-            weightedSumOfTruncatedBits -= (1ULL<<(i-1));
+            weightedSumOfTruncatedBits -= (1ULL<<(col-1));
             k++;
         }
     }

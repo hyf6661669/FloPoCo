@@ -83,7 +83,7 @@ namespace flopoco {
 
         bool faithfulTruncation = true;
         unsigned int guardBits = 0, keepBits = 0;
-        unsigned long long errorBudget = 0, centerErrConstant = 0, orgCenterErrConstant;
+        unsigned long long errorBudget = 0, centerErrConstant = 0;
         if(faithfulTruncation == true){
             computeTruncMultParams(wFullP, wOut, guardBits, keepBits, errorBudget, centerErrConstant);
         } else {
@@ -93,7 +93,6 @@ namespace flopoco {
                 static_cast<unsigned int>(wOut)
             );
         }
-        orgCenterErrConstant = centerErrConstant;
 
 
 		REPORT(INFO, "IntMultiplier(): Constructing a multiplier of size " <<
@@ -292,7 +291,7 @@ namespace flopoco {
                     }
                 }
             }
-            checkTruncationError(solution, guardBits, errorBudget, orgCenterErrConstant - centerErrConstant);
+            checkTruncationError(solution, guardBits, errorBudget, centerErrConstant);
 		}
 
 		if (dynamic_cast<CompressionStrategy*>(tilingStrategy)) {
@@ -361,6 +360,7 @@ namespace flopoco {
     void IntMultiplier::computeTruncMultParams(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant){
         // first loop iterates over the columns, right to left
         unsigned w = wFull - wOut; //weight of the LSB of the result, relative to the LSB of a non-truncated multiplier
+        errorBudget = (1ULL<<(w-1)); //tiling error budget
         if(w == 0) return;
         unsigned col = 0, height;
         unsigned long long weightedSumOfTruncatedBits = 0;   //actual error
@@ -370,13 +370,13 @@ namespace flopoco {
             height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
             weightedSumOfTruncatedBits += height * (1ULL<<(col-1));
             constant = (1ULL<<(w-1)) - (1ULL<<(col-1));
-            errorBudget = (1ULL<<(w-1)) + constant;
-            loop = (weightedSumOfTruncatedBits < errorBudget);
+            cout << "col=" << col << " height=" << height << " wstb=" << weightedSumOfTruncatedBits << " errorBudget=" << errorBudget << " C=" << constant << endl;
+            loop = (weightedSumOfTruncatedBits < errorBudget + constant);
         } // when we exit the loop, we have found g
         g = w-(col-1);
         // Now add back bits in rigthtmost column, one by one
         k = 0;
-        while(weightedSumOfTruncatedBits >= errorBudget) {
+        while(weightedSumOfTruncatedBits >= errorBudget + constant) {
             weightedSumOfTruncatedBits -= (1ULL<<(col-1));
             k++;
         }
@@ -881,7 +881,7 @@ namespace flopoco {
 		return testStateList;
 	}
 
-	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, unsigned long long errorBudget, unsigned long long constChanged){
+	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, unsigned long long errorBudget, unsigned long long constant){
         std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
 
         for(auto & tile : solution) {
@@ -909,13 +909,13 @@ namespace flopoco {
             cout << endl;
         }
 
-        unsigned msw = ((errorBudget-constChanged)>>32ULL);
-        unsigned lsw = ((errorBudget-constChanged)&0xFFFFFFFFULL);
+        unsigned msw = ((errorBudget+constant)>>32ULL);
+        unsigned lsw = ((errorBudget+constant)&0xFFFFFFFFULL);
         mpz_class factor;
         mpz_pow_ui(factor.get_mpz_t(), mpz_class(2).get_mpz_t(), 32UL);
         maxErr = (mpz_class(msw) * factor) | mpz_class(lsw);
         //mpz_mul_2exp(maxErr.get_mpz_t(),mpz_class(msw).get_mpz_t(),mpz_class(32).get_mpz_t());
-        cout << "errorBudget=" << errorBudget << " maxErr=" << maxErr << endl;
+        cout << "errorBudget=" << errorBudget+constant << " maxErr=" << maxErr << endl;
         if(truncError <= maxErr){
             cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << "." << endl;
         } else {

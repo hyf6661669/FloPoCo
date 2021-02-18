@@ -122,7 +122,7 @@ void TilingStrategyOptimalILP::solve()
 #ifdef HAVE_SCALP
 void TilingStrategyOptimalILP::constructProblem()
 {
-	performOptimalTruncation = false;
+	performOptimalTruncation = true;
 
     cout << "constructing problem formulation..." << endl;
     wS = tiles.size();
@@ -284,7 +284,7 @@ void TilingStrategyOptimalILP::constructProblem()
 
         //Limit the error budget
         cout << "  maxErr=" << errorBudget << endl;
-        ScaLP::Constraint truncConstraint = maxEpsTerm - Cvar < errorBudget-centerErrConstant;
+        ScaLP::Constraint truncConstraint = maxEpsTerm - Cvar < errorBudget;
         stringstream consName;
         consName << "maxEps";
         truncConstraint.name = consName.str();

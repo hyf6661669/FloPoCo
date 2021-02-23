@@ -38,7 +38,7 @@ namespace flopoco
     {
     public:
         BasicRowAdder(Operator* parentOp_, Target * target, int wIn);
-        virtual Compressor* getCompressor();
+        virtual Compressor* getCompressor(unsigned int middleLength);
     protected:
         int wIn;
         static vector<int> calc_heights(int wIn);

@@ -51,7 +51,7 @@ namespace flopoco {
 
         adderIn0 << "\"0\"";
         adderIn1 << "\"0\"";
-        adderCin << join("X",0) << "(2)";
+        adderCin << join("X",0) << "(2 downto 2)";
         for(int i = heights.size()-1; 0 <= i; i--){
             adderIn0 << " & " << join("X",i) << "(0)";
             adderIn1 << " & " << join("X",i) << "(1)";
@@ -124,7 +124,11 @@ namespace flopoco {
         cout << heights.size() << " " << outHeights.size() << endl;
     }
 
-    Compressor* BasicRowAdder::getCompressor(){
+    Compressor* BasicRowAdder::getCompressor(unsigned int middleLength){
+        if (middleLength > 0) {
+            area = middleLength + 2;
+            RowAdder::calc_widths(middleLength+2, heights, outHeights);
+        }
         compressor = new RowAdder(parentOp, target, heights, outHeights);
         return compressor;
     }

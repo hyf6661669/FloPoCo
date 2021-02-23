@@ -103,7 +103,7 @@ namespace flopoco
 		 * returns pointer to the compressor. In that compressor
 		 * the constructor will generate vhdl code.
 		 */
-        virtual Compressor* getCompressor();
+        virtual Compressor* getCompressor(unsigned int middleLength = 0);
 
 		/**
 		 * 	@brief returns the amount of different inputcolumns

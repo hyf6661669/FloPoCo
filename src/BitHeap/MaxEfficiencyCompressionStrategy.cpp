@@ -1,6 +1,7 @@
 
 #include "MaxEfficiencyCompressionStrategy.hpp"
 #include "ModReduction/PseudoCompressor.hpp"
+#include "ModReduction/RowAdder.hpp"
 //#include "CompressionStrategy.hpp"
 //#include "BitHeap/BitHeap.hpp"
 
@@ -23,7 +24,7 @@ namespace flopoco{
 	{
 		REPORT(DEBUG, "compressionAlgorithm is maxEfficiency");
 		// add row adder
-        //BasicCompressor *rowAdder = new BasicRowAdder(bitheap->getOp(), bitheap->getOp()->getTarget(), 0);
+        //BasicCompressor *rowAdder = new BasicRowAdder(bitheap->getOp(), bitheap->getOp()->getTarget(), 2);
         //possibleCompressors.push_back(rowAdder);
 
 		//for the maxEfficiency algorithm, the compressors should be ordered by efficiency
@@ -108,12 +109,10 @@ namespace flopoco{
 
                 //before we start this stage, check if compression is done
                 if(checkAlgorithmReachedAdder(2, s)){
-                    cerr << "should break now" << endl;
                     adderReached = true;
                     breakToWhile = true;
                     break;
                 }
-                cerr << "continues" << endl;
 
                 bool found = true;
                 while(found){

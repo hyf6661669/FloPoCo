@@ -301,7 +301,8 @@ namespace flopoco{
 				for(unsigned int j = 0; j < tempVector.size(); j++){
 					REPORT(DEBUG, "applying compressor " << tempVector[j].first->getStringOfIO());
 					//applyCompressor
-					Compressor* realCompressor = tempVector[j].first->getCompressor();  //TODO: consider middleLength
+                    unsigned int middleLength = tempVector[j].second;
+					Compressor* realCompressor = tempVector[j].first->getCompressor(middleLength);  //TODO: consider middleLength
 					//unsigned int middleLength = tempVector[j].second;
 					vector<vector<Bit*> > tempBitVector;
 					tempBitVector.resize(realCompressor->heights.size());

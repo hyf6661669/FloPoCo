@@ -37,7 +37,7 @@ namespace flopoco{
 	BasicCompressor::~BasicCompressor(){
 	}
 
-	Compressor* BasicCompressor::getCompressor(){
+	Compressor* BasicCompressor::getCompressor(unsigned int middleLength){
 		if(type.compare("combinatorial") == 0){
 			if(compressor != nullptr){
 				return compressor;

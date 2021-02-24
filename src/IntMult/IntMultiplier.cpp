@@ -229,9 +229,11 @@ namespace flopoco {
 		REPORT(DEBUG, "Solving tiling problem")
 		tilingStrategy->solve();
 
-		tilingStrategy->printSolution();
-
 		list<TilingStrategy::mult_tile_t> &solution = tilingStrategy->getSolution();
+        for(auto & tile : solution) {       //Set signedness of individual tiles according to their position
+            tile.first = tile.first.setSignStatus(tile.second.first,tile.second.second, wX, wY, signedIO);
+        }
+        tilingStrategy->printSolution();
 		auto solLen = solution.size();
 		REPORT(DETAILED, "Found solution has " << solLen << " tiles")
 		if (target_->generateFigures()) {
@@ -781,7 +783,7 @@ namespace flopoco {
 						useKaratsuba(bool)=false: if true, attempts to use rectangular Karatsuba for tiling;\
 						superTile(bool)=false: if true, attempts to use the DSP adders to chain sub-multipliers. This may entail lower logic consumption, but higher latency.;\
 						dspThreshold(real)=0.0: threshold of relative occupation ratio of a DSP multiplier to be used or not;\
-						beamRange(int)=0: range for beam search", // This string will be parsed
+						beamRange(int)=3: range for beam search", // This string will be parsed
 											 "", // no particular extra doc needed
 											IntMultiplier::parseArguments,
 											IntMultiplier::unitTest

@@ -926,4 +926,39 @@ namespace flopoco {
         }
 	}
 
+    int IntMultiplier::calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, unsigned long long errorBudget, unsigned long long constant){
+        int lsbs[solution.size()], msbs[solution.size()], prunableBits[solution.size()], weight=INT32_MAX, nBits = 0;
+        for(auto & tile : solution) {
+            int i=0;
+            auto &parameters = tile.first;
+            auto &anchor = tile.second;
+            int xPos = anchor.first;
+            int yPos = anchor.second;
+            lsbs[i] = xPos + yPos + parameters.getRelativeResultLSBWeight();
+            msbs[i] = lsbs[i] + parameters.getOutWordSize();
+            prunableBits[i]=0;
+            if(lsbs[i] < weight) weight = lsbs[i];
+            cout << "Tile " << parameters.getMultType() << " at (" << xPos << "," << yPos << ") has an LSB of" << lsbs[i] << endl;
+            i++;
+        }
+        double error = 0;
+        do{
+            for(int i = 0; i < solution.size(); i++){
+                if(lsbs[i] <= weight && weight < msbs[i]) {
+                    prunableBits[i]++;
+                    if(weight < lsbs[i]+(msbs[i]-lsbs[i])/2 ){
+                        error += prunableBits[i]*(1ULL<<weight);
+                    } else {
+                        error += ((msbs[i]-lsbs[i])-prunableBits[i])*(1ULL<<weight);
+                    }
+                    cout << "trying to prune " << prunableBits[i] << " bits in tile " << i << " error is "  << error << " permissible error is "  << errorBudget + constant << endl;
+                }
+            }
+            weight++;
+        } while(error < errorBudget + constant);
+        weight--;
+        cout << "min req weight is=" << weight << endl;
+        return weight;
+    }
+
 }

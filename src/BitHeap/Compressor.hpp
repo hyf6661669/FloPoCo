@@ -93,6 +93,13 @@ namespace flopoco
 		bool compressorUsed;                /**< whether this compressor has been used for a compression, or not */
 	};
 
+    /** @enum CompressorType Available types for compressors */
+    enum class CompressorType {
+        Gpc,  /**< generalized parallel counters, the standard compressor type */
+        Variable,  /**< compressors with a variable length, making them adders */
+        Pseudo /**< a special compressor type for modulo calculation */
+    };
+
 	class BasicCompressor
 	{
 	public:
@@ -153,13 +160,6 @@ namespace flopoco
          *	@brief returns a string of the compressor e.g. for debugging.
          */
 		string getStringOfIO();
-
-        /** @enum CompressorType Available types for compressors */
-        enum class CompressorType {
-            Gpc,  /**< generalized parallel counters, the standard compressor type */
-            Variable,  /**< compressors with a variable length, making them adders */
-            Pseudo /**< a special compressor type for modulo calculation */
-        };
 
         Operator* parentOp;
 		Target* target;

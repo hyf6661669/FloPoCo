@@ -18,8 +18,8 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
         MultiplierTileCollection mtc_,
         unsigned guardBits,
         unsigned keepBits,
-        unsigned long long errorBudget,
-        unsigned long long &centerErrConstant,
+        mpz_class errorBudget,
+        mpz_class &centerErrConstant,
         bool performOptimalTruncation):TilingStrategy(
 			wX_,
 			wY_,
@@ -31,12 +31,24 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
 		tiles{mtc_.MultTileCollection},
         guardBits{guardBits},
         keepBits{keepBits},
-        errorBudget{errorBudget},
+        //errorBudget{errorBudget},
         centerErrConstant{centerErrConstant},
         performOptimalTruncation{performOptimalTruncation}
 	{
 	    cout << errorBudget << endl;
-	    cout << this->errorBudget << endl;
+        mpz_class max64;
+        unsigned long long max64u = UINT64_MAX;
+        mpz_import(max64.get_mpz_t(), 1, -1, sizeof max64u, 0, 0, &max64u);
+        if(errorBudget <= max64){
+            mpz_export(&this->errorBudget, 0, -1, sizeof this->errorBudget, 0, 0, errorBudget.get_mpz_t());
+        } else {
+            if(performOptimalTruncation)
+            cout << "WARNING: errorBudget or constant exceeds the number range of uint64, switching to optiTrunc=0" << endl;
+            this->errorBudget = 0;
+            this->performOptimalTruncation = false;
+        }
+        cout << this->errorBudget << endl;
+
 	    cout << "guardBits " << guardBits << " keepBits " << keepBits << endl;
         for(auto &p:tiles)
         {
@@ -103,7 +115,10 @@ void TilingStrategyOptimalILP::solve()
     cout << "Own LUT cost:" << own_lut_cost <<std::endl;
     cout << "Total DSP cost:" << dsp_cost <<std::endl;
 
-    if(performOptimalTruncation) centerErrConstant = new_constant;
+    if(performOptimalTruncation){
+        //centerErrConstant = new_constant;
+        mpz_import(centerErrConstant.get_mpz_t(), 1, -1, sizeof new_constant, 0, 0, &new_constant);
+    }
     cout << "centerErrConstant now is: " << centerErrConstant << endl;
 /*
     solution.push_back(make_pair(tiles[1]->getParametrisation().tryDSPExpand(0, 0, wX, wY, signedIO), make_pair(0, 0)));

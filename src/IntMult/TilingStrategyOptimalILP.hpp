@@ -35,8 +35,8 @@ public:
         MultiplierTileCollection tiles_,
         unsigned guardBits,
         unsigned keepBits,
-        unsigned long long errorBudget,
-        unsigned long long &centerErrConstant,
+        mpz_class errorBudget,
+        mpz_class &centerErrConstant,
         bool performOptimalTruncation);
 
     void solve() override;
@@ -45,8 +45,8 @@ private:
     float occupation_threshold_;
     int dpX, dpY, dpS, dpC, wS, max_pref_mult_;
     unsigned prodWidth, guardBits, keepBits;
-    unsigned long long &centerErrConstant;
-    unsigned long long errorBudget;
+    mpz_class &centerErrConstant;
+    unsigned long long  errorBudget;
     vector<BaseMultiplierCategory*> tiles;
     bool performOptimalTruncation;
 #ifdef HAVE_SCALP

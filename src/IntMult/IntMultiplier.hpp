@@ -124,6 +124,8 @@ namespace flopoco {
          */
         void computeTruncMultParams(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant);
 
+        void computeTruncMultParamsMPZ(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant);
+
 		/**
 		 * add a unique identifier for the multiplier, and possibly for the block inside the multiplier
 		 */

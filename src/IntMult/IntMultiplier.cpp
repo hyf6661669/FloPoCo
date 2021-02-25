@@ -60,9 +60,10 @@ namespace flopoco {
         unsigned int guardBits = 0, keepBits = 0;
         unsigned long long errorBudget = 0, centerErrConstant = 0;
         if(wFullP - wOut)
-            computeTruncMultParams(wFullP, wOut, guardBits, keepBits, errorBudget, centerErrConstant);
+            computeTruncMultParamsMPZ(wFullP, wOut, guardBits, keepBits, errorBudget, centerErrConstant);
+        cout << " guardBits=" << guardBits << " keepBits=" << keepBits << " errorBudget=" << errorBudget << " centerErrConstant=" << centerErrConstant << endl;
 
-		REPORT(INFO, "IntMultiplier(): Constructing a multiplier of size " <<
+        REPORT(INFO, "IntMultiplier(): Constructing a multiplier of size " <<
 					wX << "x" << wY << " faithfully rounded to bit " << wOut <<
 					". Will use " << guardBits << " guard bits and DSP threshhold of " << dspOccupationThreshold)
 
@@ -347,6 +348,43 @@ namespace flopoco {
             weightedSumOfTruncatedBits -= (1ULL<<(col-1));
             k++;
         }
+    }
+
+    void IntMultiplier::computeTruncMultParamsMPZ(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant){
+        // first loop iterates over the columns, right to left
+        unsigned w = wFull - wOut; //weight of the LSB of the result, relative to the LSB of a non-truncated multiplier
+        mpz_class eB, C, colweight, max64;
+        mpz_pow_ui(eB.get_mpz_t(), mpz_class(2).get_mpz_t(), w-1);
+        if(w == 0) return;
+        unsigned col = 0, height;
+        mpz_class weightedSumOfTruncatedBits = 0;   //actual error
+        bool loop=true;
+        while(loop){
+            col++;                                                          //bitheap column
+            height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
+            mpz_pow_ui(colweight.get_mpz_t(), mpz_class(2).get_mpz_t(), col-1);
+            weightedSumOfTruncatedBits += mpz_class(height) * colweight;
+            C = eB - colweight;
+            //cout << "col=" << col << " height=" << height << " wstb=" << weightedSumOfTruncatedBits << " errorBudget=" << eB << " C=" << C << endl;
+            loop = (weightedSumOfTruncatedBits < eB + C);
+        } // when we exit the loop, we have found g
+        g = w-(col-1);
+        // Now add back bits in rigthtmost column, one by one
+        k = 0;
+        while(weightedSumOfTruncatedBits >= eB + C) {
+            weightedSumOfTruncatedBits -= colweight;
+            k++;
+        }
+
+        unsigned long long max64u = UINT64_MAX;
+        mpz_import(max64.get_mpz_t(), 1, -1, sizeof max64u, 0, 0, &max64u);
+        if(eB <= max64 && C <= max64){
+            mpz_export(&errorBudget, 0, -1, sizeof errorBudget, 0, 0, eB.get_mpz_t());
+            mpz_export(&constant, 0, -1, sizeof constant, 0, 0, eB.get_mpz_t());
+        } else {
+            cout << "WARNING: errorBudget or constant exceeds the number range of uint64, use optiTrunc=0 or results will be faulty!" << endl;
+        }
+
     }
 
     /**

@@ -131,10 +131,33 @@ namespace flopoco {
 
 		int multiplierUid;
 
+        /**
+         * @brief Define and calculate the size of the output signals of each multiplier tile in the solution to the BitHeap
+         * @param bh BitHeap instance, where the partial results form the multiplier tiles should compressed
+         * @param solution list of the placed tiles with their parametrization and anchor point
+         * @param bitheapLSBWeight weight (2^bitheapLSBWeight) of the LSB that should be compressed on BH. It is supposed to be 0 for regular multipliers, but can be higher for truncated multipliers.
+         * @return none
+         */
 		void branchToBitheap(BitHeap* bh, list<TilingStrategy::mult_tile_t> &solution , unsigned int bitheapLSBWeight);
 
+        /**
+         * @brief Checks if a tiling for a truncated multiplier meets the error budget as required for faithfulness
+         * @param solution list of the placed tiles with their parametrization and anchor point
+         * @param guardBits the number of bits below the output LSB that we need to keep in the summation
+         * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
+         * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
+         * @return none
+         */
         void checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned int guardBits, unsigned long long errorBudget, unsigned long long constant);
 
+        /**
+         * @brief Calculate the LSB of the BitHeap required to maintain faithfulness, so that unnecessary LSBs to meet the error budget of multiplier tiles can be omitted from compression
+         * @param solution list of the placed tiles with their parametrization and anchor point
+         * @param guardBits the number of bits below the output LSB that we need to keep in the summation
+         * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
+         * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
+         * @return none
+         */
         int calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, unsigned long long errorBudget, unsigned long long constant);
     };
 

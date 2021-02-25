@@ -280,7 +280,9 @@ namespace flopoco {
 		branchToBitheap(&bitHeap, solution, prodsize(wX, wY, signedIO, signedIO) - (wOut + guardBits));
 
 		if (guardBits > 0) {
+		    //this is the rounding bit for a faithfully rounded truncated multiplier
 			bitHeap.addConstantOneBit(static_cast<int>(guardBits) - 1);
+			//these are the constant bits to recenter the average error around 0 and allow for more truncation error
             if(faithfulTruncation == true){
                 for(int i = wFullP - wOut - guardBits ; (1ULL<<i) <= centerErrConstant; i++) {
                     if ((1ULL << i) & centerErrConstant) {
@@ -474,6 +476,7 @@ namespace flopoco {
 			ofname << "tile_" << i << "_filtered_output";
 
 			if(parameters.getOutputWeights().size()){
+			    //The multiplier tile has more then one output signal
 				for(unsigned i = 0; i < parameters.getOutputWeights().size(); i++){
 					if(i){
 						vhdl << declare(.0, ofname.str() + to_string(i), 41) << " <= " << "" << oname.str() + to_string(i) << "(40 downto 0)" << ";" << endl;
@@ -486,6 +489,7 @@ namespace flopoco {
 					cout << "output (" << i+1 << "/" << parameters.getOutputWeights().size() << "): " << ofname.str() + to_string(i) << " shift " << bitHeapOffset+parameters.getOutputWeights()[i] << endl;
 				}
 			} else {
+                //The multiplier tile has only a single output signal
 				unsigned int xInputLength = parameters.getTileXWordSize();
 				unsigned int yInputLength = parameters.getTileYWordSize();
 				bool xIsSigned = parameters.isSignedMultX();

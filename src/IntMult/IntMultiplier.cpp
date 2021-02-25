@@ -38,29 +38,6 @@ using namespace std;
 
 namespace flopoco {
 
-	/**
-	 * @brief Compute the size required to store the untruncated product of inputs of a given width
-	 * @param wX size of the first input
-	 * @param wY size of the second input
-	 * @return the number of bits needed to store a product of I<wX> * I<WY>
-	 */
-	unsigned int IntMultiplier::prodsize(unsigned int wX, unsigned int wY, bool signedX, bool signedY)
-	{
-		if(wX == 0 || wY == 0)
-			return 0;
-
-		if (wX == 1 && wY == 1) {
-			return 1;
-		}
-
-		if(wX == 1 && !signedX)
-			return wY;
-
-		if(wY == 1 && !signedY)
-			return wX;
-
-		return wX + wY;
-	}
 
 	IntMultiplier::IntMultiplier (Operator *parentOp, Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, float dspOccupationThreshold, int maxDSP, bool superTiles, bool use2xk, bool useirregular, bool useLUT, bool useDSP, bool useKaratsuba, int beamRange, bool optiTrunc):
 		Operator ( parentOp, target_ ),wX(wX_), wY(wY_), wOut(wOut_),signedIO(signedIO_), dspOccupationThreshold(dspOccupationThreshold) {
@@ -76,24 +53,14 @@ namespace flopoco {
 
         multiplierUid = parentOp->getNewUId();
         wFullP = prodsize(wX, wY, signedIO_, signedIO_);
-        //bool needCentering;                                   //unused
 
         if (wOut == 0)
             wOut = prodsize(wX, wY, signedIO_, signedIO_);
 
-        bool faithfulTruncation = true;
         unsigned int guardBits = 0, keepBits = 0;
         unsigned long long errorBudget = 0, centerErrConstant = 0;
-        if(faithfulTruncation == true){
+        if(wFullP - wOut)
             computeTruncMultParams(wFullP, wOut, guardBits, keepBits, errorBudget, centerErrConstant);
-        } else {
-            guardBits = computeGuardBits(
-                static_cast<unsigned int>(wX),
-                static_cast<unsigned int>(wY),
-                static_cast<unsigned int>(wOut)
-            );
-        }
-
 
 		REPORT(INFO, "IntMultiplier(): Constructing a multiplier of size " <<
 					wX << "x" << wY << " faithfully rounded to bit " << wOut <<
@@ -121,7 +88,6 @@ namespace flopoco {
 		}
 
 		BitHeap bitHeap(this, wOut + guardBits);
-//		bitHeap = new BitHeap(this, wOut+10); //!!! just for test
 
 		REPORT(INFO, "Creating BaseMultiplierCollection")
 //		BaseMultiplierCollection baseMultiplierCollection(parentOp->getTarget(), wX, wY);
@@ -283,15 +249,13 @@ namespace flopoco {
 		    //this is the rounding bit for a faithfully rounded truncated multiplier
 			bitHeap.addConstantOneBit(static_cast<int>(guardBits) - 1);
 			//these are the constant bits to recenter the average error around 0 and allow for more truncation error
-            if(faithfulTruncation == true){
-                for(int i = wFullP - wOut - guardBits ; (1ULL<<i) <= centerErrConstant; i++) {
-                    if ((1ULL << i) & centerErrConstant) {
-                        bitHeap.addConstantOneBit(i - (wFullP - wOut - guardBits));
-                        REPORT(DEBUG,  "Adding constant bit with weight=" << i
-                             << " BitHeap col=" << i - (wFullP - wOut - guardBits)
-                             << "to recenter the truncation error at 0");
-                        cout << "height at pos " << i - (wFullP - wOut - guardBits) << ": " << bitHeap.getColumnHeight( i - (wFullP - wOut - guardBits)) << endl;
-                    }
+            for(int i = wFullP - wOut - guardBits ; (1ULL<<i) <= centerErrConstant; i++) {
+                if ((1ULL << i) & centerErrConstant) {
+                    bitHeap.addConstantOneBit(i - (wFullP - wOut - guardBits));
+                    REPORT(DEBUG,  "Adding constant bit with weight=" << i
+                        << " BitHeap col=" << i - (wFullP - wOut - guardBits)
+                        << "to recenter the truncation error at 0");
+                    cout << "height at pos " << i - (wFullP - wOut - guardBits) << ": " << bitHeap.getColumnHeight( i - (wFullP - wOut - guardBits)) << endl;
                 }
             }
             checkTruncationError(solution, guardBits, errorBudget, centerErrConstant);
@@ -373,7 +337,7 @@ namespace flopoco {
             height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
             weightedSumOfTruncatedBits += height * (1ULL<<(col-1));
             constant = (1ULL<<(w-1)) - (1ULL<<(col-1));
-            cout << "col=" << col << " height=" << height << " wstb=" << weightedSumOfTruncatedBits << " errorBudget=" << errorBudget << " C=" << constant << endl;
+            //cout << "col=" << col << " height=" << height << " wstb=" << weightedSumOfTruncatedBits << " errorBudget=" << errorBudget << " C=" << constant << endl;
             loop = (weightedSumOfTruncatedBits < errorBudget + constant);
         } // when we exit the loop, we have found g
         g = w-(col-1);
@@ -383,6 +347,30 @@ namespace flopoco {
             weightedSumOfTruncatedBits -= (1ULL<<(col-1));
             k++;
         }
+    }
+
+    /**
+     * @brief Compute the size required to store the untruncated product of inputs of a given width
+     * @param wX size of the first input
+     * @param wY size of the second input
+     * @return the number of bits needed to store a product of I<wX> * I<WY>
+     */
+    unsigned int IntMultiplier::prodsize(unsigned int wX, unsigned int wY, bool signedX, bool signedY)
+    {
+        if(wX == 0 || wY == 0)
+            return 0;
+
+        if (wX == 1 && wY == 1) {
+            return 1;
+        }
+
+        if(wX == 1 && !signedX)
+            return wY;
+
+        if(wY == 1 && !signedY)
+            return wX;
+
+        return wX + wY;
     }
 
 	/**
@@ -441,23 +429,6 @@ namespace flopoco {
 			int xPos = anchor.first;
 			int yPos = anchor.second;
 
-			//unsigned int xInputLength = parameters.getTileXWordSize();
-			//unsigned int yInputLength = parameters.getTileYWordSize();
-			//unsigned int outputLength = parameters.getOutWordSize();
-
-			//unsigned int lsbZerosXIn = (xPos < 0) ? static_cast<unsigned int>(-xPos) : 0;                               // zero padding for the input LSBs of Multiplier tile, that are outside of the area to be tiled
-			//unsigned int lsbZerosYIn = (yPos < 0) ? static_cast<unsigned int>(-yPos) : 0;
-
-			//unsigned int msbZerosXIn = getZeroMSB(xPos, xInputLength, wX);                                            // zero padding for the input MSBs of Multiplier tile, that are outside of the area to be tiled
-			//unsigned int msbZerosYIn = getZeroMSB(yPos, yInputLength, wY);
-
-			//unsigned int selectSizeX = xInputLength - (msbZerosXIn + lsbZerosXIn);                                    // used size of the multiplier
-			//unsigned int selectSizeY = yInputLength - (msbZerosYIn + lsbZerosYIn);
-
-			//unsigned int effectiveAnchorX = (xPos < 0) ? 0 : static_cast<unsigned int>(xPos);                           // limit tile positions to > 0
-			//unsigned int effectiveAnchorY = (yPos < 0) ? 0 : static_cast<unsigned int>(yPos);
-
-			//unsigned int outLSBWeight = effectiveAnchorX + effectiveAnchorY + parameters.getRelativeResultLSBWeight();  // calc result LSB weight corresponding to tile position
 			int LSBWeight = xPos + yPos + parameters.getRelativeResultLSBWeight();
 			unsigned int outLSBWeight = (LSBWeight < 0)?0:static_cast<unsigned int>(LSBWeight);                         // calc result LSB weight corresponding to tile position
 			unsigned int truncated = (outLSBWeight < bitheapLSBWeight) ? bitheapLSBWeight - outLSBWeight : 0;           // calc result LSBs to be ignored
@@ -508,8 +479,6 @@ namespace flopoco {
 			i += 1;
 		}
 	}
-
-
 
 	Operator* IntMultiplier::realiseTile(TilingStrategy::mult_tile_t & tile, size_t idx, string output_name)
 	{

@@ -62,7 +62,7 @@ namespace flopoco {
 		return wX + wY;
 	}
 
-	IntMultiplier::IntMultiplier (Operator *parentOp, Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, float dspOccupationThreshold, int maxDSP, bool superTiles, bool use2xk, bool useirregular, bool useLUT, bool useDSP, bool useKaratsuba, int beamRange):
+	IntMultiplier::IntMultiplier (Operator *parentOp, Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, float dspOccupationThreshold, int maxDSP, bool superTiles, bool use2xk, bool useirregular, bool useLUT, bool useDSP, bool useKaratsuba, int beamRange, bool optiTrunc):
 		Operator ( parentOp, target_ ),wX(wX_), wY(wY_), wOut(wOut_),signedIO(signedIO_), dspOccupationThreshold(dspOccupationThreshold) {
         srcFileName = "IntMultiplier";
         setCopyrightString("Martin Kumm, Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012");
@@ -215,7 +215,8 @@ namespace flopoco {
                     guardBits,
                     keepBits,
                     errorBudget,
-                    centerErrConstant
+                    centerErrConstant,
+                    optiTrunc
 			);
 
 		}  else if(tilingMethod.compare("optimalTilingAndCompression") == 0){
@@ -798,7 +799,7 @@ namespace flopoco {
 
 	OperatorPtr IntMultiplier::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
 		int wX,wY, wOut, maxDSP;
-		bool signedIO,superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba;
+		bool signedIO,superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba, optiTrunc;
 		double dspOccupationThreshold=0.0;
 		int beamRange = 0;
 
@@ -814,9 +815,10 @@ namespace flopoco {
 		UserInterface::parseBoolean(args, "useKaratsuba", &useKaratsuba);
 		UserInterface::parseFloat(args, "dspThreshold", &dspOccupationThreshold);
 		UserInterface::parseInt(args, "maxDSP", &maxDSP);
+        UserInterface::parseBoolean(args, "optiTrunc", &optiTrunc);
 		UserInterface::parsePositiveInt(args, "beamRange", &beamRange);
 
-		return new IntMultiplier(parentOp, target, wX, wY, wOut, signedIO, dspOccupationThreshold, maxDSP, superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba, beamRange);
+		return new IntMultiplier(parentOp, target, wX, wY, wOut, signedIO, dspOccupationThreshold, maxDSP, superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba, beamRange, optiTrunc);
 	}
 
 
@@ -837,6 +839,7 @@ namespace flopoco {
 						useKaratsuba(bool)=false: if true, attempts to use rectangular Karatsuba for tiling;\
 						superTile(bool)=false: if true, attempts to use the DSP adders to chain sub-multipliers. This may entail lower logic consumption, but higher latency.;\
 						dspThreshold(real)=0.0: threshold of relative occupation ratio of a DSP multiplier to be used or not;\
+                        optiTrunc(bool)=true: if true, considers the Truncation error dynamicly, instead of defining a hard border for tiling, like in th ARITH paper;\
 						beamRange(int)=0: range for beam search", // This string will be parsed
 											 "", // no particular extra doc needed
 											IntMultiplier::parseArguments,

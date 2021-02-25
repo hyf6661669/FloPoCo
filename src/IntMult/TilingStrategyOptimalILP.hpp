@@ -36,7 +36,8 @@ public:
         unsigned guardBits,
         unsigned keepBits,
         unsigned long long errorBudget,
-        unsigned long long &centerErrConstant);
+        unsigned long long &centerErrConstant,
+        bool performOptimalTruncation);
 
     void solve() override;
 

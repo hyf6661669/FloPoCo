@@ -19,7 +19,8 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
         unsigned guardBits,
         unsigned keepBits,
         unsigned long long errorBudget,
-        unsigned long long &centerErrConstant):TilingStrategy(
+        unsigned long long &centerErrConstant,
+        bool performOptimalTruncation):TilingStrategy(
 			wX_,
 			wY_,
 			wOut_,
@@ -31,7 +32,8 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
         guardBits{guardBits},
         keepBits{keepBits},
         errorBudget{errorBudget},
-        centerErrConstant{centerErrConstant}
+        centerErrConstant{centerErrConstant},
+        performOptimalTruncation{performOptimalTruncation}
 	{
 	    cout << errorBudget << endl;
 	    cout << this->errorBudget << endl;
@@ -122,8 +124,6 @@ void TilingStrategyOptimalILP::solve()
 #ifdef HAVE_SCALP
 void TilingStrategyOptimalILP::constructProblem()
 {
-	performOptimalTruncation = true;
-
     cout << "constructing problem formulation..." << endl;
     wS = tiles.size();
 

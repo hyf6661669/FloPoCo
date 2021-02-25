@@ -96,7 +96,7 @@ namespace flopoco {
 
     }
 
-    BasicPseudoCompressor::BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> _heights, vector<int> _outHeights, int _range_change, int _ones_vector_start) : BasicCompressor(parentOp_, target, _heights, 0, "pseudo", true)
+    BasicPseudoCompressor::BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> _heights, vector<int> _outHeights, int _range_change, int _ones_vector_start) : BasicCompressor(parentOp_, target, _heights, 0, CompressorType::Pseudo, true)
     {
         area = 0; //every pseudo-compressor uses 0 LUTs (so far)
         outHeights = _outHeights;

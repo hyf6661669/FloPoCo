@@ -1260,7 +1260,7 @@ namespace flopoco{
 			col0=6;
 
 			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 3.0, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 3.0, CompressorType::Gpc, true);
 			//newCompressor->setShared();
 			possibleCompressors.push_back(newCompressor);
 		}
@@ -1273,7 +1273,7 @@ namespace flopoco{
 
 			newVect.push_back(col0);
 			newVect.push_back(col1);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
 			//newCompressor->setShared();
 			possibleCompressors.push_back(newCompressor);
 		}
@@ -1284,7 +1284,7 @@ namespace flopoco{
 			col0=5;
 
 			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
 			//newCompressor->setShared();
 			possibleCompressors.push_back(newCompressor);
 		}
@@ -1297,7 +1297,7 @@ namespace flopoco{
 
 			newVect.push_back(col0);
 			newVect.push_back(col1);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
 			//newCompressor->setShared();
 			possibleCompressors.push_back(newCompressor);
 		}
@@ -1308,7 +1308,7 @@ namespace flopoco{
 			col0=4;
 
 			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
 			//newCompressor->setShared();
 			possibleCompressors.push_back(newCompressor);
 		}
@@ -1321,7 +1321,7 @@ namespace flopoco{
 
 			newVect.push_back(col0);
 			newVect.push_back(col1);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
 			//newCompressor->setShared();
 			possibleCompressors.push_back(newCompressor);
 		}
@@ -1332,7 +1332,7 @@ namespace flopoco{
 			col0=3;
 
 			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 1.0, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 1.0, CompressorType::Gpc, true);
 			//newCompressor->setShared();
 			possibleCompressors.push_back(newCompressor);
 		}

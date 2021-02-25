@@ -380,7 +380,7 @@ namespace flopoco{
 			BasicCompressor *newCompressor;
 			int col0=1;
 			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 0.5, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 0.5, CompressorType::Gpc, true);
 			possibleCompressors.push_back(newCompressor);
 
 			flipflop = newCompressor;

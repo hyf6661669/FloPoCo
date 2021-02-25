@@ -81,7 +81,7 @@ namespace flopoco{
                 unsigned int currentRange = INT_MAX;
 
                 for (unsigned int i = 0; i < possibleCompressors.size(); ++i) {
-                    if (possibleCompressors[i]->type == "pseudo") {
+                    if (possibleCompressors[i]->type == CompressorType::Pseudo) {
                         //cout << "i is " << i << endl;
                         //cout << "range_change is " << possibleCompressors[i]->range_change << endl;
                         for (int j = 0; j < possibleCompressors[i]->heights.size(); ++j) {
@@ -145,7 +145,7 @@ namespace flopoco{
 
                             double achievedEfficiencyCurrent;
                             unsigned int middleLengthCurrent = 0;
-                            if(currentCompressor->type.compare("variable") != 0){
+                            if(currentCompressor->type != CompressorType::Variable){
                                 achievedEfficiencyCurrent = getCompressionEfficiency(s, currentMaxColumn, currentCompressor);
                             } else {
                                 double variableEfficiencyBest = -1.0;

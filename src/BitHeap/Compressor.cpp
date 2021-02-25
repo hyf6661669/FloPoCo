@@ -6,7 +6,7 @@ using namespace std;
 
 namespace flopoco{
 
-	BasicCompressor::BasicCompressor(Operator* parentOp_, Target * target_, vector<int> heights_, float area_, string type_, bool compactView_): parentOp(parentOp_), target(target_), heights(heights_), area(area_), type(type_), compactView(compactView_)
+	BasicCompressor::BasicCompressor(Operator* parentOp_, Target * target_, vector<int> heights_, float area_, CompressorType type_, bool compactView_): parentOp(parentOp_), target(target_), heights(heights_), area(area_), type(type_), compactView(compactView_)
 	{
 		//compute the size of the input and of the output
 		int wIn = 0;
@@ -38,7 +38,7 @@ namespace flopoco{
 	}
 
 	Compressor* BasicCompressor::getCompressor(unsigned int middleLength){
-		if(type.compare("combinatorial") == 0){
+		if(type == CompressorType::Gpc){
 			if(compressor != nullptr){
 				return compressor;
 			}
@@ -58,7 +58,7 @@ namespace flopoco{
 		int outputBits = 0;
 		double ratio = 0.0;
 
-        if(type.compare("variable") != 0){
+        if(type != CompressorType::Variable){
             for(unsigned int j = 0; j < heights.size(); j++){
                 inputBits += heights[j];
             }
@@ -88,7 +88,7 @@ namespace flopoco{
 	}
 
 	unsigned int BasicCompressor::getHeights(unsigned int middleLength){
-		if(type.compare("variable") != 0){
+		if(type != CompressorType::Variable){
 			return heights.size();
 		}
 		else{
@@ -98,7 +98,7 @@ namespace flopoco{
 	}
 
 	unsigned int BasicCompressor::getOutHeights(unsigned int middleLength){
-		if(type.compare("variable") != 0){
+		if(type != CompressorType::Variable){
 			return outHeights.size();
 		}
 		else{
@@ -108,7 +108,7 @@ namespace flopoco{
 	}
 
 	unsigned int BasicCompressor::getHeightsAtColumn(unsigned int column, bool ilpGeneration, unsigned int middleLength){
-		if(type.compare("variable") != 0){
+		if(type != CompressorType::Variable){
 			if(column >= heights.size()){
 				return 0;
 			}
@@ -138,7 +138,7 @@ namespace flopoco{
 	}
 
 	unsigned int BasicCompressor::getOutHeightsAtColumn(unsigned int column, bool ilpGeneration, unsigned int middleLength){
-		if(type.compare("variable") != 0){
+		if(type != CompressorType::Variable){
 			if(column >= outHeights.size()){
 				return 0;
 			}
@@ -168,7 +168,7 @@ namespace flopoco{
 	}
 
 	float BasicCompressor::getArea(unsigned int middleLength){
-		if(type.compare("variable") != 0){
+		if(type != CompressorType::Variable){
 			return area;
 		}
 		else{
@@ -182,7 +182,7 @@ namespace flopoco{
 	// (3;2), a compressor with six inputs at column i, six outputs at column i+2 and 5 outputs
 	// is represented as (6,0,6;5)
 	string BasicCompressor::getStringOfIO(){
-		if(type.compare("variable") != 0){
+		if(type != CompressorType::Variable){
 			ostringstream out;
 			out.str("");
 			out << "(";

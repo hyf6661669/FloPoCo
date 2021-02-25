@@ -188,20 +188,20 @@ void PseudoCompressionptILP::constructProblem(int s_max)
             if(s < s_max){
                 for(unsigned e = 0; e <= possibleCompressors.size() + 2; e++){                                          //place every possible compressor on current position and the following that get covered by it, index extended by 3 for RCA
                     if(e < possibleCompressors.size() - 1 && s < s_max-1){                                                                         //FFs and the row adders, are handled different since they currently can not be instantiated
-                        if(possibleCompressors[e]->type.compare("pseudo") != 0 || c == 0){                               //pseudocompressors are only used right aligned on BitHeap
+                        if(possibleCompressors[e]->type != CompressorType::Pseudo || c == 0){                               //pseudocompressors are only used right aligned on BitHeap
                             stringstream nvarName;
                             nvarName << "k_" << setfill('0') << setw(dpSt) << s << "_" << setfill('0') << setw(dpK) << e << "_" << setfill('0') << setw(dpC) << c;
                             //std::cout << nvarName.str() << " pscom: " << (used_pseudocom_in_col[c][0] != nullptr) << endl;
-                            ScaLP::Variable tempV = ScaLP::newIntegerVariable(nvarName.str(), 0, ((possibleCompressors[e]->type.compare("pseudo") != 0)?ScaLP::INF():1));  //pseudocompressors can only be used once per column
+                            ScaLP::Variable tempV = ScaLP::newIntegerVariable(nvarName.str(), 0, ((possibleCompressors[e]->type != CompressorType::Pseudo)?ScaLP::INF():1));  //pseudocompressors can only be used once per column
                             obj.add(tempV, possibleCompressors[e]->area );                    //append variable to cost function, for r.c.a.-area (cost) is 1 6LUT, FFs cost 0.5LUT
                             for(int ce = 0; ce < (int) possibleCompressors[e]->getHeights() && ce < (int)bitsinCurrentColumn.size() - (int)c; ce++){                                //Bits that can be removed by compressor e in stage s in column c for constraint C1
                                 //cout << possibleCompressors[e]->getHeightsAtColumn((unsigned) ce, false) << " c: " << c+ce << endl;
                                 bitsinCurrentColumn[c+ce].add(tempV, possibleCompressors[e]->getHeightsAtColumn((unsigned) ce, false));
-                                if(c+ce < wIn && possibleCompressors[e]->type.compare("pseudo") == 0){
+                                if(c+ce < wIn && possibleCompressors[e]->type == CompressorType::Pseudo){
                                     used_pseudocom_in_col[c+ce].add(tempV, -(int)possibleCompressors[e]->getHeightsAtColumn((unsigned) ce, false));
                                 }
                                 if(possibleCompressors[e]->getHeightsAtColumn((unsigned) ce, false)) {
-                                    if(possibleCompressors[e]->type.compare("pseudo") == 0){
+                                    if(possibleCompressors[e]->type == CompressorType::Pseudo){
                                         pos_range_change[s].add(tempV, -(1 << ce));                                 //consider the range change of the bit removed by the pseudo-compressor
                                     }
                                 }
@@ -214,7 +214,7 @@ void PseudoCompressionptILP::constructProblem(int s_max)
                                     cout << "compr: " << e << " height: " << possibleCompressors[e]->getOutHeightsAtColumn((unsigned) ce, false) << " c: " << c+ce << endl;
                                 }
                             }
-                            if(possibleCompressors[e]->type.compare("pseudo") == 0){
+                            if(possibleCompressors[e]->type == CompressorType::Pseudo){
                                 //cout << "stage " << s << " col " << c << " comp " << e << " range chg " << possibleCompressors[e]->range_change << endl;
                                 if(possibleCompressors[e]->range_change < 0){
                                     neg_range_change[s].add(tempV,possibleCompressors[e]->range_change);
@@ -442,7 +442,7 @@ void PseudoCompressionptILP::constructProblem(int s_max)
             //BasicCompressor *newCompressor;
             //int col0=1;
             //newVect.push_back(col0);
-            BasicCompressor *newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), vector<int> {1}, 0.5, "combinatorial", true);
+            BasicCompressor *newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), vector<int> {1}, 0.5, CompressorType::Gpc, true);
             possibleCompressors.push_back(newCompressor);
 
             flipflop = newCompressor;

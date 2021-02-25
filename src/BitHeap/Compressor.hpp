@@ -96,7 +96,7 @@ namespace flopoco
 	class BasicCompressor
 	{
 	public:
-        BasicCompressor(Operator* parentOp_, Target * target, vector<int> heights, float area = 0.0, string type = "combinatorial", bool compactView = false);
+        BasicCompressor(Operator* parentOp_, Target * target, vector<int> heights, float area = 0.0, CompressorType type = CompressorType::Gpc, bool compactView = false);
 
 		~BasicCompressor();
 		/**
@@ -154,12 +154,19 @@ namespace flopoco
          */
 		string getStringOfIO();
 
+        /** @enum CompressorType Available types for compressors */
+        enum class CompressorType {
+            Gpc,  /**< generalized parallel counters, the standard compressor type */
+            Variable,  /**< compressors with a variable length, making them adders */
+            Pseudo /**< a special compressor type for modulo calculation */
+        };
+
         Operator* parentOp;
 		Target* target;
 		vector<int> heights;                /**< the heights of the columns */
 		vector<int> outHeights;             /**< the heights of the columns of the output, if this is a partially compressed result */
 		float area;							/**< size of the compressor in LUT-equivalents */
-		string type; 						/**< combinatorial or variableLength */
+        CompressorType type;
 		int wOut;
 		int range_change;			        /**< value range change by pseudocompressor used for modular reduction*/
         int ones_vector_start;              /**< marks the start of the 1s vector for sign extension for pseudocompressors used for modular reduction*/

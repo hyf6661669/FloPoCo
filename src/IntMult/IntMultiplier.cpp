@@ -88,7 +88,9 @@ namespace flopoco {
 			return;
 		}
 
-		BitHeap bitHeap(this, wOut + guardBits);
+        BitHeap bitHeap(this, wFullP);
+		//BitHeap bitHeap(this, wOut + guardBits);
+        unsigned bitHeapLSBWeight = 0;
 
 		REPORT(INFO, "Creating BaseMultiplierCollection")
 //		BaseMultiplierCollection baseMultiplierCollection(parentOp->getTarget(), wX, wY);
@@ -244,9 +246,13 @@ namespace flopoco {
 
 		schedule();
 
-		branchToBitheap(&bitHeap, solution, prodsize(wX, wY, signedIO, signedIO) - (wOut + guardBits));
+       	if (guardBits > 0) {
+            //Check truncated solution
+            mpz_class actualTruncError = checkTruncationError(solution, guardBits, errorBudget, centerErrConstant);
+            cout << "calc min req weight is=" << prodsize(wX, wY, signedIO, signedIO) - (wOut + guardBits) << endl;
+            bitHeapLSBWeight = calcBitHeapLSB(solution, guardBits, errorBudget, centerErrConstant, actualTruncError);
+            guardBits = wFullP - wOut - bitHeapLSBWeight; //To select result bits, because the dynamic ilp does not consider guardBits
 
-		if (guardBits > 0) {
 		    //this is the rounding bit for a faithfully rounded truncated multiplier
 			bitHeap.addConstantOneBit(static_cast<int>(guardBits) - 1);
 			//these are the constant bits to recenter the average error around 0 and allow for more truncation error
@@ -262,9 +268,9 @@ namespace flopoco {
                 }
                 i++;
             } while(colweight <= centerErrConstant);
-
-            checkTruncationError(solution, guardBits, errorBudget, centerErrConstant);
 		}
+
+        branchToBitheap(&bitHeap, solution, bitHeapLSBWeight);
 
 		if (dynamic_cast<CompressionStrategy*>(tilingStrategy)) {
 			std::cout << "Class is derived from CompressionStrategy, passing result for compressor tree.";
@@ -899,7 +905,7 @@ namespace flopoco {
 		return testStateList;
 	}
 
-	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant){
+    mpz_class IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant){
         std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
 
         for(auto & tile : solution) {
@@ -935,16 +941,16 @@ namespace flopoco {
         //mpz_mul_2exp(maxErr.get_mpz_t(),mpz_class(msw).get_mpz_t(),mpz_class(32).get_mpz_t());
         //cout << "errorBudget=" << errorBudget+constant << " maxErr=" << maxErr << endl;
         if(truncError <= maxErr){
-            cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << "." << endl;
+            cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << " by " << maxErr-truncError << "." << endl;
         } else {
-            cout << "ERROR: actual truncation error=" << truncError << " is larger than the max. permissible error=" << maxErr << "." << endl;
+            cout << "ERROR: actual truncation error=" << truncError << " is larger than the max. permissible error=" << maxErr << " by " << truncError-maxErr << "." << endl;
         }
+        return truncError;
 	}
 
-    int IntMultiplier::calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, unsigned long long errorBudget, unsigned long long constant){
-        int lsbs[solution.size()], msbs[solution.size()], prunableBits[solution.size()], weight=INT32_MAX, nBits = 0;
+    int IntMultiplier::calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant, mpz_class actualTruncError){
+        int lsbs[solution.size()], msbs[solution.size()], prunableBits[solution.size()], weight=0, nBits = 0, i=0;;
         for(auto & tile : solution) {
-            int i=0;
             auto &parameters = tile.first;
             auto &anchor = tile.second;
             int xPos = anchor.first;
@@ -952,25 +958,25 @@ namespace flopoco {
             lsbs[i] = xPos + yPos + parameters.getRelativeResultLSBWeight();
             msbs[i] = lsbs[i] + parameters.getOutWordSize();
             prunableBits[i]=0;
-            if(lsbs[i] < weight) weight = lsbs[i];
-            cout << "Tile " << parameters.getMultType() << " at (" << xPos << "," << yPos << ") has an LSB of" << lsbs[i] << endl;
+            cout << "Tile " << i << " " << parameters.getMultType() << " at (" << xPos << "," << yPos << ") has an LSB of" << lsbs[i] << endl;
             i++;
         }
         double error = 0;
         do{
-            for(int i = 0; i < solution.size(); i++){
+            cout << " min weight=" << weight << endl;
+            for(i = 0; i < solution.size(); i++){
                 if(lsbs[i] <= weight && weight < msbs[i]) {
                     prunableBits[i]++;
                     if(weight < lsbs[i]+(msbs[i]-lsbs[i])/2 ){
-                        error += prunableBits[i]*(1ULL<<weight);
+                        error += prunableBits[i]*pow(2,weight);
                     } else {
-                        error += ((msbs[i]-lsbs[i])-prunableBits[i])*(1ULL<<weight);
+                        error += ((msbs[i]-lsbs[i])-prunableBits[i])*pow(2,weight);
                     }
-                    cout << "trying to prune " << prunableBits[i] << " bits in tile " << i << " error is "  << error << " permissible error is "  << errorBudget + constant << endl;
+                    cout << "trying to prune " << prunableBits[i] << " bits in tile " << i << " with weight " << weight << " error is "  << error << " additional permissible error is "  << errorBudget + constant - actualTruncError << endl;
                 }
             }
             weight++;
-        } while(error < errorBudget + constant);
+        } while(actualTruncError + error < errorBudget + constant || 0 == error);
         weight--;
         cout << "min req weight is=" << weight << endl;
         return weight;

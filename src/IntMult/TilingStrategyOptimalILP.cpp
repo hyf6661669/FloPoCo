@@ -37,7 +37,7 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
 	{
 	    cout << errorBudget << endl;
         mpz_class max64;
-        unsigned long long max64u = UINT64_MAX;
+        unsigned long long max64u = (1ULL << 52)-1ULL;//UINT64_MAX; //Limit to dynamic of double type
         mpz_import(max64.get_mpz_t(), 1, -1, sizeof max64u, 0, 0, &max64u);
         if(errorBudget <= max64){
             mpz_export(&this->errorBudget, 0, -1, sizeof this->errorBudget, 0, 0, errorBudget.get_mpz_t());
@@ -201,8 +201,8 @@ void TilingStrategyOptimalILP::constructProblem()
                 nvarName << " b" << ((x < 0) ? "m" : "") << setfill('0') << setw(dpX) << ((x < 0) ? -x : x)
                          << ((y < 0) ? "m" : "") << setfill('0') << setw(dpY) << ((y < 0) ? -y : y);
                 ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
-                maxEpsTerm.add(tempV, (-1) * ((long) 1 << (x + y)));
-                maxEpsTerm.add((long) 1 << (x + y));
+                maxEpsTerm.add(tempV, (-1LL) * (1LL << (x + y)));
+                maxEpsTerm.add(1ULL << (x + y));
 
                 c1Constraint = pxyTerm - tempV == 0;
             } else if(performOptimalTruncation == false && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut-guardBits))){

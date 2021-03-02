@@ -119,21 +119,24 @@ namespace flopoco {
         TestList testStateList;
         vector<pair<string,string>> paramList;
 
-        list<int> wordSizes = {4,8,6,24,32,53,64,128,256};
+        if(index==-1) { // The unit tests
+            list<int> wordSizes = {4,8,6,24,32,53,64,128,256};
 
-        for(int modulus=1; modulus < 32; modulus+=2)
-        {
-            for (auto wordSizePair : wordSizes)
+            for(int modulus=1; modulus < 32; modulus+=2)
             {
-                int wIn = wordSizePair;
+                for (auto wordSizePair : wordSizes)
                 {
-                    paramList.push_back(make_pair("wX", to_string(wIn)));
-                    paramList.push_back(make_pair("mod", to_string(modulus)));
-                    testStateList.push_back(paramList);
-                    paramList.clear();
+                    int wIn = wordSizePair;
+                    {
+                        paramList.push_back(make_pair("wIn", to_string(wIn)));
+                        paramList.push_back(make_pair("mod", to_string(modulus)));
+                        testStateList.push_back(paramList);
+                        paramList.clear();
+                    }
                 }
             }
         }
+
         return testStateList;
     }
 

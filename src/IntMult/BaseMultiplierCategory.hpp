@@ -66,6 +66,7 @@ namespace flopoco {
 				    string getMultType() const {return bmCat_->getType();}
                     Parametrization tryDSPExpand(int m_x_pos, int m_y_pos, int wX, int wY, bool signedIO);
                     Parametrization setSignStatus(int m_x_pos, int m_y_pos, int wX, int wY, bool signedIO);
+                    Parametrization shrinkFitDSP(int m_x_pos, int m_y_pos, int wX, int wY, bool signedIO);
                     vector<int> getOutputWeights(){return output_weights;}
 
             private:

@@ -156,6 +156,20 @@ float BaseMultiplierCategory::shape_utilisation(int shape_x, int shape_y, int wX
         return Parametrization(tile_width, tile_height, bmCat_, isSignedX, isSignedY, false, shape_para_,  output_weights);
     }
 
+    BaseMultiplierCategory::Parametrization BaseMultiplierCategory::Parametrization::shrinkFitDSP(int m_x_pos, int m_y_pos, int wX, int wY, bool signedIO) {
+        int tile_width = wX_, tile_height = wY_;
+
+        if( (wX-m_x_pos-tile_width) < 0){           //if the inputs are signed, the MSBs of individual tiles at MSB edge the tiled area |_ have to be signed
+            cout << "tile overlaps left by " << -(wX-m_x_pos-tile_width) << endl;
+            tile_width = tile_width + (wX-m_x_pos-tile_width);
+        }
+        if((wY-m_y_pos-tile_height) < 0){
+            cout << "tile overlaps at the bottom by " << -(wY-m_y_pos-tile_height) << endl;
+            tile_height = tile_height + (wY-m_y_pos-tile_height);
+        }
+        return Parametrization(tile_width, tile_height, bmCat_, isSignedX_, isSignedY_, false, shape_para_,  output_weights);
+    }
+
     BaseMultiplierCategory::Parametrization BaseMultiplierCategory::Parametrization::tryDSPExpand(int m_x_pos, int m_y_pos, int wX, int wY, bool signedIO) {
         bool isSignedX = false, isSignedY = false;
         int tile_width = wX_, tile_height = wY_;

@@ -231,6 +231,7 @@ namespace flopoco {
 
 		list<TilingStrategy::mult_tile_t> &solution = tilingStrategy->getSolution();
         for(auto & tile : solution) {       //Set signedness of individual tiles according to their position
+            tile.first = tile.first.shrinkFitDSP(tile.second.first,tile.second.second, wX, wY, signedIO);
             tile.first = tile.first.setSignStatus(tile.second.first,tile.second.second, wX, wY, signedIO);
         }
         tilingStrategy->printSolution();

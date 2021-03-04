@@ -104,6 +104,7 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     ostringstream name;
     string in1,in2;
     int width;
+    bool in2_signed, in1_signed;
 
     if(wX == 2)
     {
@@ -111,6 +112,8 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
         in2 = "X";
         name << "BaseMultiplierXilinx2x" << wY;
         width = wY;
+        in2_signed = isSignedX;
+        in1_signed = isSignedY;
     }
     else
     {
@@ -118,6 +121,8 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
         in2 = "Y";
         name << "BaseMultiplier" << wX << "x2";
         width = wX;
+        in2_signed = isSignedY;
+        in1_signed = isSignedX;
     }
     setNameWithFreqAndUID(name.str());
 
@@ -128,7 +133,7 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     addOutput("R", width+2, 1, true);
 
     if((wX != 2) && (wY != 2)) throw string("One of the input widths of the BaseMultiplierXilinx2xk has to be 2!");
-    if((isSignedX == true) || (isSignedY == true)) throw string("signed inputs currently not supported by BaseMultiplierXilinx2xkOp, sorry");
+    if((in2_signed == true)) throw string("The smaller input of the BaseMultiplierXilinx2xkOp is currently not supported to be signed, sorry");
 
     int needed_luts = width+1;//no. of required LUTs
     int needed_cc = ( needed_luts / 4 ) + ( needed_luts % 4 > 0 ? 1 : 0 ); //no. of required carry chains
@@ -139,11 +144,30 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     declare( "cc_o", needed_cc * 4 );
 
     //create the LUTs:
-    for(int i=0; i < needed_luts; i++)
+    for(int i=0; i <= needed_luts; i++)
     {
         //LUT content of the LUTs:
-        lut_op lutop_o6 = (lut_in(0) & lut_in(1)) ^ (lut_in(2) & lut_in(3)); //xor of two partial products
-        lut_op lutop_o5 = lut_in(0) & lut_in(1); //and of first partial product
+        lut_op lutop_o5, lutop_o6;
+        if(in1_signed && i==needed_luts){
+            lutop_o6 = lut_in(5);
+            lutop_o5 = lut_in(4);
+        } else if(in1_signed && i==needed_luts-1){
+            if(in2_signed){
+                lutop_o6 = ~(~lut_in(0) & lut_in(1)) ^ ~(lut_in(2) & lut_in(1)); //xor of two partial products
+                lutop_o5 = ~(~lut_in(0) & lut_in(1)); //and of first partial product
+            } else {
+                lutop_o6 = ~(lut_in(0) & lut_in(1)) ^ ~(lut_in(2) & lut_in(1)); //xor of two partial products
+                lutop_o5 = ~(lut_in(0) & lut_in(1)); //and of first partial product
+            }
+        } else {
+            if(in2_signed){
+                lutop_o6 = (~lut_in(0) & lut_in(1)) ^ (lut_in(2) & lut_in(3)); //xor of two partial products
+                lutop_o5 = ~lut_in(0) & lut_in(1); //and of first partial product
+            } else {
+                lutop_o6 = (lut_in(0) & lut_in(1)) ^ (lut_in(2) & lut_in(3)); //xor of two partial products
+                lutop_o5 = lut_in(0) & lut_in(1); //and of first partial product
+            }
+        }
         lut_init lutop( lutop_o5, lutop_o6 );
 
 		Xilinx_LUT6_2 *cur_lut = new Xilinx_LUT6_2( this,target );
@@ -152,13 +176,13 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
         inPortMap("i0",in2 + of(1));
         inPortMap("i2",in2 + of(0));
 
-        if(i==0)
+        if(i==0 || i==needed_luts)
             //inPortMapCst("i1","'0'"); //connect 0 at LSB position
             inPortMapCst("i1","'0'"); //connect 0 at LSB position
         else
             inPortMap("i1",in1 + of(i-1));
 
-        if(i==needed_luts-1)
+        if(i==needed_luts-1 || i==needed_luts)
             inPortMapCst("i3","'0'"); //connect 0 at MSB position
         else
             inPortMap("i3",in1 + of(i));
@@ -177,7 +201,11 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
 
         inPortMapCst("cyinit", "'0'" );
         if( i == 0 ) {
-            inPortMapCst("ci", "'0'" ); //carry-in can not be used as AX input is blocked!!
+            if(in2_signed){
+                inPortMapCst("ci", "'1'" );
+            } else {
+                inPortMapCst("ci", "'0'" ); //carry-in can not be used as AX input is blocked!!
+            }
         } else {
             inPortMap("ci", "cc_co" + of( i * 4 - 1 ) );
         }
@@ -192,7 +220,7 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     }
     vhdl << endl;
 
-    vhdl << tab << "R <= cc_co(" << width << ") & cc_o(" << width << " downto 0);" << endl;
+    vhdl << tab << "R <= cc_o(" << width+1 << " downto 0);" << endl;
 }
 
 }   //end namespace flopoco

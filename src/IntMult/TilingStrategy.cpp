@@ -75,7 +75,7 @@ namespace flopoco {
 
 			outstream << "\\draw[red, thick] (0, 0) -- ("<< wX << ", 0) -- ("<<(wX+wY) <<", " << wY<<") -- ("<< wY << ", " << wY <<") -- cycle;\n";
 		} else {
-			outstream << "\\draw[thick] (0, 0) rectangle (" << wX << ", " << wY << ");\n";
+			outstream << "\\draw[thick,line width=4pt] (0, 0) rectangle (" << wX << ", " << wY << ");\n";
 			for (size_t i = 0 ; i < static_cast<size_t>(wY) ; ++i) {
 				outstream << "\\draw[dotted, very thin, gray] (0, " << i <<") -- (" << wX << ", " << i << ");\n";
 			}

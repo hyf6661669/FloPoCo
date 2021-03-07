@@ -73,37 +73,41 @@ namespace flopoco{
 
 			// check if mod is used and if stage height = 1
 			// then use other compressors -> pseudocompressors
-            // right now check the lsb
 			int maxHeightBitAmount = *max_element(bitAmount[s].begin(), bitAmount[s].end());
 			if (maxHeightBitAmount == 1 && computeModulo) {
-                BasicCompressor* compressor = nullptr;
-                unsigned int column = 0;
-                unsigned int currentRange = INT_MAX;
 
-                for (unsigned int i = 0; i < possibleCompressors.size(); ++i) {
-                    if (possibleCompressors[i]->type == CompressorType::Pseudo) {
-                        //cout << "i is " << i << endl;
-                        //cout << "range_change is " << possibleCompressors[i]->range_change << endl;
-                        for (int j = 0; j < possibleCompressors[i]->heights.size(); ++j) {
-                            //cout << "input height on " << j << " = " << possibleCompressors[i]->heights[j] << endl;
-                        }
-                        // go through columns
-                        // check if allowed
-                        // check if another is better
+                bool found = true;
+                while(found) {
 
-                        for(unsigned int c = 0; c < bitAmount[s].size(); c++){
-                            if (possibleCompressors[i]->heights.size() - 1 == c) {
-                                if (possibleCompressors[i]->range_change < currentRange) {
-                                    compressor = possibleCompressors[i];
-                                    column = c;
+                    BasicCompressor* compressor = nullptr;
+
+                    // go through columns
+                    // check if allowed
+                    // check if another is better
+                    // check if there is a bit in this column
+                    for(unsigned int c = 0; c < bitAmount[s].size(); c++){
+                        found = false;
+                        unsigned int currentRange = INT_MAX;
+
+                        for (unsigned int i = 0; i < possibleCompressors.size(); ++i) {
+                            if (possibleCompressors[i]->type == CompressorType::Pseudo) {
+                                if (possibleCompressors[i]->heights.size() - 1 == c && bitAmount[s][c] == 1) {
+                                    if (abs(possibleCompressors[i]->range_change) < currentRange) {
+                                        currentRange = possibleCompressors[i]->range_change;
+                                        compressor = possibleCompressors[i];
+                                        found = true;
+                                    }
                                 }
                             }
-                        }
 
+                        }
+                        if(found){
+                            REPORT(DETAILED, "range change is " << compressor->range_change);
+                            placeCompressor(s, 0, compressor);
+                            printBitAmounts();
+                        }
                     }
                 }
-                REPORT(DETAILED, "range change is " << compressor->range_change);
-                placeCompressor(s, column, compressor);
 			} else {
                 cerr << "normal algorithm reached" << endl;
 
@@ -124,57 +128,59 @@ namespace flopoco{
                     unsigned int middleLengthBest = 0;
 
                     for(unsigned int e = 0; e < possibleCompressors.size(); e++){
-                        BasicCompressor* currentCompressor = possibleCompressors[e];
-                        REPORT(DEBUG, "compressor is " << currentCompressor->getStringOfIO());
-                        vector<bool> used;
-                        used.resize(bitAmount[s].size(), false);
+                        if (possibleCompressors[e]->type != CompressorType::Pseudo) {
+                            BasicCompressor* currentCompressor = possibleCompressors[e];
+                            REPORT(DEBUG, "compressor is " << currentCompressor->getStringOfIO());
+                            vector<bool> used;
+                            used.resize(bitAmount[s].size(), false);
 
-                        unsigned int columnsAlreadyChecked = 0;
-                        //check if the achievedEfficiency is better than the maximal efficiency possible by this compressor. If true, it's not necessary to check this and the following compressors. Therefore return.
-                        while(columnsAlreadyChecked < bitAmount[s].size() && !((found == true) && currentCompressor->getEfficiency() - achievedEfficiencyBest < 0.0001)){
+                            unsigned int columnsAlreadyChecked = 0;
+                            //check if the achievedEfficiency is better than the maximal efficiency possible by this compressor. If true, it's not necessary to check this and the following compressors. Therefore return.
+                            while(columnsAlreadyChecked < bitAmount[s].size() && !((found == true) && currentCompressor->getEfficiency() - achievedEfficiencyBest < 0.0001)){
 
-                            unsigned int currentMaxColumn = 0;
-                            int currentSize = 0;
-                            for(unsigned int c = 0; c < bitAmount[s].size(); c++){
-                                if(!used[c] && bitAmount[s][c] > currentSize){
-                                    currentMaxColumn = c;
-                                    currentSize = bitAmount[s][c];
-                                }
-                            }
-                            used[currentMaxColumn] = true;
-
-                            double achievedEfficiencyCurrent;
-                            unsigned int middleLengthCurrent = 0;
-                            if(currentCompressor->type != CompressorType::Variable){
-                                achievedEfficiencyCurrent = getCompressionEfficiency(s, currentMaxColumn, currentCompressor);
-                            } else {
-                                double variableEfficiencyBest = -1.0;
-                                for (int m = 0; m < bitAmount[s].size() - 2; m++) {
-                                    double currentVariableEfficiency = getCompressionEfficiency(s, currentMaxColumn, currentCompressor, m);
-                                    if (currentVariableEfficiency >= variableEfficiencyBest) {
-                                        variableEfficiencyBest = currentVariableEfficiency;
-                                        middleLengthCurrent = m;
+                                unsigned int currentMaxColumn = 0;
+                                int currentSize = 0;
+                                for(unsigned int c = 0; c < bitAmount[s].size(); c++){
+                                    if(!used[c] && bitAmount[s][c] > currentSize){
+                                        currentMaxColumn = c;
+                                        currentSize = bitAmount[s][c];
                                     }
                                 }
-                                achievedEfficiencyCurrent = variableEfficiencyBest;
+                                used[currentMaxColumn] = true;
+
+                                double achievedEfficiencyCurrent;
+                                unsigned int middleLengthCurrent = 0;
+                                if(currentCompressor->type != CompressorType::Variable){
+                                    achievedEfficiencyCurrent = getCompressionEfficiency(s, currentMaxColumn, currentCompressor);
+                                } else {
+                                    double variableEfficiencyBest = -1.0;
+                                    for (int m = 0; m < bitAmount[s].size() - 2; m++) {
+                                        double currentVariableEfficiency = getCompressionEfficiency(s, currentMaxColumn, currentCompressor, m);
+                                        if (currentVariableEfficiency >= variableEfficiencyBest) {
+                                            variableEfficiencyBest = currentVariableEfficiency;
+                                            middleLengthCurrent = m;
+                                        }
+                                    }
+                                    achievedEfficiencyCurrent = variableEfficiencyBest;
+                                }
+
+                                REPORT(FULL, "checked " << currentCompressor->getStringOfIO() << " in stage " << s << " and column " << currentMaxColumn << " with an efficiency of " << achievedEfficiencyCurrent);
+
+                                float lowerBound;
+                                if(s < lowerBounds.size())
+                                    lowerBound = lowerBounds[s];
+                                else
+                                    lowerBound = 0.0;
+
+                                if(achievedEfficiencyCurrent > (achievedEfficiencyBest + 0.0001) && achievedEfficiencyCurrent > (lowerBound - 0.0001)){
+                                    achievedEfficiencyBest = achievedEfficiencyCurrent;
+                                    compressor = currentCompressor;
+                                    found = true;
+                                    column = currentMaxColumn;
+                                    middleLengthBest = middleLengthCurrent;
+                                }
+                                columnsAlreadyChecked++;
                             }
-
-                            REPORT(FULL, "checked " << currentCompressor->getStringOfIO() << " in stage " << s << " and column " << currentMaxColumn << " with an efficiency of " << achievedEfficiencyCurrent);
-
-                            float lowerBound;
-                            if(s < lowerBounds.size())
-                                lowerBound = lowerBounds[s];
-                            else
-                                lowerBound = 0.0;
-
-                            if(achievedEfficiencyCurrent > (achievedEfficiencyBest + 0.0001) && achievedEfficiencyCurrent > (lowerBound - 0.0001)){
-                                achievedEfficiencyBest = achievedEfficiencyCurrent;
-                                compressor = currentCompressor;
-                                found = true;
-                                column = currentMaxColumn;
-                                middleLengthBest = middleLengthCurrent;
-                            }
-                            columnsAlreadyChecked++;
                         }
                     }
                     if(found){

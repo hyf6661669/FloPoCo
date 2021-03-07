@@ -39,6 +39,6 @@ namespace flopoco
     public:
         BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> heights, vector<int> outHeights, int range_change, int _ones_vector_start=INT32_MAX);
 
-        virtual Compressor* getCompressor();
+        virtual Compressor* getCompressor(unsigned int middleLength);
     };
 }

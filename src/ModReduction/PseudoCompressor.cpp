@@ -104,7 +104,7 @@ namespace flopoco {
         ones_vector_start = _ones_vector_start;
     }
 
-    Compressor* BasicPseudoCompressor::getCompressor(){
+    Compressor* BasicPseudoCompressor::getCompressor(unsigned int middleLength){
         compressor = new PseudoCompressor(parentOp, target, heights, outHeights);
         return compressor;
     }

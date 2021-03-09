@@ -133,10 +133,10 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     addOutput("R", width+2, 1, true);
 
     if((wX != 2) && (wY != 2)) throw string("One of the input widths of the BaseMultiplierXilinx2xk has to be 2!");
-    if((in2_signed == true)) throw string("The smaller input of the BaseMultiplierXilinx2xkOp is currently not supported to be signed, sorry");
 
+    int add_lut = (in2_signed || in1_signed) ? 1 : 0;               //The signed cases require a additional LUT
     int needed_luts = width+1;//no. of required LUTs
-    int needed_cc = ( needed_luts / 4 ) + ( needed_luts % 4 > 0 ? 1 : 0 ); //no. of required carry chains
+    int needed_cc = ( (needed_luts+add_lut) / 4 ) + ( (needed_luts+add_lut)  % 4 > 0 ? 1 : 0 ); //no. of required carry chains
 
     declare( "cc_s", needed_cc * 4 );
     declare( "cc_di", needed_cc * 4 );
@@ -144,29 +144,39 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     declare( "cc_o", needed_cc * 4 );
 
     //create the LUTs:
-    for(int i=0; i <= needed_luts; i++)
+    for(int i=0; i < needed_luts + add_lut; i++)
     {
         //LUT content of the LUTs:
         lut_op lutop_o5, lutop_o6;
-        if(in1_signed && i==needed_luts){
-            lutop_o6 = lut_in(5);
-            lutop_o5 = lut_in(4);
-        } else if(in1_signed && i==needed_luts-1){
-            if(in2_signed){
-                lutop_o6 = ~(~lut_in(0) & lut_in(1)) ^ ~(lut_in(2) & lut_in(1)); //xor of two partial products
-                lutop_o5 = ~(~lut_in(0) & lut_in(1)); //and of first partial product
-            } else {
+        if(in1_signed && !in2_signed) {
+            if (i == needed_luts) {
+                lutop_o6 = lut_in(5);
+                lutop_o5 = lut_in(4);
+            } else if (i == needed_luts - 1) {
                 lutop_o6 = ~(lut_in(0) & lut_in(1)) ^ ~(lut_in(2) & lut_in(1)); //xor of two partial products
                 lutop_o5 = ~(lut_in(0) & lut_in(1)); //and of first partial product
-            }
-        } else {
-            if(in2_signed){
-                lutop_o6 = (~lut_in(0) & lut_in(1)) ^ (lut_in(2) & lut_in(3)); //xor of two partial products
-                lutop_o5 = ~lut_in(0) & lut_in(1); //and of first partial product
             } else {
                 lutop_o6 = (lut_in(0) & lut_in(1)) ^ (lut_in(2) & lut_in(3)); //xor of two partial products
                 lutop_o5 = lut_in(0) & lut_in(1); //and of first partial product
             }
+        } else if(in1_signed && in2_signed) {
+
+            if(i==needed_luts || i==needed_luts-1) {
+                lutop_o6 = lut_in(0) & ~lut_in(1) | lut_in(2) & lut_in(1);
+                lutop_o5 = lut_in(4);
+            } else if(i==1) {
+                lutop_o6 = (lut_in(0) & lut_in(1) &  ~(lut_in(2) & lut_in(3))) | ( ~lut_in(0) & lut_in(2) & lut_in(3));
+                lutop_o5 = lut_in(0) & ( ~lut_in(1) | (lut_in(2) & lut_in(3)));
+            } else if(i==0) {
+                lutop_o6 = lut_in(2) & lut_in(3);
+                lutop_o5 = lut_in(1) & ~lut_in(3) & lut_in(0) & lut_in(2);
+            } else {
+                lutop_o6 = lut_in(0) ^ lut_in(0) & lut_in(1) ^ lut_in(2) & lut_in(3);
+                lutop_o5 = lut_in(3) & ~lut_in(1) & lut_in(0) & lut_in(2);
+            }
+        } else {
+            lutop_o6 = (lut_in(0) & lut_in(1)) ^ (lut_in(2) & lut_in(3));   //partial product
+            lutop_o5 = lut_in(0) & lut_in(1);                                       //carry
         }
         lut_init lutop( lutop_o5, lutop_o6 );
 
@@ -176,16 +186,31 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
         inPortMap("i0",in2 + of(1));
         inPortMap("i2",in2 + of(0));
 
-        if(i==0 || i==needed_luts)
-            //inPortMapCst("i1","'0'"); //connect 0 at LSB position
-            inPortMapCst("i1","'0'"); //connect 0 at LSB position
-        else
-            inPortMap("i1",in1 + of(i-1));
+        if(in1_signed && !in2_signed || !in1_signed && !in2_signed) {
+            if(i==0 || i==needed_luts)
+                inPortMapCst("i1","'0'"); //connect 0 at LSB position
+            else
+                inPortMap("i1",in1 + of(i-1));
 
-        if(i==needed_luts-1 || i==needed_luts)
-            inPortMapCst("i3","'0'"); //connect 0 at MSB position
-        else
-            inPortMap("i3",in1 + of(i));
+            if (i == needed_luts - 1 || i == needed_luts)
+                inPortMapCst("i3", "'0'"); //connect 0 at MSB position
+            else
+                inPortMap("i3", in1 + of(i));
+        } else {
+            if(i==0)
+                inPortMap("i1",in1 + of(i+1));
+            else if(i==needed_luts)
+                inPortMap("i1",in1 + of(i-2));
+            else
+                inPortMap("i1",in1 + of(i-1));
+
+            if(i==needed_luts)
+                inPortMap("i3", in1 + of(i-2));
+            else if(i==needed_luts-1)
+                inPortMap("i3", in1 + of(i-1));
+            else
+                inPortMap("i3", in1 + of(i));;
+        }
 
         inPortMapCst("i4","'0'");
         inPortMapCst("i5","'1'");
@@ -201,11 +226,7 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
 
         inPortMapCst("cyinit", "'0'" );
         if( i == 0 ) {
-            if(in2_signed){
-                inPortMapCst("ci", "'1'" );
-            } else {
-                inPortMapCst("ci", "'0'" ); //carry-in can not be used as AX input is blocked!!
-            }
+            inPortMapCst("ci", "'0'" ); //carry-in can not be used as AX input is blocked!!
         } else {
             inPortMap("ci", "cc_co" + of( i * 4 - 1 ) );
         }
@@ -220,7 +241,12 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     }
     vhdl << endl;
 
-    vhdl << tab << "R <= cc_o(" << width+1 << " downto 0);" << endl;
+    if(add_lut){
+        vhdl << tab << "R <= cc_o(" << width+1 << " downto 0);" << endl;
+    } else {
+        vhdl << tab << "R <= cc_co(" << width << ") & cc_o(" << width << " downto 0);" << endl;
+    }
+
 }
 
 }   //end namespace flopoco

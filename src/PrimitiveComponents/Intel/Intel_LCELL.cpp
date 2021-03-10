@@ -48,7 +48,7 @@ Intel_LCELL::Intel_LCELL(Operator *parentOp, Target *target, const string &lut_m
                 }
             }
             o << "lcell_comb";
-            setNameWithFreqAndUID(o.str());
+            setName(o.str());
         }
 
 

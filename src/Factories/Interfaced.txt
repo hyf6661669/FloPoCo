@@ -60,6 +60,7 @@ Xilinx_Comparator
 Xilinx_TernaryAdd_2State
 XilinxGPC
 XilinxFourToTwoCompressor
+IntelLcellTestOperator
 TutorialOperator
 BaseMultiplierDSPSuperTilesXilinx
 BaseMultiplierXilinx2xk

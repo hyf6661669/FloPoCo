@@ -159,6 +159,7 @@ PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State_slice
 PrimitiveComponents/Xilinx/XilinxGPC
 PrimitiveComponents/Xilinx/XilinxFourToTwoCompressor
 PrimitiveComponents/Intel/Intel_LCELL
+PrimitiveComponents/Intel/IntelLcellTestOperator
 Tools/Plane
 Tools/Point
 TutorialOperator

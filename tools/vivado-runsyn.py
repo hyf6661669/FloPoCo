@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     curdir=os.popen('pwd').read()
     workdir=curdir[0:-1]+"/tmp/vivado_runsyn_"+entity+"_"+target+"_"+frequency
-    print("workdir: ", workdir)
+    report("   workdir: ", workdir)
     
     os.system("rm -R "+workdir)
     os.mkdir(workdir)

@@ -211,7 +211,7 @@ float BaseMultiplierCategory::shape_utilisation(int shape_x, int shape_y, int wX
 		return tile_height;
 	}
 
-	double BaseMultiplierCategory::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY){
+	double BaseMultiplierCategory::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO){
 		int x_min = ((x_anchor < 0)?0: x_anchor);
 		int y_min = ((y_anchor < 0)?0: y_anchor);
 		int lsb = x_min + y_min;
@@ -224,7 +224,7 @@ float BaseMultiplierCategory::shape_utilisation(int shape_x, int shape_y, int wX
 		return ws*getBitHeapCompressionCostperBit();
 	}
 
-	int BaseMultiplierCategory::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) {
+	int BaseMultiplierCategory::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO) {
 		return 0;
 	}
 

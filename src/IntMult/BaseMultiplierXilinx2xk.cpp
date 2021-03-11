@@ -20,7 +20,7 @@ Operator* BaseMultiplierXilinx2xk::generateOperator(
 		);
 }
 
-double BaseMultiplierXilinx2xk::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY){
+double BaseMultiplierXilinx2xk::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO){
     int luts = ((wX() < wY())?wY():wX()) + 1;
 
     int x_min = ((x_anchor < 0)?0: x_anchor);
@@ -31,11 +31,19 @@ double BaseMultiplierXilinx2xk::getLUTCost(int x_anchor, int y_anchor, int wMult
     int y_max = ((wMultY < y_anchor + (int)wY())?wMultY: y_anchor + wY());
     int msb = (x_max==1)?y_max:((y_max==1)?x_max:x_max+y_max);
 
+    if(signedIO && ((wMultX-x_anchor-(int)wX())== 0 || (wMultY-y_anchor-(int)wY())== 0)){
+        luts++;    //The 2xk-multiplier needs one additional LUT in the signed case
+    }
+
     return luts + (msb - lsb)*getBitHeapCompressionCostperBit();
 }
 
-int BaseMultiplierXilinx2xk::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) {
-    return ((wX() < wY())?wY():wX()) + 1;;
+int BaseMultiplierXilinx2xk::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO) {
+    int luts = ((wX() < wY())?wY():wX()) + 1;
+    if(signedIO && ((wMultX-x_anchor-(int)wX())== 0 || (wMultY-y_anchor-(int)wY())== 0)){
+        luts++;    //The 2xk-multiplier needs one additional LUT in the signed case
+    }
+    return luts;
 }
 
 OperatorPtr BaseMultiplierXilinx2xk::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args)
@@ -112,8 +120,8 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
         in2 = "X";
         name << "BaseMultiplierXilinx2x" << wY;
         width = wY;
-        in2_signed = isSignedX;
-        in1_signed = isSignedY;
+        in2_signed = isSignedX;         //X is the short side
+        in1_signed = isSignedY;         //Y is the long side
     }
     else
     {
@@ -121,14 +129,13 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
         in2 = "Y";
         name << "BaseMultiplier" << wX << "x2";
         width = wX;
-        in2_signed = isSignedY;
-        in1_signed = isSignedX;
+        in2_signed = isSignedY;         //Y is the short side
+        in1_signed = isSignedX;         //X is the long side
     }
     setNameWithFreqAndUID(name.str());
 
     addInput("X", wX, true);
     addInput("Y", wY, true);
-
 
     addOutput("R", width+2, 1, true);
 
@@ -148,7 +155,7 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     {
         //LUT content of the LUTs:
         lut_op lutop_o5, lutop_o6;
-        if(in1_signed && !in2_signed) {
+        if(in1_signed && !in2_signed) {         //The long side is signed
             if (i == needed_luts) {
                 lutop_o6 = lut_in(5);
                 lutop_o5 = lut_in(4);
@@ -159,8 +166,24 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
                 lutop_o6 = (lut_in(0) & lut_in(1)) ^ (lut_in(2) & lut_in(3)); //xor of two partial products
                 lutop_o5 = lut_in(0) & lut_in(1); //and of first partial product
             }
-        } else if(in1_signed && in2_signed) {
-
+        } else if(!in1_signed && in2_signed) {       //The short side is signed
+            if(i == 0){
+                lutop_o6 = (lut_in(3) & ~lut_in(0) & lut_in(2)) | (lut_in(3) & lut_in(0) & lut_in(2));
+                lutop_o5 = (~lut_in(3) & lut_in(0) & lut_in(2));
+            } else if(i == 1){
+                lutop_o6 = (lut_in(3) & ~lut_in(0) & lut_in(2)) | (lut_in(1) & lut_in(0) & ~lut_in(2)) | (~lut_in(3) & lut_in(0) & lut_in(2));
+                lutop_o5 = (~lut_in(1) & lut_in(0) & ~lut_in(2));
+            } else if(i==needed_luts-1){
+                lutop_o6 = (~lut_in(3) & lut_in(0) & ~lut_in(2)) | (lut_in(0) & lut_in(2));
+                lutop_o5 = lut_in(4);
+            } else if(i==needed_luts){
+                lutop_o6 = (lut_in(0) & ~lut_in(2)) | (lut_in(0) & lut_in(2));
+                lutop_o5 = lut_in(4);
+            } else {
+                lutop_o6 = (lut_in(3) & ~lut_in(0) & lut_in(2)) | (~lut_in(1) & lut_in(0) & ~lut_in(2)) | (~lut_in(3) & lut_in(0) & lut_in(2));
+                lutop_o5 = lut_in(4);
+            }
+        } else if(in1_signed && in2_signed) {       //Both sides are signed
             if(i==needed_luts || i==needed_luts-1) {
                 lutop_o6 = lut_in(0) & ~lut_in(1) | lut_in(2) & lut_in(1);
                 lutop_o5 = lut_in(4);
@@ -186,7 +209,7 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
         inPortMap("i0",in2 + of(1));
         inPortMap("i2",in2 + of(0));
 
-        if(in1_signed && !in2_signed || !in1_signed && !in2_signed) {
+        if(!in1_signed && !in2_signed || in1_signed && !in2_signed) {
             if(i==0 || i==needed_luts)
                 inPortMapCst("i1","'0'"); //connect 0 at LSB position
             else

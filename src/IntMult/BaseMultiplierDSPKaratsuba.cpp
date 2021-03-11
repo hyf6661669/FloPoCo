@@ -85,7 +85,7 @@ namespace flopoco {
         return dsps;
     }
 
-    double BaseMultiplierDSPKaratsuba::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY){
+    double BaseMultiplierDSPKaratsuba::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO){
         int bits = 0, add_bits = 0, protruding_bits = 0;                //TODO: Check handling of protruding bits
         int gcd = BaseMultiplierDSPKaratsuba::gcd(wX, wY);
         long kxy = gcd;
@@ -158,7 +158,7 @@ namespace flopoco {
         ) ;
     }
 
-    int BaseMultiplierDSPKaratsuba::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) {
+    int BaseMultiplierDSPKaratsuba::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO) {
         int add_bits = 0;
         int gcd = BaseMultiplierDSPKaratsuba::gcd(wX, wY);
         long kxy = gcd;

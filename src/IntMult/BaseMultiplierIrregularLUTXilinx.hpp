@@ -45,8 +45,8 @@ namespace flopoco
 
         bool isIrregular() const override { return true;}
         int getDSPCost() const final {return 0;}
-        double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) override;
-        int ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) override;
+        double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO) override;
+        int ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO) override;
         static int get_wX(BaseMultiplierIrregularLUTXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][0];}
         static int get_wY(BaseMultiplierIrregularLUTXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][1];}
         static int get_wR(BaseMultiplierIrregularLUTXilinx::TILE_SHAPE shape) {return shape_size[(int)shape-1][2];}

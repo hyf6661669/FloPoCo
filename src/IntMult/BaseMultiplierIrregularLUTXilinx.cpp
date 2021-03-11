@@ -42,7 +42,7 @@ int BaseMultiplierIrregularLUTXilinx::getRelativeResultMSBWeight(Parametrization
     return getRelativeResultMSBWeight((BaseMultiplierIrregularLUTXilinx::TILE_SHAPE)param.getShapePara())+1;
 }
 
-    double BaseMultiplierIrregularLUTXilinx::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY){
+    double BaseMultiplierIrregularLUTXilinx::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO){
         int word_size = getRelativeResultMSBWeight(this->shape) - getRelativeResultLSBWeight(this->shape) + 1;
         int lut_required = (this->wX+this->wY <= 5)?word_size/2+word_size%2:word_size;
 
@@ -170,7 +170,7 @@ void BaseMultiplierIrregularLUTXilinx::registerFactory(){
 	) ;
 }
 
-    int BaseMultiplierIrregularLUTXilinx::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) {
+    int BaseMultiplierIrregularLUTXilinx::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO) {
         int word_size = getRelativeResultMSBWeight(this->shape) - getRelativeResultLSBWeight(this->shape) + 1;
         int lut_required = (this->wX+this->wY <= 5)?word_size/2+word_size%2:word_size;
 

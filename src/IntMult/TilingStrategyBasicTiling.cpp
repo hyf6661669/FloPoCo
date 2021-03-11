@@ -284,7 +284,7 @@ TilingStrategyBasicTiling::TilingStrategyBasicTiling(
 		auto param = bmc.parametrize(bestXMult, bestYMult, signedX, signedY);
 		auto coord = make_pair(bestXAnchor, bestYAnchor);
 		solution.push_back(make_pair(param, coord));
-		boxCost += (float)bmc.getLUTCost(bestXAnchor, bestYAnchor, wX, wY);;
+		boxCost += (float)bmc.getLUTCost(bestXAnchor, bestYAnchor, wX, wY, signedIO);;
 		return boxCost;
 	}
 

@@ -126,7 +126,10 @@ if __name__ == '__main__':
     if(options.part != None):
         part=options.part
 
-    workdir="/tmp/vivado_runsyn_"+entity+"_"+target+"_"+frequency
+    curdir=os.popen('pwd').read()
+    workdir=curdir[0:-1]+"/tmp/vivado_runsyn_"+entity+"_"+target+"_"+frequency
+    print("workdir: ", workdir)
+    
     os.system("rm -R "+workdir)
     os.mkdir(workdir)
     os.system("cp "+filename+" "+workdir)

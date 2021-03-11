@@ -53,7 +53,7 @@ namespace flopoco {
 		//Set max DSPs to max. possible value in default case, that DSPs are not limited (maxDSP=(-1))
         max_pref_mult_ = (max_pref_mult_ < 0)?INT_MAX:max_pref_mult_;
 
-		truncated_ = wOut != wX + wY;
+		truncated_ = wOut != IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
 		if(truncated_) {
 			truncatedRange_ = (IntMultiplier::prodsize(wX, wY, signedIO, signedIO) - 1) - wOut;
 		}

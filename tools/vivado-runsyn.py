@@ -105,7 +105,7 @@ if __name__ == '__main__':
         frequency = options.frequency
 
     if (options.maxdsp==None):
-        maxdsp = -1
+        maxdsp = -1 #-1 is also the value of unlimited DSPs for vivado
     else:
         maxdsp = options.maxdsp
 
@@ -172,12 +172,13 @@ if __name__ == '__main__':
     tclscriptfile.write("add_files -norecurse " + filename_abs + "\n")
     tclscriptfile.write("read_xdc -mode out_of_context " + xdc_file_name + "\n")
     tclscriptfile.write("set_property top " + entity + "  [current_fileset]\n")
+    tclscriptfile.write("set_property STEPS.SYNTH_DESIGN.ARGS.MAX_DSP " + str(maxdsp) + "  [get_runs synth_1]\n")
     tclscriptfile.write("update_compile_order -fileset sources_1\n")
     tclscriptfile.write("update_compile_order -fileset sim_1\n")
-    if maxdsp>=0:
-      tclscriptfile.write("synth_design -mode out_of_context -max_dsp " + str(maxdsp) + "\n")
-    else:
-      tclscriptfile.write("synth_design -mode out_of_context\n")
+#    if maxdsp>=0:
+#      tclscriptfile.write("synth_design -mode out_of_context -max_dsp " + str(maxdsp) + "\n")
+    #else:
+    tclscriptfile.write("synth_design -mode out_of_context\n")
 
     # Reporting files
     utilization_report_file = workdir + "/"  + entity + "_utilization_"

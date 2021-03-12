@@ -75,7 +75,7 @@ namespace flopoco{
             }
 
 
-            if(checkAlgorithmReachedAdder(1, s) && reachedModuloRange){
+            if(checkAlgorithmReachedAdder(2, s) && reachedModuloRange){
                 break;
             }
 

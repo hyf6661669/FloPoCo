@@ -30,6 +30,11 @@ class BitHeap;
 		 */
 		void maxEfficiencyAlgorithm();
 
+        /**
+         * computes the number of bits that are needed to represent a number in two's complement
+         */
+        int reqBitsForRange2Complement(int min, int max);
+
 		vector<float> lowerBounds;
 
 

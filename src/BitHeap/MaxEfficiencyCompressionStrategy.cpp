@@ -58,8 +58,8 @@ namespace flopoco{
 		unsigned int s = 0;
 		bool adderReached = false;
 
-		int moduloRangeMin;
-		int moduloRangeMax;
+		int moduloRangeMin = 0;
+		int moduloRangeMax = 0;
         long long oneLL = static_cast<long long>(1);
         for (int i = 0; i < bitheap->width; ++i) {
             moduloRangeMax += (oneLL << i);
@@ -71,7 +71,8 @@ namespace flopoco{
             bool reachedModuloRange = true;
 
             if (computeModulo) {
-                reachedModuloRange = (moduloRangeMin > -bitheap->modulus && moduloRangeMax <= bitheap->modulus);
+                cerr << "modMin: " << moduloRangeMin << " modMax: " << moduloRangeMax << endl;
+                reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < bitheap->modulus);
             }
 
 
@@ -110,7 +111,7 @@ namespace flopoco{
                         found = false;
                         unsigned int currentRange = INT_MAX;
 
-                        if (useNegativeMSBValue && c == bitheap->width - 1) {
+                        if (useNegativeMSBValue && c == requiredBitsForRange - 1) {
                             // make new compressor for negative MSB
                             vector<int> compInput(bitheap->width, 0);
                             compInput[compInput.size()-1] = 1;
@@ -274,6 +275,10 @@ namespace flopoco{
 			}
 			REPORT(DEBUG, "finished stage " << s);
 			printBitAmounts();
+			if (s > 15 && computeModulo) {
+			    cerr << "break because stage limit reached" << endl;
+			    break;
+			}
 			s++;
 		}
 	}

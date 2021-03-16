@@ -552,31 +552,23 @@ rox P						or wi is 26 bits long
 		
 		vhdl << tab << "-- keep wF+4 bits, discarding the possible known zeroes of Q, and building a sticky in the LSB" << endl;
 		int lsbSize = qSize-qMsbToDiscard-(wF+3);
-		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+4) << " <= Q(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<") & (";
-		
-		// computation of the sticky bit
-		for(int j=lsbSize-1; j>=0; j--) {
-			if (j<lsbSize-1)
-				vhdl << " or ";
-			vhdl << "Q(" << j <<")";
-		}
-		vhdl << "); " << endl;
+		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+3) << " <= Q(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<"); " << endl;
 
-		vhdl << tab << "-- mR has wf+4 bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit, and 1 sticky bit" << endl;
+		vhdl << tab << "-- mR has wf+3 bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit" << endl;
 		vhdl << tab << "-- normalisation" << endl;
-		vhdl << tab << "with mR(" << wF+3 << ") select" << endl;
+		vhdl << tab << "with mR(" << wF+2 << ") select" << endl;
 		
-		vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+2) << " <= mR(" << wF+2 << " downto 2) & (mR(1) or mR(0)) when '1'," << endl;
-		vhdl << tab << tab << "        mR(" << wF+1 << " downto 0)                    when others;" << endl;
+		vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+1) << " <= mR(" << wF+1 << " downto 1)  when '1'," << endl;
+		vhdl << tab << tab << "          mR(" << wF << " downto 0)  when others;" << endl;
 		
-		vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRnorm(1) and (fRnorm(2) or fRnorm(0)); -- fRnorm(0) is the sticky bit" << endl;
+		vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRnorm(0); " << endl;
 
 		vhdl << tab << declare(getTarget()->adderDelay(wE+2), "expR1", wE+2) << " <= expR0"
-						 << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & mR(" << wF+3 << ")); -- add back bias" << endl;
+						 << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & mR(" << wF+2 << ")); -- add back bias" << endl;
 
 		vhdl << tab << "-- final rounding" <<endl;
 		vhdl << tab <<  declare("expfrac", wE+wF+2) << " <= "
-				 << "expR1 & fRnorm(" <<wF+1 << " downto " << 2 << ") ;" << endl;
+				 << "expR1 & fRnorm(" <<wF << " downto " << 1 << ") ;" << endl;
 		
 		vhdl << tab << declare("expfracR", wE+wF+2) << " <= "
 				 << "expfrac + ((" << wE+wF+1 << " downto 1 => '0') & round);" << endl;

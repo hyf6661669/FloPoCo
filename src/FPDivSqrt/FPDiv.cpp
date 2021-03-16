@@ -15,7 +15,8 @@
  */
 
 
-// TODO Radix 4 with digit set -2..2 should fit the iteration in one row of LUT+add
+
+// TODO It could be that the mantissa datapath computes one useless LSB 
 /*
 
 
@@ -551,7 +552,7 @@ rox P						or wi is 26 bits long
 		
 		vhdl << tab << "-- keep wF+4 bits, discarding the possible known zeroes of Q, and building a sticky in the LSB" << endl;
 		int lsbSize = qSize-qMsbToDiscard-(wF+3);
-		vhdl << tab << declare(getTarget()->lutDelay(), "fR", wF+4) << " <= Q(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<") & (";
+		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+4) << " <= Q(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<") & (";
 		
 		// computation of the sticky bit
 		for(int j=lsbSize-1; j>=0; j--) {
@@ -561,17 +562,17 @@ rox P						or wi is 26 bits long
 		}
 		vhdl << "); " << endl;
 
-		vhdl << tab << "-- fR has wf+4 mantissa bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit, and 1 sticky bit" << endl;
+		vhdl << tab << "-- mR has wf+4 bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit, and 1 sticky bit" << endl;
 		vhdl << tab << "-- normalisation" << endl;
-		vhdl << tab << "with fR(" << wF+3 << ") select" << endl;
+		vhdl << tab << "with mR(" << wF+3 << ") select" << endl;
 		
-		vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+2) << " <= fR(" << wF+2 << " downto 2) & (fR(1) or fR(0)) when '1'," << endl;
-		vhdl << tab << tab << "        fR(" << wF+1 << " downto 0)                    when others;" << endl;
+		vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+2) << " <= mR(" << wF+2 << " downto 2) & (mR(1) or mR(0)) when '1'," << endl;
+		vhdl << tab << tab << "        mR(" << wF+1 << " downto 0)                    when others;" << endl;
 		
 		vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRnorm(1) and (fRnorm(2) or fRnorm(0)); -- fRnorm(0) is the sticky bit" << endl;
 
 		vhdl << tab << declare(getTarget()->adderDelay(wE+2), "expR1", wE+2) << " <= expR0"
-						 << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & fR(" << wF+3 << ")); -- add back bias" << endl;
+						 << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & mR(" << wF+3 << ")); -- add back bias" << endl;
 
 		vhdl << tab << "-- final rounding" <<endl;
 		vhdl << tab <<  declare("expfrac", wE+wF+2) << " <= "

@@ -16,8 +16,14 @@
 
 
 
-// TODO It could be that the mantissa datapath computes one useless LSB 
+
 /*
+Benchmarks for ./flopoco frequency=2 fpdiv we=8 wf=23 
+
+current best is 42 : 543 LUTs  32.306ns 
+
+
+TODOs 
 
 
  */
@@ -550,7 +556,7 @@ rox P						or wi is 26 bits long
 				qMsbToDiscard=0; 
 		}
 		
-		vhdl << tab << "-- keep wF+4 bits, discarding the possible known zeroes of Q, and building a sticky in the LSB" << endl;
+		vhdl << tab << "-- keep wF+3 bits, discarding the possible known MSB zeroes of Q, and dropping the now useless LSBs " << endl;
 		int lsbSize = qSize-qMsbToDiscard-(wF+3);
 		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+3) << " <= Q(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<"); " << endl;
 

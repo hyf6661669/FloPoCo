@@ -323,7 +323,7 @@ namespace flopoco{
 				vhdl << " & qM" << i;
 			vhdl << " & \"0\";" << endl;
 
-			vhdl << tab << declare(getTarget()->adderDelay(3*nDigit), "Q", 3*nDigit) << " <= qP - qM;" << endl;
+			vhdl << tab << declare(getTarget()->adderDelay(3*nDigit), "quotient", 3*nDigit) << " <= qP - qM;" << endl;
 
 			//The last +3 in computing nDigit is for this part
 			// Here we get rid of the leading bit, which is a known zero, we keep
@@ -547,7 +547,7 @@ rox P						or wi is 26 bits long
 
 
 			// TODO an IntAdder here
-			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "Q", 2*nDigit-2) << " <= qP - qM;" << endl;
+			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "quotient", 2*nDigit-2) << " <= qP - qM;" << endl;
 
 			// preparing the extraction of a mantissa from q
 			qSize=2*nDigit-2; // where nDigit is  floor((wF + extraBit)/2)
@@ -559,14 +559,12 @@ rox P						or wi is 26 bits long
 		
 		vhdl << tab << "-- keep wF+3 bits, discarding the possible known MSB zeroes of Q, and dropping the now useless LSBs " << endl;
 		int lsbSize = qSize-qMsbToDiscard-(wF+3);
-		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+3) << " <= Q(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<"); " << endl;
+		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+3) << " <= quotient(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<"); " << endl;
 
 		vhdl << tab << "-- mR has wf+3 bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit" << endl;
-		vhdl << tab << "-- normalisation" << endl;
-		vhdl << tab << "with mR(" << wF+2 << ") select" << endl;
-		
-		vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+1) << " <= mR(" << wF+1 << " downto 1)  when '1'," << endl;
-		vhdl << tab << tab << "          mR(" << wF << " downto 0)  when others;" << endl;
+		vhdl << tab << "-- normalisation" << endl;		
+		vhdl << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+1) << " <=    mR(" << wF+1 << " downto 1)  when mR" << of(wF+2) << "= '1'" << endl;
+		vhdl << tab << "        else mR(" << wF << " downto 0);" << endl;
 		
 		vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRnorm(0); " << endl;
 

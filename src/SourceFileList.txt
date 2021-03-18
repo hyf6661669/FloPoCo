@@ -160,6 +160,7 @@ PrimitiveComponents/Xilinx/XilinxGPC
 PrimitiveComponents/Xilinx/XilinxFourToTwoCompressor
 PrimitiveComponents/Intel/Intel_LCELL
 PrimitiveComponents/Intel/IntelLcellTestOperator
+PrimitiveComponents/Intel/IntelRCCM
 Tools/Plane
 Tools/Point
 TutorialOperator

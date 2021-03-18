@@ -23,7 +23,7 @@ namespace flopoco
 
 //		vhdl << "Y <= A & B;" << endl;
 
-		string lut_mask="abcdabcdacbdabcd";
+		string lut_mask="x\"abcdabcdacbdabcd\"";
 		Intel_LCELL *lcell = new Intel_LCELL(this,target,lut_mask,false,false);
 		inPortMap("dataa","A");
 		inPortMap("datab","A");

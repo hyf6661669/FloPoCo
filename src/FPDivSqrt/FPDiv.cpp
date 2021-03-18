@@ -20,10 +20,13 @@
 /*
 Benchmarks for ./flopoco frequency=2 fpdiv we=8 wf=23 
 
-current best is 42 : 543 LUTs  32.306ns 
+current best is 42 : 543 LUTs  32.263ns   
 
+(best FPAdder is 329 LUTs, 11,7ns )
 
-TODOs 
+ 
+TODOs: q0 could be reduced to 1 bit.
+I can't convince myself that nDigits is optimal
 
 
  */
@@ -521,11 +524,9 @@ rox P						or wi is 26 bits long
 			} // end loop
 
 			vhdl << tab << declare("wfinal", wF+2) << " <= w0" <<range(wF+1,0) << ";" << endl;
-			vhdl << tab << declare(getTarget()->eqConstComparatorDelay(wF+2), "q0",3)
-					 << " <= \"000\" when  wfinal = (" << wF+1 << " downto 0 => '0')" << endl;
-			vhdl << tab << "             else wfinal(" << wF+1 << ") & \"10\"; -- rounding digit, according to sign of remainder" << endl;
+			vhdl << tab << declare("q0") << " <= wfinal" << of(wF+1) << "; -- rounding bit is the sign of the remainder" << endl;
 
-			for(i=nDigit-1; i>=0; i--) {
+			for(i=nDigit-1; i>=1; i--) {
 				ostringstream qPi, qMi;
 				string qi = join("q",i);
 				qPi << "qP" << i;
@@ -534,22 +535,22 @@ rox P						or wi is 26 bits long
 				vhdl << tab << declare(qMi.str(), 2)<<" <=      " << qi << "(2) & \"0\";" << endl;
 			}
 
-			vhdl << tab << declare("qP", 2*nDigit) << " <= qP" << nDigit-1;
-			for (i=nDigit-2; i>=0; i--)
+			vhdl << tab << declare("qP", 2*nDigit-2) << " <= qP" << nDigit-1;
+			for (i=nDigit-2; i>=1; i--)
 				vhdl << " & qP" << i;
 			vhdl << ";" << endl;
 
-			vhdl << tab << declare("qM", 2*nDigit) << " <= qM" << nDigit-1 << "(0)";
-			for (i=nDigit-2; i>=0; i--)
+			vhdl << tab << declare("qM", 2*nDigit-2) << " <= qM" << nDigit-1 << "(0)";
+			for (i=nDigit-2; i>=1; i--)
 				vhdl << " & qM" << i;
-			vhdl << " & \"0\";" << endl;
+			vhdl << " & q0;" << endl;
 
 
 			// TODO an IntAdder here
-			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "Q", 2*nDigit) << " <= qP - qM;" << endl;
+			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "Q", 2*nDigit-2) << " <= qP - qM;" << endl;
 
 			// preparing the extraction of a mantissa from q
-			qSize=2*nDigit; // where nDigit is  floor((wF + extraBit)/2)
+			qSize=2*nDigit-2; // where nDigit is  floor((wF + extraBit)/2)
 			if(alpha==2)
 				qMsbToDiscard=1;// due to initial alignment to respect R0<rho D with rho=2/3
 			else

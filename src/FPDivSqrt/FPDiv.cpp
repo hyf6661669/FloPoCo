@@ -524,7 +524,7 @@ rox P						or wi is 26 bits long
 			} // end loop
 
 			vhdl << tab << declare("wfinal", wF+2) << " <= w0" <<range(wF+1,0) << ";" << endl;
-			vhdl << tab << declare("q0") << " <= wfinal" << of(wF+1) << "; -- rounding bit is the sign of the remainder" << endl;
+			vhdl << tab << declare("qM0") << " <= wfinal" << of(wF+1) << "; -- rounding bit is the sign of the remainder" << endl;
 
 			for(i=nDigit-1; i>=1; i--) {
 				ostringstream qPi, qMi;
@@ -543,7 +543,7 @@ rox P						or wi is 26 bits long
 			vhdl << tab << declare("qM", 2*nDigit-2) << " <= qM" << nDigit-1 << "(0)";
 			for (i=nDigit-2; i>=1; i--)
 				vhdl << " & qM" << i;
-			vhdl << " & q0;" << endl;
+			vhdl << " & qM0;" << endl;
 
 
 			// TODO an IntAdder here
@@ -557,14 +557,15 @@ rox P						or wi is 26 bits long
 				qMsbToDiscard=0; 
 		}
 		
-		vhdl << tab << "-- keep wF+3 bits, discarding the possible known MSB zeroes of Q, and dropping the now useless LSBs " << endl;
+		vhdl << tab << "-- We need a mR in (0, -wf-2) format: 1+wF fraction bits, 1 round bit, and 1 guard bit for the normalisation," << endl;
+		vhdl << tab << "-- quotient is the truncation of the exact quotient to at least 2^(-wF-2) bits" << endl;
+		vhdl << tab << "-- now discarding its possible known MSB zeroes, and dropping the possible extra LSB bit (due to radix 4) " << endl;
 		int lsbSize = qSize-qMsbToDiscard-(wF+3);
 		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+3) << " <= quotient(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<"); " << endl;
 
-		vhdl << tab << "-- mR has wf+3 bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit" << endl;
 		vhdl << tab << "-- normalisation" << endl;		
 		vhdl << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+1) << " <=    mR(" << wF+1 << " downto 1)  when mR" << of(wF+2) << "= '1'" << endl;
-		vhdl << tab << "        else mR(" << wF << " downto 0);" << endl;
+		vhdl << tab << "        else mR(" << wF << " downto 0);  -- now fRnorm is a (-1, -wF-1) fraction" << endl;
 		
 		vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRnorm(0); " << endl;
 

@@ -25,12 +25,14 @@ current best is 42 : 543 LUTs  32.263ns
 (best FPAdder is 329 LUTs, 11,7ns )
 
  
-TODOs: 
-extraDigits could possibly be reduced by 1: replace the late  normalization step by an early comparison of 1.FX and 1.FY, 
- and 1-bit shift left 1.FX if 1.FX < 1.FY
-Not completely sure this won't break the convergence condition on first step
-If it works it would reduce nDigits by 1 for odd wF (including 23) with an overall saving in area.  
+REMARK: 
+extraBit could possibly be reduced by 1: 
+it is possible to replace the late  normalization step by an early comparison of 1.FX and 1.FY, 
+ and 1-bit shift left 1.FX if 1.FX < 1.FY (it turns out this won't break the convergence condition on first step) 
 
+Florent tested it and it is not worth it: we get a small saving in latency, no saving in area for odd wF, e.g.23: 544 LUT,  31.487ns
+BUT large  overhead in latency and area for even wF (when nbDigits is not reduced). 
+In short when nDigits is not reduced we have a  mantissa comparison that is a strict overhead.
 
  */
 

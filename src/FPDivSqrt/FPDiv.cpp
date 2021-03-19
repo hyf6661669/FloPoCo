@@ -25,8 +25,11 @@ current best is 42 : 543 LUTs  32.263ns
 (best FPAdder is 329 LUTs, 11,7ns )
 
  
-TODOs: q0 could be reduced to 1 bit.
-I can't convince myself that nDigits is optimal
+TODOs: 
+extraDigits could possibly be reduced by 1: replace the late  normalization step by an early comparison of 1.FX and 1.FY, 
+ and 1-bit shift left 1.FX if 1.FX < 1.FY
+Not completely sure this won't break the convergence condition on first step
+If it works it would reduce nDigits by 1 for odd wF (including 23) with an overall saving in area.  
 
 
  */

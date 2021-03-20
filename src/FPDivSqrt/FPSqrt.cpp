@@ -104,8 +104,9 @@ namespace flopoco{
 		  else
 		    vhdl << sip /*<< range(i-1,1)*/ << " & not " << di << ";"<< endl;
 		}
-		vhdl << tab << declare("d0") << " <= "<< join("w", maxstep) << of(wF+3)<<" ;" << endl;
-		vhdl << tab << declare("fR", wF+4) << " <= "<< join("s", maxstep)<<" & not d0 & '1';" << endl;
+		string dfinal=join("d", maxstep+1);
+		vhdl << tab << declare(dfinal) << " <= "<< join("w", maxstep) << of(wF+3)<<" ;" << endl;
+		vhdl << tab << declare("mR", wF+3) << " <= "<< join("s", maxstep)<<" & not "<<dfinal<<"; -- result significand" << endl;
 
 		// end of component FPSqrt_Sqrt in fplibrary
 #if 0 // Removed because it was useless. Maybe useful for possible faithful versions, so let's keep the code for a while
@@ -115,13 +116,13 @@ namespace flopoco{
 		     << tab << tab << "        fR" <<range(wF+1, 0) << "                    when others;" << endl;
 		vhdl << tab << declare("round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)) ; -- round  and (lsb or sticky) : that's RN, tie to even" << endl;
 #else
-		vhdl << tab << declare(target->lutDelay(), "fRn1", wF+2) << " <= fR" <<range(wF+1, 0) << ";" << endl;
-		vhdl << tab << declare("round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)) ; -- round  and (lsb or sticky) : that's RN, tie to even" << endl;
+		vhdl << tab << declare(target->lutDelay(), "fR", wF+1) << " <= mR" <<range(wF, 0) << ";-- removing leading 1" << endl;
+		vhdl << tab << declare("round") << " <= fR(0); -- round bit" << endl;
 
 #endif
 
 		vhdl << tab << declare(target->adderDelay(wF),
-													 "fRn2", wF) << " <= fRn1" << range(wF+1, 2) <<" + (" << rangeAssign(wF-1, 1, "'0'") << " & round); -- rounding sqrt never changes exponents " << endl;
+													 "fRn2", wF) << " <= fR" << range(wF, 1) <<" + (" << rangeAssign(wF-1, 1, "'0'") << " & round); -- rounding sqrt never changes exponents " << endl;
 		vhdl << tab << declare("Rn2", wE+wF) << " <= eRn1 & fRn2;" << endl;
 
 		vhdl << tab << "-- sign and exception processing" << endl;
@@ -211,7 +212,37 @@ namespace flopoco{
 			return new FPSqrt(parentOp, target, wE, wF);
 		}
 
-		void FPSqrt::registerFactory(){
+
+	TestList FPSqrt::unitTest(int index)
+	{
+		// the static list of mandatory tests
+		TestList testStateList;
+		vector<pair<string,string>> paramList;
+		
+		if(index==-1) 
+		{ // The unit tests
+
+			for(int wF=5; wF<53; wF+=1) // test various input widths
+			{
+					int wE = 6+(wF/10);
+					while(wE>wF)
+					{
+						wE -= 2;
+					}
+					paramList.push_back(make_pair("wF",to_string(wF)));
+					paramList.push_back(make_pair("wE",to_string(wE)));
+					testStateList.push_back(paramList);
+					paramList.clear();
+			}
+		}
+		else     
+		{
+				// finite number of random test computed out of index
+		}	
+		return testStateList;
+	}
+
+	void FPSqrt::registerFactory(){
 			UserInterface::add("FPSqrt", // name
 												 "A correctly rounded floating-point square root function.",
 												 "BasicFloatingPoint", // categories
@@ -219,7 +250,8 @@ namespace flopoco{
 												 "wE(int): exponent size in bits; \
 wF(int): mantissa size in bits",
 												 "",
-												 FPSqrt::parseArguments
+												 FPSqrt::parseArguments,
+												 FPSqrt::unitTest
 												 ) ;
 
 		}

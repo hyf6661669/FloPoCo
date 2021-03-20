@@ -61,51 +61,51 @@ namespace flopoco{
 		vhdl << tab << declare("eRn1", wE) << " <= eRn0 + (\"00\" & " << rangeAssign(wE-3, 0, "'1'") << ") + X(" << wF << ");" << endl;
 
 		vhdl << tab << declare(getTarget()->lutDelay(),
-													 join("w",wF+3), wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
+													 join("w",0), wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
 		     << tab << "       \"1101\" & fracX; -- pre-normalization" << endl;
 		//		vhdl << tab << declare(join("d",wF+3)) << " <= '0';" << endl;
 		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
 
 		vhdl << tab << "-- now implementing the recurrence " << endl;
-		vhdl << tab << "--  w_{i+1} = 2w_i -2s_{i+1}S_j - 2^{-i-1}s_{i+1}^2  for i in {1..n}" << endl;
-		for(int step=1; step<=wF+2; step++) {
-		  double stageDelay= getTarget()->adderDelay(step) + 2*getTarget()->lutDelay();
-			REPORT(2, "estimated delay for stage "<< step << " is " << stageDelay << "s")
-
-				int i = wF+3-step; // to have the same indices as FPLibrary
+		vhdl << tab << "--  w_{i} = 2w_{i-1} -2s_{i}S_{i-1} - 2^{-i-1}s_{i}^2  for i in {1..n}" << endl;
+		int maxstep=wF+2;
+		for(int i=1; i<=maxstep; i++) {
+		  double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
+			REPORT(2, "estimated delay for stage "<< i << " is " << stageDelay << "s");
+			// was: int i = wF+3-step; // to have the same indices as FPLibrary
 		  vhdl << tab << "-- Step " << i << endl;
 		  string di = join("d", i);
 		  string xi = join("x", i);
 		  string wi = join("w", i);
-		  string wip = join("w", i+1);
+		  string wip = join("w", i-1);
 		  string si = join("s", i);
-		  string sip = join("s", i+1);
+		  string sip = join("s", i-1);
 		  //			string zs = join("zs", i);
 		  string ds = join("ds", i);
 		  string xh = join("xh", i);
 		  string wh = join("wh", i);
 		  vhdl << tab << declare(di) << " <= "<< wip << "("<< wF+3<<");" << endl;
 		  vhdl << tab << declare(xi,wF+5) << " <= " << wip << " & \"0\";" << endl;
-		  vhdl << tab << declare(ds,step+3) << " <=  \"0\" & ";
-		  if (step>1)
+		  vhdl << tab << declare(ds,i+3) << " <=  \"0\" & ";
+		  if (i>1)
 		    vhdl 	<< sip << " & ";
 		  vhdl << " (not " << di << ") & " << di << " & \"1\";" << endl;
-		  vhdl << tab << declare(xh,step+3) << " <= " << xi << range(wF+4, wF+2-step) << ";" << endl;
-		  vhdl << tab <<  declare(stageDelay, wh, step+3) << " <= " << xh << " - " << ds << " when " << di << "='0'" << endl
+		  vhdl << tab << declare(xh,i+3) << " <= " << xi << range(wF+4, wF+2-i) << ";" << endl;
+		  vhdl << tab <<  declare(stageDelay, wh, i+3) << " <= " << xh << " - " << ds << " when " << di << "='0'" << endl
 		       << tab << tab << "     else   " << xh << " + " << ds << ";" << endl;
-		  vhdl << tab << declare(wi, wF+4) << " <= " << wh << range(step+1,0);
-		  if(step <= wF+1)
-		    vhdl << " & " << xi << range(wF+1-step, 0) << ";" << endl;
+		  vhdl << tab << declare(wi, wF+4) << " <= " << wh << range(i+1,0);
+		  if(i <= wF+1)
+		    vhdl << " & " << xi << range(wF+1-i, 0) << ";" << endl;
 		  else
 		    vhdl << ";" << endl;
-		  vhdl << tab << declare(si, step) << " <= ";
-		  if(step==1)
+		  vhdl << tab << declare(si, i) << " <= ";
+		  if(i==1)
 		    vhdl << "\"\" & (not " << di << ") ;"<< endl;
 		  else
-		    vhdl << sip /*<< range(step-1,1)*/ << " & not " << di << ";"<< endl;
+		    vhdl << sip /*<< range(i-1,1)*/ << " & not " << di << ";"<< endl;
 		}
-		vhdl << tab << declare("d0") << " <= w1(" << wF+3 << ") ;" << endl;
-		vhdl << tab << declare("fR", wF+4) << " <= s1 & not d0 & '1';" << endl;
+		vhdl << tab << declare("d0") << " <= "<< join("w", maxstep) << of(wF+3)<<" ;" << endl;
+		vhdl << tab << declare("fR", wF+4) << " <= "<< join("s", maxstep)<<" & not d0 & '1';" << endl;
 
 		// end of component FPSqrt_Sqrt in fplibrary
 #if 0 // Removed because it was useless. Maybe useful for possible faithful versions, so let's keep the code for a while

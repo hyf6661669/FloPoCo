@@ -62,10 +62,12 @@ namespace flopoco{
 
 		vhdl << tab << declare(getTarget()->lutDelay(),
 													 join("w",wF+3), wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
-		     << tab << "       \"1101\" & fracX;" << endl;
+		     << tab << "       \"1101\" & fracX; -- pre-normalization" << endl;
 		//		vhdl << tab << declare(join("d",wF+3)) << " <= '0';" << endl;
 		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
 
+		vhdl << tab << "-- now implementing the recurrence " << endl;
+		vhdl << tab << "--  w_{i+1} = 2w_i -2s_{i+1}S_j - 2^{-i-1}s_{i+1}^2  for i in {1..n}" << endl;
 		for(int step=1; step<=wF+2; step++) {
 		  double stageDelay= getTarget()->adderDelay(step) + 2*getTarget()->lutDelay();
 			REPORT(2, "estimated delay for stage "<< step << " is " << stageDelay << "s")
@@ -89,9 +91,8 @@ namespace flopoco{
 		    vhdl 	<< sip << " & ";
 		  vhdl << " (not " << di << ") & " << di << " & \"1\";" << endl;
 		  vhdl << tab << declare(xh,step+3) << " <= " << xi << range(wF+4, wF+2-step) << ";" << endl;
-		  vhdl << tab << "with " << di << " select" << endl
-		       << tab << tab <<  declare(stageDelay, wh, step+3) << " <= " << xh << " - " << ds << " when '0'," << endl
-		       << tab << tab << "      " << xh << " + " << ds << " when others;" << endl;
+		  vhdl << tab <<  declare(stageDelay, wh, step+3) << " <= " << xh << " - " << ds << " when " << di << "='0'" << endl
+		       << tab << tab << "     else   " << xh << " + " << ds << ";" << endl;
 		  vhdl << tab << declare(wi, wF+4) << " <= " << wh << range(step+1,0);
 		  if(step <= wF+1)
 		    vhdl << " & " << xi << range(wF+1-step, 0) << ";" << endl;
@@ -107,12 +108,17 @@ namespace flopoco{
 		vhdl << tab << declare("fR", wF+4) << " <= s1 & not d0 & '1';" << endl;
 
 		// end of component FPSqrt_Sqrt in fplibrary
+#if 0 // Removed because it was useless. Maybe useful for possible faithful versions, so let's keep the code for a while
 		vhdl << tab << "-- normalisation of the result, removing leading 1" << endl;
 		vhdl << tab <<  "with fR(" << wF+3 << ") select" << endl
 		     << tab << tab << declare(target->lutDelay(), "fRn1", wF+2) << " <= fR" << range(wF+2, 2) << " & (fR(1) or fR(0)) when '1'," << endl
 		     << tab << tab << "        fR" <<range(wF+1, 0) << "                    when others;" << endl;
 		vhdl << tab << declare("round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)) ; -- round  and (lsb or sticky) : that's RN, tie to even" << endl;
+#else
+		vhdl << tab << declare(target->lutDelay(), "fRn1", wF+2) << " <= fR" <<range(wF+1, 0) << ";" << endl;
+		vhdl << tab << declare("round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)) ; -- round  and (lsb or sticky) : that's RN, tie to even" << endl;
 
+#endif
 
 		vhdl << tab << declare(target->adderDelay(wF),
 													 "fRn2", wF) << " <= fRn1" << range(wF+1, 2) <<" + (" << rangeAssign(wF-1, 1, "'0'") << " & round); -- rounding sqrt never changes exponents " << endl;

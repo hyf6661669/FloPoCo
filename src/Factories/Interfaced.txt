@@ -62,6 +62,7 @@ TutorialOperator
 ModuloBitHeapOperator
 ModuloMontgomery
 ModuloBarrett
+BitHeapModuloTest
 BaseMultiplierDSPSuperTilesXilinx
 BaseMultiplierXilinx2xk
 BaseMultiplierIrregularLUTXilinx

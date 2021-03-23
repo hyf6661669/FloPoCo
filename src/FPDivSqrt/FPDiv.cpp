@@ -20,11 +20,19 @@
 /*
 Benchmarks for ./flopoco frequency=2 fpdiv we=8 wf=23 
 
-current best is 42 : 543 LUTs  32.306ns 
+current best is 42 : 543 LUTs  32.263ns   
 
+(best FPAdder is 329 LUTs, 11,7ns )
 
-TODOs 
+ 
+REMARK: 
+extraBit could possibly be reduced by 1: 
+it is possible to replace the late  normalization step by an early comparison of 1.FX and 1.FY, 
+ and 1-bit shift left 1.FX if 1.FX < 1.FY (it turns out this won't break the convergence condition on first step) 
 
+Florent tested it and it is not worth it: we get a small saving in latency, no saving in area for odd wF, e.g.23: 544 LUT,  31.487ns
+BUT large  overhead in latency and area for even wF (when nbDigits is not reduced). 
+In short when nDigits is not reduced we have a  mantissa comparison that is a strict overhead.
 
  */
 
@@ -320,7 +328,7 @@ namespace flopoco{
 				vhdl << " & qM" << i;
 			vhdl << " & \"0\";" << endl;
 
-			vhdl << tab << declare(getTarget()->adderDelay(3*nDigit), "Q", 3*nDigit) << " <= qP - qM;" << endl;
+			vhdl << tab << declare(getTarget()->adderDelay(3*nDigit), "quotient", 3*nDigit) << " <= qP - qM;" << endl;
 
 			//The last +3 in computing nDigit is for this part
 			// Here we get rid of the leading bit, which is a known zero, we keep
@@ -521,11 +529,9 @@ rox P						or wi is 26 bits long
 			} // end loop
 
 			vhdl << tab << declare("wfinal", wF+2) << " <= w0" <<range(wF+1,0) << ";" << endl;
-			vhdl << tab << declare(getTarget()->eqConstComparatorDelay(wF+2), "q0",3)
-					 << " <= \"000\" when  wfinal = (" << wF+1 << " downto 0 => '0')" << endl;
-			vhdl << tab << "             else wfinal(" << wF+1 << ") & \"10\"; -- rounding digit, according to sign of remainder" << endl;
+			vhdl << tab << declare("qM0") << " <= wfinal" << of(wF+1) << "; -- rounding bit is the sign of the remainder" << endl;
 
-			for(i=nDigit-1; i>=0; i--) {
+			for(i=nDigit-1; i>=1; i--) {
 				ostringstream qPi, qMi;
 				string qi = join("q",i);
 				qPi << "qP" << i;
@@ -534,38 +540,37 @@ rox P						or wi is 26 bits long
 				vhdl << tab << declare(qMi.str(), 2)<<" <=      " << qi << "(2) & \"0\";" << endl;
 			}
 
-			vhdl << tab << declare("qP", 2*nDigit) << " <= qP" << nDigit-1;
-			for (i=nDigit-2; i>=0; i--)
+			vhdl << tab << declare("qP", 2*nDigit-2) << " <= qP" << nDigit-1;
+			for (i=nDigit-2; i>=1; i--)
 				vhdl << " & qP" << i;
 			vhdl << ";" << endl;
 
-			vhdl << tab << declare("qM", 2*nDigit) << " <= qM" << nDigit-1 << "(0)";
-			for (i=nDigit-2; i>=0; i--)
+			vhdl << tab << declare("qM", 2*nDigit-2) << " <= qM" << nDigit-1 << "(0)";
+			for (i=nDigit-2; i>=1; i--)
 				vhdl << " & qM" << i;
-			vhdl << " & \"0\";" << endl;
+			vhdl << " & qM0;" << endl;
 
 
 			// TODO an IntAdder here
-			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "Q", 2*nDigit) << " <= qP - qM;" << endl;
+			vhdl << tab << declare(getTarget()->adderDelay(2*nDigit), "quotient", 2*nDigit-2) << " <= qP - qM;" << endl;
 
 			// preparing the extraction of a mantissa from q
-			qSize=2*nDigit; // where nDigit is  floor((wF + extraBit)/2)
+			qSize=2*nDigit-2; // where nDigit is  floor((wF + extraBit)/2)
 			if(alpha==2)
 				qMsbToDiscard=1;// due to initial alignment to respect R0<rho D with rho=2/3
 			else
 				qMsbToDiscard=0; 
 		}
 		
-		vhdl << tab << "-- keep wF+3 bits, discarding the possible known MSB zeroes of Q, and dropping the now useless LSBs " << endl;
+		vhdl << tab << "-- We need a mR in (0, -wf-2) format: 1+wF fraction bits, 1 round bit, and 1 guard bit for the normalisation," << endl;
+		vhdl << tab << "-- quotient is the truncation of the exact quotient to at least 2^(-wF-2) bits" << endl;
+		vhdl << tab << "-- now discarding its possible known MSB zeroes, and dropping the possible extra LSB bit (due to radix 4) " << endl;
 		int lsbSize = qSize-qMsbToDiscard-(wF+3);
-		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+3) << " <= Q(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<"); " << endl;
+		vhdl << tab << declare(getTarget()->lutDelay(), "mR", wF+3) << " <= quotient(" << qSize-1-qMsbToDiscard << " downto "<< lsbSize <<"); " << endl;
 
-		vhdl << tab << "-- mR has wf+3 bits: 1 bit for the norm, 1+wF fraction bits, 1 round bit" << endl;
-		vhdl << tab << "-- normalisation" << endl;
-		vhdl << tab << "with mR(" << wF+2 << ") select" << endl;
-		
-		vhdl << tab << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+1) << " <= mR(" << wF+1 << " downto 1)  when '1'," << endl;
-		vhdl << tab << tab << "          mR(" << wF << " downto 0)  when others;" << endl;
+		vhdl << tab << "-- normalisation" << endl;		
+		vhdl << tab << declare(getTarget()->lutDelay(), "fRnorm", wF+1) << " <=    mR(" << wF+1 << " downto 1)  when mR" << of(wF+2) << "= '1'" << endl;
+		vhdl << tab << "        else mR(" << wF << " downto 0);  -- now fRnorm is a (-1, -wF-1) fraction" << endl;
 		
 		vhdl << tab << declare(getTarget()->lutDelay(), "round") << " <= fRnorm(0); " << endl;
 

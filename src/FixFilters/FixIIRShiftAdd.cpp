@@ -177,7 +177,7 @@ namespace flopoco {
         // registers (only word size is needed for vhdl code generation, but it can be derived from msb and lsb)
         for(int i = n-2; i >= 0; i--)
         {
-            int bitGainForRegister = 0;
+            int64_t bitGainForRegister = 0;
             for (int j = i + 1; j < n; j++)
             {
                 if(method == "plain" && isPowerOfTwo(coeffb_si[j], true)) // see comment multiplications forward path
@@ -205,12 +205,13 @@ namespace flopoco {
 
         for (int i = n - 2; i >= 0; i--) // for additions except addN-1
         {
-            int bitGainForAdditons = 0;
+            int64_t bitGainForAdditons = 0;
             for (int j = i; j < n; j++)
                 if(method == "plain" && isPowerOfTwo(coeffb_si[j], true)) // see comment multiplications forward path
                     bitGainForAdditons += abs(coeffb_si[j])+1;
                 else
                     bitGainForAdditons += abs(coeffb_si[j]);
+            REPORT(INFO, "bitGainForAdditons: " << ceil(log2((abs(bitGainForAdditons)))));
             if(bitGainForAdditons == 0)
                 msbAdditionsForwardOut[i] = msbIn;
             else
@@ -226,7 +227,7 @@ namespace flopoco {
         // ################################### WORD SIZES BACKPATH ###############################################
 
         // check if replaceble by wcpg
-        int wordsizeGainFeedback = 0; // growth of wordsize in feedback path. Used multiple times for wird size / msb / lsb calculation
+        int64_t wordsizeGainFeedback = 0; // growth of wordsize in feedback path. Used multiple times for wird size / msb / lsb calculation
         for (int i = 0; i < m; i++)
             wordsizeGainFeedback += (abs(coeffa_si[i]));
         wordsizeGainFeedback = ceil(log2(wordsizeGainFeedback));
@@ -257,7 +258,7 @@ namespace flopoco {
         // values of registers are computed first -> values for additions can be derived
         for(int i = m-1; i >= 0; i--)
         {
-            int tmp = 0;
+            int64_t tmp = 0;
             for (int j = i; j < m; j++)
             {
                 if(method == "plain" && isPowerOfTwo(coeffa_si[j], false)) // see comment multiplications forward path
@@ -471,10 +472,11 @@ namespace flopoco {
             parameters << "wIn=" << wIn << " graph=" << graphb;
             string inPortMaps = "X0=>X";
             REPORT(LIST, "outPortMaps (forward): " << outPortMaps.str())
+            cout << "parameters: " << parameters.str() << endl;
             newInstance("IntConstMultShiftAdd", "IntConstMultShiftAddComponentForward", parameters.str(), inPortMaps,
                         outPortMaps.str());
 
-            REPORT(DETAILED, "IntConstMultShiftAdd for forward path created")
+            REPORT(LIST, "IntConstMultShiftAdd for forward path created")
         }
 
         vhdl << endl;
@@ -1428,6 +1430,22 @@ namespace flopoco {
         paramList.push_back(make_pair("shiftb", "3"));
         paramList.push_back(make_pair("shifta", "3"));
         paramList.push_back(make_pair("guardbits", "-1"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-16"));
+        paramList.push_back(make_pair("lsbOut", "-16"));
+        paramList.push_back(make_pair("coeffb", "2:6"));
+        paramList.push_back(make_pair("coeffa", "6:10:6"));
+        paramList.push_back(make_pair("shiftb", "16"));
+        paramList.push_back(make_pair("shifta", "16"));
+        paramList.push_back(make_pair("guardbits", "-1"));
+        paramList.push_back(make_pair("grapha",
+                                      "\"{{\'O\',[6],3,[3],2,1},{\'O\',[10],3,[5],1,1},{\'A\',[3],2,[1],0,-1,[5],1,-1},{\'A\',[5],1,[1],0,2,[1],0,0}}\""));
+        paramList.push_back(make_pair("graphb", "\"{{\'O\',[2],2,[1],0,1},{\'O\',[6],2,[3],1,1},{\'A\',[3],1,[1],0,2,[-1],0,0}}\""));
+        paramList.push_back(make_pair("method", "multiplierless"));
+
         testStateList.push_back(paramList);
         paramList.clear();
 

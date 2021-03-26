@@ -52,7 +52,7 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
 	    cout << "guardBits " << guardBits << " keepBits " << keepBits << endl;
         for(auto &p:tiles)
         {
-                cout << p->getLUTCost(0, 0, wX, wY) << " " << p->getType() << endl;
+                cout << p->getLUTCost(0, 0, wX, wY, false) << " " << p->getType() << endl;
         }
 	}
 
@@ -96,10 +96,10 @@ void TilingStrategyOptimalILP::solve()
                 int m_x_pos = stoi(var_name.substr(2+dpS+x_negative,dpX)) * ((x_negative)?(-1):1);
                 int y_negative = (var_name.substr(2+dpS+x_negative+dpX,1).compare("m") == 0)?1:0;
                 int m_y_pos = stoi(var_name.substr(2+dpS+dpX+x_negative+y_negative,dpY)) * ((y_negative)?(-1):1);
-                cout << "is true:  " << setfill(' ') << setw(dpY) << mult_id << " " << setfill(' ') << setw(dpY) << m_x_pos << " " << setfill(' ') << setw(dpY) << m_y_pos << " cost: " << setfill(' ') << setw(5) << tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY) << std::endl;
+                cout << "is true:  " << setfill(' ') << setw(dpY) << mult_id << " " << setfill(' ') << setw(dpY) << m_x_pos << " " << setfill(' ') << setw(dpY) << m_y_pos << " cost: " << setfill(' ') << setw(5) << tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO) << std::endl;
 
-                total_cost += (double)tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY);
-                own_lut_cost += tiles[mult_id]->ownLUTCost(m_x_pos, m_y_pos, wX, wY);
+                total_cost += (double)tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
+                own_lut_cost += tiles[mult_id]->ownLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
                 dsp_cost += (double)tiles[mult_id]->getDSPCost();
                 auto coord = make_pair(m_x_pos, m_y_pos);
                 solution.push_back(make_pair(tiles[mult_id]->getParametrisation().tryDSPExpand(m_x_pos, m_y_pos, wX, wY, signedIO), coord));
@@ -132,7 +132,8 @@ void TilingStrategyOptimalILP::solve()
     solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(32, 48, wX, wY, signedIO), make_pair(32, 48)));
 */
 //    solution.push_back(make_pair(tiles[1]->getParametrisation(), make_pair(0, 0)));
-
+/*    solution.push_back(make_pair(tiles[9]->getParametrisation().tryDSPExpand(0, 0, wX, wY, signedIO), make_pair(0, 0)));
+    solution.push_back(make_pair(tiles[5]->getParametrisation().tryDSPExpand(5, 0, wX, wY, signedIO), make_pair(5, 0)));*/
 #endif
 }
 
@@ -187,7 +188,7 @@ void TilingStrategyOptimalILP::constructProblem()
                                     //std::cout << nvarName.str() << endl;
                                     ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
                                     solve_Vars[s][xs+x_neg][ys+y_neg] = tempV;
-                                    obj.add(tempV, (double)tiles[s]->getLUTCost(xs, ys, wX, wY));    //append variable to cost function
+                                    obj.add(tempV, (double)tiles[s]->getLUTCost(xs, ys, wX, wY, signedIO));    //append variable to cost function
                                 }
                                 pxyTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg], 1);
                             }

@@ -19,6 +19,7 @@ DSPBlock
 IntMultiplier
 IntMultiplierLUT
 IntKaratsubaRectangular
+IntSquarer
 FixFunctionByTable
 FixFunctionByMultipartiteTable
 FixFunctionBySimplePoly

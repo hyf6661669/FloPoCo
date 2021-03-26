@@ -58,7 +58,7 @@ int BaseMultiplierDSPSuperTilesXilinx::isSuperTile(int rx1, int ry1, int lx1, in
     return 0;
 }
 
-double BaseMultiplierDSPSuperTilesXilinx::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY){
+double BaseMultiplierDSPSuperTilesXilinx::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO){
     int rx1 = mult_bounds[shape-1].dsp1_rx, rx2 = mult_bounds[shape-1].dsp2_rx, ry1 = mult_bounds[shape-1].dsp1_ry, ry2 = mult_bounds[shape-1].dsp2_ry;
     int x1_min = ((x_anchor + rx1 < 0)?0: x_anchor + rx1);
     int y1_min = ((y_anchor + ry1 < 0)?0: y_anchor + ry1);

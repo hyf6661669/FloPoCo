@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <iostream>
 #include <iomanip>
+#include <regex>
 
 // TODO check the hard mult threshold
 
@@ -377,6 +378,11 @@ namespace flopoco
 		}
 		if(argc==2 && string(argv[1])=="BuildHTMLDoc") {
 			buildHTMLDoc();
+			exit(EXIT_SUCCESS);
+		}
+		if(argc==2 && string(argv[1])=="BuildJSON") {
+			buildOperatorsJSON();
+			buildOperatorListJSON();
 			exit(EXIT_SUCCESS);
 		}
 		if(argc==2 && string(argv[1])=="BuildAutocomplete") {
@@ -853,6 +859,95 @@ namespace flopoco
 		file.close();
 	}
 
+	void UserInterface::buildOperatorsJSON(){
+		ifstream versionfile;
+		versionfile.open("VERSION", ios::in);
+		string version;
+		versionfile >> version;
+		versionfile.close();
+		ofstream file;
+		file.open("operators_" + version + ".json", ios::out);
+		file << "{" << endl;
+
+		bool firstOperator=true;
+		// The following is an inefficient double loop to avoid duplicating the data structure: nobody needs efficiency here
+		// It is used to keep the order identical to the UI
+		for(auto catIt: UserInterface::categories) {
+			string cat =  catIt.first;
+
+			for(auto it: UserInterface::factoryList) {
+				OperatorFactoryPtr f =  it.second;
+				if(cat == f->m_category)
+				{
+					if(!firstOperator)
+						file << "," << endl;
+					else
+						firstOperator = false;
+
+					file << "\t\"" << f->name() << "\" : {" << endl;
+					file << f->getJSONDescription();
+
+					file << "\t}";
+				}
+			}
+		}
+		file << endl << "}" << endl;
+		file.close();
+	}
+
+	void UserInterface::buildOperatorListJSON(){
+		ifstream versionfile;
+		versionfile.open("VERSION", ios::in);
+		string version;
+		versionfile >> version;
+		versionfile.close();
+		ofstream file;
+		file.open("operator_categories_" + version + ".json", ios::out);
+		file << "{" << endl;
+
+		file << "\t\"sectionsOrdered\": [";
+		bool firstCategory=true;
+		for(auto catIt: UserInterface::categories) {
+			string catDesc =  catIt.second;
+			if(!firstCategory)
+				file << ", ";
+			else
+				firstCategory = false;
+
+			file << "\"" << catDesc << "\"";
+		}
+		file << "]," << endl;
+
+		// The following is an inefficient double loop to avoid duplicating the data structure: nobody needs efficiency here
+		firstCategory=true;
+		for(auto catIt: UserInterface::categories) {
+			string cat =  catIt.first;
+			string catDesc =  catIt.second;
+
+			if(!firstCategory)
+				file << "," << endl;
+			else
+				firstCategory = false;
+
+			file << "\t\"" << catDesc << "\": [";
+			bool firstOperator=true;
+			for(auto it: UserInterface::factoryList) {
+				OperatorFactoryPtr f =  it.second;
+				if(cat == f->m_category)
+				{
+					if(!firstOperator)
+						file << ", ";
+					else
+						firstOperator = false;
+					file << "\"" << f->name() << "\"";
+				}
+			}
+			file << "]";
+		}
+		file << endl << "}" << endl;
+		file.close();
+	}
+
 	void UserInterface::buildAutocomplete()
 	{
 		ofstream file;
@@ -1169,8 +1264,8 @@ namespace flopoco
 		ostringstream s;
 		s << "<dl>"<<endl;
 		s << "<dt class=\"operatorname\">" <<  name() << "</dt>"<< endl
-			<< "<dd class=\"operatordescription\">"<< m_description << "</dd>" << endl
-			<< "<dd><em>Parameters:</em> <dl>" << endl;
+		  << "<dd class=\"operatordescription\">"<< m_description << "</dd>" << endl
+		  << "<dd><em>Parameters:</em> <dl>" << endl;
 		for (unsigned i=0; i<m_paramNames.size(); i++) {
 			string pname = m_paramNames[i];
 			if("" != m_paramDefault[pname])
@@ -1188,6 +1283,33 @@ namespace flopoco
 		if("" != m_extraHTMLDoc)
 			s << "<dd>" << m_extraHTMLDoc << "</dd>"<<endl;
 		s << "</dl>"<<endl;
+		return s.str();
+	}
+
+	string OperatorFactory::getJSONDescription(){
+		ostringstream s;
+
+		s << "\t\t" << "\"descr\": \"" << std::regex_replace(m_description ,std::regex("\n+"),"\\n")<< "\"," << endl;
+
+		s << "\t\t" << "\"params\": [{" << endl;
+		bool firstParam=true;
+		for (unsigned i=0; i<m_paramNames.size(); i++)
+		{
+			string pname = m_paramNames[i];
+
+			if(!firstParam)
+				s << "\t\t}, {" << endl;
+			else
+				firstParam=false;
+
+			s << "\t\t\t" << "\"" << pname << "\": {" << endl;
+			s << "\t\t\t\t" << "\"descr\": \"" << std::regex_replace(m_paramDoc[pname],std::regex("\n+"),"\\n") << "\"," << endl;
+			s << "\t\t\t\t" << "\"type\": \"" << m_paramType[pname] << "\"," << endl;
+			s << "\t\t\t\t" << "\"optional\": \"" << ((m_paramDefault[pname] != "") ? "true" : "false") << "\"," << endl;
+			s << "\t\t\t\t" << "\"default\": \"" << m_paramDefault[pname] << "\"" << endl;
+			s << "\t\t\t" << "}" << endl;
+		}
+		s << "\t\t" << "}]" << endl;
 		return s.str();
 	}
 

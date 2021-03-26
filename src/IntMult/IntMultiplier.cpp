@@ -209,9 +209,15 @@ namespace flopoco {
 		REPORT(DEBUG, "Solving tiling problem")
 		tilingStrategy->solve();
 
-		tilingStrategy->printSolution();
-
 		list<TilingStrategy::mult_tile_t> &solution = tilingStrategy->getSolution();
+		if(signedIO)
+            for(auto & tile : solution) {
+                //resize DSPs to be aligned with left and bottom border of the tiled area to allow the correct handling of the sign
+                tile.first = tile.first.shrinkFitDSP(tile.second.first,tile.second.second, wX, wY);
+                //Set signedness of individual tiles according to their position
+                tile.first = tile.first.setSignStatus(tile.second.first,tile.second.second, wX, wY, signedIO);
+            }
+        tilingStrategy->printSolution();
 		auto solLen = solution.size();
 		REPORT(DETAILED, "Found solution has " << solLen << " tiles")
 		if (target_->generateFigures()) {

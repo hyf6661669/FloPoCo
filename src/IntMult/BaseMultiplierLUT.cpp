@@ -19,7 +19,7 @@ Operator* BaseMultiplierLUT::generateOperator(
 		);
 }
 
-	double BaseMultiplierLUT::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY){
+	double BaseMultiplierLUT::getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO){
 		int ws = (wX()==1)?wY():((wY()==1)?wX():wX()+wY());
 		int luts = ((ws <= 5)?ws/2+ws%2:ws);
 
@@ -35,7 +35,7 @@ Operator* BaseMultiplierLUT::generateOperator(
 		return luts + ws*getBitHeapCompressionCostperBit();
 	}
 
-	int BaseMultiplierLUT::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY) {
+	int BaseMultiplierLUT::ownLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO) {
 		int ws = (wX()==1)?wY():((wY()==1)?wX():wX()+wY());
 		int luts = ((ws <= 5)?ws/2+ws%2:ws);
 		return luts;

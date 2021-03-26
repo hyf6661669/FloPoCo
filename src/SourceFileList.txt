@@ -94,6 +94,7 @@ IntMult/BaseMultiplierIrregularLUTXilinx
 IntMult/MultiplierTileCollection
 IntMult/BaseMultiplierDSPKaratsuba
 IntMult/TilingAndCompressionOptILP
+IntMult/IntSquarer
 Complex/FixComplexKCM
 Complex/FixComplexAdder
 Complex/FixComplexR2Butterfly
@@ -157,6 +158,7 @@ PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State
 PrimitiveComponents/Xilinx/Xilinx_TernaryAdd_2State_slice
 PrimitiveComponents/Xilinx/XilinxGPC
 PrimitiveComponents/Xilinx/XilinxFourToTwoCompressor
+PrimitiveComponents/Intel/Intel_LCELL
 Tools/Plane
 Tools/Point
 TutorialOperator

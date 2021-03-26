@@ -136,6 +136,10 @@ namespace flopoco
 		/** Build operators.html directly into the doc directory. */
 		static void buildHTMLDoc();
 
+		/** Build JSON files of FloPoCo operators and FloPoCo categories for the web Interface. Writes operators.json into the current directory. */
+		static void buildOperatorsJSON();
+		static void buildOperatorListJSON();
+
 		/** Build flopoco bash autocompletion file **/
 		static void buildAutocomplete();
 
@@ -222,6 +226,8 @@ namespace flopoco
 		string getFullDoc();
 		/** Provide a string with the full documentation in HTML. */
 		string getHTMLDoc();
+		/** Provide a string with the full JSON description. */
+		string getJSONDescription();
 
 		const vector<string> &param_names(void) const;
 

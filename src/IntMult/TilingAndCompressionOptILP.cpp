@@ -29,7 +29,7 @@ TilingAndCompressionOptILP::TilingAndCompressionOptILP(
 	{
         for(auto &p:tiles)
         {
-                cout << p->getLUTCost(0, 0, wX, wY) << " " << p->getType() << endl;
+                cout << p->getLUTCost(0, 0, wX, wY, false) << " " << p->getType() << endl;
         }
  	}
 
@@ -82,8 +82,8 @@ void TilingAndCompressionOptILP::solve()
                     int m_y_pos = stoi(var_name.substr(1+dpS+dpX+x_negative+y_negative,dpY)) * ((y_negative)?(-1):1);
                     //cout << "is true:  " << setfill(' ') << setw(dpY) << mult_id << " " << setfill(' ') << setw(dpY) << m_x_pos << " " << setfill(' ') << setw(dpY) << m_y_pos << " cost: " << setfill(' ') << setw(5) << tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY) << std::endl;
 
-                    total_cost += (double)tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY);
-                    own_lut_cost += tiles[mult_id]->ownLUTCost(m_x_pos, m_y_pos, wX, wY);
+                    total_cost += (double)tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
+                    own_lut_cost += tiles[mult_id]->ownLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
                     dsp_cost += (double)tiles[mult_id]->getDSPCost();
                     auto coord = make_pair(m_x_pos, m_y_pos);
                     TilingStrategy::solution.push_back(make_pair(tiles[mult_id]->getParametrisation().tryDSPExpand(m_x_pos, m_y_pos, wX, wY, signedIO), coord));
@@ -254,7 +254,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                                     //std::cout << nvarName.str() << endl;
                                     ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
                                     solve_Vars[s][xs+x_neg][ys+y_neg] = tempV;
-                                    obj.add(tempV, (double)tiles[s]->ownLUTCost(xs, ys, wX, wY));    //append variable to cost function
+                                    obj.add(tempV, (double)tiles[s]->ownLUTCost(xs, ys, wX, wY, signedIO));    //append variable to cost function
 
                                     int col_min = xs+ys+tiles[s]->getRelativeResultLSBWeight(tiles[s]->getParametrisation());
                                     int col_max = xs+ys+tiles[s]->getRelativeResultMSBWeight(tiles[s]->getParametrisation());

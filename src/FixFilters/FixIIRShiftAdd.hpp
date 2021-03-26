@@ -21,6 +21,10 @@ namespace flopoco{
             string signLeft = "+";
             string signRight = "+";
         };
+        void computeImpulseResponse(); // evaluates the filter on an impulsion
+        /** @brief checks if an integer number is a power of two.
+         * checkNegativeNumber indicates whether ONLY positive or neg. numbers are checked*/
+        bool isPowerOfTwo(int64_t, bool);
     public:
         /** @brief Constructor ; you must use bitheap in case of negative coefficient*/
         FixIIRShiftAdd(OperatorPtr parentOp, Target* target, int lsbIn, int lsbOut, int msbIn, int guardBits, vector<string> coeffb, vector<string> coeffa, int64_t shifta, int64_t shiftb, string method, string grapha, string graphb);
@@ -65,7 +69,6 @@ namespace flopoco{
         bool buildWorstCaseTestBench; /**< if true, build the worst-case test bench */
         uint32_t n;							/**< number of taps on the numerator */
         uint32_t m;							/**< number of taps on the denominator */
-        int g;							/**< number of guard bits used for the IIR -- more are used inside the SOPC */
         int64_t shifta;             /**< number of shifts for coeffa (not scaling factor) */
         int64_t shiftb;             /**< number of shifts for coeffb (not scaling factor) */
         int guardBits;
@@ -101,6 +104,18 @@ namespace flopoco{
         mpz_t* registerFeedbackTB_mpz;
         mpz_t resultForwardPathTB_mpz; /**< result of the forward path in testbench */
         mpz_t feedbackAdd0;
+
+        /* faithfully rounded testbench */
+        vector<double> yi;  // outputs in the trace of simulation in double precision
+        uint64_t vanishingK; /**< faithul testbench */
+        double miny, maxy; /**< faithul testbench */
+        vector<double> ui;  // inputs in the trace of simulation in double precision
+        uint64_t currentIndex;       // used for round-robin access to the history
+        mpfr_t* xHistory; // history of x used by emulate
+        mpfr_t* yHistory; // history of y (result) used by emulate
+        int hugePrec;
+        mpfr_t* coeffb_mp_f_scaled;			/**< the scaled coefficients as MPFR numbers */
+        mpfr_t* coeffa_mp_f_scaled;			/**< the scaled coefficients as MPFR numbers */
     };
 
 }

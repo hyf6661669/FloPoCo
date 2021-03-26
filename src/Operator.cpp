@@ -2567,7 +2567,7 @@ namespace flopoco{
 			    rhs = getSignalByName(it->second);
 				}catch(string &e){
 					if (allSignalsLowercased.find(toLower(it->second)) != allSignalsLowercased.end() ) {
-						THROWERROR("Signal" << it->second << " undeclared, but a signal that differs only by capitalization has been declared");
+						THROWERROR("Signal " << it->second << " undeclared, but a signal that differs only by capitalization has been declared");
 					}
 					else{
 						REPORT(DEBUG, endl << "Warning: RHS signal name: " << it->second << " unknown so far"  << endl);

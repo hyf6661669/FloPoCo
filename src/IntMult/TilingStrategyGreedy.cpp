@@ -53,7 +53,7 @@ namespace flopoco {
 		//Set max DSPs to max. possible value in default case, that DSPs are not limited (maxDSP=(-1))
         max_pref_mult_ = (max_pref_mult_ < 0)?INT_MAX:max_pref_mult_;
 
-		truncated_ = wOut != wX + wY;
+		truncated_ = wOut != IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
 		if(truncated_) {
 			truncatedRange_ = (IntMultiplier::prodsize(wX, wY, signedIO, signedIO) - 1) - wOut;
 		}
@@ -261,7 +261,7 @@ namespace flopoco {
 				tempArea += bm->getArea();
 			}
 
-			tempCost += bm->getLUTCost(placementPos.first, placementPos.second, wX, wY);
+			tempCost += bm->getLUTCost(placementPos.first, placementPos.second, wX, wY, signedIO);
 
 			if(tempCost > cmpCost) {
 				return false;
@@ -289,7 +289,7 @@ namespace flopoco {
 					solution->push_back(make_pair(std::get<1>(tile).tryDSPExpand(x, y, wX, wY, signedIO), std::get<2>(tile)));
 				}
 
-				tempCost += std::get<0>(tile)->getLUTCost(x, y, wX, wY);
+				tempCost += std::get<0>(tile)->getLUTCost(x, y, wX, wY, signedIO);
 
 				if(tempCost > cmpCost) {
 					return false;
@@ -361,7 +361,7 @@ namespace flopoco {
 					solution->push_back(make_pair(tile->getParametrisation(), baseCoord));
 				}
 
-				cost += tile->getLUTCost(baseCoord.first, baseCoord.second, wX, wY);
+				cost += tile->getLUTCost(baseCoord.first, baseCoord.second, wX, wY, signedIO);
 				if(cost > cmpCost) {
 					return false;
 				}

@@ -100,7 +100,7 @@ namespace flopoco{
 
                 bool found = true;
                 while(found) {
-
+                    found = false;
                     BasicCompressor* compressor = nullptr;
 
                     // go through columns
@@ -111,9 +111,9 @@ namespace flopoco{
                         found = false;
                         unsigned int currentRange = INT_MAX;
 
-                        if (useNegativeMSBValue && c == requiredBitsForRange - 1) {
+                        if (useNegativeMSBValue && c == requiredBitsForRange - 1 && bitAmount[s][c] > 0) {
                             // make new compressor for negative MSB
-                            vector<int> compInput(bitheap->width, 0);
+                            vector<int> compInput(requiredBitsForRange, 0);
                             compInput[compInput.size()-1] = 1;
                             int modulo = bitheap->modulus;
                             int wIn = bitheap->width;
@@ -131,7 +131,7 @@ namespace flopoco{
                                     }
                                 }
 
-                                currentRange = newRem;
+                                currentRange = abs(newRem);
                                 compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutput, newRem);
                                 found = true;
                             } else {
@@ -147,11 +147,20 @@ namespace flopoco{
                                     cnt++;
                                 }
 
-                                currentRange = newReciprocal;
+                                currentRange = abs(newReciprocal);
                                 compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutputRec, newReciprocal, ones_vector_start);
                                 found = true;
                             }
 
+                        } else if (c >= requiredBitsForRange && bitAmount[s][c] > 0 && c < bitheap->width) {
+                            cerr << "set 0 pseudo comp c is " << c << endl;
+                            vector<int> compInput(c+1, 0);
+                            compInput[compInput.size()-1] = 1;
+                            cerr << "compInput size: " << compInput.size() << endl;
+                            vector<int> compOutput(bitAmount[s].size(), 0);
+                            compOutput[bitAmount[s] .size()-1] = 1;
+                            compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutput, 0);
+                            found = true;
                         } else {
                             for (unsigned int i = 0; i < possibleCompressors.size(); ++i) {
                                 if (possibleCompressors[i]->type == CompressorType::Pseudo) {
@@ -179,14 +188,7 @@ namespace flopoco{
                     }
                 }
 			} else {
-                cerr << "normal algorithm reached" << endl;
-
-                //before we start this stage, check if compression is done
-//                if(checkAlgorithmReachedAdder(2, s)){
-//                    adderReached = true;
-//                    breakToWhile = true;
-//                    break;
-//                }
+			    cerr << "normal compression" << endl;
 
                 bool found = true;
                 while(found){
@@ -275,7 +277,7 @@ namespace flopoco{
 			}
 			REPORT(DEBUG, "finished stage " << s);
 			printBitAmounts();
-			if (s > 15 && computeModulo) {
+			if (s > 30 && computeModulo) {
 			    cerr << "break because stage limit reached" << endl;
 			    break;
 			}

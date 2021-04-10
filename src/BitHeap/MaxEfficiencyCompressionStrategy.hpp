@@ -35,6 +35,11 @@ class BitHeap;
          */
         int reqBitsForRange2Complement(int min, int max);
 
+        /**
+         * return true if the first remainder is more efficient than the second
+         */
+        bool isRemainderMoreEfficient(int rem, int remToCompare);
+
 		vector<float> lowerBounds;
 
 

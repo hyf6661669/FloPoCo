@@ -89,6 +89,7 @@ namespace flopoco{
 			// check if mod is used and if stage height = 1
 			// then use other compressors -> pseudocompressors
 			int maxHeightBitAmount = *max_element(bitAmount[s].begin(), bitAmount[s].end());
+			// pseudo compression
 			if (maxHeightBitAmount == 1 && computeModulo) {
 			    bool useNegativeMSBValue = false;
 			    unsigned int requiredBitsForRange = reqBitsForRange2Complement(moduloRangeMin, moduloRangeMax);
@@ -109,7 +110,6 @@ namespace flopoco{
                     // check if there is a bit in this column
                     for(unsigned int c = 0; c < bitAmount[s].size(); c++){
                         found = false;
-                        unsigned int currentRange = INT_MAX;
 
                         if (useNegativeMSBValue && c == requiredBitsForRange - 1 && bitAmount[s][c] > 0) {
                             // make new compressor for negative MSB
@@ -131,7 +131,6 @@ namespace flopoco{
                                     }
                                 }
 
-                                currentRange = abs(newRem);
                                 compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutput, newRem);
                                 found = true;
                             } else {
@@ -147,7 +146,6 @@ namespace flopoco{
                                     cnt++;
                                 }
 
-                                currentRange = abs(newReciprocal);
                                 compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutputRec, newReciprocal, ones_vector_start);
                                 found = true;
                             }
@@ -156,16 +154,18 @@ namespace flopoco{
                             cerr << "set 0 pseudo comp c is " << c << endl;
                             vector<int> compInput(c+1, 0);
                             compInput[compInput.size()-1] = 1;
-                            cerr << "compInput size: " << compInput.size() << endl;
                             vector<int> compOutput(bitAmount[s].size(), 0);
                             compOutput[bitAmount[s] .size()-1] = 1;
                             compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutput, 0);
                             found = true;
                         } else {
+                            int currentRange = INT_MAX;
                             for (unsigned int i = 0; i < possibleCompressors.size(); ++i) {
                                 if (possibleCompressors[i]->type == CompressorType::Pseudo) {
                                     if (possibleCompressors[i]->heights.size() - 1 == c && bitAmount[s][c] > 0 && c < requiredBitsForRange) {
-                                        if (abs(possibleCompressors[i]->range_change) < currentRange) {
+                                        cerr << "decide which compressor is better" << endl;
+                                        if (isRemainderMoreEfficient(possibleCompressors[i]->range_change, currentRange)) {
+                                            cerr << "this one is more efficient" << endl;
                                             currentRange = possibleCompressors[i]->range_change;
                                             compressor = possibleCompressors[i];
                                             found = true;
@@ -306,4 +306,8 @@ namespace flopoco{
         }
         return bit;
     }
+
+    bool MaxEfficiencyCompressionStrategy::isRemainderMoreEfficient(int rem, int remToCompare) {
+	    return abs(rem) < abs(remToCompare);
+	}
 }

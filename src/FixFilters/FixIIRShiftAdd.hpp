@@ -55,23 +55,26 @@ namespace flopoco{
 
     private:
         int lsbIn;					/**< weight of the LSB in the input, considered as a signed number in (-1,1) */
-        int msbOut;					/**< weight of the MSB in the result */
+        int msbOutIIR;					/**< weight of the MSB in the result */
+        int msbOutFIR;
         int lsbOut;					/**< weight of the LSB in the result */
         int msbIn;
         int lsbInt;
         int msbInt;
+        int wOut;
+        int64_t bitGainForAdditons;
         uint64_t wIn;                     /**<  input word size */
+        int guardBits;                  /**< number of guard bits for feedback path */
         vector<string> coeffb;			/**< the b_i coefficients as strings */
         vector<string> coeffa;			/**< the a_i coefficients as strings */
+        int64_t shifta;             /**< number of shifts for coeffa (not scaling factor) */
+        int64_t shiftb;             /**< number of shifts for coeffb (not scaling factor) */
         string method;
         string grapha;
         string graphb;
         bool buildWorstCaseTestBench; /**< if true, build the worst-case test bench */
         uint32_t n;							/**< number of taps on the numerator */
         uint32_t m;							/**< number of taps on the denominator */
-        int64_t shifta;             /**< number of shifts for coeffa (not scaling factor) */
-        int64_t shiftb;             /**< number of shifts for coeffb (not scaling factor) */
-        int guardBits;
         double wcpg;                /**< worst case peak gain of filter */
         int wcpgBitGain;            /**< required amount of bits for wcpg */
         mpfr_t* coeffb_mp_f;			/**< the coefficients as MPFR numbers */
@@ -104,6 +107,7 @@ namespace flopoco{
         mpz_t* registerFeedbackTB_mpz;
         mpz_t resultForwardPathTB_mpz; /**< result of the forward path in testbench */
         mpz_t feedbackAdd0;
+        bool isFIR = false; /**< if not all parameters for feedback path given FIR is assumed instead of IIR */
 
         /* faithfully rounded testbench */
         vector<double> yi;  // outputs in the trace of simulation in double precision

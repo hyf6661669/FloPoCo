@@ -4,13 +4,14 @@
 
 /*
  *  TODO:
- *  Assert for valid method-string
- *  remove warnings (since feedbackadd0 is xx...xx until the first value for it is computed but one bit is sliced for endresultfaithfullyrounded)
+ *  Faithful rounding for FIR?
+ *  Add more extensive description
 
  *
  *  Optimizations:
  *  Word sizes in feedbackpath have conservative computation. Using wcpg can optimze the wordsizes - the more coeffs the more potential
- *   */
+ *
+ */
 
 #include "FixIIRShiftAdd.hpp"
 #include <iostream>
@@ -98,52 +99,55 @@ namespace flopoco {
             coeffa_si[i] = mpfr_get_si(coeffa_mp_f[i], GMP_RNDN);
             REPORT(DETAILED, "a[" << i << "]=" << scientific << setprecision(15) << coeffa_d[i]);
         }
+
+        // check if FIR or IIR, if coeffa is -1 or shifta is -1 its detected as FIR
+        if ((m == 1 && coeffa_si[0] == -1) || shifta == -1)
+            isFIR = true;
+
         wcpg = 0;
         wcpgBitGain = 0;
 
+        if(!isFIR) // wcpg and guard bits only necessary for IIR
+        {
 #if HAVE_WCPG
+            REPORT(INFO, "Computing worst-case peak gain");
+            coeffa_d_wcpg = (double *) malloc(m * sizeof(double));
+            coeffb_d_wcpg = (double *) malloc(n * sizeof(double));
+            for(uint32_t i = 0; i < m; i++)
+            {
+                coeffa_d_wcpg[i] = coeffa_d[i] * (1 / (pow(2, shifta)));
+                REPORT(DETAILED, "coeffa_d_wcpg: " << coeffa_d_wcpg[i] << ", coeffa: " << coeffa_d[i] << ", shifta: " << shifta)
+            }
+            for(uint32_t i = 0; i < n; i++)
+                coeffb_d_wcpg[i] = coeffb_d[i]*(1/(pow(2, shiftb)));
 
-        REPORT(INFO, "Computing worst-case peak gain");
-        coeffa_d_wcpg = (double *) malloc(m * sizeof(double));
-        coeffb_d_wcpg = (double *) malloc(n * sizeof(double));
-        for(int i = 0; i < m; i++)
-        {
-            coeffa_d_wcpg[i] = coeffa_d[i] * (1 / (pow(2, shifta)));
-            REPORT(DETAILED, "coeffa_d_wcpg: " << coeffa_d_wcpg[i] << ", coeffa: " << coeffa_d[i] << ", shifta: " << shifta)
-        }
-        for(int i = 0; i < n; i++)
-            coeffb_d_wcpg[i] = coeffb_d[i]*(1/(pow(2, shiftb)));
-
-        if (!WCPG_tf(&wcpg, coeffb_d_wcpg, coeffa_d_wcpg, n, m, (int)0))
-        THROWERROR("Could not compute WCPG");
-
-        wcpgBitGain = intlog2(wcpg);
-        REPORT(INFO, "Computed filter worst-case peak gain: wcpg=" << wcpg << ", wcpg bit gain: " << wcpgBitGain);
-
-        // ################# COMPUTE GUARD BITS #########################################
-        if(guardBits < 0)
-        {
-            REPORT(DETAILED, "computing guard bits");
-            double Heps;
-            double one_d[1] = {1.0};
-            if (!WCPG_tf(&Heps, one_d, coeffa_d_wcpg, 1, m, (int)0))
+            if (!WCPG_tf(&wcpg, coeffb_d_wcpg, coeffa_d_wcpg, n, m, (int)0))
             THROWERROR("Could not compute WCPG");
-            guardBits = intlog2(Heps)+1; // +1 for last bit accuracy
-            REPORT(LIST, "Computed error amplification worst-case peak gain: Heps=" << Heps);
+
+            wcpgBitGain = intlog2(wcpg);
+            REPORT(INFO, "Computed filter worst-case peak gain: wcpg=" << wcpg << ", wcpg bit gain: " << wcpgBitGain);
+
+            // ################# COMPUTE GUARD BITS #########################################
+            if(guardBits < 0)
+            {
+                REPORT(DETAILED, "computing guard bits");
+                double Heps;
+                double one_d[1] = {1.0};
+                if (!WCPG_tf(&Heps, one_d, coeffa_d_wcpg, 1, m, (int)0))
+                THROWERROR("Could not compute WCPG");
+                guardBits = intlog2(Heps)+1; // +1 for last bit accuracy
+                REPORT(LIST, "Computed error amplification worst-case peak gain: Heps=" << Heps);
+            }
+    #else
+                THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Compile FloPoCo with WCPG");
+    #endif
+
+            REPORT(INFO, "No of guard bits=" << guardBits);
         }
-#else
-            THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Compile FloPoCo with WCPG");
-#endif
-
-        // enhance guard bits testwise
-        //guardBits += shifta;
-        REPORT(INFO, "No of guard bits=" << guardBits);
-
         wIn = msbIn - lsbIn + 1;
         msbInt = ceil(msbIn + wcpgBitGain);
-        msbOut = msbInt;
+        msbOutIIR = msbInt;
         lsbInt = lsbOut - guardBits;
-        int wOut = msbOut - lsbOut + 1;
         //int wInt = wOut + guardBits; // not needed yet
         REPORT(INFO, "msbIn: \t\t\t\t" << msbIn << ", lsbIn: \t\t\t\t " << lsbIn)
         REPORT(INFO, "msbInt: \t\t\t\t" << msbInt << ", lsbInt: \t\t\t\t" << lsbInt)
@@ -162,7 +166,7 @@ namespace flopoco {
          * This cannot appear in multiplierless since only positive coeffs are used
          */
         // multiplications
-        for(int i = 0; i < n; i++)
+        for(uint32_t i = 0; i < n; i++)
         {
             if(coeffb_si[i] == 0)
                 msbMultiplicationsForwardOut[i] = msbIn;
@@ -178,7 +182,7 @@ namespace flopoco {
         for(int i = n-2; i >= 0; i--)
         {
             int64_t bitGainForRegister = 0;
-            for (int j = i + 1; j < n; j++)
+            for (uint32_t j = i + 1; j < n; j++)
             {
                 if(method == "plain" && isPowerOfTwo(coeffb_si[j], true)) // see comment multiplications forward path
                     bitGainForRegister += abs(coeffb_si[j])+1;
@@ -202,11 +206,11 @@ namespace flopoco {
         else
             msbAdditionsForwardOut[n - 1] = msbIn + ceil(log2((abs(coeffb_si[n - 1]) + abs(coeffb_si[n - 2]))));
         REPORT(INFO, "msbAdditionsForwardOut["<<n - 1<<"]: " << msbAdditionsForwardOut[n-1])
-
+        bitGainForAdditons = 0;
         for (int i = n - 2; i >= 0; i--) // for additions except addN-1
         {
-            int64_t bitGainForAdditons = 0;
-            for (int j = i; j < n; j++)
+            bitGainForAdditons = 0;
+            for (uint32_t j = i; j < n; j++)
                 if(method == "plain" && isPowerOfTwo(coeffb_si[j], true)) // see comment multiplications forward path
                     bitGainForAdditons += abs(coeffb_si[j])+1;
                 else
@@ -224,103 +228,124 @@ namespace flopoco {
         lsbScaleBOut = lsbForwardPath - abs(shiftb);
         REPORT(INFO, "msbScaleBOut: \t\t\t" << msbScaleBOut << ", lsbScaleBOut: \t\t\t" << lsbScaleBOut)
 
+        // msbOut is computed different for FIR and IIR since the output is at different position
+        msbOutFIR = msbScaleBOut;
+        if(!isFIR)
+            wOut = msbOutIIR - lsbOut + 1;
+        else
+            wOut = msbOutFIR - lsbOut + 1;
+        cout << "isFir: " << isFIR << endl;
+
         // ################################### WORD SIZES BACKPATH ###############################################
+        if(!isFIR) {
+            // check if replaceble by wcpg
+            int64_t wordsizeGainFeedback = 0; // growth of wordsize in feedback path. Used multiple times for wird size / msb / lsb calculation
+            for (uint32_t i = 0; i < m; i++)
+                wordsizeGainFeedback += (abs(coeffa_si[i]));
+            wordsizeGainFeedback = ceil(log2(wordsizeGainFeedback));
+            REPORT(INFO, "wordsizeGainFeedback: " << wordsizeGainFeedback);
 
-        // check if replaceble by wcpg
-        int64_t wordsizeGainFeedback = 0; // growth of wordsize in feedback path. Used multiple times for wird size / msb / lsb calculation
-        for (int i = 0; i < m; i++)
-            wordsizeGainFeedback += (abs(coeffa_si[i]));
-        wordsizeGainFeedback = ceil(log2(wordsizeGainFeedback));
-        REPORT(INFO, "wordsizeGainFeedback: " << wordsizeGainFeedback);
+            msbRegisterFeedbackOut = (int *) malloc(m * sizeof(int));
+            lsbRegisterFeedbackOut = (int *) malloc(m * sizeof(int));
+            msbMultiplicationsFeedbackOut = (int *) malloc(m * sizeof(int));
+            lsbMultiplicationsFeedbackOut = (int *) malloc(m * sizeof(int));
+            msbAdditionsFeedbackOut = (int *) malloc(m * sizeof(int));
+            lsbAdditionsFeedbackOut = (int *) malloc(m * sizeof(int));
 
-        msbRegisterFeedbackOut = (int *) malloc(m * sizeof(int));
-        lsbRegisterFeedbackOut = (int *) malloc(m * sizeof(int));
-        msbMultiplicationsFeedbackOut = (int *) malloc(m * sizeof(int));
-        lsbMultiplicationsFeedbackOut = (int *) malloc(m * sizeof(int));
-        msbAdditionsFeedbackOut = (int *) malloc(m * sizeof(int));
-        lsbAdditionsFeedbackOut = (int *) malloc(m * sizeof(int));
-
-        // Multiplications
-        for(int i = 0; i < m; i++)
-        {
-            if(coeffa_si[i] == 0) // avoid log(0)
-                msbMultiplicationsFeedbackOut[i] = msbInt-shifta + 1; // use minus shifta since scaling is after truncation and must be kept in mind
-            else
-                if(method == "plain" && isPowerOfTwo(coeffa_si[i], false)) // see comment multiplications forward path
-                    msbMultiplicationsFeedbackOut[i] = msbInt-shifta + ceil(log2(abs(coeffa_si[i])+1));
+            // Multiplications
+            for (uint32_t i = 0; i < m; i++) {
+                if (coeffa_si[i] == 0) // avoid log(0)
+                    msbMultiplicationsFeedbackOut[i] =
+                            msbInt - shifta +
+                            1; // use minus shifta since scaling is after truncation and must be kept in mind
+                else if (method == "plain" &&
+                         isPowerOfTwo(coeffa_si[i], false)) // see comment multiplications forward path
+                    msbMultiplicationsFeedbackOut[i] = msbInt - shifta + ceil(log2(abs(coeffa_si[i]) + 1));
                 else
-                    msbMultiplicationsFeedbackOut[i] = msbInt-shifta + ceil(log2(abs(coeffa_si[i])));
-            lsbMultiplicationsFeedbackOut[i] = lsbInt - shifta;
-            REPORT(INFO, "msbMultiplicationsFeedbackOut["<<i<<"]: \t" << msbMultiplicationsFeedbackOut[i] << ", lsbMultiplicationsFeedbackOut["<<i<<"] \t" << lsbMultiplicationsFeedbackOut[i])
-        }
-
-        // registers
-        // values of registers are computed first -> values for additions can be derived
-        for(int i = m-1; i >= 0; i--)
-        {
-            int64_t tmp = 0;
-            for (int j = i; j < m; j++)
-            {
-                if(method == "plain" && isPowerOfTwo(coeffa_si[j], false)) // see comment multiplications forward path
-                    tmp += abs(coeffa_si[j])+1;
-                else
-                    tmp += abs(coeffa_si[j]);
+                    msbMultiplicationsFeedbackOut[i] = msbInt - shifta + ceil(log2(abs(coeffa_si[i])));
+                lsbMultiplicationsFeedbackOut[i] = lsbInt - shifta;
+                REPORT(INFO, "msbMultiplicationsFeedbackOut[" << i << "]: \t" << msbMultiplicationsFeedbackOut[i]
+                                                              << ", lsbMultiplicationsFeedbackOut[" << i << "] \t"
+                                                              << lsbMultiplicationsFeedbackOut[i])
             }
 
-            msbRegisterFeedbackOut[i] = msbInt-shifta+ceil(log2((abs(tmp))));
-            lsbRegisterFeedbackOut[i] = lsbInt - shifta;
-            REPORT(INFO, "msbRegisterFeedbackOut["<<i<<"]: \t" << msbRegisterFeedbackOut[i] << ", lsbRegisterFeedbackOut["<<i<<"]: \t\t" << lsbRegisterFeedbackOut[i])
+            // registers
+            // values of registers are computed first -> values for additions can be derived
+            for (int i = m - 1; i >= 0; i--) {
+                int64_t tmp = 0;
+                for (uint32_t j = i; j < m; j++) {
+                    if (method == "plain" &&
+                        isPowerOfTwo(coeffa_si[j], false)) // see comment multiplications forward path
+                        tmp += abs(coeffa_si[j]) + 1;
+                    else
+                        tmp += abs(coeffa_si[j]);
+                }
+
+                msbRegisterFeedbackOut[i] = msbInt - shifta + ceil(log2((abs(tmp))));
+                lsbRegisterFeedbackOut[i] = lsbInt - shifta;
+                REPORT(INFO,
+                       "msbRegisterFeedbackOut[" << i << "]: \t" << msbRegisterFeedbackOut[i]
+                                                 << ", lsbRegisterFeedbackOut["
+                                                 << i << "]: \t\t" << lsbRegisterFeedbackOut[i])
+            }
+
+            // Additions, first addition is special case, computation depends on register size
+            // Output from an addition is equal to the input of the succeeding register and registers values are already computed
+            // exception for add0, see comment for addition 0 below
+            for (int i = m - 1; i > 0; i--) {
+                msbAdditionsFeedbackOut[i] = msbRegisterFeedbackOut[i -
+                                                                    1]; // no need for special case handling power of two since register msb is used
+                lsbAdditionsFeedbackOut[i] = lsbInt - shifta;
+                REPORT(INFO,
+                       "msbAdditionsFeedbackOut[" << i << "]: \t" << msbAdditionsFeedbackOut[i]
+                                                  << ", lsbAdditionsFeedbackOut["
+                                                  << i << "]: \t" << lsbAdditionsFeedbackOut[i])
+            }
+
+            /*
+             * Addition 0
+             * The computation for the msb and word sizes in the forward and feedback path is very conservative.
+             * This may lead to the fact, that one input word size of the adder is larger than the result
+             * The maximum word size is given by msbIn + wcpgBitGain, so the maximum output of the adder is
+             * msbIn + wcpgBitGain + shifta since it is the latest operation (msbInt = msbIn + wcpgBitGain)
+             * wcpg determines maximum word size after scalea
+             */
+
+            msbAdditionsFeedbackOut[0] = msbIn + wcpgBitGain;
+            lsbAdditionsFeedbackOut[0] = min(lsbInt - shifta, lsbScaleBOut);
+            REPORT(INFO,
+                   "msbAdditionsFeedbackOut[0]: \t" << msbAdditionsFeedbackOut[0] << ", lsbAdditionsFeedbackOut[0]: \t"
+                                                    << lsbAdditionsFeedbackOut[0])
+
+            // truncationAfterScaleA
+            msbTruncationIntOut = msbInt;
+            lsbTruncationIntOut = lsbInt;
+            REPORT(INFO,
+                   "msbTruncationIntOut: \t\t" << msbTruncationIntOut << ", lsbTruncationIntOut: \t\t"
+                                               << lsbTruncationIntOut)
+
+            // ScaleA, only shift fixed point, no code generation
+            msbScaleAOut = msbTruncationIntOut - (int) shifta;
+            lsbScaleAOut = lsbTruncationIntOut - (int) shifta;
+            REPORT(INFO, "msbScaleAOut: \t\t\t" << msbScaleAOut << ", lsbScaleAOut: \t\t\t" << lsbScaleAOut)
         }
-
-        // Additions, first addition is special case, computation depends on register size
-        // Output from an addition is equal to the input of the succeeding register and registers values are already computed
-        // exception for add0, see comment for addition 0 below
-        for(int i = m-1; i > 0; i--)
-        {
-            msbAdditionsFeedbackOut[i] = msbRegisterFeedbackOut[i-1]; // no need for special case handling power of two since register msb is used
-            lsbAdditionsFeedbackOut[i] = lsbInt - shifta;
-            REPORT(INFO, "msbAdditionsFeedbackOut["<<i<<"]: \t" << msbAdditionsFeedbackOut[i] << ", lsbAdditionsFeedbackOut["<<i<<"]: \t" << lsbAdditionsFeedbackOut[i])
-        }
-
-        /*
-         * Addition 0
-         * The computation for the msb and word sizes in the forward and feedback path is very conservative.
-         * This may lead to the fact, that one input word size of the adder is larger than the result
-         * The maximum word size is given by msbIn + wcpgBitGain, so the maximum output of the adder is
-         * msbIn + wcpgBitGain + shifta since it is the latest operation (msbInt = msbIn + wcpgBitGain)
-         * wcpg determines maximum word size after scalea
-         */
-
-        msbAdditionsFeedbackOut[0] = msbIn+wcpgBitGain;
-        lsbAdditionsFeedbackOut[0] = min(lsbInt-shifta, lsbScaleBOut);
-        REPORT(INFO, "msbAdditionsFeedbackOut[0]: \t" << msbAdditionsFeedbackOut[0] << ", lsbAdditionsFeedbackOut[0]: \t" << lsbAdditionsFeedbackOut[0])
-
-        // truncationAfterScaleA
-        msbTruncationIntOut = msbInt;
-        lsbTruncationIntOut = lsbInt;
-        REPORT(INFO, "msbTruncationIntOut: \t\t" << msbTruncationIntOut << ", lsbTruncationIntOut: \t\t" << lsbTruncationIntOut)
-
-        // ScaleA, only shift fixed point, no code generation
-        msbScaleAOut = msbTruncationIntOut-(int)shifta;
-        lsbScaleAOut = lsbTruncationIntOut-(int)shifta;
-        REPORT(INFO, "msbScaleAOut: \t\t\t" << msbScaleAOut << ", lsbScaleAOut: \t\t\t" << lsbScaleAOut)
-
-        addInput("X", wIn, true);
-        addOutput("Result", wOut);
-        REPORT(INFO, "input size (wIn): " << wIn)
-        REPORT(INFO, "output size (wOut): " << wOut)
+            addInput("X", wIn, true);
+            addOutput("Result", wOut);
+            REPORT(INFO, "input size (wIn): " << wIn)
+            REPORT(INFO, "wordsize size scaleb: " << msbScaleBOut-lsbScaleBOut+1)
+            REPORT(INFO, "output size (wOut): " << wOut)
 
         // ################################# Sign computation for adders #########################################
         vector<adderSigns> adderFeedbackpPath;
         vector<adderSigns> adderForwardPath;
 
-        for(int i = 0; i < n; i++) // initialize adder default with + for use in plain
+        for(uint32_t i = 0; i < n; i++) // initialize adder default with + for use in plain
         {
             adderSigns tmp;
             adderForwardPath.push_back(tmp);
         }
 
-        for(int i = 0; i < m; i++) // initialize adder default with + for use in plain
+        for(uint32_t i = 0; i < m; i++) // initialize adder default with + for use in plain
         {
             adderSigns tmp;
             adderFeedbackpPath.push_back(tmp);
@@ -334,14 +359,14 @@ namespace flopoco {
              * In this case the inputs of the succeeding adder (default both "+") must changed so that the right input is "-"
              */
 
-            for (int i = 1; i < m; i++)
+            for (uint32_t i = 1; i < m; i++)
                 if (coeffa_si[i - 1] >= 0)
                     adderFeedbackpPath.at(i).signRight = "-";
 
             if (coeffa_si[m - 1] >= 0)
                 adderFeedbackpPath.at(m - 1).signLeft = "-";
 
-            for(int i = 0; i < m; i++)
+            for(uint32_t i = 0; i < m; i++)
                 REPORT(LIST, "feedback add" << i << " left: " << adderFeedbackpPath.at(i).signLeft << " right: " << adderFeedbackpPath.at(i).signRight)
 
             /*
@@ -350,7 +375,7 @@ namespace flopoco {
              * so change input sign of adder to "-"
              */
 
-            for (int i = 0; i < n-1; i++)
+            for (uint32_t i = 0; i < n-1; i++)
                 if (coeffb_si[i] <= 0)
                     adderForwardPath.at(i).signRight = "-";
 
@@ -365,7 +390,7 @@ namespace flopoco {
             preventDoubleNegativeInputsAdder(m, &adderFeedbackpPath);
             preventDoubleNegativeInputsAdder(n, &adderForwardPath);
 
-            for(int i = 0; i < m; i++)
+            for(uint32_t i = 0; i < m; i++)
                 REPORT(LIST, "feedback add" << i << " left: " << adderFeedbackpPath.at(i).signLeft << " right: " << adderFeedbackpPath.at(i).signRight)
 
         }
@@ -378,14 +403,14 @@ namespace flopoco {
         mpz_init(registerForwardTB_mpz[0]);
         mpz_set_si(registerForwardTB_mpz[0], 0);
 
-        for(int i = 1; i < n; i++)
+        for(uint32_t i = 1; i < n; i++)
         {
             //mpz_init2(registerForwardTB_mpz[i], msbRegisterForwardOut[i-1] - lsbForwardPath + 1); // mpz_reg[i] has msb of reg[i-1] since reg0 in testbench is emulated as input
             mpz_init(registerForwardTB_mpz[i]);
             mpz_set_si(registerForwardTB_mpz[i], 0); // necessary of 0 by default?
         }
 
-        for(int i = 0; i < m+1; i++)
+        for(uint32_t i = 0; i < m+1; i++)
         {
             //mpz_init2(registerFeedbackTB_mpz[i], msbRegisterFeedbackOut[i] - lsbRegisterFeedbackOut[i] + 1 + guardBits);
             mpz_init(registerFeedbackTB_mpz[i]);
@@ -396,7 +421,7 @@ namespace flopoco {
         xHistory  = (mpfr_t*) malloc(n * sizeof(mpfr_t));
         yHistory  = (mpfr_t*) malloc((m+2) * sizeof(mpfr_t)); // We need to memorize the m previous y, and the current output. Plus one because it helps debugging
 
-        hugePrec = 10*(1+msbOut+-lsbOut+guardBits);
+        hugePrec = 10*(1+msbOutIIR+-lsbOut+guardBits);
         currentIndex=0x0FFFFFFFFFFFFFFFUL; // it will be decremented, let's start from high
 
         for (uint32_t i = 0; i<m+2; i++)
@@ -410,10 +435,10 @@ namespace flopoco {
         }
 
         // faithful testbench
-        for(int i = 0; i < n; i++)
+        for(uint32_t i = 0; i < n; i++)
             mpfr_div_2ui(coeffb_mp_f_scaled[i], coeffb_mp_f[i], shiftb, GMP_RNDN);
 
-        for(int i = 0; i < m; i++)
+        for(uint32_t i = 0; i < m; i++)
             mpfr_div_2ui(coeffa_mp_f_scaled[i], coeffa_mp_f[i], shifta, GMP_RNDN);
 
         // ################################# CODE GENERATION FORWARD PATH #########################################
@@ -430,7 +455,7 @@ namespace flopoco {
         if(method == "plain")
         {
             // multiplications
-            for (int i = 0; i < n; i++) {
+            for (uint32_t i = 0; i < n; i++) {
                 vhdl << declare(join("forMul", i), msbMultiplicationsForwardOut[i] - lsbForwardPath +1)
                      << " <= std_logic_vector(resize(signed(X) * (signed(std_logic_vector(to_signed(" << coeffb_si[i] << ","
                      << ceil(log2(abs(coeffb_si[i]) + TEMP_SIGN_FOR_RESIZE)) + TEMP_SIGN_FOR_RESIZE << ")))),"<<msbMultiplicationsForwardOut[i] - lsbForwardPath +1<<"));" << endl ;
@@ -441,7 +466,7 @@ namespace flopoco {
         {
             vector<string> outportmapsBuilder;
             stringstream outPortMaps;
-            for (int i = 0; i < n; i++)
+            for (uint32_t i = 0; i < n; i++)
             {
                 if (FixIIRShiftAdd::getIndexCoeff(coeffb_si, n, coeffb_si[i]) == i) // first time occurence of element, if the result if getIndexCoeff() is not i it means that the element was found earlier in the array, hence duplicate
                 {
@@ -457,14 +482,14 @@ namespace flopoco {
             }
 
             // add comma between signals in port map. Must be done separatly since leading coefficients can be 0 what doesnt result in a signal
-            for(int i = 0; i < outportmapsBuilder.size(); i++)
+            for(uint32_t i = 0; i < outportmapsBuilder.size(); i++)
             {
                 outPortMaps << outportmapsBuilder.at(i);
                 if(i != outportmapsBuilder.size()-1)
                     outPortMaps << ",";
             }
 
-            for (int i = 0; i < n; i++)
+            for (uint32_t i = 0; i < n; i++)
                 if(coeffb_si[i] == 0)
                     vhdl << "forMul" << i << " <= (others => '0');" << endl;
 
@@ -486,7 +511,7 @@ namespace flopoco {
         string forwardpathOperandLeft = "forAdd";
         string forwardpathOperandRight = "forRegOut";
 
-        for (int i = 0; i < n - 1; i++)
+        for (uint32_t i = 0; i < n - 1; i++)
         {
             if(adderForwardPath.at(i).signLeft == "-" && adderFeedbackpPath.at(i).signRight == "+") // treat special case, see comments addition feedbackpath
             {
@@ -507,7 +532,7 @@ namespace flopoco {
 
         vhdl << endl;
         // registers
-        for (int i = 0; i < n - 2; i++) {
+        for (uint32_t i = 0; i < n - 2; i++) {
             newInstance("ShiftReg", join("forReg", i), join("n=1 reset=2 w=", msbRegisterForwardOut[i] - lsbForwardPath + 1),
                         join("X=>forAdd", i + 1), join("Xd1=>forRegOut", i));
         }
@@ -516,184 +541,220 @@ namespace flopoco {
                     join("X=>forMul", n - 1), join("Xd1=>forRegOut", n - 2));
         vhdl << endl;
 
-        // ################################# CODE GENERATION BACKPATH #########################################
-        // truncation, truncate to lsbInt
-        vhdl << declare("truncationAfterScaleA", msbInt - lsbInt + 1) << " <= feedbackAdd0("<< msbInt - lsbInt + 1 + (lsbInt - lsbScaleAOut)-1 << " downto " << lsbInt - lsbScaleAOut << ");" << endl;
+        if(!isFIR) {
+            // ################################# CODE GENERATION BACKPATH #########################################
+            // truncation, truncate to lsbInt
+            vhdl << declare("truncationAfterScaleA", msbInt - lsbInt + 1) << " <= feedbackAdd0("
+                 << msbInt - lsbInt + 1 + (lsbInt - lsbScaleAOut) - 1 << " downto " << lsbInt - lsbScaleAOut << ");"
+                 << endl;
 
-        // multiplications, see comment multiplications forward path for explanation of TEMP_SIGN_FOR_RESIZE
-        if (method=="plain")
-        {
-            for (int i = 0; i < m; i++)
-            {
-                vhdl << declare(join("feedbackMul", i), msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1)
-                     << " <= std_logic_vector(resize(signed(truncationAfterScaleA) * (signed(std_logic_vector(to_signed(" << -coeffa_si[i] << ","
-                     << ceil(abs(log2((abs(coeffa_si[i]) + TEMP_SIGN_FOR_RESIZE)))) + TEMP_SIGN_FOR_RESIZE << ")))),"<< msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1<<"));" << endl;
-            }
-        }
-        else if (method=="multiplierless")
-        {
-            stringstream outPortMaps;
-            vector<string> outportmapsBuilder;
-            for (int i = 0; i < m; i++)
-            {
-                if (FixIIRShiftAdd::getIndexCoeff(coeffa_si, m, coeffa_si[i]) == i) // first time occurence of element, if the result if getIndexCoeff() is not i it means that the element was found earlier in the array, hence duplicate
-                {
-                    declare(join("feedbackMul", i), msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] +1);
-                    if(coeffa_si[i] != 0)
-                        outportmapsBuilder.push_back(join("R_c", abs(coeffa_si[i]), "=>feedbackMul", i));
+            // multiplications, see comment multiplications forward path for explanation of TEMP_SIGN_FOR_RESIZE
+            if (method == "plain") {
+                for (uint32_t i = 0; i < m; i++) {
+                    vhdl << declare(join("feedbackMul", i),
+                                    msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1)
+                         << " <= std_logic_vector(resize(signed(truncationAfterScaleA) * (signed(std_logic_vector(to_signed("
+                         << -coeffa_si[i] << ","
+                         << ceil(abs(log2((abs(coeffa_si[i]) + TEMP_SIGN_FOR_RESIZE)))) + TEMP_SIGN_FOR_RESIZE
+                         << "))))," << msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1 << "));"
+                         << endl;
                 }
-                else // duplicate detected, set the duplicate to the signal where it was first found, so if coeff_b[0] and coeff_b[2] are equal, feedbackMul is set to feedbackMul
-                {
-                    REPORT(LIST, "duplicate detected (" << coeffa_si[i] << ")")
-                    vhdl << declare(join("feedbackMul", i), msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] +1) << "<= std_logic_vector(feedbackMul" << FixIIRShiftAdd::getIndexCoeff(coeffa_si, m, coeffa_si[i]) << ");" <<  endl;
+            } else if (method == "multiplierless") {
+                stringstream outPortMaps;
+                vector<string> outportmapsBuilder;
+                for (uint32_t i = 0; i < m; i++) {
+                    if (FixIIRShiftAdd::getIndexCoeff(coeffa_si, m, coeffa_si[i]) ==
+                        i) // first time occurence of element, if the result if getIndexCoeff() is not i it means that the element was found earlier in the array, hence duplicate
+                    {
+                        declare(join("feedbackMul", i),
+                                msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1);
+                        if (coeffa_si[i] != 0)
+                            outportmapsBuilder.push_back(join("R_c", abs(coeffa_si[i]), "=>feedbackMul", i));
+                    } else // duplicate detected, set the duplicate to the signal where it was first found, so if coeff_b[0] and coeff_b[2] are equal, feedbackMul is set to feedbackMul
+                    {
+                        REPORT(LIST, "duplicate detected (" << coeffa_si[i] << ")")
+                        vhdl << declare(join("feedbackMul", i),
+                                        msbMultiplicationsFeedbackOut[i] - lsbMultiplicationsFeedbackOut[i] + 1)
+                             << "<= std_logic_vector(feedbackMul"
+                             << FixIIRShiftAdd::getIndexCoeff(coeffa_si, m, coeffa_si[i]) << ");" << endl;
+                    }
                 }
+
+                for (uint32_t i = 0; i < m; i++)
+                    if (coeffa_si[i] == 0)
+                        vhdl << "feedbackMul" << i << " <= (others => '0');" << endl;
+
+                // add comma between signals in port map. Must be done separatly since leading coefficients can be 0 what doesnt result in a signal
+                for (uint32_t i = 0; i < outportmapsBuilder.size(); i++) {
+                    REPORT(LIST, "outputmapsbuilder: " << outportmapsBuilder.at(i))
+                    outPortMaps << outportmapsBuilder.at(i);
+                    if (i != outportmapsBuilder.size() - 1)
+                        outPortMaps << ",";
+                }
+
+                stringstream parameters;
+                parameters << "wIn=" << msbScaleAOut - lsbScaleAOut + 1 << " graph=" << grapha;
+                string inPortMaps = "X0=>truncationAfterScaleA";
+                REPORT(LIST, "outPortMaps (feedback): " << outPortMaps.str())
+                newInstance("IntConstMultShiftAdd", "IntConstMultShiftAddComponentFeedback", parameters.str(),
+                            inPortMaps,
+                            outPortMaps.str());
+
+                REPORT(DETAILED, "IntConstMultShiftAdd for feedback path created")
             }
 
-            for (int i = 0; i < m; i++)
-                if(coeffa_si[i] == 0)
-                    vhdl << "feedbackMul" << i << " <= (others => '0');" << endl;
-
-
-            // add comma between signals in port map. Must be done separatly since leading coefficients can be 0 what doesnt result in a signal
-            for(int i = 0; i < outportmapsBuilder.size(); i++)
-            {
-                REPORT(LIST, "outputmapsbuilder: " << outportmapsBuilder.at(i))
-                outPortMaps << outportmapsBuilder.at(i);
-                if(i != outportmapsBuilder.size()-1)
-                    outPortMaps << ",";
-            }
-
-            stringstream parameters;
-            parameters << "wIn=" << msbScaleAOut-lsbScaleAOut+1 << " graph=" << grapha;
-            string inPortMaps = "X0=>truncationAfterScaleA";
-            REPORT(LIST, "outPortMaps (feedback): " << outPortMaps.str())
-            newInstance("IntConstMultShiftAdd", "IntConstMultShiftAddComponentFeedback", parameters.str(), inPortMaps,
-                        outPortMaps.str());
-
-            REPORT(DETAILED, "IntConstMultShiftAdd for feedback path created")
-        }
-
-        /*
-         * Additions
-         * addition0 ist special case since it has scaleB as input and the other input is possible too large bc of the
-         * conservative computation in the feedback path (see comment msb computation for this addition)
-         * --> feedbackRegOut0 has to be rescaled to max output of adder (later it can be optimized to mInt + wcpgGain - (msbScaleBOut - msbIn) + shifta
-         * both inputs of the additions must have same amount of lsb-bits
-         *
-         * There are 3 cases for the signs. left "+" and right "+", keft "+" and right "-" and left "-" and right "+". The possible fourth case is handled
-         * in preventDoubleNegativeInputsAdder. Left "-" and right "+" is special case and must be treated differently since -a+b ist not feasible using
-         * IntConstMultShift, so use b-a.
-         */
-
-        string operandNameFeedbackLeft = "feedbackRegOut"; // except feedbackAdd0
-        string operandNameFeedbackRight = "feedbackMul"; // except feedbackAdd0
-
-        int64_t numLsbBitsDifference = abs(lsbRegisterFeedbackOut[0] - lsbScaleBOut); // determine how often to shift
-        REPORT(DEBUG, "numLsbBitsDifference: " << numLsbBitsDifference)
-        if(lsbScaleBOut < lsbRegisterFeedbackOut[0])
-        {
-            /* lsbScaleBOut has more lsb bits, so add lsb-bits to regOut0
-             * resize and shifting (to the left), scale this value to the size of the output of feedbackAdd0, since this value cannot be larger
-             * the word size cannot be larger than the word size of the adder (see comment msb computation for this addition)
+            /*
+             * Additions
+             * addition0 ist special case since it has scaleB as input and the other input is possible too large bc of the
+             * conservative computation in the feedback path (see comment msb computation for this addition)
+             * --> feedbackRegOut0 has to be rescaled to max output of adder (later it can be optimized to mInt + wcpgGain - (msbScaleBOut - msbIn) + shifta
+             * both inputs of the additions must have same amount of lsb-bits
+             *
+             * There are 3 cases for the signs. left "+" and right "+", keft "+" and right "-" and left "-" and right "+". The possible fourth case is handled
+             * in preventDoubleNegativeInputsAdder. Left "-" and right "+" is special case and must be treated differently since -a+b ist not feasible using
+             * IntConstMultShift, so use b-a.
              */
-            wordsizefeedbackAdd0ResizedReg0 = min(msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1, msbRegisterFeedbackOut[0] - lsbRegisterFeedbackOut[0] + 1 + numLsbBitsDifference);
-            vhdl << declare("feedbackAdd0ResizedReg0", wordsizefeedbackAdd0ResizedReg0) << " <= std_logic_vector(shift_left(resize(signed(feedbackRegOut0), " << wordsizefeedbackAdd0ResizedReg0 << "),"<< numLsbBitsDifference <<"));" << endl;
-            if(adderFeedbackpPath.at(0).signLeft == "-" && adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+
+            string operandNameFeedbackLeft = "feedbackRegOut"; // except feedbackAdd0
+            string operandNameFeedbackRight = "feedbackMul"; // except feedbackAdd0
+
+            int64_t numLsbBitsDifference = abs(
+                    lsbRegisterFeedbackOut[0] - lsbScaleBOut); // determine how often to shift
+            REPORT(DEBUG, "numLsbBitsDifference: " << numLsbBitsDifference)
+            if (lsbScaleBOut < lsbRegisterFeedbackOut[0]) {
+                /* lsbScaleBOut has more lsb bits, so add lsb-bits to regOut0
+                 * resize and shifting (to the left), scale this value to the size of the output of feedbackAdd0, since this value cannot be larger
+                 * the word size cannot be larger than the word size of the adder (see comment msb computation for this addition)
+                 */
+                wordsizefeedbackAdd0ResizedReg0 = min(msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1,
+                                                      msbRegisterFeedbackOut[0] - lsbRegisterFeedbackOut[0] + 1 +
+                                                      numLsbBitsDifference);
+                vhdl << declare("feedbackAdd0ResizedReg0", wordsizefeedbackAdd0ResizedReg0)
+                     << " <= std_logic_vector(shift_left(resize(signed(feedbackRegOut0), "
+                     << wordsizefeedbackAdd0ResizedReg0 << ")," << numLsbBitsDifference << "));" << endl;
+                if (adderFeedbackpPath.at(0).signLeft == "-" &&
+                    adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+                {
+                    vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                         << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedReg0), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                         << adderFeedbackpPath.at(0).signLeft << " signed(forAdd0));" << endl;
+                } else {
+                    vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                         << " <= std_logic_vector(resize(signed(forAdd0), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                         << adderFeedbackpPath.at(0).signRight << " signed(feedbackAdd0ResizedReg0));" << endl;
+                }
+            } else if (lsbScaleBOut > lsbRegisterFeedbackOut[0]) {
+                //vhdl << declare("feedbackAdd0ResizedScaleB", msbScaleBOut - lsbScaleBOut + numLsbBitsDifference + 1) << " <= std_logic_vector(shift_left(signed(scaleBOut(" << msbScaleBOut - lsbScaleBOut +1  << " downto 0))), to_integer(to_signed(1, 2)));" << endl;
+                wordsizefeedbackAdd0ResizedScaleB = min(msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1,
+                                                        msbScaleBOut - lsbScaleBOut + 1 + numLsbBitsDifference);
+                vhdl << declare("feedbackAdd0ResizedScaleB", wordsizefeedbackAdd0ResizedScaleB)
+                     << " <= std_logic_vector(shift_left(resize(signed(forAdd0), " << wordsizefeedbackAdd0ResizedScaleB
+                     << ")," << numLsbBitsDifference << "));" << endl;
+                if (adderFeedbackpPath.at(0).signLeft == "-" &&
+                    adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+                {
+                    vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                         << " <= std_logic_vector(resize(signed(feedbackRegOut0), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                         << adderFeedbackpPath.at(0).signLeft << " resize(signed(feedbackAdd0ResizedScaleB), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+                } else {
+                    vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                         << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedScaleB), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                         << adderFeedbackpPath.at(0).signRight << " resize(signed(feedbackRegOut0), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+                }
+            } else // if both inputs are well aligned, use regular inputs
             {
-                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
-                     << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedReg0), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
-                     << adderFeedbackpPath.at(0).signLeft << " signed(forAdd0));" << endl;
+                if (adderFeedbackpPath.at(0).signLeft == "-" &&
+                    adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+                {
+                    vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                         << " <= std_logic_vector(resize(signed(feedbackRegOut0), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                         << adderFeedbackpPath.at(0).signLeft << " resize(signed(forAdd0), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+                } else {
+                    vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
+                         << " <= std_logic_vector(resize(signed(forAdd0), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
+                         << adderFeedbackpPath.at(0).signRight << " resize(signed(feedbackRegOut0), "
+                         << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+                }
             }
-            else {
-                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
-                     << " <= std_logic_vector(resize(signed(forAdd0), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
-                     << adderFeedbackpPath.at(0).signRight << " signed(feedbackAdd0ResizedReg0));" << endl;
+
+            for (uint32_t i = 1; i < m; i++) {
+                if (adderFeedbackpPath.at(i).signLeft == "-" &&
+                    adderFeedbackpPath.at(i).signRight == "+") // treat special case and switch operands and change sign
+                {
+                    vhdl << declare(join("feedbackAdd", i), msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1)
+                         << " <= std_logic_vector(resize(signed("
+                         << join(operandNameFeedbackRight, i - 1) << "), "
+                         << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") "
+                         << adderFeedbackpPath.at(i).signLeft
+                         << " signed(" << join(operandNameFeedbackLeft, i) << "));"
+                         << endl;
+                } else {
+                    vhdl << declare(join("feedbackAdd", i), msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1)
+                         << " <= std_logic_vector(resize(signed("
+                         << join(operandNameFeedbackLeft, i) << "), "
+                         << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") "
+                         << adderFeedbackpPath.at(i).signRight
+                         << " signed(" << join(operandNameFeedbackRight, i - 1) << "));"
+                         << endl;
+                }
             }
+
+            newInstance("ShiftReg", join("feedbackReg", m - 1),
+                        join("n=1 reset=1 w=", msbRegisterFeedbackOut[m - 1] - lsbRegisterFeedbackOut[m - 1] + 1),
+                        join("X=>feedbackMul", m - 1), join("Xd1=>feedbackRegOut", m - 1));
+
+            for (uint32_t i = 0; i < m - 1; i++) {
+                newInstance("ShiftReg", join("feedbackReg", i),
+                            join("n=1 reset=1 w=", msbRegisterFeedbackOut[i] - lsbRegisterFeedbackOut[i] + 1),
+                            join("X=>feedbackAdd", i + 1), join("Xd1=>feedbackRegOut", i));
+            }
+
+            // determine bit position for the bit that has to be added
+            uint16_t bitPositionRoundingBit = abs(lsbAdditionsFeedbackOut[0] - lsbInt) + guardBits - 1;
+            // cutting bit so it survises truncation
+            vhdl << declare("faithfulRoundingBitValue", 1) << " <= feedbackAdd0(" << bitPositionRoundingBit
+                 << " downto " << bitPositionRoundingBit << " ); " << endl;
+
+            // shift feedback0 to the right, resp. cut two more bits, guard bits also considered (truncation)
+            vhdl << declare("endresult", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 -
+                                         abs(lsbAdditionsFeedbackOut[0] - lsbInt - guardBits)) << " <= feedbackAdd0("
+                 << (msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0]) << " downto "
+                 << abs(lsbAdditionsFeedbackOut[0] - lsbInt) + guardBits << ");" << endl;
+            //vhdl << "Result <= std_logic_vector(resize(signed(endresult)," << wOut << "));" << endl; // not rounded result
+
+            vhdl << "Result <= std_logic_vector(resize(signed(endresult + faithfulRoundingBitValue)," << wOut << "));"
+                 << endl; // faithfully rounded result
         }
 
-        else if(lsbScaleBOut > lsbRegisterFeedbackOut[0])
+        // resulting signal for FIR filter
+        if(isFIR)
         {
-            //vhdl << declare("feedbackAdd0ResizedScaleB", msbScaleBOut - lsbScaleBOut + numLsbBitsDifference + 1) << " <= std_logic_vector(shift_left(signed(scaleBOut(" << msbScaleBOut - lsbScaleBOut +1  << " downto 0))), to_integer(to_signed(1, 2)));" << endl;
-            wordsizefeedbackAdd0ResizedScaleB = min(msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1, msbScaleBOut - lsbScaleBOut + 1 + numLsbBitsDifference);
-            vhdl << declare("feedbackAdd0ResizedScaleB", wordsizefeedbackAdd0ResizedScaleB) << " <= std_logic_vector(shift_left(resize(signed(forAdd0), " << wordsizefeedbackAdd0ResizedScaleB << "),"<< numLsbBitsDifference <<"));" << endl;
-            if(adderFeedbackpPath.at(0).signLeft == "-" && adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+            if(lsbOut - lsbScaleBOut > 0) // if there are more
             {
-                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
-                     << " <= std_logic_vector(resize(signed(feedbackRegOut0), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
-                     << adderFeedbackpPath.at(0).signLeft << " resize(signed(feedbackAdd0ResizedScaleB), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
+                REPORT(DEBUG, "cut " << lsbOut - lsbScaleBOut << " bit. Range from " << msbScaleBOut-lsbScaleBOut+1-1 << " to: " << lsbOut - lsbScaleBOut-1 << endl);
+                // no +1 in lsbOut - lsbScaleBOut and the  other since for downto 1 must be suctracted again
+                vhdl << "Result <= std_logic_vector(forAdd0)(" << msbScaleBOut-lsbScaleBOut << "  downto " << lsbOut - lsbScaleBOut << "); " << endl;
             }
-            else {
-                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
-                     << " <= std_logic_vector(resize(signed(feedbackAdd0ResizedScaleB), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
-                     << adderFeedbackpPath.at(0).signRight << " resize(signed(feedbackRegOut0), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
-            }
-        }
-
-        else // if both inputs are well aligned, use regular inputs
-        {
-            if(adderFeedbackpPath.at(0).signLeft == "-" && adderFeedbackpPath.at(0).signRight == "+") // treat special case and switch operands and change sign
+            else if(lsbOut - lsbScaleBOut < 0)
             {
-                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
-                     << " <= std_logic_vector(resize(signed(feedbackRegOut0), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
-                     << adderFeedbackpPath.at(0).signLeft << " resize(signed(forAdd0), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
-            }
-            else {
-                vhdl << declare("feedbackAdd0", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1)
-                     << " <= std_logic_vector(resize(signed(forAdd0), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << ") "
-                     << adderFeedbackpPath.at(0).signRight << " resize(signed(feedbackRegOut0), "
-                     << msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 << "));" << endl;
-            }
-        }
-
-        for (int i = 1; i < m; i++)
-        {
-            if(adderFeedbackpPath.at(i).signLeft == "-" && adderFeedbackpPath.at(i).signRight == "+") // treat special case and switch operands and change sign
-            {
-                vhdl << declare(join("feedbackAdd", i), msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1)
-                     << " <= std_logic_vector(resize(signed("
-                     << join(operandNameFeedbackRight, i-1) << "), "
-                     << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") " << adderFeedbackpPath.at(i).signLeft
-                     << " signed(" << join(operandNameFeedbackLeft, i) << "));"
-                     << endl;
+                REPORT(DEBUG, "pad " << abs(lsbOut - lsbScaleBOut) << "bit on right side")
+                vhdl << "Result <= std_logic_vector(shift_left(resize(signed(forAdd0), " << wOut << "), " << abs(lsbOut - lsbScaleBOut) << ")); " << endl;
             }
             else
             {
-                vhdl << declare(join("feedbackAdd", i), msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1)
-                     << " <= std_logic_vector(resize(signed("
-                     << join(operandNameFeedbackLeft, i) << "), "
-                     << msbAdditionsFeedbackOut[i] - lsbAdditionsFeedbackOut[i] + 1 << ") " << adderFeedbackpPath.at(i).signRight
-                     << " signed(" << join(operandNameFeedbackRight, i - 1) << "));"
-                     << endl;
+                REPORT(DEBUG, "proper alignment");
+                vhdl << "Result <= std_logic_vector(forAdd0);" << endl;
             }
         }
-
-        newInstance("ShiftReg", join("feedbackReg", m - 1), join("n=1 reset=1 w=", msbRegisterFeedbackOut[m - 1] - lsbRegisterFeedbackOut[m-1] + 1),
-                    join("X=>feedbackMul", m - 1), join("Xd1=>feedbackRegOut", m - 1));
-
-        for (int i = 0; i < m - 1; i++) {
-            newInstance("ShiftReg", join("feedbackReg", i), join("n=1 reset=1 w=", msbRegisterFeedbackOut[i] - lsbRegisterFeedbackOut[i] + 1),
-                        join("X=>feedbackAdd", i + 1), join("Xd1=>feedbackRegOut", i));
-        }
-
-        // determine bit position for the bit that has to be added
-        uint16_t bitPositionRoundingBit = abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits-1;
-        // cutting bit so it survises truncation
-        vhdl << declare("faithfulRoundingBitValue", 1) << " <= feedbackAdd0(" << bitPositionRoundingBit << " downto "<< bitPositionRoundingBit << " ); " << endl;
-
-        // shift feedback0 to the right, resp. cut two more bits, guard bits also considered (truncation)
-        vhdl << declare("endresult", msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0] + 1 - abs(lsbAdditionsFeedbackOut[0]-lsbInt - guardBits)) << " <= feedbackAdd0("<< (msbAdditionsFeedbackOut[0] - lsbAdditionsFeedbackOut[0]) << " downto " << abs(lsbAdditionsFeedbackOut[0]-lsbInt) + guardBits << ");" << endl;
-        //vhdl << "Result <= std_logic_vector(resize(signed(endresult)," << wOut << "));" << endl; // not rounded result
-
-        vhdl << "Result <= std_logic_vector(resize(signed(endresult + faithfulRoundingBitValue)," << wOut << "));" << endl; // faithfully rounded result
     }
 
     FixIIRShiftAdd::~FixIIRShiftAdd()
@@ -847,7 +908,6 @@ namespace flopoco {
             mpz_sub(registerFeedbackTB_mpz[i], registerFeedbackTB_mpz[i + 1], coeffR);
         }
 #endif
-
         if (1) {
             mpz_class sx;
             mpfr_t x, s, t;
@@ -875,15 +935,17 @@ namespace flopoco {
                 //REPORT(LIST, "forward: " << mpfr_get_d(t, GMP_RNDN)<< " = " << mpfr_get_d(xHistory[(currentIndex+i)%n], GMP_RNDN) << " * " << mpfr_get_d(coeffb_mp_f_scaled[i], GMP_RNDN))
                 mpfr_add(s, s, t, GMP_RNDN);                            // same comment as above
             }
-
-            for (uint32_t i = 0; i < m; i++) {
-                mpfr_mul(t, yHistory[(currentIndex + i + 1) % (m + 2)], coeffa_mp_f_scaled[i],
-                         GMP_RNDZ);                    // Here rounding possible, but precision used is ridiculously high so it won't matter
-                //REPORT(LIST, "feedback: " << mpfr_get_d(t, GMP_RNDN)<< " = " << mpfr_get_d(yHistory[(currentIndex +i+1)%(m+2)], GMP_RNDN) << " * " << mpfr_get_d(coeffa_mp_f_scaled[i], GMP_RNDN))
-                mpfr_sub(s, s, t, GMP_RNDZ);                            // same comment as above
-            }
+            if(!isFIR)
+            {
+                for (uint32_t i = 0; i < m; i++) {
+                    mpfr_mul(t, yHistory[(currentIndex + i + 1) % (m + 2)], coeffa_mp_f_scaled[i],
+                             GMP_RNDZ);                    // Here rounding possible, but precision used is ridiculously high so it won't matter
+                    //REPORT(LIST, "feedback: " << mpfr_get_d(t, GMP_RNDN)<< " = " << mpfr_get_d(yHistory[(currentIndex +i+1)%(m+2)], GMP_RNDN) << " * " << mpfr_get_d(coeffa_mp_f_scaled[i], GMP_RNDN))
+                    mpfr_sub(s, s, t, GMP_RNDZ);                            // same comment as above
+                }
             //REPORT(LIST, "output variable: " << mpfr_get_d(s, GMP_RNDZ))
             mpfr_set(yHistory[(currentIndex + 0) % (m + 2)], s, GMP_RNDN);
+            }
 
 #if 0// debugging the emulate
             cout << "x=" << 	mpfr_get_d(xHistory[currentIndex % n], GMP_RNDN);
@@ -918,21 +980,27 @@ namespace flopoco {
             mpfr_mul_2si(s, s, -lsbOut, GMP_RNDN);
             //REPORT(LIST, "output variable scaled with lsbOut: " << mpfr_get_d(s, GMP_RNDZ))
 
-
             // We are waiting until the first meaningful value comes out of the IIR
+            int bitVectorSize; // bit vector size is different for FIR since the position of the output is different
+            if(!isFIR)
+                bitVectorSize = msbOutIIR - lsbOut + 1;
+            else
+                bitVectorSize = msbScaleBOut - lsbOut + 1;
 
+        if(!isFIR)
+        {
             mpz_class rdz, ruz;
             mpfr_get_z(rdz.get_mpz_t(), s, GMP_RNDD);                    // there can be a real rounding here
 
 #if 1 // to unplug the conversion that fails to see if it diverges further
-            rdz = signedToBitVector(rdz, msbOut - lsbOut + 1);
+            rdz = signedToBitVector(rdz, bitVectorSize);
             tc->addExpectedOutput("Result", rdz);
 
             mpfr_get_z(ruz.get_mpz_t(), s, GMP_RNDU);                    // there can be a real rounding here
-            ruz = signedToBitVector(ruz, msbOut - lsbOut + 1);
+            ruz = signedToBitVector(ruz, bitVectorSize);
             tc->addExpectedOutput("Result", ruz);
-
 #endif
+        }
             mpfr_clears(x, t, s, NULL);
         }
     }
@@ -980,13 +1048,14 @@ namespace flopoco {
 
         REPORT(0, "Filter output remains in [" << miny << ", " << maxy << "]");
     }
-        if(1) {
+        if(0) {
             int largestPossibleValue = pow(2, msbIn - lsbIn + 1) - 1;
-            int numTestcases = 10000;
+            int numTestcases = 10;
 
             int *testcases = (int *) malloc(numTestcases * sizeof(int));
-            for (int i = 0; i < numTestcases; i++) {
-                testcases[i] = -128;
+            for (int i = 0; i < numTestcases; i++)
+            {
+                testcases[i] = largestPossibleValue;
             }
 
             TestCase *tc;
@@ -1050,6 +1119,162 @@ namespace flopoco {
     TestList FixIIRShiftAdd::unitTest(int index) {
         TestList testStateList;
         vector<pair<string, string>> paramList;
+
+        // FIR testbench
+        paramList.push_back(make_pair("msbIn", "5"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "1:2:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "5"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-6"));
+        paramList.push_back(make_pair("coeffb", "1:2:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "5"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-10"));
+        paramList.push_back(make_pair("coeffb", "1:2:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "5"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "1:2:0"));
+        paramList.push_back(make_pair("shiftb", "3"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "5"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-6"));
+        paramList.push_back(make_pair("coeffb", "1:2:0"));
+        paramList.push_back(make_pair("shiftb", "3"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "5"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-10"));
+        paramList.push_back(make_pair("coeffb", "1:2:0"));
+        paramList.push_back(make_pair("shiftb", "3"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "-576:512:128:7:8:5:6"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "17"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "-576:512:128:7:8:5:6"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "1:0:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "17"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "1:0:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "1:0:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "17"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "1:0:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "17"));
+        paramList.push_back(make_pair("lsbIn", "-16"));
+        paramList.push_back(make_pair("lsbOut", "-16"));
+        paramList.push_back(make_pair("coeffb", "1:0:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-16"));
+        paramList.push_back(make_pair("lsbOut", "-16"));
+        paramList.push_back(make_pair("coeffb", "1:0:0"));
+        paramList.push_back(make_pair("shiftb", "0"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-16"));
+        paramList.push_back(make_pair("lsbOut", "-16"));
+        paramList.push_back(make_pair("coeffb", "32:-32:16"));
+        paramList.push_back(make_pair("shiftb", "9"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "32:-32:16"));
+        paramList.push_back(make_pair("shiftb", "9"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "2:-2:1"));
+        paramList.push_back(make_pair("shiftb", "3"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-8"));
+        paramList.push_back(make_pair("lsbOut", "-8"));
+        paramList.push_back(make_pair("coeffb", "2:2:1"));
+        paramList.push_back(make_pair("shiftb", "3"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        paramList.push_back(make_pair("msbIn", "-1"));
+        paramList.push_back(make_pair("lsbIn", "-16"));
+        paramList.push_back(make_pair("lsbOut", "-16"));
+        paramList.push_back(make_pair("coeffb", "2:6"));
+        paramList.push_back(make_pair("shiftb", "16"));
+        testStateList.push_back(paramList);
+        paramList.clear();
+
+        // IIR testbench
+
         if (1) {// old testbench, use again later
             paramList.push_back(make_pair("msbIn", "21"));
             paramList.push_back(make_pair("lsbIn", "-8"));
@@ -1461,9 +1686,9 @@ namespace flopoco {
                         lsbIn(int): input least significant bit;\
                         lsbOut(int): output least significant bit;\
                         guardbits(int)=-1: number of guard bits for computation in recursive feedback path (-1: automatic);\
-                        coeffa(string): colon-separated list of real coefficients using Sollya syntax. Example: coeffa=\"1.234567890123:sin(3*pi/8)\";\
+                        coeffa(string)=-1: colon-separated list of real coefficients using Sollya syntax. Example: coeffa=\"1.234567890123:sin(3*pi/8)\";\
                         coeffb(string): colon-separated list of real coefficients using Sollya syntax. Example: coeffb=\"1.234567890123:sin(3*pi/8)\";\
-                        shifta(int): Num of rightshifts for coeffa (must be positive);\
+                        shifta(int)=-1: Num of rightshifts for coeffa (must be positive);\
                         shiftb(int): Num of rightshifts for coeffb (must be positive);\
                         method(string)=plain: plain or multiplierless;\
                         grapha(string)=emptya: graph in rpag format for coeffa;\

@@ -3,13 +3,16 @@
 //
 
 /*
- *  TODO:
- *  Faithful rounding for FIR?
- *  Add more extensive description
-
+ *  Description:
+ *  IIR filter with multiplierless option (graph in rpag format mandatory for multiplierless)
+ *  If no coeffa is given the filter turns into a FIR filter (feedback path is omitted)
+ *  IIR and FIR variant use faithful rounding
+ *  Caution: shifta/b denotes the number of (right)shitfs, not scaling. Always give positive number
+ *
  *
  *  Optimizations:
- *  Word sizes in feedbackpath have conservative computation. Using wcpg can optimze the wordsizes - the more coeffs the more potential
+ *  Word sizes for adder and register have conservative computation. Using wcpg can optimze the wordsizes for each
+ *  adder. Conservative computation does not apply for feedbackAdd0, this one is good
  *
  */
 
@@ -175,7 +178,7 @@ namespace flopoco {
                     msbMultiplicationsForwardOut[i] = msbIn + ceil(log2(abs(coeffb_si[i])+1));
                 else
                     msbMultiplicationsForwardOut[i] = msbIn + ceil(log2(abs(coeffb_si[i])));
-            REPORT(INFO, "msbMultiplicationsForwardOut["<<i<<"]: " << msbMultiplicationsForwardOut[i])
+            REPORT(DEBUG, "msbMultiplicationsForwardOut["<<i<<"]: " << msbMultiplicationsForwardOut[i])
         }
 
         // registers (only word size is needed for vhdl code generation, but it can be derived from msb and lsb)
@@ -193,7 +196,7 @@ namespace flopoco {
                 msbRegisterForwardOut[i] = msbIn;
             else
                 msbRegisterForwardOut[i] = msbIn + ceil(log2((abs(bitGainForRegister))));
-            REPORT(INFO, "msbRegisterForwardOut["<<i<<"]: " << msbRegisterForwardOut[i])
+            REPORT(DEBUG, "msbRegisterForwardOut["<<i<<"]: " << msbRegisterForwardOut[i])
         }
 
         // additions, last addition (addN-1) is special case since it has two inputs
@@ -205,7 +208,7 @@ namespace flopoco {
             msbAdditionsForwardOut[n - 1] = msbIn + 0;
         else
             msbAdditionsForwardOut[n - 1] = msbIn + ceil(log2((abs(coeffb_si[n - 1]) + abs(coeffb_si[n - 2]))));
-        REPORT(INFO, "msbAdditionsForwardOut["<<n - 1<<"]: " << msbAdditionsForwardOut[n-1])
+        REPORT(DEBUG, "msbAdditionsForwardOut["<<n - 1<<"]: " << msbAdditionsForwardOut[n-1])
         bitGainForAdditons = 0;
         for (int i = n - 2; i >= 0; i--) // for additions except addN-1
         {
@@ -220,7 +223,7 @@ namespace flopoco {
                 msbAdditionsForwardOut[i] = msbIn;
             else
                 msbAdditionsForwardOut[i] = msbIn + ceil(log2((abs(bitGainForAdditons))));
-            REPORT(INFO, "msbAdditionsForwardOut["<<i<<"]: " << msbAdditionsForwardOut[i])
+            REPORT(DEBUG, "msbAdditionsForwardOut["<<i<<"]: " << msbAdditionsForwardOut[i])
         }
 
         // scaleb
@@ -738,11 +741,14 @@ namespace flopoco {
         // resulting signal for FIR filter
         if(isFIR)
         {
-            if(lsbOut - lsbScaleBOut > 0) // if there are more
+            if(lsbOut - lsbScaleBOut > 0) // if there are more lsbScaleBOut bits than lsbOut,
             {
                 REPORT(DEBUG, "cut " << lsbOut - lsbScaleBOut << " bit. Range from " << msbScaleBOut-lsbScaleBOut+1-1 << " to: " << lsbOut - lsbScaleBOut-1 << endl);
+                uint16_t bitPositionRoundingBit = msbScaleBOut-lsbScaleBOut-1;
+                vhdl << declare("faithfulRoundingBitValue", 1) << " <= forAdd0(" << bitPositionRoundingBit << " downto " << bitPositionRoundingBit << " ); " << endl;
                 // no +1 in lsbOut - lsbScaleBOut and the  other since for downto 1 must be suctracted again
-                vhdl << "Result <= std_logic_vector(forAdd0)(" << msbScaleBOut-lsbScaleBOut << "  downto " << lsbOut - lsbScaleBOut << "); " << endl;
+                vhdl << declare("resultNotRounded", wOut) << " <= std_logic_vector(forAdd0)(" << msbScaleBOut-lsbScaleBOut << "  downto " << lsbOut - lsbScaleBOut << "); " << endl;
+                vhdl << "Result <= std_logic_vector(resultNotRounded+faithfulRoundingBitValue);" << endl;
             }
             else if(lsbOut - lsbScaleBOut < 0)
             {

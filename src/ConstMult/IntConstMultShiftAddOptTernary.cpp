@@ -33,7 +33,7 @@
 
 using namespace std;
 
-#if defined(HAVE_PAGLIB)
+#if defined(HAVE_PAGLIB) && defined(HAVE_OSCM)
 
 using namespace PAGSuite;
 
@@ -105,7 +105,7 @@ namespace flopoco{
 namespace flopoco{
     void flopoco::IntConstMultShiftAddOptTernary::registerFactory() {
 
-#if defined(HAVE_PAGLIB)
+#if defined(HAVE_PAGLIB) && defined(HAVE_OSCM)
         UserInterface::add( "IntConstMultShiftAddOptTernary", // name
                             "Integer constant multiplication using shift and ternary additions in an optimal way (i.e., with minimum number of ternary adders). Works for coefficients up to 4194303 (22 bit)", // description, string
                             "ConstMultDiv", // category, from the list defined in UserInterface.cpp

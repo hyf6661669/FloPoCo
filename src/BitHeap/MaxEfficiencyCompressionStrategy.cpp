@@ -54,27 +54,33 @@ namespace flopoco{
 	}
 
 	void MaxEfficiencyCompressionStrategy::maxEfficiencyAlgorithm(){
-
 		unsigned int s = 0;
 		bool adderReached = false;
+		vector<int> currentRanges(bitheap->width);
 
-		int moduloRangeMin = 0;
-		int moduloRangeMax = 0;
         long long oneLL = static_cast<long long>(1);
         for (int i = 0; i < bitheap->width; ++i) {
-            moduloRangeMax += (oneLL << i);
+            currentRanges[i] = (oneLL << i);
         }
 
-
 		while(!adderReached){
-            bool breakToWhile = false;
             bool reachedModuloRange = true;
+
+            int moduloRangeMax = 0;
+            int moduloRangeMin = 0;
+
+            for (int i = 0; i < currentRanges.size(); ++i) {
+                if (currentRanges[i] >= 0) {
+                    moduloRangeMax += currentRanges[i];
+                } else {
+                    moduloRangeMin += currentRanges[i];
+                }
+            }
 
             if (computeModulo) {
                 cerr << "modMin: " << moduloRangeMin << " modMax: " << moduloRangeMax << endl;
                 reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < bitheap->modulus);
             }
-
 
             if(checkAlgorithmReachedAdder(2, s) && reachedModuloRange){
                 break;
@@ -85,110 +91,36 @@ namespace flopoco{
 				bitAmount.resize(bitAmount.size() + 1);
 				bitAmount[bitAmount.size() - 1].resize(bitAmount[bitAmount.size() - 2].size(), 0);
 			}
+            unsigned int requiredBitsForRange = reqBitsForRange2Complement(moduloRangeMin, moduloRangeMax);
 
-			// check if mod is used and if stage height = 1
-			// then use other compressors -> pseudocompressors
-			int maxHeightBitAmount = *max_element(bitAmount[s].begin(), bitAmount[s].end());
 			// pseudo compression
-			if (maxHeightBitAmount == 1 && computeModulo) {
+			if (shouldPlacePseudoCompressors(bitAmount[s]) && computeModulo) {
+			    cerr << "pseudo compression" << endl;
 			    bool useNegativeMSBValue = false;
-			    unsigned int requiredBitsForRange = reqBitsForRange2Complement(moduloRangeMin, moduloRangeMax);
 			    if (moduloRangeMin < 0) {
 			        useNegativeMSBValue = true;
 			    }
-			    moduloRangeMax = 0;
-			    moduloRangeMin = 0;
 
-                bool found = true;
-                while(found) {
-                    found = false;
-                    BasicCompressor* compressor = nullptr;
-
-                    // go through columns
-                    // check if allowed
-                    // check if another is better
-                    // check if there is a bit in this column
-                    for(unsigned int c = 0; c < bitAmount[s].size(); c++){
-                        found = false;
-
-                        if (useNegativeMSBValue && c == requiredBitsForRange - 1 && bitAmount[s][c] > 0) {
-                            // make new compressor for negative MSB
-                            vector<int> compInput(requiredBitsForRange, 0);
-                            compInput[compInput.size()-1] = 1;
-                            int modulo = bitheap->modulus;
-                            int wIn = bitheap->width;
-
-                            int newRem = (((-1 << c) % modulo) + modulo) % modulo;
-                            int newReciprocal = newRem - modulo;
-
-                            if (abs(newRem) <= abs(newReciprocal)) {
-                                vector<int> compOutput;
-                                for(int j = 1; j < 1<<wIn; j <<= 1){
-                                    if(j&newRem){
-                                        compOutput.push_back(1);
-                                    } else {
-                                        compOutput.push_back(0);
-                                    }
-                                }
-
-                                compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutput, newRem);
-                                found = true;
-                            } else {
-                                vector<int> compOutputRec;
-                                int ones_vector_start = 0, cnt = 1;
-                                for(int j = 1; j < 1<<wIn; j <<= 1){
-                                    if(j&newReciprocal){
-                                        compOutputRec.push_back(1);
-                                    } else {
-                                        compOutputRec.push_back(0);
-                                        ones_vector_start = cnt;
-                                    }
-                                    cnt++;
-                                }
-
-                                compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutputRec, newReciprocal, ones_vector_start);
-                                found = true;
-                            }
-
-                        } else if (c >= requiredBitsForRange && bitAmount[s][c] > 0 && c < bitheap->width) {
-                            cerr << "set 0 pseudo comp c is " << c << endl;
-                            vector<int> compInput(c+1, 0);
-                            compInput[compInput.size()-1] = 1;
-                            vector<int> compOutput(bitAmount[s].size(), 0);
-                            compOutput[bitAmount[s] .size()-1] = 1;
-                            compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutput, 0);
-                            found = true;
-                        } else {
-                            int currentRange = INT_MAX;
-                            for (unsigned int i = 0; i < possibleCompressors.size(); ++i) {
-                                if (possibleCompressors[i]->type == CompressorType::Pseudo) {
-                                    if (possibleCompressors[i]->heights.size() - 1 == c && bitAmount[s][c] > 0 && c < requiredBitsForRange) {
-                                        cerr << "decide which compressor is better" << endl;
-                                        if (isRemainderMoreEfficient(possibleCompressors[i]->range_change, currentRange)) {
-                                            cerr << "this one is more efficient" << endl;
-                                            currentRange = possibleCompressors[i]->range_change;
-                                            compressor = possibleCompressors[i];
-                                            found = true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if(found){
-                            REPORT(DETAILED, "range change is " << compressor->range_change);
-                            placeCompressor(s, 0, compressor);
-                            if (compressor->range_change >= 0) {
-                                moduloRangeMax += compressor->range_change;
-                            } else {
-                                moduloRangeMin += compressor->range_change;
-                            }
-                            printBitAmounts();
-                        }
+                for(unsigned int c = 0; c < bitAmount[s].size(); c++){
+                    int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, true, useNegativeMSBValue);
+                    cerr << "set range change " << rangeChange << " for column " << c << endl;
+                    if (c < currentRanges.size()) {
+                        currentRanges[c] = rangeChange;
                     }
                 }
 			} else {
 			    cerr << "normal compression" << endl;
+
+			    // place PseudoCompressors where column height = 1
+//                for(unsigned int c = 0; c < bitAmount[s].size(); c++){
+//                    if (bitAmount[s][c] == 1) {
+//                        int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, false,  moduloRangeMin < 0);
+//                        cerr << "set range change 2 " << rangeChange << " for column " << c << endl;
+//                        if (c < currentRanges.size()) {
+//                            currentRanges[c] = rangeChange;
+//                        }
+//                    }
+//                }
 
                 bool found = true;
                 while(found){
@@ -263,10 +195,6 @@ namespace flopoco{
                 }
 			}
 
-			if (breakToWhile) {
-			    break;
-			}
-
 			//finished one stage. bring the remaining bits in bitAmount to the new stage
 			for(unsigned int c = 0; c < bitAmount[s].size(); c++){
 				if(bitAmount[s][c] > 0){
@@ -309,5 +237,86 @@ namespace flopoco{
 
     bool MaxEfficiencyCompressionStrategy::isRemainderMoreEfficient(int rem, int remToCompare) {
 	    return abs(rem) < abs(remToCompare);
+	}
+
+    bool MaxEfficiencyCompressionStrategy::shouldPlacePseudoCompressors(vector<int> bitAmountStage) {
+        int maxHeightBitAmount = *max_element(bitAmountStage.begin(), bitAmountStage.end());
+        return maxHeightBitAmount == 1;
+	}
+
+    int MaxEfficiencyCompressionStrategy::placePseudoCompressor(int s, int column, int requiredBitsForRange, bool allowDeletion, bool useNegativeMSBValue) {
+
+        BasicCompressor* compressor = nullptr;
+        bool found = false;
+
+        if (useNegativeMSBValue && column == requiredBitsForRange - 1 && bitAmount[s][column] > 0) {
+            // make new compressor for negative MSB
+            vector<int> compInput(requiredBitsForRange, 0);
+            compInput[compInput.size()-1] = 1;
+            int modulo = bitheap->modulus;
+            int wIn = bitheap->width;
+
+            int newRem = (((-1 << column) % modulo) + modulo) % modulo;
+            int newReciprocal = newRem - modulo;
+
+            if (abs(newRem) <= abs(newReciprocal)) {
+                vector<int> compOutput;
+                for(int j = 1; j < 1<<wIn; j <<= 1){
+                    if(j&newRem){
+                        compOutput.push_back(1);
+                    } else {
+                        compOutput.push_back(0);
+                    }
+                }
+
+                compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutput, newRem);
+                found = true;
+            } else {
+                vector<int> compOutputRec;
+                int ones_vector_start = 0, cnt = 1;
+                for(int j = 1; j < 1<<wIn; j <<= 1){
+                    if(j&newReciprocal){
+                        compOutputRec.push_back(1);
+                    } else {
+                        compOutputRec.push_back(0);
+                        ones_vector_start = cnt;
+                    }
+                    cnt++;
+                }
+
+                compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutputRec, newReciprocal, ones_vector_start);
+                found = true;
+            }
+
+        } else if (column >= requiredBitsForRange && bitAmount[s][column] > 0 && column < bitheap->width && allowDeletion) {
+            cerr << "set 0 pseudo comp c is " << column << endl;
+            vector<int> compInput(column+1, 0);
+            compInput[compInput.size()-1] = 1;
+            vector<int> compOutput(bitAmount[s].size(), 0);
+            compOutput[bitAmount[s] .size()-1] = 1;
+            compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutput, 0);
+            found = true;
+        } else {
+            int currentRange = INT_MAX;
+            for (unsigned int i = 0; i < possibleCompressors.size(); ++i) {
+                if (possibleCompressors[i]->type == CompressorType::Pseudo) {
+                    if (possibleCompressors[i]->heights.size() - 1 == column && bitAmount[s][column] > 0 && column < requiredBitsForRange) {
+                        if (isRemainderMoreEfficient(possibleCompressors[i]->range_change, currentRange)) {
+                            currentRange = possibleCompressors[i]->range_change;
+                            compressor = possibleCompressors[i];
+                            found = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if(found){
+            REPORT(DETAILED, "range change is " << compressor->range_change);
+            placeCompressor(s, 0, compressor);
+            return compressor->range_change;
+        } else {
+            return 0;
+        }
 	}
 }

@@ -40,6 +40,10 @@ class BitHeap;
          */
         bool isRemainderMoreEfficient(int rem, int remToCompare);
 
+        bool shouldPlacePseudoCompressors(vector<int> bitAmountStage);
+
+        int placePseudoCompressor(int s, int column, int requiredBitsForRange, bool allowDeletion, bool useNegativeMSBValue = false);
+
 		vector<float> lowerBounds;
 
 

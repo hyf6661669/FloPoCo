@@ -139,8 +139,8 @@ namespace flopoco{
 		for(unsigned int c = 0; c < compressor->getHeights(middleLength); c++){
 			if(bitAmount.size() > stage && bitAmount[stage].size() > column + c){
 				//position exists, now check how many bits there are to compress
-				if(bitAmount[stage][column + c] >= (int)compressor->getHeightsAtColumn(c, middleLength)){
-					inputBits += compressor->getHeightsAtColumn(c, middleLength);
+				if(bitAmount[stage][column + c] >= (int)compressor->getHeightsAtColumn(c, false, middleLength)){
+					inputBits += compressor->getHeightsAtColumn(c, false, middleLength);
 				}
 				else{
 					if(bitAmount[stage][column + c] > 0){ //preventing negative values (holes)
@@ -150,8 +150,8 @@ namespace flopoco{
 			}
 		}
 		for(unsigned int c = 0; c < compressor->getOutHeights(middleLength); c++){
-			if(compressor->getOutHeightsAtColumn(c, middleLength) > 0){
-				outputBits += compressor->getOutHeightsAtColumn(c, middleLength);
+			if(compressor->getOutHeightsAtColumn(c, false, middleLength) > 0){
+				outputBits += compressor->getOutHeightsAtColumn(c, false, middleLength);
 			}
 		}
 		double ratio = 0.0;

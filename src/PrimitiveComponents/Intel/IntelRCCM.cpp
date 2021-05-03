@@ -203,13 +203,13 @@ namespace flopoco
 
     OperatorPtr IntelRCCM::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args)
     {
-        int length;
+        int wIn;
         string type;
 
-        UserInterface::parseInt(args, "length", &length);
+        UserInterface::parseInt(args, "wIn", &wIn);
         UserInterface::parseString(args, "type", &type);
 
-        return new IntelRCCM(parentOp,target,length,type);
+        return new IntelRCCM(parentOp,target,wIn,type);
     }
 
     void IntelRCCM::registerFactory(){
@@ -296,6 +296,7 @@ namespace flopoco
                         if(d == a || d == b || d == c) continue;
 
                         paramList.push_back(make_pair("type", string(1, (char)(((a >= 10) ? 'W' : '0') + a)) + string(1, (char)(((b >= 10) ? 'W' : '0') + b)) + string(1, (char)(((c >= 10) ? 'W' : '0') + c)) + string(1, (char)(((d >= 10) ? 'W' : '0') + d))));
+                        paramList.push_back(make_pair("wIn", to_string((rand() % 2) + 4)));
                         testStateList.push_back(paramList);
                         paramList.clear();
                     }

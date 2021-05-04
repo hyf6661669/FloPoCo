@@ -43,7 +43,9 @@ void TilingStrategyOptimalILP::solve()
     solver = new ScaLP::Solver(ScaLP::newSolverDynamic({target->getILPSolver(),"Gurobi","CPLEX","SCIP","LPSolve"}));
     solver->timeout = target->getILPTimeout();
 
-    constructProblem();
+    vector<vector<ScaLP::Variable>> bVec(wX, vector<ScaLP::Variable>(wY)); //!!!
+
+    constructProblem(bVec);
 
     // Try to solve
     cout << "starting solver, this might take a while..." << endl;
@@ -54,6 +56,61 @@ void TilingStrategyOptimalILP::solve()
     cerr << "The result is " << stat << endl;
     //cerr << solver->getResult() << endl;
     ScaLP::Result res = solver->getResult();
+
+ /*
+  {
+    dpX = 2; //!!!
+    dpY = 2;
+    cerr << endl << endl << endl << endl;
+    for (int y = 0; y < wY; y++)
+    {
+      for (int x = 0; x < wX; x++)
+      {
+        stringstream nvarName;
+        nvarName << " b" << ((x < 0) ? "m" : "") << setfill('0') << setw(dpX) << ((x < 0) ? -x : x)
+                 << ((y < 0) ? "m" : "") << setfill('0') << setw(dpY) << ((y < 0) ? -y : y);
+        cerr << nvarName.str() << endl;
+      }
+    }
+    cerr << endl << endl << endl << endl;
+  }
+*/
+  cerr << endl << endl << endl;
+  cerr << "wX=" << wX << endl;
+  cerr << "wY=" << wY << endl;
+
+  double errorAcc=0;
+  double errorAccRnd=0;
+  for (int x = 0; x < wX; x++)
+  {
+    for (int y = 0; y < wY; y++)
+    {
+      if((x + y) < ((int) prodWidth - wOut))
+      {
+        double r = res.values[bVec[x][y]];
+        cerr << "! " << bVec[x][y]->getName() << "=" << std::setprecision(20) << r << endl;
+        errorAcc += (1 - res.values[bVec[x][y]])*(1LL << (x+y));
+        errorAccRnd += (1 - round(res.values[bVec[x][y]]))*(1LL << (x+y));
+      }
+    }
+  }
+
+  cerr << "errorAcc=" << std::setprecision(20) << errorAcc << endl;
+  cerr << "errorAccRnd=" << std::setprecision(20) << errorAccRnd << endl;
+  cerr << endl << endl << endl;
+
+//    cerr << endl << endl << endl;
+//    cerr << res.showSolutionVector() << endl;
+/*
+    cerr << endl << endl << endl;
+    for(auto &p:res.values)
+    {
+      //cerr << p.first->getName() << "=" << std::setprecision(20) << p.second << endl;
+      cout << p.first->getName() << "=";
+      printf("%2.40f\n",p.second);
+    }
+    cerr << endl << endl << endl;
+*/
 
     double total_cost = 0;
     int dsp_cost = 0, own_lut_cost=0;
@@ -99,84 +156,102 @@ void TilingStrategyOptimalILP::solve()
 }
 
 #ifdef HAVE_SCALP
-void TilingStrategyOptimalILP::constructProblem()
+void TilingStrategyOptimalILP::constructProblem(vector<vector<ScaLP::Variable>> &bVec)
 {
-	bool performOptimalTruncation = true;
+  bool performOptimalTruncation = true;
 
-    cout << "constructing problem formulation..." << endl;
-    wS = tiles.size();
+  cout << "constructing problem formulation..." << endl;
+  wS = tiles.size();
 
 
-    //Assemble cost function, declare problem variables
-    cout << "   assembling cost function, declaring problem variables..." << endl;
-    ScaLP::Term obj;
-    prodWidth = IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
-    int x_neg = 0, y_neg = 0;
-    for(int s = 0; s < wS; s++){
-        x_neg = (x_neg < (int)tiles[s]->wX())?tiles[s]->wX() - 1:x_neg;
-        y_neg = (y_neg < (int)tiles[s]->wY())?tiles[s]->wY() - 1:y_neg;
-    }
-    int nx = wX-1, ny = wY-1, ns = wS-1; dpX = 1; dpY = 1; dpS = 1; //calc number of decimal places, for var names
-    nx = (x_neg > nx)?x_neg:nx;                                     //in case the extend in negative direction is larger
-    ny = (y_neg > ny)?y_neg:ny;
-    while (nx /= 10)
-        dpX++;
-    while (ny /= 10)
-        dpY++;
-    while (ns /= 10)
-        dpS++;
+  //Assemble cost function, declare problem variables
+  cout << "   assembling cost function, declaring problem variables..." << endl;
+  ScaLP::Term obj;
+  prodWidth = IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
+  int x_neg = 0, y_neg = 0;
+  for (int s = 0; s < wS; s++)
+  {
+    x_neg = (x_neg < (int) tiles[s]->wX()) ? tiles[s]->wX() - 1 : x_neg;
+    y_neg = (y_neg < (int) tiles[s]->wY()) ? tiles[s]->wY() - 1 : y_neg;
+  }
+  int nx = wX - 1, ny = wY - 1, ns = wS - 1;
+  dpX = 1;
+  dpY = 1;
+  dpS = 1; //calc number of decimal places, for var names
+  nx = (x_neg > nx) ? x_neg : nx;                                     //in case the extend in negative direction is larger
+  ny = (y_neg > ny) ? y_neg : ny;
+  while (nx /= 10)
+    dpX++;
+  while (ny /= 10)
+    dpY++;
+  while (ns /= 10)
+    dpS++;
 
-    vector<vector<vector<ScaLP::Variable>>> solve_Vars(wS, vector<vector<ScaLP::Variable>>(wX+x_neg, vector<ScaLP::Variable>(wY+y_neg)));
-    ScaLP::Term maxEpsTerm;
-    __uint64_t sumOfPosEps = 0;
-    // add the Constraints
-    cout << "   adding the constraints to problem formulation..." << endl;
-    for(int y = 0; y < wY; y++){
-        for(int x = 0; x < wX; x++){
-            stringstream consName;
-            consName << "p" << setfill('0') << setw(dpX) << x << setfill('0') << setw(dpY) << y;            //one constraint for every position in the area to be tiled
-            ScaLP::Term pxyTerm;
-            for(int s = 0; s < wS; s++){					//for every available tile...
-                for(int ys = 0 - tiles[s]->wY() + 1; ys <= y; ys++){					//...check if the position x,y gets covered by tile s located at position (xs, ys) = (x-wtile..x, y-htile..y)
-                    for(int xs = 0 - tiles[s]->wX() + 1; xs <= x; xs++){
-                        if(occupation_threshold_ == 1.0 && ((wX - xs) < (int)tiles[s]->wX() || (wY - ys) < (int)tiles[s]->wY())) break;
-                        if(tiles[s]->shape_contribution(x, y, xs, ys, wX, wY, signedIO) == true){
-                            if((wOut < (int)prodWidth) && ((xs+tiles[s]->wX()+ys+tiles[s]->wY()-2) < ((int)prodWidth-wOut-guardBits))) break;
-                            if(tiles[s]->shape_utilisation(xs, ys, wX, wY, signedIO) >=  occupation_threshold_ ){
-                                if(solve_Vars[s][xs+x_neg][ys+y_neg] == nullptr){
-                                    stringstream nvarName;
-                                    nvarName << " d" << setfill('0') << setw(dpS) << s << ((xs < 0)?"m":"") << setfill('0') << setw(dpX) << ((xs<0)?-xs:xs) << ((ys < 0)?"m":"")<< setfill('0') << setw(dpY) << ((ys<0)?-ys:ys) ;
-                                    //std::cout << nvarName.str() << endl;
-                                    ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
-                                    solve_Vars[s][xs+x_neg][ys+y_neg] = tempV;
-                                    obj.add(tempV, (double)tiles[s]->getLUTCost(xs, ys, wX, wY, signedIO));    //append variable to cost function
-                                }
-                                pxyTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg], 1);
-                            }
-                        }
-                    }
+  vector<vector<vector<ScaLP::Variable>>> solve_Vars(wS, vector<vector<ScaLP::Variable>>(wX + x_neg, vector<ScaLP::Variable>(wY + y_neg)));
+  ScaLP::Term maxEpsTerm;
+  __uint64_t sumOfPosEps = 0;
+  // add the Constraints
+  cout << "   adding the constraints to problem formulation..." << endl;
+  for (int y = 0; y < wY; y++)
+  {
+    for (int x = 0; x < wX; x++)
+    {
+      stringstream consName;
+      consName << "p" << setfill('0') << setw(dpX) << x << setfill('0') << setw(dpY) << y;            //one constraint for every position in the area to be tiled
+      ScaLP::Term pxyTerm;
+      for (int s = 0; s < wS; s++)
+      {          //for every available tile...
+        for (int ys = 0 - tiles[s]->wY() + 1; ys <= y; ys++)
+        {          //...check if the position x,y gets covered by tile s located at position (xs, ys) = (x-wtile..x, y-htile..y)
+          for (int xs = 0 - tiles[s]->wX() + 1; xs <= x; xs++)
+          {
+            if (occupation_threshold_ == 1.0 && ((wX - xs) < (int) tiles[s]->wX() || (wY - ys) < (int) tiles[s]->wY())) break;
+            if (tiles[s]->shape_contribution(x, y, xs, ys, wX, wY, signedIO) == true)
+            {
+              if ((wOut < (int) prodWidth) && ((xs + tiles[s]->wX() + ys + tiles[s]->wY() - 2) < ((int) prodWidth - wOut - guardBits))) break;
+              if (tiles[s]->shape_utilisation(xs, ys, wX, wY, signedIO) >= occupation_threshold_)
+              {
+                if (solve_Vars[s][xs + x_neg][ys + y_neg] == nullptr)
+                {
+                  stringstream nvarName;
+                  nvarName << " d" << setfill('0') << setw(dpS) << s << ((xs < 0) ? "m" : "") << setfill('0') << setw(dpX) << ((xs < 0) ? -xs : xs) << ((ys < 0) ? "m" : "") << setfill('0') << setw(dpY) << ((ys < 0) ? -ys : ys);
+                  //std::cout << nvarName.str() << endl;
+                  ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
+                  solve_Vars[s][xs + x_neg][ys + y_neg] = tempV;
+                  obj.add(tempV, (double) tiles[s]->getLUTCost(xs, ys, wX, wY, signedIO));    //append variable to cost function
                 }
+                pxyTerm.add(solve_Vars[s][xs + x_neg][ys + y_neg], 1);
+              }
             }
-            ScaLP::Constraint c1Constraint;
-            if(performOptimalTruncation == true && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut))) {
-                stringstream nvarName;
-                nvarName << " b" << ((x < 0) ? "m" : "") << setfill('0') << setw(dpX) << ((x < 0) ? -x : x)
-                         << ((y < 0) ? "m" : "") << setfill('0') << setw(dpY) << ((y < 0) ? -y : y);
-                ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
-                maxEpsTerm.add(tempV, (-1) * ((long) 1 << (x + y)));
-                maxEpsTerm.add((long) 1 << (x + y));
-
-                c1Constraint = pxyTerm - tempV == 0;
-            } else if(performOptimalTruncation == false && (wOut < (int)prodWidth) && ((x+y) < ((int)prodWidth-wOut-guardBits))){
-                //c1Constraint = pxyTerm <= (bool)1;
-            } else {
-                c1Constraint = pxyTerm == (bool)1;
-            }
-
-            c1Constraint.name = consName.str();
-            solver->addConstraint(c1Constraint);
+          }
         }
+      }
+      ScaLP::Constraint c1Constraint;
+      if (performOptimalTruncation == true && (wOut < (int) prodWidth) && ((x + y) < ((int) prodWidth - wOut)))
+      {
+        stringstream nvarName;
+
+        nvarName << " b" << ((x < 0) ? "m" : "") << setfill('0') << setw(dpX) << ((x < 0) ? -x : x)
+                 << ((y < 0) ? "m" : "") << setfill('0') << setw(dpY) << ((y < 0) ? -y : y);
+        bVec[x][y] = ScaLP::newBinaryVariable(nvarName.str());
+        maxEpsTerm.add(bVec[x][y], (-1) * ((long) 1 << (x + y)));
+        maxEpsTerm.add((long) 1 << (x + y));
+
+        c1Constraint = pxyTerm - bVec[x][y] == 0;
+      }
+      else if (performOptimalTruncation == false && (wOut < (int) prodWidth) && ((x + y) < ((int) prodWidth - wOut - guardBits)))
+      {
+        //c1Constraint = pxyTerm <= (bool)1;
+      }
+      else
+      {
+        c1Constraint = pxyTerm == (bool) 1;
+      }
+
+      c1Constraint.name = consName.str();
+      solver->addConstraint(c1Constraint);
     }
+  }
 
     //limit use of DSPs
     if(0 <= max_pref_mult_) {
@@ -219,11 +294,19 @@ void TilingStrategyOptimalILP::constructProblem()
         //maxErr = ((unsigned long)((wX < wY) ? wX : wY)*(((unsigned long)1<<maxErr)));
         unsigned long maxErr = ((unsigned long)1)<<(prodWidth-(int)wOut-1);
         //cout << "maxErr=" << maxErr << endl;
-        ScaLP::Constraint truncConstraint = maxEpsTerm  <= maxErr; //((unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))));
+        ScaLP::Constraint truncConstraint = maxEpsTerm  <= maxErr-1; //((unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))));
         //ScaLP::Constraint truncConstraint = maxEpsTerm >= (bool)1;
         stringstream consName;
         consName << "maxEps";
         truncConstraint.name = consName.str();
+
+        cerr << endl << endl << endl;
+
+      cerr << "maxEpsTerm=" << maxEpsTerm << endl;
+      cerr << "maxErr=" << maxErr << endl;
+        cerr << truncConstraint << endl;
+        cerr << endl << endl << endl;
+
         solver->addConstraint(truncConstraint);
     }
 

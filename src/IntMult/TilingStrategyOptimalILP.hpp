@@ -43,8 +43,7 @@ private:
     unsigned prodWidth, guardBits;
     vector<BaseMultiplierCategory*> tiles;
 #ifdef HAVE_SCALP
-    void constructProblem();
-
+    void constructProblem(vector<vector<ScaLP::Variable>> &bVec);
     ScaLP::Solver *solver;
 #endif
 };

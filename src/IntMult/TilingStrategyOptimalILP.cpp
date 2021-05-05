@@ -31,7 +31,7 @@ TilingStrategyOptimalILP::TilingStrategyOptimalILP(
 		tiles{mtc_.MultTileCollection},
         guardBits{guardBits},
         keepBits{keepBits},
-        //errorBudget{errorBudget},
+        eBudget{errorBudget},
         centerErrConstant{centerErrConstant},
         performOptimalTruncation{performOptimalTruncation}
 	{
@@ -66,60 +66,96 @@ void TilingStrategyOptimalILP::solve()
     solver = new ScaLP::Solver(ScaLP::newSolverDynamic({target->getILPSolver(),"Gurobi","CPLEX","SCIP","LPSolve"}));
     solver->timeout = target->getILPTimeout();
 
-    constructProblem();
+    long long optTruncNumericErr = 0;
+    do {                                //Loop as a workaround for numeric solver problems during optimal truncation to ensure that the truncation error margin is met
+        solver->reset();
+        constructProblem();
 
-    // Try to solve
-    cout << "starting solver, this might take a while..." << endl;
-    solver->quiet = false;
-    ScaLP::status stat = solver->solve();
+        // Try to solve
+        cout << "starting solver, this might take a while..." << endl;
+        solver->quiet = false;
+        ScaLP::status stat = solver->solve();
 
-    // print results
-    cerr << "The result is " << stat << endl;
-    //cerr << solver->getResult() << endl;
-    ofstream result_file;
-    result_file.open ("result.txt");
-    result_file << solver->getResult();
-    result_file.close();
-    ScaLP::Result res = solver->getResult();
+        // print results
+        cerr << "The result is " << stat << endl;
+        //cerr << solver->getResult() << endl;
+        ofstream result_file;
+        result_file.open("result.txt");
+        result_file << solver->getResult();
+        result_file.close();
+        ScaLP::Result res = solver->getResult();
 
-    cout << "centerErrConstant was: " << centerErrConstant << endl;
-    unsigned long long new_constant = 0;
-    double total_cost = 0;
-    int dsp_cost = 0, own_lut_cost=0;
-    for(auto &p:res.values)
-    {
-        if(p.second > 0.5){     //parametrize all multipliers at a certain position, for which the solver returned 1 as solution, to flopoco solution structure
-            std::string var_name = p.first->getName();
-            if(var_name.substr(1,1) == "d"){
-                int mult_id = stoi(var_name.substr(2,dpS));
-                int x_negative = (var_name.substr(2+dpS,1).compare("m") == 0)?1:0;
-                int m_x_pos = stoi(var_name.substr(2+dpS+x_negative,dpX)) * ((x_negative)?(-1):1);
-                int y_negative = (var_name.substr(2+dpS+x_negative+dpX,1).compare("m") == 0)?1:0;
-                int m_y_pos = stoi(var_name.substr(2+dpS+dpX+x_negative+y_negative,dpY)) * ((y_negative)?(-1):1);
-                cout << "is true:  " << setfill(' ') << setw(dpY) << mult_id << " " << setfill(' ') << setw(dpY) << m_x_pos << " " << setfill(' ') << setw(dpY) << m_y_pos << " cost: " << setfill(' ') << setw(5) << tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO) << std::endl;
+        //parse solution
+        cout << "centerErrConstant was: " << centerErrConstant << endl;
+        unsigned long long new_constant = 0;
+        double total_cost = 0, sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0;
+        int dsp_cost = 0, own_lut_cost = 0;
+        for (auto &p:res.values) {
+            if (p.second >= 0.5) {     //parametrize all multipliers at a certain position, for which the solver returned 1 as solution, to flopoco solution structure
+                std::string var_name = p.first->getName();
+                if (var_name.substr(1, 1) == "d") {
+                    int mult_id = stoi(var_name.substr(2, dpS));
+                    int x_negative = (var_name.substr(2 + dpS, 1).compare("m") == 0) ? 1 : 0;
+                    int m_x_pos = stoi(var_name.substr(2 + dpS + x_negative, dpX)) * ((x_negative) ? (-1) : 1);
+                    int y_negative = (var_name.substr(2 + dpS + x_negative + dpX, 1).compare("m") == 0) ? 1 : 0;
+                    int m_y_pos = stoi(var_name.substr(2 + dpS + dpX + x_negative + y_negative, dpY)) *
+                                  ((y_negative) ? (-1) : 1);
+                    cout << "is true:  " << setfill(' ') << setw(dpY) << mult_id << " " << setfill(' ') << setw(dpY)
+                         << m_x_pos << " " << setfill(' ') << setw(dpY) << m_y_pos << " cost: " << setfill(' ')
+                         << setw(5) << tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO) << std::endl;
 
-                total_cost += (double)tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
-                own_lut_cost += tiles[mult_id]->ownLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
-                dsp_cost += (double)tiles[mult_id]->getDSPCost();
-                auto coord = make_pair(m_x_pos, m_y_pos);
-                solution.push_back(make_pair(tiles[mult_id]->getParametrisation().tryDSPExpand(m_x_pos, m_y_pos, wX, wY, signedIO), coord));
+                    total_cost += (double) tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
+                    own_lut_cost += tiles[mult_id]->ownLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
+                    dsp_cost += (double) tiles[mult_id]->getDSPCost();
+                    auto coord = make_pair(m_x_pos, m_y_pos);
+                    solution.push_back(make_pair(
+                            tiles[mult_id]->getParametrisation().tryDSPExpand(m_x_pos, m_y_pos, wX, wY, signedIO),
+                            coord));
+                }
+                if (var_name.substr(0, 1) == "c") {
+                    int c_id = stoi(var_name.substr(1, dpC));
+                    new_constant |= (1ULL << c_id);
+                    cout << var_name << " pos " << c_id << " dpC " << dpC << endl;
+                }
             }
-            if(var_name.substr(0,1) == "c"){
-                int c_id = stoi(var_name.substr(1,dpC));
-                new_constant |= (1ULL<<c_id);
-                cout << var_name << " pos " << c_id << " dpC " << dpC << endl;
+            //check variables for numeric derivations due to rounding for optimal truncation.
+            if (p.first->getName().substr(1, 1) == "b") {
+                int x_negative = (p.first->getName().substr(2, 1).compare("m") == 0) ? 1 : 0;
+                int m_x_pos = stoi(p.first->getName().substr(2 + x_negative, dpX)) * ((x_negative) ? (-1) : 1);
+                int y_negative = (p.first->getName().substr(2 + x_negative + dpX, 1).compare("m") == 0) ? 1 : 0;
+                int m_y_pos = stoi(p.first->getName().substr(2 + dpX + x_negative + y_negative, dpY)) *
+                              ((y_negative) ? (-1) : 1);
+                sum1 += p.second * (1LL << (m_x_pos + m_y_pos));
+                if (p.second >= 0.5) sum2 += (1LL << (m_x_pos + m_y_pos));
+            }
+            if (p.first->getName().substr(0, 1) == "c") {
+                int shift = stoi(p.first->getName().substr(1, dpC));
+                sum3 += p.second * (1 << shift);
+                if (p.second >= 0.5) sum4 += (1 << shift);
             }
         }
-    }
-    cout << "Total LUT cost:" << total_cost <<std::endl;
-    cout << "Own LUT cost:" << own_lut_cost <<std::endl;
-    cout << "Total DSP cost:" << dsp_cost <<std::endl;
+        cout << "Total LUT cost:" << total_cost << std::endl;
+        cout << "Own LUT cost:" << own_lut_cost << std::endl;
+        cout << "Total DSP cost:" << dsp_cost << std::endl;
+        cout << std::setprecision(20) << sum1 << " s2 " << std::setprecision(20) << sum2 << " c:"
+             << std::setprecision(20) << sum3 << " s2 " << std::setprecision(20) << sum4 << endl;
 
-    if(performOptimalTruncation){
-        //centerErrConstant = new_constant;
-        mpz_import(centerErrConstant.get_mpz_t(), 1, -1, sizeof new_constant, 0, 0, &new_constant);
-    }
-    cout << "centerErrConstant now is: " << centerErrConstant << endl;
+        if(performOptimalTruncation){
+            //refresh centerErrConstant according to ILP solution
+            //centerErrConstant = new_constant;
+            mpz_import(centerErrConstant.get_mpz_t(), 1, -1, sizeof new_constant, 0, 0, &new_constant);
+            cout << "centerErrConstant now is: " << centerErrConstant << endl;
+
+            //check for numeric errors in solution
+            optTruncNumericErr = (long long)ceil(fabs((sum1 + sum3) - (sum2 + sum4)));
+            if(0 < optTruncNumericErr){
+                cout << "Warning: Numeric problems in solution, repeating ILP with Offset for Error of " << optTruncNumericErr << endl;
+                errorBudget -= optTruncNumericErr;      //Reduce errorBudget by scope of numeric derivation for next iteration
+            }
+        }
+
+    } while(performOptimalTruncation && !checkTruncationError(solution, guardBits, eBudget, centerErrConstant) && 0 < optTruncNumericErr);
+
 /*
     solution.push_back(make_pair(tiles[1]->getParametrisation().tryDSPExpand(0, 0, wX, wY, signedIO), make_pair(0, 0)));
     solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(16, 0, wX, wY, signedIO), make_pair(16, 0)));
@@ -260,15 +296,7 @@ void TilingStrategyOptimalILP::constructProblem()
     {
         cout << "   multiplier is truncated by " << (int)prodWidth-wOut << " bits (err=" << (unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))) << "), ensure sufficient precision..." << endl;
         cout << "   guardBits=" << guardBits << endl;
-        /*int g, k;
-        long long errorBudget;
-        computeTruncMultParams((int)prodWidth-wOut, g, k, errorBudget);*/
         cout << "   g=" << guardBits << " k=" << keepBits << " errorBudget=" << errorBudget << " difference to conservative est: " << errorBudget-(long long)(((unsigned long)1)<<(prodWidth-(int)wOut-1)-1) << endl;
-        //cout << sumOfPosEps << " " << ((unsigned long)1<<((int)prodWidth-wOut-1));
-        //unsigned long maxErr = (prodWidth-(int)wOut-guardBits > prodWidth)?prodWidth:(prodWidth-(int)wOut-guardBits);
-        //cout << "shift=" << maxErr << endl;
-        //maxErr = ((unsigned long)((wX < wY) ? wX : wY)*(((unsigned long)1<<maxErr)));
-        //unsigned long maxErr = ((unsigned long)1)<<(prodWidth-(int)wOut-1);
 
         stringstream nvarName;
         nvarName << "C";
@@ -340,5 +368,41 @@ void TilingStrategyOptimalILP::constructProblem()
         }
     }
 
+    bool TilingStrategyOptimalILP::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant){
+        std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
+
+        for(auto & tile : solution) {
+            auto &parameters = tile.first;
+            auto &anchor = tile.second;
+            int xPos = anchor.first;
+            int yPos = anchor.second;
+
+            for(int x = 0; x < parameters.getMultXWordSize(); x++){
+                for(int y = 0; y < parameters.getMultYWordSize(); y++){
+                    if(xPos+x < wX && yPos+y < wY)
+                        mulArea[xPos+x][yPos+y] = mulArea[xPos+x][yPos+y] || parameters.shapeValid(x,y);
+                }
+            }
+        }
+
+        mpz_class truncError, maxErr = errorBudget+constant;
+        truncError = mpz_class(0);
+        for(int y = 0; y < wY; y++){
+            for(int x = wX-1; 0 <= x; x--){
+                if(mulArea[x][y] == false)
+                    truncError += (mpz_class(1)<<(x+y));
+                //cout << ((mulArea[x][y] == true)?1:0);
+            }
+            //cout << endl;
+        }
+
+        if(truncError <= maxErr){
+            cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << " by " << maxErr-truncError << "." << endl;
+            return true;
+        } else {
+            cout << "WARNING: actual truncation error=" << truncError << " is larger than the max. permissible error=" << maxErr << " by " << truncError-maxErr << "." << endl;
+            return false;
+        }
+    }
 
 }   //end namespace flopoco

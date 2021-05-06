@@ -69,6 +69,7 @@ void TilingStrategyOptimalILP::solve()
     long long optTruncNumericErr = 0;
     do {                                //Loop as a workaround for numeric solver problems during optimal truncation to ensure that the truncation error margin is met
         solver->reset();
+        TilingStrategy::solution.clear();
         constructProblem();
 
         // Try to solve

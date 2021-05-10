@@ -380,7 +380,7 @@ void TilingStrategyOptimalILP::constructProblem()
 
             for(int x = 0; x < parameters.getMultXWordSize(); x++){
                 for(int y = 0; y < parameters.getMultYWordSize(); y++){
-                    if(xPos+x < wX && yPos+y < wY)
+                    if(0 <= xPos+x && 0 <= yPos+y && xPos+x < wX && yPos+y < wY)
                         mulArea[xPos+x][yPos+y] = mulArea[xPos+x][yPos+y] || parameters.shapeValid(x,y);
                 }
             }

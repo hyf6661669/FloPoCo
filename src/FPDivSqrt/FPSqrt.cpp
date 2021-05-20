@@ -105,21 +105,12 @@ namespace flopoco{
 		    vhdl << sip /*<< range(i-1,1)*/ << " & not " << di << ";"<< endl;
 		}
 		string dfinal=join("d", maxstep+1);
-		vhdl << tab << declare(dfinal) << " <= "<< join("w", maxstep) << of(wF+3)<<" ;" << endl;
+		vhdl << tab << declare(dfinal) << " <= "<< join("w", maxstep) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
 		vhdl << tab << declare("mR", wF+3) << " <= "<< join("s", maxstep)<<" & not "<<dfinal<<"; -- result significand" << endl;
 
 		// end of component FPSqrt_Sqrt in fplibrary
-#if 0 // Removed because it was useless. Maybe useful for possible faithful versions, so let's keep the code for a while
-		vhdl << tab << "-- normalisation of the result, removing leading 1" << endl;
-		vhdl << tab <<  "with fR(" << wF+3 << ") select" << endl
-		     << tab << tab << declare(target->lutDelay(), "fRn1", wF+2) << " <= fR" << range(wF+2, 2) << " & (fR(1) or fR(0)) when '1'," << endl
-		     << tab << tab << "        fR" <<range(wF+1, 0) << "                    when others;" << endl;
-		vhdl << tab << declare("round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)) ; -- round  and (lsb or sticky) : that's RN, tie to even" << endl;
-#else
 		vhdl << tab << declare(target->lutDelay(), "fR", wF+1) << " <= mR" <<range(wF, 0) << ";-- removing leading 1" << endl;
 		vhdl << tab << declare("round") << " <= fR(0); -- round bit" << endl;
-
-#endif
 
 		vhdl << tab << declare(target->adderDelay(wF),
 													 "fRn2", wF) << " <= fR" << range(wF, 1) <<" + (" << rangeAssign(wF-1, 1, "'0'") << " & round); -- rounding sqrt never changes exponents " << endl;

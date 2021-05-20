@@ -44,11 +44,13 @@
 #include <set>
 #include "Operator.hpp"  // Useful only for reporting. TODO split out the REPORT and THROWERROR #defines from Operator to another include.
 #include "utils.hpp"
+#if 0 // these seem to be unused
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/uniform_int.hpp>
-
+#endif
+#include <cassert>
 
 namespace flopoco{
 

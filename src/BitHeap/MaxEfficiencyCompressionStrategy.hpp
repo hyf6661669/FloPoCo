@@ -44,9 +44,12 @@ class BitHeap;
 
         int placePseudoCompressor(int s, int column, int requiredBitsForRange, bool allowDeletion, bool useNegativeMSBValue = false);
 
+        BasicCompressor* createCompWithoutSignExtension(BasicCompressor* compressor);
+
 		vector<float> lowerBounds;
 
-
+		int negativeSignExtension;
+        bool needToApplyNegativeSignExtension;
 	};
 
 }

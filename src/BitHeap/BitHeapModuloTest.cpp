@@ -74,7 +74,7 @@ namespace flopoco {
 //        vhdl << tab << "R <= " << bitHeap->getSumName(modSize-1,0) << " when ";
 //        vhdl << "UNSIGNED(" << bitHeap->getSumName(bitHeapResultBits-1,0) << ") < M";
 //        vhdl << tab << "else STemp" << range(modSize-1,0) << ";" << endl;
-//        delete bitHeap;
+        delete bitHeap;
 
         addFullComment("End of vhdl generation"); // this will be a large, centered comment in the VHDL
     };
@@ -126,6 +126,28 @@ namespace flopoco {
         if (wIn >= 4) {
             tc = new TestCase(this);
             tc->addInput("X", mpz_class(14));
+            emulate(tc);
+            tcl->add(tc);
+        }
+        if (wIn >= 5) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(21));
+            emulate(tc);
+            tcl->add(tc);
+        }
+        if (wIn >= 6) {
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(40));
+            emulate(tc);
+            tcl->add(tc);
+
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(44));
+            emulate(tc);
+            tcl->add(tc);
+
+            tc = new TestCase(this);
+            tc->addInput("X", mpz_class(63));
             emulate(tc);
             tcl->add(tc);
         }

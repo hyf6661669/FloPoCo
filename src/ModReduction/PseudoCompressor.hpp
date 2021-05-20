@@ -21,7 +21,7 @@ namespace flopoco
     public:
         /** constructor **/
         PseudoCompressor(Operator* parentOp, Target* target, int weight, int modulus);
-        PseudoCompressor(Operator *parentOp, Target *target, vector<int> _heights, vector<int> _outHeights);
+        PseudoCompressor(Operator *parentOp, Target *target, vector<int> _heights, vector<int> _outHeights, bool externalSignExtension = false);
 
         /** destructor**/
         ~PseudoCompressor();
@@ -40,5 +40,10 @@ namespace flopoco
         BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> heights, vector<int> outHeights, int range_change, int _ones_vector_start=INT32_MAX);
 
         virtual Compressor* getCompressor(unsigned int middleLength);
+
+        void setHasExternalSignExtension(bool hasExternalSignExtension);
+
+    private:
+        bool _hasExternalSignExtension;
     };
 }

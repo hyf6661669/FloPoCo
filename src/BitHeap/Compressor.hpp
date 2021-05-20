@@ -97,7 +97,8 @@ namespace flopoco
     enum class CompressorType {
         Gpc,  /**< generalized parallel counters, the standard compressor type */
         Variable,  /**< compressors with a variable length, making them adders */
-        Pseudo /**< a special compressor type for modulo calculation */
+        Pseudo, /**< a special compressor type for modulo calculation */
+        Constant /**< to allow addition with a constant while compressing */
     };
 
 	class BasicCompressor

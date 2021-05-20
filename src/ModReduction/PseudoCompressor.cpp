@@ -57,7 +57,7 @@ namespace flopoco {
 
     }
 
-    PseudoCompressor::PseudoCompressor(Operator *parentOp, Target *target, vector<int> _heights, vector<int> _outHeights) : Compressor(
+    PseudoCompressor::PseudoCompressor(Operator *parentOp, Target *target, vector<int> _heights, vector<int> _outHeights, bool externalSignExtension) : Compressor(
             parentOp, target) {
         setCopyrightString("Andreas Boettcher");
 
@@ -68,7 +68,7 @@ namespace flopoco {
         setCombinatorial();
         setShared();
 
-        cout << "in-heights: " << _heights.size() << " out-heights: " << _outHeights.size() << endl;
+        cerr << "in-heights: " << _heights.size() << " out-heights: " << _outHeights.size() << endl;
 
         ostringstream name;
         name << "Pseudo_Compressor_Weight_" << _heights.size() ;
@@ -78,22 +78,40 @@ namespace flopoco {
         wOut = _outHeights.size();
         createInputsAndOutputs();
 
-        for(int i = 0; i < _heights.size(); i++){
-            if(_heights[i] == 1){
-                REPORT(DEBUG, "add pseudocompressor input with weight " << i );
-                //addInput(join("X", i), 1);
-                for(int j = 0; j < _outHeights.size(); j++) {
-                    if (_outHeights[j] == 1) {
-                        REPORT(DEBUG, "add pseudocompressor output with weight " << j );
-                        vhdl << tab << "R" << range(j,j) << " <= " << join("X", i) << ";" << endl;
-                    } else {
+        if (!externalSignExtension){
+            for(int i = 0; i < _heights.size(); i++){
+                if(_heights[i] == 1){
+                    REPORT(DEBUG, "add pseudocompressor input with weight " << i );
+                    //addInput(join("X", i), 1);
+                    for(int j = 0; j < _outHeights.size(); j++) {
+                        if (_outHeights[j] == 1) {
+                            REPORT(DEBUG, "add pseudocompressor output with weight " << j );
+                            vhdl << tab << "R" << range(j,j) << " <= " << join("X", i) << ";" << endl;
+                        } else {
 
+                        }
+                    }
+                }
+
+            }
+        } else {
+            // special variant if the sign extension is handled outside the compressor, e.g. in a version of MaxEfficiency
+            for(int i = 0; i < _heights.size(); i++) {
+                if (_heights[i] == 1) {
+                    bool isFirstOne = true;
+                    for(int j = _outHeights.size()-1; j >= 0; j--) {
+                        if (_outHeights[j] == 1) {
+                            if (isFirstOne) {
+                                isFirstOne = false;
+                                vhdl << tab << "R" << range(j,j) << " <= not " << join("X", i) << ";" << endl;
+                            } else {
+                                vhdl << tab << "R" << range(j,j) << " <= " << join("X", i) << ";" << endl;
+                            }
+                        }
                     }
                 }
             }
-
         }
-
     }
 
     BasicPseudoCompressor::BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> _heights, vector<int> _outHeights, int _range_change, int _ones_vector_start) : BasicCompressor(parentOp_, target, _heights, 0, CompressorType::Pseudo, true)
@@ -102,11 +120,22 @@ namespace flopoco {
         outHeights = _outHeights;
         range_change = _range_change;
         ones_vector_start = _ones_vector_start;
+        _hasExternalSignExtension = false;
     }
 
     Compressor* BasicPseudoCompressor::getCompressor(unsigned int middleLength){
-        compressor = new PseudoCompressor(parentOp, target, heights, outHeights);
+
+        if (!_hasExternalSignExtension) {
+            compressor = new PseudoCompressor(parentOp, target, heights, outHeights);
+        } else {
+            compressor = new PseudoCompressor(parentOp, target, heights, outHeights, true);
+        }
+
         return compressor;
+    }
+
+    void BasicPseudoCompressor::setHasExternalSignExtension(bool hasExternalSignExtension) {
+        _hasExternalSignExtension = hasExternalSignExtension;
     }
 
     PseudoCompressor::~PseudoCompressor() {

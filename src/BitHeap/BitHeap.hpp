@@ -67,7 +67,7 @@ enum BitType : unsigned;
 		 *									compression
 		 * @param modulus           modulus. Used for modulo reduction if > 0. Default is 0
 		 */
-		BitHeap(Operator* op, unsigned width, string name = "", int compressionType = COMPRESSION_TYPE, int modulus = 0);
+		BitHeap(Operator* op, unsigned width, string name = "", int compressionType = COMPRESSION_TYPE, int modulus = 0, int maxInput = -1);
 
 		/**
 		 * @brief The constructor for an signed/unsigned fixed-point bitheap
@@ -83,7 +83,7 @@ enum BitType : unsigned;
 		 *									compression
 		 * @param modulus           modulus. Used for modulo reduction if > 0. Default is 0
 		 */
-		BitHeap(Operator* op, int msb, int lsb, string name = "", int compressionType = COMPRESSION_TYPE, int modulus = 0);
+		BitHeap(Operator* op, int msb, int lsb, string name = "", int compressionType = COMPRESSION_TYPE, int modulus = 0, int maxInput = -1);
 
 
 		~BitHeap();
@@ -416,6 +416,7 @@ enum BitType : unsigned;
 		string name;                                /**< The name of the bitheap */
 		unsigned final_add_height = 2;
         int modulus;                                /**> If modulus is > 0 additionally to the compression a modulo reduction with respect to this modulus is performed */
+        int maxInput;
 
 	private:
 		Operator* op;

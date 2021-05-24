@@ -19,13 +19,13 @@ namespace flopoco {
            stocking information about the operator. The user is able to defined any number of parameter in this class, as soon as it does not affect Operator parameters undeliberatly*/
         int wIn;
         int mod;
-
+        int maxInput;
 
     public:
         // definition of some function for the operator
 
         // constructor, defined there with two parameters
-        BitHeapModuloTest(Target* target,int wIn = 8, int mod = 11);
+        BitHeapModuloTest(Target* target, int wIn = 8, int mod = 11, int maxInput = -1);
 
         // destructor
         ~BitHeapModuloTest() {};

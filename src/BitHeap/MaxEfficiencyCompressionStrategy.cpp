@@ -60,10 +60,17 @@ namespace flopoco{
 		vector<int> currentRanges(bitheap->width);
 		negativeSignExtension = 0;
 		needToApplyNegativeSignExtension = false;
+		int currentPossibleMaxRange = 0;
 
         long long oneLL = static_cast<long long>(1);
         for (int i = 0; i < bitheap->width; ++i) {
             currentRanges[i] = (oneLL << i);
+            currentPossibleMaxRange += (oneLL << i);
+        }
+
+        cerr << "bitheap max input: " << bitheap->maxInput << endl;
+        if (bitheap->maxInput != -1) {
+            currentPossibleMaxRange = bitheap->maxInput;
         }
 
 		while(!adderReached){
@@ -72,22 +79,58 @@ namespace flopoco{
             int moduloRangeMax = 0;
             int moduloRangeMin = 0;
 
+            // MSB
+            // max value is moduloRangeMax
+            // if zero everything else can be one: value for this
+            // if one: mod for the one and for max rest value
+            int msbOneRage = 0;
+            int msbZeroRange = 0;
+            int maxInputSize = floor(log2(currentPossibleMaxRange)+1);
+            cerr << "current possible max range " << currentPossibleMaxRange << endl;
+            cerr << "maxInput size " << maxInputSize << endl;
+
             for (int i = 0; i < currentRanges.size(); ++i) {
                 if (currentRanges[i] >= 0) {
                     moduloRangeMax += currentRanges[i];
                 } else {
                     moduloRangeMin += currentRanges[i];
                 }
+
+                if ((currentPossibleMaxRange & (1 << i)) != 0) {
+                    msbOneRage += currentRanges[i];
+                    int number = currentRanges[i];
+                    cerr << "msbOneRange + " << number << endl;
+                }
+                if (i < maxInputSize - 1) {
+                    msbZeroRange += currentRanges[i];
+                }
             }
+            cerr << "first modMin: " << moduloRangeMin << " modMax: " << moduloRangeMax << endl;
+
+//            for (int i = 0; i < currentRanges.size(); i++) {
+//                if ((currentPossibleMaxRange & (1 << i)) != 0) {
+//                    msbOneRage += currentRanges[i];
+//                    int number = currentRanges[i];
+//                    cerr << "msbOneRange + " << number << endl;
+//                }
+//                if (i < maxInputSize - 1) {
+//                    msbZeroRange += currentRanges[i];
+//                }
+//            }
+            cerr << "msbZeroRange: " << msbZeroRange << ", msbOneRange: " << msbOneRage << endl;
+            //currentPossibleMaxRange  = max(msbZeroRange, msbOneRage);
+
+            moduloRangeMax = max(msbZeroRange, msbOneRage);
 
             // constant vector has to be considered
             int remainderExtension = negativeSignExtension % bitheap->modulus;
-            moduloRangeMax += remainderExtension;
-            moduloRangeMin += remainderExtension;
+//            moduloRangeMax += remainderExtension;
+//            moduloRangeMin += remainderExtension;
 
             if (computeModulo) {
                 cerr << "modMin: " << moduloRangeMin << " modMax: " << moduloRangeMax << endl;
-                reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < bitheap->modulus);
+                //reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < bitheap->modulus);
+                reachedModuloRange = moduloRangeMax < bitheap->modulus*2;
             }
 
             if(checkAlgorithmReachedAdder(2, s) && reachedModuloRange && !needToApplyNegativeSignExtension){
@@ -115,9 +158,9 @@ namespace flopoco{
                 if (shouldPlacePseudoCompressors(bitAmount[s]) && computeModulo) {
                     cerr << "pseudo compression" << endl;
                     bool useNegativeMSBValue = false;
-//                    if (moduloRangeMin < 0) {
-//                        useNegativeMSBValue = true;
-//                    }
+                    if (moduloRangeMin < 0) {
+                        useNegativeMSBValue = true;
+                    }
 
                     for(unsigned int c = 0; c < bitAmount[s].size(); c++){
                         int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, true, useNegativeMSBValue);
@@ -126,6 +169,7 @@ namespace flopoco{
                             currentRanges[c] = rangeChange;
                         }
                     }
+                    currentPossibleMaxRange = moduloRangeMax;
                 } else {
                     cerr << "normal compression" << endl;
 
@@ -307,7 +351,6 @@ namespace flopoco{
                 }
 
                 compressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compInput, compOutputRec, newReciprocal, ones_vector_start);
-                compressor = createCompWithoutSignExtension(compressor);
                 found = true;
             }
 
@@ -327,7 +370,7 @@ namespace flopoco{
                         if (isRemainderMoreEfficient(possibleCompressors[i]->range_change, currentRange)) {
                             if (possibleCompressors[i]->range_change < 0) {
                                 currentRange = possibleCompressors[i]->range_change;
-                                compressor = createCompWithoutSignExtension(possibleCompressors[i]);
+                                //compressor = createCompWithoutSignExtension(possibleCompressors[i]);
                                 found = true;
                             } else {
                                 currentRange = possibleCompressors[i]->range_change;
@@ -343,13 +386,13 @@ namespace flopoco{
         if(found){
             REPORT(DETAILED, "range change is " << compressor->range_change);
             placeCompressor(s, 0, compressor);
-            if (compressor->ones_vector_start < INT32_MAX) {
-                int signExt = (1 << compressor->ones_vector_start);
-                negativeSignExtension -= (1 << compressor->ones_vector_start);
-                if (!needToApplyNegativeSignExtension) {
-                    needToApplyNegativeSignExtension = true;
-                }
-            }
+//            if (compressor->ones_vector_start < INT32_MAX) {
+//                int signExt = (1 << compressor->ones_vector_start);
+//                negativeSignExtension -= (1 << compressor->ones_vector_start);
+//                if (!needToApplyNegativeSignExtension) {
+//                    needToApplyNegativeSignExtension = true;
+//                }
+//            }
             return compressor->range_change;
         } else {
             return 0;

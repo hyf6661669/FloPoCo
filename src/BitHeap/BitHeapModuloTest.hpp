@@ -25,7 +25,7 @@ namespace flopoco {
         // definition of some function for the operator
 
         // constructor, defined there with two parameters
-        BitHeapModuloTest(Target* target, int wIn = 8, int mod = 11, int maxInput = -1);
+        BitHeapModuloTest(Target* target, int wIn = 8, int mod = 11, int maxInput = -1, string mode = "default");
 
         // destructor
         ~BitHeapModuloTest() {};

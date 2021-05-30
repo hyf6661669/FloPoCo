@@ -57,20 +57,27 @@ namespace flopoco{
 	void MaxEfficiencyCompressionStrategy::maxEfficiencyAlgorithm(){
 		unsigned int s = 0;
 		bool adderReached = false;
+//        int moduloRangeMax = 0;
+//        int moduloRangeMin = 0;
+
 		vector<int> currentRanges(bitheap->width);
 		negativeSignExtension = 0;
 		needToApplyNegativeSignExtension = false;
 		int currentPossibleMaxRange = 0;
+		int extraRangeToSubtract = 0;
+		string compressionMode = bitheap->mode;
 
         long long oneLL = static_cast<long long>(1);
         for (int i = 0; i < bitheap->width; ++i) {
+            //moduloRangeMax += (oneLL << i);
             currentRanges[i] = (oneLL << i);
             currentPossibleMaxRange += (oneLL << i);
         }
 
-        cerr << "bitheap max input: " << bitheap->maxInput << endl;
-        if (bitheap->maxInput != -1) {
-            currentPossibleMaxRange = bitheap->maxInput;
+        if (compressionMode.find("msbcases") != string::npos) {
+            if (bitheap->maxInput != -1) {
+                currentPossibleMaxRange = bitheap->maxInput;
+            }
         }
 
 		while(!adderReached){
@@ -78,59 +85,54 @@ namespace flopoco{
 
             int moduloRangeMax = 0;
             int moduloRangeMin = 0;
-
-            // MSB
-            // max value is moduloRangeMax
-            // if zero everything else can be one: value for this
-            // if one: mod for the one and for max rest value
-            int msbOneRage = 0;
-            int msbZeroRange = 0;
-            int maxInputSize = floor(log2(currentPossibleMaxRange)+1);
-            cerr << "current possible max range " << currentPossibleMaxRange << endl;
-            cerr << "maxInput size " << maxInputSize << endl;
-
-            for (int i = 0; i < currentRanges.size(); ++i) {
-                if (currentRanges[i] >= 0) {
-                    moduloRangeMax += currentRanges[i];
-                } else {
-                    moduloRangeMin += currentRanges[i];
-                }
-
-                if ((currentPossibleMaxRange & (1 << i)) != 0) {
-                    msbOneRage += currentRanges[i];
-                    int number = currentRanges[i];
-                    cerr << "msbOneRange + " << number << endl;
-                }
-                if (i < maxInputSize - 1) {
-                    msbZeroRange += currentRanges[i];
-                }
-            }
-            cerr << "first modMin: " << moduloRangeMin << " modMax: " << moduloRangeMax << endl;
-
-//            for (int i = 0; i < currentRanges.size(); i++) {
-//                if ((currentPossibleMaxRange & (1 << i)) != 0) {
-//                    msbOneRage += currentRanges[i];
-//                    int number = currentRanges[i];
-//                    cerr << "msbOneRange + " << number << endl;
-//                }
-//                if (i < maxInputSize - 1) {
-//                    msbZeroRange += currentRanges[i];
-//                }
-//            }
-            cerr << "msbZeroRange: " << msbZeroRange << ", msbOneRange: " << msbOneRage << endl;
-            //currentPossibleMaxRange  = max(msbZeroRange, msbOneRage);
-
-            moduloRangeMax = max(msbZeroRange, msbOneRage);
-
-            // constant vector has to be considered
             int remainderExtension = negativeSignExtension % bitheap->modulus;
-//            moduloRangeMax += remainderExtension;
-//            moduloRangeMin += remainderExtension;
+
 
             if (computeModulo) {
+                int msbOneRage = 0;
+                int msbZeroRange = 0;
+                int maxInputSize = floor(log2(currentPossibleMaxRange)+1);
+
+                for (int i = 0; i < currentRanges.size(); ++i) {
+                    cerr << "current ranges " << i << " is " << currentRanges[i] << endl;
+                    if (currentRanges[i] >= 0) {
+                        moduloRangeMax += currentRanges[i];
+                    } else {
+                        moduloRangeMin += currentRanges[i];
+                    }
+
+                    if (compressionMode.find("msbcases") != string::npos) {
+                        if ((currentPossibleMaxRange & (1 << i)) != 0) {
+                            msbOneRage += currentRanges[i];
+                            int number = currentRanges[i];
+                            cerr << "msbOneRange + " << number << endl;
+                        }
+                        if (i < maxInputSize - 1) {
+                            msbZeroRange += currentRanges[i];
+                        }
+                    }
+                }
+
+                if (compressionMode.find("msbcases") != string::npos) {
+                    cerr << "msbZeroRange: " << msbZeroRange << ", msbOneRange: " << msbOneRage << endl;
+                    moduloRangeMax = max(msbZeroRange, msbOneRage);
+                }
+
+                if (compressionMode.find("singlebit") != string::npos) {
+                    moduloRangeMax -= extraRangeToSubtract;
+                }
+
+                if (compressionMode.find("sevector") != string::npos) {
+                    moduloRangeMax += remainderExtension;
+                    moduloRangeMin += remainderExtension;
+                }
+
                 cerr << "modMin: " << moduloRangeMin << " modMax: " << moduloRangeMax << endl;
-                //reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < bitheap->modulus);
-                reachedModuloRange = moduloRangeMax < bitheap->modulus*2;
+                if (compressionMode.find("pos") != string::npos) {
+                    reachedModuloRange = moduloRangeMax < bitheap->modulus*2;
+                } else {
+                    reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < bitheap->modulus);
+                }
             }
 
             if(checkAlgorithmReachedAdder(2, s) && reachedModuloRange && !needToApplyNegativeSignExtension){
@@ -158,9 +160,15 @@ namespace flopoco{
                 if (shouldPlacePseudoCompressors(bitAmount[s]) && computeModulo) {
                     cerr << "pseudo compression" << endl;
                     bool useNegativeMSBValue = false;
-                    if (moduloRangeMin < 0) {
-                        useNegativeMSBValue = true;
+
+                    if (compressionMode.find("sevector") == string::npos) {
+                        if (moduloRangeMin < 0) {
+                            useNegativeMSBValue = true;
+                        }
+
+                        extraRangeToSubtract = 0;
                     }
+
 
                     for(unsigned int c = 0; c < bitAmount[s].size(); c++){
                         int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, true, useNegativeMSBValue);
@@ -169,20 +177,43 @@ namespace flopoco{
                             currentRanges[c] = rangeChange;
                         }
                     }
-                    currentPossibleMaxRange = moduloRangeMax;
+                    if (compressionMode.find("msbcases") != string::npos) {
+                        currentPossibleMaxRange = moduloRangeMax;
+                    }
                 } else {
                     cerr << "normal compression" << endl;
 
                     // place PseudoCompressors where column height = 1
-//                for(unsigned int c = 0; c < bitAmount[s].size(); c++){
-//                    if (bitAmount[s][c] == 1) {
-//                        int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, false,  moduloRangeMin < 0);
-//                        cerr << "set range change 2 " << rangeChange << " for column " << c << endl;
-//                        if (c < currentRanges.size()) {
-//                            currentRanges[c] = rangeChange;
-//                        }
-//                    }
-//                }
+                    // TODO: leave reachedModuloRange here?
+                    if (compressionMode.find("singlebit") != string::npos && !reachedModuloRange) {
+                        cerr << "placing single bit pseudo comps" << endl;
+                        bool useNegativeMSBValue = false;
+
+                        if (compressionMode.find("sevector") == string::npos) {
+                            if (moduloRangeMin < 0) {
+                                useNegativeMSBValue = true;
+                            }
+                        }
+                        for(unsigned int c = 0; c < bitAmount[s].size(); c++){
+                            if (bitAmount[s][c] == 1) {
+                                int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, false,  useNegativeMSBValue);
+                                cerr << "set range change 2 " << rangeChange << " for column " << c << endl;
+                                int bitWeight = 1 << c;
+                                int newRangeChange = bitWeight - rangeChange;
+                                cerr << "newRangeChange " << newRangeChange << endl;
+                                extraRangeToSubtract += newRangeChange;
+                                cerr << "extraRangeToSubtract " << extraRangeToSubtract << endl;
+//                                while (newRangeChange > 0) {
+//                                    for (int i = 0; i < currentRanges.size(); i++) {
+//                                        if (newRangeChange > 0 && currentRanges[i] > 0) {
+//                                            currentRanges[i] -= 1;
+//                                            newRangeChange--;
+//                                        }
+//                                    }
+//                                }
+                            }
+                        }
+                    }
 
                     bool found = true;
                     while(found){
@@ -302,7 +333,11 @@ namespace flopoco{
     }
 
     bool MaxEfficiencyCompressionStrategy::isRemainderMoreEfficient(int rem, int remToCompare) {
-	    return abs(rem) < abs(remToCompare);
+	    if (bitheap->mode.find("pos") != string::npos) {
+            return rem >= 0;
+	    } else {
+            return abs(rem) < abs(remToCompare);
+	    }
 	}
 
     bool MaxEfficiencyCompressionStrategy::shouldPlacePseudoCompressors(vector<int> bitAmountStage) {
@@ -370,7 +405,12 @@ namespace flopoco{
                         if (isRemainderMoreEfficient(possibleCompressors[i]->range_change, currentRange)) {
                             if (possibleCompressors[i]->range_change < 0) {
                                 currentRange = possibleCompressors[i]->range_change;
-                                //compressor = createCompWithoutSignExtension(possibleCompressors[i]);
+                                if (bitheap->mode.find("sevector") != string::npos) {
+                                    compressor = createCompWithoutSignExtension(possibleCompressors[i]);
+                                } else {
+                                    compressor = possibleCompressors[i];
+                                }
+
                                 found = true;
                             } else {
                                 currentRange = possibleCompressors[i]->range_change;
@@ -386,13 +426,15 @@ namespace flopoco{
         if(found){
             REPORT(DETAILED, "range change is " << compressor->range_change);
             placeCompressor(s, 0, compressor);
-//            if (compressor->ones_vector_start < INT32_MAX) {
-//                int signExt = (1 << compressor->ones_vector_start);
-//                negativeSignExtension -= (1 << compressor->ones_vector_start);
-//                if (!needToApplyNegativeSignExtension) {
-//                    needToApplyNegativeSignExtension = true;
-//                }
-//            }
+            if (bitheap->mode.find("sevector") != string::npos) {
+                if (compressor->ones_vector_start < INT32_MAX) {
+                    negativeSignExtension -= (1 << compressor->ones_vector_start);
+                    if (!needToApplyNegativeSignExtension) {
+                        needToApplyNegativeSignExtension = true;
+                    }
+                }
+            }
+
             return compressor->range_change;
         } else {
             return 0;

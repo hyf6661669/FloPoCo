@@ -18,7 +18,7 @@ using namespace std;
 namespace flopoco {
 
 
-    BitHeapModuloTest::BitHeapModuloTest(Target* target, int wIn_, int mod_, int maxInput_) : Operator(target), wIn(wIn_), mod(mod_), maxInput(maxInput_) {
+    BitHeapModuloTest::BitHeapModuloTest(Target* target, int wIn_, int mod_, int maxInput_, string mode_) : Operator(target), wIn(wIn_), mod(mod_), maxInput(maxInput_) {
 
         // definition of the source file name, used for info and error reporting using REPORT
         srcFileName="BitHeapModuloTest";
@@ -66,23 +66,28 @@ namespace flopoco {
             return;
         }
 
+        transform(mode_.begin(), mode_.end(), mode_.begin(), ::tolower);
+
         BitHeap *bitHeap;
-        bitHeap = new BitHeap(this, wIn, "moduloBitheap", 0, mod, maxInput);
+        bitHeap = new BitHeap(this, wIn, "moduloBitheap", 0, mod, maxInput, mode_);
         bitHeap->addSignal("X", 0);
         bitHeap->startCompression();
 
         int bitHeapResultBits = wIn;
-//        vhdl << tab << declare(
-//                "STemp", bitHeapResultBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeap->getSumName(bitHeapResultBits-1,0) << ") + M);" << endl;
-//        vhdl << tab << "R <= " << bitHeap->getSumName(modSize-1,0) << " when ";
-//        vhdl << bitHeap->getSumName() << of(bitHeapResultBits-1) << " = '0'";
-//        vhdl << tab << "else STemp" << range(modSize-1,0) << ";" << endl;
 
-        vhdl << tab << declare(
-                "STemp", bitHeapResultBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeap->getSumName(bitHeapResultBits-1,0) << ") - M);" << endl;
-        vhdl << tab << "R <= " << bitHeap->getSumName(modSize-1,0) << " when ";
-        vhdl << "UNSIGNED(" << bitHeap->getSumName(bitHeapResultBits-1,0) << ") < M";
-        vhdl << tab << "else STemp" << range(modSize-1,0) << ";" << endl;
+        if (mode_.find("pos") != string::npos) {
+            vhdl << tab << declare(
+                    "STemp", bitHeapResultBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeap->getSumName(bitHeapResultBits-1,0) << ") - M);" << endl;
+            vhdl << tab << "R <= " << bitHeap->getSumName(modSize-1,0) << " when ";
+            vhdl << "UNSIGNED(" << bitHeap->getSumName(bitHeapResultBits-1,0) << ") < M";
+            vhdl << tab << "else STemp" << range(modSize-1,0) << ";" << endl;
+        } else {
+            vhdl << tab << declare(
+                    "STemp", bitHeapResultBits, false) << tab << "<= STD_LOGIC_VECTOR(SIGNED(" << bitHeap->getSumName(bitHeapResultBits-1,0) << ") + M);" << endl;
+            vhdl << tab << "R <= " << bitHeap->getSumName(modSize-1,0) << " when ";
+            vhdl << bitHeap->getSumName() << of(bitHeapResultBits-1) << " = '0'";
+            vhdl << tab << "else STemp" << range(modSize-1,0) << ";" << endl;
+        }
         delete bitHeap;
 
         addFullComment("End of vhdl generation"); // this will be a large, centered comment in the VHDL
@@ -191,10 +196,12 @@ namespace flopoco {
 
     OperatorPtr BitHeapModuloTest::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
         int wIn, mod, maxInput;
+        string mode;
         UserInterface::parseInt(args, "wIn", &wIn); // wIn has a default value, this method will recover it if it doesn't find it in args,
         UserInterface::parseInt(args, "mod", &mod);
         UserInterface::parseInt(args, "maxInput", &maxInput);
-        return new BitHeapModuloTest(target, wIn, mod, maxInput);
+        UserInterface::parseString(args, "mode", &mode);
+        return new BitHeapModuloTest(target, wIn, mod, maxInput, mode);
     }
 
     void BitHeapModuloTest::registerFactory(){
@@ -208,7 +215,16 @@ namespace flopoco {
                 // where parameterDescription is parameterName (parameterType)[=defaultValue]: parameterDescriptionString
                            "wIn(int)=8: input size; \
                             mod(int): modulus for the modulo computation; \
-                            maxInput(int)=-1: maximal allowed input value",
+                            maxInput(int)=-1: maximal allowed input value; \
+                            mode(string)=default: mode for testing different variations"
+                           "available are:"
+                           "pos:"
+                           " - seVector:"
+                           " - singleBitPos:"
+                           " - singleBitSEVector:"
+                           " - msbCasesPos:"
+                           " - msbCasesSEVector:"
+                           " - default: ",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "<br> Also see the developer manual in the doc/ directory of FloPoCo.",
                            BitHeapModuloTest::parseArguments,

@@ -46,6 +46,8 @@ class BitHeap;
 
         BasicCompressor* createCompWithoutSignExtension(BasicCompressor* compressor);
 
+        int getMaxRangeForMaxValue(int maxValue, vector<int> currentRanges);
+
 		vector<float> lowerBounds;
 
 		int negativeSignExtension;

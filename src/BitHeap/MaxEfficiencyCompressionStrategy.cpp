@@ -89,10 +89,6 @@ namespace flopoco{
 
 
             if (computeModulo) {
-                int msbOneRage = 0;
-                int msbZeroRange = 0;
-                int maxInputSize = floor(log2(currentPossibleMaxRange)+1);
-
                 for (int i = 0; i < currentRanges.size(); ++i) {
                     cerr << "current ranges " << i << " is " << currentRanges[i] << endl;
                     if (currentRanges[i] >= 0) {
@@ -100,22 +96,10 @@ namespace flopoco{
                     } else {
                         moduloRangeMin += currentRanges[i];
                     }
-
-                    if (compressionMode.find("msbcases") != string::npos) {
-                        if ((currentPossibleMaxRange & (1 << i)) != 0) {
-                            msbOneRage += currentRanges[i];
-                            int number = currentRanges[i];
-                            cerr << "msbOneRange + " << number << endl;
-                        }
-                        if (i < maxInputSize - 1) {
-                            msbZeroRange += currentRanges[i];
-                        }
-                    }
                 }
 
                 if (compressionMode.find("msbcases") != string::npos) {
-                    cerr << "msbZeroRange: " << msbZeroRange << ", msbOneRange: " << msbOneRage << endl;
-                    moduloRangeMax = max(msbZeroRange, msbOneRage);
+                    moduloRangeMax = getMaxRangeForMaxValue(currentPossibleMaxRange, currentRanges);
                 }
 
                 if (compressionMode.find("singlebit") != string::npos) {
@@ -460,5 +444,33 @@ namespace flopoco{
         pseudoCompressor = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), compressor->heights, compOutput, rangeChange, compressor->ones_vector_start);
         pseudoCompressor->setHasExternalSignExtension(true);
         return pseudoCompressor;
+	}
+
+    int MaxEfficiencyCompressionStrategy::getMaxRangeForMaxValue(int maxValue, vector<int> currentRanges) {
+	    int currentMaxRange = 0;
+	    int currentOneMSBRange = 0;
+        int maxInputSize = floor(log2(maxValue)+1);
+        for (int i = maxInputSize-1; i >= 0; i--) {
+            if ((maxValue & (1 << i)) != 0) {
+                // case 0
+                int msbZeroRange = currentOneMSBRange;
+                for (int j = 0; j < currentRanges.size(); ++j) {
+                    if (j < i) {
+                        msbZeroRange += currentRanges[j];
+                    }
+                }
+                if (msbZeroRange > currentMaxRange) {
+                    currentMaxRange = msbZeroRange;
+                }
+                // case 1
+                currentOneMSBRange += currentRanges[i];
+            }
+        }
+
+        if (currentOneMSBRange > currentMaxRange) {
+            currentMaxRange = currentOneMSBRange;
+        }
+
+        return currentMaxRange;
 	}
 }

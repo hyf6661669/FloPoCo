@@ -85,10 +85,12 @@ namespace flopoco{
 
             int moduloRangeMax = 0;
             int moduloRangeMin = 0;
-            int remainderExtension = negativeSignExtension % bitheap->modulus;
+            int remainderExtension = 0;
 
 
             if (computeModulo) {
+                remainderExtension = negativeSignExtension % bitheap->modulus;
+
                 for (int i = 0; i < currentRanges.size(); ++i) {
                     cerr << "current ranges " << i << " is " << currentRanges[i] << endl;
                     if (currentRanges[i] >= 0) {

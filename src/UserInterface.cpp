@@ -45,11 +45,13 @@ namespace flopoco
 	string   UserInterface::tiling;
 	string UserInterface::ilpSolver;
 	int    UserInterface::ilpTimeout;
+	bool   UserInterface::allRegistersWithAsyncReset;
+#if 0 // Shall we resurrect all this some day?
 	int    UserInterface::resourceEstimation;
 	bool   UserInterface::floorplanning;
 	bool   UserInterface::reDebug;
 	bool   UserInterface::flpDebug;
-
+#endif
 	string UserInterface::depGraphDrawing="";
 
 
@@ -204,7 +206,8 @@ namespace flopoco
 		parsePositiveInt(args, "ilpTimeout", &ilpTimeout, true); // sticky option
 		parseString(args, "compression", &compression, true);
 		parseString(args, "tiling", &tiling, true);
-		parseBoolean(args, "floorplanning", &floorplanning, true);
+		parseBoolean(args, "allRegistersWithAsyncReset", &allRegistersWithAsyncReset, true);
+		//		parseBoolean(args, "floorplanning", &floorplanning, true);
 		//		parseBoolean(args, "reDebug", &reDebug, true );
 		parseString(args, "dependencyGraph", &depGraphDrawing, true);
 		//	parseBoolean(args, "", &  );
@@ -356,6 +359,7 @@ namespace flopoco
 		useHardMult=true;
 		registerLargeTables=false;
 		tableCompression=false;
+		allRegistersWithAsyncReset=false;
 		unusedHardMultThreshold=0.7;
 		compression = "heuristicMaxEff";
 		tiling = "heuristicBasicTiling"; //should be heuristicBeamSearchTiling in future
@@ -799,6 +803,7 @@ namespace flopoco
 		s << "  " << COLOR_BOLD << "tableCompression" << COLOR_NORMAL << "=<0|1>:       use errorless table compression when possible (default false while experimental)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "registerLargeTables" << COLOR_NORMAL << "=<0|1>:    force registering of large ROMs to force the use of blockRAMs (default false)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "useTargetOptimizations" << COLOR_NORMAL << "=<0|1>: use target specific optimizations (e.g., using primitives) " << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
+		s << "  " << COLOR_BOLD << "allRegistersWithAsyncReset" << COLOR_NORMAL << "=<0|1>: if set, all the pipeline registers have an asynchronous reset signal" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "ilpSolver" << COLOR_NORMAL << "=<string>:           override ILP solver for operators optimized by ILP, has to match a solver name known by the ScaLP library" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "ilpTimeout" << COLOR_NORMAL << "=<int>:             sets the timeout in seconds for the ILP solver for operators optimized by ILP (default=3600)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;
 		s << "  " << COLOR_BOLD << "compression" << COLOR_NORMAL << "=<heuristicMaxEff,heuristicPA,heuristicFirstFit,optimal,optimalMinStages>:        compression method (default=heuristicMaxEff)" << COLOR_RED_NORMAL << "(sticky option)" << COLOR_NORMAL<<endl;

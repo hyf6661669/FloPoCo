@@ -148,6 +148,7 @@ namespace flopoco
 		static vector<vector<OperatorPtr>>  globalOpListStack;  /**< a stack on which to save globalOpList when you don't want to mess with it */
 		static int    verbose;
 		static int pipelineActive_;
+		static bool   allRegistersWithAsyncReset; // too lazy to write setters/getters
 	private:
 		static string outputFileName;
 		static string entityName;
@@ -161,15 +162,17 @@ namespace flopoco
 		static bool   tableCompression;
 		static bool   generateFigures;
 		static double unusedHardMultThreshold;
-        static bool   useTargetOptimizations;
+		static bool   useTargetOptimizations;
 		static string compression;
 		static string tiling;
 		static string ilpSolver;
 		static int    ilpTimeout;
+#if 0 // Shall we resurrect all this some day?
 		static int    resourceEstimation;
 		static bool   floorplanning;
 		static bool   reDebug;
 		static bool   flpDebug;
+#endif
 		static vector<pair<string,OperatorFactoryPtr>> factoryList; // used to be a map, but I don't want them listed in alphabetical order
 		static const vector<pair<string,string>> categories;
 

@@ -991,6 +991,9 @@ namespace flopoco{
 		s->setCriticalPath(0.0);
 		if(UserInterface::pipelineActive_) {
 			s->setCriticalPathContribution(criticalPathContribution);
+			if(UserInterface::allRegistersWithAsyncReset) {
+				s->setResetType(Signal::asyncReset);				
+			}
 		}
 		else {
 			s->setCriticalPathContribution(0);

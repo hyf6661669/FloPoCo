@@ -68,6 +68,7 @@ namespace flopoco{
 
 		vhdl << tab << "-- now implementing the recurrence " << endl;
 		vhdl << tab << "--  w_{i} = 2w_{i-1} -2s_{i}S_{i-1} - 2^{-i-1}s_{i}^2  for i in {1..n}" << endl;
+		vhdl << tab << "--  This is a binary restoring algorithm, see e.g. Parhami book 2nd ed. p. 438" << endl;
 		int maxstep=wF+2;
 		for(int i=1; i<=maxstep; i++) {
 		  double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();

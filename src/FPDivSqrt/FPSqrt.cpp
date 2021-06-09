@@ -61,14 +61,14 @@ namespace flopoco{
 		vhdl << tab << declare("eRn1", wE) << " <= eRn0 + (\"00\" & " << rangeAssign(wE-3, 0, "'1'") << ") + X(" << wF << ");" << endl;
 
 		vhdl << tab << declare(getTarget()->lutDelay(),
-													 join("w",0), wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
+													 "R0", wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
 		     << tab << "       \"1101\" & fracX; -- pre-normalization" << endl;
 		//		vhdl << tab << declare(join("d",wF+3)) << " <= '0';" << endl;
 		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
 
 		vhdl << tab << "-- now implementing the recurrence " << endl;
 		vhdl << tab << "--  w_{i} = 2w_{i-1} -2s_{i}S_{i-1} - 2^{-i-1}s_{i}^2  for i in {1..n}" << endl;
-		vhdl << tab << "--  This is a binary restoring algorithm, see e.g. Parhami book 2nd ed. p. 438" << endl;
+		vhdl << tab << "--  this is a binary non-restoring algorithm, see e.g. Parhami book 2nd ed. p. 441" << endl;
 		int maxstep=wF+2;
 		for(int i=1; i<=maxstep; i++) {
 		  double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
@@ -76,38 +76,42 @@ namespace flopoco{
 			// was: int i = wF+3-step; // to have the same indices as FPLibrary
 		  vhdl << tab << "-- Step " << i << endl;
 		  string di = join("d", i);
-		  string xi = join("x", i);
-		  string wi = join("w", i);
-		  string wip = join("w", i-1);
-		  string si = join("s", i);
-		  string sip = join("s", i-1);
+		  string xi = "R" + to_string(i-1) + "s";
+		  string wi = join("R", i);
+		  string wip = join("R", i-1);
+		  string si = join("S", i);
+		  string sip = join("S", i-1);
 		  //			string zs = join("zs", i);
-		  string ds = join("ds", i);
-		  string xh = join("xh", i);
-		  string wh = join("wh", i);
-		  vhdl << tab << declare(di) << " <= "<< wip << "("<< wF+3<<");" << endl;
+		  string ds = join("Rupdate", i);
+		  string xh = xi + "_h";
+		  string xl = xi + "_l";
+		  string wh = "R" + to_string(i) + "_h";
+		  vhdl << tab << declare(di) << " <= "<< wip << "("<< wF+3<<"); -- sign bit (0 means digit +1, 1 means digit -1)" << endl;
 		  vhdl << tab << declare(xi,wF+5) << " <= " << wip << " & \"0\";" << endl;
+		  vhdl << tab << declare(xh,i+3) << " <= " << xi << range(wF+4, wF+2-i) << ";" << endl;
+		  if(i <= wF+1) {
+				vhdl << tab << declare(xl,wF+2-i) << " <= "  << xi << range(wF+1-i, 0) << ";" << endl;
+			}
 		  vhdl << tab << declare(ds,i+3) << " <=  \"0\" & ";
 		  if (i>1)
 		    vhdl 	<< sip << " & ";
-		  vhdl << " (not " << di << ") & " << di << " & \"1\";" << endl;
-		  vhdl << tab << declare(xh,i+3) << " <= " << xi << range(wF+4, wF+2-i) << ";" << endl;
-		  vhdl << tab <<  declare(stageDelay, wh, i+3) << " <= " << xh << " - " << ds << " when " << di << "='0'" << endl
-		       << tab << tab << "     else   " << xh << " + " << ds << ";" << endl;
+		  vhdl << " (not " << di << ") & " << di << " & \"1\"; -- in the add/sub below, this will always add 011" << endl;
+		  vhdl << tab <<  declare(stageDelay, wh, i+3) << " <=   " << xh << " - " << ds << " when " << di << "='0'" << endl
+		       << tab << tab << "  else " << xh << " + " << ds << ";" << endl;
 		  vhdl << tab << declare(wi, wF+4) << " <= " << wh << range(i+1,0);
 		  if(i <= wF+1)
-		    vhdl << " & " << xi << range(wF+1-i, 0) << ";" << endl;
+		    vhdl << " & " << xl << ";" << endl;
 		  else
 		    vhdl << ";" << endl;
 		  vhdl << tab << declare(si, i) << " <= ";
 		  if(i==1)
 		    vhdl << "\"\" & (not " << di << ") ;"<< endl;
 		  else
-		    vhdl << sip /*<< range(i-1,1)*/ << " & not " << di << ";"<< endl;
+		    vhdl << sip /*<< range(i-1,1)*/ << " & not " << di << "; -- here -1 becomes 0 and 1 becomes 1"<< endl;
 		}
 		string dfinal=join("d", maxstep+1);
-		vhdl << tab << declare(dfinal) << " <= "<< join("w", maxstep) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
-		vhdl << tab << declare("mR", wF+3) << " <= "<< join("s", maxstep)<<" & not "<<dfinal<<"; -- result significand" << endl;
+		vhdl << tab << declare(dfinal) << " <= "<< join("R", maxstep) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
+		vhdl << tab << declare("mR", wF+3) << " <= "<< join("S", maxstep)<<" & not "<<dfinal<<"; -- result significand" << endl;
 
 		// end of component FPSqrt_Sqrt in fplibrary
 		vhdl << tab << declare(target->lutDelay(), "fR", wF+1) << " <= mR" <<range(wF, 0) << ";-- removing leading 1" << endl;

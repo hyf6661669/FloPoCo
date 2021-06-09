@@ -38,57 +38,32 @@ using namespace std;
 
 namespace flopoco {
 
-	/**
-	 * @brief Compute the size required to store the untruncated product of inputs of a given width
-	 * @param wX size of the first input
-	 * @param wY size of the second input
-	 * @return the number of bits needed to store a product of I<wX> * I<WY>
-	 */
-	unsigned int IntMultiplier::prodsize(unsigned int wX, unsigned int wY, bool signedX, bool signedY)
-	{
-		if(wX == 0 || wY == 0)
-			return 0;
 
-		if (wX == 1 && wY == 1) {
-			return 1;
-		}
+	IntMultiplier::IntMultiplier (Operator *parentOp, Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, float dspOccupationThreshold, int maxDSP, bool superTiles, bool use2xk, bool useirregular, bool useLUT, bool useDSP, bool useKaratsuba, int beamRange, bool optiTrunc):
+		Operator ( parentOp, target_ ),wX(wX_), wY(wY_), wOut(wOut_),signedIO(signedIO_), dspOccupationThreshold(dspOccupationThreshold) {
+        srcFileName = "IntMultiplier";
+        setCopyrightString("Martin Kumm, Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012");
 
-		if(wX == 1 && !signedX)
-			return wY;
+        ostringstream name;
+        name << "IntMultiplier";
+        setNameWithFreqAndUID(name.str());
 
-		if(wY == 1 && !signedY)
-			return wX;
+        // the addition operators need the ieee_std_signed/unsigned libraries
+        useNumericStd();
 
-		return wX + wY;
-	}
+        multiplierUid = parentOp->getNewUId();
+        wFullP = prodsize(wX, wY, signedIO_, signedIO_);
 
-	IntMultiplier::IntMultiplier (Operator *parentOp, Target* target_, int wX_, int wY_, int wOut_, bool signedIO_, float dspOccupationThreshold, int maxDSP, bool superTiles, bool use2xk, bool useirregular, bool useLUT, bool useDSP, bool useKaratsuba, int beamRange):
-		Operator ( parentOp, target_ ),wX(wX_), wY(wY_), wOut(wOut_),signedIO(signedIO_), dspOccupationThreshold(dspOccupationThreshold)
-	{
-		srcFileName="IntMultiplier";
-		setCopyrightString ( "Martin Kumm, Florent de Dinechin, Kinga Illyes, Bogdan Popa, Bogdan Pasca, 2012" );
+        if (wOut == 0)
+            wOut = prodsize(wX, wY, signedIO_, signedIO_);
 
-		ostringstream name;
-		name <<"IntMultiplier";
-		setNameWithFreqAndUID (name.str());
+        unsigned int guardBits = 0, keepBits = 0;
+        mpz_class errorBudget = 0, centerErrConstant = 0;
+        if(wFullP - wOut)
+            computeTruncMultParamsMPZ(wFullP, wOut, guardBits, keepBits, errorBudget, centerErrConstant);
+        cout << " guardBits=" << guardBits << " keepBits=" << keepBits << " errorBudget=" << errorBudget << " centerErrConstant=" << centerErrConstant << endl;
 
-		// the addition operators need the ieee_std_signed/unsigned libraries
-		useNumericStd();
-
-		multiplierUid=parentOp->getNewUId();
-		wFullP = prodsize(wX, wY, signedIO_, signedIO_);
-		//bool needCentering;                                   //unused
-
-		if(wOut == 0)
-			wOut = prodsize(wX, wY, signedIO_, signedIO_);
-
-		unsigned int guardBits = computeGuardBits(
-					static_cast<unsigned int>(wX),
-					static_cast<unsigned int>(wY),
-					static_cast<unsigned int>(wOut)
-				);
-
-		REPORT(INFO, "IntMultiplier(): Constructing a multiplier of size " <<
+        REPORT(INFO, "IntMultiplier(): Constructing a multiplier of size " <<
 					wX << "x" << wY << " faithfully rounded to bit " << wOut <<
 					". Will use " << guardBits << " guard bits and DSP threshhold of " << dspOccupationThreshold)
 
@@ -113,8 +88,9 @@ namespace flopoco {
 			return;
 		}
 
-		BitHeap bitHeap(this, wOut + guardBits);
-//		bitHeap = new BitHeap(this, wOut+10); //!!! just for test
+        BitHeap bitHeap(this, wFullP);
+		//BitHeap bitHeap(this, wOut + guardBits);
+        unsigned bitHeapLSBWeight = 0;
 
 		REPORT(INFO, "Creating BaseMultiplierCollection")
 //		BaseMultiplierCollection baseMultiplierCollection(parentOp->getTarget(), wX, wY);
@@ -205,7 +181,11 @@ namespace flopoco {
 					dspOccupationThreshold,
 					maxDSP,
 					multiplierTileCollection,
-                    guardBits
+                    guardBits,
+                    keepBits,
+                    errorBudget,
+                    centerErrConstant,
+                    optiTrunc
 			);
 
 		}  else if(tilingMethod.compare("optimalTilingAndCompression") == 0){
@@ -272,12 +252,31 @@ namespace flopoco {
 
 		schedule();
 
-		branchToBitheap(&bitHeap, solution, prodsize(wX, wY, signedIO, signedIO) - (wOut + guardBits));
+       	if (guardBits > 0) {
+            //Check truncated solution
+            mpz_class actualTruncError = checkTruncationError(solution, guardBits, errorBudget, centerErrConstant);
+            cout << "calc min req weight is=" << prodsize(wX, wY, signedIO, signedIO) - (wOut + guardBits) << endl;
+            bitHeapLSBWeight = calcBitHeapLSB(solution, guardBits, errorBudget, centerErrConstant, actualTruncError);
+            guardBits = wFullP - wOut - bitHeapLSBWeight; //To select result bits, because the dynamic ilp does not consider guardBits
 
-		if (guardBits > 0) {
+		    //this is the rounding bit for a faithfully rounded truncated multiplier
 			bitHeap.addConstantOneBit(static_cast<int>(guardBits) - 1);
-            checkTruncationError(solution, guardBits);
+			//these are the constant bits to recenter the average error around 0 and allow for more truncation error
+            mpz_class colweight, bitstate;
+            int i = wFullP - wOut - guardBits ;
+            do{
+                mpz_pow_ui(colweight.get_mpz_t(), mpz_class(2).get_mpz_t(), i);
+                mpz_and(bitstate.get_mpz_t(), colweight.get_mpz_t(), centerErrConstant.get_mpz_t());
+                if (bitstate) {
+                    bitHeap.addConstantOneBit(i - (wFullP - wOut - guardBits));
+                    REPORT(DEBUG,  "Adding constant bit with weight=" << i << " BitHeap col=" << i - (wFullP - wOut - guardBits) << "to recenter the truncation error at 0");
+                    cout << "height at pos " << i - (wFullP - wOut - guardBits) << ": " << bitHeap.getColumnHeight( i - (wFullP - wOut - guardBits)) << endl;
+                }
+                i++;
+            } while(colweight <= centerErrConstant);
 		}
+
+        branchToBitheap(&bitHeap, solution, bitHeapLSBWeight);
 
 		if (dynamic_cast<CompressionStrategy*>(tilingStrategy)) {
 			std::cout << "Class is derived from CompressionStrategy, passing result for compressor tree.";
@@ -331,6 +330,102 @@ namespace flopoco {
 
 		return nbDontCare - nbUnneeded;
 	}
+
+    /**
+     * @brief Compute several parameters for a faithfully rounding truncated multiplier
+     * @param wFull width of result of a non-truncated multiplier with the same input widths
+     * @param wOut requested output width of the result vector of the truncated multiplier
+     * @param g the number of bits below the output LSB that we need to keep in the summation
+     * @param k number of bits to keep in in the column with weight w-g
+     * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
+     * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
+     * @return none
+     */
+    void IntMultiplier::computeTruncMultParams(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant){
+        // first loop iterates over the columns, right to left
+        unsigned w = wFull - wOut; //weight of the LSB of the result, relative to the LSB of a non-truncated multiplier
+        errorBudget = (1ULL<<(w-1)); //tiling error budget
+        if(w == 0) return;
+        unsigned col = 0, height;
+        unsigned long long weightedSumOfTruncatedBits = 0;   //actual error
+        bool loop=true;
+        while(loop){
+            col++;                                                          //bitheap column
+            height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
+            weightedSumOfTruncatedBits += height * (1ULL<<(col-1));
+            constant = (1ULL<<(w-1)) - (1ULL<<(col-1));
+            //cout << "col=" << col << " height=" << height << " wstb=" << weightedSumOfTruncatedBits << " errorBudget=" << errorBudget << " C=" << constant << endl;
+            loop = (weightedSumOfTruncatedBits < errorBudget + constant);
+        } // when we exit the loop, we have found g
+        g = w-(col-1);
+        // Now add back bits in rigthtmost column, one by one
+        k = 0;
+        while(weightedSumOfTruncatedBits >= errorBudget + constant) {
+            weightedSumOfTruncatedBits -= (1ULL<<(col-1));
+            k++;
+        }
+    }
+
+    void IntMultiplier::computeTruncMultParamsMPZ(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, mpz_class &errorBudget, mpz_class &constant){
+        // first loop iterates over the columns, right to left
+        unsigned w = wFull - wOut; //weight of the LSB of the result, relative to the LSB of a non-truncated multiplier
+        mpz_class colweight;//, max64;
+        mpz_pow_ui(errorBudget.get_mpz_t(), mpz_class(2).get_mpz_t(), w-1);
+        if(w == 0) return;
+        unsigned col = 0, height;
+        mpz_class weightedSumOfTruncatedBits = 0;   //actual error
+        bool loop=true;
+        while(loop){
+            col++;                                                          //bitheap column
+            height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
+            mpz_pow_ui(colweight.get_mpz_t(), mpz_class(2).get_mpz_t(), col-1);
+            weightedSumOfTruncatedBits += mpz_class(height) * colweight;
+            constant = errorBudget - colweight;
+            //cout << "col=" << col << " height=" << height << " wstb=" << weightedSumOfTruncatedBits << " errorBudget=" << errorBudget << " C=" << C << endl;
+            loop = (weightedSumOfTruncatedBits < errorBudget + constant);
+        } // when we exit the loop, we have found g
+        g = w-(col-1);
+        // Now add back bits in rigthtmost column, one by one
+        k = 0;
+        while(weightedSumOfTruncatedBits >= errorBudget + constant) {
+            weightedSumOfTruncatedBits -= colweight;
+            k++;
+        }
+
+/*        unsigned long long max64u = UINT64_MAX;
+        mpz_import(max64.get_mpz_t(), 1, -1, sizeof max64u, 0, 0, &max64u);
+        if(errorBudget <= max64 && constant <= max64){
+            mpz_export(&errorBudget, 0, -1, sizeof errorBudget, 0, 0, errorBudget.get_mpz_t());
+            mpz_export(&constant, 0, -1, sizeof constant, 0, 0, errorBudget.get_mpz_t());
+        } else {
+            cout << "WARNING: errorBudget or constant exceeds the number range of uint64, use optiTrunc=0 or results will be faulty!" << endl;
+        }*/
+
+    }
+
+    /**
+     * @brief Compute the size required to store the untruncated product of inputs of a given width
+     * @param wX size of the first input
+     * @param wY size of the second input
+     * @return the number of bits needed to store a product of I<wX> * I<WY>
+     */
+    unsigned int IntMultiplier::prodsize(unsigned int wX, unsigned int wY, bool signedX, bool signedY)
+    {
+        if(wX == 0 || wY == 0)
+            return 0;
+
+        if (wX == 1 && wY == 1) {
+            return 1;
+        }
+
+        if(wX == 1 && !signedX)
+            return wY;
+
+        if(wY == 1 && !signedY)
+            return wX;
+
+        return wX + wY;
+    }
 
 	/**
 	 * @brief getZeroMSB if the tile goes out of the multiplier,
@@ -388,23 +483,6 @@ namespace flopoco {
 			int xPos = anchor.first;
 			int yPos = anchor.second;
 
-			//unsigned int xInputLength = parameters.getTileXWordSize();
-			//unsigned int yInputLength = parameters.getTileYWordSize();
-			//unsigned int outputLength = parameters.getOutWordSize();
-
-			//unsigned int lsbZerosXIn = (xPos < 0) ? static_cast<unsigned int>(-xPos) : 0;                               // zero padding for the input LSBs of Multiplier tile, that are outside of the area to be tiled
-			//unsigned int lsbZerosYIn = (yPos < 0) ? static_cast<unsigned int>(-yPos) : 0;
-
-			//unsigned int msbZerosXIn = getZeroMSB(xPos, xInputLength, wX);                                            // zero padding for the input MSBs of Multiplier tile, that are outside of the area to be tiled
-			//unsigned int msbZerosYIn = getZeroMSB(yPos, yInputLength, wY);
-
-			//unsigned int selectSizeX = xInputLength - (msbZerosXIn + lsbZerosXIn);                                    // used size of the multiplier
-			//unsigned int selectSizeY = yInputLength - (msbZerosYIn + lsbZerosYIn);
-
-			//unsigned int effectiveAnchorX = (xPos < 0) ? 0 : static_cast<unsigned int>(xPos);                           // limit tile positions to > 0
-			//unsigned int effectiveAnchorY = (yPos < 0) ? 0 : static_cast<unsigned int>(yPos);
-
-			//unsigned int outLSBWeight = effectiveAnchorX + effectiveAnchorY + parameters.getRelativeResultLSBWeight();  // calc result LSB weight corresponding to tile position
 			int LSBWeight = xPos + yPos + parameters.getRelativeResultLSBWeight();
 			unsigned int outLSBWeight = (LSBWeight < 0)?0:static_cast<unsigned int>(LSBWeight);                         // calc result LSB weight corresponding to tile position
 			unsigned int truncated = (outLSBWeight < bitheapLSBWeight) ? bitheapLSBWeight - outLSBWeight : 0;           // calc result LSBs to be ignored
@@ -423,6 +501,7 @@ namespace flopoco {
 			ofname << "tile_" << i << "_filtered_output";
 
 			if(parameters.getOutputWeights().size()){
+			    //The multiplier tile has more then one output signal
 				for(unsigned i = 0; i < parameters.getOutputWeights().size(); i++){
 					if(i){
 						vhdl << declare(.0, ofname.str() + to_string(i), 41) << " <= " << "" << oname.str() + to_string(i) << "(40 downto 0)" << ";" << endl;
@@ -435,6 +514,7 @@ namespace flopoco {
 					cout << "output (" << i+1 << "/" << parameters.getOutputWeights().size() << "): " << ofname.str() + to_string(i) << " shift " << bitHeapOffset+parameters.getOutputWeights()[i] << endl;
 				}
 			} else {
+                //The multiplier tile has only a single output signal
 				unsigned int xInputLength = parameters.getTileXWordSize();
 				unsigned int yInputLength = parameters.getTileYWordSize();
 				bool xIsSigned = parameters.isSignedMultX();
@@ -453,8 +533,6 @@ namespace flopoco {
 			i += 1;
 		}
 	}
-
-
 
 	Operator* IntMultiplier::realiseTile(TilingStrategy::mult_tile_t & tile, size_t idx, string output_name)
 	{
@@ -748,7 +826,7 @@ namespace flopoco {
 
 	OperatorPtr IntMultiplier::parseArguments(OperatorPtr parentOp, Target *target, std::vector<std::string> &args) {
 		int wX,wY, wOut, maxDSP;
-		bool signedIO,superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba;
+		bool signedIO,superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba, optiTrunc;
 		double dspOccupationThreshold=0.0;
 		int beamRange = 0;
 
@@ -764,9 +842,10 @@ namespace flopoco {
 		UserInterface::parseBoolean(args, "useKaratsuba", &useKaratsuba);
 		UserInterface::parseFloat(args, "dspThreshold", &dspOccupationThreshold);
 		UserInterface::parseInt(args, "maxDSP", &maxDSP);
+        UserInterface::parseBoolean(args, "optiTrunc", &optiTrunc);
 		UserInterface::parsePositiveInt(args, "beamRange", &beamRange);
 
-		return new IntMultiplier(parentOp, target, wX, wY, wOut, signedIO, dspOccupationThreshold, maxDSP, superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba, beamRange);
+		return new IntMultiplier(parentOp, target, wX, wY, wOut, signedIO, dspOccupationThreshold, maxDSP, superTile, use2xk, useirregular, useLUT, useDSP, useKaratsuba, beamRange, optiTrunc);
 	}
 
 
@@ -787,6 +866,7 @@ namespace flopoco {
 						useKaratsuba(bool)=false: if true, attempts to use rectangular Karatsuba for tiling;\
 						superTile(bool)=false: if true, attempts to use the DSP adders to chain sub-multipliers. This may entail lower logic consumption, but higher latency.;\
 						dspThreshold(real)=0.0: threshold of relative occupation ratio of a DSP multiplier to be used or not;\
+                        optiTrunc(bool)=true: if true, considers the Truncation error dynamicly, instead of defining a hard border for tiling, like in th ARITH paper;\
 						beamRange(int)=3: range for beam search", // This string will be parsed
 											 "", // no particular extra doc needed
 											IntMultiplier::parseArguments,
@@ -831,7 +911,7 @@ namespace flopoco {
 		return testStateList;
 	}
 
-	void IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits){
+    mpz_class IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant){
         std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
 
         for(auto & tile : solution) {
@@ -842,13 +922,13 @@ namespace flopoco {
 
             for(int x = 0; x < parameters.getMultXWordSize(); x++){
                 for(int y = 0; y < parameters.getMultYWordSize(); y++){
-                    if(xPos+x < wX && yPos+y < wY)
+                    if(0 <= xPos+x && 0 <= yPos+y && xPos+x < wX && yPos+y < wY)
                         mulArea[xPos+x][yPos+y] = mulArea[xPos+x][yPos+y] || parameters.shapeValid(x,y);
                 }
             }
         }
 
-        mpz_class truncError, maxErr;
+        mpz_class truncError, maxErr = errorBudget+constant;
         truncError = mpz_class(0);
         for(int y = 0; y < wY; y++){
             for(int x = wX-1; 0 <= x; x--){
@@ -859,16 +939,53 @@ namespace flopoco {
             cout << endl;
         }
 
-        //cout << "wFullP " << wFullP << endl;
-        //cout << "wOut " << wOut << endl;
-        //cout << "guardBits " << guardBits << endl;
-        //maxErr = mpz_class((wX < wY) ? wX : wY)*(mpz_class(1)<<(wFullP-(int)wOut-guardBits));
-        maxErr = (mpz_class(1)<<(wFullP-(int)wOut-1));
+        /*unsigned msw = ((errorBudget+constant)>>32ULL);
+        unsigned lsw = ((errorBudget+constant)&0xFFFFFFFFULL);
+        mpz_class factor;
+        mpz_pow_ui(factor.get_mpz_t(), mpz_class(2).get_mpz_t(), 32UL);
+        maxErr = (mpz_class(msw) * factor) | mpz_class(lsw);*/
+        //mpz_mul_2exp(maxErr.get_mpz_t(),mpz_class(msw).get_mpz_t(),mpz_class(32).get_mpz_t());
+        //cout << "errorBudget=" << errorBudget+constant << " maxErr=" << maxErr << endl;
         if(truncError <= maxErr){
-            cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << "." << endl;
+            cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << " by " << maxErr-truncError << "." << endl;
         } else {
-            cout << "ERROR: actual truncation error=" << truncError << " is larger than the max. permissible error=" << maxErr << "." << endl;
+            cout << "ERROR: actual truncation error=" << truncError << " is larger than the max. permissible error=" << maxErr << " by " << truncError-maxErr << "." << endl;
         }
+        return truncError;
 	}
+
+    int IntMultiplier::calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant, mpz_class actualTruncError){
+        int lsbs[solution.size()], msbs[solution.size()], prunableBits[solution.size()], weight=0, nBits = 0, i=0;;
+        for(auto & tile : solution) {
+            auto &parameters = tile.first;
+            auto &anchor = tile.second;
+            int xPos = anchor.first;
+            int yPos = anchor.second;
+            lsbs[i] = xPos + yPos + parameters.getRelativeResultLSBWeight();
+            msbs[i] = lsbs[i] + parameters.getOutWordSize();
+            prunableBits[i]=0;
+            cout << "Tile " << i << " " << parameters.getMultType() << " at (" << xPos << "," << yPos << ") has an LSB of" << lsbs[i] << endl;
+            i++;
+        }
+        double error = 0;
+        do{
+            cout << " min weight=" << weight << endl;
+            for(i = 0; i < solution.size(); i++){
+                if(lsbs[i] <= weight && weight < msbs[i]) {
+                    prunableBits[i]++;
+                    if(weight < lsbs[i]+(msbs[i]-lsbs[i])/2 ){
+                        error += prunableBits[i]*pow(2,weight);
+                    } else {
+                        error += ((msbs[i]-lsbs[i])-prunableBits[i])*pow(2,weight);
+                    }
+                    cout << "trying to prune " << prunableBits[i] << " bits in tile " << i << " with weight " << weight << " error is "  << error << " additional permissible error is "  << errorBudget + constant - actualTruncError << endl;
+                }
+            }
+            weight++;
+        } while(actualTruncError + error < errorBudget + constant || 0 == error);
+        weight--;
+        cout << "min req weight is=" << weight << endl;
+        return weight;
+    }
 
 }

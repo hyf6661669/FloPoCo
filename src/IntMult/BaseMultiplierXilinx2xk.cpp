@@ -145,10 +145,10 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     int needed_luts = width+1;//no. of required LUTs
     int needed_cc = ( (needed_luts+add_lut) / 4 ) + ( (needed_luts+add_lut)  % 4 > 0 ? 1 : 0 ); //no. of required carry chains
 
-    declare( "cc_s", needed_cc * 4 );
-    declare( "cc_di", needed_cc * 4 );
-    declare( "cc_co", needed_cc * 4 );
-    declare( "cc_o", needed_cc * 4 );
+    declare( target->logicDelay(5),"cc_s", needed_cc * 4 );                         //TODO Check if delays are actually correct
+    declare( target->logicDelay(5),"cc_di", needed_cc * 4 );
+    declare( width * target->carryPropagateDelay(), "cc_co", needed_cc * 4 );
+    declare( width * target->carryPropagateDelay(),"cc_o", needed_cc * 4 );
 
     //create the LUTs:
     for(int i=0; i < needed_luts + add_lut; i++)
@@ -264,12 +264,13 @@ BaseMultiplierXilinx2xkOp::BaseMultiplierXilinx2xkOp(Operator *parentOp, Target*
     }
     vhdl << endl;
 
+    declare( width * target->carryPropagateDelay()+target->logicDelay(5) + 9e-10,"result", width+2);
     if(add_lut){
-        vhdl << tab << "R <= cc_o(" << width+1 << " downto 0);" << endl;
+        vhdl << tab << "result <= cc_o(" << width+1 << " downto 0);" << endl;
     } else {
-        vhdl << tab << "R <= cc_co(" << width << ") & cc_o(" << width << " downto 0);" << endl;
+        vhdl << tab << "result <= cc_co(" << width << ") & cc_o(" << width << " downto 0);" << endl;
     }
-
+    vhdl << tab << "R <= result;" << endl;
 }
 
 }   //end namespace flopoco

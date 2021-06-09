@@ -28,7 +28,7 @@ namespace flopoco {
 		 * @param[in] signedIO       false=unsigned, true=signed
 		 * @param[in] texOutput      true=generate a tek file with the found tiling solution
 		 **/
-		IntMultiplier(Operator *parentOp, Target* target, int wX, int wY, int wOut=0, bool signedIO = false, float dspOccupationThreshold=0.0, int maxDSP=-1, bool superTiles=false, bool use2xk=false, bool useirregular=false, bool useLUT=true, bool useDSP=true, bool useKaratsuba=false, int beamRange=0);
+		IntMultiplier(Operator *parentOp, Target* target, int wX, int wY, int wOut=0, bool signedIO = false, float dspOccupationThreshold=0.0, int maxDSP=-1, bool superTiles=false, bool use2xk=false, bool useirregular=false, bool useLUT=true, bool useDSP=true, bool useKaratsuba=false, int beamRange=0, bool optiTrunc=true);
 
 		/**
 		 * The emulate function.
@@ -112,6 +112,20 @@ namespace flopoco {
 		 */
 		unsigned int computeGuardBits(unsigned int wX, unsigned int wY, unsigned int wOut);
 
+        /**
+         * @brief Compute several parameters for a faithfully rounding truncated multiplier
+         * @param wFull width of result of a non-truncated multiplier with the same input widths
+         * @param wOut requested output width of the result vector of the truncated multiplier
+         * @param g the number of bits below the output LSB that we need to keep in the summation
+         * @param k number of bits to keep in in the column with weight w-g
+         * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
+         * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
+         * @return none
+         */
+        void computeTruncMultParams(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, unsigned long long &errorBudget, unsigned long long &constant);
+
+        void computeTruncMultParamsMPZ(unsigned wFull, unsigned wOut, unsigned &g, unsigned &k, mpz_class &errorBudget, mpz_class &constant);
+
 		/**
 		 * add a unique identifier for the multiplier, and possibly for the block inside the multiplier
 		 */
@@ -119,9 +133,34 @@ namespace flopoco {
 
 		int multiplierUid;
 
+        /**
+         * @brief Define and calculate the size of the output signals of each multiplier tile in the solution to the BitHeap
+         * @param bh BitHeap instance, where the partial results form the multiplier tiles should compressed
+         * @param solution list of the placed tiles with their parametrization and anchor point
+         * @param bitheapLSBWeight weight (2^bitheapLSBWeight) of the LSB that should be compressed on BH. It is supposed to be 0 for regular multipliers, but can be higher for truncated multipliers.
+         * @return none
+         */
 		void branchToBitheap(BitHeap* bh, list<TilingStrategy::mult_tile_t> &solution , unsigned int bitheapLSBWeight);
 
-        void checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned int guardBits);
+        /**
+         * @brief Checks if a tiling for a truncated multiplier meets the error budget as required for faithfulness
+         * @param solution list of the placed tiles with their parametrization and anchor point
+         * @param guardBits the number of bits below the output LSB that we need to keep in the summation
+         * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
+         * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
+         * @return none
+         */
+        mpz_class checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned int guardBits, mpz_class errorBudget, mpz_class constant);
+
+        /**
+         * @brief Calculate the LSB of the BitHeap required to maintain faithfulness, so that unnecessary LSBs to meet the error budget of multiplier tiles can be omitted from compression
+         * @param solution list of the placed tiles with their parametrization and anchor point
+         * @param guardBits the number of bits below the output LSB that we need to keep in the summation
+         * @param errorBudget maximal permissible weight of the sum of the omitted partial products (as they would appear in an array multiplier)
+         * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
+         * @return none
+         */
+        int calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant, mpz_class actualTruncError);
     };
 
 }

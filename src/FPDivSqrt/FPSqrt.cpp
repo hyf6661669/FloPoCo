@@ -46,6 +46,16 @@ namespace flopoco{
 
 		uniqueName_ = name.str();
 
+		if(method==0) {
+			REPORT(0, "Floating-point square root using plain restoring algorithm");
+		}
+		else if(method==1) {
+			REPORT(0, "Floating-point square root using SRT2 algorithm");
+		}
+		else  {
+			THROWERROR("Wrong value passed to parameter: method=" << method);
+		}
+
 		// -------- Parameter set up -----------------
 
 		addFPInput ("X", wE, wF);
@@ -87,8 +97,6 @@ namespace flopoco{
 		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
 			int maxstep=wF+1;
 			for(int i=1; i<=maxstep; i++) {
-				double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
-				REPORT(2, "estimated delay for stage "<< i << " is " << stageDelay << "s");
 				vhdl << tab << "-- Step " << i << endl;
 				string TwoRim1 = "R" + to_string(i-1) + "s";
 				string Ti = join("T", i);
@@ -106,11 +114,12 @@ namespace flopoco{
 				if(i <= wF) {
 					vhdl << tab << declare(TwoRim1L,wF+4-subsize) << " <= "  << TwoRim1 << range(wF+4-subsize-1, 0) << ";" << endl;
 				}
-				vhdl << tab << declare(Ti, subsize) << " <= " << TwoRim1H << " - (\"0\" & "<< Sim1 << " & \"01\"); -- tentative subtraction "<< endl;
+				vhdl << tab << declare(getTarget()->adderDelay(subsize), Ti, subsize)
+						 << " <= " << TwoRim1H << " - (\"0\" & "<< Sim1 << " & \"01\"); -- tentative subtraction "<< endl;
 				vhdl << tab << declare(di) << " <= not " << Ti << of(subsize-1) << "; -- next digit"<< endl;
 				vhdl << tab << declare(Si, i+1) << " <= " << Sim1 << " & " << di << "; "<< endl;
 				string Rih = "R" + to_string(i) + "_h";
-				vhdl << tab << declare(Rih, subsize-1)
+				vhdl << tab << declare(getTarget()->logicDelay(), Rih, subsize-1)
 						 << " <= " << Ti << range(subsize-2,0)
 						 << "   when " << di << "= '1' else" << endl
 						 << tab << "       " << TwoRim1H << range(subsize-2,0) <<"; " << endl;
@@ -339,7 +348,7 @@ namespace flopoco{
 												 "",
 												 "wE(int): exponent size in bits; \
 wF(int): mantissa size in bits; \
-method(int)=1: 0 for plain restoring, 1 for Jérémie's non-restoring",
+method(int)=1: 0 for plain restoring, 1 for SRT2 method taken from Detrey's FPLibrary",
 												 "",
 												 FPSqrt::parseArguments,
 												 FPSqrt::unitTest

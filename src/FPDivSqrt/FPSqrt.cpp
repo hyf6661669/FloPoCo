@@ -37,8 +37,8 @@ namespace flopoco{
 #define DEBUGVHDL 0
 	//#define LESS_DSPS
 
-	FPSqrt::FPSqrt(OperatorPtr parentOp, Target* target, int wE, int wF) :
-		Operator(parentOp,target), wE(wE), wF(wF) {
+	FPSqrt::FPSqrt(OperatorPtr parentOp, Target* target, int wE_, int wF_, int method_) :
+		Operator(parentOp,target), wE(wE_), wF(wF_), method(method_) {
 
 		ostringstream name;
 
@@ -52,74 +52,146 @@ namespace flopoco{
 		addFPOutput("R", wE, wF);
 
 
-		// Digit-recurrence implementation recycled from FPLibrary
-		//cout << "   DDDD" <<  getTarget()->adderDelay(10) << "  " <<  getTarget()->localWireDelay() << "  " << getTarget()->lutDelay();
 		vhdl << tab << declare("fracX", wF) << " <= X" << range(wF-1, 0) << "; -- fraction"  << endl;
 		vhdl << tab << declare("eRn0", wE) << " <= \"0\" & X" << range(wE+wF-1, wF+1) << "; -- exponent" << endl;
 		vhdl << tab << declare("xsX", 3) << " <= X"<< range(wE+wF+2, wE+wF) << "; -- exception and sign" << endl;
 
 		vhdl << tab << declare("eRn1", wE) << " <= eRn0 + (\"00\" & " << rangeAssign(wE-3, 0, "'1'") << ") + X(" << wF << ");" << endl;
 
-		vhdl << tab << declare(getTarget()->lutDelay(),
-													 "R0", wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
-		     << tab << "       \"1101\" & fracX; -- pre-normalization" << endl;
+
+		
+		if(method==0) {
+			vhdl << tab << "-- now implementing the recurrence: d_i has position -i " << endl;
+			// R1 = 2R0 - 2S0 -2^-1 d_0
+			vhdl << tab << "--  this is a binary restoring algorithm, see e.g. Parhami book 2nd ed. p. 438" << endl;
+			vhdl << tab << "--  recurrence is R_i = 2R_{i-1} -2d_iS_{i-1} - 2^{-i}di^2  for i in {1..n}" << endl;
+			vhdl << tab << "--  so try  T_i = 2R_{i-1} -2S_{i-1} - 2^{-i} " << endl;
+			vhdl << tab << "--  If T_i>=0 then d_{i}=1 and R_i=T_i " << endl;
+			vhdl << tab << "--  If T_i<0 then d_{i}=0 and R_i=2R_{i-1} " << endl;
+			vhdl << tab << "--  this is a binary restoring algorithm, see e.g. Parhami book 2nd ed. p. 438" << endl;
+			// R_i has a constant size: wF+1+1+1 (implicit bit, + norm bit + round bit), format ufix(1,-wF-1)
+			// S_i has size i+1  e.g. S0 = 1, format ufix(0,-i);
+			// d_i \in |{0,1\}  has position -i in S_i
+			// 2S_{i-1} has format ufix(1,-i+2)
+			// d_i^2 == d_i is added at position -i
+			// so tentative subtrahand is  2S_{i-1} + 2^{-i}    is   2S_{i-1} 01, format ufix(1,-i)  
+			// but subtraction has result on sfix(2,-wF-1) to keep the sign,
+			// so effective subtraction on format sfix(2, -i) : size i+3 
+			vhdl << tab << " -- initialization " << endl;
+			vhdl << tab << declare("d0") << " <= '1';" << endl;
+			vhdl << tab << declare("S0", 1) << " <= \"1\";" << endl;
+			vhdl << tab << declare(getTarget()->lutDelay(), "R0", wF+3)
+					 << " <= \"00\" & fracX & \"0\" when X(" << wF << ") = '1' else   -- parity of EX-E0 is opposite to that of EX" << endl
+					 << tab << "       fracX"<<of(wF-1) <<" & (not fracX"<<of(wF-1) <<") & fracX" << range(wF-2,0) << " & \"00\"; -- pre-normalization" << endl;
 		//		vhdl << tab << declare(join("d",wF+3)) << " <= '0';" << endl;
 		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
+			int maxstep=wF+1;
+			for(int i=1; i<=maxstep; i++) {
+				double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
+				REPORT(2, "estimated delay for stage "<< i << " is " << stageDelay << "s");
+				vhdl << tab << "-- Step " << i << endl;
+				string TwoRim1 = "R" + to_string(i-1) + "s";
+				string Ti = join("T", i);
+				string di = join("d", i);
+				string Ri = join("R", i);
+				string Rim1 = join("R", i-1);
+				string TwoRim1H = TwoRim1 + "_h";
+				string TwoRim1L = TwoRim1 + "_l";
+				string Si = join("S", i);
+				string Sim1 = join("S", i-1);
 
-		vhdl << tab << "-- now implementing the recurrence " << endl;
-		vhdl << tab << "--  w_{i} = 2w_{i-1} -2s_{i}S_{i-1} - 2^{-i-1}s_{i}^2  for i in {1..n}" << endl;
-		vhdl << tab << "--  this is a binary non-restoring algorithm, see e.g. Parhami book 2nd ed. p. 441" << endl;
-		int maxstep=wF+2;
-		for(int i=1; i<=maxstep; i++) {
-		  double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
-			REPORT(2, "estimated delay for stage "<< i << " is " << stageDelay << "s");
-			// was: int i = wF+3-step; // to have the same indices as FPLibrary
-		  vhdl << tab << "-- Step " << i << endl;
-		  string di = join("d", i);
-		  string xi = "R" + to_string(i-1) + "s";
-		  string wi = join("R", i);
-		  string wip = join("R", i-1);
-		  string si = join("S", i);
-		  string sip = join("S", i-1);
-		  //			string zs = join("zs", i);
-		  string ds = join("Rupdate", i);
-		  string xh = xi + "_h";
-		  string xl = xi + "_l";
-		  string wh = "R" + to_string(i) + "_h";
-		  vhdl << tab << declare(di) << " <= "<< wip << "("<< wF+3<<"); -- sign bit (0 means digit +1, 1 means digit -1)" << endl;
-		  vhdl << tab << declare(xi,wF+5) << " <= " << wip << " & \"0\";" << endl;
-		  vhdl << tab << declare(xh,i+3) << " <= " << xi << range(wF+4, wF+2-i) << ";" << endl;
-		  if(i <= wF+1) {
-				vhdl << tab << declare(xl,wF+2-i) << " <= "  << xi << range(wF+1-i, 0) << ";" << endl;
-			}
-		  vhdl << tab << declare(ds,i+3) << " <=  \"0\" & ";
-		  if (i>1)
-		    vhdl 	<< sip << " & ";
-		  vhdl << " (not " << di << ") & " << di << " & \"1\"; -- in the add/sub below, this will always add 011" << endl;
-		  vhdl << tab <<  declare(stageDelay, wh, i+3) << " <=   " << xh << " - " << ds << " when " << di << "='0'" << endl
-		       << tab << tab << "  else " << xh << " + " << ds << ";" << endl;
-		  vhdl << tab << declare(wi, wF+4) << " <= " << wh << range(i+1,0);
-		  if(i <= wF+1)
-		    vhdl << " & " << xl << ";" << endl;
-		  else
-		    vhdl << ";" << endl;
-		  vhdl << tab << declare(si, i) << " <= ";
-		  if(i==1)
-		    vhdl << "\"\" & (not " << di << ") ;"<< endl;
-		  else
-		    vhdl << sip /*<< range(i-1,1)*/ << " & not " << di << "; -- here -1 becomes 0 and 1 becomes 1"<< endl;
+				int subsize=i+3; // this is a sfix(2,-i)
+				vhdl << tab << declare(TwoRim1,wF+4) << " <= " << Rim1 << " & \"0\";" << endl;
+				vhdl << tab << declare(TwoRim1H,subsize) << " <= " << TwoRim1 << range(wF+4-1, wF+4-subsize) << ";" << endl;
+				if(i <= wF) {
+					vhdl << tab << declare(TwoRim1L,wF+4-subsize) << " <= "  << TwoRim1 << range(wF+4-subsize-1, 0) << ";" << endl;
+				}
+				vhdl << tab << declare(Ti, subsize) << " <= " << TwoRim1H << " - (\"0\" & "<< Sim1 << " & \"01\"); -- tentative subtraction "<< endl;
+				vhdl << tab << declare(di) << " <= not " << Ti << of(subsize-1) << "; -- next digit"<< endl;
+				vhdl << tab << declare(Si, i+1) << " <= " << Sim1 << " & " << di << "; "<< endl;
+				string Rih = "R" + to_string(i) + "_h";
+				vhdl << tab << declare(Rih, subsize-1)
+						 << " <= " << Ti << range(subsize-2,0)
+						 << "   when " << di << "= '1' else" << endl
+						 << tab << "       " << TwoRim1H << range(subsize-2,0) <<"; " << endl;
+				vhdl << tab << declare(Ri, wF+3)
+						 << " <= " << Rih  << (i <= wF? " & " + TwoRim1L: "") <<"; " << endl;
+				
+			} // end  digit iteration
+
+			vhdl << tab << declare(target->lutDelay(), "fR", wF) << " <= "<< join("S", maxstep) <<range(wF, 1) << ";-- removing leading 1" << endl;
+			vhdl << tab << declare("round") << " <= " << join("d", maxstep) << "; -- round bit" << endl;
+
 		}
-		string dfinal=join("d", maxstep+1);
-		vhdl << tab << declare(dfinal) << " <= "<< join("R", maxstep) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
-		vhdl << tab << declare("mR", wF+3) << " <= "<< join("S", maxstep)<<" & not "<<dfinal<<"; -- result significand" << endl;
 
-		// end of component FPSqrt_Sqrt in fplibrary
-		vhdl << tab << declare(target->lutDelay(), "fR", wF+1) << " <= mR" <<range(wF, 0) << ";-- removing leading 1" << endl;
-		vhdl << tab << declare("round") << " <= fR(0); -- round bit" << endl;
 
-		vhdl << tab << declare(target->adderDelay(wF),
-													 "fRn2", wF) << " <= fR" << range(wF, 1) <<" + (" << rangeAssign(wF-1, 1, "'0'") << " & round); -- rounding sqrt never changes exponents " << endl;
-		vhdl << tab << declare("Rn2", wE+wF) << " <= eRn1 & fRn2;" << endl;
+
+		else if(method==1) {
+		// Digit-recurrence implementation recycled from FPLibrary: works better!
+		
+			vhdl << tab << declare(getTarget()->lutDelay(),
+														 "R0", wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
+					 << tab << "       \"1101\" & fracX; -- pre-normalization" << endl;
+		//		vhdl << tab << declare(join("d",wF+3)) << " <= '0';" << endl;
+		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
+			vhdl << tab << "-- now implementing the recurrence " << endl;
+			vhdl << tab << "--  w_{i} = 2w_{i-1} -2s_{i}S_{i-1} - 2^{-i-1}s_{i}^2  for i in {1..n}" << endl;
+			vhdl << tab << "--  this is a binary non-restoring algorithm, see e.g. Parhami book 2nd ed. p. 441" << endl;
+			int maxstep=wF+2;
+			for(int i=1; i<=maxstep; i++) {
+				double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
+				REPORT(2, "estimated delay for stage "<< i << " is " << stageDelay << "s");
+				// was: int i = wF+3-step; // to have the same indices as FPLibrary
+				vhdl << tab << "-- Step " << i << endl;
+				string di = join("d", i);
+				string TwoRim1 = "R" + to_string(i-1) + "s";
+				string Ri = join("R", i);
+				string Rim1 = join("R", i-1);
+				string Si = join("S", i);
+				string Sim1 = join("S", i-1);
+				//			string zs = join("zs", i);
+				string ds = join("Rupdate", i);
+				string TwoRim1H = TwoRim1 + "_h";
+				string TwoRim1L = TwoRim1 + "_l";
+				string wh = "R" + to_string(i) + "_h";
+				vhdl << tab << declare(di) << " <= "<< Rim1 << "("<< wF+3<<"); -- sign bit (0 means digit +1, 1 means digit -1)" << endl;
+				vhdl << tab << declare(TwoRim1,wF+5) << " <= " << Rim1 << " & \"0\";" << endl;
+				vhdl << tab << declare(TwoRim1H,i+3) << " <= " << TwoRim1 << range(wF+4, wF+2-i) << ";" << endl;
+				if(i <= wF+1) {
+					vhdl << tab << declare(TwoRim1L,wF+2-i) << " <= "  << TwoRim1 << range(wF+1-i, 0) << ";" << endl;
+				}
+				vhdl << tab << declare(ds,i+3) << " <=  \"0\" & ";
+				if (i>1)
+					vhdl 	<< Sim1 << " & ";
+				vhdl << " (not " << di << ") & " << di << " & \"1\"; -- in the add/sub below, this will always add 011" << endl;
+				vhdl << tab <<  declare(stageDelay, wh, i+3) << " <=   " << TwoRim1H << " - " << ds << " when " << di << "='0'" << endl
+						 << tab << tab << "  else " << TwoRim1H << " + " << ds << ";" << endl;
+				vhdl << tab << declare(Ri, wF+4) << " <= " << wh << range(i+1,0);
+				if(i <= wF+1)
+					vhdl << " & " << TwoRim1L << ";" << endl;
+				else
+					vhdl << ";" << endl;
+				vhdl << tab << declare(Si, i) << " <= ";
+				if(i==1)
+					vhdl << "\"\" & (not " << di << ") ;"<< endl;
+				else
+					vhdl << Sim1 /*<< range(i-1,1)*/ << " & not " << di << "; -- here -1 becomes 0 and 1 becomes 1"<< endl;
+			}
+			string dfinal=join("d", maxstep+1);
+			vhdl << tab << declare(dfinal) << " <= "<< join("R", maxstep) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
+			vhdl << tab << declare("mR", wF+3) << " <= "<< join("S", maxstep)<<" & not "<<dfinal<<"; -- result significand" << endl;
+
+			// end of component FPSqrt_Sqrt in fplibrary
+			vhdl << tab << declare("fR", wF) << " <= mR" <<range(wF, 1) << ";-- removing leading 1" << endl;
+			vhdl << tab << declare("round") << " <= mR(0); -- round bit" << endl;
+
+
+		} // End method select
+
+
+			vhdl << tab << declare(target->adderDelay(wF),
+														 "fRrnd", wF) << " <= fR" <<" + (" << rangeAssign(wF-1, 1, "'0'") << " & round); -- rounding sqrt never changes exponents " << endl;
+		vhdl << tab << declare("Rn2", wE+wF) << " <= eRn1 & fRrnd;" << endl;
 
 		vhdl << tab << "-- sign and exception processing" << endl;
 		vhdl << tab <<  "with xsX select" << endl
@@ -178,6 +250,26 @@ namespace flopoco{
 
 
 
+		void FPSqrt::buildStandardTestCases(TestCaseList* tcl){
+		TestCase *tc;
+
+		// Regression tests
+		tc = new TestCase(this);
+		tc->addFPInput("X", 1.0);
+		emulate(tc);
+		tcl->add(tc);
+
+		tc = new TestCase(this);
+		tc->addFPInput("X", 25.0);
+		emulate(tc);
+		tcl->add(tc);
+
+
+
+	}
+
+
+
 
 		// One test out of 4 fully random (tests NaNs etc)
 		// All the remaining ones test positive numbers.
@@ -205,7 +297,9 @@ namespace flopoco{
 			UserInterface::parseStrictlyPositiveInt(args, "wE", &wE);
 			int wF;
 			UserInterface::parseStrictlyPositiveInt(args, "wF", &wF);
-			return new FPSqrt(parentOp, target, wE, wF);
+			int method;
+			UserInterface::parsePositiveInt(args, "method", &method);
+			return new FPSqrt(parentOp, target, wE, wF, method);
 		}
 
 
@@ -244,7 +338,8 @@ namespace flopoco{
 												 "BasicFloatingPoint", // categories
 												 "",
 												 "wE(int): exponent size in bits; \
-wF(int): mantissa size in bits",
+wF(int): mantissa size in bits; \
+method(int)=1: 0 for plain restoring, 1 for Jérémie's non-restoring",
 												 "",
 												 FPSqrt::parseArguments,
 												 FPSqrt::unitTest

@@ -366,7 +366,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                     nvarName << "k_" << setfill('0') << setw(dpSt) << s << "_" << setfill('0') << setw(dpK) << e << "_" << setfill('0') << setw(dpC) << c;      //for final FFs or placeholder for 2-input ripple carry adder
                     //std::cout << nvarName.str() << endl;
                     ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
-                    obj.add(tempV, (e == possibleCompressors.size()-1)?0.5:1);    //append variable to cost function, r.c.a.-area (cost) is 1 6LUT, FFs cost 0.5LUT
+                    obj.add(tempV, (e == possibleCompressors.size()-1)?0.0:1);    //append variable to cost function, r.c.a.-area (cost) is 1 6LUT, FFs cost 0.0LUT
                     int takes_carry = (e == possibleCompressors.size() && bitheap->final_add_height == 2)?1:0;      //The dual input adder can process an additional carry input bit in its LSB column
                     bitsinCurrentColumn[c].add(tempV, ((e == possibleCompressors.size()-1)?1: (c == prodWidth) ? 0 : (bitheap->final_add_height + takes_carry) ));   //FFs remove only one bit from current stage, but the ripple carry adder two, the front element of ripple carry adder does not remove any bit but just provides the carry
                     bitsinNextColumn[c + 0].add(tempV, 1);
@@ -473,7 +473,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
             //BasicCompressor *newCompressor;
             //int col0=1;
             //newVect.push_back(col0);
-            BasicCompressor *newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), vector<int> {1}, 0.5, "combinatorial", true);
+            BasicCompressor *newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), vector<int> {1}, 0.0, "combinatorial", true);
             possibleCompressors.push_back(newCompressor);
 
             flipflop = newCompressor;

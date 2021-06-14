@@ -329,7 +329,7 @@ namespace flopoco{
 					c3Term = c3Term + 4 * newBitsCountVars[z][c];
 				}
 				c3Term = c3Term + LARGE_NUMBER * stageVars[s];
-				ScaLP::Constraint c3Constraint = c3Term <= LARGE_NUMBER + 2;
+				ScaLP::Constraint c3Constraint = c3Term <= LARGE_NUMBER + 3;
 				c3Constraint.name = consName.str();
 				problemSolver->addConstraint(c3Constraint);
 
@@ -380,7 +380,7 @@ namespace flopoco{
 			BasicCompressor *newCompressor;
 			int col0=1;
 			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 0.5, "combinatorial", true);
+			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 0.0, "combinatorial", true);
 			possibleCompressors.push_back(newCompressor);
 
 			flipflop = newCompressor;

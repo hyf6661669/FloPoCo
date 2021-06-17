@@ -184,6 +184,7 @@ namespace flopoco {
                 for(int m=2; m<20; m++) {
                     paramList.push_back(make_pair("wIn",to_string(wIn)));
                     paramList.push_back(make_pair("mod",to_string(m)));
+                    paramList.push_back(make_pair("mode","singleBitSeVector"));
                     paramList.push_back(make_pair("TestBench n=",to_string(100)));
                     testStateList.push_back(paramList);
 

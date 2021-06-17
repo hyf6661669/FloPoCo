@@ -65,6 +65,8 @@ namespace flopoco{
 		needToApplyNegativeSignExtension = false;
 		int currentPossibleMaxRange = 0;
 		int extraRangeToSubtract = 0;
+		int currentRangeMaxRange = 0;
+		int currentOnlyPositiveMaxRange = 0;
 		string compressionMode = bitheap->mode;
 
         long long oneLL = static_cast<long long>(1);
@@ -72,6 +74,7 @@ namespace flopoco{
             //moduloRangeMax += (oneLL << i);
             currentRanges[i] = (oneLL << i);
             currentPossibleMaxRange += (oneLL << i);
+            currentRangeMaxRange += (oneLL << i);
         }
 
         if (compressionMode.find("msbcases") != string::npos) {
@@ -105,7 +108,9 @@ namespace flopoco{
                 }
 
                 if (compressionMode.find("singlebit") != string::npos) {
+                    currentRangeMaxRange = moduloRangeMax;
                     moduloRangeMax -= extraRangeToSubtract;
+                    currentOnlyPositiveMaxRange = moduloRangeMax;
                 }
 
                 if (compressionMode.find("sevector") != string::npos) {
@@ -157,7 +162,7 @@ namespace flopoco{
 
 
                     for(unsigned int c = 0; c < bitAmount[s].size(); c++){
-                        int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, true, useNegativeMSBValue);
+                        int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, true, useNegativeMSBValue).first;
                         cerr << "set range change " << rangeChange << " for column " << c << endl;
                         if (c < currentRanges.size()) {
                             currentRanges[c] = rangeChange;
@@ -172,7 +177,6 @@ namespace flopoco{
                     // place PseudoCompressors where column height = 1
                     // TODO: leave reachedModuloRange here?
                     if (compressionMode.find("singlebit") != string::npos && !reachedModuloRange) {
-                        cerr << "placing single bit pseudo comps" << endl;
                         bool useNegativeMSBValue = false;
 
                         if (compressionMode.find("sevector") == string::npos) {
@@ -180,25 +184,27 @@ namespace flopoco{
                                 useNegativeMSBValue = true;
                             }
                         }
+                        vector<int> bitDistributionStage = bitAmount[s];
+                        vector<bool> pseudoCompSet;
+                        vector<bool> invertedRangeBits;
                         for(unsigned int c = 0; c < bitAmount[s].size(); c++){
                             if (bitAmount[s][c] == 1) {
-                                int rangeChange = placePseudoCompressor(s, c, requiredBitsForRange, false,  useNegativeMSBValue);
-                                cerr << "set range change 2 " << rangeChange << " for column " << c << endl;
-                                int bitWeight = 1 << c;
-                                int newRangeChange = bitWeight - rangeChange;
-                                cerr << "newRangeChange " << newRangeChange << endl;
-                                extraRangeToSubtract += newRangeChange;
-                                cerr << "extraRangeToSubtract " << extraRangeToSubtract << endl;
-//                                while (newRangeChange > 0) {
-//                                    for (int i = 0; i < currentRanges.size(); i++) {
-//                                        if (newRangeChange > 0 && currentRanges[i] > 0) {
-//                                            currentRanges[i] -= 1;
-//                                            newRangeChange--;
-//                                        }
-//                                    }
-//                                }
+                                pair<int,bool> resultPlacedComp = placePseudoCompressor(s, c, requiredBitsForRange, false,  useNegativeMSBValue);
+                                cerr << "placed single bit pseudo comp " << resultPlacedComp.first << " at " << c << endl;
+
+                                pseudoCompSet.push_back(true);
+                                if (resultPlacedComp.second) {
+                                    invertedRangeBits.push_back(true);
+                                } else {
+                                    invertedRangeBits.push_back(false);
+                                }
+                            } else {
+                                pseudoCompSet.push_back(false);
+                                invertedRangeBits.push_back(false);
                             }
                         }
+                        int newRangeChange = getMaxRangeForStage(currentOnlyPositiveMaxRange, currentRanges, bitDistributionStage, pseudoCompSet, invertedRangeBits);
+                        extraRangeToSubtract = currentRangeMaxRange - newRangeChange;
                     }
 
                     bool found = true;
@@ -331,10 +337,11 @@ namespace flopoco{
         return maxHeightBitAmount == 1;
 	}
 
-    int MaxEfficiencyCompressionStrategy::placePseudoCompressor(int s, int column, int requiredBitsForRange, bool allowDeletion, bool useNegativeMSBValue) {
+    pair<int,bool> MaxEfficiencyCompressionStrategy::placePseudoCompressor(int s, int column, int requiredBitsForRange, bool allowDeletion, bool useNegativeMSBValue) {
 
         BasicCompressor* compressor = nullptr;
         bool found = false;
+        bool invertedBitComp = false;
 
         if (useNegativeMSBValue && column == requiredBitsForRange - 1 && bitAmount[s][column] > 0) {
             // make new compressor for negative MSB
@@ -393,6 +400,7 @@ namespace flopoco{
                                 currentRange = possibleCompressors[i]->range_change;
                                 if (bitheap->mode.find("sevector") != string::npos) {
                                     compressor = createCompWithoutSignExtension(possibleCompressors[i]);
+                                    invertedBitComp = true;
                                 } else {
                                     compressor = possibleCompressors[i];
                                 }
@@ -421,9 +429,9 @@ namespace flopoco{
                 }
             }
 
-            return compressor->range_change;
+            return make_pair(compressor->range_change, invertedBitComp);
         } else {
-            return 0;
+            return make_pair(0, false);
         }
 	}
 
@@ -474,5 +482,80 @@ namespace flopoco{
         }
 
         return currentMaxRange;
+	}
+
+    int MaxEfficiencyCompressionStrategy::getMaxRangeForStage(int maxValue, vector<int> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits) {
+	    vector<RangeEntry> actualRanges;
+
+        for (int i = 0; i < bitDistribution.size(); ++i) {
+            for (int j = 0; j < bitDistribution[i]; ++j) {
+                RangeEntry rangeEntry;
+                rangeEntry.isSet = false;
+
+                if (invertedRangeBits[i]) {
+                    rangeEntry.weight = 0;
+                } else {
+                    rangeEntry.weight = 1 << i;
+                }
+
+                if (setPseudoComps[i]) {
+                    rangeEntry.range = currentRanges[i];
+                } else {
+                    rangeEntry.range = 1 << i;
+                }
+                actualRanges.push_back(rangeEntry);
+            }
+        }
+
+        return maxRangeForPosition(actualRanges, actualRanges.size()-1, maxValue);
+	}
+
+	int MaxEfficiencyCompressionStrategy::maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, int maxValue) {
+	    int maxWeightRange = 0;
+        int minWeightRange = 0;
+
+        for (int i = 0; i < actualRanges.size(); ++i) {
+            if (i > currentPosition) {
+                maxWeightRange += actualRanges[i].isSet ? actualRanges[i].weight : 0;
+                minWeightRange += actualRanges[i].isSet ? actualRanges[i].weight : 0;
+            } else {
+                maxWeightRange += actualRanges[i].weight;
+                minWeightRange += 0;
+            }
+        }
+
+        // break 1: cannot be higher than maxValue
+        if (maxWeightRange <= maxValue) {
+            int rangeNow = 0;
+            for (int i = 0; i < actualRanges.size(); ++i) {
+                if (i > currentPosition) {
+                    rangeNow += actualRanges[i].isSet ? actualRanges[i].range : 0;
+                } else {
+                    rangeNow += actualRanges[i].range;
+                }
+            }
+            return rangeNow;
+        }
+
+        // break 2: maxValue not in range
+        if (maxValue > maxWeightRange || maxValue < minWeightRange) {
+            return -1;
+        }
+
+
+        int rangeZero = -1;
+        int rangeOne = -1;
+        int newPosition = currentPosition-1;
+
+	    // case 0
+        actualRanges[currentPosition].isSet = false;
+        rangeZero = maxRangeForPosition(actualRanges, newPosition, maxValue);
+
+
+	    // case 1
+        actualRanges[currentPosition].isSet = true;
+        rangeOne = maxRangeForPosition(actualRanges, newPosition, maxValue);
+
+        return max(rangeZero, rangeOne);
 	}
 }

@@ -150,7 +150,7 @@ namespace flopoco {
          * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
          * @return none
          */
-        mpz_class checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned int guardBits, mpz_class errorBudget, mpz_class constant);
+        mpz_class checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned int guardBits, const mpz_class& errorBudget, const mpz_class& constant) const;
 
         /**
          * @brief Calculate the LSB of the BitHeap required to maintain faithfulness, so that unnecessary LSBs to meet the error budget of multiplier tiles can be omitted from compression
@@ -160,7 +160,17 @@ namespace flopoco {
          * @param constant to recenter the truncation error around 0 since it can otherwise only be negative, since there are only partial products left out. This allows a larger error, so more products can be omitted
          * @return none
          */
-        int calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant, mpz_class actualTruncError);
+        static int calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, const mpz_class& errorBudget, const mpz_class& constant, const mpz_class& actualTruncError);
+
+        /**
+         * @brief calculate the width of the diagonal of a rectangle, that is equivalent to the number of partial product bits in the hypothetical resulting bitheap of a Bough-Wooley-Multiplier
+         * @param wX width of the rectangle
+         * @param wY height of the rectangle
+         * @param col sum of the coordinates (x+y) that describe the diagonal
+         * @param wFull full product width of the rectangular multiplier
+         * @return number of partial products in the diagonal
+         */
+        static unsigned int widthOfDiagonalOfRect(unsigned int wX, unsigned int wY, unsigned int col, unsigned wFull);
     };
 
 }

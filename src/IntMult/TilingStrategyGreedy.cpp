@@ -23,7 +23,9 @@ namespace flopoco {
 			bool use2xk,
 			bool useSuperTiles,
 			bool useKaratsuba,
-			MultiplierTileCollection& tiles):TilingStrategy(wX, wY, wOut, signedIO, bmc),
+			MultiplierTileCollection& tiles,
+            unsigned guardBits,
+            unsigned keepBits):TilingStrategy(wX, wY, wOut, signedIO, bmc),
 								prefered_multiplier_{prefered_multiplier},
 								occupation_threshold_{occupation_threshold},
 								max_pref_mult_{maxPrefMult},
@@ -31,7 +33,9 @@ namespace flopoco {
 								use2xk_{use2xk},
 								useSuperTiles_{useSuperTiles},
 								useKaratsuba_{useKaratsuba},
-								tileCollection_{tiles}
+								tileCollection_{tiles},
+                                guardBits_{guardBits},
+                                keepBits_{keepBits}
 	{
 		//copy vector
 		tiles_ = tiles.BaseTileCollection;
@@ -53,10 +57,11 @@ namespace flopoco {
 		//Set max DSPs to max. possible value in default case, that DSPs are not limited (maxDSP=(-1))
         max_pref_mult_ = (max_pref_mult_ < 0)?INT_MAX:max_pref_mult_;
 
-		truncated_ = wOut != IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
-		if(truncated_) {
-			truncatedRange_ = (IntMultiplier::prodsize(wX, wY, signedIO, signedIO) - 1) - wOut;
-		}
+		prodsize_ = IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
+		truncated_ = wOut != prodsize_;
+/*		if(truncated_) {
+			truncatedRange_ = (prodsize_ - 1) - wOut;
+		}*/
 	}
 
 	void TilingStrategyGreedy::solve() {
@@ -64,8 +69,10 @@ namespace flopoco {
 		Field field(wX, wY, signedIO, fieldState);
 
 		if(truncated_) {
-			field.setTruncated(truncatedRange_, fieldState);
+			//field.setTruncated(truncatedRange_, fieldState);
+			field.setTruncated(wOut, prodsize_, guardBits_, keepBits_,  fieldState);
 		}
+		field.printField();
 
 		double cost = 0.0;
 		unsigned int area = 0;
@@ -74,6 +81,7 @@ namespace flopoco {
 		greedySolution(fieldState, &solution, nullptr, cost, area, usedDSPBlocks);
 		cout << "Total cost: " << cost << " " << usedDSPBlocks << endl;
 		cout << "Total area: " << area << endl;
+        field.printField();
 	}
 
 	bool TilingStrategyGreedy::greedySolution(BaseFieldState& fieldState, list<mult_tile_t>* solution, queue<unsigned int>* path, double& cost, unsigned int& area, unsigned int& usedDSPBlocks, double cmpCost, vector<tuple<BaseMultiplierCategory*, BaseMultiplierParametrization, multiplier_coordinates_t>>* dspBlocks) {

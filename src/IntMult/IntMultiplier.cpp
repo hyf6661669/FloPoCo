@@ -123,41 +123,7 @@ namespace flopoco {
 			tilingStrategy = new TilingStrategyGreedy(
 					wX,
 					wY,
-					wOut + guardBits,
-					signedIO,
-					&baseMultiplierCollection,
-					baseMultiplierCollection.getPreferedMultiplier(),
-					dspOccupationThreshold,
-					maxDSP,
-					useirregular,
-					use2xk,
-					superTiles,
-					useKaratsuba,
-					multiplierTileCollection
-			);
-		}
-		else if(tilingMethod.compare("heuristicXGreedyTiling") == 0) {
-			tilingStrategy = new TilingStrategyXGreedy(
-					wX,
-					wY,
-					wOut + guardBits,
-					signedIO,
-					&baseMultiplierCollection,
-					baseMultiplierCollection.getPreferedMultiplier(),
-					dspOccupationThreshold,
-					maxDSP,
-					useirregular,
-					use2xk,
-					superTiles,
-					useKaratsuba,
-					multiplierTileCollection
-			);
-		}
-		else if(tilingMethod.compare("heuristicBeamSearchTiling") == 0) {
-			tilingStrategy = new TilingStrategyBeamSearch(
-					wX,
-					wY,
-					wOut + guardBits,
+					wOut,
 					signedIO,
 					&baseMultiplierCollection,
 					baseMultiplierCollection.getPreferedMultiplier(),
@@ -168,7 +134,47 @@ namespace flopoco {
 					superTiles,
 					useKaratsuba,
 					multiplierTileCollection,
-					beamRange
+                    guardBits,
+                    keepBits
+			);
+		}
+		else if(tilingMethod.compare("heuristicXGreedyTiling") == 0) {
+			tilingStrategy = new TilingStrategyXGreedy(
+					wX,
+					wY,
+					wOut,
+					signedIO,
+					&baseMultiplierCollection,
+					baseMultiplierCollection.getPreferedMultiplier(),
+					dspOccupationThreshold,
+					maxDSP,
+					useirregular,
+					use2xk,
+					superTiles,
+					useKaratsuba,
+					multiplierTileCollection,
+                    guardBits,
+                    keepBits
+			);
+		}
+		else if(tilingMethod.compare("heuristicBeamSearchTiling") == 0) {
+			tilingStrategy = new TilingStrategyBeamSearch(
+					wX,
+					wY,
+					wOut,
+					signedIO,
+					&baseMultiplierCollection,
+					baseMultiplierCollection.getPreferedMultiplier(),
+					dspOccupationThreshold,
+					maxDSP,
+					useirregular,
+					use2xk,
+					superTiles,
+					useKaratsuba,
+					multiplierTileCollection,
+					beamRange,
+                    guardBits,
+                    keepBits
 			);
 		} else if(tilingMethod.compare("optimal") == 0){
 			tilingStrategy = new TilingStrategyOptimalILP(
@@ -377,7 +383,8 @@ namespace flopoco {
         bool loop=true;
         while(loop){
             col++;                                                          //bitheap column
-            height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
+            //height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
+            height = widthOfDiagonalOfRect(wX, wY, col, wFull);             //number of partial products in column
             mpz_pow_ui(colweight.get_mpz_t(), mpz_class(2).get_mpz_t(), col-1);
             weightedSumOfTruncatedBits += mpz_class(height) * colweight;
             constant = errorBudget - colweight;
@@ -401,6 +408,16 @@ namespace flopoco {
             cout << "WARNING: errorBudget or constant exceeds the number range of uint64, use optiTrunc=0 or results will be faulty!" << endl;
         }*/
 
+    }
+
+    unsigned int IntMultiplier::widthOfDiagonalOfRect(unsigned wX, unsigned wY, unsigned col, unsigned wFull){
+        if(0 <= col && col <= min((int)wX, (int)wY)){
+            return col;
+        } else if(min((int)wX,(int)wY) < col && col <= max((int)wX, (int)wY)){
+            return min((int)wX,(int)wY);
+        } else {
+            return wFull-col;
+        }
     }
 
     /**
@@ -911,7 +928,7 @@ namespace flopoco {
 		return testStateList;
 	}
 
-    mpz_class IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant){
+    mpz_class IntMultiplier::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, const mpz_class& errorBudget, const mpz_class& constant) const{
         std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
 
         for(auto & tile : solution) {
@@ -932,9 +949,9 @@ namespace flopoco {
         truncError = mpz_class(0);
         for(int y = 0; y < wY; y++){
             for(int x = wX-1; 0 <= x; x--){
-                if(mulArea[x][y] == false)
+                if(!mulArea[x][y])
                     truncError += (mpz_class(1)<<(x+y));
-                cout << ((mulArea[x][y] == true)?1:0);
+                cout << (mulArea[x][y] ? 1 : 0);
             }
             cout << endl;
         }
@@ -954,7 +971,7 @@ namespace flopoco {
         return truncError;
 	}
 
-    int IntMultiplier::calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant, mpz_class actualTruncError){
+    int IntMultiplier::calcBitHeapLSB(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, const mpz_class& errorBudget, const mpz_class& constant, const mpz_class& actualTruncError){
         int lsbs[solution.size()], msbs[solution.size()], prunableBits[solution.size()], weight=0, nBits = 0, i=0;;
         for(auto & tile : solution) {
             auto &parameters = tile.first;

@@ -93,6 +93,7 @@ namespace flopoco
 				v.push_back("cyclone3");
 				v.push_back("cyclone4");
 				v.push_back("cyclone5");
+				v.push_back("genericasic");
 				return v;
 			}();
 
@@ -459,6 +460,7 @@ namespace flopoco
 				//					else if (targetFPGA=="cycloneiii" || targetFPGA=="cyclone3") target=new CycloneIII();
 				//					else if (targetFPGA=="cycloneiv" || targetFPGA=="cyclone4") target=new CycloneIV();
 				//				else if (targetFPGA=="cyclonev" || targetFPGA=="cyclone5") target=new CycloneV();
+				else if (targetFPGA=="genericasic") target=new GenericAsic();
 				else {
 					throw("ERROR: unknown target: " + targetFPGA);
 				}

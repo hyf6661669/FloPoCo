@@ -24,4 +24,6 @@
 #include "Targets/Kintex7.hpp"
 #include "Targets/VirtexUltrascalePlus.hpp"
 
+#include "Targets/GenericAsic.hpp"
+
 #endif //ALLTARGETSHEADERS_HPP

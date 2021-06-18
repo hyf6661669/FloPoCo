@@ -14,6 +14,7 @@ Targets/Zynq7000
 Targets/Kintex7
 Targets/VirtexUltrascalePlus
 Targets/StratixV
+Targets/GenericAsic
 AutoTest/AutoTest
 TestBenches/TestCase
 TestBenches/FPNumber

@@ -1231,125 +1231,159 @@ namespace flopoco{
 
 	void CompressionStrategy::generatePossibleCompressors()
 	{
-		int col0, col1;
+        int col0, col1;
+
+	    if (bitheap->getOp()->getTarget()->getID() == "GenericAsic"){
+	        // use only full adders and half adders
+            {
+                BasicCompressor *newCompressor;
+
+                newCompressor = createFullAdder();
+
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+            {
+                vector<int> newVect;
+                BasicCompressor *newCompressor;
+
+                col0 = 2;
+
+                newVect.push_back(col0);
+                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 1.0,
+                                                    CompressorType::Gpc, true);
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+	    } else {
 
 #if 0 // The generic alternative
-		//Generate all "workable" compressors for 2 columns
-		for(col0=maxCompressibleBits; col0>=3; col0--)
-			for(col1=col0; col1>=0; col1--)
-				if((col0 + col1<=maxCompressibleBits) && (intlog2(col0 + 2*col1)<=3))
-					{
-						vector<int> newVect;
+            //Generate all "workable" compressors for 2 columns
+            for(col0=maxCompressibleBits; col0>=3; col0--)
+                for(col1=col0; col1>=0; col1--)
+                    if((col0 + col1<=maxCompressibleBits) && (intlog2(col0 + 2*col1)<=3))
+                        {
+                            vector<int> newVect;
 
-						REPORT(DEBUG, "Generating compressor for col1=" << col1 <<", col0=" << col0);
+                            REPORT(DEBUG, "Generating compressor for col1=" << col1 <<", col0=" << col0);
 
-						newVect.push_back(col0);
-						newVect.push_back(col1);
-						Compressor* bc = new Compressor(op->getTarget(), newVect);
-						possibleCompressors.push_back(bc);
-					}
+                            newVect.push_back(col0);
+                            newVect.push_back(col1);
+                            Compressor* bc = new Compressor(op->getTarget(), newVect);
+                            possibleCompressors.push_back(bc);
+                        }
 
 #endif
 
-		//generate the compressors, in decreasing order
-		//  of their compression ratio
-		{
-			vector<int> newVect;
-			BasicCompressor *newCompressor;
+            //generate the compressors, in decreasing order
+            //  of their compression ratio
+            {
+                vector<int> newVect;
+                BasicCompressor *newCompressor;
 
-			col0=6;
+                col0 = 6;
 
-			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 3.0, CompressorType::Gpc, true);
-			//newCompressor->setShared();
-			possibleCompressors.push_back(newCompressor);
-		}
-		{
-			vector<int> newVect;
-			BasicCompressor *newCompressor;
+                newVect.push_back(col0);
+                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 3.0,
+                                                    CompressorType::Gpc, true);
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+            {
+                vector<int> newVect;
+                BasicCompressor *newCompressor;
 
-			col0=4;
-			col1=1;
+                col0 = 4;
+                col1 = 1;
 
-			newVect.push_back(col0);
-			newVect.push_back(col1);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
-			//newCompressor->setShared();
-			possibleCompressors.push_back(newCompressor);
-		}
-		{
-			vector<int> newVect;
-			BasicCompressor *newCompressor;
+                newVect.push_back(col0);
+                newVect.push_back(col1);
+                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0,
+                                                    CompressorType::Gpc, true);
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+            {
+                vector<int> newVect;
+                BasicCompressor *newCompressor;
 
-			col0=5;
+                col0 = 5;
 
-			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
-			//newCompressor->setShared();
-			possibleCompressors.push_back(newCompressor);
-		}
-		{
-			vector<int> newVect;
-			BasicCompressor *newCompressor;
+                newVect.push_back(col0);
+                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0,
+                                                    CompressorType::Gpc, true);
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+            {
+                vector<int> newVect;
+                BasicCompressor *newCompressor;
 
-			col0=3;
-			col1=1;
+                col0 = 3;
+                col1 = 1;
 
-			newVect.push_back(col0);
-			newVect.push_back(col1);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
-			//newCompressor->setShared();
-			possibleCompressors.push_back(newCompressor);
-		}
-		{
-			vector<int> newVect;
-			BasicCompressor *newCompressor;
+                newVect.push_back(col0);
+                newVect.push_back(col1);
+                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0,
+                                                    CompressorType::Gpc, true);
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+            {
+                vector<int> newVect;
+                BasicCompressor *newCompressor;
 
-			col0=4;
+                col0 = 4;
 
-			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
-			//newCompressor->setShared();
-			possibleCompressors.push_back(newCompressor);
-		}
-		{
-			vector<int> newVect;
-			BasicCompressor *newCompressor;
+                newVect.push_back(col0);
+                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0,
+                                                    CompressorType::Gpc, true);
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+            {
+                vector<int> newVect;
+                BasicCompressor *newCompressor;
 
-			col0=3;
-			col1=2;
+                col0 = 3;
+                col1 = 2;
 
-			newVect.push_back(col0);
-			newVect.push_back(col1);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0, CompressorType::Gpc, true);
-			//newCompressor->setShared();
-			possibleCompressors.push_back(newCompressor);
-		}
-		{
-			vector<int> newVect;
-			BasicCompressor *newCompressor;
+                newVect.push_back(col0);
+                newVect.push_back(col1);
+                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 2.0,
+                                                    CompressorType::Gpc, true);
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+            {
+                BasicCompressor *newCompressor;
 
-			col0=3;
-
-			newVect.push_back(col0);
-			newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 1.0, CompressorType::Gpc, true);
-			//newCompressor->setShared();
-			possibleCompressors.push_back(newCompressor);
-		}
-		if(bitheap->getOp()->getTarget()->useTargetOptimizations() && (bitheap->getOp()->getTarget()->getVendor() == "Xilinx"))
-		{
-			REPORT(DEBUG,"Adding target optimized GPCs for Xilinx FPGAs");
+                newCompressor = createFullAdder();
+                //newCompressor->setShared();
+                possibleCompressors.push_back(newCompressor);
+            }
+            if (bitheap->getOp()->getTarget()->useTargetOptimizations() &&
+                (bitheap->getOp()->getTarget()->getVendor() == "Xilinx")) {
+                REPORT(DEBUG, "Adding target optimized GPCs for Xilinx FPGAs");
 
 //          possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {6,0,6})); //outdated since (6,0,7;5) GPC
-			possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {7,0,6}));
-			possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {5,1,6}));
-			possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {3,2,6}));
-			possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {5,2,3,1}));
-			possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {5,1,4,1}));
+                possibleCompressors.push_back(
+                        new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {7, 0, 6}));
+                possibleCompressors.push_back(
+                        new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {5, 1, 6}));
+                possibleCompressors.push_back(
+                        new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {3, 2, 6}));
+                possibleCompressors.push_back(
+                        new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {5, 2, 3, 1}));
+                possibleCompressors.push_back(
+                        new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {5, 1, 4, 1}));
 //            possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {6,0,4,1})); //outdated since (1,4,0,7;5) GPC
-			possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {7,0,4,1}));
-			possibleCompressors.push_back(new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {7,1,1,2}));
-		}
+                possibleCompressors.push_back(
+                        new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {7, 0, 4, 1}));
+                possibleCompressors.push_back(
+                        new BasicXilinxGPC(bitheap->getOp(), bitheap->getOp()->getTarget(), {7, 1, 1, 2}));
+            }
+        }
 	}
 
 
@@ -1459,4 +1493,15 @@ namespace flopoco{
             return 0;                           //But the adder LSB can process 3 bits due to the Cin, but not more
         return 1;
     }
+
+    BasicCompressor* CompressionStrategy::createFullAdder() {
+	    int col0;
+        vector<int> newVect;
+
+        col0 = 3;
+
+        newVect.push_back(col0);
+        return new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 1.0,
+                                   CompressorType::Gpc, true);
+	}
 }

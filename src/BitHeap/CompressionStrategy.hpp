@@ -284,7 +284,8 @@ class BitheapPlotter;
 		string srcFileName;
 		string uniqueName_;
 
-
+    private:
+	    BasicCompressor* createFullAdder();
 	};
 }
 

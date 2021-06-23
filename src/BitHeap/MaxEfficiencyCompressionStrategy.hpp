@@ -41,7 +41,7 @@ class BitHeap;
         /**
          * computes the number of bits that are needed to represent a number in two's complement
          */
-        int reqBitsForRange2Complement(int min, int max);
+        int reqBitsForRange2Complement(long long min, long long max);
 
         /**
          * return true if the first remainder is more efficient than the second
@@ -69,7 +69,7 @@ class BitHeap;
          * assumes pseudo compressors are set at every column and every column has a height of one
          * @return new maximal range
          */
-        int getMaxRangeForMaxValue(int maxValue, vector<int> currentRanges);
+        int getMaxRangeForMaxValue(int maxValue, vector<long long> currentRanges);
 
         /**
          * computes the maximal range for the next stage. Here the columns can be of different heights
@@ -81,7 +81,7 @@ class BitHeap;
          *
          * @return new maximal range
          */
-        int getMaxRangeForStage(int maxValue, vector<int> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits);
+        int getMaxRangeForStage(int maxValue, vector<long long> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits);
 
         /* recursive function to compute the range for the specified position in the actualRanges array*/
         int maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, int maxValue);

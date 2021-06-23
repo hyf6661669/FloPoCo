@@ -60,7 +60,7 @@ namespace flopoco{
 //        int moduloRangeMax = 0;
 //        int moduloRangeMin = 0;
 
-		vector<int> currentRanges(bitheap->width);
+		vector<long long> currentRanges(bitheap->width);
 		negativeSignExtension = 0;
 		needToApplyNegativeSignExtension = false;
 		int currentPossibleMaxRange = 0;
@@ -86,8 +86,8 @@ namespace flopoco{
 		while(!adderReached){
             bool reachedModuloRange = true;
 
-            int moduloRangeMax = 0;
-            int moduloRangeMin = 0;
+            long long moduloRangeMax = 0;
+            long long moduloRangeMin = 0;
             int remainderExtension = 0;
 
 
@@ -169,6 +169,7 @@ namespace flopoco{
                         }
                     }
                     if (compressionMode.find("msbcases") != string::npos) {
+                        cerr << "set currentPossible max range " << moduloRangeMax << endl;
                         currentPossibleMaxRange = moduloRangeMax;
                     }
                 } else {
@@ -302,7 +303,7 @@ namespace flopoco{
 		}
 	}
 
-    int MaxEfficiencyCompressionStrategy::reqBitsForRange2Complement(int min, int max) {
+    int MaxEfficiencyCompressionStrategy::reqBitsForRange2Complement(long long min, long long max) {
         REPORT(DEBUG, "reqBitsForRange min: " << min << " max " << max);
         int bit = 0;
         if (max > 0) {
@@ -343,7 +344,10 @@ namespace flopoco{
         bool found = false;
         bool invertedBitComp = false;
 
+        cerr << "requiredBitsForRange " << requiredBitsForRange << endl;
+        cerr << "placePseudoCompressors useNegativeValue " << useNegativeMSBValue << endl;
         if (useNegativeMSBValue && column == requiredBitsForRange - 1 && bitAmount[s][column] > 0) {
+            cerr << "negative MSB comp" << endl;
             // make new compressor for negative MSB
             vector<int> compInput(requiredBitsForRange, 0);
             compInput[compInput.size()-1] = 1;
@@ -456,7 +460,7 @@ namespace flopoco{
         return pseudoCompressor;
 	}
 
-    int MaxEfficiencyCompressionStrategy::getMaxRangeForMaxValue(int maxValue, vector<int> currentRanges) {
+    int MaxEfficiencyCompressionStrategy::getMaxRangeForMaxValue(int maxValue, vector<long long> currentRanges) {
 	    int currentMaxRange = 0;
 	    int currentOneMSBRange = 0;
         int maxInputSize = floor(log2(maxValue)+1);
@@ -484,7 +488,7 @@ namespace flopoco{
         return currentMaxRange;
 	}
 
-    int MaxEfficiencyCompressionStrategy::getMaxRangeForStage(int maxValue, vector<int> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits) {
+    int MaxEfficiencyCompressionStrategy::getMaxRangeForStage(int maxValue, vector<long long> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits) {
 	    vector<RangeEntry> actualRanges;
 
         for (int i = 0; i < bitDistribution.size(); ++i) {

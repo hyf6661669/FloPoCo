@@ -10,7 +10,7 @@ namespace flopoco{
 	{
 		//compute the size of the input and of the output
 		int wIn = 0;
-		int maxVal = 0;
+		long long maxVal = 0;
 		for(int i=heights.size()-1; i>=0; i--)
 		{
 			wIn    += heights[i];
@@ -21,11 +21,15 @@ namespace flopoco{
 
 		//setting up outHeights
 		outHeights.resize(wOut, 1);
+        //outHeights.resize(32, 1);
 		compressor = nullptr;
 
 		//initialize variables used for pseudo-compressors if they are not used
         range_change = 0;
         ones_vector_start = INT32_MAX;
+
+        cerr << "basiccompressor wout " << wOut << endl;
+        cerr << "basiccompressor outheights size: " << outHeights.size() << endl;
 	}
 /*
 	BasicCompressor::~BasicCompressor(){

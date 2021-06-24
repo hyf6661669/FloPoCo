@@ -50,7 +50,7 @@ namespace flopoco{
 			REPORT(0, "Floating-point square root using plain restoring algorithm");
 		}
 		else if(method==1) {
-			REPORT(0, "Floating-point square root using SRT2 algorithm");
+			REPORT(0, "Floating-point square root using binary nonrestoring algorithm");
 		}
 		else  {
 			THROWERROR("Wrong value passed to parameter: method=" << method);
@@ -136,34 +136,35 @@ namespace flopoco{
 
 
 		else if(method==1) {
-		// Digit-recurrence implementation recycled from FPLibrary: works better!
-		
+			// Digit-recurrence implementation recycled from FPLibrary: works better!
+			// Sorry for the completely inconsistent signal names in the C++,
+			// this code was modified to match the mames and indices in the ASA book.
 			vhdl << tab << declare(getTarget()->lutDelay(),
-														 "R0", wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
-					 << tab << "       \"1101\" & fracX; -- pre-normalization" << endl;
+														 "T0", wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
+					 << tab << "      \"1101\" & fracX; -- pre-normalization, T0=2M-4 where 1<=M<4" << endl;
 		//		vhdl << tab << declare(join("d",wF+3)) << " <= '0';" << endl;
 		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
 			vhdl << tab << "-- now implementing the recurrence " << endl;
-			vhdl << tab << "--  w_{i} = 2w_{i-1} -2s_{i}S_{i-1} - 2^{-i-1}s_{i}^2  for i in {1..n}" << endl;
-			vhdl << tab << "--  this is a binary non-restoring algorithm, see e.g. Parhami book 2nd ed. p. 441" << endl;
+			//			vhdl << tab << "--  w_{i} = 2w_{i-1} -2s_{i}S_{i-1} - 2^{-i-1}s_{i}^2  for i in {1..n}" << endl;
+			vhdl << tab << "--  this is a binary non-restoring algorithm, see ASA book" << endl;
 			int maxstep=wF+2;
 			for(int i=1; i<=maxstep; i++) {
 				double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
 				REPORT(2, "estimated delay for stage "<< i << " is " << stageDelay << "s");
 				// was: int i = wF+3-step; // to have the same indices as FPLibrary
 				vhdl << tab << "-- Step " << i << endl;
-				string di = join("d", i);
-				string TwoRim1 = "R" + to_string(i-1) + "s";
-				string Ri = join("R", i);
-				string Rim1 = join("R", i-1);
-				string Si = join("S", i);
-				string Sim1 = join("S", i-1);
+				string di = join("d", i-1);
+				string TwoRim1 = "T" + to_string(i-1) + "s";
+				string Ri = join("T", i);
+				string Rim1 = join("T", i-1);
+				string Si = join("S", i-1);
+				string Sim1 = join("S", i-2);
 				//			string zs = join("zs", i);
-				string ds = join("Rupdate", i);
+				string ds = join("U", i-1);
 				string TwoRim1H = TwoRim1 + "_h";
 				string TwoRim1L = TwoRim1 + "_l";
-				string wh = "R" + to_string(i) + "_h";
-				vhdl << tab << declare(di) << " <= "<< Rim1 << "("<< wF+3<<"); -- sign bit (0 means digit +1, 1 means digit -1)" << endl;
+				string wh = "T" + to_string(i) + "_h";
+				vhdl << tab << declare(di) << " <= not "<< Rim1 << "("<< wF+3<<"); --  bit of weight "<< -(i-1) << endl;
 				vhdl << tab << declare(TwoRim1,wF+5) << " <= " << Rim1 << " & \"0\";" << endl;
 				vhdl << tab << declare(TwoRim1H,i+3) << " <= " << TwoRim1 << range(wF+4, wF+2-i) << ";" << endl;
 				if(i <= wF+1) {
@@ -172,8 +173,8 @@ namespace flopoco{
 				vhdl << tab << declare(ds,i+3) << " <=  \"0\" & ";
 				if (i>1)
 					vhdl 	<< Sim1 << " & ";
-				vhdl << " (not " << di << ") & " << di << " & \"1\"; -- in the add/sub below, this will always add 011" << endl;
-				vhdl << tab <<  declare(stageDelay, wh, i+3) << " <=   " << TwoRim1H << " - " << ds << " when " << di << "='0'" << endl
+				vhdl << di  << " & (not " << di << ")" << " & \"1\"; " << endl;
+				vhdl << tab <<  declare(stageDelay, wh, i+3) << " <=   " << TwoRim1H << " - " << ds << " when " << di << "='1'" << endl
 						 << tab << tab << "  else " << TwoRim1H << " + " << ds << ";" << endl;
 				vhdl << tab << declare(Ri, wF+4) << " <= " << wh << range(i+1,0);
 				if(i <= wF+1)
@@ -182,13 +183,13 @@ namespace flopoco{
 					vhdl << ";" << endl;
 				vhdl << tab << declare(Si, i) << " <= ";
 				if(i==1)
-					vhdl << "\"\" & (not " << di << ") ;"<< endl;
+					vhdl << "\"\" & " << di << ";"<< endl;
 				else
-					vhdl << Sim1 /*<< range(i-1,1)*/ << " & not " << di << "; -- here -1 becomes 0 and 1 becomes 1"<< endl;
+					vhdl << Sim1 /*<< range(i-1,1)*/ << " & " << di << "; -- here -1 becomes 0 and 1 becomes 1"<< endl;
 			}
 			string dfinal=join("d", maxstep+1);
-			vhdl << tab << declare(dfinal) << " <= "<< join("R", maxstep) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
-			vhdl << tab << declare("mR", wF+3) << " <= "<< join("S", maxstep)<<" & not "<<dfinal<<"; -- result significand" << endl;
+			vhdl << tab << declare(dfinal) << " <= not "<< join("T", maxstep) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
+			vhdl << tab << declare("mR", wF+3) << " <= "<< join("S", maxstep-1)<<" & "<<dfinal<<"; -- result significand" << endl;
 
 			// end of component FPSqrt_Sqrt in fplibrary
 			vhdl << tab << declare("fR", wF) << " <= mR" <<range(wF, 1) << ";-- removing leading 1" << endl;
@@ -348,7 +349,7 @@ namespace flopoco{
 												 "",
 												 "wE(int): exponent size in bits; \
 wF(int): mantissa size in bits; \
-method(int)=1: 0 for plain restoring, 1 for SRT2 method taken from Detrey's FPLibrary",
+method(int)=1: 0 for plain restoring, 1 for nonrestoring method",
 												 "",
 												 FPSqrt::parseArguments,
 												 FPSqrt::unitTest

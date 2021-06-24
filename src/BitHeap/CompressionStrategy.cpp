@@ -408,29 +408,30 @@ namespace flopoco{
     void CompressionStrategy::addPseudocompressors(int wIn, int mod) {
         //pseudocompressors.resize(2*wIn);
         cout << "nr. of avail. compressors: " << possibleCompressors.size() << endl;
-        long long oneLL = static_cast<long long>(1);
+        mpz_class oneMpz = mpz_class(1);
         vector<int> comp_inputs, comp_out_rem, comp_out_rec;
         int shift;
-        for(long long i = 1; i < oneLL<<wIn; i <<= 1){
+        for(mpz_class i = 1; i < oneMpz<<wIn; i <<= 1){
             cerr << "addPseudocompressors for loop" << endl;
             shift = 0;
             do{
                 //cerr << "shift: " << shift << endl;
-                if(i&(oneLL<<shift)) {
+                if((i&(oneMpz<<shift)) != 0) {
                     comp_inputs.push_back(1);
                     //cerr << "1";
                 } else {
                     comp_inputs.push_back(0);
                     //cerr << "0";
                 }
-            } while(i > (oneLL<<shift++));
+            } while(i > (oneMpz<<shift++));
             //cerr << " here, length: " << comp_inputs.size() << endl;
-            int rem = (long long)i % (int)mod;
+            mpz_class remMpz = i % mod;
+            int rem = remMpz.get_si();
             int reciproc = rem - mod;
-            //cerr << "rem: " << rem << " reciprocal: " << reciproc << endl;
+            cerr << "rem: " << rem << " reciprocal: " << reciproc << endl;
 
-            for(long long j = 1; j < oneLL<<wIn; j <<= 1){
-                if(j&rem){
+            for(mpz_class j = 1; j < oneMpz<<wIn; j <<= 1){
+                if((j&rem) != 0){
                     comp_out_rem.push_back(1);
                     //cerr << "1";
                     //cerr << "remainder: bit " << j << " is set" << endl;
@@ -441,8 +442,8 @@ namespace flopoco{
             }
             //cerr << " length: " << comp_out_rem.size() << endl;
             int ones_vector_start = 0, cnt = 1;
-            for(long long j = 1; j < oneLL<<wIn; j <<= 1){
-                if(j&reciproc){
+            for(mpz_class j = 1; j < oneMpz<<wIn; j <<= 1){
+                if((j&reciproc) != 0){
                     comp_out_rec.push_back(1);
                     //cerr << "1";
                     //cerr << "reciproc: bit " << j << " is set" << endl;
@@ -481,14 +482,9 @@ namespace flopoco{
             remCompressor->range_change = rem;
             possibleCompressors.push_back(remCompressor);
 */
-            cerr << "adding compressors for weight i " << i << " rem size " << comp_out_rem.size() << " rec size " << comp_out_rec.size() << endl;
-            cerr << "input heights: " << comp_inputs.size() << endl;
             possibleCompressors.push_back(new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, comp_out_rem, rem));
 
             possibleCompressors.push_back(new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, comp_out_rec, reciproc, ones_vector_start));
-
-            BasicPseudoCompressor* testPseudoComp = new BasicPseudoCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, comp_out_rem, rem);
-            cerr << "outHeights after creation " << testPseudoComp->outHeights.size() << endl;
 /*
             BasicCompressor *recCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, 0.1, "pseudo", true);
             recCompressor->outHeights = comp_out_rec;

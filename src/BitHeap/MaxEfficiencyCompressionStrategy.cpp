@@ -60,21 +60,25 @@ namespace flopoco{
 //        int moduloRangeMax = 0;
 //        int moduloRangeMin = 0;
 
-		vector<long long> currentRanges(bitheap->width);
+		vector<mpz_class> currentRanges(bitheap->width);
 		negativeSignExtension = 0;
 		needToApplyNegativeSignExtension = false;
-		int currentPossibleMaxRange = 0;
-		int extraRangeToSubtract = 0;
-		int currentRangeMaxRange = 0;
-		int currentOnlyPositiveMaxRange = 0;
+		// range case differentiation
+		mpz_class currentPossibleMaxRange = 0;
+		// se vector
+		mpz_class extraRangeToSubtract = 0;
+		// single bit
+		mpz_class currentRangeMaxRange = 0;
+		mpz_class currentOnlyPositiveMaxRange = 0;
 		string compressionMode = bitheap->mode;
 
-        long long oneLL = static_cast<long long>(1);
+        unsigned long long oneLL = static_cast<unsigned long long>(1);
+        mpz_class oneMpz = mpz_class(1);
         for (int i = 0; i < bitheap->width; ++i) {
             //moduloRangeMax += (oneLL << i);
-            currentRanges[i] = (oneLL << i);
-            currentPossibleMaxRange += (oneLL << i);
-            currentRangeMaxRange += (oneLL << i);
+            currentRanges[i] = (oneMpz << i);
+            currentPossibleMaxRange += (oneMpz << i);
+            currentRangeMaxRange += (oneMpz << i);
         }
 
         if (compressionMode.find("msbcases") != string::npos) {
@@ -86,8 +90,8 @@ namespace flopoco{
 		while(!adderReached){
             bool reachedModuloRange = true;
 
-            long long moduloRangeMax = 0;
-            long long moduloRangeMin = 0;
+            mpz_class moduloRangeMax = 0;
+            mpz_class moduloRangeMin = 0;
             int remainderExtension = 0;
 
 
@@ -96,6 +100,7 @@ namespace flopoco{
 
                 for (int i = 0; i < currentRanges.size(); ++i) {
                     cerr << "current ranges " << i << " is " << currentRanges[i] << endl;
+
                     if (currentRanges[i] >= 0) {
                         moduloRangeMax += currentRanges[i];
                     } else {
@@ -204,8 +209,8 @@ namespace flopoco{
                                 invertedRangeBits.push_back(false);
                             }
                         }
-                        int newRangeChange = getMaxRangeForStage(currentOnlyPositiveMaxRange, currentRanges, bitDistributionStage, pseudoCompSet, invertedRangeBits);
-                        extraRangeToSubtract = currentRangeMaxRange - newRangeChange;
+                        mpz_class newRangeForStage = getMaxRangeForStage(currentOnlyPositiveMaxRange, currentRanges, bitDistributionStage, pseudoCompSet, invertedRangeBits);
+                        extraRangeToSubtract = currentRangeMaxRange - newRangeForStage;
                     }
 
                     bool found = true;
@@ -303,7 +308,7 @@ namespace flopoco{
 		}
 	}
 
-    int MaxEfficiencyCompressionStrategy::reqBitsForRange2Complement(long long min, long long max) {
+    int MaxEfficiencyCompressionStrategy::reqBitsForRange2Complement(mpz_class min, mpz_class max) {
         REPORT(DEBUG, "reqBitsForRange min: " << min << " max " << max);
         int bit = 0;
         if (max > 0) {
@@ -460,14 +465,15 @@ namespace flopoco{
         return pseudoCompressor;
 	}
 
-    int MaxEfficiencyCompressionStrategy::getMaxRangeForMaxValue(int maxValue, vector<long long> currentRanges) {
-	    int currentMaxRange = 0;
-	    int currentOneMSBRange = 0;
-        int maxInputSize = floor(log2(maxValue)+1);
+    mpz_class MaxEfficiencyCompressionStrategy::getMaxRangeForMaxValue(mpz_class maxValue, vector<mpz_class> currentRanges) {
+	    mpz_class currentMaxRange = 0;
+	    mpz_class currentOneMSBRange = 0;
+        int maxInputSize = intlog2(maxValue);
+
         for (int i = maxInputSize-1; i >= 0; i--) {
-            if ((maxValue & (1 << i)) != 0) {
+            if ((maxValue & (mpz_class(1)) << i) != 0) {
                 // case 0
-                int msbZeroRange = currentOneMSBRange;
+                mpz_class msbZeroRange = currentOneMSBRange;
                 for (int j = 0; j < currentRanges.size(); ++j) {
                     if (j < i) {
                         msbZeroRange += currentRanges[j];
@@ -488,8 +494,9 @@ namespace flopoco{
         return currentMaxRange;
 	}
 
-    int MaxEfficiencyCompressionStrategy::getMaxRangeForStage(int maxValue, vector<long long> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits) {
+    mpz_class MaxEfficiencyCompressionStrategy::getMaxRangeForStage(mpz_class maxValue, vector<mpz_class> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits) {
 	    vector<RangeEntry> actualRanges;
+        mpz_class oneMpz = mpz_class(1);
 
         for (int i = 0; i < bitDistribution.size(); ++i) {
             for (int j = 0; j < bitDistribution[i]; ++j) {
@@ -499,13 +506,13 @@ namespace flopoco{
                 if (invertedRangeBits[i]) {
                     rangeEntry.weight = 0;
                 } else {
-                    rangeEntry.weight = 1 << i;
+                    rangeEntry.weight = oneMpz << i;
                 }
 
                 if (setPseudoComps[i]) {
                     rangeEntry.range = currentRanges[i];
                 } else {
-                    rangeEntry.range = 1 << i;
+                    rangeEntry.range = oneMpz << i;
                 }
                 actualRanges.push_back(rangeEntry);
             }
@@ -514,9 +521,9 @@ namespace flopoco{
         return maxRangeForPosition(actualRanges, actualRanges.size()-1, maxValue);
 	}
 
-	int MaxEfficiencyCompressionStrategy::maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, int maxValue) {
-	    int maxWeightRange = 0;
-        int minWeightRange = 0;
+	mpz_class MaxEfficiencyCompressionStrategy::maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, mpz_class maxValue) {
+	    mpz_class maxWeightRange = 0;
+        mpz_class minWeightRange = 0;
 
         for (int i = 0; i < actualRanges.size(); ++i) {
             if (i > currentPosition) {
@@ -530,7 +537,7 @@ namespace flopoco{
 
         // break 1: cannot be higher than maxValue
         if (maxWeightRange <= maxValue) {
-            int rangeNow = 0;
+            mpz_class rangeNow = 0;
             for (int i = 0; i < actualRanges.size(); ++i) {
                 if (i > currentPosition) {
                     rangeNow += actualRanges[i].isSet ? actualRanges[i].range : 0;
@@ -547,8 +554,8 @@ namespace flopoco{
         }
 
 
-        int rangeZero = -1;
-        int rangeOne = -1;
+        mpz_class rangeZero = -1;
+        mpz_class rangeOne = -1;
         int newPosition = currentPosition-1;
 
 	    // case 0

@@ -3,6 +3,7 @@
 
 #include "BitHeap/CompressionStrategy.hpp"
 #include "BitHeap/BitHeap.hpp"
+#include "../utils.hpp"
 
 namespace flopoco
 {
@@ -23,8 +24,8 @@ class BitHeap;
 
 	    /* struct that is used for the range computation */
         struct RangeEntry {
-            int range;
-            int weight;
+            mpz_class range;
+            mpz_class weight;
             bool isSet;
         };
 
@@ -41,7 +42,7 @@ class BitHeap;
         /**
          * computes the number of bits that are needed to represent a number in two's complement
          */
-        int reqBitsForRange2Complement(long long min, long long max);
+        int reqBitsForRange2Complement(mpz_class min, mpz_class max);
 
         /**
          * return true if the first remainder is more efficient than the second
@@ -69,7 +70,7 @@ class BitHeap;
          * assumes pseudo compressors are set at every column and every column has a height of one
          * @return new maximal range
          */
-        int getMaxRangeForMaxValue(int maxValue, vector<long long> currentRanges);
+        mpz_class getMaxRangeForMaxValue(mpz_class maxValue, vector<mpz_class> currentRanges);
 
         /**
          * computes the maximal range for the next stage. Here the columns can be of different heights
@@ -81,10 +82,10 @@ class BitHeap;
          *
          * @return new maximal range
          */
-        int getMaxRangeForStage(int maxValue, vector<long long> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits);
+        mpz_class getMaxRangeForStage(mpz_class maxValue, vector<mpz_class> currentRanges, vector<int> bitDistribution, vector<bool> setPseudoComps, vector<bool> invertedRangeBits);
 
         /* recursive function to compute the range for the specified position in the actualRanges array*/
-        int maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, int maxValue);
+        mpz_class maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, mpz_class maxValue);
 
 		vector<float> lowerBounds;
 

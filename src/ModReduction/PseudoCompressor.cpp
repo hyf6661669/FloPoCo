@@ -68,7 +68,7 @@ namespace flopoco {
         setCombinatorial();
         setShared();
 
-        cerr << "in-heights: " << _heights.size() << " out-heights: " << _outHeights.size() << endl;
+        //cerr << "in-heights: " << _heights.size() << " out-heights: " << _outHeights.size() << endl;
 
         ostringstream name;
         name << "Pseudo_Compressor_Weight_" << _heights.size() ;
@@ -82,12 +82,10 @@ namespace flopoco {
             for(int i = 0; i < _heights.size(); i++){
                 if(_heights[i] == 1){
                     REPORT(DEBUG, "add pseudocompressor input with weight " << i );
-                    cerr << "add pseudocompressor input with weight " << i << endl;
                     //addInput(join("X", i), 1);
                     for(int j = 0; j < _outHeights.size(); j++) {
                         if (_outHeights[j] == 1) {
                             REPORT(DEBUG, "add pseudocompressor output with weight " << j );
-                            cerr << "add pseudocompressor output with weight " << j << endl;
                             vhdl << tab << "R" << range(j,j) << " <= " << join("X", i) << ";" << endl;
                         } else {
 
@@ -118,18 +116,15 @@ namespace flopoco {
 
     BasicPseudoCompressor::BasicPseudoCompressor(Operator* parentOp_, Target * target, vector<int> _heights, vector<int> _outHeights, int _range_change, int _ones_vector_start) : BasicCompressor(parentOp_, target, _heights, 0, CompressorType::Pseudo, true)
     {
-        cerr << "outHeights size " << outHeights.size() << endl;
         area = 0; //every pseudo-compressor uses 0 LUTs (so far)
         outHeights = _outHeights;
         range_change = _range_change;
         ones_vector_start = _ones_vector_start;
         _hasExternalSignExtension = false;
-        cerr << "new basic pseudo compressor _outHeights: " << _outHeights.size() << " outHeights " << outHeights.size() << endl;
     }
 
     Compressor* BasicPseudoCompressor::getCompressor(unsigned int middleLength){
-        cerr << "get Compressor called on heights: " << this->heights.size() << endl;
-        cerr << "get Compressor called on outheights: " << this->outHeights.size() << endl;
+
         if (!_hasExternalSignExtension) {
             compressor = new PseudoCompressor(parentOp, target, heights, outHeights);
         } else {

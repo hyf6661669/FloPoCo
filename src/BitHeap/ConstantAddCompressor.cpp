@@ -12,7 +12,6 @@ namespace flopoco {
         setCopyrightString("Annika Oeste");
         useNumericStd();
 
-        cerr << "constructor constantAddcompressor" << endl;
 
         //compressors are supposed to be combinatorial
         setCombinatorial();
@@ -30,7 +29,10 @@ namespace flopoco {
         outHeights = _outHeights;
         //wOut = heights.size()+1;
 
-        setWordSizes();
+        //setWordSizes();
+        wIn = heights.size();
+        wOut = outHeights.size();
+
         createInputsAndOutputs();
 
         // create signal X as input concatenation

@@ -300,8 +300,6 @@ namespace flopoco{
 				REPORT(DEBUG, "at stage " << s << " and column " << c << " there are " << tempVector.size() << " compressors");
 				for(unsigned int j = 0; j < tempVector.size(); j++){
 					REPORT(DEBUG, "applying compressor " << tempVector[j].first->getStringOfIO());
-					cerr << "applying compressor " << tempVector[j].first->getStringOfIO() << endl;
-					cerr << "applying compressor with outHeights " << tempVector[j].first->outHeights.size() << endl;
 					//applyCompressor
                     unsigned int middleLength = tempVector[j].second;
 					Compressor* realCompressor = tempVector[j].first->getCompressor(middleLength);  //TODO: consider middleLength
@@ -412,7 +410,6 @@ namespace flopoco{
         vector<int> comp_inputs, comp_out_rem, comp_out_rec;
         int shift;
         for(mpz_class i = 1; i < oneMpz<<wIn; i <<= 1){
-            cerr << "addPseudocompressors for loop" << endl;
             shift = 0;
             do{
                 //cerr << "shift: " << shift << endl;
@@ -428,7 +425,7 @@ namespace flopoco{
             mpz_class remMpz = i % mod;
             int rem = remMpz.get_si();
             int reciproc = rem - mod;
-            cerr << "rem: " << rem << " reciprocal: " << reciproc << endl;
+            //cerr << "rem: " << rem << " reciprocal: " << reciproc << endl;
 
             for(mpz_class j = 1; j < oneMpz<<wIn; j <<= 1){
                 if((j&rem) != 0){
@@ -474,7 +471,6 @@ namespace flopoco{
                     break;
                 }
             }
-            //cerr << "found: " << found << endl;
             if(found) break;
             //cerr << " length: " << comp_out_rec.size() << endl;
 /*            BasicCompressor *remCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), comp_inputs, 0.1, "pseudo", true);
@@ -563,10 +559,6 @@ namespace flopoco{
 
 	void CompressionStrategy::startCompression()
 	{
-	    BasicCompressor* lastBasicComp = possibleCompressors[possibleCompressors.size()-1];
-	    cerr << "basic compressor last position in-height: " << lastBasicComp->heights.size() << endl;
-        cerr << "basic compressor last position out-height: " << lastBasicComp->outHeights.size() << endl;
-
 		double delay;
 
 		// Add the constant bits

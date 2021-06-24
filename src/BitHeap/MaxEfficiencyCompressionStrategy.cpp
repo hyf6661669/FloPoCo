@@ -72,7 +72,6 @@ namespace flopoco{
 		mpz_class currentOnlyPositiveMaxRange = 0;
 		string compressionMode = bitheap->mode;
 
-        unsigned long long oneLL = static_cast<unsigned long long>(1);
         mpz_class oneMpz = mpz_class(1);
         for (int i = 0; i < bitheap->width; ++i) {
             //moduloRangeMax += (oneLL << i);
@@ -100,7 +99,6 @@ namespace flopoco{
 
                 for (int i = 0; i < currentRanges.size(); ++i) {
                     cerr << "current ranges " << i << " is " << currentRanges[i] << endl;
-
                     if (currentRanges[i] >= 0) {
                         moduloRangeMax += currentRanges[i];
                     } else {
@@ -174,7 +172,6 @@ namespace flopoco{
                         }
                     }
                     if (compressionMode.find("msbcases") != string::npos) {
-                        cerr << "set currentPossible max range " << moduloRangeMax << endl;
                         currentPossibleMaxRange = moduloRangeMax;
                     }
                 } else {
@@ -183,34 +180,53 @@ namespace flopoco{
                     // place PseudoCompressors where column height = 1
                     // TODO: leave reachedModuloRange here?
                     if (compressionMode.find("singlebit") != string::npos && !reachedModuloRange) {
-                        bool useNegativeMSBValue = false;
 
-                        if (compressionMode.find("sevector") == string::npos) {
-                            if (moduloRangeMin < 0) {
-                                useNegativeMSBValue = true;
+                        vector<int> bitDistributionStage = bitAmount[s];
+                        int bitsInStage = 0;
+
+                        for (int i = 0; i < bitDistributionStage.size(); ++i) {
+                            for (int j = 0; j < bitDistributionStage[i]; ++j) {
+                                bitsInStage++;
                             }
                         }
-                        vector<int> bitDistributionStage = bitAmount[s];
-                        vector<bool> pseudoCompSet;
-                        vector<bool> invertedRangeBits;
-                        for(unsigned int c = 0; c < bitAmount[s].size(); c++){
-                            if (bitAmount[s][c] == 1) {
-                                pair<int,bool> resultPlacedComp = placePseudoCompressor(s, c, requiredBitsForRange, false,  useNegativeMSBValue);
-                                cerr << "placed single bit pseudo comp " << resultPlacedComp.first << " at " << c << endl;
 
-                                pseudoCompSet.push_back(true);
-                                if (resultPlacedComp.second) {
-                                    invertedRangeBits.push_back(true);
+                        // for more bits the range calculation takes very long
+                        if (bitsInStage <= 30) {
+                            bool useNegativeMSBValue = false;
+
+                            if (compressionMode.find("sevector") == string::npos) {
+                                if (moduloRangeMin < 0) {
+                                    useNegativeMSBValue = true;
+                                }
+                            }
+
+                            vector<bool> pseudoCompSet;
+                            vector<bool> invertedRangeBits;
+
+                            bool pseudoCompWasSet = false;
+
+                            for(unsigned int c = 0; c < bitAmount[s].size(); c++){
+                                if (bitAmount[s][c] == 1) {
+                                    pair<int,bool> resultPlacedComp = placePseudoCompressor(s, c, requiredBitsForRange, false,  useNegativeMSBValue);
+                                    cerr << "placed single bit pseudo comp " << resultPlacedComp.first << " at " << c << endl;
+
+                                    pseudoCompSet.push_back(true);
+                                    pseudoCompWasSet = true;
+                                    if (resultPlacedComp.second) {
+                                        invertedRangeBits.push_back(true);
+                                    } else {
+                                        invertedRangeBits.push_back(false);
+                                    }
                                 } else {
+                                    pseudoCompSet.push_back(false);
                                     invertedRangeBits.push_back(false);
                                 }
-                            } else {
-                                pseudoCompSet.push_back(false);
-                                invertedRangeBits.push_back(false);
+                            }
+                            if (pseudoCompWasSet) {
+                                mpz_class newRangeForStage = getMaxRangeForStage(currentOnlyPositiveMaxRange, currentRanges, bitDistributionStage, pseudoCompSet, invertedRangeBits);
+                                extraRangeToSubtract = currentRangeMaxRange - newRangeForStage;
                             }
                         }
-                        mpz_class newRangeForStage = getMaxRangeForStage(currentOnlyPositiveMaxRange, currentRanges, bitDistributionStage, pseudoCompSet, invertedRangeBits);
-                        extraRangeToSubtract = currentRangeMaxRange - newRangeForStage;
                     }
 
                     bool found = true;
@@ -279,7 +295,7 @@ namespace flopoco{
                             }
                         }
                         if(found){
-                            cerr << "placed compressor " << compressor->getStringOfIO() << " in stage " << s << " and column " << column << endl;
+
                             REPORT(DETAILED, "placed compressor " << compressor->getStringOfIO() << " in stage " << s << " and column " << column);
                             REPORT(DETAILED, "efficiency is " << achievedEfficiencyBest);
                             placeCompressor(s, column, compressor, middleLengthBest);
@@ -349,8 +365,6 @@ namespace flopoco{
         bool found = false;
         bool invertedBitComp = false;
 
-        cerr << "requiredBitsForRange " << requiredBitsForRange << endl;
-        cerr << "placePseudoCompressors useNegativeValue " << useNegativeMSBValue << endl;
         if (useNegativeMSBValue && column == requiredBitsForRange - 1 && bitAmount[s][column] > 0) {
             cerr << "negative MSB comp" << endl;
             // make new compressor for negative MSB

@@ -278,6 +278,7 @@ class BitheapPlotter;
 
 		bool canComputeModulo;                      /**< Has to be set by subclasses. Says if this strategy supports modulo reduction */
 		bool computeModulo;                         /**< If set in this computation modulo reduction is used */
+		int logicalStages;                          /**< Only counts the stages where compression is done, pseudo compression does not add a logical stage */
 
 		// For error reporting to work
 		int guid;

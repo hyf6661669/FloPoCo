@@ -56,6 +56,7 @@ namespace flopoco{
 
 	void MaxEfficiencyCompressionStrategy::maxEfficiencyAlgorithm(){
 		unsigned int s = 0;
+		logicalStages = 0;
 		bool adderReached = false;
 //        int moduloRangeMax = 0;
 //        int moduloRangeMin = 0;
@@ -301,6 +302,7 @@ namespace flopoco{
                             placeCompressor(s, column, compressor, middleLengthBest);
                         }
                     }
+                    logicalStages++;
                 }
             }
 

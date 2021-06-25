@@ -23,7 +23,9 @@ namespace flopoco{
 
 		//no chunks already compressed
 		compressionDoneIndex = 0;
+		canComputeModulo = false;
 		computeModulo = false;
+		logicalStages = 0;
 
 		if(UserInterface::pipelineActive_) {
 			//the initial delay between the soonest bit and the rest of the bits
@@ -255,6 +257,10 @@ namespace flopoco{
 	void CompressionStrategy::printSolutionStatistics(){
 		REPORT(DEBUG, "calculating compression area");
 		unsigned int totalArea = 0;  //area in Compressor.hpp
+
+		unsigned int fullAdders = 0;
+		unsigned int halfAdders = 0;
+
 		for(unsigned int s = 0; s < bitAmount.size() - 1; s++) {
 
 			for (unsigned int c = 0; c < bitheap->width; c++) {
@@ -273,12 +279,22 @@ namespace flopoco{
 												 " at stage " << s << " and column " << c << " with a combined LUT-area cost of " << (tempVector[j].second+1)*tempVector[j].first->getArea());
 					totalArea+=(tempVector[j].second+1)*tempVector[j].first->getArea();
 
-
+                    if (tempVector[j].first->getStringOfIO() == "(3;2)"){
+                        fullAdders++;
+                    } else if (tempVector[j].first->getStringOfIO() == "(2;2)"){
+                        halfAdders++;
+                    }
 				}
 			}
 		}
 		REPORT(DETAILED, "total area of the compression is equivalent to " << totalArea << " LUTs");
 		REPORT(DETAILED, "total number of stages is " << bitAmount.size()-1);
+
+		if (computeModulo){
+            REPORT(DETAILED, "total number of logical stages is " << logicalStages);
+            REPORT(DETAILED, "total number of full adders is " << fullAdders);
+            REPORT(DETAILED, "total number of half adders is " << halfAdders);
+		}
 	}
 
 

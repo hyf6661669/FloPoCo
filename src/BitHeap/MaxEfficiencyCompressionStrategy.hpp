@@ -70,7 +70,7 @@ class BitHeap;
          * assumes pseudo compressors are set at every column and every column has a height of one
          * @return new maximal range
          */
-        mpz_class getMaxRangeForMaxValue(mpz_class maxValue, vector<mpz_class> currentRanges);
+        mpz_class getMaxRangeForMaxValue(mpz_class maxValue, vector<mpz_class> currentRanges, vector<bool> currentRangesInvertedBits);
 
         /**
          * computes the maximal range for the next stage. Here the columns can be of different heights
@@ -86,6 +86,8 @@ class BitHeap;
 
         /* recursive function to compute the range for the specified position in the actualRanges array*/
         mpz_class maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, mpz_class maxValue);
+
+        bool checkForRepetition(int currentStage);
 
 		vector<float> lowerBounds;
 

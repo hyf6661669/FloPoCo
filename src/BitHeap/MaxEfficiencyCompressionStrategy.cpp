@@ -63,10 +63,14 @@ namespace flopoco{
 
 		vector<mpz_class> currentRanges(bitheap->width);
 		vector<bool> currentRangesInvertedBits(bitheap->width);
-		int setPseudoCompressors = 0;
 
 		negativeSignExtension = 0;
 		needToApplyNegativeSignExtension = false;
+
+		// set to false when single pseudo comps don't improve the range
+		bool shouldUseSinglePseudoComps = true;
+		bool useSingleBitSubtraction = false;
+
 		// range case differentiation
 		mpz_class currentPossibleMaxRange = 0;
 		// se vector
@@ -75,6 +79,7 @@ namespace flopoco{
 		mpz_class currentRangeMaxRange = 0;
 		// single bit and msb cases. Max range before remainderExtension is subtracted
 		mpz_class currentOnlyPositiveMaxRange = 0;
+
 		string compressionMode = bitheap->mode;
 
         mpz_class oneMpz = mpz_class(1);
@@ -124,8 +129,13 @@ namespace flopoco{
 
                 if (compressionMode.find("singlebit") != string::npos) {
                     currentRangeMaxRange = moduloRangeMax;
-                    moduloRangeMax -= extraRangeToSubtract;
+                    if (useSingleBitSubtraction) {
+                        moduloRangeMax -= extraRangeToSubtract;
+                    }
+
+                    //cerr << "extraRangeToSubtract" << extraRangeToSubtract << endl;
                 }
+
                 currentOnlyPositiveMaxRange = moduloRangeMax;
 
                 if (compressionMode.find("sevector") != string::npos) {
@@ -198,16 +208,21 @@ namespace flopoco{
                             }
                         }
                     }
-                    setPseudoCompressors = requiredBitsForRange;
+
                     if (compressionMode.find("msbcases") != string::npos) {
                         currentPossibleMaxRange = currentOnlyPositiveMaxRange;
                     }
+                    if (compressionMode.find("singlebit") != string::npos) {
+                        shouldUseSinglePseudoComps = true;
+                        useSingleBitSubtraction = false;
+                    }
+
                 } else {
                     cerr << "normal compression" << endl;
 
                     // place PseudoCompressors where column height = 1
                     // TODO: leave reachedModuloRange here?
-                    if (compressionMode.find("singlebit") != string::npos && !reachedModuloRange && !checkForRepetition(s)) {
+                    if (compressionMode.find("singlebit") != string::npos && !reachedModuloRange && shouldUseSinglePseudoComps) {
 
                         vector<int> bitDistributionStage = bitAmount[s];
                         int bitsInStage = 0;
@@ -232,9 +247,10 @@ namespace flopoco{
                             vector<bool> invertedRangeBits;
 
                             bool pseudoCompWasSet = false;
+                            bool pseudoCompChangedRange = false;
 
                             for(unsigned int c = 0; c < bitAmount[s].size(); c++){
-                                if (bitAmount[s][c] == 1) {
+                                if (bitAmount[s][c] == 1 && c < bitheap->width) {
                                     pair<int,bool> resultPlacedComp = placePseudoCompressor(s, c, requiredBitsForRange, false,  useNegativeMSBValue);
                                     cerr << "placed single bit pseudo comp " << resultPlacedComp.first << " at " << c << endl;
 
@@ -245,6 +261,10 @@ namespace flopoco{
                                     } else {
                                         invertedRangeBits.push_back(false);
                                     }
+
+                                    if (resultPlacedComp.first != mpz_class(1) << c) {
+                                        pseudoCompChangedRange = true;
+                                    }
                                 } else {
                                     pseudoCompSet.push_back(false);
                                     invertedRangeBits.push_back(false);
@@ -253,6 +273,15 @@ namespace flopoco{
                             if (pseudoCompWasSet) {
                                 mpz_class newRangeForStage = getMaxRangeForStage(currentOnlyPositiveMaxRange, currentRanges, bitDistributionStage, pseudoCompSet, invertedRangeBits);
                                 extraRangeToSubtract = currentRangeMaxRange - newRangeForStage;
+                                //cerr << "single bit currentRangeMaxRange " << currentRangeMaxRange << endl;
+                                //cerr << "single bit newRangeForStage " << newRangeForStage << endl;
+                                //cerr << "single bit currentOnlyPositiveMaxRange " << currentOnlyPositiveMaxRange << endl;
+
+                                if (currentOnlyPositiveMaxRange == newRangeForStage && pseudoCompChangedRange) {
+                                    //cerr << "shouldUseSinglePseudoComps false" << endl;
+                                    shouldUseSinglePseudoComps = false;
+                                }
+                                useSingleBitSubtraction = true;
                             }
                         }
                     }
@@ -346,7 +375,7 @@ namespace flopoco{
 			}
 			REPORT(DEBUG, "finished stage " << s);
 			printBitAmounts();
-			if (s > 30 && computeModulo) {
+			if (s > 100 && computeModulo) {
 			    cerr << "break because stage limit reached" << endl;
 			    break;
 			}
@@ -617,22 +646,4 @@ namespace flopoco{
 
         return max(rangeZero, rangeOne);
 	}
-
-    bool MaxEfficiencyCompressionStrategy::checkForRepetition(int currentStage) {
-        bool same = false;
-        for (int s = 0; s <= currentStage; ++s) {
-            int c = 0;
-            same = true;
-            while (c < bitAmount[currentStage].size() && bitAmount[s][c] != 0) {
-                if (bitAmount[currentStage+1][c] != bitAmount[s][c]) {
-                    same = false;
-                }
-                c++;
-            }
-            if (same) {
-                return same;
-            }
-        }
-        return same;
-    }
 }

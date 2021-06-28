@@ -87,8 +87,6 @@ class BitHeap;
         /* recursive function to compute the range for the specified position in the actualRanges array*/
         mpz_class maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, mpz_class maxValue);
 
-        bool checkForRepetition(int currentStage);
-
 		vector<float> lowerBounds;
 
 		int negativeSignExtension;

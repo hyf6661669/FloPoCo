@@ -1269,7 +1269,7 @@ namespace flopoco{
                 col0 = 2;
 
                 newVect.push_back(col0);
-                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 1.0,
+                newCompressor = new BasicCompressor(bitheap->getOp(), bitheap->getOp()->getTarget(), newVect, 0.5,
                                                     CompressorType::Gpc, true);
                 //newCompressor->setShared();
                 possibleCompressors.push_back(newCompressor);

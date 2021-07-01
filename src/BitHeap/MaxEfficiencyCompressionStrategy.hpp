@@ -49,6 +49,10 @@ class BitHeap;
          */
         bool isRemainderMoreEfficient(int rem, int remToCompare);
 
+        int getLeadingZero(long long value);
+
+        int countOnes(long long value);
+
         bool shouldPlacePseudoCompressors(vector<int> bitAmountStage);
 
         /**

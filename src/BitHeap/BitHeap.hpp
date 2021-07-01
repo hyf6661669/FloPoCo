@@ -67,7 +67,8 @@ enum BitType : unsigned;
 		 *									compression
 		 * @param modulus           modulus. Used for modulo reduction if > 0. Default is 0
 		 */
-		BitHeap(Operator* op, unsigned width, string name = "", int compressionType = COMPRESSION_TYPE, int modulus = 0, int maxInput = -1, string mode="default");
+		BitHeap(Operator* op, unsigned width, string name = "", int compressionType = COMPRESSION_TYPE,
+          int modulus = 0, int maxInput = -1, string mode="default", string pseudoCompMode="minRange");
 
 		/**
 		 * @brief The constructor for an signed/unsigned fixed-point bitheap
@@ -83,7 +84,8 @@ enum BitType : unsigned;
 		 *									compression
 		 * @param modulus           modulus. Used for modulo reduction if > 0. Default is 0
 		 */
-		BitHeap(Operator* op, int msb, int lsb, string name = "", int compressionType = COMPRESSION_TYPE, int modulus = 0, int maxInput = -1, string mode="default");
+		BitHeap(Operator* op, int msb, int lsb, string name = "", int compressionType = COMPRESSION_TYPE,
+          int modulus = 0, int maxInput = -1, string mode="default", string pseudoCompMode="minRange");
 
 
 		~BitHeap();
@@ -415,9 +417,11 @@ enum BitType : unsigned;
 		int height;                                 /**< The current maximum height of any column of the bitheap */
 		string name;                                /**< The name of the bitheap */
 		unsigned final_add_height = 2;
-        int modulus;                                /**> If modulus is > 0 additionally to the compression a modulo reduction with respect to this modulus is performed */
+        int modulus;                                /**< If modulus is > 0 additionally to the compression a modulo reduction with respect to this modulus is performed */
         int maxInput;
-        string mode;
+        string mode;                                /**< Different modes can be chosen, deciding how the range is calculated, if a sign extension vector is used
+                                                    *    and if pseudo compressors can be placed individually */
+        string pseudoCompMode;                      /**< The mode that decides which pseudocompressor is used for a specific bit(remainder or closest negative congruent) */
 
 	private:
 		Operator* op;

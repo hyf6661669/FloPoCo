@@ -27,7 +27,7 @@
 #include <algorithm>
 namespace flopoco {
 
-	BitHeap::BitHeap(Operator* op_, unsigned width_, string name_, int compressionType_, int modulus_, int maxInput_, string mode_) :
+	BitHeap::BitHeap(Operator* op_, unsigned width_, string name_, int compressionType_, int modulus_, int maxInput_, string mode_, string pseudoCompMode_) :
 		msb(width_-1), lsb(0),
 		width(width_),
 		height(0),
@@ -36,13 +36,14 @@ namespace flopoco {
 		compressionType(compressionType_),
 		modulus(modulus_),
 		maxInput(maxInput_),
-		mode(mode_)
+		mode(mode_),
+		pseudoCompMode(pseudoCompMode_)
 	{
 		initialize();
 	}
 
 
-	BitHeap::BitHeap(Operator* op_, int msb_, int lsb_, string name_, int compressionType_, int modulus_, int maxInput_, string mode_) :
+	BitHeap::BitHeap(Operator* op_, int msb_, int lsb_, string name_, int compressionType_, int modulus_, int maxInput_, string mode_, string pseudoCompMode_) :
 		msb(msb_), lsb(lsb_),
 		width(msb_-lsb_+1),
 		height(0),
@@ -51,7 +52,8 @@ namespace flopoco {
 		compressionType(compressionType_),
 		modulus(modulus_),
 		maxInput(maxInput_),
-		mode(mode_)
+		mode(mode_),
+		pseudoCompMode(pseudoCompMode_)
 	{
 		initialize();
 	}

@@ -217,6 +217,23 @@ namespace flopoco{
                         useSingleBitSubtraction = false;
                     }
 
+                    mpz_class afterPseudoCompMax = 0;
+                    mpz_class afterPseudoCompMin = 0;
+                    for (int i = 0; i < currentRanges.size(); ++i) {
+                        //cerr << "current ranges " << i << " is " << currentRanges[i] << endl;
+                        if (currentRanges[i] >= 0) {
+                            afterPseudoCompMax += currentRanges[i];
+                        } else {
+                            afterPseudoCompMin += currentRanges[i];
+                        }
+                    }
+
+                    if (afterPseudoCompMax == moduloRangeMax && afterPseudoCompMin == moduloRangeMin) {
+                        if (bitheap->pseudoCompMode == "lMinBits") {
+                            bitheap->pseudoCompMode = "minRange";
+                        }
+                    }
+
                 } else {
                     cerr << "normal compression" << endl;
 
@@ -408,10 +425,44 @@ namespace flopoco{
     bool MaxEfficiencyCompressionStrategy::isRemainderMoreEfficient(int rem, int remToCompare) {
 	    if (bitheap->mode.find("pos") != string::npos) {
             return rem >= 0;
-	    } else {
+	    } else if (bitheap->pseudoCompMode == "minRange") {
             return abs(rem) < abs(remToCompare);
+	    } else if (bitheap->pseudoCompMode == "lMinBits"){
+	        cerr << "For value " << rem << " contains ones " << countOnes(rem) << endl;
+            cerr << "For value 2 " << remToCompare << " contains ones " << countOnes(remToCompare) << endl;
+            return countOnes(rem) < countOnes(remToCompare);
+	    } else {
+            THROWERROR("No matching mode to decide which pseudo compressor is better");
 	    }
 	}
+
+    int MaxEfficiencyCompressionStrategy::getLeadingZero(long long value) {
+        long long oneLL = static_cast<long long>(1);
+        int msz = -1;
+        for (int w = 0; w < 32; ++w) {
+            if ((value & (oneLL << (w))) == 0) {
+                msz = w;
+            }
+        }
+        return msz;
+    }
+
+    int MaxEfficiencyCompressionStrategy::countOnes(long long value) {
+        long long oneLL = static_cast<long long>(1);
+        int bits = 0;
+        int limit = 63;
+        if (value < 0 && bitheap->mode.find("sevector") != string::npos) {
+            limit = getLeadingZero(value) + 1;
+        }
+        //cerr << "countOnes value " << value << " limit is " << limit << endl;
+
+        for (int i = 0; i <= limit; ++i) {
+            if ((value & (oneLL << i)) == (oneLL << i)) {
+                bits++;
+            }
+        }
+        return bits;
+    }
 
     bool MaxEfficiencyCompressionStrategy::shouldPlacePseudoCompressors(vector<int> bitAmountStage) {
         int maxHeightBitAmount = *max_element(bitAmountStage.begin(), bitAmountStage.end());

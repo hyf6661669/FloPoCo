@@ -18,7 +18,7 @@ using namespace std;
 namespace flopoco {
 
 
-    BitHeapModuloTest::BitHeapModuloTest(Target* target, int wIn_, int mod_, int maxInput_, string mode_) : Operator(target), wIn(wIn_), mod(mod_), maxInput(maxInput_) {
+    BitHeapModuloTest::BitHeapModuloTest(Target* target, int wIn_, int mod_, int maxInput_, string mode_, string pseudoCompMode_) : Operator(target), wIn(wIn_), mod(mod_), maxInput(maxInput_) {
 
         // definition of the source file name, used for info and error reporting using REPORT
         srcFileName="BitHeapModuloTest";
@@ -69,7 +69,7 @@ namespace flopoco {
         transform(mode_.begin(), mode_.end(), mode_.begin(), ::tolower);
 
         BitHeap *bitHeap;
-        bitHeap = new BitHeap(this, wIn, "moduloBitheap", 0, mod, maxInput, mode_);
+        bitHeap = new BitHeap(this, wIn, "moduloBitheap", 0, mod, maxInput, mode_, pseudoCompMode_);
         bitHeap->addSignal("X", 0);
         bitHeap->startCompression();
 
@@ -197,12 +197,13 @@ namespace flopoco {
 
     OperatorPtr BitHeapModuloTest::parseArguments(OperatorPtr parentOp, Target *target, vector<string> &args) {
         int wIn, mod, maxInput;
-        string mode;
+        string mode, pseudoCompMode;
         UserInterface::parseInt(args, "wIn", &wIn); // wIn has a default value, this method will recover it if it doesn't find it in args,
         UserInterface::parseInt(args, "mod", &mod);
         UserInterface::parseInt(args, "maxInput", &maxInput);
         UserInterface::parseString(args, "mode", &mode);
-        return new BitHeapModuloTest(target, wIn, mod, maxInput, mode);
+        UserInterface::parseString(args, "pseudoCompMode", &pseudoCompMode);
+        return new BitHeapModuloTest(target, wIn, mod, maxInput, mode, pseudoCompMode);
     }
 
     void BitHeapModuloTest::registerFactory(){
@@ -225,7 +226,9 @@ namespace flopoco {
                            " - singleBitSEVector:"
                            " - msbCasesPos:"
                            " - msbCasesSEVector:"
-                           " - default: ",
+                           " - default: ; \
+                           pseudoCompMode(string)=minRange: mode for pseudocompression to choose which pseudocomrpessor to use"
+                           "available are: minRange, lMinBits",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "<br> Also see the developer manual in the doc/ directory of FloPoCo.",
                            BitHeapModuloTest::parseArguments,

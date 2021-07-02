@@ -107,7 +107,11 @@ namespace flopoco{
 
             if (computeModulo) {
                 cerr << "negativeSignExtension " << negativeSignExtension << endl;
-                remainderExtension = negativeSignExtension % bitheap->modulus;
+                //remainderExtension = negativeSignExtension % bitheap->modulus;
+                int remainderExtensionTmp = ((negativeSignExtension % bitheap->modulus) + bitheap->modulus) % bitheap->modulus - bitheap->modulus;
+                remainderExtension = negativeSignExtension == 0 ? 0 : remainderExtensionTmp;
+                //cerr << "remainderExtension" << remainderExtension << endl;
+                //cerr << "previous remainderExtension " << negativeSignExtension % bitheap->modulus << endl;
 
                 for (int i = 0; i < currentRanges.size(); ++i) {
                     //cerr << "current ranges " << i << " is " << currentRanges[i] << endl;
@@ -192,6 +196,17 @@ namespace flopoco{
                         extraRangeToSubtract = 0;
                     }
 
+                    mpz_class beforePseudoCompMax = 0;
+                    mpz_class beforePseudoCompMin = 0;
+                    for (int i = 0; i < currentRanges.size(); ++i) {
+                        //cerr << "current ranges " << i << " is " << currentRanges[i] << endl;
+                        if (currentRanges[i] >= 0) {
+                            beforePseudoCompMax += currentRanges[i];
+                        } else {
+                            beforePseudoCompMin += currentRanges[i];
+                        }
+                    }
+
 
                     currentRangesInvertedBits.clear();
                     for(unsigned int c = 0; c < bitAmount[s].size(); c++){
@@ -228,7 +243,7 @@ namespace flopoco{
                         }
                     }
 
-                    if (afterPseudoCompMax == moduloRangeMax && afterPseudoCompMin == moduloRangeMin) {
+                    if (afterPseudoCompMax == beforePseudoCompMax && afterPseudoCompMin == beforePseudoCompMin) {
                         if (bitheap->pseudoCompMode == "lMinBits") {
                             bitheap->pseudoCompMode = "minRange";
                         }
@@ -294,7 +309,7 @@ namespace flopoco{
                                 //cerr << "single bit newRangeForStage " << newRangeForStage << endl;
                                 //cerr << "single bit currentOnlyPositiveMaxRange " << currentOnlyPositiveMaxRange << endl;
 
-                                if (currentOnlyPositiveMaxRange == newRangeForStage && pseudoCompChangedRange) {
+                                if (currentOnlyPositiveMaxRange <= newRangeForStage && pseudoCompChangedRange) {
                                     //cerr << "shouldUseSinglePseudoComps false" << endl;
                                     shouldUseSinglePseudoComps = false;
                                 }

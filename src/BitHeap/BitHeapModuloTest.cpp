@@ -178,17 +178,22 @@ namespace flopoco {
         // the static list of mandatory tests
         TestList testStateList;
         vector<pair<string,string>> paramList;
+        string modes[] = {"msbCasesSingleBitSEVector"};
 
         if(index==-1) 	{ // The unit tests
-            for (int wIn=4; wIn<=12; wIn++) {
-                for(int m=2; m<20; m++) {
-                    paramList.push_back(make_pair("wIn",to_string(wIn)));
-                    paramList.push_back(make_pair("mod",to_string(m)));
-                    paramList.push_back(make_pair("mode","singleBitSeVector"));
-                    paramList.push_back(make_pair("TestBench n=",to_string(100)));
-                    testStateList.push_back(paramList);
+            for (int i = 0; i < 1; i++) {
+                for (int wIn=64; wIn<=64; wIn++) {
+                    for(int m=11; m<61; m+=2) {
+                        paramList.push_back(make_pair("target","GenericAsic"));
+                        paramList.push_back(make_pair("wIn",to_string(wIn)));
+                        paramList.push_back(make_pair("mod",to_string(m)));
+                        paramList.push_back(make_pair("mode",modes[i]));
+                        paramList.push_back(make_pair("pseudoCompMode", "lMinBits"));
+                        paramList.push_back(make_pair("TestBench n=",to_string(100)));
+                        testStateList.push_back(paramList);
 
-                    paramList.clear();
+                        paramList.clear();
+                    }
                 }
             }
         }

@@ -16,7 +16,12 @@ TilingAndCompressionOptILP::TilingAndCompressionOptILP(
 		float occupation_threshold,
 		int maxPrefMult,
         MultiplierTileCollection mtc_,
-        BitHeap* bitheap):TilingStrategy(
+        BitHeap* bitheap,
+        unsigned guardBits,
+        unsigned keepBits,
+        mpz_class errorBudget,
+        mpz_class &centerErrConstant,
+        bool performOptimalTruncation):TilingStrategy(
 			wX_,
 			wY_,
 			wOut_,
@@ -25,8 +30,30 @@ TilingAndCompressionOptILP::TilingAndCompressionOptILP(
         CompressionStrategy(bitheap),
 		max_pref_mult_ {maxPrefMult},
 		occupation_threshold_{occupation_threshold},
-		tiles{mtc_.MultTileCollection}
+		tiles{mtc_.MultTileCollection},
+        guardBits{guardBits},
+        keepBits{keepBits},
+        eBudget{errorBudget},
+        centerErrConstant{centerErrConstant},
+        performOptimalTruncation{performOptimalTruncation}
 	{
+	    //Check if error bound fits into UINT64 and otherwise use optiTrunc=0
+        cout << errorBudget << endl;
+        mpz_class max64;
+        unsigned long long max64u = (1ULL << 52)-1ULL;//UINT64_MAX; //Limit to dynamic of double type
+        mpz_import(max64.get_mpz_t(), 1, -1, sizeof max64u, 0, 0, &max64u);
+        if(errorBudget <= max64){
+            mpz_export(&this->errorBudget, 0, -1, sizeof this->errorBudget, 0, 0, errorBudget.get_mpz_t());
+        } else {
+            if(performOptimalTruncation)
+                cout << "WARNING: errorBudget or constant exceeds the number range of uint64, switching to optiTrunc=0" << endl;
+            this->errorBudget = 0;
+            this->performOptimalTruncation = false;
+        }
+        cout << this->errorBudget << endl;
+
+        cout << "guardBits " << guardBits << " keepBits " << keepBits << endl;
+
         for(auto &p:tiles)
         {
                 cout << p->getLUTCost(0, 0, wX, wY, false) << " " << p->getType() << endl;
@@ -46,11 +73,27 @@ void TilingAndCompressionOptILP::solve()
     //for debugging it might be better to order the compressors by efficiency
     orderCompressorsByCompressionEfficiency();
 
+    cout << "available compressors" << endl;
+    for(unsigned int i = 0; i < possibleCompressors.size(); i++){
+        cout << possibleCompressors[i]->getStringOfIO() << " efficiency " << possibleCompressors[i]->getEfficiency() << endl;
+
+    }
+
     ScaLP::status stat;
+    solver->reset();
+    bool tryOneMoreStage = true;
     s_max = 0;
-    do{
+    do{ //increase stages till a feasible solution is found to get the minimal possible number of compressor stages
+        //Try to find a cheaper result with one more stage, check if previous solution was feasible
+        if((stat == ScaLP::status::OPTIMAL || stat == ScaLP::status::FEASIBLE || stat == ScaLP::status::TIMEOUT_FEASIBLE) && tryOneMoreStage){
+            cerr << "The result with " << s_max << " stages was " << stat << " but attempting to get a cheaper result with one stage more." << endl;
+            bestResult = solver->getResult();
+            tryOneMoreStage = false;
+        }
+
         s_max++;
         solver->reset();
+        TilingStrategy::solution.clear();
         constructProblem(s_max);
 
         // Try to solve
@@ -61,74 +104,126 @@ void TilingAndCompressionOptILP::solve()
         // print results
         cerr << "The result is " << stat << endl;
         //cerr << solver->getResult() << endl;
-    } while(stat == ScaLP::status::INFEASIBLE);
+        writeSolutionFile(solver->getResult());
 
+    } while(stat == ScaLP::status::INFEASIBLE || tryOneMoreStage);
+
+    //Select the least expensive solution, when a solution with an additional compression stage was tested
     ScaLP::Result res = solver->getResult();
-
-    double total_cost = 0;
-    int dsp_cost = 0, own_lut_cost=0;;
-    for(auto &p:res.values)
-    {
-        if(p.second > 0.5){     //parametrize all multipliers at a certain position, for which the solver returned 1 as solution, to flopoco solution structure
-            std::string var_name = p.first->getName();
-            cout << var_name << "\t " << p.second << endl;
-            if(var_name.substr(0,1).compare("d") != 0 && var_name.substr(0,1).compare("k") != 0) continue;
-            switch(var_name.substr(0,1).at(0)){
-                case 'd':{
-                    int mult_id = stoi(var_name.substr(1,dpS));
-                    int x_negative = (var_name.substr(1+dpS,1).compare("m") == 0)?1:0;
-                    int m_x_pos = stoi(var_name.substr(1+dpS+x_negative,dpX)) * ((x_negative)?(-1):1);
-                    int y_negative = (var_name.substr(1+dpS+x_negative+dpX,1).compare("m") == 0)?1:0;
-                    int m_y_pos = stoi(var_name.substr(1+dpS+dpX+x_negative+y_negative,dpY)) * ((y_negative)?(-1):1);
-                    //cout << "is true:  " << setfill(' ') << setw(dpY) << mult_id << " " << setfill(' ') << setw(dpY) << m_x_pos << " " << setfill(' ') << setw(dpY) << m_y_pos << " cost: " << setfill(' ') << setw(5) << tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY) << std::endl;
-
-                    total_cost += (double)tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
-                    own_lut_cost += tiles[mult_id]->ownLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
-                    dsp_cost += (double)tiles[mult_id]->getDSPCost();
-                    auto coord = make_pair(m_x_pos, m_y_pos);
-                    TilingStrategy::solution.push_back(make_pair(tiles[mult_id]->getParametrisation().tryDSPExpand(m_x_pos, m_y_pos, wX, wY, signedIO), coord));
-                    break;
-                }
-                case 'k':{
- /*                   int sta_id = stoi(var_name.substr(2,dpSt));
-                    int com_id = stoi(var_name.substr(2+dpSt+1,dpK));
-                    int col_id = stoi(var_name.substr(2+dpSt+1+dpK+1,dpC));
-                    //cout << "is compressor" << com_id << " stage " << sta_id << " column" << col_id;
-                    if(possibleCompressors[com_id] != flipflop && sta_id < s_max-1) {
-                        float instances = p.second;
-                        while(instances-- > 0.5){
-                            CompressionStrategy::solution.addCompressor(sta_id, col_id, possibleCompressors[com_id]);
-                            //cout << " new instance " << endl;
-                        }
-
-                    }*/
-                    break;
-                }
-                default:
-                    continue;
-            }
+    if(!bestResult.empty()){
+        if(bestResult.objectiveValue <= res.objectiveValue){
+            cout << "The solution with " << s_max-1 << " stages is less or equally expensive (" << bestResult.objectiveValue << ") then with " << s_max << " stages (" << res.objectiveValue << ")" << endl;
+            s_max--;
+            writeSolutionFile(bestResult);
+        } else {
+            cout << "The solution with " << s_max-1 << " stages is more expensive (" << bestResult.objectiveValue << ") then with " << s_max << " stages (" << res.objectiveValue << ")" << endl;
+            bestResult = res;
         }
-    }
-    cout << "Total LUT cost:" << total_cost <<std::endl;
-    cout << "Own LUT cost:" << own_lut_cost <<std::endl;
-    cout << "Total DSP cost:" << dsp_cost <<std::endl;
-/*
-    solution.push_back(make_pair(tiles[1]->getParametrisation().tryDSPExpand(0, 0, wX, wY, signedIO), make_pair(0, 0)));
-    solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(16, 0, wX, wY, signedIO), make_pair(16, 0)));
-    solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(32, 0, wX, wY, signedIO), make_pair(32, 0)));
-    solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(0, 24, wX, wY, signedIO), make_pair(0, 24)));
-    solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(16, 24, wX, wY, signedIO), make_pair(16, 24)));
-    solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(32, 24, wX, wY, signedIO), make_pair(32, 24)));
-    solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(48, 24, wX, wY, signedIO), make_pair(48, 24)));
-    solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(16, 48, wX, wY, signedIO), make_pair(16, 48)));
-    solution.push_back(make_pair(tiles[0]->getParametrisation().tryDSPExpand(32, 48, wX, wY, signedIO), make_pair(32, 48)));
-*/
-//    solution.push_back(make_pair(tiles[1]->getParametrisation(), make_pair(0, 0)));
+    } else bestResult = res;
+
+    bool truncErrorBoundsNotMet = false;
+    long long optTruncNumericErr = 0;
+    do {                                //Loop as a workaround for numeric solver problems during optimal truncation to ensure that the truncation error margin is met
+        if(truncErrorBoundsNotMet){
+            solver->reset();
+            TilingStrategy::solution.clear();
+            constructProblem(s_max);
+
+            // Try to solve
+            cout << "starting solver, this might take a while..." << endl;
+            solver->quiet = false;
+            stat = solver->solve();
+
+            // print results
+            cerr << "The result is " << stat << endl;
+            //cerr << solver->getResult() << endl;
+            writeSolutionFile(solver->getResult());
+        }
+        truncErrorBoundsNotMet = true;  //iterate, if error truncation bounds are not met
+
+        parseTilingSolution(optTruncNumericErr);
+
+    } while(performOptimalTruncation && (wOut < (int)prodWidth) && !checkTruncationError(TilingStrategy::solution, guardBits, eBudget, centerErrConstant) && 0 < optTruncNumericErr);
 
 #endif
 }
 
-void TilingAndCompressionOptILP::compressionAlgorithm() {
+    void TilingAndCompressionOptILP::parseTilingSolution(long long &optTruncNumericErr) {
+        //parse tiling solution
+        unsigned long long int new_constant = 0;
+        double sum[4] = {0, 0, 0, 0};                   //variable to sum the rounded and double decision variables to check for numeric problems
+        if(wOut < (int) prodWidth) cout << "centerErrConstant was: " << centerErrConstant << endl;//new error re-centering constant for truncation from solution
+        double total_cost = 0 ;
+        int dsp_cost = 0, own_lut_cost=0;
+        for(auto &p:bestResult.values)
+        {
+            if(p.second > 0.5){     //parametrize all multipliers at a certain position, for which the solver returned 1 as solution, to flopoco solution structure
+                string var_name = p.first->getName();
+                //cout << var_name << "\t " << p.second << endl;
+                switch(var_name.substr(0,1).at(0)){
+                    case 'd':{
+                        int mult_id = stoi(var_name.substr(1, dpS));
+                        int x_negative = (var_name.substr(1 + dpS, 1) == "m") ? 1 : 0;
+                        int m_x_pos = stoi(var_name.substr(1 + dpS + x_negative, dpX)) * ((x_negative) ? (-1) : 1);
+                        int y_negative = (var_name.substr(1 + dpS + x_negative + dpX, 1) == "m") ? 1 : 0;
+                        int m_y_pos = stoi(var_name.substr(1 + dpS + dpX + x_negative + y_negative, dpY)) * ((y_negative) ? (-1) : 1);
+                        cout << "is true:  " << setfill(' ') << setw(dpY) << mult_id << " " << setfill(' ') << setw(dpY) << m_x_pos << " " << setfill(' ') << setw(
+                                dpY) << m_y_pos << " cost: " << setfill(' ') << setw(5) << tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO) << endl;
+
+                        total_cost += (double) tiles[mult_id]->getLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
+                        own_lut_cost += tiles[mult_id]->ownLUTCost(m_x_pos, m_y_pos, wX, wY, signedIO);
+                        dsp_cost += tiles[mult_id]->getDSPCost();
+                        auto coord = make_pair(m_x_pos, m_y_pos);
+                        TilingStrategy::solution.push_back(make_pair(
+                                tiles[mult_id]->getParametrisation().tryDSPExpand(m_x_pos, m_y_pos, wX, wY, signedIO), coord));
+                        break;
+                    }
+                    case 'k':{
+                        //the compressors are processed in compressionAlgorithm()
+                        break;
+                    }
+                    case 'c':{
+                        int c_id = stoi(var_name.substr(1, dpC));
+                        new_constant |= (1ULL << c_id);
+                        cout << var_name << " pos " << c_id << " dpC " << dpC << endl;
+                        break;
+                    }
+                    default:
+                        continue;
+                }
+            }
+            //check variables for numeric derivations due to rounding for optimal truncation.
+            if (p.first->getName().substr(1, 1) == "b") {
+                int m_x_pos = stoi(p.first->getName().substr(2, dpX)) ;
+                int m_y_pos = stoi(p.first->getName().substr(2 + dpX, dpY));
+                sum[0] += p.second * (double)(1LL << (m_x_pos + m_y_pos));
+                if (p.second >= 0.5) sum[1] += (double)(1LL << (m_x_pos + m_y_pos));
+            }
+            if (p.first->getName().substr(0, 1) == "c") {
+                int shift = stoi(p.first->getName().substr(1, dpC));
+                sum[2] += p.second * (1 << shift);
+                if (p.second >= 0.5) sum[3] += (1 << shift);
+            }
+        }
+        cout << "Total LUT cost:" << total_cost << endl;
+        cout << "Own LUT cost:" << own_lut_cost << endl;
+        cout << "Total DSP cost:" << dsp_cost << endl;
+
+        if(performOptimalTruncation){
+            //refresh centerErrConstant according to ILP solution
+            mpz_import(centerErrConstant.get_mpz_t(), 1, -1, sizeof new_constant, 0, 0, &new_constant);
+            cout << "centerErrConstant now is: " << centerErrConstant << endl;
+
+            //check for numeric errors in solution
+            optTruncNumericErr = (long long)ceil(fabs((sum[0] + sum[2]) - (sum[1] + sum[3])));
+            if(0 < optTruncNumericErr){
+                cout << "Warning: Numeric problems in solution, repeating ILP with Offset for Error of " << optTruncNumericErr << endl;
+                errorBudget -= optTruncNumericErr;      //Reduce errorBudget by scope of numeric derivation for next iteration
+            }
+        }
+    }
+
+    void TilingAndCompressionOptILP::compressionAlgorithm() {
 #ifndef HAVE_SCALP
 		throw "Error, TilingAndCompressionOptILP::compressionAlgorithm() was called but FloPoCo was not built with ScaLP library";
 #else
@@ -148,8 +243,8 @@ void TilingAndCompressionOptILP::compressionAlgorithm() {
 		float compressor_cost = 0;
 		vector<vector<int>> zeroInputsVector(s_max, vector<int>((int)prodWidth,0));
 		resizeBitAmount(s_max-1);
-		ScaLP::Result res = solver->getResult();
-		for(auto &p:res.values)
+
+		for(auto &p:bestResult.values)
 		{
 			if(p.second > 0.5){     //parametrize all multipliers at a certain position, for which the solver returned 1 as solution, to flopoco solution structure
 				std::string var_name = p.first->getName();
@@ -201,7 +296,7 @@ void TilingAndCompressionOptILP::compressionAlgorithm() {
 #ifdef HAVE_SCALP
 void TilingAndCompressionOptILP::constructProblem(int s_max)
 {
-    cout << "constructing problem formulation..." << endl;
+    cout << "constructing problem formulation with " << s_max << " stages..." << endl;
     wS = tiles.size();
 
 
@@ -215,7 +310,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
     }
     prodWidth = IntMultiplier::prodsize(wX, wY, signedIO, signedIO);
     int nx = wX-1, ny = wY-1, ns = wS-1; dpX = 1; dpY = 1; dpS = 1;     //calc number of decimal places, for var names
-    int nk = possibleCompressors.size()+4, nc = prodWidth + 1, nst = s_max; dpK = 1; dpC = 1; dpSt = 1;
+    int nk = possibleCompressors.size()+4, nc = prodWidth + 1, nerc = prodWidth-wOut, nst = s_max; dpK = 1; dpC = 1; dpERC = 1; dpSt = 1;
     nx = (x_neg > nx)?x_neg:nx;                                         //in case the extend in negative direction is larger
     ny = (y_neg > ny)?y_neg:ny;
     while (nx /= 10)
@@ -228,12 +323,14 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
         dpK++;
     while (nc /= 10)
         dpC++;
+    while (nc /= 10)
+        dpERC++;
     while (nst /= 10)
         dpSt++;
 
     vector<ScaLP::Term> bitsinColumn(prodWidth + 1);
     vector<vector<vector<ScaLP::Variable>>> solve_Vars(wS, vector<vector<ScaLP::Variable>>(wX+x_neg, vector<ScaLP::Variable>(wY+y_neg)));
-    ScaLP::Term maxEpsTerm;
+    ScaLP::Term maxEpsTerm, constVecTerm;
     __uint64_t sumOfPosEps = 0;
     // add the Constraints
     cout << "   adding the constraints to problem formulation..." << endl;
@@ -246,7 +343,9 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                 for(int ys = 0 - tiles[s]->wY() + 1; ys <= y; ys++){					//...check if the position x,y gets covered by tile s located at position (xs, ys) = (x-wtile..x, y-htile..y)
                     for(int xs = 0 - tiles[s]->wX() + 1; xs <= x; xs++){
                         if(occupation_threshold_ == 1.0 && ((wX - xs) < (int)tiles[s]->wX() || (wY - ys) < (int)tiles[s]->wY())) break;
-                        if(tiles[s]->shape_contribution(x, y, xs, ys, wX, wY, signedIO) == true){
+                        if(signedIO && (wX < xs+tiles[s]->wX() || wY < ys+tiles[s]->wY()) ) break;                      //Avoid considering protruding cases in signed case, tiling is valid without
+                        if(tiles[s]->shape_contribution(x, y, xs, ys, wX, wY, signedIO)){
+//                            if((wOut < (int)prodWidth) && ((xs+tiles[s]->wX()+ys+tiles[s]->wY()-2) < ((int)prodWidth-wOut-guardBits))) break;
                             if(tiles[s]->shape_utilisation(xs, ys, wX, wY, signedIO) >=  occupation_threshold_ ){
                                 if(solve_Vars[s][xs+x_neg][ys+y_neg] == nullptr){
                                     stringstream nvarName;
@@ -257,29 +356,50 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                                     obj.add(tempV, (double)tiles[s]->ownLUTCost(xs, ys, wX, wY, signedIO));    //append variable to cost function
 
                                     int col_min = xs+ys+tiles[s]->getRelativeResultLSBWeight(tiles[s]->getParametrisation());
-                                    int col_max = xs+ys+tiles[s]->getRelativeResultMSBWeight(tiles[s]->getParametrisation());
+                                    //int col_max = xs+ys+tiles[s]->getRelativeResultMSBWeight(tiles[s]->getParametrisation());
+                                    int col_max = xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),signedIO && xs == wX-tiles[s]->wX(), signedIO && ys == wY-tiles[s]->wY());
                                     for(col_min = ((col_min < 0)?0:col_min); col_min < (((int)prodWidth<col_max)?(int)prodWidth:col_max); col_min++){
-                                        //cout << "position " << col_min << endl;
+                                        //if(s == 5 || s==6) cout << "position " << col_min << " max col " << col_max << endl;
                                         bitsinColumn[col_min].add(tempV, 1);
                                     }
 
                                     if(wOut < (int)prodWidth && ((unsigned long)1<<(x+y)) <= ((unsigned long)1<<(prodWidth-wOut))){
-                                        maxEpsTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg], ((unsigned long)1<<(x+y)));
+//                                        maxEpsTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg], (double)((unsigned long)1<<(x+y)));
                                         //maxEpsTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg], 1);
                                     }
                                 }
                                 pxyTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg], 1);
+                                //if(signedIO && (x == wX-1 || y == wY-1)) constVecTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg],(double)((1ULL<<(wX+wY))-(1ULL<<(xs+ys+tiles[s]->getParametrisation().getRelativeResultMSBWeight()))));
+                                //if(signedIO && (x == wX-1 || y == wY-1)) printf("s=%02d, x=%02d, y=%02d, wx=%01d, wy=%01d, wOut=%02d, msb=%02d, 0x%08llx\n", s, xs, ys, tiles[s]->wX(), tiles[s]->wY(), tiles[s]->getParametrisation().getRelativeResultMSBWeight(), xs+ys+tiles[s]->getParametrisation().getRelativeResultMSBWeight(), ((1ULL<<(wX+wY))-(1ULL<<(xs+ys+tiles[s]->getParametrisation().getRelativeResultMSBWeight()))));
+                                if(signedIO && (x == wX-1 || y == wY-1) && x == xs+tiles[s]->wX()-1 && y == ys+tiles[s]->wY()-1){
+                                    if(tiles[s]->wX() == 1 && tiles[s]->wY() == 1 && xs == wX-1 && ys == wY-1) break; //the 1x1 tile with (1,1) signedness should not get a sign extension vector.
+                                    constVecTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg],(double)((1ULL<<(wX+wY))-(1ULL<<(xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY())-1))));
+                                    printf("s=%02d, x=%02d, y=%02d, wx=%01d, wy=%01d, wOut=%02d, msb=%02d, 0x%08llx\n", s, xs, ys, tiles[s]->wX(), tiles[s]->wY(), IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY()), xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY())-1, ((1ULL<<(wX+wY))-(1ULL<<(xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY())-1))));
+                                }
                             }
                         }
                     }
                 }
             }
+
             ScaLP::Constraint c1Constraint;
-            if(wOut < (int)prodWidth && ((unsigned long)1 << (x + y)) <= ((unsigned long)1 << (prodWidth - wOut - 1))){
-                c1Constraint = pxyTerm <= (bool)1;
-                sumOfPosEps += ((unsigned long)1<<(x+y));
-                cout << sumOfPosEps << " " << ((unsigned long)1<<(x+y)) << endl;
-                cout << wOut << " " << (wOut < (int)prodWidth) << " " << ((unsigned long)1<<(x+y)) << " " << ((unsigned long)1<<(prodWidth-wOut-1)) << endl;
+            if(performOptimalTruncation && (wOut < (int)prodWidth) && ((x + y) < ((int)prodWidth - wOut))) {
+                stringstream nvarName;
+                nvarName << " b" << setfill('0') << setw(dpX) << x << setfill('0') << setw(dpY) << y;
+                ScaLP::Variable tempV = ScaLP::newBinaryVariable(nvarName.str());
+                maxEpsTerm.add(tempV, (-1LL) * (1LL << (x + y)));
+                maxEpsTerm.add(1ULL << (x + y));
+
+                c1Constraint = pxyTerm - tempV == 0;
+            } else if(!performOptimalTruncation && (wOut < (int)prodWidth) && ((x + y) < ((int)prodWidth - wOut - guardBits))){
+                //c1Constraint = pxyTerm <= (bool)1;
+            } else if(!performOptimalTruncation && (wOut < (int)prodWidth) && ((x + y) == ((int)prodWidth - wOut - guardBits))){
+                if((keepBits)?keepBits--:0){
+                    c1Constraint = pxyTerm == (bool)1;
+                    cout << "keepBit at" << x << "," << y << endl;
+                } else {
+                    cout << "NO keepBit at" << x << "," << y << endl;
+                }
             } else {
                 c1Constraint = pxyTerm == (bool)1;
             }
@@ -317,16 +437,72 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
     }
 
     //make shure the available precision is present in case of truncation
-    if(wOut < (int)prodWidth){
-        cout << "   multiplier is truncated by " << prodWidth-wOut << " bits, ensure sufficient precision..." << endl;
-        cout << sumOfPosEps << " " << ((unsigned long)1<<(prodWidth-wOut-1));
-        ScaLP::Constraint truncConstraint = maxEpsTerm >= (sumOfPosEps-((unsigned long)1<<(prodWidth-wOut-1)));
-        //ScaLP::Constraint truncConstraint = maxEpsTerm >= (bool)1;
+    if(performOptimalTruncation && (wOut < (int)prodWidth))
+    {
+        cout << "   multiplier is truncated by " << (int)prodWidth-wOut << " bits (err=" << (unsigned long)wX*(((unsigned long)1<<((int)wOut-guardBits))) << "), ensure sufficient precision..." << endl;
+        //cout << "   guardBits=" << guardBits << endl;
+        //cout << "   g=" << guardBits << " k=" << keepBits << " errorBudget=" << errorBudget << " difference to conservative est: " << errorBudget-(long long)(((unsigned long)1)<<(prodWidth-(int)wOut-1)-1) << endl;
+
+        stringstream nvarName;
+        nvarName << "C";
+        ScaLP::Variable Cvar = ScaLP::newIntegerVariable(nvarName.str());
+
+        // C = 2^i*c_i + 2^(i+1)*c_(i+1)...
+        ScaLP::Term cTerm;
+        vector<ScaLP::Variable> cVars(prodWidth-wOut-1);
+        for(int i = 0; i < prodWidth-wOut-1; i++){
+            stringstream cvarName;
+            cvarName << "c" << i;
+            //cout << cvarName.str() << endl;
+            cVars[i] = ScaLP::newBinaryVariable(cvarName.str());
+            cTerm.add(cVars[i],  (double)( 1ULL << i));
+            constVecTerm.add(cVars[i],  (double)( 1ULL << i));
+            //obj.add(cVars[i], (double)0.65);    //append variable to cost function (not needed for combined optimization)
+        }
+        ScaLP::Constraint cConstraint = cTerm - Cvar == 0;
+        stringstream cName;
+        cName << "cCons";
+        cConstraint.name = cName.str();
+        solver->addConstraint(cConstraint);
+
+        //Limit value of constant to center the error around 0 to the error budget
+        ScaLP::Constraint cLimConstraint = Cvar < errorBudget;
+        stringstream cLimName;
+        cLimName << "cLimCons";
+        cLimConstraint.name = cLimName.str();
+        solver->addConstraint(cLimConstraint);
+
+        //Limit the error budget
+        //cout << "  maxErr=" << errorBudget << endl;
+        ScaLP::Constraint truncConstraint = maxEpsTerm - Cvar < errorBudget;
         stringstream consName;
         consName << "maxEps";
         truncConstraint.name = consName.str();
         solver->addConstraint(truncConstraint);
     }
+    //Add rounding bit to constant vector
+    if(wOut < (int)prodWidth) constVecTerm.add((double)( 1ULL << (prodWidth-wOut-1)));
+    //When the optimal truncation is not used, the truncation error recentering constant is added to the constant vector
+    if((wOut < (int)prodWidth) && !performOptimalTruncation) constVecTerm.add(centerErrConstant.get_d());
+
+    //constant vector bits for sign extension and truncation constants
+    vector<ScaLP::Variable> cvBits(prodWidth+5);
+    if(signedIO || wOut < (int)prodWidth){
+        for(int i = 0; i < prodWidth+5; i++){
+            stringstream cvarName;
+            cvarName << "v" << setfill('0') << setw(dpC) << i;
+            //cout << cvarName.str() << " weight " << (double)(1ULL << i) << endl;
+            cvBits[i] = ScaLP::newBinaryVariable(cvarName.str());
+            constVecTerm.add(cvBits[i], -(double)(1ULL << i));
+        }
+        //Calculate individual constant vector bits
+        ScaLP::Constraint cvConstraint = constVecTerm == 0;
+        stringstream consName;
+        consName << "cVec";
+        cvConstraint.name = consName.str();
+        solver->addConstraint(cvConstraint);
+    }
+
 
     // BitHeap compression part of ILP formulation
     bitheap->final_add_height = 3;   //Select if dual or ternary adder is used in final stage of bitheap compression
@@ -389,7 +565,8 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
             if(s == 0 && bitsInColAndStage[s][c] != nullptr){
                 stringstream consName0;
                 consName0 << "C0_" << s << "_" << c;
-                bitsinColumn[c].add(bitsInColAndStage[s][c], -1);      //Output bits from sub-multipliers
+                bitsinColumn[c].add(bitsInColAndStage[s][c], -1);      //Add variable to account for the output bits from sub-multipliers
+                if(cvBits[c] != nullptr) bitsinColumn[c].add(cvBits[c], 1);      //Output bits from constant vector
                 ScaLP::Constraint c0Constraint = bitsinColumn[c] == 0;     //C0_s_c
                 c0Constraint.name = consName0.str();
                 solver->addConstraint(c0Constraint);
@@ -494,7 +671,51 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
         }
     }
 
+    bool TilingAndCompressionOptILP::checkTruncationError(list<TilingStrategy::mult_tile_t> &solution, unsigned guardBits, mpz_class errorBudget, mpz_class constant){
+        std::vector<std::vector<bool>> mulArea(wX, std::vector<bool>(wY,false));
+
+        for(auto & tile : solution) {
+            auto &parameters = tile.first;
+            auto &anchor = tile.second;
+            int xPos = anchor.first;
+            int yPos = anchor.second;
+
+            for(int x = 0; x < parameters.getMultXWordSize(); x++){
+                for(int y = 0; y < parameters.getMultYWordSize(); y++){
+                    if(0 <= xPos+x && 0 <= yPos+y && xPos+x < wX && yPos+y < wY)
+                        mulArea[xPos+x][yPos+y] = mulArea[xPos+x][yPos+y] || parameters.shapeValid(x,y);
+                }
+            }
+        }
+
+        mpz_class truncError, maxErr = errorBudget+constant;
+        truncError = mpz_class(0);
+        for(int y = 0; y < wY; y++){
+            for(int x = wX-1; 0 <= x; x--){
+                if(mulArea[x][y] == false)
+                    truncError += (mpz_class(1)<<(x+y));
+                //cout << ((mulArea[x][y] == true)?1:0);
+            }
+            //cout << endl;
+        }
+
+        if(truncError <= maxErr){
+            cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << " by " << maxErr-truncError << "." << endl;
+            return true;
+        } else {
+            cout << "WARNING: actual truncation error=" << truncError << " is larger than the max. permissible error=" << maxErr << " by " << truncError-maxErr << "." << endl;
+            return false;
+        }
+    }
+
 #endif
+
+    void TilingAndCompressionOptILP::writeSolutionFile(ScaLP::Result result) {
+        ofstream result_file;
+        result_file.open("result.txt");
+        result_file << result;
+        result_file.close();
+    }
 
 
 }   //end namespace flopoco

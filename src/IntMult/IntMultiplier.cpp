@@ -198,14 +198,19 @@ namespace flopoco {
 			tilingStrategy = new TilingAndCompressionOptILP(
 					wX,
 					wY,
-					wOut + guardBits,
+					wOut,
 					signedIO,
 					&baseMultiplierCollection,
 					baseMultiplierCollection.getPreferedMultiplier(),
 					dspOccupationThreshold,
 					maxDSP,
 					multiplierTileCollection,
-					&bitHeap
+					&bitHeap,
+                    guardBits,
+                    keepBits,
+                    errorBudget,
+                    centerErrConstant,
+                    optiTrunc
 			);
 
 		} else {
@@ -262,7 +267,7 @@ namespace flopoco {
             //Check truncated solution
             mpz_class actualTruncError = checkTruncationError(solution, guardBits, errorBudget, centerErrConstant);
             cout << "calc min req weight is=" << prodsize(wX, wY, signedIO, signedIO) - (wOut + guardBits) << endl;
-            bitHeapLSBWeight = calcBitHeapLSB(solution, guardBits, errorBudget, centerErrConstant, actualTruncError);
+            bitHeapLSBWeight = 0;//calcBitHeapLSB(solution, guardBits, errorBudget, centerErrConstant, actualTruncError);
             guardBits = wFullP - wOut - bitHeapLSBWeight; //To select result bits, because the dynamic ilp does not consider guardBits
 
 		    //this is the rounding bit for a faithfully rounded truncated multiplier
@@ -285,7 +290,7 @@ namespace flopoco {
         branchToBitheap(&bitHeap, solution, bitHeapLSBWeight);
 
 		if (dynamic_cast<CompressionStrategy*>(tilingStrategy)) {
-			std::cout << "Class is derived from CompressionStrategy, passing result for compressor tree.";
+			std::cout << "Class is derived from CompressionStrategy, passing result for compressor tree.\n";
 			bitHeap.startCompression(dynamic_cast<CompressionStrategy*>(tilingStrategy));
 		} else {
 			bitHeap.startCompression();
@@ -383,7 +388,7 @@ namespace flopoco {
         bool loop=true;
         while(loop){
             col++;                                                          //bitheap column
-            //height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column
+            //height = (col > (wFull/2))?wFull-col:col;                       //number of partial products in column (square multiplier)
             height = widthOfDiagonalOfRect(wX, wY, col, wFull);             //number of partial products in column
             mpz_pow_ui(colweight.get_mpz_t(), mpz_class(2).get_mpz_t(), col-1);
             weightedSumOfTruncatedBits += mpz_class(height) * colweight;
@@ -956,13 +961,6 @@ namespace flopoco {
             cout << endl;
         }
 
-        /*unsigned msw = ((errorBudget+constant)>>32ULL);
-        unsigned lsw = ((errorBudget+constant)&0xFFFFFFFFULL);
-        mpz_class factor;
-        mpz_pow_ui(factor.get_mpz_t(), mpz_class(2).get_mpz_t(), 32UL);
-        maxErr = (mpz_class(msw) * factor) | mpz_class(lsw);*/
-        //mpz_mul_2exp(maxErr.get_mpz_t(),mpz_class(msw).get_mpz_t(),mpz_class(32).get_mpz_t());
-        //cout << "errorBudget=" << errorBudget+constant << " maxErr=" << maxErr << endl;
         if(truncError <= maxErr){
             cout << "OK: actual truncation error=" << truncError << " is smaller than the max. permissible error=" << maxErr << " by " << maxErr-truncError << "." << endl;
         } else {

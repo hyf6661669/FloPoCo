@@ -91,10 +91,24 @@ class BitHeap;
         /* recursive function to compute the range for the specified position in the actualRanges array*/
         mpz_class maxRangeForPosition(vector<RangeEntry> actualRanges, int currentPosition, mpz_class maxValue);
 
+        /**
+         * computes the range for the bits on the bit heap
+         * @param currentRanges the range that a pseudo compressor will create at each column
+         * @param currentRangesInvertedBits bool for each bit to indicate that the output bits is inverted
+         * @param extraRangeToSubtract the number that has to be subtracted computed through the rangeForStage
+         *        method after a single bit pseudo compressor was used.
+         *
+         * @return a pair of <maximalRange,minimalRange>
+         */
+        pair<mpz_class,mpz_class> getMaxAndMinRangeOnBitHeap(vector<mpz_class> currentRanges, vector<bool> currentRangesInvertedBits, mpz_class extraRangeToSubtract, bool shouldSubtractSingleBit);
+
 		vector<float> lowerBounds;
 
 		int negativeSignExtension;
         bool needToApplyNegativeSignExtension;
+        bool useSingleBitSubtraction;
+        mpz_class moduloMaxRangeAfterLastPseudoCompression;
+        mpz_class moduloRangeMaxStageRangeCalculation;
 	};
 
 }

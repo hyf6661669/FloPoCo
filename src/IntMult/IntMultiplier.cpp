@@ -267,7 +267,7 @@ namespace flopoco {
             //Check truncated solution
             mpz_class actualTruncError = checkTruncationError(solution, guardBits, errorBudget, centerErrConstant);
             cout << "calc min req weight is=" << prodsize(wX, wY, signedIO, signedIO) - (wOut + guardBits) << endl;
-            bitHeapLSBWeight = 0;//calcBitHeapLSB(solution, guardBits, errorBudget, centerErrConstant, actualTruncError);
+            bitHeapLSBWeight = (dynamic_cast<CompressionStrategy*>(tilingStrategy))?0:calcBitHeapLSB(solution, guardBits, errorBudget, centerErrConstant, actualTruncError);
             guardBits = wFullP - wOut - bitHeapLSBWeight; //To select result bits, because the dynamic ilp does not consider guardBits
 
 		    //this is the rounding bit for a faithfully rounded truncated multiplier

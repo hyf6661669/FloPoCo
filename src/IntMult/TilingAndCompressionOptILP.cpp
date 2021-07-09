@@ -595,16 +595,19 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                 solver->addConstraint(c2Constraint);
             }
             if(s_max-1 <= s){
-                stringstream consName3;
-                consName3 << "C3_" << s << "_" << c;
-                //bitsinLastStageColumn[c].add(stageV, 10000);
-                bitsinLastStageColumn[c].add(bitsInColAndStage[s][c], 1);
-                //if(s < s_max - 1)
-                //    bitsinLastStageColumn[c].add(bitsInColAndStage[s+1][c], 4);
-                ScaLP::Constraint c3Constraint = bitsinLastStageColumn[c] <= ((s == s_max-1)?bitheap->final_add_height:1);     //C3_s_c
-                c3Constraint.name = consName3.str();
-                solver->addConstraint(c3Constraint);
-                //cout << consName3.str() << " " << stage.str() << endl;
+                if(s_max == s) {
+                    stringstream consName3;
+                    consName3 << "C3_" << s << "_" << c;
+                    //bitsinLastStageColumn[c].add(stageV, 10000);
+                    bitsinLastStageColumn[c].add(bitsInColAndStage[s][c], 1);
+                    //if(s < s_max - 1)
+                    //    bitsinLastStageColumn[c].add(bitsInColAndStage[s+1][c], 4);
+                    ScaLP::Constraint c3Constraint =
+                            bitsinLastStageColumn[c] <= ((s == s_max - 1) ? bitheap->final_add_height : 1);     //C3_s_c
+                    c3Constraint.name = consName3.str();
+                    solver->addConstraint(c3Constraint);
+                    //cout << consName3.str() << " " << stage.str() << endl;
+                }
                 if(0 < c && s < s_max){
                     stringstream consName5;
                     consName5 << "C5_" << s << "_" << c;

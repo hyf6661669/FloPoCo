@@ -928,6 +928,8 @@ namespace flopoco{
                 adderIn1 << " & " << bitheap->bits[compressionDoneIndex][1]->getName();
                 if(bitheap->bits[compressionDoneIndex].size() > 2)
                     adderIn2 << " & " << bitheap->bits[compressionDoneIndex][2]->getName();
+                else
+                    adderIn2 << " & \'0\'";
 
                 if(bitheap->bits[compressionDoneIndex].size() > 3)
                     adderCin << bitheap->bits[compressionDoneIndex][3]->getName();

@@ -11,6 +11,7 @@ namespace flopoco{
 	OptimalCompressionStrategy::OptimalCompressionStrategy(BitHeap* bitheap, bool optimalMinStages) : CompressionStrategy(bitheap)
 	{
 		this->optimalMinStages = optimalMinStages;
+        bitheap->final_add_height = 3;              //use ternary final adder
 	}
 
 
@@ -329,7 +330,7 @@ namespace flopoco{
 					c3Term = c3Term + 4 * newBitsCountVars[z][c];
 				}
 				c3Term = c3Term + LARGE_NUMBER * stageVars[s];
-				ScaLP::Constraint c3Constraint = c3Term <= LARGE_NUMBER + 3;
+				ScaLP::Constraint c3Constraint = c3Term <= LARGE_NUMBER + bitheap->final_add_height;
 				c3Constraint.name = consName.str();
 				problemSolver->addConstraint(c3Constraint);
 

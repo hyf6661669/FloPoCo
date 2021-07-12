@@ -41,8 +41,8 @@ using namespace std;
 // is coeffa 1/2:1/4 bc shifta = 3 (scalea = 1/(2^3) = 0.125)
 
 namespace flopoco {
-    FixIIRShiftAdd::FixIIRShiftAdd(OperatorPtr parentOp, Target* target, int lsbIn_, int lsbOut_, int msbIn_, int guardBits_, vector<string> coeffb_, vector<string> coeffa_, int64_t shifta_, int64_t shiftb_, string method_, string grapha_, string graphb_) :
-            Operator(parentOp, target), lsbIn(lsbIn_), lsbOut(lsbOut_), msbIn(msbIn_), guardBits(guardBits_), coeffb(coeffb_), coeffa(coeffa_), shifta(shifta_), shiftb(shiftb_), method(method_), grapha(grapha_), graphb(graphb_) {
+    FixIIRShiftAdd::FixIIRShiftAdd(OperatorPtr parentOp, Target* target, int lsbIn_, int lsbOut_, int msbIn_, int guardBits_, vector<string> coeffb_, vector<string> coeffa_, int64_t shifta_, int64_t shiftb_, string method_, string grapha_, string graphb_, double H_, double Heps_) :
+            Operator(parentOp, target), lsbIn(lsbIn_), lsbOut(lsbOut_), msbIn(msbIn_), guardBits(guardBits_), coeffb(coeffb_), coeffa(coeffa_), shifta(shifta_), shiftb(shiftb_), method(method_), grapha(grapha_), graphb(graphb_), H(H_), Heps(Heps_) {
         srcFileName = "FixIIRShiftAdd";
         setCopyrightString("Jonas Kuehle (2020)");
 
@@ -107,40 +107,54 @@ namespace flopoco {
         if ((m == 1 && coeffa_si[0] == -1) || shifta == -1)
             isFIR = true;
 
-        wcpg = 0;
         wcpgBitGain = 0;
 
         if(!isFIR) // wcpg and guard bits only necessary for IIR
         {
 #if HAVE_WCPG
-            REPORT(INFO, "Computing worst-case peak gain");
             coeffa_d_wcpg = (double *) malloc(m * sizeof(double));
             coeffb_d_wcpg = (double *) malloc(n * sizeof(double));
-            for(uint32_t i = 0; i < m; i++)
+            if(H == 0) // H not set by argument
             {
-                coeffa_d_wcpg[i] = coeffa_d[i] * (1 / (pow(2, shifta)));
-                REPORT(DETAILED, "coeffa_d_wcpg: " << coeffa_d_wcpg[i] << ", coeffa: " << coeffa_d[i] << ", shifta: " << shifta)
+                REPORT(INFO, "Computing worst-case peak gain");
+                for (uint32_t i = 0; i < m; i++) {
+                    coeffa_d_wcpg[i] = coeffa_d[i] * (1 / (pow(2, shifta)));
+                    REPORT(DETAILED,
+                           "coeffa_d_wcpg: " << coeffa_d_wcpg[i] << ", coeffa: " << coeffa_d[i] << ", shifta: "
+                                             << shifta)
+                }
+                for (uint32_t i = 0; i < n; i++)
+                    coeffb_d_wcpg[i] = coeffb_d[i] * (1 / (pow(2, shiftb)));
+
+                if (!WCPG_tf(&H, coeffb_d_wcpg, coeffa_d_wcpg, n, m, (int) 0)) THROWERROR("Could not compute H");
+                REPORT(INFO, "Computed filter worst-case peak gain: H=" << H)
             }
-            for(uint32_t i = 0; i < n; i++)
-                coeffb_d_wcpg[i] = coeffb_d[i]*(1/(pow(2, shiftb)));
+            else // H set by argument -> overwrite
+            {
+                REPORT(LIST, "H=" << H);
+            }
 
-            if (!WCPG_tf(&wcpg, coeffb_d_wcpg, coeffa_d_wcpg, n, m, (int)0))
-            THROWERROR("Could not compute WCPG");
+            wcpgBitGain = intlog2(H);
+            REPORT(INFO, "wcpg bit gain: " << wcpgBitGain);
 
-            wcpgBitGain = intlog2(wcpg);
-            REPORT(INFO, "Computed filter worst-case peak gain: wcpg=" << wcpg << ", wcpg bit gain: " << wcpgBitGain);
-
-            // ################# COMPUTE GUARD BITS #########################################
+            // ################# COMPUTE GUARD BITS AND HEPS #########################################
             if(guardBits < 0)
             {
-                REPORT(DETAILED, "computing guard bits");
-                double Heps;
-                double one_d[1] = {1.0};
-                if (!WCPG_tf(&Heps, one_d, coeffa_d_wcpg, 1, m, (int)0))
-                THROWERROR("Could not compute WCPG");
-                guardBits = intlog2(Heps)+1; // +1 for last bit accuracy
-                REPORT(LIST, "Computed error amplification worst-case peak gain: Heps=" << Heps);
+                if (Heps == 0) // if guard bits not set by argument then overwrite
+                {
+                    REPORT(DETAILED, "computing guard bits");
+                    double one_d[1] = {1.0};
+                    if (!WCPG_tf(&Heps, one_d, coeffa_d_wcpg, 1, m, (int) 0)) THROWERROR("Could not compute Heps");
+
+                    REPORT(LIST, "Computed error amplification worst-case peak gain: Heps=" << Heps);
+                }
+                else
+                {
+                    REPORT(LIST, "Heps=" << Heps);
+                }
+                guardBits = intlog2(Heps) + 1; // +1 for last bit accuracy
             }
+
     #else
                 THROWERROR("WCPG was not found (see cmake output), cannot compute worst-case peak gain H. Compile FloPoCo with WCPG");
     #endif
@@ -613,7 +627,7 @@ namespace flopoco {
              * --> feedbackRegOut0 has to be rescaled to max output of adder (later it can be optimized to mInt + wcpgGain - (msbScaleBOut - msbIn) + shifta
              * both inputs of the additions must have same amount of lsb-bits
              *
-             * There are 3 cases for the signs. left "+" and right "+", keft "+" and right "-" and left "-" and right "+". The possible fourth case is handled
+             * There are 3 cases for the signs. left "+" and right "+", left "+" and right "-" and left "-" and right "+". The possible fourth case is handled
              * in preventDoubleNegativeInputsAdder. Left "-" and right "+" is special case and must be treated differently since -a+b ist not feasible using
              * IntConstMultShift, so use b-a.
              */
@@ -1081,18 +1095,18 @@ namespace flopoco {
         UserInterface::parseInt(args, "lsbIn", &lsbIn);
         int lsbOut;
         UserInterface::parseInt(args, "lsbOut", &lsbOut);
-
         int shifta;
         UserInterface::parseInt(args, "shifta", &shifta);
         int shiftb;
         UserInterface::parseInt(args, "shiftb", &shiftb);
-
+        double H;
+        UserInterface::parseFloat(args, "H", &H);
+        double Heps;
+        UserInterface::parseFloat(args, "Heps", &Heps);
         int guardBits;
         UserInterface::parseInt(args, "guardbits", &guardBits);
-
         vector<string> coeffb;
         vector<string> coeffa;
-
         string in;
         UserInterface::parseString(args, "coeffb", &in);
         stringstream ssa(in);
@@ -1119,7 +1133,7 @@ namespace flopoco {
         string graphb;
         UserInterface::parseString(args, "graphb", &graphb);
 
-        return new FixIIRShiftAdd(parentOp, target, lsbIn, lsbOut, msbIn, guardBits, coeffb, coeffa, shifta, shiftb, method, grapha, graphb);
+        return new FixIIRShiftAdd(parentOp, target, lsbIn, lsbOut, msbIn, guardBits, coeffb, coeffa, shifta, shiftb, method, grapha, graphb, H, Heps);
     }
 
     TestList FixIIRShiftAdd::unitTest(int index) {
@@ -1691,6 +1705,8 @@ namespace flopoco {
                            "msbIn(int): input most significant bit;\
                         lsbIn(int): input least significant bit;\
                         lsbOut(int): output least significant bit;\
+                        H(real)=0: worst-case peak gain. if 0, it will be computed by the WCPG library;\
+                        Heps(real)=0: worst-case peak gain of the feedback loop. if 0, it will be computed by the WCPG library;\
                         guardbits(int)=-1: number of guard bits for computation in recursive feedback path (-1: automatic);\
                         coeffa(string)=-1: colon-separated list of real coefficients using Sollya syntax. Example: coeffa=\"1.234567890123:sin(3*pi/8)\";\
                         coeffb(string): colon-separated list of real coefficients using Sollya syntax. Example: coeffb=\"1.234567890123:sin(3*pi/8)\";\

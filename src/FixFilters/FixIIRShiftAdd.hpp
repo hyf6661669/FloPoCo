@@ -27,7 +27,7 @@ namespace flopoco{
         bool isPowerOfTwo(int64_t, bool);
     public:
         /** @brief Constructor ; you must use bitheap in case of negative coefficient*/
-        FixIIRShiftAdd(OperatorPtr parentOp, Target* target, int lsbIn, int lsbOut, int msbIn, int guardBits, vector<string> coeffb, vector<string> coeffa, int64_t shifta, int64_t shiftb, string method, string grapha, string graphb);
+        FixIIRShiftAdd(OperatorPtr parentOp, Target* target, int lsbIn, int lsbOut, int msbIn, int guardBits, vector<string> coeffb, vector<string> coeffa, int64_t shifta, int64_t shiftb, string method, string grapha, string graphb, double H, double Heps);
 
         /** @brief Destructor */
         ~FixIIRShiftAdd();
@@ -75,7 +75,8 @@ namespace flopoco{
         bool buildWorstCaseTestBench; /**< if true, build the worst-case test bench */
         uint32_t n;							/**< number of taps on the numerator */
         uint32_t m;							/**< number of taps on the denominator */
-        double wcpg;                /**< worst case peak gain of filter */
+        double H;                /**< worst case peak gain of filter */
+        double Heps;
         int wcpgBitGain;            /**< required amount of bits for wcpg */
         mpfr_t* coeffb_mp_f;			/**< the coefficients as MPFR numbers */
         mpfr_t* coeffa_mp_f;			/**< the coefficients as MPFR numbers */

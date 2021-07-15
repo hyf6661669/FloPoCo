@@ -107,18 +107,13 @@ namespace flopoco{
 		}
 	}
 
-	unsigned int BasicCompressor::getHeightsAtColumn(unsigned int column, bool ilpGeneration, unsigned int middleLength){
+	unsigned int BasicCompressor::getHeightsAtColumn(unsigned int column, unsigned int middleLength){
 		if(type != CompressorType::Variable){
 			if(column >= heights.size()){
 				return 0;
 			}
 			else{
-				if(!ilpGeneration){
-					return heights[column];
-				}
-				else{	//ilp generation works on the reversed vector
-					return heights[heights.size() - (column + 1)];
-				}
+			    return heights[column];
 			}
 		}
 		else{
@@ -127,28 +122,18 @@ namespace flopoco{
                 return 0;
             }
             else{
-                if(!ilpGeneration){
-                    return column == 0 ? 3 : 2;
-                }
-                else{	//ilp generation works on the reversed vector
-                    return (column == getHeights(middleLength) - 1) ? 3 : 2;
-                }
+                return column == 0 ? 3 : 2;
             }
 		}
 	}
 
-	unsigned int BasicCompressor::getOutHeightsAtColumn(unsigned int column, bool ilpGeneration, unsigned int middleLength){
+	unsigned int BasicCompressor::getOutHeightsAtColumn(unsigned int column, unsigned int middleLength){
 		if(type != CompressorType::Variable){
 			if(column >= outHeights.size()){
 				return 0;
 			}
 			else{
-				if(!ilpGeneration){
-					return outHeights[column];
-				}
-				else{	//ilp generation works on the reversed vector
-					return outHeights[outHeights.size() - (column + 1)];
-				}
+			    return outHeights[column];
 			}
 		}
 		else{
@@ -157,12 +142,7 @@ namespace flopoco{
                 return 0;
             }
             else{
-                if(!ilpGeneration){
-                    return 1;
-                }
-                else{	//ilp generation works on the reversed vector
-                    return 1;
-                }
+                return 1;
             }
 		}
 	}

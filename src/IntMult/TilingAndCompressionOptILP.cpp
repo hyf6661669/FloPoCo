@@ -303,7 +303,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
     //Assemble cost function, declare problem variables
     cout << "   assembling cost function, declaring problem variables..." << endl;
     ScaLP::Term obj;
-    int x_neg = 0, y_neg = 0;
+    int x_neg = 0, y_neg = 0, keepBits_ = keepBits;
     for(int s = 0; s < wS; s++){
         x_neg = (x_neg < (int)tiles[s]->wX())?tiles[s]->wX() - 1:x_neg;
         y_neg = (y_neg < (int)tiles[s]->wY())?tiles[s]->wY() - 1:y_neg;
@@ -394,7 +394,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
             } else if(!performOptimalTruncation && (wOut < (int)prodWidth) && ((x + y) < ((int)prodWidth - wOut - guardBits))){
                 //c1Constraint = pxyTerm <= (bool)1;
             } else if(!performOptimalTruncation && (wOut < (int)prodWidth) && ((x + y) == ((int)prodWidth - wOut - guardBits))){
-                if((keepBits)?keepBits--:0){
+                if((keepBits_)?keepBits_--:0){
                     c1Constraint = pxyTerm == (bool)1;
                     cout << "keepBit at" << x << "," << y << endl;
                 } else {

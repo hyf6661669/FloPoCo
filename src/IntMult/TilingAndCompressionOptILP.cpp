@@ -374,7 +374,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                                 if(signedIO && (x == wX-1 || y == wY-1) && x == xs+tiles[s]->wX()-1 && y == ys+tiles[s]->wY()-1){
                                     if(tiles[s]->wX() == 1 && tiles[s]->wY() == 1 && xs == wX-1 && ys == wY-1) break; //the 1x1 tile with (1,1) signedness should not get a sign extension vector.
                                     constVecTerm.add(solve_Vars[s][xs+x_neg][ys+y_neg],(double)((1ULL<<(wX+wY))-(1ULL<<(xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY())-1))));
-                                    printf("s=%02d, x=%02d, y=%02d, wx=%01d, wy=%01d, wOut=%02d, msb=%02d, 0x%08llx\n", s, xs, ys, tiles[s]->wX(), tiles[s]->wY(), IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY()), xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY())-1, ((1ULL<<(wX+wY))-(1ULL<<(xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY())-1))));
+                                    //printf("s=%02d, x=%02d, y=%02d, wx=%01d, wy=%01d, wOut=%02d, msb=%02d, 0x%08llx\n", s, xs, ys, tiles[s]->wX(), tiles[s]->wY(), IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY()), xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY())-1, ((1ULL<<(wX+wY))-(1ULL<<(xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),xs == wX-tiles[s]->wX(), ys == wY-tiles[s]->wY())-1))));
                                 }
                             }
                         }
@@ -446,6 +446,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
         stringstream nvarName;
         nvarName << "C";
         ScaLP::Variable Cvar = ScaLP::newIntegerVariable(nvarName.str());
+        constVecTerm.add(Cvar, 1);
 
         // C = 2^i*c_i + 2^(i+1)*c_(i+1)...
         ScaLP::Term cTerm;
@@ -456,7 +457,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
             //cout << cvarName.str() << endl;
             cVars[i] = ScaLP::newBinaryVariable(cvarName.str());
             cTerm.add(cVars[i],  (double)( 1ULL << i));
-            constVecTerm.add(cVars[i],  (double)( 1ULL << i));
+            //constVecTerm.add(cVars[i],  (double)( 1ULL << i));
             //obj.add(cVars[i], (double)0.65);    //append variable to cost function (not needed for combined optimization)
         }
         ScaLP::Constraint cConstraint = cTerm - Cvar == 0;

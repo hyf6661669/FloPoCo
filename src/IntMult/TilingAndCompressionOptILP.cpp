@@ -344,6 +344,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                     for(int xs = 0 - tiles[s]->wX() + 1; xs <= x; xs++){
                         if(occupation_threshold_ == 1.0 && ((wX - xs) < (int)tiles[s]->wX() || (wY - ys) < (int)tiles[s]->wY())) break;
                         if(signedIO && (wX < xs+tiles[s]->wX() || wY < ys+tiles[s]->wY()) ) break;                      //Avoid considering protruding cases in signed case, tiling is valid without
+                        if(signedIO && (wX == xs+tiles[s]->wX() && !tiles[s]->signSupX() || wY == ys+tiles[s]->wY() && !tiles[s]->signSupY() )) break; //Avoid placing tiles without signed support at the bottom and left |_ edge of the area to be tiled.
                         if(tiles[s]->shape_contribution(x, y, xs, ys, wX, wY, signedIO)){
 //                            if((wOut < (int)prodWidth) && ((xs+tiles[s]->wX()+ys+tiles[s]->wY()-2) < ((int)prodWidth-wOut-guardBits))) break;
                             if(tiles[s]->shape_utilisation(xs, ys, wX, wY, signedIO) >=  occupation_threshold_ ){

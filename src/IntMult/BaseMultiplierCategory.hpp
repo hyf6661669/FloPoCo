@@ -42,6 +42,22 @@ namespace flopoco {
 			string getType() const {return type_;}
             double getBitHeapCompressionCostperBit();
 
+            /**
+             * @brief Returns true if the x-input supports signed when the multiplier is instantiated, every tile that
+             * supports signed multiplication should implement this function so that the tiling heuristic can avoid
+             * placing tiles without signed support at the bottom and left |_ edge of the area to be tiled.
+             * @return true if there is signed support for the x-input
+             */
+            virtual bool signSupX(){return false;}
+
+            /**
+             * @brief Returns true if the y-input supports signed when the multiplier is instantiated, every tile that
+             * supports signed multiplication should implement this function so that the tiling heuristic can avoid
+             * placing tiles without signed support at the bottom and left |_ edge of the area to be tiled.
+             * @return true if there is signed support for the y-input
+             */
+            virtual bool signSupY(){return false;}
+
 			class Parametrization{
 				public:
 					Operator *generateOperator(

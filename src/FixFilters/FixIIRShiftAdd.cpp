@@ -298,7 +298,11 @@ namespace flopoco {
                         tmp += abs(coeffa_si[j]);
                 }
 
-                msbRegisterFeedbackOut[i] = msbInt - shifta + ceil(log2((abs(tmp))));
+                if(tmp == 0) // avoid log2(0)
+                    msbRegisterFeedbackOut[i] = msbInt - shifta + 1;
+                else
+                    msbRegisterFeedbackOut[i] = msbInt - shifta + ceil(log2((abs(tmp))));
+
                 lsbRegisterFeedbackOut[i] = lsbInt - shifta;
                 REPORT(INFO,
                        "msbRegisterFeedbackOut[" << i << "]: \t" << msbRegisterFeedbackOut[i]

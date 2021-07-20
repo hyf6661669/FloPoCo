@@ -357,8 +357,7 @@ void TilingAndCompressionOptILP::constructProblem(int s_max)
                                     obj.add(tempV, (double)tiles[s]->ownLUTCost(xs, ys, wX, wY, signedIO));    //append variable to cost function
 
                                     int col_min = xs+ys+tiles[s]->getRelativeResultLSBWeight(tiles[s]->getParametrisation());
-                                    //int col_max = xs+ys+tiles[s]->getRelativeResultMSBWeight(tiles[s]->getParametrisation());
-                                    int col_max = xs+ys+IntMultiplier::prodsize(tiles[s]->wX(), tiles[s]->wY(),signedIO && xs == wX-tiles[s]->wX(), signedIO && ys == wY-tiles[s]->wY());
+                                    int col_max = xs+ys+tiles[s]->getRelativeResultMSBWeight(tiles[s]->getParametrisation(),signedIO && xs+tiles[s]->wX() == wX, signedIO && ys+tiles[s]->wY() == wY);
                                     for(col_min = ((col_min < 0)?0:col_min); col_min < (((int)prodWidth<col_max)?(int)prodWidth:col_max); col_min++){
                                         //if(s == 5 || s==6) cout << "position " << col_min << " max col " << col_max << endl;
                                         bitsinColumn[col_min].add(tempV, 1);

@@ -132,6 +132,7 @@ namespace flopoco {
 
             virtual int getRelativeResultLSBWeight(Parametrization const & param) const;
             virtual int getRelativeResultMSBWeight(Parametrization const & param) const;
+            virtual int getRelativeResultMSBWeight(Parametrization const & param, bool isSignedX, bool isSignedY) const;
 
 			virtual Operator* generateOperator(
 					Operator *parentOp,

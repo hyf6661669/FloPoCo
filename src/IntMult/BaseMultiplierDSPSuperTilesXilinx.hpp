@@ -67,6 +67,7 @@ namespace flopoco {
         double getLUTCost(int x_anchor, int y_anchor, int wMultX, int wMultY, bool signedIO) override;
         int getRelativeResultLSBWeight(Parametrization const& param) const override;
         int getRelativeResultMSBWeight(Parametrization const& param) const override;
+        int getRelativeResultMSBWeight(Parametrization const& param, bool isSignedX, bool isSignedY) const override {return getRelativeResultMSBWeight(param);};
 		bool shapeValid(int x, int y) override;
         bool shapeValid(Parametrization const & param, unsigned x, unsigned y) const override;
         float shape_utilisation(int shape_x, int shape_y, int wX, int wY, bool signedIO) override;

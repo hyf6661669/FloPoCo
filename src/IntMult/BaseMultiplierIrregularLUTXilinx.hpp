@@ -56,6 +56,7 @@ namespace flopoco
         unsigned getArea(void) override {return shape_size[(int)shape-1][5];}
         int getRelativeResultLSBWeight(Parametrization const& param) const override;
         int getRelativeResultMSBWeight(Parametrization const& param) const override;
+        int getRelativeResultMSBWeight(Parametrization const& param, bool isSignedX, bool isSignedY) const override {return getRelativeResultMSBWeight(param);};
         bool shapeValid(int x, int y) override;
         bool shapeValid(Parametrization const & param, unsigned x, unsigned y) const override;
 

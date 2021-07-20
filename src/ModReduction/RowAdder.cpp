@@ -31,7 +31,7 @@ namespace flopoco {
             //no need to create a signal for columns of height 0
             if (heights[i] > 0) {
                 addInput(join("X", i), heights[i]);
-                cout << " creating input " << join("X", i) << " width " << heights[i] << endl;
+                cerr << " creating input " << join("X", i) << " width " << heights[i] << endl;
             }
         }
         addOutput("R", heights.size()+1);
@@ -39,7 +39,7 @@ namespace flopoco {
         ostringstream name;
         name << "Pseudo_Compressor_Weight_" << heights.size() ;
         setNameWithFreqAndUID(name.str());
-        cout << "in-heights: " << heights.size() << " out-heights: " << outHeights.size() << endl;
+        cerr << "in-heights: " << heights.size() << " out-heights: " << outHeights.size() << endl;
 
         int adderUid = parentOp->getNewUId();
         ostringstream adderIn0, adderIn0Name, adderIn1, adderIn1Name, adderOutName, adderCin, adderCinName;
@@ -125,10 +125,8 @@ namespace flopoco {
     }
 
     Compressor* BasicRowAdder::getCompressor(unsigned int middleLength){
-        if (middleLength > 0) {
-            area = middleLength + 2;
-            RowAdder::calc_widths(middleLength+2, heights, outHeights);
-        }
+        area = middleLength + 2;
+        RowAdder::calc_widths(middleLength+2, heights, outHeights);
         compressor = new RowAdder(parentOp, target, heights, outHeights);
         return compressor;
     }

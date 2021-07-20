@@ -26,7 +26,7 @@ namespace flopoco{
 		REPORT(DEBUG, "compressionAlgorithm is maxEfficiency");
 		// add row adder
         BasicCompressor *rowAdder = new BasicRowAdder(bitheap->getOp(), bitheap->getOp()->getTarget(), 2);
-        //possibleCompressors.push_back(rowAdder);
+        possibleCompressors.push_back(rowAdder);
 
 		//for the maxEfficiency algorithm, the compressors should be ordered by efficiency
 		orderCompressorsByCompressionEfficiency();

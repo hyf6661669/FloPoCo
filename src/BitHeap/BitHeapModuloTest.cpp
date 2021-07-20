@@ -183,7 +183,7 @@ namespace flopoco {
         if(index==-1) 	{ // The unit tests
             for (int i = 0; i < 1; i++) {
                 for (int wIn=64; wIn<=64; wIn++) {
-                    for(int m=11; m<61; m+=2) {
+                    for(int m=11; m<=61; m+=2) {
                         paramList.push_back(make_pair("target","GenericAsic"));
                         paramList.push_back(make_pair("wIn",to_string(wIn)));
                         paramList.push_back(make_pair("mod",to_string(m)));

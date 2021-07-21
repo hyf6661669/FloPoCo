@@ -140,7 +140,6 @@ namespace flopoco{
 			// Sorry for the completely inconsistent signal names in the C++,
 			// this code was incrementally modified to match the mames and indices in the ASA book, and history shows.
 			// TODO refactor the change of variable i -> i-1 in the C++, and rename R into T etc
-#define OPT 1
 			vhdl << tab << declare(getTarget()->lutDelay(),
 														 "fracXnorm", wF+4) << " <= \"1\" & fracX & \"000\" when X(" << wF << ") = '0' else" << endl
 					 << tab << "      \"01\" & fracX&\"00\"; -- pre-normalization" << endl;
@@ -157,7 +156,7 @@ namespace flopoco{
 			vhdl << tab << "--  this is a binary non-restoring algorithm, see ASA book" << endl;
 			int maxstep=wF+2;
 			for(int i=3; i<=maxstep; i++) {
-				double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
+				double stageDelay= getTarget()->adderDelay(i);
 				REPORT(2, "estimated delay for stage "<< i << " is " << stageDelay << "s");
 				// was: int i = wF+3-step; // to have the same indices as FPLibrary
 				vhdl << tab << "-- Step " << i-1 << endl;

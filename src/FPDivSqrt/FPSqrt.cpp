@@ -138,33 +138,41 @@ namespace flopoco{
 		else if(method==1) {
 			// Digit-recurrence implementation recycled from FPLibrary: works better!
 			// Sorry for the completely inconsistent signal names in the C++,
-			// this code was modified to match the mames and indices in the ASA book.
+			// this code was incrementally modified to match the mames and indices in the ASA book, and history shows.
+			// TODO refactor the change of variable i -> i-1 in the C++, and rename R into T etc
+#define OPT 1
 			vhdl << tab << declare(getTarget()->lutDelay(),
-														 "T0", wF+4) << " <= \"111\" & fracX & \"0\" when X(" << wF << ") = '0' else" << endl
-					 << tab << "      \"1101\" & fracX; -- pre-normalization, T0=2M-4 where 1<=M<4" << endl;
+														 "fracXnorm", wF+4) << " <= \"1\" & fracX & \"000\" when X(" << wF << ") = '0' else" << endl
+					 << tab << "      \"01\" & fracX&\"00\"; -- pre-normalization" << endl;
+			vhdl << tab << declare("S0", 2) << " <= \"01\";" << endl;
+
+			vhdl << tab << declare(getTarget()->adderDelay(4),
+														 "T1", wF+4) << " <= (\"0111\" + fracXnorm" << range(wF+3, wF)<< ") & fracXnorm" << range(wF-1, 0)<< ";"<< endl;
+
+			
 		//		vhdl << tab << declare(join("d",wF+3)) << " <= '0';" << endl;
 		//		vhdl << tab << declare(join("s",wF+3)) << " <= '1';" << endl;
 			vhdl << tab << "-- now implementing the recurrence " << endl;
 			//			vhdl << tab << "--  w_{i} = 2w_{i-1} -2s_{i}S_{i-1} - 2^{-i-1}s_{i}^2  for i in {1..n}" << endl;
 			vhdl << tab << "--  this is a binary non-restoring algorithm, see ASA book" << endl;
 			int maxstep=wF+2;
-			for(int i=1; i<=maxstep; i++) {
+			for(int i=3; i<=maxstep; i++) {
 				double stageDelay= getTarget()->adderDelay(i) + 2*getTarget()->lutDelay();
 				REPORT(2, "estimated delay for stage "<< i << " is " << stageDelay << "s");
 				// was: int i = wF+3-step; // to have the same indices as FPLibrary
-				vhdl << tab << "-- Step " << i << endl;
-				string di = join("d", i-1);
-				string TwoRim1 = "T" + to_string(i-1) + "s";
-				string Ri = join("T", i);
-				string Rim1 = join("T", i-1);
-				string Si = join("S", i-1);
-				string Sim1 = join("S", i-2);
+				vhdl << tab << "-- Step " << i-1 << endl;
+				string di = join("d", i-2);
+				string TwoRim1 = "T" + to_string(i-2) + "s";
+				string Ri = join("T", i-1);
+				string Rim1 = join("T", i-2);
+				string Si = join("S", i-2);
+				string Sim1 = join("S", i-3);
 				//			string zs = join("zs", i);
-				string ds = join("U", i-1);
+				string ds = join("U", i-2);
 				string TwoRim1H = TwoRim1 + "_h";
 				string TwoRim1L = TwoRim1 + "_l";
 				string wh = "T" + to_string(i) + "_h";
-				vhdl << tab << declare(di) << " <= not "<< Rim1 << "("<< wF+3<<"); --  bit of weight "<< -(i-1) << endl;
+				vhdl << tab << declare(di) << " <= not "<< Rim1 << "("<< wF+3<<"); --  bit of weight "<< -(i-2) << endl;
 				vhdl << tab << declare(TwoRim1,wF+5) << " <= " << Rim1 << " & \"0\";" << endl;
 				vhdl << tab << declare(TwoRim1H,i+3) << " <= " << TwoRim1 << range(wF+4, wF+2-i) << ";" << endl;
 				if(i <= wF+1) {
@@ -187,9 +195,9 @@ namespace flopoco{
 				else
 					vhdl << Sim1 /*<< range(i-1,1)*/ << " & " << di << "; -- here -1 becomes 0 and 1 becomes 1"<< endl;
 			}
-			string dfinal=join("d", maxstep+1);
-			vhdl << tab << declare(dfinal) << " <= not "<< join("T", maxstep) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
-			vhdl << tab << declare("mR", wF+3) << " <= "<< join("S", maxstep-1)<<" & "<<dfinal<<"; -- result significand" << endl;
+			string dfinal=join("d", maxstep);
+			vhdl << tab << declare(dfinal) << " <= not "<< join("T", maxstep-1) << of(wF+3)<<" ; -- the sign of the remainder will become the round bit" << endl;
+			vhdl << tab << declare("mR", wF+3) << " <= "<< join("S", maxstep-2)<<" & "<<dfinal<<"; -- result significand" << endl;
 
 			// end of component FPSqrt_Sqrt in fplibrary
 			vhdl << tab << declare("fR", wF) << " <= mR" <<range(wF, 1) << ";-- removing leading 1" << endl;
@@ -274,7 +282,10 @@ namespace flopoco{
 		emulate(tc);
 		tcl->add(tc);
 
-
+		tc = new TestCase(this);
+		tc->addFPInput("X", 2.0);
+		emulate(tc);
+		tcl->add(tc);
 
 	}
 

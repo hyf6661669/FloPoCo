@@ -102,6 +102,13 @@ class BitHeap;
          */
         pair<mpz_class,mpz_class> getMaxAndMinRangeOnBitHeap(vector<mpz_class> currentRanges, vector<bool> currentRangesInvertedBits, mpz_class extraRangeToSubtract, bool shouldSubtractSingleBit);
 
+        /**
+         * For Testin purposes
+         * @return true if on the right side of the bit heap the height was 2 plus r-3 additional stages
+         */
+        bool checkReachedLowChangCompressionEnd(int stage, int r, bool pseudoCompressionDone);
+        int stageRightSideHeightTwoReached = -1;
+
 		vector<float> lowerBounds;
 
 		int negativeSignExtension;

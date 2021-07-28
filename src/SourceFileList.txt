@@ -25,6 +25,7 @@ TestBenches/TestBench
 BitHeap/Bit
 BitHeap/Compressor
 BitHeap/ConstantAddCompressor
+BitHeap/ConstantToBitheap
 BitHeap/BitHeap
 BitHeap/CompressionStrategy
 BitHeap/BitHeapPlotter

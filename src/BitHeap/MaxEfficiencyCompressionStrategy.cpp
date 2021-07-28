@@ -3,6 +3,7 @@
 #include "ModReduction/PseudoCompressor.hpp"
 #include "ModReduction/RowAdder.hpp"
 #include "BitHeap/ConstantAddCompressor.hpp"
+#include "BitHeap/ConstantToBitheap.hpp"
 //#include "CompressionStrategy.hpp"
 //#include "BitHeap/BitHeap.hpp"
 
@@ -24,9 +25,15 @@ namespace flopoco{
 	void MaxEfficiencyCompressionStrategy::compressionAlgorithm()
 	{
 		REPORT(DEBUG, "compressionAlgorithm is maxEfficiency");
-		// add row adder
-        BasicCompressor *rowAdder = new BasicRowAdder(bitheap->getOp(), bitheap->getOp()->getTarget(), 2);
-        possibleCompressors.push_back(rowAdder);
+
+        if (bitheap->mode.find("rowadder") != string::npos) {
+            // add row adder
+            cerr << "add row adder" << endl;
+            // TODO: place somewhere all compression strategies they have to test if they support it
+            BasicCompressor *rowAdder = new BasicRowAdder(bitheap->getOp(), bitheap->getOp()->getTarget(), 2);
+            possibleCompressors.push_back(rowAdder);
+        }
+
 
 		//for the maxEfficiency algorithm, the compressors should be ordered by efficiency
 		orderCompressorsByCompressionEfficiency();
@@ -66,6 +73,9 @@ namespace flopoco{
 
 		negativeSignExtension = 0;
 		needToApplyNegativeSignExtension = false;
+
+		// for testing purposes, to compare with Low/Chang
+		bool onePseudoCompressionDone = false;
 
 		// set to false when single pseudo comps don't improve the range
 		bool shouldUseSinglePseudoComps = true;
@@ -127,25 +137,38 @@ namespace flopoco{
                     if (compressionMode.find("bcl") != string::npos) {
                         int modSize = floor(log2(bitheap->modulus)+1);
                         reachedModuloRange = moduloRangeMax < (bitheap->modulus + (1 << modSize) - 2);
-                        REPORT(DETAILED, "with low chang break reached range: " << moduloRangeMax);
                     } else {
                         reachedModuloRange = moduloRangeMax < bitheap->modulus*2;
                     }
                 } else {
                     if (compressionMode.find("bcl") != string::npos) {
                         int modSize = floor(log2(bitheap->modulus)+1);
-                        reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < (bitheap->modulus + (1 << modSize) - 2) - bitheap->modulus);
-                        REPORT(DETAILED, "with low chang break reached range max: " << moduloRangeMax << " min: " << moduloRangeMin);
+                        int calcValue = (bitheap->modulus + (1 << modSize) - 2) - bitheap->modulus;
+                        cerr << "bcl mod max " << moduloRangeMax << " calc value " << calcValue << endl;
+                        reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < calcValue);
                     } else {
                         reachedModuloRange = (moduloRangeMin >= -bitheap->modulus && moduloRangeMax < bitheap->modulus);
                     }
                 }
             }
 
-            if(checkAlgorithmReachedAdder(2, s) && reachedModuloRange && !needToApplyNegativeSignExtension){
-                cerr << "reached Adder and range: break" << endl;
-                break;
+            if (compressionMode.find("bcl") != string::npos) {
+                int modSize = floor(log2(bitheap->modulus)+1);
+                cerr << "modSize" << modSize << endl;
+                cerr << "checkReachedLowChangCompressionEnd(s, modSize, onePseudoCompressionDone) " << checkReachedLowChangCompressionEnd(s, modSize, onePseudoCompressionDone) << endl;
+                if (checkReachedLowChangCompressionEnd(s, modSize, onePseudoCompressionDone)) {
+                    REPORT(DETAILED, "with low chang break reached bcl range max: " << moduloRangeMax << " min: " << moduloRangeMin);
+                    break;
+                }
+            } else {
+                if(checkAlgorithmReachedAdder(2, s) && reachedModuloRange && !needToApplyNegativeSignExtension){
+                    //if(checkAlgorithmReachedAdder(2, s) && onePseudoCompressionDone && !needToApplyNegativeSignExtension){
+                    //if(checkAlgorithmReachedAdder(2, s) && onePseudoCompressionDone){
+                    cerr << "reached Adder and range: break" << endl;
+                    break;
+                }
             }
+
 
 			//make sure there is the stage s+1 with the same amount of columns as s
 			while(bitAmount.size() <= s + 1){
@@ -161,6 +184,7 @@ namespace flopoco{
             }
 
 
+            //if (negativeSignExtension < 0 && shouldPlacePseudoCompressors(bitAmount[s]) && onePseudoCompressionDone) {
             if (negativeSignExtension < 0 && shouldPlacePseudoCompressors(bitAmount[s]) && reachedModuloRange) {
                 // constantAddCompressor
                 vector<int> compInput(bitheap->width, 1);
@@ -229,6 +253,15 @@ namespace flopoco{
                         }
                     }
 
+                    // put constant directly on bit heap
+                    if (compressionMode.find("bcl") != string::npos) {
+                        int remainderExtensionBcl = ((negativeSignExtension % bitheap->modulus) + bitheap->modulus) % bitheap->modulus;
+
+                        cerr << "remainderExtensionBcl " << remainderExtensionBcl << endl;
+                        onePseudoCompressionDone = true;
+                        BasicConstantToBitheap* constantToBitHeap = new BasicConstantToBitheap(bitheap->getOp(), bitheap->getOp()->getTarget(), remainderExtensionBcl);
+                        placeCompressor(s, 0, constantToBitHeap);
+                    }
                 } else {
                     cerr << "normal compression" << endl;
 
@@ -369,6 +402,9 @@ namespace flopoco{
                             cerr << "placed compressor " << compressor->getStringOfIO() << " in stage " << s << " and column " << column << endl;
                             REPORT(DETAILED, "efficiency is " << achievedEfficiencyBest);
                             placeCompressor(s, column, compressor, middleLengthBest);
+//                            UserInterface::verbose=2;
+//                            printBitAmounts();
+//                            UserInterface::verbose=0;
                         }
                     }
                     logicalStages++;
@@ -725,5 +761,46 @@ namespace flopoco{
         }
 
         return make_pair(moduloRangeMax, moduloRangeMin);
+	}
+
+    bool MaxEfficiencyCompressionStrategy::checkReachedLowChangCompressionEnd(int stage, int r, bool pseudoCompressionDone) {
+        if(stage >= bitAmount.size()){
+            THROWERROR("checkReachedLowChangCompressionEnd. Tried to access stage " << stage << " but there aren't that many stages");
+        }
+
+        cerr << "stageRightSideHeightTwoReached " << stageRightSideHeightTwoReached << " in stage " << stage << endl;
+        if(stageRightSideHeightTwoReached == -1 && pseudoCompressionDone) {
+            // check if right side height is two
+            for(unsigned int c = 0; c < r; c++){
+                if(bitAmount[stage][c] > 2){
+                    return false;   //column exists where there are more bits left
+                }
+            }
+
+            //now check if in all other stages there are no bits left
+            for(unsigned int s = 0; s < bitAmount.size(); s++){
+                if(s != stage){
+                    for(unsigned int c = 0; c < bitAmount[s].size(); c++){
+                        if(bitAmount[s][c] > 0){
+                            return false;
+                        }
+                    }
+                }
+            }
+            stageRightSideHeightTwoReached = stage;
+        } else if (stageRightSideHeightTwoReached >= 0 ){
+            int additionalStages = r >= 3 ? r - 3 : 0;
+            if (stage == stageRightSideHeightTwoReached+additionalStages) {
+                return true;
+            }
+
+            for(unsigned int c = r; c < bitAmount.size(); c++){
+                if(bitAmount[stage][c] > 2){
+                    return false;   //column exists where there are more bits left
+                }
+            }
+            return true;
+        }
+        return false;
 	}
 }

@@ -125,8 +125,11 @@ namespace flopoco {
     }
 
     Compressor* BasicRowAdder::getCompressor(unsigned int middleLength){
-        area = middleLength + 2;
-        RowAdder::calc_widths(middleLength+2, heights, outHeights);
+        if (middleLength >= 0) {
+            area = middleLength + 2;
+            RowAdder::calc_widths(middleLength+2, heights, outHeights);
+        }
+
         compressor = new RowAdder(parentOp, target, heights, outHeights);
         return compressor;
     }

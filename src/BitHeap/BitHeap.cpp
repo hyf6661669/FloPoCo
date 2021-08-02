@@ -786,7 +786,7 @@ namespace flopoco {
 		if(op->getTarget()->getCompressionMethod().compare("heuristicMaxEff") == 0)
 		{
 			compressionStrategy = new MaxEfficiencyCompressionStrategy(this);
-			if (modulus > 0) {
+			if (compressionStrategy->canStrategyComputeModulo() && modulus > 0) {
 			    compressionStrategy->shallComputeModulo(width, modulus);
 			}
 		}

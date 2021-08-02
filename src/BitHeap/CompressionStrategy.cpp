@@ -419,6 +419,10 @@ namespace flopoco{
         addPseudocompressors(wIn, mod);
 	}
 
+    bool CompressionStrategy::canStrategyComputeModulo() {
+        return canComputeModulo;
+	}
+
     void CompressionStrategy::addPseudocompressors(int wIn, int mod) {
         //pseudocompressors.resize(2*wIn);
         cout << "nr. of avail. compressors: " << possibleCompressors.size() << endl;

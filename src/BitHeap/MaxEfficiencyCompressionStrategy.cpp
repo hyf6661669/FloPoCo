@@ -17,6 +17,7 @@ namespace flopoco{
 	{
 		lowerBounds.resize(1);
 		lowerBounds[0] = 0.0;
+		canComputeModulo = true;
 	}
 
 

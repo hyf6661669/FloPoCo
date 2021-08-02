@@ -43,7 +43,20 @@ class BitheapPlotter;
 		 */
 		void startCompression();
 
+		/**
+		 * Tells the strategy that modulo operation should be performed
+		 * Best to check with canStrategyComputeModulo() if this strategy supports it
+		 * @param wIn input width
+		 * @param mod the modulus that should be used
+		 */
 		void shallComputeModulo(int wIn, int mod);
+
+		/**
+		 * Returns true is this strategy supports the modulo operation
+		 * in addition to standard compression
+		 * @return canComputeModulo
+		 */
+		bool canStrategyComputeModulo();
 
 
 	protected:

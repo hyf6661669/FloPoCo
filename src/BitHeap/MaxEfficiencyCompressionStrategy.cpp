@@ -29,7 +29,7 @@ namespace flopoco{
         if (bitheap->mode.find("rowadder") != string::npos) {
             // add row adder
             cerr << "add row adder" << endl;
-            // TODO: place somewhere all compression strategies they have to test if they support it
+            // TODO: place this where all compression strategies can access it and use it, if they support row adders
             BasicCompressor *rowAdder = new BasicRowAdder(bitheap->getOp(), bitheap->getOp()->getTarget(), 2);
             possibleCompressors.push_back(rowAdder);
         }
@@ -423,7 +423,7 @@ namespace flopoco{
 			}
 			REPORT(DEBUG, "finished stage " << s);
 			printBitAmounts();
-			if (s > 100 && computeModulo) {
+			if (s > 200 && computeModulo) {
 			    cerr << "break because stage limit reached" << endl;
 			    break;
 			}
@@ -513,14 +513,15 @@ namespace flopoco{
             compInput[compInput.size()-1] = 1;
             int modulo = bitheap->modulus;
             int wIn = bitheap->width;
+            mpz_class oneMpz = mpz_class(1);
 
             int newRem = (((-1 << column) % modulo) + modulo) % modulo;
             int newReciprocal = newRem - modulo;
 
             if (abs(newRem) <= abs(newReciprocal)) {
                 vector<int> compOutput;
-                for(int j = 1; j < 1<<wIn; j <<= 1){
-                    if(j&newRem){
+                for(mpz_class j = 1; j < oneMpz<<wIn; j <<= 1){
+                    if((j&newRem) != 0){
                         compOutput.push_back(1);
                     } else {
                         compOutput.push_back(0);
@@ -532,8 +533,8 @@ namespace flopoco{
             } else {
                 vector<int> compOutputRec;
                 int ones_vector_start = 0, cnt = 1;
-                for(int j = 1; j < 1<<wIn; j <<= 1){
-                    if(j&newReciprocal){
+                for(mpz_class j = 1; j < oneMpz<<wIn; j <<= 1){
+                    if((j&newReciprocal) != 0){
                         compOutputRec.push_back(1);
                     } else {
                         compOutputRec.push_back(0);

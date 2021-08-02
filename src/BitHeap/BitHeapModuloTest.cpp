@@ -233,7 +233,7 @@ namespace flopoco {
                            " - msbCasesSEVector:"
                            " - default: ; \
                            pseudoCompMode(string)=minRange: mode for pseudocompression to choose which pseudocomrpessor to use"
-                           "available are: minRange, lMinBits",
+                           "available are: minRange, lMinBits, minRangeWeight",
                 // More documentation for the HTML pages. If you want to link to your blog, it is here.
                            "<br> Also see the developer manual in the doc/ directory of FloPoCo.",
                            BitHeapModuloTest::parseArguments,

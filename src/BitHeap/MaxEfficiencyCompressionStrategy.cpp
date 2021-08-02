@@ -248,7 +248,7 @@ namespace flopoco{
 
 
                     if (bitHeapRangesAfterPseudoComp.first == bitHeapRangesBeforePseudoComp.first && bitHeapRangesAfterPseudoComp.second == bitHeapRangesBeforePseudoComp.second) {
-                        if (bitheap->pseudoCompMode == "lMinBits") {
+                        if (bitheap->pseudoCompMode == "lMinBits" || bitheap->pseudoCompMode == "minRangeWeight") {
                             bitheap->pseudoCompMode = "minRange";
                         }
                     }
@@ -459,10 +459,12 @@ namespace flopoco{
 	    } else if (bitheap->pseudoCompMode == "minRange") {
             return abs(rem) < abs(remToCompare);
 	    } else if (bitheap->pseudoCompMode == "lMinBits"){
-	        cerr << "For value " << rem << " contains ones " << countOnes(rem) << endl;
-            cerr << "For value 2 " << remToCompare << " contains ones " << countOnes(remToCompare) << endl;
             return countOnes(rem) < countOnes(remToCompare);
-	    } else {
+	    } else if (bitheap->pseudoCompMode == "minRangeWeight"){
+	        long long int remLL = rem;
+	        long long int remToCompareLL = remToCompare;
+            return (countOnes(remLL) + abs(remLL)) < (countOnes(remToCompareLL) + abs(remToCompareLL));
+        } else {
             THROWERROR("No matching mode to decide which pseudo compressor is better");
 	    }
 	}

@@ -37,7 +37,7 @@ namespace flopoco {
         addOutput("R", heights.size()+1);
 
         ostringstream name;
-        name << "Pseudo_Compressor_Weight_" << heights.size() ;
+        name << "Row_Adder_" << heights.size() ;
         setNameWithFreqAndUID(name.str());
         cerr << "in-heights: " << heights.size() << " out-heights: " << outHeights.size() << endl;
 

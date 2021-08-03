@@ -277,7 +277,8 @@ namespace flopoco{
 					*/
 					REPORT(DEBUG, "applying " << tempVector[j].second+1 << " compressors of type " << tempVector[j].first->getStringOfIO() <<
 												 " at stage " << s << " and column " << c << " with a combined LUT-area cost of " << (tempVector[j].second+1)*tempVector[j].first->getArea());
-					totalArea+=(tempVector[j].second+1)*tempVector[j].first->getArea();
+					//totalArea+=(tempVector[j].second+1)*tempVector[j].first->getArea(); // TODO: Was this written with another use of middleLength in mind? Can now be given to getArea
+					totalArea += tempVector[j].first->getArea(tempVector[j].second);
 
                     if (tempVector[j].first->getStringOfIO() == "(3;2)"){
                         fullAdders++;

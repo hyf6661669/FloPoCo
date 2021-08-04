@@ -53,7 +53,7 @@ class BitHeap;
 
         int countOnes(long long value);
 
-        bool shouldPlacePseudoCompressors(vector<int> bitAmountStage);
+        bool isBitHeapHeightOne(vector<int> bitAmountStage);
 
         /**
          * chooses the better pseudo compressor for the column

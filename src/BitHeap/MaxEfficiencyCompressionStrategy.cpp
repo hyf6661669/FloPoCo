@@ -185,8 +185,8 @@ namespace flopoco{
             }
 
 
-            //if (negativeSignExtension < 0 && shouldPlacePseudoCompressors(bitAmount[s]) && onePseudoCompressionDone) {
-            if (negativeSignExtension < 0 && shouldPlacePseudoCompressors(bitAmount[s]) && reachedModuloRange) {
+            //if (negativeSignExtension < 0 && isBitHeapHeightOne(bitAmount[s]) && onePseudoCompressionDone) {
+            if (negativeSignExtension < 0 && isBitHeapHeightOne(bitAmount[s]) && reachedModuloRange) {
                 // constantAddCompressor
                 vector<int> compInput(bitheap->width, 1);
                 BasicCompressor* compressor = nullptr;
@@ -196,7 +196,7 @@ namespace flopoco{
                 needToApplyNegativeSignExtension =  false;
             } else {
                 // pseudo compression
-                if (shouldPlacePseudoCompressors(bitAmount[s]) && computeModulo) {
+                if (isBitHeapHeightOne(bitAmount[s]) && computeModulo) {
                     cerr << "pseudo compression" << endl;
                     cerr << "pseudoCompMode " << bitheap->pseudoCompMode << endl;
                     bool useNegativeMSBValue = false;
@@ -498,7 +498,7 @@ namespace flopoco{
         return bits;
     }
 
-    bool MaxEfficiencyCompressionStrategy::shouldPlacePseudoCompressors(vector<int> bitAmountStage) {
+    bool MaxEfficiencyCompressionStrategy::isBitHeapHeightOne(vector<int> bitAmountStage) {
         int maxHeightBitAmount = *max_element(bitAmountStage.begin(), bitAmountStage.end());
         return maxHeightBitAmount == 1;
 	}
